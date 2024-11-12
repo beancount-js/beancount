@@ -1,0 +1,37 @@
+import { BeancountOptions } from "../core";
+import type { Directives, Options, Plugin as PluginEntity } from "../core/data";
+import { autoInsertOpen } from "../plugins/autoaccount";
+import { checkBalance } from "./balance";
+import { pad } from "./pad";
+import type { ValidationError } from "./validation";
+
+export type PluginOptions = Options & { directive: PluginEntity };
+
+export type Plugin = (
+  entries: Directives,
+  options: BeancountOptions,
+) => [Directives, Array<ValidationError>];
+
+export const PLUGINS_PRE = [];
+export const PLUGINS_AUTO = [];
+export const PLUGINS_POST = ["beancount.ops.pad", "beancount.ops.balance"];
+
+export interface PluginType {
+  plugin: Plugin;
+  order: number;
+}
+
+export const Plugins: Record<string, PluginType> = {
+  "beancount.ops.pad": {
+    plugin: pad,
+    order: 10,
+  },
+  "beancount.ops.balance": {
+    plugin: checkBalance,
+    order: 0,
+  },
+  "beancount.plugins.auto": {
+    plugin: autoInsertOpen,
+    order: 0,
+  },
+};

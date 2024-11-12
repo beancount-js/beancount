@@ -1,0 +1,27 @@
+{
+  "name": "@beancount-js/parser",
+  "version": "0.1.0",
+  "description": "Beancount parser",
+  "type": "module",
+  "sideEffects": false,
+  "main": "dist/index.umd.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "import": "./dist/index.js",
+    "require": "./dist/index.umd.cjs"
+  },
+  "dependencies": {
+    "@beancount-js/codemirror-lang-beancount": "*",
+    "luxon": "^3.5.0",
+    "big.js": "^6.2.1"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.4.2",
+    "@types/big.js": "^6.2.2",
+    "dedent": "^1.5.3",
+    "vite-plugin-dts": "^4.3.0",
+    "tslib": "^2.6.2"
+  },
+  "license": "MIT"
+}

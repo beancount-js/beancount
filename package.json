@@ -1,0 +1,8 @@
+{
+  "name": "beancount-js",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
+}

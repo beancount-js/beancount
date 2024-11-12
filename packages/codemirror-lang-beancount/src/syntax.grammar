@@ -1,0 +1,182 @@
+@top Journal { 
+  entries*
+}
+
+@skip { 
+  space | 
+  Comment space? newline?
+}
+
+entries {
+  Open |
+  Close |
+  Commodity |
+  PushTag |
+  PopTag |
+  Balance |
+  Pad |
+  Note |
+  Option | 
+  Price |
+  Event |
+  Custom |
+  Plugin |
+  Query |
+  Include |
+  Document |
+  DocumentMarkup |
+  Transaction
+}
+
+OPEN { @extend<MetaName, "open"> }
+CLOSE { @extend<MetaName, "close"> }
+COMMODITY {@extend<MetaName, "commodity"> }
+PUSHTAG { @extend<MetaName, "pushtag"> }
+POPTAG{ @extend<MetaName, "poptag"> }
+BALANCE { @extend<MetaName, "balance"> }
+PAD { @extend<MetaName, "pad"> }
+NOTE { @extend<MetaName, "note"> }
+PRICE { @extend<MetaName, "price"> }
+EVENT { @extend<MetaName, "event"> }
+CUSTOM { @extend<MetaName, "custom"> }
+OPTION { @extend<MetaName, "option"> }
+PLUGIN { @extend<MetaName, "plugin"> }
+QUERY { @extend<MetaName, "query"> }
+DOCUMENT { @extend<MetaName, "document"> }
+INCLUDE { @extend<MetaName, "include"> }
+
+
+Open { Date OPEN AccountName Currencies? BookingMethod? tx Metadata? }
+Close { Date CLOSE AccountName tx Metadata?}
+Commodity { Date COMMODITY Currency tx Metadata?}
+PushTag { PUSHTAG Tag tx }
+PopTag {  POPTAG Tag tx }
+Plugin {  PLUGIN String (String | CodeBlock)? tx }
+Balance { Date BALANCE AccountName NumberExpr Tolerance? Currency tx Metadata?}
+Pad { Date PAD AccountName AccountName tx Metadata?}
+Note { Date NOTE AccountName String tx Metadata?  }
+Option { OPTION String String tx Metadata?}
+Price { Date PRICE Currency Amount tx Metadata? }
+Event { Date EVENT String String? tx Metadata? }
+Custom { Date CUSTOM String MetaValue*  tx Metadata? }
+Query { Date QUERY String (String | CodeBlock) tx Metadata?}
+Include { INCLUDE String tx Metadata?}
+Document { Date DOCUMENT AccountName String (Tag | Link)* tx Metadata?}
+
+Transaction {
+  Date Flag? String? String? (Tag | Link)* tx Metadata? Posting+
+}
+
+Posting {
+  Flag? AccountName (Amount)? (Cost | CostTotalValue) ? (PostingPrice | TotalCost)? tx Metadata?
+}
+
+Currencies {
+  (Currency ",")+ Currency |
+  Currency
+}
+
+MetaValue { NumberExpr | Date | Currency | String | Tag | Link | Bool | AccountName | MetaName }
+
+Attribute { MetaName ":" MetaValue* tx }
+
+Metadata {
+  Attribute+
+}
+
+Amount {
+  NumberExpr Currency |
+  Currency |
+  NumberExpr
+}
+
+CostPer { "#" Amount }
+CostTotal { NumberExpr "#" Amount }
+
+costAmount {
+  CostPer |
+  CostTotal |
+  Amount
+}
+
+costValue { 
+  costAmount ("," Date)? "," String |
+  costAmount ("," Date)? | 
+  String |
+  Date
+}
+
+Cost { BraceL costValue? BraceR }
+CostTotalValue { BraceL Cost  BraceR}
+PostingPrice { AT Amount }
+TotalCost { ATAT Amount }
+Tolerance { TILDE NumberExpr }
+
+@precedence { div @left, times @left, plus @left, minus @left }
+
+NumberExpr {
+  Number |
+  NumberExpr !div SLASH NumberExpr |
+  NumberExpr !times ASTERISK NumberExpr |
+  NumberExpr !plus PLUS NumberExpr |
+  NumberExpr !minus MINUS NumberExpr |
+  LPAREN NumberExpr RPAREN 
+}
+
+Bool { @specialize<MetaName, "true"> | bool | @specialize<MetaName, "false"> }
+
+@tokens {
+   AT { "@" }
+   ATAT { "@@" }
+   BraceL  { "{" }
+   BraceR { "}" }
+   TILDE { "~"}
+
+   MINUS { "-" }
+   PLUS  { "+" }
+   SLASH { "/" }
+   ASTERISK { "*" }
+   LPAREN { '(' }
+   RPAREN { ')' }
+
+   space { @whitespace+ }
+   bool { "TRUE" | "FALSE" }
+   newline { $[\n] }
+   sep { "-" | "/" | "."}
+   num {$[1-9]$[0-9]?$[0-9]? ("," " "* $[0-9]$[0-9]$[0-9])+ }
+   int { num | @digit+ }
+   frac { '.' @digit+ }
+   tx { space? (newline | @eof ) }
+   Tag { "#" $[a-zA-Z0-9_-]+}
+   Link { "^" $[a-zA-Z0-9_-]+ }
+   Number { (MINUS | PLUS) int frac? | int frac?} 
+   Date { @digit @digit @digit @digit sep @digit @digit sep @digit @digit}
+   Comment {  ";" ![\n]* }
+   String { '"' (!["\\] | "\\" _)* '"' }
+  
+   BookingMethod { "STRICT" | "NONE" | "AVERAGE" | "FIFO" | "LIFO" | "HIFO" }
+
+   Currency { $[A-Z]$[A-Z0-9'._-]*$[A-Z0-9] }
+
+   MetaName { $[a-z]$[a-zA-Z0-9_-]* }
+   
+   name { $[A-Z0-9]$[A-Za-z0-9-]* }
+   AccountName { $[A-Z]$[a-z]+ ":" (name ":")* name }
+
+   @precedence { ATAT, AT }
+   @precedence { Number PLUS }
+   @precedence { Number MINUS }
+   @precedence { bool Currency }
+   @precedence { AT, MetaName }
+   @precedence { ATAT, MetaName }
+   @precedence { BookingMethod, Currency }
+   @precedence { Date, Number }
+   @precedence { tx, space }
+
+   @precedence { space, newline }
+}
+
+@external propSource beancountHighlighting from "./highlight"
+@external tokens flag from "./tokens" { Flag }
+@external tokens codeBlock from "./tokens" { CodeBlock }
+@external tokens markup from "./tokens" { DocumentMarkup }

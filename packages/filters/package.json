@@ -1,0 +1,37 @@
+{
+  "name": "@beancount-js/filters",
+  "version": "0.1.0",
+  "description": "Beancount Filter language support",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "fmt": "prettier ./ --write"
+  },
+  "exports": {
+    "import": "./dist/index.js",
+    "require": "./dist/index.cjs"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@codemirror/language": "^6.0.0",
+    "@lezer/highlight": "^1.0.0",
+    "@lezer/lr": "^1.0.0"
+  },
+  "devDependencies": {
+    "@lezer/generator": "^1.0.0",
+    "vite-plugin-dts": "^4.3.0",
+    "tsx": "^4.7.2",
+    "@vitest/ui": "latest",
+    "vite": "latest",
+    "vitest": "latest",
+    "prettier": "3.3.3",
+    "prettier-plugin-jsdoc": "^1.3.0",
+    "tslib": "^2.6.2"
+  },
+  "license": "MIT"
+}
