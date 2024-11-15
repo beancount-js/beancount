@@ -7,6 +7,7 @@
     "target": "es6",
     "allowJs": true,
     "noImplicitAny": true,
+    "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "importHelpers": true,
@@ -16,7 +17,7 @@
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "sourceMap": true
   },
   "include": ["**/*.ts", "**/*.js", "**/*.d.ts"],

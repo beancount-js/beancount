@@ -1,7 +1,6 @@
 import {
   Decimal,
   formatDate,
-  NumberSource,
   writeString,
   checksum,
 } from "@beancount-js/parser";
@@ -10,7 +9,7 @@ import { DateTime } from "luxon";
 import { Cost, CostSpec } from "./position";
 import { LedgerEntry } from "../parser/parser";
 
-export type ScalarType =
+type ScalarType =
   | string
   | number
   | boolean
@@ -20,9 +19,11 @@ export type ScalarType =
   | Amount
   | undefined;
 
+export { type ScalarType };
+
 export type Metadata = Record<
   string,
-  ScalarType | Record<string, ScalarType> | any
+  ScalarType | Record<string, ScalarType> | unknown
 >;
 
 export type Currency = string;
@@ -51,36 +52,6 @@ export const FLAG_UNREALIZED = "U";
 export const SOURCE_META = "__source__";
 export const DIRECTIVE_META = "__directive__";
 
-type Missing = { [key: string]: Missing };
-
-const missing = Symbol("beancount.missing");
-const MISSING_OBJ: any = {
-  [missing]: () => MISSING,
-  toString() {
-    return "";
-  },
-  valueOf() {
-    return false;
-  },
-  [Symbol.toStringTag]: () => "MISSING",
-  [Symbol.iterator]: function* () {},
-};
-export const MISSING: Missing = new Proxy(MISSING_OBJ, {
-  get(target: any, key) {
-    if (target[key]) {
-      return target[key];
-    }
-    if (typeof target[key] === "function") {
-      return target[missing];
-    }
-    return MISSING;
-  },
-
-  set(target, prop, value) {
-    return true;
-  },
-});
-
 // A set of valid booking method names for positions on accounts.
 export enum Booking {
   // Reject ambiguous matches with an error.
@@ -107,20 +78,7 @@ export enum Booking {
   HIFO = "HIFO",
 }
 
-export type MissingType = typeof MISSING;
-
-export function isMissing(object: any): object is MissingType {
-  return object === MISSING;
-}
-
-export function resolveMissing<T>(value: T | MissingType): T | null {
-  if (isMissing(value)) {
-    return null;
-  }
-  return value;
-}
-
-function isScalar(object: any): object is ScalarType {
+function isScalar(object: unknown): object is ScalarType {
   if (
     typeof object === "string" ||
     typeof object === "number" ||
@@ -188,7 +146,7 @@ export abstract class DirectiveBase {
   }
 
   get lineno() {
-    return +this.meta["lineno"];
+    return +(this.meta["lineno"] ?? 0);
   }
 
   get content(): string {
@@ -476,9 +434,9 @@ export class Posting {
    */
   constructor(
     readonly account: Account,
-    readonly units: Amount | MissingType = MISSING,
-    readonly cost: Cost | CostSpec | MissingType = MISSING,
-    readonly price: Amount | MissingType = MISSING,
+    readonly units: Amount | null = null,
+    readonly cost: Cost | CostSpec | null = null,
+    readonly price: Amount | null = null,
     readonly flag: Flag = "",
     readonly meta: Metadata = {},
   ) {}
@@ -490,9 +448,9 @@ export class Posting {
   public copy(
     data: Partial<{
       account: Account;
-      units: Amount | MissingType;
-      cost: Cost | CostSpec | MissingType;
-      price: Amount | MissingType;
+      units: Amount | null;
+      cost: Cost | CostSpec | null;
+      price: Amount | null;
       flag: Flag;
       meta: Metadata;
     }> = {},
@@ -507,19 +465,19 @@ export class Posting {
     );
   }
 
-  get resolvedCost(): Cost | MissingType {
+  get resolvedCost(): Cost | null {
     if (!this.cost) {
-      return MISSING;
+      return null;
     } else if (this.cost instanceof Cost) {
       return this.cost;
     }
 
-    return MISSING;
+    return null;
   }
 
   toString(includeMeta: boolean = true) {
     let str = (this.flag + " " + this.account).trim();
-    str += " " + (this.units.toString() || "").trim();
+    str += " " + (this.units || "").toString().trim();
     if (this.cost instanceof Cost) {
       str += " " + this.cost.toString(true).trim();
     } else if (this.cost instanceof CostSpec) {
@@ -1168,7 +1126,7 @@ export function sorted(directives: Array<Directive>) {
 }
 
 function compare(a: Array<number>, b: Array<number>) {
-  for (var i = 0; i < a.length; i++) {
+  for (let i = 0; i < a.length; i++) {
     if (a[i] === b[i]) {
       continue;
     }
@@ -1192,13 +1150,13 @@ export function filterPostings(
 }
 
 export function isInstanceOf(
-  directive: any,
+  directive: unknown,
   ...types: Array<typeof DirectiveBase>
 ) {
   return types.some((type) => directive instanceof type);
 }
 
-export function isDirective(obj: any): obj is Directive {
+export function isDirective(obj: unknown): obj is Directive {
   return obj instanceof DirectiveBase;
 }
 

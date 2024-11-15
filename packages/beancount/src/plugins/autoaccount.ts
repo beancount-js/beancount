@@ -34,7 +34,7 @@ function accountsUseMap(entries: Directives) {
  */
 export function autoInsertOpen(
   entries: Directives,
-  options?: BeancountOptions,
+  _options?: BeancountOptions,
 ): [Directives, Array<ValidationError>] {
   const response: Directives = sorted([...entries]);
   const errors: Array<ValidationError> = [];

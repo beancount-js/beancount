@@ -389,7 +389,7 @@ export abstract class Directive extends NodeBase {
     return visitor.visit(this);
   }
 
-  abstract copy(props: Partial<Record<string, any>>): Directive;
+  abstract copy(props: Partial<Record<string, unknown>>): Directive;
 
   #id: string = "";
   get id() {

@@ -3,7 +3,7 @@ import { DocumentLoader, loadString } from "./loader";
 
 describe("Loader", () => {
   test("loadString", () => {
-    const documentLoader: DocumentLoader = (file, state) => {
+    const documentLoader: DocumentLoader = (file, _state) => {
       const documents: Record<string, string> = {
         "budget.ledger": `
           include "accounts/accounts.ledger"

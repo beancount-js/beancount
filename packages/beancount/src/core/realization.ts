@@ -29,6 +29,7 @@ export class RealAccount {
 
   get(name: string) {
     const components = name.split(":");
+    // eslint-disable-next-line  @typescript-eslint/no-this-alias
     let account: RealAccount = this;
     components.forEach((component) => {
       if (!account) return;
@@ -47,6 +48,7 @@ export class RealAccount {
   }
 
   getOrCreate(name: Account): RealAccount {
+    // eslint-disable-next-line  @typescript-eslint/no-this-alias
     let account: RealAccount = this;
     const components = name.split(":");
     const path: Array<string> = [];
@@ -76,16 +78,16 @@ export class RealAccount {
       if (this.empty) {
         yield this;
       } else {
-        for (const [key, child] of Object.entries(this.children)) {
-          for (let subChild of child.traverse(leafOnly)) {
+        for (const [_, child] of Object.entries(this.children)) {
+          for (const subChild of child.traverse(leafOnly)) {
             yield subChild;
           }
         }
       }
     } else {
       yield this;
-      for (const [key, child] of Object.entries(this.children)) {
-        for (let subChild of child.traverse(leafOnly)) {
+      for (const [_, child] of Object.entries(this.children)) {
+        for (const subChild of child.traverse(leafOnly)) {
           yield subChild;
         }
       }
@@ -130,7 +132,7 @@ export class RealAccounts {
   pathNames(account: string) {
     const paths = new Set<string>();
     const parts = account.split(":");
-    for (var i = 0; i <= parts.length; i++) {
+    for (let i = 0; i <= parts.length; i++) {
       const key = parts.slice(0, i).join(":");
       paths.add(key);
     }

@@ -22,6 +22,7 @@ describe("Validate Open/Close", () => {
         2014-02-20 open  Assets:US:Bank:Checking3
         2014-02-21 open  Assets:US:Bank:Checking3
       `);
+    expect(errors).toEqual([]);
 
     const validationErrors = validateOpenClose(directives);
     expect(validationErrors.map((it) => it.message)).toEqual([
@@ -47,7 +48,7 @@ describe("Validate Open/Close", () => {
         2014-03-21 close Assets:US:Bank:Checking3
         2014-03-22 close Assets:US:Bank:Checking3
       `);
-
+    expect(errors).toEqual([]);
     const validationErrors = validateOpenClose(directives);
     expect(validationErrors.map((it) => it.message)).toEqual([
       "Duplicate close directive for Assets:US:Bank:Checking2",
@@ -120,7 +121,7 @@ describe("Validate", () => {
             2014-01-05 commodity USD
             2014-01-06 commodity HOOL
           `);
-
+    expect(errors).toEqual([]);
     const validationErrors = validateDuplicateCommodities(directives);
     expect(validationErrors.map((it) => it.message)).toEqual([
       "Duplicate commodity directives for 'USD'",
@@ -159,7 +160,7 @@ describe("Validate", () => {
         2014-10-02 note  Assets:Temporary "Invalid note entry again"
         2014-10-03 document  Assets:Temporary "/path/to/allowed-doc.pdf"
           `);
-
+    expect(errors).toEqual([]);
     const expected = [
       "Invalid reference to inactive account 'Assets:Temporary'",
       "Invalid reference to inactive account 'Assets:Temporary'",
@@ -177,7 +178,7 @@ describe("Validate", () => {
             Assets:US:Bank:Checking     100 USD
             Assets:US:Bank:Savings     -100 USD
           `);
-
+    expect(errors).toEqual([]);
     const validationErrors = validateActiveAccounts(directives);
     expect(validationErrors.map((it) => it.message)).toEqual([
       "Invalid reference to unknown account 'Assets:US:Bank:Checking'",

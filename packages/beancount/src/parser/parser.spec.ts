@@ -26,7 +26,7 @@ describe("LedgerParser", () => {
       Assets:Investments:MSFT      0 MSFT {200.00 USD}
       Assets:Investments:Cash      0 USD
     `;
-    const [entries, errors, options, parser] = parseDirectives(input);
+    const [entries, errors, _, parser] = parseDirectives(input);
     expect(parser.sources).toEqual(["budget.ledger"]);
     expect(errors).toEqual([]);
     expect(entries.length).toEqual(2);

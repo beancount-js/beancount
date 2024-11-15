@@ -120,7 +120,7 @@ function normalizeIndentWhitespace(
 }
 
 function findMatches(line: string, ...patterns: RegExp[]) {
-  for (let p of patterns) {
+  for (const p of patterns) {
     const match = [...line.matchAll(p)];
     if (match.length) {
       return match;
@@ -253,6 +253,7 @@ function getPrefixWidth(prefix: string, fixedCJKWidth?: boolean): number {
   if (!fixedCJKWidth) {
     return prefix.length;
   }
+  // eslint-disable-next-line  no-misleading-character-class
   const charsRegex = new RegExp(`[${WIDE_CHARS.join("")}]`, "g");
   // One CJK length = Two alphabet length
   return prefix.replace(charsRegex, "..").length;

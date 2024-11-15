@@ -1,0 +1,7 @@
+{
+  "plugins": [
+    "../../node_modules/prettier-plugin-jsdoc/dist/index.js",
+    "../../node_modules/prettier-plugin-svelte/plugin.js",
+    "../../node_modules/prettier-plugin-tailwindcss/dist/index.mjs"
+  ]
+}

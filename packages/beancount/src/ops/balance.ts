@@ -1,8 +1,6 @@
 import {
   Balance,
   type Directives,
-  type Options,
-  resolveMissing,
   Transaction,
   isDescendantOf,
   accountOpenClose,
@@ -74,7 +72,7 @@ export function checkBalance(
       });
     } else if (entry instanceof Balance) {
       const expectedAmount = entry.amount;
-      const expectedCurrency = resolveMissing(expectedAmount.currency) || "";
+      const expectedCurrency = expectedAmount.currency || "";
       const open = openCloseMap[entry.account]?.open;
       if (!open) {
         errors.push(

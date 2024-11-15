@@ -4,7 +4,6 @@ import {
   NumberSource,
   RoundingMode,
 } from "@beancount-js/parser";
-import { isMissing, MISSING, MissingType, resolveMissing } from "./data";
 
 export function sameSign(a: NumberSource, b: NumberSource) {
   const na = new Decimal(a);
@@ -19,29 +18,37 @@ export function sameSign(a: NumberSource, b: NumberSource) {
  * defined on it.
  */
 export class Amount {
-  readonly units: Decimal | MissingType;
-  readonly currency: string | MissingType;
+  private num: Decimal | null;
+  readonly currency: string | null;
   readonly source: string;
 
   constructor(
-    source: NumberSource | Amount | MissingType = MISSING,
-    currency: Currency | MissingType = MISSING,
+    source: NumberSource | Amount = null,
+    currency: Currency | null = null,
   ) {
     if (source instanceof Amount) {
       this.source = source.source;
-      this.units = source.units;
+      this.num = source.num;
       this.currency = currency ?? source.currency;
     } else {
       this.source = source?.toString() ?? "";
-      this.units = isMissing(source) ? source : new Decimal(source);
-      this.currency = currency ?? MISSING;
+      this.num =
+        source != null && source != undefined ? new Decimal(source) : null;
+      this.currency = currency;
     }
+  }
+
+  get units(): Decimal {
+    if (!this.num) {
+      throw new Error("Missing units on number");
+    }
+    return this.num;
   }
 
   copy(
     props: Partial<{
-      units: NumberSource | Amount | MissingType;
-      currency: Currency | MissingType;
+      units: NumberSource | Amount;
+      currency: Currency | null;
     }>,
   ) {
     return new Amount(
@@ -55,8 +62,7 @@ export class Amount {
   }
 
   digits(): Array<number> {
-    if (isMissing(this.units)) return [];
-    return this.units.digits();
+    return this.units?.digits() ?? [];
   }
 
   toFixed(dp?: number, roundingMode?: RoundingMode) {
@@ -64,14 +70,14 @@ export class Amount {
   }
 
   get zero() {
-    if (isMissing(this.units)) {
+    if (!this.units) {
       throw new Error("Missing units on number");
     }
     return this.units.zero;
   }
 
   get valueOf() {
-    if (isMissing(this.units)) {
+    if (!this.units) {
       return undefined;
     }
     return this.value.valueOf();
@@ -86,7 +92,7 @@ export class Amount {
   }
 
   get value(): Decimal {
-    if (isMissing(this.units)) {
+    if (!this.units) {
       throw new Error("Missing units on number");
     }
     return this.units;
@@ -101,12 +107,12 @@ export class Amount {
 
   public eq(amount: NumberSource | Amount) {
     if (amount instanceof Amount) {
-      return isMissing(this.units)
-        ? isMissing(amount.units) && this.currency === amount.currency
-        : this.units.eq(resolveMissing(amount.units)) &&
-            this.currency === amount.currency;
+      return (
+        this.currency === amount.currency &&
+        (this.units ? this.units.eq(amount.units) : this.units === amount)
+      );
     }
-    return isMissing(this.units) ? isMissing(amount) : this.units.eq(amount);
+    return this.units ? this.units.eq(amount) : this.units === amount;
   }
 
   public add(amount: NumberSource | Amount): Amount {
@@ -185,7 +191,7 @@ export class Amount {
     return this.with(this.value.scaleb(exponent));
   }
 
-  public toString(numeric: boolean = false) {
+  public toString(_numeric: boolean = false) {
     if (this.source) {
       return (this.source + " " + this.currency).trim();
     }

@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { pad } from "./pad";
-import { type Directives, Transaction } from "../core/data";
+import { type Directives } from "../core/data";
 import { parseDirectives } from "../parser/parser";
 import { defaultBeancountOptions } from "../core";
 
@@ -86,6 +86,7 @@ describe("Pad", () => {
       { transform: false },
     );
 
+    expect(parseErrors).toEqual([]);
     const [entries, errors] = pad(directives, OPTIONS);
 
     expect(errors).toEqual([]);

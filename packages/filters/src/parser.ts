@@ -418,7 +418,6 @@ export function dateExpression(
     return null;
   }
 
-
   const date = node.getChild("Date");
   const duration = node.getChild("Duration");
 
@@ -487,7 +486,7 @@ export class Parser {
     this.tree.cursor().iterate((node) => {
       try {
         return this.enter(node);
-      } catch (e: any) {
+      } catch (e: unknown) {
         this.errors.push(node.toString() + ":" + e.toString());
       }
     }, this.leave.bind(this));
@@ -526,8 +525,8 @@ export class Parser {
       const value =
         node.node.getChild("Integer") ||
         node.node.getChild("DateExpr") ||
-        node.node.getChild("Value");
-      op?.nextSibling;
+        node.node.getChild("Value") ||
+        op?.nextSibling;
       if (!op || !value) {
         this.errors.push(
           `Expected Term OP <Value|Number> found ${node.toString()}`,
@@ -581,7 +580,6 @@ export class Parser {
         );
         return false;
       }
-
 
       this.add(
         new FieldFilter(

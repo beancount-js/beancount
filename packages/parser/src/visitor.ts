@@ -83,6 +83,7 @@ export abstract class AbstractVisitor<T> implements DocumentVisitor<T> {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   visitPosting(directive: Posting): T {
     return;
   }

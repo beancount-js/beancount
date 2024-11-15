@@ -41,12 +41,13 @@ import {
 } from "./directives";
 import { parseDate, readString } from "./parser";
 import { Decimal, parseNumber } from "./number";
+import { md5 } from "./hash";
 
 export type ParserOptions = {
   strict: boolean;
   filename: string;
   bookingMethod: BookingMethod;
-  attributes: Record<string, any>;
+  attributes: Record<string, unknown>;
 };
 
 export interface ParseError {
@@ -80,6 +81,14 @@ export class BeanCountDocument {
 
   get filename() {
     return this.options.filename;
+  }
+
+  #hash: string = ""
+  get hash() {
+    if (this.#hash === "") {
+      this.#hash = md5(this.contents);
+    }
+    return this.#hash;
   }
 
   get directives(): Array<Directive> {
@@ -454,7 +463,7 @@ export class BeanCountDocument {
 
     const children = node.getChildren("Attribute") || [];
     for (let i = 0; i < children.length; i++) {
-      let attr = children[i];
+      const attr = children[i];
       const name = attr.getChild("MetaName");
       if (!name) {
         this.error(attr, "Expected: (MetaName ':' [MetaValue])");
@@ -981,13 +990,13 @@ export class BeanCountDocument {
       return false;
     }
 
-    let prev = node.prevSibling;
+    const prev = node.prevSibling;
     if (!prev) {
       return true;
     }
 
-    let prevLine = this.doc.lineAt(prev.from).number;
-    let curLine = this.doc.lineAt(node.from).number;
+    const prevLine = this.doc.lineAt(prev.from).number;
+    const curLine = this.doc.lineAt(node.from).number;
 
     if (prevLine < curLine) {
       return true;

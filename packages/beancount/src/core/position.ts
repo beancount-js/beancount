@@ -1,6 +1,5 @@
 import { Decimal, formatDate, writeString } from "@beancount-js/parser";
 import { Amount } from "./amount";
-import { MISSING, resolveMissing, type MissingType } from "./data";
 import { DateTime } from "luxon";
 
 /** A variant of Amount that also includes a date and a label. */
@@ -13,8 +12,8 @@ export class Cost {
    *   label.
    */
   constructor(
-    readonly date: DateTime | MissingType = MISSING,
-    readonly amount: Amount | MissingType = MISSING,
+    readonly date: DateTime | null = null,
+    readonly amount: Amount | null = null,
     readonly label: string = "",
   ) {}
 
@@ -25,7 +24,7 @@ export class Cost {
   public toString(showDetails: boolean = true) {
     const str: Array<string> = [this.amount?.toString() || ""];
     if (showDetails) {
-      str.push(formatDate(resolveMissing(this.date)));
+      str.push(formatDate(this.date));
       if (this.label) {
         str.push(writeString(this.label));
       }
@@ -36,7 +35,7 @@ export class Cost {
   public copy(
     data: Partial<{
       date: DateTime;
-      amount: Amount | MissingType;
+      amount: Amount | null;
       label: string;
     }> = {},
   ) {
@@ -69,20 +68,20 @@ export class CostSpec {
    *   units of this lot's currency, or False if unspecified.
    */
   constructor(
-    readonly numberPer: Decimal | MissingType = MISSING,
-    readonly numberTotal: Decimal | MissingType = MISSING,
-    readonly currency: string | MissingType = MISSING,
-    readonly date: DateTime | MissingType = MISSING,
+    readonly numberPer: Decimal | null = null,
+    readonly numberTotal: Decimal | null = null,
+    readonly currency: string | null = null,
+    readonly date: DateTime | null = null,
     readonly label: string = "",
     readonly merge: boolean = false,
   ) {}
 
   public copy(
     data: Partial<{
-      numberPer: Decimal | MissingType;
-      numberTotal: Decimal | MissingType;
-      currency: string | MissingType;
-      date: DateTime | MissingType;
+      numberPer: Decimal | null;
+      numberTotal: Decimal | null;
+      currency: string | null;
+      date: DateTime | null;
       label: string;
       merge: boolean;
     }> = {},
@@ -100,7 +99,7 @@ export class CostSpec {
   public toString(showDetails: boolean = false) {
     const str: Array<string> = [];
     const amountList: Array<string> = [];
-    const date = resolveMissing(this.date);
+    const date = this.date;
     if (this.numberPer != null) amountList.push(this.numberPer.toString());
     if (this.numberTotal != null) {
       amountList.push("#");
@@ -152,13 +151,13 @@ export class Position {
    */
   constructor(
     readonly units: Amount,
-    readonly cost: Cost | MissingType = MISSING,
+    readonly cost: Cost | null = null,
   ) {}
 
   copy(
     data: Partial<{
       units: Amount;
-      cost: Cost | MissingType;
+      cost: Cost | null;
     }> = {},
   ) {
     return new Position(
@@ -170,7 +169,7 @@ export class Position {
   public sortKey() {
     const currency = this.units.currency?.toString() || "";
     const orderUnits = currencySortKey(currency);
-    const amount = resolveMissing(this.cost)?.amount;
+    const amount = this.cost?.amount;
     const costNumber = amount ? amount.number : 0;
     const costCurrency = amount ? amount.currency : "";
     return [orderUnits, costNumber, costCurrency, this.units.number];
@@ -200,7 +199,7 @@ export class Position {
 
   get currencyPair() {
     const pairs = [this.units.currency];
-    const amount = resolveMissing(resolveMissing(this.cost)?.amount);
+    const amount = this.cost?.amount;
     if (amount) {
       pairs.push(amount.currency);
     }

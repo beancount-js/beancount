@@ -33,7 +33,7 @@ describe("Balance", () => {
         2013-05-03 balance Assets:Bank:Checking   0.00 USD
     `);
 
-    const [updated, balanceErrors] = checkBalance(directives, OPTIONS);
+    const [_updated, balanceErrors] = checkBalance(directives, OPTIONS);
     expect(balanceErrors.map((it) => it.message)).toEqual([
       "Invalid currency 'USD' for Balance directive",
     ]);
@@ -337,7 +337,7 @@ describe("Balance", () => {
   });
 
   test("simple cont", () => {
-    const [directives, errors, doc] = parseDirectives(`
+    const [directives] = parseDirectives(`
         2013-05-01 open Assets:Bank:Checking
         2013-05-01 open Equity:Opening-Balances
 

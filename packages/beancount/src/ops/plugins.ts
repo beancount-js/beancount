@@ -1,11 +1,9 @@
 import { BeancountOptions } from "../core";
-import type { Directives, Options, Plugin as PluginEntity } from "../core/data";
+import type { Directives } from "../core/data";
 import { autoInsertOpen } from "../plugins/autoaccount";
 import { checkBalance } from "./balance";
 import { pad } from "./pad";
 import type { ValidationError } from "./validation";
-
-export type PluginOptions = Options & { directive: PluginEntity };
 
 export type Plugin = (
   entries: Directives,

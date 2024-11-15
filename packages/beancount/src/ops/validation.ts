@@ -6,7 +6,6 @@ import {
   Commodity,
   type Directives,
   filterTransactions,
-  isMissing,
   Note,
   Open,
   Directive,
@@ -17,13 +16,13 @@ import { computeResidual, inferTolerances } from "../core/interpolate";
 import { LedgerError } from "../parser/loader";
 
 export class ValidationError extends Error implements LedgerError {
-  readonly context: Record<string, any>;
-  constructor(message: string, context: Record<string, any> | Directive) {
+  readonly context: Record<string, unknown>;
+  constructor(message: string, context: Record<string, unknown> | Directive) {
     super(message);
     this.context = isDirective(context) ? { directive: context } : context;
   }
 
-  with(attributes: Record<string, any>) {
+  with(attributes: Record<string, unknown>) {
     for (const [key, value] of Object.entries(attributes)) {
       this.context[key] = value;
     }
@@ -70,7 +69,7 @@ const ALLOW_AFTER_CLOSE = [Balance, Document, Note];
  */
 export function validateOpenClose(
   entries: Directives,
-  options?: BeancountOptions,
+  _options?: BeancountOptions,
 ): Array<ValidationError> {
   const errors: Array<ValidationError> = [];
   const openMap: Record<string, Open> = {};
@@ -134,7 +133,7 @@ export function validateOpenClose(
  */
 export function validateDuplicateBalances(
   entries: Directives,
-  options?: BeancountOptions,
+  _options?: BeancountOptions,
 ): Array<ValidationError> {
   const errors: Array<ValidationError> = [];
   const balanceEntries: Record<string, Balance> = {};
@@ -168,7 +167,7 @@ export function validateDuplicateBalances(
  */
 export function validateDuplicateCommodities(
   entries: Directives,
-  options?: BeancountOptions,
+  _options?: BeancountOptions,
 ): Array<ValidationError> {
   const errors: Array<ValidationError> = [];
   const commodityEntries: Record<string, Commodity> = {};
@@ -211,7 +210,7 @@ export function validateDuplicateCommodities(
  */
 export function validateActiveAccounts(
   entries: Directives,
-  options?: BeancountOptions,
+  _options?: BeancountOptions,
 ): Array<ValidationError> {
   const errorPairs: Array<{ account: Account; entry: Directive }> = [];
   const errors: Array<ValidationError> = [];
@@ -267,7 +266,7 @@ export function validateActiveAccounts(
  */
 export function validateCurrencyConstraints(
   entries: Directives,
-  options?: BeancountOptions,
+  _options?: BeancountOptions,
 ): Array<ValidationError> {
   const errors: Array<ValidationError> = [];
   const openMap: Record<string, Open> = {};
@@ -281,11 +280,7 @@ export function validateCurrencyConstraints(
 
   filterTransactions(entries).forEach((entry) => {
     entry.postings.forEach((posting) => {
-      if (
-        posting.price &&
-        posting.cost &&
-        !(isMissing(posting.price) || isMissing(posting.cost))
-      ) {
+      if (posting.price && posting.cost) {
         if (posting.price.currency !== posting.cost.currency) {
           errors.push(
             new ValidationError(

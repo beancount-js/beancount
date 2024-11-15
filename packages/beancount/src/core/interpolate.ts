@@ -1,5 +1,5 @@
 import { getWeight } from "./convert";
-import { Posting, resolveMissing } from "./data";
+import { Posting } from "./data";
 import { Inventory } from "./inventory";
 import { Cost } from "./position";
 import { Amount } from "./amount";
@@ -50,7 +50,7 @@ export function hasNonTrivialBalance(posting: Posting): boolean {
  */
 export function computeResidual(postings: ArrayLike<Posting>): Inventory {
   const inventory = new Inventory();
-  for (var i = 0; i < postings.length; i++) {
+  for (let i = 0; i < postings.length; i++) {
     const posting = postings[i];
     if (posting.meta[AUTOMATIC_RESIDUAL]) {
       continue;
@@ -80,11 +80,11 @@ export function inferTolerances(
     if (posting.meta[AUTOMATIC_RESIDUAL]) {
       continue;
     }
-    const units = resolveMissing(posting.units);
+    const units = posting.units;
     if (!units) {
       continue;
     }
-    const currency = resolveMissing(units.currency) || "";
+    const currency = units.currency || "";
     const expo = units.exponent;
 
     if (expo < 0) {
@@ -106,23 +106,21 @@ export function inferTolerances(
         continue;
       }
 
-      const cost = resolveMissing(posting.cost);
+      const cost = posting.cost;
       let costCurrency: string;
       let costTolerance: Decimal;
       if (cost) {
         if (cost instanceof Cost) {
-          costCurrency =
-            resolveMissing(cost.amount)?.currency?.toString() || "";
-          const amount =
-            resolveMissing(cost.amount) || new Amount(0, costCurrency);
+          costCurrency = cost.amount?.currency?.toString() || "";
+          const amount = cost.amount || new Amount(0, costCurrency);
           costTolerance = Decimal.min(
             amount.mul(tolerance).number,
             MAXIMUM_TOLERANCE,
           );
         } else {
-          costCurrency = cost.currency.toString();
+          costCurrency = cost.currency ?? "";
           costTolerance = MAXIMUM_TOLERANCE;
-          [resolveMissing(cost.numberTotal), resolveMissing(cost.numberPer)]
+          [cost.numberTotal, cost.numberPer]
             .filter((it) => it !== null)
             .forEach((costNum) => {
               costTolerance = Decimal.min(
@@ -136,15 +134,15 @@ export function inferTolerances(
           costTolerances[costCurrency].plus(costTolerance);
       }
 
-      const price = resolveMissing(posting.price);
+      const price = posting.price;
       if (price) {
         const priceTolerance = Decimal.min(
           tolerance.mul(price.number),
           MAXIMUM_TOLERANCE,
         );
-        costTolerances[price.currency.toString()] ||= Decimal.ZERO;
-        costTolerances[price.currency.toString()] =
-          costTolerances[price.currency.toString()].plus(priceTolerance);
+        costTolerances[price.currency ?? ""] ||= Decimal.ZERO;
+        costTolerances[price.currency ?? ""] =
+          costTolerances[price.currency ?? ""].plus(priceTolerance);
       }
 
       Object.keys(costTolerances).forEach((k) => {
@@ -170,7 +168,7 @@ export function quantizeWithTolerance(
   defaultTolerance: Decimal = new Decimal(0.000005),
 ): Amount {
   // Applying rounding to the default tolerance, if there is one.
-  const currency = resolveMissing(amount.currency) || "";
+  const currency = amount.currency || "";
   const tolerance = tolerances[currency] || defaultTolerance;
   if (tolerance) {
     const quantum = new Amount(tolerance).mul(2);

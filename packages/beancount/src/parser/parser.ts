@@ -37,7 +37,6 @@ import {
   Directive as BeancountDirective,
   Plugin,
   Metadata,
-  resolveMissing,
   ScalarType,
   Document,
   Query,
@@ -45,7 +44,6 @@ import {
   LedgerInclude,
   Custom,
   Price,
-  MissingType,
   LedgerOption,
   Open,
   Booking,
@@ -53,7 +51,6 @@ import {
   Commodity,
   Balance,
   Amount,
-  MISSING,
   Pad,
   Note,
   Transaction,
@@ -65,12 +62,11 @@ import {
   Directives,
   sorted,
   SOURCE_META,
-  isMissing,
 } from "../core";
 
 export interface ParserProperties {
   filename: string;
-  attributes: Record<string, any>;
+  attributes: Record<string, unknown>;
   transform: boolean;
   parser?: ParserOptions;
 }
@@ -96,7 +92,7 @@ export function parseLedger(contents: string, props: ParserProperties) {
 export function parseDirectives(
   contents: string,
   props: Partial<ParserProperties> = {},
-): [Directives, Array<ParseError>, Record<string, any>, LedgerParser] {
+): [Directives, Array<ParseError>, Record<string, unknown>, LedgerParser] {
   const ledger = parseLedger(contents, {
     filename: "",
     transform: true,
@@ -122,7 +118,7 @@ export class LedgerEntry {
 
 export class LedgerParser extends AbstractVisitor<void> {
   readonly directives: Array<BeancountDirective> = [];
-  readonly optionsMap: Record<string, any> = [];
+  readonly optionsMap: Metadata = {};
   readonly sources: Array<string> = [];
 
   constructor(
@@ -162,7 +158,7 @@ export class LedgerParser extends AbstractVisitor<void> {
       if (value instanceof NumberExpression) {
         meta[attr.name] = value.resolve();
       } else if (value instanceof ParserAmount) {
-        meta[attr.name] = resolveMissing(this.visitAmount(value));
+        meta[attr.name] = this.visitAmount(value);
       } else {
         meta[attr.name] = value;
       }
@@ -174,7 +170,7 @@ export class LedgerParser extends AbstractVisitor<void> {
     if (value instanceof NumberExpression) {
       return value.resolve();
     } else if (value instanceof ParserAmount) {
-      return resolveMissing(this.visitAmount(value));
+      return this.visitAmount(value);
     }
     return value;
   }
@@ -235,7 +231,7 @@ export class LedgerParser extends AbstractVisitor<void> {
       new Price(
         directive.date,
         directive.currency,
-        resolveMissing(this.visitAmount(directive.amount))!,
+        this.visitAmount(directive.amount)!,
         this.metadataFor(directive),
       ),
     );
@@ -259,18 +255,16 @@ export class LedgerParser extends AbstractVisitor<void> {
   };
 
   private visitNumber(
-    number: Numeric | null | undefined | MissingType,
-  ): MissingType | Decimal {
+    number: Numeric | null | undefined | null,
+  ): null | Decimal {
     if (number === null || number === undefined) {
-      return MISSING;
-    } else if (isMissing(number)) {
-      return number;
+      return null;
     } else if (number instanceof Decimal) {
       return number;
     } else if (number instanceof NumberExpression) {
       return number.resolve();
     }
-    return MISSING;
+    return null;
   }
 
   visitOption = (directive: OptionDirective) => {
@@ -326,7 +320,7 @@ export class LedgerParser extends AbstractVisitor<void> {
         directive.account,
         new Amount(
           this.visitNumber(directive.amount?.value)?.toString(),
-          directive.amount?.currency ?? MISSING,
+          directive.amount?.currency ?? null,
         ),
         null,
         this.visitNumber(directive.tolerance)?.toString(),
@@ -388,35 +382,31 @@ export class LedgerParser extends AbstractVisitor<void> {
     return new TxPosting(
       posting.account,
       this.visitAmount(posting.amount),
-      this.visitCost(directive, posting) ?? MISSING,
+      this.visitCost(directive, posting) ?? null,
       price,
       posting.status,
       this.attributesFor(posting.position, posting.metadata),
     );
   }
 
-  visitAmount(
-    units: ParserAmount | MissingType | null | undefined,
-  ): Amount | MissingType {
-    if (!units || isMissing(units)) {
-      return MISSING;
+  visitAmount(units: ParserAmount | null | null | undefined): Amount | null {
+    if (!units) {
+      return null;
     }
-    return new Amount(this.visitNumber(units.value), units.currency ?? MISSING);
+    return new Amount(this.visitNumber(units.value), units.currency ?? null);
   }
 
   visitPostingPrice(posting: Posting) {
     if (posting.price?.value) {
       return this.visitAmount(posting.price);
     } else if (posting.totalCost && posting.amount) {
-      const totalCost = resolveMissing(
-        this.visitNumber(posting.totalCost?.value),
-      );
-      const amount = resolveMissing(this.visitNumber(posting.amount?.value));
+      const totalCost = this.visitNumber(posting.totalCost?.value);
+      const amount = this.visitNumber(posting.amount?.value);
 
       if (totalCost && amount) {
         return new Amount(
           totalCost.div(amount.abs()).toString(),
-          posting.totalCost.currency ?? MISSING,
+          posting.totalCost.currency ?? null,
         );
       }
     }
@@ -425,7 +415,7 @@ export class LedgerParser extends AbstractVisitor<void> {
 
   visitCost(directive: TransactionDirective, posting: Posting) {
     const cost = posting.cost;
-    if (isMissing(cost)) {
+    if (!cost) {
       return cost;
     } else if (cost && cost instanceof ParserCost && cost.amount) {
       return new Cost(
@@ -434,22 +424,22 @@ export class LedgerParser extends AbstractVisitor<void> {
         cost.label,
       );
     } else if (cost && cost instanceof ParserCostSpec) {
-      const numberPer = resolveMissing(this.visitNumber(cost.numberPer));
-      const numberTotal = resolveMissing(this.visitNumber(cost.numberTotal));
+      const numberPer = this.visitNumber(cost.numberPer);
+      const numberTotal = this.visitNumber(cost.numberTotal);
       return new CostSpec(
-        numberPer !== null ? numberPer : MISSING,
-        numberTotal !== null ? numberTotal : MISSING,
-        cost.currency ?? MISSING,
-        cost.date ?? MISSING,
+        numberPer !== null ? numberPer : null,
+        numberTotal !== null ? numberTotal : null,
+        cost.currency ?? null,
+        cost.date ?? null,
         cost.label ?? "",
       );
     }
     return null;
   }
 
-  visitPushTag = (directive: PushTagDirective) => {};
+  visitPushTag = (_directive: PushTagDirective) => {};
 
-  visitPopTag = (directive: PopTagDirective) => {};
+  visitPopTag = (_directive: PopTagDirective) => {};
 
   visitEvent = (directive: EventDirective) => {
     this.directives.push(

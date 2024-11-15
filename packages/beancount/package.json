@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "description": "Beancount Core",
   "type": "module",
+  "main": "dist/beancount.js",
+  "types": "dist/index.d.ts",
   "sideEffects": false,
   "dependencies": {
     "yaml": "^2.5.1",
@@ -10,9 +12,14 @@
     "@beancount-js/parser": "*",
     "@beancount-js/filters": "*",
     "luxon": "^3.5.0",
-    "dedent": "^1.5.3"
+    "dedent": "^1.5.3",
+    "rrule": "^2.8.1"
   },
   "scripts": {
+    "build": "vite build",
+    "lint": "eslint ./src",
+    "lint:fix": "eslint --fix ./src",
+    "check-types": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",

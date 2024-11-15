@@ -95,7 +95,7 @@ export class DateRange {
 
 export type Op = ":" | ">" | "=" | "<" | "!=" | ">=" | "<=" | "~" | "!~";
 
-export type VisitorContext = Record<string, any> & {
+export type VisitorContext = Record<string, unknown> & {
   op: Op;
 };
 
@@ -264,7 +264,7 @@ export class PatternFilter extends Filter {
     }
     try {
       return new PatternFilter(new RegExp(value, flags));
-    } catch (e) {
+    } catch (_) {
       return new PatternFilter(new RegExp(escapeRegex(value), flags));
     }
   }

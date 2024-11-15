@@ -49,7 +49,7 @@ export const parser = grammarParser.configure({
       Transaction: (node: SyntaxNode) => {
         const nodes = node.getChildren("String");
         const el = (node.getChildren("Posting") || [])[0]?.prevSibling;
-        let first = el || nodes[1] || nodes[0] || node.firstChild,
+        const first = el || nodes[1] || nodes[0] || node.firstChild,
           last = node.lastChild;
         return first && first.to < last!.from
           ? {
@@ -59,7 +59,7 @@ export const parser = grammarParser.configure({
           : null;
       },
       Posting: (node: SyntaxNode) => {
-        let first =
+        const first =
             node.getChild("Number") ||
             node.getChild("AccountName") ||
             node.firstChild,

@@ -1,3 +1,4 @@
+import { ZodIssue, ZodIssueCode } from "zod";
 import {
   BeancountOptions,
   beanCountOptionsSchema,
@@ -11,6 +12,7 @@ import {
 } from "../core";
 import { Plugins, PluginType } from "../ops/plugins";
 import { parseLedger } from "./parser";
+import { BeanCountDocument } from "@beancount-js/parser";
 
 export const PLUGINS_PRE = [];
 export const PLUGINS_AUTO = [];
@@ -42,19 +44,19 @@ export function dedent(str: string) {
 
 export interface LedgerError {
   readonly message: string;
-  readonly context: Record<string, any>;
-  with(attributes: Record<string, any>): LedgerError;
+  readonly context: Record<string, unknown>;
+  with(attributes: Record<string, unknown>): LedgerError;
 }
 
 export class LoadError extends Error implements LedgerError {
   constructor(
     message: string,
-    readonly context: Record<string, any> = {},
+    readonly context: Record<string, unknown> = {},
   ) {
     super(message);
   }
 
-  with(attributes: Record<string, any>) {
+  with(attributes: Record<string, unknown>) {
     for (const [key, value] of Object.entries(attributes)) {
       this.context[key] = value;
     }
@@ -82,6 +84,8 @@ interface LoadProps {
 
   documentLoader?: DocumentLoader;
 }
+
+export type { LoadProps };
 
 function logTime<T>(
   operationName: string,
@@ -159,14 +163,19 @@ export function parseRecursive(
 
   // A stack of sources to be parsed.
   const sourceStack: Array<[string, boolean]> = [...sources];
-  let optionsMap: Record<string, any> | null = null;
-  const otherOptionsMap: Array<Record<string, any>> = [];
+  let optionsMap: Record<string, unknown> | null = null;
 
   // A list of absolute filenames that have been parsed in the past, used to
   // detect and avoid duplicates (cycles).
   const filenamesSeen = new Set<string>();
   return logTime("beancount.parser.parser", logTimings, 1, () => {
+    const files: Array<{
+      filename: string;
+      options: Record<string, unknown>;
+      document: BeanCountDocument
+    }> = [];
     while (sourceStack.length) {
+      // eslint-disable-next-line prefer-const
       let [source, isFile] = sourceStack.pop()!;
       const isTopLevel = optionsMap === null;
       const sourceFileName = isFile ? normPath(source) : "";
@@ -244,14 +253,21 @@ export function parseRecursive(
       entries.push(...doc.directives);
       if (isTopLevel) {
         optionsMap = doc.optionsMap;
+        optionsMap["filename"] = sourceFileName;
+        files.push({filename: sourceFileName, document: doc.document, options: doc.optionsMap});
       } else {
-        otherOptionsMap.push(doc.optionsMap);
+        const opts = doc.optionsMap;
+        opts["filename"] = sourceFileName;
+        opts["include"] = [...filenamesSeen].sort();
+        opts["files"] = [...files];
+        files.push({filename: sourceFileName, document: doc.document, options: opts});
       }
     }
     if (!optionsMap) {
       optionsMap = defaultBeancountOptions();
     }
     optionsMap["include"] = [...filenamesSeen].sort();
+    optionsMap["files"] = files;
     return runTransformations(
       loadBeancountOptions([sorted(entries), parseErrors, optionsMap], props),
       props,
@@ -260,16 +276,16 @@ export function parseRecursive(
 }
 
 export function loadBeancountOptions(
-  data: [Directives, Array<LedgerError>, Record<string, any>],
+  data: [Directives, Array<LedgerError>, Record<string, unknown>],
   props: LoadProps,
 ): [Directives, Array<LedgerError>, BeancountOptions] {
-  let [entries, errors, optionsMap] = data;
+  const [entries, errors, optionsMap] = data;
   let options: BeancountOptions = defaultBeancountOptions();
-  const source: Record<string, any> = { ...options };
+  const source: Record<string, unknown> = { ...options };
 
   for (let [key, value] of Object.entries(optionsMap)) {
     key = optionKey(key);
-    let existing = source[key];
+    const existing = source[key];
     if (existing) {
       if (Array.isArray(existing)) {
         value = Array.isArray(value) ? value : [value];
@@ -309,8 +325,11 @@ export function loadBeancountOptions(
   const beancount = beanCountOptionsSchema.strict().safeParse(source);
 
   if (!beancount.success) {
-    beancount.error.errors.forEach((error: any) => {
-      const key = error.path[0] ?? error.keys[0];
+    beancount.error.errors.forEach((error: ZodIssue) => {
+      const key =
+        error.code === ZodIssueCode.unrecognized_keys
+          ? error.keys[0]
+          : error.path[0];
       errors.push(
         new LoadError(
           `${key}: ${error.message}${error.code ? ` (${error.code})` : ""}`,

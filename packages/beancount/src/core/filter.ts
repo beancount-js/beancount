@@ -20,7 +20,6 @@ import {
   Note,
   Transaction,
   Document,
-  isMissing,
   Price,
   Balance,
   Posting,
@@ -30,27 +29,35 @@ import {
 } from "./data";
 import { Decimal, isValidNumber, parseDate } from "@beancount-js/parser";
 import { Cost } from "./position";
+import { LedgerError } from "../parser/loader";
 
 function getValueByDotNotation(
-  obj: any,
+  obj: unknown,
   path: string,
   aliases: Record<string, string[]> = {},
-): any {
+): unknown {
   const keys = path.replace(/\[(\d+)\]/g, ".$1").split("."); // Converts array indices to dot notation
-  let result = obj;
+  let result: unknown = obj;
 
   for (let key of keys) {
-    if (result === undefined || result === null || isMissing(result)) {
+    if (result === undefined || result === null) {
       return undefined; // Return undefined if any key doesn't exist or if result becomes null
     }
     const names: string[] = [...(aliases[key] ?? []), key];
     key =
-      names.find((k) => result[k] !== null && result[k] !== undefined) ?? key;
+      names.find(
+        (k) => typeof result === "object" && result !== null && k in result,
+      ) ?? key;
+
     // Check if the property is a function
-    if (typeof result[key] === "function") {
-      result = result[key](); // Call the function
-    } else {
-      result = result[key]; // Otherwise, just access the property
+    if (
+      typeof result === "object" &&
+      result !== null &&
+      typeof (result as Record<string, unknown>)[key] === "function"
+    ) {
+      result = (result as Record<string, () => unknown>)[key](); // Call the function
+    } else if (typeof result === "object" && result !== null) {
+      result = (result as Record<string, unknown>)[key]; // Otherwise, just access the property
     }
   }
   return result;
@@ -70,7 +77,7 @@ export class BeancountFilter extends AbstractFilterVisitor<
   visitTagFilter(
     filter: TagFilter,
     entity: DirectiveBase | string,
-    context: VisitorContext,
+    _context: VisitorContext,
   ): boolean {
     if (typeof entity === "string") {
       return entity.startsWith(filter.tag);
@@ -87,7 +94,7 @@ export class BeancountFilter extends AbstractFilterVisitor<
   visitLinkFilter(
     filter: LinkFilter,
     entity: DirectiveBase | string,
-    context: VisitorContext,
+    _context: VisitorContext,
   ): boolean {
     if (typeof entity === "string") {
       return entity.startsWith(filter.link);
@@ -129,20 +136,16 @@ export class BeancountFilter extends AbstractFilterVisitor<
     } else if (entity instanceof Transaction) {
       return entity.postings.map((it) => this.amounts(it)).flat();
     } else if (entity instanceof Price || entity instanceof Balance) {
-      return isMissing(entity.amount.units) ? [] : [entity.amount.units];
+      return entity.amount.units ? [entity.amount.units] : [];
     } else if (entity instanceof Posting) {
       const amounts: Decimal[] = [];
-      if (!isMissing(entity.units) && !isMissing(entity.units.units)) {
+      if (entity.units?.units) {
         amounts.push(entity.units.units);
       }
-      if (
-        entity.cost instanceof Cost &&
-        !isMissing(entity.cost.amount) &&
-        !isMissing(entity.cost.amount.units)
-      ) {
+      if (entity.cost instanceof Cost && entity.cost?.amount?.units) {
         amounts.push(entity.cost.amount.units);
       }
-      if (!isMissing(entity.price) && !isMissing(entity.price.units)) {
+      if (entity.price?.units) {
         amounts.push(entity.price.units);
       }
       return amounts;
@@ -195,7 +198,7 @@ export class BeancountFilter extends AbstractFilterVisitor<
   visitPatternFilter(
     filter: PatternFilter,
     entity: DirectiveBase | string,
-    context: VisitorContext,
+    _context: VisitorContext,
   ): boolean {
     if (typeof entity === "string") {
       return filter.value.test(entity);
@@ -224,7 +227,7 @@ export class BeancountFilter extends AbstractFilterVisitor<
   visitFieldFilter(
     filter: FieldFilter,
     entity: DirectiveBase | string,
-    context: VisitorContext,
+    _context: VisitorContext,
   ): boolean {
     switch (filter.field) {
       case "type":
@@ -286,11 +289,7 @@ export class BeancountFilter extends AbstractFilterVisitor<
         case "cost":
           return entity.postings
             .map((posting) => {
-              if (
-                posting.cost instanceof Cost &&
-                !isMissing(posting.cost.amount) &&
-                !isMissing(posting.cost.amount.units)
-              ) {
+              if (posting.cost instanceof Cost && posting.cost?.amount?.units) {
                 return [posting.cost.amount.units];
               } else {
                 return [];
@@ -304,10 +303,7 @@ export class BeancountFilter extends AbstractFilterVisitor<
         case "price":
           return entity.postings
             .map((posting) => {
-              if (
-                !isMissing(posting.price) &&
-                !isMissing(posting.price.units)
-              ) {
+              if (posting.price?.units) {
                 return [posting.price.units];
               } else {
                 return [];
@@ -408,20 +404,30 @@ export class BeancountFilter extends AbstractFilterVisitor<
 
 const beancountFilter = new BeancountFilter();
 
+
 export function filterLedger(
   directives: Directives,
-  query: string,
+  query: string | Filter,
   options: QueryParserOptions = {},
-): [Directives, Array<string>] {
+): [Directives, Array<string>, Filter] {
+  if (query instanceof Filter) {
+    return [
+      directives.filter((it) => beancountFilter.accept(filter, it, { op: ":" })),
+      [],
+      query,
+    ];
+  }
+
   const [filter, errors] = parseQuery(query, options);
   if (errors.length) {
-    return [[], errors];
+    return [[], errors, filter];
   }
   if (!filter) {
-    return [directives, []];
+    return [directives, [], filter];
   }
   return [
     directives.filter((it) => beancountFilter.accept(filter, it, { op: ":" })),
     [],
+    filter,
   ];
 }

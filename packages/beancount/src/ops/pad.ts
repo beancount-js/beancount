@@ -10,7 +10,6 @@ import {
   Transaction,
   FLAG_PADDING,
   Posting,
-  resolveMissing,
 } from "../core/data";
 import { Inventory } from "../core/inventory";
 import { Position } from "../core/position";
@@ -100,7 +99,7 @@ export function pad(
             const positions = padBalance.positions.filter(
               (it) => it.units.currency === checkAmount.currency,
             );
-            if (positions.some((it) => resolveMissing(it.cost))) {
+            if (positions.some((it) => it.cost)) {
               errors.push(
                 new ValidationError(
                   `Attempt to pad an entry with cost for balance: ${padBalance}`,

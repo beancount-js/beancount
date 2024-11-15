@@ -2,11 +2,6 @@ export { parent, isDescendantOf, accountOpenClose } from "./account";
 export { sameSign, Amount } from "./amount";
 export { getWeight } from "./convert";
 export {
-  ScalarType,
-  Metadata,
-  Currency,
-  Account,
-  Flag,
   FLAG_OKAY,
   FLAG_CONVERSIONS,
   FLAG_MERGING,
@@ -17,11 +12,7 @@ export {
   FLAG_WARNING,
   SOURCE_META,
   DIRECTIVE_META,
-  MISSING,
   Booking,
-  MissingType,
-  isMissing,
-  resolveMissing,
   writeScalar,
   DirectiveBase,
   Open,
@@ -42,8 +33,6 @@ export {
   Price,
   Document,
   Custom,
-  Directive,
-  Directives,
   postingHasConversion,
   transactionHasConversion,
   getEntry,
@@ -56,6 +45,15 @@ export {
   isDirective,
   optionKey,
 } from "./data";
+export type {
+  Metadata,
+  ScalarType,
+  Currency,
+  Account,
+  Flag,
+  Directive,
+  Directives,
+} from "./data";
 export {
   MAXIMUM_TOLERANCE,
   MAX_TOLERANCE_DIGITS,
@@ -66,8 +64,15 @@ export {
   computeResidual,
   inferTolerances,
 } from "./interpolate";
-export { MatchResult, Inventory } from "./inventory";
-export { DefaultKeyedMap, MapKey, DefaultMap, CaseInsensitiveMap } from "./map";
+export {
+  MatchResult,
+  Inventory,
+  SimpleCounterInventory,
+  InventoryKey,
+  CounterInventory,
+} from "./inventory";
+export { DefaultKeyedMap, DefaultMap, CaseInsensitiveMap } from "./map";
+export type { MapKey } from "./map";
 export { Cost, CostSpec, currencySortKey, Position } from "./position";
 export { RealAccount } from "./realization";
 export {
@@ -77,6 +82,16 @@ export {
   currency,
   bookingSchema,
   beanCountOptionsSchema,
-  BeancountOptions,
   defaultBeancountOptions,
 } from "./options";
+
+export type { BeancountOptions } from "./options";
+export { PricePoint, BaseQuote, PriceMap } from "./prices";
+export {
+  Conversion,
+  getConversion,
+  costOrValue,
+  DEFAULT_CONVERSION,
+} from "./conversion";
+export type { ConversionContext } from "./conversion";
+export * from "./filter"

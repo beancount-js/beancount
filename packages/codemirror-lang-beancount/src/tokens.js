@@ -90,22 +90,6 @@ function isDirective(value) {
   );
 }
 
-function isCaptialized(char) {
-  return char >= 65 && char <= 90;
-}
-
-function isFlag(input) {
-  const char = input.next;
-  if (char === 33 || char === 42 || char === 35 || isCaptialized(char)) {
-    return String.fromCharCode(char);
-  }
-  const id = readIdentifier(input, 0, 1).trim();
-  if (id === "txn") {
-    return id;
-  }
-  return "";
-}
-
 function spaceBefore(input) {
   let count = 0;
   const chars = input.split("");
@@ -119,21 +103,8 @@ function spaceBefore(input) {
   return count;
 }
 
-function spaceAfter(input) {
-  let count = 0;
-  const chars = input.split("").reverse();
-  for (let i = 0; i < chars.length; i++) {
-    if (/\s/.test(chars[i])) {
-      count++;
-    } else {
-      break;
-    }
-  }
-  return count;
-}
-
 export const markup = new ExternalTokenizer(
-  (input, stack) => {
+  (input) => {
     if (input.next < 0) {
       return;
     }
@@ -156,7 +127,7 @@ export const markup = new ExternalTokenizer(
 );
 
 export const flag = new ExternalTokenizer(
-  (input, stack) => {
+  (input) => {
     // !, *, [A-Z]
     if (input.next < 0) {
       return;
@@ -181,7 +152,7 @@ export const flag = new ExternalTokenizer(
 );
 
 export const codeBlock = new ExternalTokenizer(
-  (input, stack) => {
+  (input) => {
     if (input.next < 0) {
       return;
     }
@@ -191,24 +162,20 @@ export const codeBlock = new ExternalTokenizer(
       ({ char }) => char === "`",
     );
     if (openBlock.length >= 3) {
-      const [bodyOffset, bodyContent] = consume(
-        input,
-        openOffset,
-        ({ code, char, offset, value }) => {
-          if (char !== "`") {
-            return true;
-          }
-          const token = consume(
-            input,
-            offset,
-            ({ char, index }) => char === "`" && index < openBlock.length,
-          );
-          if (token[1] === openBlock) {
-            return false;
-          }
+      const [bodyOffset] = consume(input, openOffset, ({ char, offset }) => {
+        if (char !== "`") {
           return true;
-        },
-      );
+        }
+        const token = consume(
+          input,
+          offset,
+          ({ char, index }) => char === "`" && index < openBlock.length,
+        );
+        if (token[1] === openBlock) {
+          return false;
+        }
+        return true;
+      });
       const [closeOffset, closeBlock] = consume(
         input,
         bodyOffset,

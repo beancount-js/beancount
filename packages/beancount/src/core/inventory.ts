@@ -1,15 +1,10 @@
 import { Amount } from "./amount";
-import {
-  type Currency,
-  isMissing,
-  MISSING,
-  type MissingType,
-  Posting,
-  resolveMissing,
-} from "./data";
+import { type Currency, Posting } from "./data";
 import { sameSign } from "./amount";
-import { Cost, Position } from "./position";
+import { Cost, CostSpec, Position } from "./position";
 import { Decimal } from "@beancount-js/parser";
+import { DefaultKeyedMap, DefaultMap } from "./map";
+import { Conversion, ConversionContext, costOrValue } from "./conversion";
 
 export enum MatchResult {
   // A new lot was created.
@@ -69,9 +64,7 @@ export class Inventory {
   get currencies(): Array<Currency> {
     return [
       ...new Set(
-        this.positions
-          .map((it) => resolveMissing(it.units)?.currency?.toString() || "")
-          .filter((it) => it),
+        this.positions.map((it) => it.units?.currency || "").filter((it) => it),
       ),
     ];
   }
@@ -86,7 +79,7 @@ export class Inventory {
     ];
   }
 
-  currencyUnits(currency: Currency | MissingType): Amount {
+  currencyUnits(currency: Currency | null): Amount {
     return this.positions
       .filter((it) => it.units.currency === currency)
       .reduce(
@@ -169,14 +162,14 @@ export class Inventory {
    *   the position was deleted.
    */
   public addAmount(
-    units: Amount | MissingType,
-    cost: Cost | MissingType = MISSING,
+    units: Amount | null,
+    cost: Cost | null = null,
   ): [Position | null, MatchResult] {
     const key =
       `${units?.currency?.toString() || ""} ${cost?.toString(true) || ""}`.trim();
     const pos = this.#values[key];
 
-    if (isMissing(units) || !units) {
+    if (!units) {
       return [pos, MatchResult.IGNORED];
     }
     let booking: MatchResult;
@@ -216,7 +209,7 @@ export class Inventory {
   public addPosting(posting: Posting) {
     return this.addAmount(
       posting.units,
-      posting.cost instanceof Cost ? posting.cost : MISSING,
+      posting.cost instanceof Cost ? posting.cost : null,
     );
   }
 
@@ -230,5 +223,173 @@ export class Inventory {
       inventory.positions.forEach((p) => this.addPosition(p));
       return this;
     }
+  }
+}
+
+export class SimpleCounterInventory extends DefaultMap<string, Amount> {
+  constructor(entries?: readonly (readonly [string, Amount])[] | null) {
+    super((currency: string) => new Amount("0", currency), entries);
+  }
+
+  toRecord(): Record<string, number> {
+    const data: Record<string, number> = {};
+    for (const [k, value] of this.entries()) {
+      if (value?.units) {
+        data[k] = value.units.number;
+      }
+    }
+    return data;
+  }
+
+  add(number: Amount | null) {
+    if (!number || !number.currency) {
+      throw new Error(`No currency specified for amount: ${number}`);
+    }
+    this.set(number.currency, number);
+  }
+
+  set(key: string, value: Amount) {
+    if (value.currency !== key) {
+      throw new Error(
+        `Invalid currency for amount expected ${key} found ${value.currency}`,
+      );
+    }
+    this.insert(key);
+    const amount = super.get(key).add(value);
+    if (amount.zero) {
+      this.delete(key);
+      return this;
+    } else {
+      return super.set(key, amount);
+    }
+  }
+
+  neg() {
+    const entries: Array<[string, Amount]> = [];
+    for (const [key, value] of this.entries()) {
+      entries.push([key, value.neg()]);
+    }
+    return new SimpleCounterInventory(entries);
+  }
+
+  reduce(reducer: (key: string, value: Amount) => Amount) {
+    const counter = new SimpleCounterInventory();
+    for (const [key, value] of this.entries()) {
+      const amount = reducer(key, value);
+      counter.add(amount);
+    }
+    return counter;
+  }
+
+  positions() {
+    return [...this.values()].map((it) => new Position(it));
+  }
+}
+
+export class InventoryKey {
+  constructor(
+    readonly currency: string,
+    readonly cost: Cost | null = null,
+  ) {}
+
+  copy() {
+    return new InventoryKey(this.currency, this.cost?.copy());
+  }
+
+  get hash() {
+    return `${this.currency} ${this.cost?.toString(true) || ""}`.trim();
+  }
+}
+
+export class CounterInventory extends DefaultKeyedMap<InventoryKey, Decimal> {
+  constructor(entries?: readonly (readonly [InventoryKey, Decimal])[] | null) {
+    super(() => new Decimal("0"), entries);
+  }
+
+  add(amount: Amount | null, cost?: Cost | CostSpec) {
+    if (!amount?.currency || amount.units === null) {
+      return;
+    }
+    const costed = cost instanceof Cost ? cost : null;
+    this.set(new InventoryKey(amount.currency, costed), amount.units);
+  }
+
+  set(key: InventoryKey, value: Decimal) {
+    this.insert(key);
+    const amount = super.get(key).add(value);
+    if (amount.zero) {
+      this.delete(key);
+      return this;
+    } else {
+      return super.set(key, amount);
+    }
+  }
+
+  neg() {
+    const entries: Array<[InventoryKey, Decimal]> = [];
+    for (const [key, value] of this.entries()) {
+      entries.push([key, value.neg()]);
+    }
+    return new CounterInventory(entries);
+  }
+
+  copy() {
+    const entries: Array<[InventoryKey, Decimal]> = [];
+    for (const [key, value] of this.entries()) {
+      entries.push([key.copy(), value.copy()]);
+    }
+    return new CounterInventory(entries);
+  }
+
+  plus(inventory: CounterInventory) {
+    const counter = this.copy();
+    counter.addInventory(inventory);
+    return counter;
+  }
+
+  reduce(reducer: (key: InventoryKey, value: Decimal) => Amount) {
+    const counter = new SimpleCounterInventory();
+    for (const [key, value] of this.entries()) {
+      const amount = reducer(key, value);
+      counter.add(amount);
+    }
+    return counter;
+  }
+
+  positions() {
+    const values: Array<Position> = [];
+    for (const [key, value] of this.entries()) {
+      values.push(new Position(new Amount(value, key.currency), key.cost));
+    }
+    return values;
+  }
+
+  convert(conversion: Conversion, context: Partial<ConversionContext> = {}) {
+    return costOrValue(this, conversion, context);
+  }
+
+  toRecord(
+    conversion: Conversion = Conversion.AT_COST,
+    context: Partial<ConversionContext> = {},
+  ): Record<string, number> {
+    return this.convert(conversion, context).toRecord();
+  }
+
+  public addInventory(inventory: CounterInventory | SimpleCounterInventory) {
+    if (inventory instanceof CounterInventory) {
+      for (const [key, value] of inventory.entries()) {
+        this.set(key, value);
+      }
+    } else {
+      for (const [key, value] of inventory.entries()) {
+        this.set(new InventoryKey(key), value.units);
+      }
+    }
+  }
+
+  static defaultMap(): DefaultMap<string, CounterInventory> {
+    return new DefaultMap<string, CounterInventory>(
+      () => new CounterInventory(),
+    );
   }
 }

@@ -7,6 +7,10 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "build": "vite build",
+    "lint": "eslint ./src",
+    "lint:fix": "eslint --fix ./src",
+    "check-types": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
@@ -25,6 +29,8 @@
   "devDependencies": {
     "@lezer/generator": "^1.0.0",
     "vite-plugin-dts": "^4.3.0",
+    "eslint": "^9.14.0",
+    "globals": "^15.12.0",
     "tsx": "^4.7.2",
     "@vitest/ui": "latest",
     "vite": "latest",

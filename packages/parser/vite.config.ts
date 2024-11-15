@@ -5,6 +5,7 @@ import { resolve } from "path";
 export default defineConfig({
   plugins: [dts({ rollupTypes: true })],
   build: {
+    sourcemap: "inline",
     lib: {
       name: "@beancount-js/parser",
       fileName: "index",

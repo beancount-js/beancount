@@ -1059,7 +1059,7 @@ export class PadDirective extends DatedDirective {
   }
 
   public toString() {
-    let str =
+    const str =
       formatDate(this.date) +
       " " +
       this.type.toString() +
