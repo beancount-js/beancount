@@ -23,7 +23,7 @@ import type { LedgerData, LedgerSource } from "./core/ledger";
 import type { AccountDetails } from "./core/account";
 export const ContextKey = Symbol("componentContext");
 
-export type Options = Record<string, any> & {
+export type Options = Record<string, unknown> & {
   beancount: BeancountOptions;
   fava: FavaOptions;
   ledger: LedgerOptions;

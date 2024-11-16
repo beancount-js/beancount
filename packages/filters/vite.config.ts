@@ -10,6 +10,10 @@ export default defineConfig({
       name: "filters",
       fileName: "index",
       entry: resolve(__dirname, "src/index.ts"),
+      formats: ["cjs", "es"],
+    },
+    rollupOptions: {
+      external:  id => id != "tslib" && !/^(\.?\/|\w:)/.test(id),
     },
   },
 });

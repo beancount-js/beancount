@@ -29,7 +29,6 @@ import {
 } from "./data";
 import { Decimal, isValidNumber, parseDate } from "@beancount-js/parser";
 import { Cost } from "./position";
-import { LedgerError } from "../parser/loader";
 
 function getValueByDotNotation(
   obj: unknown,
@@ -410,15 +409,15 @@ export function filterLedger(
   query: string | Filter,
   options: QueryParserOptions = {},
 ): [Directives, Array<string>, Filter] {
-  if (query instanceof Filter) {
+  if (typeof query !== "string") {
     return [
-      directives.filter((it) => beancountFilter.accept(filter, it, { op: ":" })),
+      directives.filter((it) => beancountFilter.accept(query, it, { op: ":" })),
       [],
       query,
     ];
   }
 
-  const [filter, errors] = parseQuery(query, options);
+  const [filter, errors] = parseQuery(query.toString(), options);
   if (errors.length) {
     return [[], errors, filter];
   }

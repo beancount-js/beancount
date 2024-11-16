@@ -30,7 +30,11 @@ import {
   type FavaOptions,
   type LedgerOptions,
 } from "../options";
-import { OptionDirective, type BeanCountDocument, Text } from "@beancount-js/parser";
+import {
+  OptionDirective,
+  type BeanCountDocument,
+  Text,
+} from "@beancount-js/parser";
 import { DateTime } from "luxon";
 import type { Filter } from "@beancount-js/filters";
 export interface LedgerTaxonomy {
@@ -289,9 +293,13 @@ export class LedgerSource {
   }
 
   get doc(): BeanCountDocument {
-    const value = this.options.beancount.files.find(it => it.filename === this.options.beancount.filename);
+    const value = this.options.beancount.files.find(
+      (it) => it.filename === this.options.beancount.filename,
+    );
     if (!value?.document) {
-       throw new Error(`No document for ledger file: {${this.options.beancount.filename}}`);
+      throw new Error(
+        `No document for ledger file: {${this.options.beancount.filename}}`,
+      );
     }
     return value.document;
   }
@@ -459,11 +467,11 @@ export class LedgerData {
     const errors = [...this.errors];
     const [filtered, filterErrors] = filterLedger(this.directives, filter);
     if (filterErrors.length) {
-      errors.push(...filterErrors.map(it => new LoadError(it)));
+      errors.push(...filterErrors.map((it) => new LoadError(it)));
     }
     return this.copy({
       directives: filtered,
-      errors
-    })
+      errors,
+    });
   }
 }

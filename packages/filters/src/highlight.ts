@@ -7,7 +7,7 @@ export const filterHighlighting = styleTags({
   "MINUS PLUS SLASH ASTERISK": t.operator,
   "LPAREN RPAREN": t.paren,
   Key: t.propertyName,
-  "Term/Value/Key": t.attributeValue,
+  "Regex": t.regexp,
   String: t.string,
   Comment: t.lineComment,
   Tag: t.tagName,

@@ -4,7 +4,7 @@ import builtins from "builtin-modules";
 import { PluginOption, defineConfig } from "vite";
 import { fileURLToPath, URL } from "url";
 
-export default defineConfig(({ mode }) => {
+export default defineConfig((_cfg) => {
   return {
     assetsInclude: ["**/*.ledger"],
     plugins: [svelte({ preprocess: vitePreprocess() }) as PluginOption],
@@ -23,9 +23,18 @@ export default defineConfig(({ mode }) => {
       lib: {
         name: "@beancount-js/fava",
         entry: "src/main.ts",
+        formats: ["cjs"],
       },
       rollupOptions: {
-        external: [...builtins],
+        external: [
+          // "@codemirror/collab",
+					// "@codemirror/commands",
+          // "@codemirror/lint",
+					// "@codemirror/search",
+					// "@codemirror/state",
+					// "@codemirror/view",
+          ...builtins
+        ],
       },
       outDir: "dist",
       emptyOutDir: false,

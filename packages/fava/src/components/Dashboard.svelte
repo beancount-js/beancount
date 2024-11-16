@@ -20,7 +20,8 @@
   import { derived } from "svelte/store";
   import { useLedger } from "./helpers";
   import { Query } from "@beancount-js/beancount";
-    import { cn } from "$lib/utils";
+  import { cn } from "$lib/utils";
+  import Search from "./Search.svelte";
 
   const { menu, ledgerSource, bqlQuery } = useContext();
   const ledgerData = useLedger();
@@ -139,42 +140,49 @@
     <div class="flex w-full items-center">
       <div
         data-collapsed={$isCollapsed}
-        class={cn("group flex flex-col gap-4 pb-2 data-[collapsed=true]:py-2",  {"min-w-[40px] max-w-[45px]": $isCollapsed})}
+        class={cn("group flex flex-col gap-4 pb-2 data-[collapsed=true]:py-2", {
+          "min-w-[45px] max-w-[45px]": $isCollapsed,
+        })}
       >
-      <nav
-        class="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2"
-      >
-      {#if $isCollapsed}
-        <Button
-          aria-label="Expand"
-          size="icon"
-          variant="ghost"
-          class="size-9"
-          on:click={() => pane.expand()}
+        <nav
+          class="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2"
         >
-          <PanelLeftOpen class="text-primary/60 size-5" />
-        </Button>
-      {:else}
-        <Button
-          aria-label="Collapse"
-          size="icon"
-          variant="ghost"
-          class="size-9"
-          on:click={() => pane.collapse()}
-        >
-          <PanelLeftClose class="text-primary/60 size-5" />
-        </Button>
-      {/if} 
-      </nav>
-    </div>
-      <!-- <Search /> -->
+          {#if $isCollapsed}
+            <Button
+              aria-label="Expand"
+              size="icon"
+              variant="ghost"
+              class="size-9"
+              on:click={() => pane.expand()}
+            >
+              <PanelLeftOpen class="size-5 text-primary/60" />
+            </Button>
+          {:else}
+            <Button
+              aria-label="Collapse"
+              size="icon"
+              variant="ghost"
+              class="size-9"
+              on:click={() => pane.collapse()}
+            >
+              <PanelLeftClose class="size-5 text-primary/60" />
+            </Button>
+          {/if}
+        </nav>
+      </div>
+      <div class="w-full">
+        <Search />
+      </div>
     </div>
     <Resizable.PaneGroup direction="horizontal" class="h-full items-stretch">
       <Resizable.Pane
         collapsedSize={navCollapsedSize}
         collapsible
         bind:pane
-        class={cn("h-screen", {"min-w-[175px]": !$isCollapsed, "min-w-[45px] max-w-[45px]": $isCollapsed})}
+        class={cn("h-screen", {
+          "min-w-[175px]": !$isCollapsed,
+          "min-w-[45px] max-w-[45px]": $isCollapsed,
+        })}
         minSize={10}
         maxSize={15}
         {onCollapse}

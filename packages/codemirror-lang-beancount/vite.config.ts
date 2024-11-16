@@ -11,6 +11,10 @@ export default defineConfig({
       name: "codemirror-lang-beancount",
       fileName: "index",
       entry: resolve(__dirname, "src/index.ts"),
+      formats: ["cjs", "es"],
+    },
+    rollupOptions: {
+      external:  id => id != "tslib" && !/^(\.?\/|\w:)/.test(id),
     },
   },
 });
