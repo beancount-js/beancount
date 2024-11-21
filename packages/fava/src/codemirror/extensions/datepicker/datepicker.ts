@@ -17,6 +17,7 @@ import {
 } from "@internationalized/date";
 import { formatDate } from "@beancount-js/parser";
 
+
 export interface DatePickerProps {
   from: number;
   to: number;
@@ -28,8 +29,8 @@ class DatePickerWidget extends WidgetType {
     super();
   }
 
-  eq(other: unknown) {
-    return other instanceof DatePickerWidget && (
+  eq(other: any) {
+    return (
       this.state.date === other.state.date &&
       this.state.from === other.state.from
     );
@@ -37,7 +38,7 @@ class DatePickerWidget extends WidgetType {
 
   toDOM(view: EditorView) {
     const span = document.createElement("span");
-    new DatePickerWidgetComponent({
+    const component = new DatePickerWidgetComponent({
       target: span,
       props: {
         value: parseDate(this.state.date),
@@ -66,18 +67,27 @@ class DatePickerWidget extends WidgetType {
   }
 }
 
-class DatePickerWidgetView implements PluginValue {
-  accountDecorations: Array<Range<Decoration>> = [];
+export interface DateProps {
+  node: string;
+}
 
-  constructor(readonly view: EditorView) {}
+class DatePickerWidgetView implements PluginValue {
+  dateDecorations: Array<Range<Decoration>> = [];
+  ranges: Record<string, number> = {};
+
+  constructor(
+    readonly view: EditorView,
+    readonly props: DateProps,
+  ) {}
 
   update(update: ViewUpdate) {
     if (update.docChanged || update.viewportChanged) {
-      this.accountDecorations = [];
+      this.ranges = {};
+      this.dateDecorations = [];
       syntaxTree(update.state)
         .cursor()
         .iterate((node) => {
-          if (node.name === "Date") {
+          if (node.name === this.props.node) {
             const date = update.state.sliceDoc(node.from, node.to);
             const widget = Decoration.widget({
               widget: new DatePickerWidget({
@@ -86,14 +96,21 @@ class DatePickerWidgetView implements PluginValue {
                 date,
               }),
             });
-            this.accountDecorations.push(widget.range(node.from));
+            this.ranges[node.from.toString()] = node.to;
+            this.dateDecorations.push(widget.range(node.from));
           }
         });
     }
   }
 
   get decorations(): RangeSet<Decoration> {
-    return Decoration.set(this.accountDecorations);
+    const pos = this.view.state.selection.main.head;
+    return Decoration.set(
+      this.dateDecorations.filter((it) => {
+        const to = this.ranges[it.from.toString()];
+        return pos >= it.from && pos <= to;
+      }),
+    );
   }
 }
 
@@ -103,6 +120,9 @@ const pluginSpec: PluginSpec<DatePickerWidgetView> = {
   },
 };
 
-export function datePicker() {
-  return ViewPlugin.fromClass(DatePickerWidgetView, pluginSpec);
+export function datePicker(props: DateProps = { node: "Date" }) {
+  return ViewPlugin.define(
+    (view) => new DatePickerWidgetView(view, props),
+    pluginSpec,
+  );
 }

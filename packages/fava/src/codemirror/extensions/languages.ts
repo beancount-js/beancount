@@ -4,6 +4,7 @@ import {
   ParseContext,
 } from "@codemirror/language";
 import { yaml } from "@codemirror/lang-yaml";
+import { sql, PostgreSQL } from "@codemirror/lang-sql";
 
 export const languages = [
   LanguageDescription.of({
@@ -12,6 +13,14 @@ export const languages = [
     extensions: ["yaml", "yml"],
     load() {
       return Promise.resolve(yaml());
+    },
+  }),
+  LanguageDescription.of({
+    name: "PostgreSQL",
+    alias: ["sql", "bql"],
+    extensions: ["sql", "bql"],
+    load() {
+      return Promise.resolve(sql({ dialect: PostgreSQL }));
     },
   }),
 ];

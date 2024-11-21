@@ -19,7 +19,7 @@ import {
 } from "@beancount-js/filters";
 import type { DateTime } from "luxon";
 import type { FavaOptions, LedgerOptions } from "./options";
-import type { LedgerData, LedgerSource } from "./core/ledger";
+import { LedgerSource, type LedgerData } from "./core/ledger";
 import type { AccountDetails } from "./core/account";
 export const ContextKey = Symbol("componentContext");
 
@@ -80,7 +80,7 @@ export function createContext(): ComponentContext {
     return { predicate, errors };
   });
 
-  const ledgerSource = writable<LedgerSource>();
+  const ledgerSource = writable<LedgerSource>(new LedgerSource(";; Beancount Ledger"));
   const ledgerOptions = derived([ledgerSource], ([$ledgerSource]) => {
     return $ledgerSource.options;
   });

@@ -7,11 +7,15 @@
   import { createRouter, RouterKey } from "./router/router";
   import Editor from "./components/Editor.svelte";
   import "@fontsource/source-code-pro";
+  import { storageSyncedStore } from "./stores/storage";
+  import { z } from "zod"
+  import type { Unsubscriber } from "svelte/store";
   
   const context = createContext();
-  context.menu.set([MainNav]);
-  context.ledgerSource.set(
-    new LedgerSource(`
+
+  const content = storageSyncedStore<string>(
+    "file/test.beancount",
+    () =>`
       2024-10-25 custom "ledger-option" "dashboard_collapsed" "false"
       1987-05-17 open     Equity:Opening-Balances ; inline comment
       2014-07-09 query "position-by-account" "SELECT account, sum(position)"
@@ -26,20 +30,30 @@
       2024-11-09 # "Barclays" "Barclays Credit Card" #creditcard ^link-to-the-end-of-world
         Assets:Checking:Starling                                                         
         Liabilities:CreditCard:Barclays  150.00 GBP
-    `),
+    `,
+    z.string(), {
+      read: (data) => data,
+      write: (data) => data
+    }
   );
+  context.menu.set([MainNav]);
+  context.ledgerSource.set(new LedgerSource($content));
+
   setContext(ContextKey, context);
   setContext(RouterKey, createRouter([
     { path: "/editor", element: Editor },
   ], "/editor"));
 
   onMount(() => {
-    const unsubscribe = context.ledgerSource.subscribe((source) => {
-      console.log("Source::", source);
-    });
-
+    const unsubscribers: Array<Unsubscriber> = [];
+    unsubscribers.push(context.ledgerSource.subscribe((data) => {
+      if (data) {
+        console.log(data)
+        content.set(data.toString());
+      }
+    }));
     return () => {
-      unsubscribe();
+      unsubscribers.forEach(it => it());
     };
   });
 </script>

@@ -12,6 +12,7 @@ import {
 import ComboWidgetComponent from "./comboWidget.svelte";
 import type { SyntaxNodeRef } from "@lezer/common";
 
+
 export interface ComboProps {
   from: number;
   to: number;
@@ -68,7 +69,8 @@ class ComboWidget extends WidgetType {
 }
 
 class ComboWidgetView implements PluginValue {
-  accountDecorations: Array<Range<Decoration>> = [];
+  comboDecorations: Array<Range<Decoration>> = [];
+  ranges: Record<string, number> = {};
 
   constructor(
     readonly view: EditorView,
@@ -77,7 +79,8 @@ class ComboWidgetView implements PluginValue {
 
   update(update: ViewUpdate) {
     if (update.docChanged || update.viewportChanged) {
-      this.accountDecorations = [];
+      this.ranges = {};
+      this.comboDecorations = [];
       syntaxTree(update.state)
         .cursor()
         .iterate((node) => {
@@ -93,14 +96,21 @@ class ComboWidgetView implements PluginValue {
                 nodeName: node.name,
               }),
             });
-            this.accountDecorations.push(widget.range(node.from));
+            this.ranges[node.from.toString()] = node.to;
+            this.comboDecorations.push(widget.range(node.from));
           }
         });
     }
   }
 
   get decorations(): RangeSet<Decoration> {
-    return Decoration.set(this.accountDecorations);
+    const pos = this.view.state.selection.main.head;
+    return Decoration.set(
+      this.comboDecorations.filter((it) => {
+        const to = this.ranges[it.from.toString()];
+        return pos >= it.from && pos <= to;
+      }),
+    );
   }
 }
 

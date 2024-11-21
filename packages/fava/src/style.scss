@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("codemirror/themes/base.css");
-@import url("codemirror/themes/vitesse.css");
-
+@import url("codemirror/themes/base.scss");
 @layer base {
   .theme-light:has(.beancount) {
     &:has(.zinc) {
@@ -571,9 +569,3 @@
   font-size: 0.85rem;
 }
 
-.cm-editor .cm-gutters,
-.cm-gutter .cm-gutterElement.cm-activeLineGutter {
-  background-color: var(--background);
-  border: none;
-  font-size: 12px;
-}

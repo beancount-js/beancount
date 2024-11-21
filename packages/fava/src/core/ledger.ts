@@ -292,6 +292,10 @@ export class LedgerSource {
     return this.#taxonomy;
   }
 
+  public toString() {
+    return this.doc.contents;
+  }
+
   get doc(): BeanCountDocument {
     const value = this.options.beancount.files.find(
       (it) => it.filename === this.options.beancount.filename,

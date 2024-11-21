@@ -1,6 +1,7 @@
 import { BeancountOptions } from "../core";
 import type { Directives } from "../core/data";
 import { autoInsertOpen } from "../plugins/autoaccount";
+import { forecast } from "../plugins/forecast";
 import { checkBalance } from "./balance";
 import { pad } from "./pad";
 import type { ValidationError } from "./validation";
@@ -30,6 +31,10 @@ export const Plugins: Record<string, PluginType> = {
   },
   "beancount.plugins.auto": {
     plugin: autoInsertOpen,
+    order: 0,
+  },
+  "beancount.plugins.forecast": {
+    plugin: forecast,
     order: 0,
   },
 };

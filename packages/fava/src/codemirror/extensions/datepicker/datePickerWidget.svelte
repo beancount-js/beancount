@@ -38,9 +38,10 @@
   <Popover.Root openFocus>
     <Popover.Trigger asChild let:builder>
       <Button
-        variant="outline"
+        variant="ghost"
+        size="xs"
         class={cn(
-          "clickable-icon view-action inline-block size-[20px] p-[3px] pt-0",
+          "inline-block p-0",
         )}
         builders={[builder]}
       >

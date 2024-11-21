@@ -1,3 +1,4 @@
+import type { Schema } from "inspector/promises";
 import { writable, type Writable } from "svelte/store";
 import { parseDocument } from "yaml";
 import { z, ZodIssueCode, type ZodTypeAny } from "zod";
@@ -34,37 +35,34 @@ export interface Storage {
   removeItem(key: string): void;
 }
 
+type SyncedStorageProps<T> = {
+  read(data: string | null): T | null,
+  write: (data: T) => string,
+  storage: Storage
+}
+
 export function storageSyncedStore<T>(
   key: string,
   init: () => T,
   schema: ZodTypeAny,
-  storage: Storage = localStorage,
+  props: Partial<SyncedStorageProps<T>> = {}
 ): Writable<T> {
   const fullKey = `beancount://${key}`;
-  const parser = yamlParser(schema);
+  const options: SyncedStorageProps<T> = {
+    read: props.read ?? ((data) => yamlParser(schema).safeParse(data).data),
+    write: props.write ?? ((data: T) => JSON.stringify(data)),
+    storage: props.storage ?? localStorage
+  };
 
   // Create a store which is empty first but reads the value from
   // localStorage on the first subscription.
   const store = writable<T>(undefined, (set) => {
-    const stored_val = storage.getItem(fullKey);
-    let initial: T | null = null;
-    if (stored_val != null) {
-      const data = parser.safeParse(stored_val);
-      if (data.success) {
-        initial = data.data;
-      } else {
-        console.error("Ledger:Storage", data.error);
-      }
-    }
+    const stored_val = options.storage.getItem(fullKey);
+    const initial: T | null = options.read(stored_val);
     set(initial ?? init());
 
-    store.subscribe((val) => {
-      const data = parser.safeParse(val);
-      if (data.success) {
-        storage.setItem(fullKey, JSON.stringify(val));
-      } else {
-        console.error("Ledger:Storage", data.error);
-      }
+    store.subscribe((data) => {
+      options.storage.setItem(fullKey, options.write(data));
     });
   });
 

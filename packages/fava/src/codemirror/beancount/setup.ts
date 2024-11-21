@@ -12,13 +12,16 @@ import {
   lineNumbers,
   EditorView,
   highlightActiveLine,
+  gutterLineClass,
 } from "@codemirror/view";
-import { EditorState, Facet, Prec, type Extension } from "@codemirror/state";
+import { EditorState, Facet, Prec, Range, RangeSet, type Extension } from "@codemirror/state";
 import {
   indentOnInput,
   syntaxHighlighting,
   codeFolding,
   foldKeymap,
+  syntaxTree,
+  ensureSyntaxTree,
 } from "@codemirror/language";
 import {
   defaultKeymap,
@@ -37,7 +40,7 @@ import { decorateHeaders } from "./headers";
 import { mathExpressions } from "./math";
 import { foldComments } from "./foldComments";
 import { hashTags } from "../extensions/hashTags";
-import { parseMixed } from "@lezer/common";
+import { parseMixed, type SyntaxNodeRef } from "@lezer/common";
 import { getCodeParser, languages } from "../extensions/languages";
 import { beanCountLinter } from "./linter";
 import { beancountCompletion } from "./autocomplete";
@@ -48,10 +51,12 @@ import { showGotoLine } from "../extensions/gotoline";
 import type { LedgerSource } from "../../core/ledger";
 import { readString, writeString } from "@beancount-js/parser";
 import { beanCount } from "@beancount-js/codemirror-lang-beancount";
+import { GutterMarker} from "@codemirror/view"
 
 export interface Ledgerconfig {
   source: LedgerSource;
 }
+
 export const ledgerFacet: Facet<
   Ledgerconfig,
   Required<Ledgerconfig>
@@ -104,9 +109,29 @@ export const ledgerSetup = (source: () => LedgerSource): Extension => {
   ];
 };
 
+class HeaderMarker extends GutterMarker {
+  constructor(readonly elementClass: string = "cm-gutterHeader") {
+    super()
+  }
+}
+
+const headerGutter = gutterLineClass.compute(["doc"], state => {
+  const marks: Range<GutterMarker>[] = [];
+  for (let i=1; i<state.doc.lines; i++) {
+    const line = state.doc.line(i);
+    const match = /^(#+|\*+)/gi.exec(line.text);
+    if (match) {
+      marks.push(new HeaderMarker(`cm-gutterHeader cm-gutterHeader-${match[1].length}`).range(line.from))
+    } 
+  }
+  return RangeSet.of(marks)
+});
+
 export const basicSetup: Extension = (() => [
   closeBrackets(),
-  lineNumbers(),
+  headerGutter,
+  lineNumbers({
+  }),
   history(),
   lintGutter(),
   clickableUrls(),
@@ -115,6 +140,7 @@ export const basicSetup: Extension = (() => [
   highlightActiveLineGutter(),
   highlightActiveLine(),
   highlightSelectionMatches(),
+  EditorView.lineWrapping,
   EditorState.allowMultipleSelections.of(true),
   indentOnInput(),
   EditorView.editable.of(true),
@@ -127,7 +153,7 @@ export const basicSetup: Extension = (() => [
   beanCount({
     wrap: parseMixed((node, input) => {
       if (node.name === "CodeBlock") {
-        const contents = input.read(node.from, node.to);
+        var contents = input.read(node.from, node.to);
         const matches = contents.match(/^([`]+)([a-z][a-zA-Z0-9_-]*)?/);
         if (!matches || !matches[2]) {
           return null;
@@ -140,6 +166,47 @@ export const basicSetup: Extension = (() => [
               to: node.to - matches[1].length,
             },
           ];
+          return { parser, overlay };
+        }
+      } else if (node.name === "Query") {
+        const str = node.node.getChildren("String");
+        const parser = getCodeParser(languages)("bql");
+        if (parser && str.length == 2) {
+          const query = str[1];
+          const overlay = [{ from: query.from + 1, to: query.to - 1 }].filter(
+            (it) => it.to - it.from > 0,
+          );
+          if (overlay.length) {
+            return { parser, overlay };
+          }
+        }
+      } else if (node.name === "Plugin") {
+        const str = node.node.getChildren("String");
+        const parser = getCodeParser(languages)("yml");
+        if (parser && str.length == 2) {
+          const query = str[1];
+          const overlay = [{ from: query.from + 1, to: query.to - 1 }].filter(
+            (it) => it.to - it.from > 0,
+          );
+          if (overlay.length) {
+            return { parser, overlay };
+          }
+        }
+      } else if (node.name === "Custom") {
+        const strs = node.node
+          .getChildren("MetaValue")
+          .map((it) => it.getChildren("String"))
+          .flat();
+        const parser = getCodeParser(languages)("yml");
+        if(!parser) {
+          return null;
+        }
+        const overlay = strs
+          .map((str) => {
+            return { from: str.from + 1, to: str.to - 1 };
+          })
+          .filter((it) => it.to - it.from > 0);
+        if (overlay.length) {
           return { parser, overlay };
         }
       }

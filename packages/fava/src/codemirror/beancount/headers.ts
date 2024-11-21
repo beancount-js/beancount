@@ -83,6 +83,7 @@ const headerDecorator = new MatchDecorator({
         class: `cm-line HyperMD-header-${level} HyperMD-header`,
       }),
     );
+    
 
     add(
       start,

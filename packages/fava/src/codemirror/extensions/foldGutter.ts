@@ -14,8 +14,8 @@ export function useFoldIcon(open: boolean) {
     "http://www.w3.org/2000/svg",
     "path",
   );
-  foldIcon_svg.setAttributeNS(null, "width", "24");
-  foldIcon_svg.setAttributeNS(null, "height", "24");
+  // foldIcon_svg.setAttributeNS(null, "width", "24");
+  // foldIcon_svg.setAttributeNS(null, "height", "24");
   foldIcon_svg.setAttributeNS(null, "viewBox", "0 0 24 24");
   foldIcon_svg.setAttributeNS(null, "fill", "none");
   foldIcon_svg.setAttributeNS(null, "stroke", "currentColor");
@@ -25,15 +25,13 @@ export function useFoldIcon(open: boolean) {
   foldIcon_svg.setAttributeNS(null, "class", "svg-icon");
   foldIcon_svg_path.setAttribute("d", "M3 8L12 17L21 8");
   foldIcon_svg.appendChild(foldIcon_svg_path);
-  foldIcon_svg.setAttribute("style", "height: 100%; width: 10px; height: 10px;")
   if (open) {
     foldIcon.classList.add("closed-fold-icon")
   } else {
     foldIcon.classList.add("closed-fold-icon");
-    foldIcon_svg.setAttribute("style", "height: 100%; width: 10px; height: 10px; transform: rotate(-90deg); color: var(--text-accent)")  
+    foldIcon_svg.setAttribute("style", "height: 100%; transform: rotate(-90deg);")
   }
   foldIcon.appendChild(foldIcon_svg);
-  foldIcon.setAttribute("style", "height: 100%")
 
   return foldIcon;
 }

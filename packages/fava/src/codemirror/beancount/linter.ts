@@ -1,4 +1,4 @@
-import { syntaxTree } from "@codemirror/language";
+import { ensureSyntaxTree, syntaxTree } from "@codemirror/language";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import type { EditorView } from "@codemirror/view";
 import type { SyntaxNodeRef } from "@lezer/common";
@@ -13,7 +13,8 @@ export function beanCountLinter(source: () => LedgerSource) {
         syntaxTree(view.state).iterate({
           enter: (node: SyntaxNodeRef) => {
             if (node.type.isError) {
-              const key = view.state.doc.lineAt(node.from).number.toString();
+              const line = view.state.doc.lineAt(node.from);
+              const key = line.number.toString();
               const path = node.node.parent?.toString();
               errorMap[key] = {
                 from: node.from,
@@ -27,10 +28,12 @@ export function beanCountLinter(source: () => LedgerSource) {
           },
         });
 
+        const lines: string[] = []
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         state.errors.forEach((err: any) => {
           const lineNo = +(err?.source?.lineno || err.line);
           const key = lineNo.toString();
+          lines.push(key);
           if (key && errorMap[key]) {
             errorMap[key].message = err.message;
           } else if (err.from && err.to) {
