@@ -14,7 +14,14 @@ import {
   highlightActiveLine,
   gutterLineClass,
 } from "@codemirror/view";
-import { EditorState, Facet, Prec, Range, RangeSet, type Extension } from "@codemirror/state";
+import {
+  EditorState,
+  Facet,
+  Prec,
+  Range,
+  RangeSet,
+  type Extension,
+} from "@codemirror/state";
 import {
   indentOnInput,
   syntaxHighlighting,
@@ -51,7 +58,7 @@ import { showGotoLine } from "../extensions/gotoline";
 import type { LedgerSource } from "../../core/ledger";
 import { readString, writeString } from "@beancount-js/parser";
 import { beanCount } from "@beancount-js/codemirror-lang-beancount";
-import { GutterMarker} from "@codemirror/view"
+import { GutterMarker } from "@codemirror/view";
 
 export interface Ledgerconfig {
   source: LedgerSource;
@@ -111,27 +118,30 @@ export const ledgerSetup = (source: () => LedgerSource): Extension => {
 
 class HeaderMarker extends GutterMarker {
   constructor(readonly elementClass: string = "cm-gutterHeader") {
-    super()
+    super();
   }
 }
 
-const headerGutter = gutterLineClass.compute(["doc"], state => {
+const headerGutter = gutterLineClass.compute(["doc"], (state) => {
   const marks: Range<GutterMarker>[] = [];
-  for (let i=1; i<state.doc.lines; i++) {
+  for (let i = 1; i < state.doc.lines; i++) {
     const line = state.doc.line(i);
     const match = /^(#+|\*+)/gi.exec(line.text);
     if (match) {
-      marks.push(new HeaderMarker(`cm-gutterHeader cm-gutterHeader-${match[1].length}`).range(line.from))
-    } 
+      marks.push(
+        new HeaderMarker(
+          `cm-gutterHeader cm-gutterHeader-${match[1].length}`,
+        ).range(line.from),
+      );
+    }
   }
-  return RangeSet.of(marks)
+  return RangeSet.of(marks);
 });
 
 export const basicSetup: Extension = (() => [
   closeBrackets(),
   headerGutter,
-  lineNumbers({
-  }),
+  lineNumbers({}),
   history(),
   lintGutter(),
   clickableUrls(),
@@ -198,7 +208,7 @@ export const basicSetup: Extension = (() => [
           .map((it) => it.getChildren("String"))
           .flat();
         const parser = getCodeParser(languages)("yml");
-        if(!parser) {
+        if (!parser) {
           return null;
         }
         const overlay = strs

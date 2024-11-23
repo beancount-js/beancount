@@ -1,131 +1,146 @@
 <script lang="ts">
-  import { ArrowUpDown, Check, Icon } from "lucide-svelte";
-  import { tick, type ComponentType } from "svelte";
+  import Check from "lucide-svelte/icons/check";
+  import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
+  import { tick, type Snippet } from "svelte";
   import * as Command from "$lib/components/ui/command/index.js";
   import * as Popover from "$lib/components/ui/popover/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import { cn } from "$lib/utils.js";
+  import { Icon, icons, type Icon as IconType } from "lucide-svelte";
   import ScrollArea from "$lib/components/ui/scroll-area/scroll-area.svelte";
 
-  let className: string | undefined | null = undefined;
-  export { className as class };
-
-  let itemInput:
-    | Array<{ label: string; value: string }>
-    | (() => Array<{ label: string; value: string }>);
-  export { itemInput as items };
-
-  export let groups: Array<{
-    group: string;
-    items: Array<{ label: string; value: string; icon?: ComponentType<Icon> }>;
-  }> = [];
-
-  let open = false;
-  export let value = "";
-  export let placeholder = "Select";
-  export let onValueChange: (value: string) => void = () => {};
-
-  $: itemFetcher = () => {
-    const values: Array<{ label: string; value: string }> = [];
-    if (Array.isArray(itemInput)) {
-      values.push(...itemInput);
-    } else {
-      values.push(...itemInput());
-    }
-
-    if (value && !values.find((it) => it.value === value)) {
-      values.push({ label: value, value });
-    }
-    return values;
+  type ComboProps = {
+    class?: string;
+    trigger?: Snippet<[{ props: Record<string, unknown> }]>;
+    items:
+      | Array<{ label: string; value: string }>
+      | (() => Array<{ label: string; value: string }>);
+    groups?: Array<{
+      group: string;
+      items: Array<{ label: string; value: string; icon?: typeof IconType }>;
+    }>;
+    value: string;
+    placeholder?: string;
+    onValueChange: (value: string) => void;
   };
 
-  $: items = itemFetcher();
-  $: selected = items.find((f) => f.value === value);
-  $: selectedValue = selected?.label ?? placeholder;
+  let {
+    trigger,
+    class: klass,
+    items: options,
+    value: selected = "",
+    groups = [],
+    placeholder = "Select",
+    onValueChange = () => {},
+  }: ComboProps = $props();
+
+  let items = $derived.by(() => {
+    const values: Array<{ label: string; value: string }> = [];
+    if (Array.isArray(options)) {
+      values.push(...options);
+    } else {
+      values.push(...options());
+    }
+    if (selected && !values.find((it) => it.value === selected)) {
+      values.push({ label: selected, value: selected });
+    }
+    return values;
+  });
+
+  let open = $state(false);
+  let value = $state(selected);
+  let triggerRef = $state<HTMLButtonElement>(null!);
+
+  const selectedValue = $derived(items.find((f) => f.value === value)?.label);
 
   // We want to refocus the trigger button when the user selects
   // an item from the list so users can continue navigating the
   // rest of the form with the keyboard.
-  function closeAndFocusTrigger(triggerId: string) {
+  function closeAndFocusTrigger() {
     open = false;
     tick().then(() => {
-      document.getElementById(triggerId)?.focus();
+      triggerRef.focus();
     });
   }
 </script>
 
-<div class={className}>
-  <Popover.Root bind:open let:ids>
-    <Popover.Trigger asChild let:builder>
-      <slot name="trigger" {builder} {open} {selected} value={selectedValue}>
-        <Button
-          builders={[builder]}
-          variant="outline"
-          size="sm"
-          role="combobox"
-          aria-expanded={open}
-          class="text-mono w-full justify-between text-xs"
-        >
-          {selectedValue}
-          <ArrowUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </slot>
+<div class={klass}>
+  <Popover.Root bind:open>
+    <Popover.Trigger bind:ref={triggerRef}>
+      {#snippet child({ props })}
+        {#if trigger}
+          {@render trigger({ props: { ...props, value: selectedValue } })}
+        {:else}
+          <Button
+            variant="outline"
+            class="text-mono w-full justify-between text-xs"
+            {...props}
+            role="combobox"
+            size="sm"
+            aria-expanded={open}
+          >
+            <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
+          </Button>
+        {/if}
+      {/snippet}
     </Popover.Trigger>
-    <Popover.Content class="border-divider z-[1000] border border-solid pt-2">
+    <Popover.Content class="w-[200px] p-0">
       <Command.Root>
-        <Command.Input placeholder="Search ..." class="h-9 !shadow-none" />
-        <Command.Empty>No items found.</Command.Empty>
-        {#each groups as group}
-          <Command.Group heading={group.group} class="">
-            {#each group.items as item}
-              <Command.Item
-                class="text-mono w-full text-xs"
-                value={item.value}
-                onSelect={(currentValue) => {
-                  value = currentValue;
-                  closeAndFocusTrigger(ids.trigger);
-                  onValueChange(value);
-                }}
-              >
-                {#if value !== item.value && item.icon}
-                  <svelte:component this={item.icon} class="mr-2 h-4 w-4" />
-                {:else}
+        <Command.Input placeholder="Search ..." />
+        <Command.List>
+          <Command.Empty>No items found.</Command.Empty>
+          {#each groups as group}
+            <Command.Group heading={group.group} class="">
+              {#each group.items as item}
+                <Command.Item
+                  class="text-mono w-full text-xs"
+                  value={item.value}
+                  onSelect={() => {
+                    value = item.value;
+                    closeAndFocusTrigger();
+                    onValueChange(item.value);
+                  }}
+                >
+                  {#if value !== item.value && item.icon}
+                    {@const Icon = item.icon}
+                    <Icon class="mr-2 h-4 w-4" />
+                  {:else}
+                    <Check
+                      class={cn(
+                        "mr-2 h-4 w-4",
+                        value !== item.value && "text-transparent",
+                      )}
+                    />
+                  {/if}
+                  {item.label}
+                </Command.Item>
+              {/each}
+            </Command.Group>
+            <Command.Separator></Command.Separator>
+          {/each}
+          <Command.Group>
+            <ScrollArea>
+              {#each items as item}
+                <Command.Item
+                  value={item.value}
+                  onSelect={() => {
+                    value = item.value;
+                    onValueChange(item.value);
+                    closeAndFocusTrigger();
+                  }}
+                >
                   <Check
                     class={cn(
-                      "mr-2 h-4 w-4",
+                      "mr-2 size-4",
                       value !== item.value && "text-transparent",
                     )}
                   />
-                {/if}
-                {item.label}
-              </Command.Item>
-            {/each}
+                  {item.label}
+                </Command.Item>
+              {/each}
+            </ScrollArea>
           </Command.Group>
-          <Command.Separator></Command.Separator>
-        {/each}
-        <Command.Group>
-          <ScrollArea class="h-[200px]">
-            {#each items as item}
-              <Command.Item
-                class="text-mono w-full text-xs"
-                value={item.value}
-                onSelect={(currentValue) => {
-                  value = currentValue;
-                  onValueChange(value);
-                  closeAndFocusTrigger(ids.trigger);
-                }}
-              >
-                <Check
-                  class={cn(
-                    "mr-2 h-4 w-4",
-                    value !== item.value && "text-transparent",
-                  )}
-                />
-                {item.label}
-              </Command.Item>
-            {/each}
-          </ScrollArea>
-        </Command.Group>
+        </Command.List>
       </Command.Root>
     </Popover.Content>
   </Popover.Root>

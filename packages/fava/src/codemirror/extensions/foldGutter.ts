@@ -26,10 +26,13 @@ export function useFoldIcon(open: boolean) {
   foldIcon_svg_path.setAttribute("d", "M3 8L12 17L21 8");
   foldIcon_svg.appendChild(foldIcon_svg_path);
   if (open) {
-    foldIcon.classList.add("closed-fold-icon")
+    foldIcon.classList.add("closed-fold-icon");
   } else {
     foldIcon.classList.add("closed-fold-icon");
-    foldIcon_svg.setAttribute("style", "height: 100%; transform: rotate(-90deg);")
+    foldIcon_svg.setAttribute(
+      "style",
+      "height: 100%; transform: rotate(-90deg);",
+    );
   }
   foldIcon.appendChild(foldIcon_svg);
 

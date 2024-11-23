@@ -16,7 +16,7 @@ import {
   type DateValue,
 } from "@internationalized/date";
 import { formatDate } from "@beancount-js/parser";
-
+import { mount } from "svelte";
 
 export interface DatePickerProps {
   from: number;
@@ -29,19 +29,21 @@ class DatePickerWidget extends WidgetType {
     super();
   }
 
-  eq(other: any) {
+  eq(other: unknown) {
     return (
-      this.state.date === other.state.date &&
+      other instanceof DatePickerWidget &&
+      this.state.to === other.state.to &&
       this.state.from === other.state.from
     );
   }
 
   toDOM(view: EditorView) {
     const span = document.createElement("span");
-    const component = new DatePickerWidgetComponent({
+    mount(DatePickerWidgetComponent, {
       target: span,
       props: {
         value: parseDate(this.state.date),
+        ref: span,
         onValueChange: (value: DateValue | undefined) => {
           if (!value) {
             return;

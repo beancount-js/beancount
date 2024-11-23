@@ -34,6 +34,7 @@ import {
   OptionDirective,
   type BeanCountDocument,
   Text,
+  md5,
 } from "@beancount-js/parser";
 import { DateTime } from "luxon";
 import type { Filter } from "@beancount-js/filters";
@@ -290,6 +291,14 @@ export class LedgerSource {
       years: [...taxonomy.years],
     };
     return this.#taxonomy;
+  }
+
+  #hash: string = "";
+  get hash() {
+    if (!this.#hash) {
+      this.#hash = md5(this.toString());
+    }
+    return this.#hash;
   }
 
   public toString() {

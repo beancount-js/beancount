@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { svelte, vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import builtins from "builtin-modules";
-import { PluginOption, defineConfig } from "vite";
+import { type PluginOption, defineConfig } from "vite";
 import { fileURLToPath, URL } from "url";
 
 export default defineConfig((_cfg) => {

@@ -8,12 +8,11 @@
     PanelLeftOpen,
     PanelLeftClose,
   } from "lucide-svelte";
-  // import Search from "./Search.svelte";
   import View from "../router/View.svelte";
   import { useContext } from "../context";
   import { useNavigation } from "../router/router";
   import Separator from "$lib/components/ui/separator/separator.svelte";
-  import ComboBox from "./ComboBox.svelte";
+  import ComboBox from "./ComboBoxx.svelte";
   import { Button } from "$lib/components/ui/button";
   import { ArrowUpDown } from "lucide-svelte";
   import type { PaneAPI } from "paneforge/dist/components/types";
@@ -178,7 +177,6 @@
       <Resizable.Pane
         collapsedSize={navCollapsedSize}
         collapsible
-        bind:pane
         class={cn("h-screen", {
           "min-w-[175px]": !$isCollapsed,
           "min-w-[45px] max-w-[45px]": $isCollapsed,
@@ -223,7 +221,6 @@
                         </Button>
                       {:else}
                         <Button
-                          slot="trigger"
                           size="sm"
                           builders={[builder]}
                           variant="ghost"
@@ -278,7 +275,6 @@
                         </Button>
                       {:else}
                         <Button
-                          slot="trigger"
                           size="sm"
                           builders={[builder]}
                           variant="ghost"

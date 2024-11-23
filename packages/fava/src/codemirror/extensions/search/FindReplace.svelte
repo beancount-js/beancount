@@ -12,7 +12,7 @@
   import { EditorView, runScopeHandlers } from "@codemirror/view";
   import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
   import { CaseSensitive, Regex, WholeWord } from "lucide-svelte";
-    import { debounceWithDelay } from "../../../hooks/debounce";
+  import { debounceWithDelay } from "../../../hooks/debounce";
 
   export let view: EditorView;
 

@@ -8,14 +8,14 @@
   import Editor from "./components/Editor.svelte";
   import "@fontsource/source-code-pro";
   import { storageSyncedStore } from "./stores/storage";
-  import { z } from "zod"
+  import { z } from "zod";
   import type { Unsubscriber } from "svelte/store";
-  
+
   const context = createContext();
 
   const content = storageSyncedStore<string>(
     "file/test.beancount",
-    () =>`
+    () => `
       2024-10-25 custom "ledger-option" "dashboard_collapsed" "false"
       1987-05-17 open     Equity:Opening-Balances ; inline comment
       2014-07-09 query "position-by-account" "SELECT account, sum(position)"
@@ -31,29 +31,33 @@
         Assets:Checking:Starling                                                         
         Liabilities:CreditCard:Barclays  150.00 GBP
     `,
-    z.string(), {
+    z.string(),
+    {
       read: (data) => data,
-      write: (data) => data
-    }
+      write: (data) => data,
+    },
   );
   context.menu.set([MainNav]);
   context.ledgerSource.set(new LedgerSource($content));
 
   setContext(ContextKey, context);
-  setContext(RouterKey, createRouter([
-    { path: "/editor", element: Editor },
-  ], "/editor"));
+  setContext(
+    RouterKey,
+    createRouter([{ path: "/editor", element: Editor }], "/editor"),
+  );
 
   onMount(() => {
     const unsubscribers: Array<Unsubscriber> = [];
-    unsubscribers.push(context.ledgerSource.subscribe((data) => {
-      if (data) {
-        console.log(data)
-        content.set(data.toString());
-      }
-    }));
+    unsubscribers.push(
+      context.ledgerSource.subscribe((data) => {
+        if (data) {
+          console.log(data);
+          content.set(data.toString());
+        }
+      }),
+    );
     return () => {
-      unsubscribers.forEach(it => it());
+      unsubscribers.forEach((it) => it());
     };
   });
 </script>

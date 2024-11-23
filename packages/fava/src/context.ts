@@ -80,7 +80,9 @@ export function createContext(): ComponentContext {
     return { predicate, errors };
   });
 
-  const ledgerSource = writable<LedgerSource>(new LedgerSource(";; Beancount Ledger"));
+  const ledgerSource = writable<LedgerSource>(
+    new LedgerSource(";; Beancount Ledger"),
+  );
   const ledgerOptions = derived([ledgerSource], ([$ledgerSource]) => {
     return $ledgerSource.options;
   });

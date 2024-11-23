@@ -93,7 +93,7 @@
 
 .dark,
 .theme-dark {
-  --code-caret: #FFFFFF;
+  --code-caret: #ffffff;
   --color-red: #fb464c;
   --color-orange: #e9973f;
   --color-yellow: #e0de71;
@@ -102,6 +102,20 @@
   --color-blue: #027aff;
   --color-purple: #a882ff;
   --color-pink: #fa99cd;
+}
+
+.cm-editor {
+  width: 100%;
+  &.cm-focused {
+    outline: none;
+  }
+}
+
+.cm-editor,
+.cm-editor .cm-scroller,
+.cm-editor .cm-line {
+  @apply font-mono;
+  font-size: 0.85rem;
 }
 
 .cm-inline-code,
@@ -147,7 +161,7 @@
   color: var(--code-keyword);
 }
 
-.cm-editor .cm-cursor { 
+.cm-editor .cm-cursor {
   border-left-color: var(--code-caret);
 }
 
@@ -174,12 +188,13 @@
 .HyperMD-header .cm-header-4,
 .HyperMD-header .cm-header-5,
 .HyperMD-header .cm-header-6 {
-  font-size: inherit !important;
+  // font-size: inherit !important;
   @apply font-sans;
 }
 
 @for $i from 1 through 6 {
-  .cm-header-#{$i},.HyperMD-header-#{$i} {
+  .cm-header-#{$i},
+  .HyperMD-header-#{$i} {
     font-variant: var(--h#{$i}-variant);
     letter-spacing: -0.015em;
     line-height: var(--h#{$i}-line-height);
@@ -213,7 +228,7 @@
 
 .cm-editor .cm-gutter .cm-gutterElement.cm-activeLineGutter {
   color: hsl(var(--ring));
-  background: none; 
+  background: none;
 }
 
 .collapse-icon svg.svg-icon {

@@ -1,36 +1,35 @@
 <script lang="ts">
-  import { Edit } from "lucide-svelte";
-  import { Button } from "$lib/components/ui/button";
-  import { cn } from "$lib/utils";
+  import Edit from "lucide-svelte/icons/edit";
   import ComboBox from "../../../components/ComboBox.svelte";
-  export let className: string | undefined = undefined;
-  export let accounts:
-    | Array<{ label: string; value: string }>
-    | (() => Array<{ label: string; value: string }>);
-  export let value: string | undefined = undefined;
-  export let onValueChange: (value: string) => void;
-  $: count = Array.isArray(accounts) ? accounts.length : accounts().length;
+  import { cn } from "$lib/utils.js";
+  let {
+    class: klass,
+    items,
+    value = "",
+    onValueChange,
+  }: {
+    class?: string;
+    items:
+      | Array<{ label: string; value: string }>
+      | (() => Array<{ label: string; value: string }>);
+    value: string;
+    onValueChange: (value: string) => void;
+  } = $props();
+
+  let count = $derived.by(() =>
+    Array.isArray(items) ? items.length : items().length,
+  );
 </script>
 
 {#if count > 1}
   <ComboBox
-    class={cn("cm-inactive-hide inline-block font-mono", className)}
+    class={cn("cm-inactive-hide inline-block font-mono", klass)}
     {value}
-    items={accounts}
+    {items}
     {onValueChange}
   >
-    <Button
-      slot="trigger"
-      let:builder
-      builders={[builder]}
-      variant="ghost"
-      size="xs"
-      role="combobox"
-      class={cn(
-        "inline-block p-0",
-      )}
-    >
+    {#snippet icon({ props })}
       <Edit class="size-4" />
-    </Button>
+    {/snippet}
   </ComboBox>
 {/if}

@@ -67,7 +67,8 @@ const config: Config = {
 				sm: "calc(var(--radius) - 4px)"
 			},
 			fontFamily: {
-				sans: [...fontFamily.sans]
+				sans: ["Inter", '"Fira Sans"', ...fontFamily.sans],
+				mono: ['"Source Code Pro"', '"Fira Mono"', ...fontFamily.mono]
 			},
 			keyframes: {
 				"accordion-down": {

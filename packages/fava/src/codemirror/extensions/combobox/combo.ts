@@ -11,7 +11,7 @@ import {
 } from "@codemirror/view";
 import ComboWidgetComponent from "./comboWidget.svelte";
 import type { SyntaxNodeRef } from "@lezer/common";
-
+import { mount } from "svelte";
 
 export interface ComboProps {
   from: number;
@@ -36,11 +36,11 @@ class ComboWidget extends WidgetType {
 
   toDOM(view: EditorView) {
     const span = document.createElement("span");
-    const component = new ComboWidgetComponent({
+    mount(ComboWidgetComponent, {
       target: span,
       props: {
         value: this.state.account,
-        accounts: () => this.state.props.data(this.state),
+        items: () => this.state.props.data(this.state),
         onValueChange: (value: string) => {
           if (!value) {
             return;

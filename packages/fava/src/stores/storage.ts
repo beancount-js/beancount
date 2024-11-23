@@ -36,22 +36,22 @@ export interface Storage {
 }
 
 type SyncedStorageProps<T> = {
-  read(data: string | null): T | null,
-  write: (data: T) => string,
-  storage: Storage
-}
+  read(data: string | null): T | null;
+  write: (data: T) => string;
+  storage: Storage;
+};
 
 export function storageSyncedStore<T>(
   key: string,
   init: () => T,
   schema: ZodTypeAny,
-  props: Partial<SyncedStorageProps<T>> = {}
+  props: Partial<SyncedStorageProps<T>> = {},
 ): Writable<T> {
   const fullKey = `beancount://${key}`;
   const options: SyncedStorageProps<T> = {
     read: props.read ?? ((data) => yamlParser(schema).safeParse(data).data),
     write: props.write ?? ((data: T) => JSON.stringify(data)),
-    storage: props.storage ?? localStorage
+    storage: props.storage ?? localStorage,
   };
 
   // Create a store which is empty first but reads the value from

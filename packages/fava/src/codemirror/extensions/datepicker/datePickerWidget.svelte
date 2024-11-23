@@ -1,19 +1,32 @@
 <script lang="ts">
   import { CalendarIcon } from "lucide-svelte";
   import {
+    DateFormatter,
     type DateValue,
     getLocalTimeZone,
     today,
   } from "@internationalized/date";
   import { cn } from "$lib/utils.js";
-  import { Button } from "$lib/components/ui/button/index.js";
-  import { Calendar } from "$lib/components/ui/calendar/index.js";
-  import * as Popover from "$lib/components/ui/popover/index.js";
-  import * as Select from "$lib/components/ui/select/index.js";
+  import { buttonVariants } from "$lib/components/ui/button";
+  import { Calendar } from "$lib/components/ui/calendar";
+  import * as Popover from "$lib/components/ui/popover";
+  import * as Select from "$lib/components/ui/select";
 
-  export let value: DateValue | undefined = undefined;
-  export let onValueChange: (date: DateValue | undefined) => void;
-
+  let {
+    value: initialValue,
+    onValueChange,
+  }: {
+    value?: DateValue;
+    ref?: HTMLElement;
+    onValueChange: (date: DateValue | undefined) => void;
+  } = $props();
+  const df = new DateFormatter("en-US", {
+    dateStyle: "long",
+  });
+  let value: DateValue | undefined = $state(initialValue);
+  const valueString = $derived(
+    value ? df.format(value.toDate(getLocalTimeZone())) : "",
+  );
   const items = [
     {
       value: 0,
@@ -34,42 +47,39 @@
   ];
 </script>
 
-<span class="cm-inactive-hide z-50">
-  <Popover.Root openFocus>
-    <Popover.Trigger asChild let:builder>
-      <Button
-        variant="ghost"
-        size="xs"
-        class={cn(
-          "inline-block p-0",
-        )}
-        builders={[builder]}
-      >
-        <CalendarIcon class="size-4" />
-      </Button>
-    </Popover.Trigger>
-    <Popover.Content
-      class="border-divider z-[1000] flex w-auto flex-col space-y-2 border border-solid p-2 font-sans text-xs"
+<Popover.Root>
+  <Popover.Trigger
+    class={cn(
+      buttonVariants({
+        variant: "ghost",
+        class: "inline-block size-[20px] p-[3px] pt-0 ",
+      }),
+      !value && "text-muted-foreground",
+    )}
+  >
+    <CalendarIcon class="mr-2 size-4" />
+  </Popover.Trigger>
+  <Popover.Content class="flex w-auto flex-col space-y-2 p-2">
+    <Select.Root
+      type="single"
+      value={valueString}
+      controlledValue
+      onValueChange={(v: string) => {
+        if (!v) return;
+        value = today(getLocalTimeZone()).add({ days: Number.parseInt(v) });
+      }}
     >
-      <Select.Root
-        {items}
-        onSelectedChange={(v) => {
-          if (!v) return;
-          value = today(getLocalTimeZone()).add({ days: v.value });
-        }}
-      >
-        <Select.Trigger>
-          <Select.Value placeholder="Select" />
-        </Select.Trigger>
-        <Select.Content>
-          {#each items as item}
-            <Select.Item value={item.value}>{item.label}</Select.Item>
-          {/each}
-        </Select.Content>
-      </Select.Root>
-      <div class="rounded-md border">
-        <Calendar bind:value {onValueChange} />
-      </div>
-    </Popover.Content>
-  </Popover.Root>
-</span>
+      <Select.Trigger>
+        {valueString}
+      </Select.Trigger>
+      <Select.Content>
+        {#each items as item}
+          <Select.Item value={`${item.value}`}>{item.label}</Select.Item>
+        {/each}
+      </Select.Content>
+    </Select.Root>
+    <div class="rounded-md border">
+      <Calendar type="single" bind:value {onValueChange} />
+    </div>
+  </Popover.Content>
+</Popover.Root>
