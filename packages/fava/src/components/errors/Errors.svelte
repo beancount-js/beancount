@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { createSvelteTable } from "@tanstack/svelte-table";
+  import { useLedger } from "../../context/ledger.svelte";
+  import DataTable from "../DataTable.svelte";
+  import { columns } from "./columns.js";
+  const ledger = useLedger();
+  const data = ledger.source.errors;
 </script>
 
-npx shadcn-svelte@latest add table
+<DataTable {data} {columns} />

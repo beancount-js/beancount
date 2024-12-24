@@ -53,6 +53,8 @@ const config: Config = {
 					DEFAULT: "hsl(var(--sidebar-background))",
 					foreground: "hsl(var(--sidebar-foreground))",
 					primary: "hsl(var(--sidebar-primary))",
+					active: "hsl(var(--sidebar-active))",
+					"active-foreground": "hsl(var(--sidebar-active-foreground))",
 					"primary-foreground": "hsl(var(--sidebar-primary-foreground))",
 					accent: "hsl(var(--sidebar-accent))",
 					"accent-foreground": "hsl(var(--sidebar-accent-foreground))",

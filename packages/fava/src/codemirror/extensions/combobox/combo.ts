@@ -26,9 +26,9 @@ class ComboWidget extends WidgetType {
     super();
   }
 
-  eq(other: any) {
+  eq(other: unknown) {
     return (
-      this.state.account === other.state.account &&
+      other instanceof ComboWidget &&
       this.state.nodeName === other.state.nodeName &&
       this.state.from === other.state.from
     );

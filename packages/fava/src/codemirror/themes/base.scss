@@ -193,6 +193,9 @@
 }
 
 @for $i from 1 through 6 {
+  .cm-header.cm-header-#{$i} > .cm-comment {
+    color: var(--h#{$i}-color);
+  }
   .cm-header-#{$i},
   .HyperMD-header-#{$i} {
     font-variant: var(--h#{$i}-variant);
@@ -204,6 +207,11 @@
     font-style: var(--h#{$i}-style);
     font-family: var(--h#{$i}-font);
   }
+}
+
+.cm-editor .cm-panels {
+  @apply bg-background;
+  border: none;
 }
 
 .cm-editor .cm-foldPlaceholder {

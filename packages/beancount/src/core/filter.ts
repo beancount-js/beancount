@@ -403,7 +403,6 @@ export class BeancountFilter extends AbstractFilterVisitor<
 
 const beancountFilter = new BeancountFilter();
 
-
 export function filterLedger(
   directives: Directives,
   query: string | Filter,

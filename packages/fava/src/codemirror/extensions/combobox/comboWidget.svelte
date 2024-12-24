@@ -2,6 +2,7 @@
   import Edit from "lucide-svelte/icons/edit";
   import ComboBox from "../../../components/ComboBox.svelte";
   import { cn } from "$lib/utils.js";
+  import { Button } from "$lib/components/ui/button";
   let {
     class: klass,
     items,
@@ -28,8 +29,16 @@
     {items}
     {onValueChange}
   >
-    {#snippet icon({ props })}
-      <Edit class="size-4" />
+    {#snippet trigger({ props })}
+      <Button
+        variant="ghost"
+        class="inline-block py-0 text-xs"
+        {...props}
+        role="combobox"
+        size="xs"
+      >
+        <Edit class="size-2" />
+      </Button>
     {/snippet}
   </ComboBox>
 {/if}

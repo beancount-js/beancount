@@ -2,6 +2,7 @@ import { EditorView, type Panel } from "@codemirror/view";
 import FindReplace from "./FindReplace.svelte";
 import { search as editorSearch } from "@codemirror/search";
 import type { Extension, SelectionRange, StateEffect } from "@codemirror/state";
+import { mount, unmount } from "svelte";
 
 class SearchPanel implements Panel {
   component: FindReplace;
@@ -9,7 +10,7 @@ class SearchPanel implements Panel {
 
   constructor(readonly view: EditorView) {
     this.dom = document.createElement("div");
-    this.component = new FindReplace({
+    this.component = mount(FindReplace, {
       target: this.dom,
       props: { view },
     });
@@ -22,7 +23,7 @@ class SearchPanel implements Panel {
   }
 
   destroy(): void {
-    this.component?.$destroy();
+    unmount(this.component);
   }
 
   get top() {

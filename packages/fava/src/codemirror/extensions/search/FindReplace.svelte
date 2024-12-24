@@ -11,8 +11,24 @@
   } from "@codemirror/search";
   import { EditorView, runScopeHandlers } from "@codemirror/view";
   import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
-  import { CaseSensitive, Regex, WholeWord } from "lucide-svelte";
+  import CaseSensitive from "lucide-svelte/icons/case-sensitive";
+  import Regex from "lucide-svelte/icons/regex";
+  import WholeWord from "lucide-svelte/icons/whole-word";
+  import ArrowUp from "lucide-svelte/icons/arrow-up";
+  import ArrowDown from "lucide-svelte/icons/arrow-down";
+  import ChevronRight from "lucide-svelte/icons/chevron-right";
+  import ChevronDown from "lucide-svelte/icons/chevron-down";
+
+  import TextSelect from "lucide-svelte/icons/text-select";
+  import Replace from "lucide-svelte/icons/replace";
+  import ReplaceAll from "lucide-svelte/icons/replace-all";
+
+  import X from "lucide-svelte/icons/x";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
+
   import { debounceWithDelay } from "../../../hooks/debounce";
+  import Input from "$lib/components/ui/input/input.svelte";
+  import { buttonVariants } from "$lib/components/ui/button";
 
   export let view: EditorView;
 
@@ -27,6 +43,7 @@
   let replaceField: HTMLInputElement;
 
   let query: SearchQuery = new SearchQuery({ search: "" });
+  let isReplace: boolean = false;
 
   function exitSearch() {
     closeSearchPanel(view);
@@ -93,10 +110,10 @@
     const qs = new SearchQuery({
       search: searchValue,
       literal: query.literal,
-      regexp: props.contains("regex"),
+      regexp: props.includes("regex"),
       replace: replaceValue,
-      caseSensitive: props.contains("case"),
-      wholeWord: props.contains("word"),
+      caseSensitive: props.includes("case"),
+      wholeWord: props.includes("word"),
     });
     query = qs;
     noMatches = missingMatches(qs);
@@ -112,7 +129,7 @@
   const replaceAllMatches = () => replaceAll(view);
 </script>
 
-<div class="document-search-container mod-replace-mode">
+<div class="mx-4 flex flex-col py-2">
   <ToggleGroup.Root
     type="multiple"
     value={values()}
@@ -124,199 +141,167 @@
       aria-label="Match Case"
       class="!hover:border-none"
     >
-      <CaseSensitive class="size-4" />
+      <Tooltip.Provider>
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            <CaseSensitive class="size-4" />
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            <p>Case Sensitive</p>
+          </Tooltip.Content>
+        </Tooltip.Root>
+      </Tooltip.Provider>
     </ToggleGroup.Item>
     <ToggleGroup.Item value="word" aria-label="Match Whole Word" class="">
-      <WholeWord class="size-4" />
+      <Tooltip.Provider>
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            <WholeWord class="size-4" />
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            <p>Whole Word</p>
+          </Tooltip.Content>
+        </Tooltip.Root>
+      </Tooltip.Provider>
     </ToggleGroup.Item>
     <ToggleGroup.Item
       value="regex"
       aria-label="Use Regular Expression"
       class=""
     >
-      <Regex class="size-4" />
+      <Tooltip.Provider>
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            <Regex class="size-4" />
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            <p>Regex</p>
+          </Tooltip.Content>
+        </Tooltip.Root>
+      </Tooltip.Provider>
     </ToggleGroup.Item>
   </ToggleGroup.Root>
-  <div class="document-search">
-    <input
-      on:keydown={keydown}
-      bind:value={searchValue}
-      use:focus
-      bind:this={searchField}
-      on:keyup={handleSearch}
-      class="document-search-input"
-      class:mod-no-match={noMatches}
-      type="text"
-      placeholder="Find"
-    />
-    <div class="document-search-buttons">
-      <button
-        on:click={searchPrevious}
-        class="clickable-icon document-search-button"
-        aria-label="Previous ⇧ F3"
-        data-tooltip-position="top"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="svg-icon lucide-arrow-up"
-        >
-          <path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path>
-        </svg>
-      </button>
-      <button
-        on:click={searchNext}
-        class="clickable-icon document-search-button"
-        aria-label="Next F3"
-        data-tooltip-position="top"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="svg-icon lucide-arrow-down"
-        >
-          <path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path>
-        </svg>
-      </button>
-      <button
-        on:click={searchAll}
-        class="clickable-icon document-search-button"
-        aria-label="Find all ⌥ Enter"
-        data-tooltip-position="top"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="svg-icon lucide-text-select"
-        >
-          <path d="M5 3a2 2 0 0 0-2 2"></path>
-          <path d="M19 3a2 2 0 0 1 2 2"></path>
-          <path d="M21 19a2 2 0 0 1-2 2"></path>
-          <path d="M5 21a2 2 0 0 1-2-2"></path>
-          <path d="M9 3h1"></path><path d="M9 21h1"></path>
-          <path d="M14 3h1"></path><path d="M14 21h1"></path>
-          <path d="M3 9v1"></path><path d="M21 9v1"></path>
-          <path d="M3 14v1"></path><path d="M21 14v1"></path>
-          <line x1="7" y1="8" x2="15" y2="8"></line><line
-            x1="7"
-            y1="12"
-            x2="17"
-            y2="12"
-          ></line>
-          <line x1="7" y1="16" x2="13" y2="16"></line>
-        </svg>
-      </button>
+  <div class="flex items-center">
+    <div class="p-1">
+      <Tooltip.Provider>
+        <Tooltip.Root>
+          <Tooltip.Trigger
+            onclick={() => (isReplace = !isReplace)}
+            class={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            {#if isReplace}
+              <ChevronDown />
+            {:else}
+              <ChevronRight />
+            {/if}
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            <p>Toggle Replace</p>
+          </Tooltip.Content>
+        </Tooltip.Root>
+      </Tooltip.Provider>
     </div>
-    <button
-      on:click={exitSearch}
-      class="clickable-icon document-search-close-button"
-      aria-label="Exit search"
-      data-tooltip-position="top"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="svg-icon lucide-x"
-      >
-        <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
-      </svg>
-    </button>
-  </div>
-  <div class="document-replace">
-    <input
-      on:keydown={keydown}
-      on:keyup={handleSearch}
-      bind:value={replaceValue}
-      bind:this={replaceField}
-      class="document-replace-input"
-      type="text"
-      placeholder="Replace"
-    />
-    <div class="document-replace-buttons">
-      <button
-        on:click={replaceMatch}
-        class="clickable-icon document-search-button"
-        aria-label="Replace Enter"
-        data-tooltip-position="top"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="svg-icon lucide-replace"
-        >
-          <path d="M14 4c0-1.1.9-2 2-2"></path>
-          <path d="M20 2c1.1 0 2 .9 2 2"></path>
-          <path d="M22 8c0 1.1-.9 2-2 2"></path>
-          <path d="M16 10c-1.1 0-2-.9-2-2"></path>
-          <path d="m3 7 3 3 3-3"></path>
-          <path d="M6 10V5c0-1.7 1.3-3 3-3h1"></path>
-          <rect x="2" y="14" width="8" height="8" rx="2"></rect>
-        </svg>
-      </button>
-      <button
-        on:click={replaceAllMatches}
-        class="clickable-icon document-search-button"
-        aria-label="Replace all ⌘ ⌥ Enter"
-        data-tooltip-position="top"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="svg-icon lucide-replace-all"
-        >
-          <path d="M14 4c0-1.1.9-2 2-2"></path>
-          <path d="M20 2c1.1 0 2 .9 2 2"></path>
-          <path d="M22 8c0 1.1-.9 2-2 2"></path>
-          <path d="M16 10c-1.1 0-2-.9-2-2"></path>
-          <path d="m3 7 3 3 3-3"></path>
-          <path d="M6 10V5c0-1.7 1.3-3 3-3h1"></path>
-          <rect x="2" y="14" width="8" height="8" rx="2"></rect>
-          <path d="M14 14c1.1 0 2 .9 2 2v4c0 1.1-.9 2-2 2"></path>
-          <path d="M20 14c1.1 0 2 .9 2 2v4c0 1.1-.9 2-2 2"></path>
-        </svg>
-      </button>
+    <div class="w-full">
+      <div class="mx-auto flex w-full gap-2 py-2">
+        <Input
+          type="text"
+          onkeydown={keydown}
+          onkeyup={handleSearch}
+          bind:value={searchValue}
+          placeholder="Find"
+          class="h-8 focus-visible:ring-2"
+        />
+        <Tooltip.Provider>
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              onclick={searchPrevious}
+              class={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <ArrowUp />
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              <p>Previous ⇧ F3</p>
+            </Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+        <Tooltip.Provider>
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              onclick={searchNext}
+              class={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <ArrowDown />
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              <p>Next F3</p>
+            </Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+        <Tooltip.Provider>
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              onclick={searchAll}
+              class={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <TextSelect />
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              <p>Find all ⌥ Enter</p>
+            </Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+        <Tooltip.Provider>
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              onclick={exitSearch}
+              class={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <X />
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              <p>Exit search</p>
+            </Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+      </div>
+      {#if isReplace}
+        <div class="mx-auto flex w-full gap-2 py-2">
+          <Input
+            type="text"
+            onkeydown={keydown}
+            onkeyup={handleSearch}
+            bind:value={replaceValue}
+            placeholder="Replace"
+            class="h-8 focus-visible:ring-2"
+          />
+          <Tooltip.Provider>
+            <Tooltip.Root>
+              <Tooltip.Trigger
+                onclick={replaceMatch}
+                class={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                <Replace />
+              </Tooltip.Trigger>
+              <Tooltip.Content>
+                <p>Replace Enter</p>
+              </Tooltip.Content>
+            </Tooltip.Root>
+          </Tooltip.Provider>
+          <Tooltip.Provider>
+            <Tooltip.Root>
+              <Tooltip.Trigger
+                onclick={replaceAllMatches}
+                class={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                <ReplaceAll />
+              </Tooltip.Trigger>
+              <Tooltip.Content>
+                <p>Replace all ⌘ ⌥ Enter</p>
+              </Tooltip.Content>
+            </Tooltip.Root>
+          </Tooltip.Provider>
+        </div>
+      {/if}
     </div>
   </div>
 </div>

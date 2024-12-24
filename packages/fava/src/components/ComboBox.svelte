@@ -6,7 +6,7 @@
   import * as Popover from "$lib/components/ui/popover/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import { cn } from "$lib/utils.js";
-  import { Icon, icons, type Icon as IconType } from "lucide-svelte";
+  import { type Icon as IconType } from "lucide-svelte";
   import ScrollArea from "$lib/components/ui/scroll-area/scroll-area.svelte";
 
   type ComboProps = {
@@ -84,7 +84,7 @@
         {/if}
       {/snippet}
     </Popover.Trigger>
-    <Popover.Content class="w-[200px] p-0">
+    <Popover.Content class="w-max p-0 text-xs">
       <Command.Root>
         <Command.Input placeholder="Search ..." />
         <Command.List>
@@ -93,7 +93,7 @@
             <Command.Group heading={group.group} class="">
               {#each group.items as item}
                 <Command.Item
-                  class="text-mono w-full text-xs"
+                  class="text-mono w-full font-mono text-xs"
                   value={item.value}
                   onSelect={() => {
                     value = item.value;
@@ -119,10 +119,11 @@
             <Command.Separator></Command.Separator>
           {/each}
           <Command.Group>
-            <ScrollArea>
+            <ScrollArea class="h-[200px]">
               {#each items as item}
                 <Command.Item
                   value={item.value}
+                  class="w-full font-mono text-xs"
                   onSelect={() => {
                     value = item.value;
                     onValueChange(item.value);

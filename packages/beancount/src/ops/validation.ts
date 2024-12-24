@@ -298,7 +298,7 @@ export function validateCurrencyConstraints(
       if (!currencies.some((it) => it === posting.units?.currency)) {
         errors.push(
           new ValidationError(
-            `Invalid currency {} for account '${posting.account}'`,
+            `Invalid currency for account '${posting.account}'`,
             entry,
           ),
         );

@@ -1,36 +1,69 @@
-import { ensureSyntaxTree, syntaxTree } from "@codemirror/language";
+import { syntaxTree } from "@codemirror/language";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import type { EditorView } from "@codemirror/view";
-import type { SyntaxNodeRef } from "@lezer/common";
-import type { LedgerSource } from "../../core/ledger";
+import type { SyntaxNodeRef, Tree } from "@lezer/common";
+import { parseLedger } from "@beancount-js/beancount";
 
-export function beanCountLinter(source: () => LedgerSource) {
+import type { Text } from "@codemirror/state";
+
+function treeErrors(tree: Tree, doc: Text): Record<string, Diagnostic> {
+  const errorMap: Record<string, Diagnostic> = {};
+  tree.iterate({
+    enter: (node: SyntaxNodeRef) => {
+      if (node.type.isError) {
+        const line = doc.lineAt(node.from);
+        const key = line.number.toString();
+        const path = node.node.parent?.toString();
+        errorMap[key] = {
+          from: node.from,
+          to: node.to,
+          severity: "error",
+          message: path
+            ? `Invalid syntax on: ${path}`
+            : "Invalid ledger syntax",
+        };
+      }
+    },
+  });
+  return errorMap;
+}
+
+export function beanCountLinter() {
   return linter(
     (view: EditorView) => {
       try {
-        const errorMap: Record<string, Diagnostic> = {};
-        const state = source();
-        syntaxTree(view.state).iterate({
-          enter: (node: SyntaxNodeRef) => {
-            if (node.type.isError) {
-              const line = view.state.doc.lineAt(node.from);
-              const key = line.number.toString();
-              const path = node.node.parent?.toString();
-              errorMap[key] = {
-                from: node.from,
-                to: node.to,
-                severity: "error",
-                message: path
-                  ? `Invalid syntax on: ${path}`
-                  : "Invalid ledger syntax",
-              };
-            }
-          },
+        const tree = syntaxTree(view.state);
+        const parser = parseLedger(view.state.doc.toString(), {
+          filename: "",
+          attributes: {},
+          transform: true,
         });
+        const doc = view.state.doc;
+        const trueErrors = treeErrors(parser.document.tree, doc);
+        const errorMap = treeErrors(tree, doc);
+        Object.keys(errorMap)
+          .filter((k) => !trueErrors[k])
+          .forEach((n) => {
+            const line = doc.line(+n);
+            view.dispatch(
+              {
+                changes: {
+                  insert: " ",
+                  from: line.to,
+                },
+              },
+              {
+                changes: {
+                  insert: "",
+                  from: line.to - 1,
+                },
+              },
+            );
+          });
 
         const lines: string[] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        state.errors.forEach((err: any) => {
+        parser.errors.forEach((err: any) => {
           const lineNo = +(err?.source?.lineno || err.line);
           const key = lineNo.toString();
           lines.push(key);
@@ -60,8 +93,8 @@ export function beanCountLinter(source: () => LedgerSource) {
       }
     },
     {
-      needsRefresh: () => {
-        return source().errors.length > 0;
+      needsRefresh: (update) => {
+        return false;
       },
     },
   );

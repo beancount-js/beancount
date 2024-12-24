@@ -57,9 +57,12 @@ import { datePicker } from "../extensions/datepicker/datepicker";
 import { showGotoLine } from "../extensions/gotoline";
 import type { LedgerSource } from "../../core/ledger";
 import { readString, writeString } from "@beancount-js/parser";
-import { beanCount } from "@beancount-js/codemirror-lang-beancount";
+import {
+  beanCount,
+  parser as beancountParser,
+} from "@beancount-js/codemirror-lang-beancount";
 import { GutterMarker } from "@codemirror/view";
-
+import { LRLanguage } from "@codemirror/language";
 export interface Ledgerconfig {
   source: LedgerSource;
 }
@@ -71,7 +74,6 @@ export const ledgerFacet: Facet<
 
 export const ledgerSetup = (source: () => LedgerSource): Extension => {
   return [
-    beanCountLinter(source),
     autocompletion({
       override: [beancountCompletion(source)],
     }),
@@ -138,7 +140,66 @@ const headerGutter = gutterLineClass.compute(["doc"], (state) => {
   return RangeSet.of(marks);
 });
 
+const mixedBeancountParser = beancountParser.configure({
+  wrap: parseMixed((node, input) => {
+    if (node.name === "CodeBlock") {
+      var contents = input.read(node.from, node.to);
+      const matches = contents.match(/^([`]+)([a-z][a-zA-Z0-9_-]*)?/);
+      if (!matches || !matches[2]) {
+        return null;
+      }
+      const parser = getCodeParser(languages)(matches[2]);
+      if (parser) {
+        const overlay = [
+          {
+            from: node.from + matches[0].length,
+            to: node.to - matches[1].length,
+          },
+        ];
+        return { parser, overlay };
+      }
+    } else if (node.name === "Query") {
+      const parser = getCodeParser(languages)("bql");
+      if (parser) {
+        return {
+          parser,
+          overlay: (node) => {
+            if (
+              node.name === "String" &&
+              node.node.prevSibling?.name === "String" &&
+              node.to - node.from > 0
+            ) {
+              return { from: node.from + 1, to: node.to - 1 };
+            }
+            return false;
+          },
+        };
+      }
+    } else if (["Custom", "Plugin"].includes(node.name)) {
+      const parser = getCodeParser(languages)("yml");
+      if (parser) {
+        return {
+          parser,
+          overlay: (node) => {
+            if (node.name === "String" && node.to - node.from > 0) {
+              return { from: node.from + 1, to: node.to - 1 };
+            }
+            return false;
+          },
+        };
+      }
+    }
+    return null;
+  }),
+});
+
+const mixedBeancountLanguage = LRLanguage.define({
+  parser: mixedBeancountParser,
+});
+
 export const basicSetup: Extension = (() => [
+  mixedBeancountLanguage,
+  beanCountLinter(),
   closeBrackets(),
   headerGutter,
   lineNumbers({}),
@@ -160,75 +221,12 @@ export const basicSetup: Extension = (() => [
   foldHeaders(),
   foldComments(),
   hashTags(),
-  beanCount({
-    wrap: parseMixed((node, input) => {
-      if (node.name === "CodeBlock") {
-        var contents = input.read(node.from, node.to);
-        const matches = contents.match(/^([`]+)([a-z][a-zA-Z0-9_-]*)?/);
-        if (!matches || !matches[2]) {
-          return null;
-        }
-        const parser = getCodeParser(languages)(matches[2]);
-        if (parser) {
-          const overlay = [
-            {
-              from: node.from + matches[0].length,
-              to: node.to - matches[1].length,
-            },
-          ];
-          return { parser, overlay };
-        }
-      } else if (node.name === "Query") {
-        const str = node.node.getChildren("String");
-        const parser = getCodeParser(languages)("bql");
-        if (parser && str.length == 2) {
-          const query = str[1];
-          const overlay = [{ from: query.from + 1, to: query.to - 1 }].filter(
-            (it) => it.to - it.from > 0,
-          );
-          if (overlay.length) {
-            return { parser, overlay };
-          }
-        }
-      } else if (node.name === "Plugin") {
-        const str = node.node.getChildren("String");
-        const parser = getCodeParser(languages)("yml");
-        if (parser && str.length == 2) {
-          const query = str[1];
-          const overlay = [{ from: query.from + 1, to: query.to - 1 }].filter(
-            (it) => it.to - it.from > 0,
-          );
-          if (overlay.length) {
-            return { parser, overlay };
-          }
-        }
-      } else if (node.name === "Custom") {
-        const strs = node.node
-          .getChildren("MetaValue")
-          .map((it) => it.getChildren("String"))
-          .flat();
-        const parser = getCodeParser(languages)("yml");
-        if (!parser) {
-          return null;
-        }
-        const overlay = strs
-          .map((str) => {
-            return { from: str.from + 1, to: str.to - 1 };
-          })
-          .filter((it) => it.to - it.from > 0);
-        if (overlay.length) {
-          return { parser, overlay };
-        }
-      }
-      return null;
-    }),
-  }),
   rulerPlugin(),
   decorateHeaders(),
   mathExpressions(),
   datePicker(),
   syntaxHighlighting(classHighlighter),
-  EditorView.editorAttributes.of({ class: "mod-cm6 editor-ledger-cli" }),
+  EditorView.editorAttributes.of({ class: "mod-cm6 beancount-editor" }),
   Prec.highest(
     keymap.of([
       {

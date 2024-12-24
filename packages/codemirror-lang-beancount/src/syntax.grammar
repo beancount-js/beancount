@@ -28,22 +28,22 @@ entries {
   Transaction
 }
 
-OPEN { @extend<MetaName, "open"> }
-CLOSE { @extend<MetaName, "close"> }
-COMMODITY {@extend<MetaName, "commodity"> }
-PUSHTAG { @extend<MetaName, "pushtag"> }
-POPTAG{ @extend<MetaName, "poptag"> }
-BALANCE { @extend<MetaName, "balance"> }
-PAD { @extend<MetaName, "pad"> }
-NOTE { @extend<MetaName, "note"> }
-PRICE { @extend<MetaName, "price"> }
-EVENT { @extend<MetaName, "event"> }
-CUSTOM { @extend<MetaName, "custom"> }
-OPTION { @extend<MetaName, "option"> }
-PLUGIN { @extend<MetaName, "plugin"> }
-QUERY { @extend<MetaName, "query"> }
-DOCUMENT { @extend<MetaName, "document"> }
-INCLUDE { @extend<MetaName, "include"> }
+OPEN { @extend<Identifier, "open"> }
+CLOSE { @extend<Identifier, "close"> }
+COMMODITY {@extend<Identifier, "commodity"> }
+PUSHTAG { @extend<Identifier, "pushtag"> }
+POPTAG{ @extend<Identifier, "poptag"> }
+BALANCE { @extend<Identifier, "balance"> }
+PAD { @extend<Identifier, "pad"> }
+NOTE { @extend<Identifier, "note"> }
+PRICE { @extend<Identifier, "price"> }
+EVENT { @extend<Identifier, "event"> }
+CUSTOM { @extend<Identifier, "custom"> }
+OPTION { @extend<Identifier, "option"> }
+PLUGIN { @extend<Identifier, "plugin"> }
+QUERY { @extend<Identifier, "query"> }
+DOCUMENT { @extend<Identifier, "document"> }
+INCLUDE { @extend<Identifier, "include"> }
 
 
 Open { Date OPEN AccountName Currencies? BookingMethod? tx Metadata? }
@@ -76,9 +76,9 @@ Currencies {
   Currency
 }
 
-MetaValue { NumberExpr | Date | Currency | String | Tag | Link | Bool | AccountName | MetaName }
+MetaValue { NumberExpr | Date | Currency | String | Tag | Link | Bool | AccountName | Identifier }
 
-Attribute { MetaName ":" MetaValue* tx }
+Attribute { AttributeName  MetaValue* tx }
 
 Metadata {
   Attribute+
@@ -112,7 +112,9 @@ PostingPrice { AT Amount }
 TotalCost { ATAT Amount }
 Tolerance { TILDE NumberExpr }
 
-@precedence { div @left, times @left, plus @left, minus @left }
+@precedence { 
+  div @left, times @left, plus @left, minus @left
+}
 
 NumberExpr {
   Number |
@@ -123,7 +125,7 @@ NumberExpr {
   LPAREN NumberExpr RPAREN 
 }
 
-Bool { @specialize<MetaName, "true"> | bool | @specialize<MetaName, "false"> }
+Bool { @specialize<Identifier, "true"> | bool | @specialize<Identifier, "false"> }
 
 @tokens {
    AT { "@" }
@@ -158,17 +160,21 @@ Bool { @specialize<MetaName, "true"> | bool | @specialize<MetaName, "false"> }
 
    Currency { $[A-Z]$[A-Z0-9'._-]*$[A-Z0-9] }
 
-   MetaName { $[a-z]$[a-zA-Z0-9_-]* }
+   Identifier { $[a-zA-Z_]$[a-zA-Z0-9_-]* }
    
    name { $[A-Z0-9]$[A-Za-z0-9-]* }
    AccountName { $[A-Z]$[a-z]+ ":" (name ":")* name }
+   AttributeName { Identifier ":"}
 
+   @precedence { Currency Identifier}
+   @precedence { bool Identifier}
+   @precedence { AccountName, AttributeName, Identifier}
    @precedence { ATAT, AT }
    @precedence { Number PLUS }
    @precedence { Number MINUS }
    @precedence { bool Currency }
-   @precedence { AT, MetaName }
-   @precedence { ATAT, MetaName }
+   @precedence { AT, Identifier }
+   @precedence { ATAT, Identifier }
    @precedence { BookingMethod, Currency }
    @precedence { Date, Number }
    @precedence { tx, space }

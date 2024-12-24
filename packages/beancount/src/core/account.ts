@@ -1,7 +1,13 @@
 import { DateTime } from "luxon";
 import { Close, Directives, Open } from "./data";
 
-export function isDescendantOf(parent: string, child: string) {
+/**
+ * Check whether an account is a descendant of another.
+ *
+ * @param name - An account name.
+ * @param of - The possible ancestor
+ */
+export function isDescendantOf(parent: string, child: string): boolean {
   return child === parent || parent == "" || child.startsWith(`${parent}:`);
 }
 

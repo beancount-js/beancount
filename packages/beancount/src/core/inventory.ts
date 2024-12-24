@@ -306,7 +306,7 @@ export class CounterInventory extends DefaultKeyedMap<InventoryKey, Decimal> {
     super(() => new Decimal("0"), entries);
   }
 
-  add(amount: Amount | null, cost?: Cost | CostSpec) {
+  add(amount: Amount | null, cost?: Cost | CostSpec | null) {
     if (!amount?.currency || amount.units === null) {
       return;
     }

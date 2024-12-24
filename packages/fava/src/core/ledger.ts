@@ -216,7 +216,9 @@ export class LedgerSource {
 
   constructor(
     contents: string,
-    readonly props: Partial<LoadProps> = {},
+    readonly props: Partial<LoadProps> = {
+      logTimings: console.log,
+    },
   ) {
     const [directives, errors, beancountOptions] = loadString(contents, props);
     const [favaOptions, favaErrors] = parseFavaOptions(directives);

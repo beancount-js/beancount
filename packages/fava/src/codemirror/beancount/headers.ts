@@ -116,7 +116,8 @@ class HeaderView implements PluginValue {
     const current: Range<Decoration>[] = [];
     const deco = this.headerDecorations.update({
       filter: (from, to) => {
-        if (to > from && isActiveLine(this.view, from)) {
+        const size = this.view.state.doc.length;
+        if (to > from && to <= size && isActiveLine(this.view, from)) {
           const level = headerLevel(this.view.state.sliceDoc(from, to));
           const line = this.view.state.doc.lineAt(from);
           if (line.to > line.from) {

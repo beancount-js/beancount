@@ -65,8 +65,8 @@ const testCases: Record<string, Array<{ input: string; expected: string }>> = {
           Commodity(
             Date,COMMODITY,Currency,
             Metadata(
-              Attribute(MetaName,MetaValue(String)),
-              Attribute(MetaName,MetaValue(String))
+              Attribute(AttributeName,MetaValue(String)),
+              Attribute(AttributeName,MetaValue(String))
             )
           )
         )
@@ -564,7 +564,7 @@ const testCases: Record<string, Array<{ input: string; expected: string }>> = {
         2014-02-03 open Assets:US:BofA:Checking ; inline comment
       `.trim(),
       expected:
-        "Journal(Comment,DocumentMarkup,Comment,Open(Date,OPEN,AccountName,Comment))",
+        "Journal(Comment,DocumentMarkup,Comment,Open(Date,OPEN,AccountName),Comment)",
     },
     {
       input: `
@@ -583,8 +583,9 @@ const testCases: Record<string, Array<{ input: string; expected: string }>> = {
             Posting(
               AccountName,Amount(NumberExpr(Number),Currency), Comment, Comment
             ),
-            Posting(AccountName,Comment)
-          )
+            Posting(AccountName),
+            Comment
+          ),
         )
       `,
     },

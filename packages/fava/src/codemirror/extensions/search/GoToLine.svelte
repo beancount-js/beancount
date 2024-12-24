@@ -1,12 +1,20 @@
 <script lang="ts">
   import { EditorView, runScopeHandlers } from "@codemirror/view";
-  import { ArrowDownToLine, X } from "lucide-svelte";
+  import ArrowDownToLine from "lucide-svelte/icons/arrow-down-to-line";
+  import X from "lucide-svelte/icons/x";
   import { closeGotoLine, dialogEffect, goToLine } from "../gotoline";
+  import Input from "$lib/components/ui/input/input.svelte";
+  import Button, {
+    buttonVariants,
+  } from "$lib/components/ui/button/button.svelte";
+  import { onMount } from "svelte";
+  import type { WithElementRef } from "bits-ui";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
 
-  export let view: EditorView;
+  let { ref = $bindable(null), view }: WithElementRef<{ view: EditorView }> =
+    $props();
 
-  let lineField: HTMLInputElement;
-
+  let value: string = $state("");
   function exitSearch() {
     closeGotoLine(view);
   }
@@ -14,7 +22,7 @@
   const keydown = (e: KeyboardEvent) => {
     if (runScopeHandlers(view, e, "goto-panel")) {
       e.preventDefault();
-    } else if (e.key == "Enter" && e.target == lineField) {
+    } else if (e.key == "Enter" && e.target == ref) {
       e.preventDefault();
       handleSearch();
     } else if (e.key == "Escape") {
@@ -26,41 +34,51 @@
   };
 
   function handleSearch() {
-    goToLine(view, lineField.value);
+    goToLine(view, value);
   }
 
-  function focus(el: HTMLElement) {
-    el.focus();
-  }
+  onMount(() => {
+    setTimeout(() => {
+      ref?.focus();
+    });
+  });
 </script>
 
-<div class="document-search-container mod-replace-mode">
-  <div class="document-search">
-    <input
-      on:keydown={keydown}
-      use:focus
-      bind:this={lineField}
-      class="document-search-input"
+<div class="mx-4 flex flex-col py-2">
+  <div class="mx-auto flex w-full gap-2">
+    <Input
+      onkeydown={keydown}
       type="text"
+      bind:value
+      bind:ref
+      class="h-8 focus-visible:ring-2"
       placeholder="Go to line"
     />
-    <div class="document-search-buttons">
-      <button
-        on:click={handleSearch}
-        class="clickable-icon document-search-button"
-        aria-label="Go to line"
-        data-tooltip-position="top"
-      >
-        <ArrowDownToLine class="svg-icon lucide-arrow-down" />
-      </button>
-    </div>
-    <button
-      on:click={exitSearch}
-      class="clickable-icon document-search-close-button"
-      aria-label="Exit go to line"
-      data-tooltip-position="top"
-    >
-      <X class="svg-icon" />
-    </button>
+    <Tooltip.Provider>
+      <Tooltip.Root>
+        <Tooltip.Trigger
+          onclick={handleSearch}
+          class={buttonVariants({ variant: "outline", size: "sm" })}
+        >
+          <ArrowDownToLine />
+        </Tooltip.Trigger>
+        <Tooltip.Content>
+          <p>Go to line</p>
+        </Tooltip.Content>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+    <Tooltip.Provider>
+      <Tooltip.Root>
+        <Tooltip.Trigger
+          onclick={exitSearch}
+          class={buttonVariants({ variant: "outline", size: "sm" })}
+        >
+          <X />
+        </Tooltip.Trigger>
+        <Tooltip.Content>
+          <p>Exit go to line</p>
+        </Tooltip.Content>
+      </Tooltip.Root>
+    </Tooltip.Provider>
   </div>
 </div>

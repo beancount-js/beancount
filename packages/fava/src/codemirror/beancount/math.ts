@@ -119,7 +119,10 @@ class MathExprView implements PluginValue {
     );
   }
 
-  private content(node: SyntaxNode) {
+  private content(node: SyntaxNode | null | undefined) {
+    if (!node) {
+      return "";
+    }
     return this.view.state.sliceDoc(node.from, node.to);
   }
 

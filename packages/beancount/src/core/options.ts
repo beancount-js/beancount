@@ -1,7 +1,11 @@
 import { z, ZodIssueCode } from "zod";
 import { parseDocument } from "yaml";
 import { Booking } from "./data";
-import { BeanCountDocument, Decimal, isValidNumber } from "@beancount-js/parser";
+import {
+  BeanCountDocument,
+  Decimal,
+  isValidNumber,
+} from "@beancount-js/parser";
 
 export const yamlProcessor = (value: unknown, ctx: z.RefinementCtx) => {
   if (typeof value === "string") {
@@ -89,11 +93,13 @@ export const beanCountOptionsSchema = z.object({
   conversion_currency: z.string().regex(/^([A-Z]+)?$/),
   documents: z.array(z.string()),
   include: z.array(z.string()),
-  files: z.array(z.object({
-    filename: z.string(),
-    options: z.record(z.string(), z.unknown()),
-    document: z.instanceof(BeanCountDocument)
-  })),
+  files: z.array(
+    z.object({
+      filename: z.string(),
+      options: z.record(z.string(), z.unknown()),
+      document: z.instanceof(BeanCountDocument),
+    }),
+  ),
   filename: z.string(),
   infer_tolerance_from_cost: bool,
   inferred_tolerance_default: z.record(currency, decimal),
@@ -134,7 +140,7 @@ export function defaultBeancountOptions(
     commodities: [],
     conversion_currency: "",
     include: [],
-    files: {},
+    files: [],
     documents: [],
     filename: "",
     infer_tolerance_from_cost: false,

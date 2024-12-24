@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CalendarIcon } from "lucide-svelte";
+  import CalendarIcon from "lucide-svelte/icons/calendar";
   import {
     DateFormatter,
     type DateValue,
@@ -52,12 +52,13 @@
     class={cn(
       buttonVariants({
         variant: "ghost",
-        class: "inline-block size-[20px] p-[3px] pt-0 ",
+        size: "xs",
+        class: "inline-block py-0",
       }),
       !value && "text-muted-foreground",
     )}
   >
-    <CalendarIcon class="mr-2 size-4" />
+    <CalendarIcon />
   </Popover.Trigger>
   <Popover.Content class="flex w-auto flex-col space-y-2 p-2">
     <Select.Root
@@ -67,6 +68,7 @@
       onValueChange={(v: string) => {
         if (!v) return;
         value = today(getLocalTimeZone()).add({ days: Number.parseInt(v) });
+        onValueChange(value);
       }}
     >
       <Select.Trigger>

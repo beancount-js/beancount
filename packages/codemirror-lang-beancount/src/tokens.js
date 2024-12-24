@@ -9,7 +9,7 @@ const newline = 10,
 function currentLine(input, offset = 0) {
   let value = "";
   let off = offset - 1;
-  while (![newline, -1, 0].includes(input.peek(off))) {
+  while (![newline, -1].includes(input.peek(off))) {
     value += String.fromCharCode(input.peek(off));
     off--;
     if (off < 0) {
@@ -18,7 +18,7 @@ function currentLine(input, offset = 0) {
   }
   value = value.split("").reverse().join("");
   off = offset;
-  while (![newline, -1, 0].includes(input.peek(off))) {
+  while (![newline, -1].includes(input.peek(off))) {
     value += String.fromCharCode(input.peek(off));
     off++;
   }
@@ -34,7 +34,7 @@ function readIdentifier(input, offset, delta = -1) {
     return value;
   }
 
-  while (![space, tab, newline, carriage, -1, 0].includes(input.peek(offset))) {
+  while (![space, tab, newline, carriage, -1].includes(input.peek(offset))) {
     value += String.fromCharCode(input.peek(offset));
     offset += delta;
   }
@@ -69,7 +69,7 @@ function consume(input, offset, cb) {
 }
 
 function isDate(value) {
-  return /^\d{4}[-/]\d{2}[-/]\d{2}$/.test(value.trim());
+  return /^\d{4}[-/]\d{2}[-/]\d{2}$/.test(value.trim().substring(0,10));
 }
 
 function isAccount(value) {
@@ -86,7 +86,7 @@ function isDirective(value) {
     /^[A-Z!*]?\s*[A-Z][a-z]+:([A-Z0-9][A-Za-z0-9-]*:)*[A-Z0-9][A-Za-z0-9-]*/.test(
       value,
     ) ||
-    /^(option|plugin)\s*["`]/.test(value)
+    /^(option|plugin)\s*["`]/.test(value) || /^balance/.test(value)
   );
 }
 

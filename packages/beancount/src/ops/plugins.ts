@@ -16,6 +16,7 @@ export const PLUGINS_AUTO = [];
 export const PLUGINS_POST = ["beancount.ops.pad", "beancount.ops.balance"];
 
 export interface PluginType {
+  id: string;
   plugin: Plugin;
   order: number;
 }
@@ -24,17 +25,21 @@ export const Plugins: Record<string, PluginType> = {
   "beancount.ops.pad": {
     plugin: pad,
     order: 10,
+    id: "beancount.ops.pad",
   },
   "beancount.ops.balance": {
     plugin: checkBalance,
     order: 0,
+    id: "beancount.ops.balance",
   },
   "beancount.plugins.auto": {
     plugin: autoInsertOpen,
     order: 0,
+    id: "beancount.plugins.auto",
   },
   "beancount.plugins.forecast": {
     plugin: forecast,
     order: 0,
+    id: "beancount.plugins.forecast",
   },
 };

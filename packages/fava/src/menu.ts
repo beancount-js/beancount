@@ -1,6 +1,4 @@
-import type { ComponentType } from "svelte";
 import type { Icon } from "lucide-svelte";
-import { type VariantProps } from "tailwind-variants";
 import {
   Wallet,
   Scale,
@@ -16,59 +14,57 @@ import {
   Search,
   ChartArea,
   ChartPie,
+  Edit,
 } from "lucide-svelte";
-import type { buttonVariants } from "$lib/components/ui/button";
 import { urlForAccount } from "./helpers";
-type Variant = VariantProps<typeof buttonVariants>["variant"];
 export interface MenuItem {
   name: string;
   path: string;
-  variant: Variant;
-  label?: string;
-  icon: ComponentType<Icon>;
+  // variant: Variant;
+  badge?: string;
+  icon: typeof Icon;
 }
 
 export const MainNav: Array<MenuItem> = [
   {
+    name: "Editor",
+    path: "/editor",
+    icon: Edit,
+  },
+  {
     name: "Income Statement",
     path: "/income_statement",
-    variant: "ghost",
     icon: Wallet,
   },
   {
     name: "Balance Sheet",
     path: "/balance_sheet",
-    variant: "ghost",
     icon: Scale,
   },
   {
     name: "Trial Balance",
     path: "/trial_balance",
-    variant: "ghost",
     icon: Weight,
   },
-  { name: "Journal", path: "#/journal", variant: "ghost", icon: NotebookText },
+  { name: "Journal", path: "/journal", icon: NotebookText },
   {
     name: "Holdings",
     path: "/holdings",
-    variant: "ghost",
     icon: ChartArea,
   },
   {
     name: "Statistics",
     path: "/statistics",
-    variant: "ghost",
     icon: ChartPie,
   },
   {
     name: "Query",
     path: "/query",
-    variant: "ghost",
     icon: Search,
   },
 ];
 
-const icons: Record<string, ComponentType<Icon>> = {
+const icons: Record<string, typeof Icon> = {
   "": ListTree,
   Assets: BadgePercent,
   Equity: BadgeDollarSign,
@@ -85,7 +81,6 @@ export function menuItemFor(account: string): MenuItem {
   return {
     name: account || "Accounts",
     path: urlForAccount(account),
-    variant: "ghost",
     icon: icons[account] ?? Tags,
   };
 }

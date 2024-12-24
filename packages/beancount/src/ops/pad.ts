@@ -116,8 +116,8 @@ export function pad(
             const newEntry = new Transaction(
               activePad.date,
               FLAG_PADDING,
-              narration,
               "",
+              narration,
               [],
               [],
               [
@@ -161,5 +161,5 @@ export function pad(
     }
   });
 
-  return [paddedEntries, errors];
+  return [sorted(paddedEntries), errors];
 }

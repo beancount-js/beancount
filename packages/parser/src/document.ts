@@ -464,9 +464,9 @@ export class BeanCountDocument {
     const children = node.getChildren("Attribute") || [];
     for (let i = 0; i < children.length; i++) {
       const attr = children[i];
-      const name = attr.getChild("MetaName");
+      const name = attr.getChild("AttributeName");
       if (!name) {
-        this.error(attr, "Expected: (MetaName ':' [MetaValue])");
+        this.error(attr, "Expected: (AttributeName ':' [MetaValue])");
         return;
       }
       const el = attr.getChild("MetaValue");
@@ -481,7 +481,7 @@ export class BeanCountDocument {
       }
       const attribute = new Attribute(
         this.position(attr),
-        this.content(name),
+        this.content(name).replaceAll(/\s*:$/g, ""),
         value,
       );
       this.addComments(attr, attribute);
@@ -1012,8 +1012,11 @@ export class BeanCountDocument {
     return new LineComment(this.position(node), this.content(node));
   }
 
-  public content(node: { from: number; to: number }) {
-    return this.doc.slice(node.from, node.to).toString();
+  public content(node: { from: number; to: number } | undefined | null) {
+    if (!node) {
+      return "";
+    }
+    return this.doc.sliceString(node.from, node.to);
   }
 }
 

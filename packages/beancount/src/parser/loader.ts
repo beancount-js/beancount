@@ -13,6 +13,8 @@ import {
 import { Plugins, PluginType } from "../ops/plugins";
 import { parseLedger } from "./parser";
 import { BeanCountDocument } from "@beancount-js/parser";
+import { validate } from "../ops/validation";
+import { book } from "./booking";
 
 export const PLUGINS_PRE = [];
 export const PLUGINS_AUTO = [];
@@ -172,7 +174,7 @@ export function parseRecursive(
     const files: Array<{
       filename: string;
       options: Record<string, unknown>;
-      document: BeanCountDocument
+      document: BeanCountDocument;
     }> = [];
     while (sourceStack.length) {
       // eslint-disable-next-line prefer-const
@@ -254,13 +256,21 @@ export function parseRecursive(
       if (isTopLevel) {
         optionsMap = doc.optionsMap;
         optionsMap["filename"] = sourceFileName;
-        files.push({filename: sourceFileName, document: doc.document, options: doc.optionsMap});
+        files.push({
+          filename: sourceFileName,
+          document: doc.document,
+          options: doc.optionsMap,
+        });
       } else {
         const opts = doc.optionsMap;
         opts["filename"] = sourceFileName;
         opts["include"] = [...filenamesSeen].sort();
         opts["files"] = [...files];
-        files.push({filename: sourceFileName, document: doc.document, options: opts});
+        files.push({
+          filename: sourceFileName,
+          document: doc.document,
+          options: opts,
+        });
       }
     }
     if (!optionsMap) {
@@ -360,13 +370,16 @@ export function runTransformations(
   if (!props.transform) {
     return [sorted(entries), errors, options];
   }
-  let response: Directives = entries;
+  let response: Directives = sorted(entries);
+  const [updatedEntries, bookingErrors] = book(entries, options);
+  errors.push(...bookingErrors);
+  response = updatedEntries;
+
   const declaredPlugins =
     options.plugin_processing_mode === "default"
       ? [PLUGINS_PRE, options.plugin, PLUGINS_AUTO, PLUGINS_POST]
       : [options.plugin];
 
-  sorted(entries);
   const plugins: Array<PluginType> = declaredPlugins
     .map((values) =>
       values
@@ -378,15 +391,19 @@ export function runTransformations(
           return plugin;
         })
         .filter((it) => it)
-        .sort((a, b) => a.order - b.order),
+        .sort((a, b) => b.order - a.order),
     )
     .flat();
 
   plugins.forEach((plugin) => {
-    const [updatedEntries, pluginErrors] = plugin.plugin(entries, options);
-    response = sorted(updatedEntries);
-    errors.push(...pluginErrors);
+    logTime("beancount.plugin." + plugin.id, props.logTimings, 2, () => {
+      const [updatedEntries, pluginErrors] = plugin.plugin(response, options);
+      response = sorted(updatedEntries);
+      errors.push(...pluginErrors);
+    });
   });
+
+  errors.push(...validate(response, options));
 
   return [response, errors, options];
 }

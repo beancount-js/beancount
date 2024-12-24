@@ -16,18 +16,24 @@
   import { replaceContents } from "../codemirror/extensions/transactions";
   import { formatLedger } from "../codemirror/beancount/format";
   import { foldAll } from "../codemirror/extensions/foldAll";
-  import { showGotoLine } from "../codemirror/extensions/gotoline";
+  import { goToLine, showGotoLine } from "../codemirror/extensions/gotoline";
   import { useLedger } from "../context/ledger.svelte.js";
+  import { useNavigation } from "../router/router";
 
   const ledger = useLedger();
-  export let formatOnSave: boolean = true;
+  const nav = useNavigation();
+
+  let formatOnSave: boolean = $state(true);
+  let line: string = $derived(nav.activeRoute.properties.query["line"]);
   let editor: EditorView;
-  let searchContainer!: HTMLElement;
+
+  $effect(() => {
+    if (editor && line) {
+      goToLine(editor, line);
+    }
+  });
 
   const codeMirror = (node: HTMLDivElement, qs: string) => {
-    searchContainer = node ?? document.createElement("div");
-    searchContainer.classList.add("cm-s-vars");
-    searchContainer.classList.add("font-mono");
     editor = new EditorView({
       state: EditorState.create({
         doc: qs,
@@ -46,7 +52,7 @@
           ]),
         ],
       }),
-      parent: searchContainer,
+      parent: node,
     });
     return {
       update(qs: string) {

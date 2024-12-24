@@ -38,6 +38,13 @@ export class Amount {
     }
   }
 
+  isDefined() {
+    if(!this.num) {
+      return false;
+    }
+    return true;
+  }
+
   get units(): Decimal {
     if (!this.num) {
       throw new Error("Missing units on number");
@@ -192,6 +199,9 @@ export class Amount {
   }
 
   public toString(_numeric: boolean = false) {
+    if (!this.isDefined()) {
+      return "";
+    } 
     if (this.source) {
       return (this.source + " " + this.currency).trim();
     }

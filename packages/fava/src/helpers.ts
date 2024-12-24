@@ -23,9 +23,9 @@ export function urlForAccount(
   params?: Record<string, string>,
 ) {
   if (!account) {
-    return "#/accounts";
+    return "/accounts";
   }
-  return urlFor(`#/account/${account}/`, params);
+  return urlFor(`/account/${account}/`, params);
 }
 
 export function urlForDate(

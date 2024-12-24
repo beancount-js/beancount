@@ -8,6 +8,7 @@ import {
 } from "@codemirror/view";
 import GoToLine from "./search/GoToLine.svelte";
 import { EditorSelection, StateEffect, StateField } from "@codemirror/state";
+import { mount, unmount } from "svelte";
 
 class GoToPanel implements Panel {
   component: GoToLine;
@@ -15,7 +16,7 @@ class GoToPanel implements Panel {
 
   constructor(readonly view: EditorView) {
     this.dom = document.createElement("div");
-    this.component = new GoToLine({
+    this.component = mount(GoToLine, {
       target: this.dom,
       props: { view },
     });
@@ -28,11 +29,11 @@ class GoToPanel implements Panel {
   }
 
   destroy(): void {
-    this.component?.$destroy();
+    unmount(this.component);
   }
 
   get top() {
-    return true;
+    return false;
   }
 }
 
@@ -69,7 +70,15 @@ export const showGotoLine: Command = (view) => {
     view.dispatch({ effects });
     panel = getPanel(view, creategotoLinePanel);
   }
-  if (panel) panel.dom.querySelector("input")!.select();
+  if (panel) {
+    const input = panel.dom.querySelector("input")!;
+    input.select();
+    input.focus();
+    setTimeout(() => {
+      input.select();
+      input.focus();
+    });
+  }
   return true;
 };
 
