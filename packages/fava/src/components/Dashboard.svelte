@@ -12,7 +12,7 @@
   import { useContext } from "../context";
   import { useNavigation } from "../router/router";
   import Separator from "$lib/components/ui/separator/separator.svelte";
-  import ComboBox from "./ComboBoxx.svelte";
+  import ComboBox from "./ComboBox.svelte";
   import { Button } from "$lib/components/ui/button";
   import { ArrowUpDown } from "lucide-svelte";
   import type { PaneAPI } from "paneforge/dist/components/types";
