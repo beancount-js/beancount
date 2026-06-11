@@ -9,10 +9,7 @@
     "fmt": "prettier ./ --write",
     "check-types": "tsc --noEmit"
   },
-  "packageManager": "npm@9.5.0",
-  "workspaces": [
-    "packages/*"
-  ],
+  "packageManager": "pnpm@10.12.4",
   "devDependencies": {
     "turbo": "^2.2.3"
   }
