@@ -9,6 +9,8 @@ import {
 import { type SyntaxNode } from "@lezer/common";
 import type { ParserConfig } from "@lezer/lr";
 
+export { parser as rawParser } from "./syntax.grammar";
+
 export const parser = grammarParser.configure({
   props: [
     indentNodeProp.add({

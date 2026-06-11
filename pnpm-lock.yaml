@@ -14,24 +14,54 @@ importers:
 
   packages/beancount:
     dependencies:
+      '@beancount-js/codemirror-lang-beancount':
+        specifier: workspace:*
+        version: link:../codemirror-lang-beancount
       '@beancount-js/filters':
         specifier: workspace:*
         version: link:../filters
       '@beancount-js/parser':
         specifier: workspace:*
         version: link:../parser
+      '@codemirror/lang-sql':
+        specifier: ^6.8.0
+        version: 6.10.0
+      '@codemirror/state':
+        specifier: ^6.4.1
+        version: 6.6.0
+      '@lezer/common':
+        specifier: ^1.2.3
+        version: 1.5.2
+      '@lezer/highlight':
+        specifier: ^1.2.1
+        version: 1.2.3
+      '@lezer/lr':
+        specifier: ^1.4.2
+        version: 1.4.10
+      '@lezer/yaml':
+        specifier: ^1.0.0
+        version: 1.0.4
       '@tanstack/svelte-table':
         specifier: ^8.20.5
         version: 8.21.3(svelte@5.56.3(@typescript-eslint/types@8.61.0))
+      alasql:
+        specifier: ^4.5.2
+        version: 4.17.3(react-native@0.86.0(@babel/core@7.29.7)(react@19.2.7))
       dedent:
         specifier: ^1.5.3
         version: 1.7.2
+      lodash:
+        specifier: ^4.17.21
+        version: 4.18.1
       luxon:
         specifier: ^3.5.0
         version: 3.7.2
       rrule:
         specifier: ^2.8.1
         version: 2.8.1
+      sql-formatter:
+        specifier: ^15.4.6
+        version: 15.8.1
       yaml:
         specifier: ^2.5.1
         version: 2.9.0
@@ -39,6 +69,9 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
     devDependencies:
+      '@lezer/generator':
+        specifier: ^1.7.1
+        version: 1.8.0
       '@vitest/ui':
         specifier: ^2.1.5
         version: 2.1.9(vitest@2.1.9)
@@ -151,6 +184,12 @@ importers:
       '@fontsource/source-code-pro':
         specifier: ^5.1.0
         version: 5.2.7
+      '@lezer/common':
+        specifier: ^1.2.3
+        version: 1.5.2
+      '@lezer/highlight':
+        specifier: ^1.2.1
+        version: 1.2.3
       '@tanstack/svelte-virtual':
         specifier: ^3.10.9
         version: 3.13.28(svelte@5.56.3(@typescript-eslint/types@8.61.0))
@@ -217,6 +256,9 @@ importers:
       sql-formatter:
         specifier: ^15.4.6
         version: 15.8.1
+      svelte-tiny-virtual-list:
+        specifier: ^2.0.5
+        version: 2.1.2
       urlpattern-polyfill:
         specifier: ^10.0.0
         version: 10.1.0
@@ -254,15 +296,9 @@ importers:
       '@lezer-unofficial/printer':
         specifier: ^1.0.1
         version: 1.0.1
-      '@lezer/common':
-        specifier: ^1.2.3
-        version: 1.5.2
       '@lezer/generator':
         specifier: ^1.7.1
         version: 1.8.0
-      '@lezer/highlight':
-        specifier: ^1.2.1
-        version: 1.2.3
       '@lezer/lr':
         specifier: ^1.4.2
         version: 1.4.10
@@ -3645,6 +3681,9 @@ packages:
     resolution: {integrity: sha512-TCbV7fzlJ2aEUB0nu2EodVA+r1eYj526IYpmGUTV32Z0bIrCUvx3K8xX3tcxR5dDFA5ZBU1Hxr4RYC4TDFEQ4A==}
     peerDependencies:
       svelte: ^3.54.0 || ^4.0.0 || ^5.0.0 || ^5.0.0-next.1
+
+  svelte-tiny-virtual-list@2.1.2:
+    resolution: {integrity: sha512-jeP/WMvgFUR4mYXHGPiCexjX5DuzSO+3xzHNhxfcsFyy+uYPtnqI5UGb383swpzQAyXB0OBqYfzpYihD/5gxnA==}
 
   svelte-toolbelt@0.7.1:
     resolution: {integrity: sha512-HcBOcR17Vx9bjaOceUvxkY3nGmbBmCBBbuWLLEWO6jtmWH8f/QoWmbyUfQZrpDINH39en1b8mptfPQT9VKQ1xQ==}
@@ -7432,6 +7471,8 @@ snapshots:
   svelte-radix@1.1.1(svelte@5.56.3(@typescript-eslint/types@8.61.0)):
     dependencies:
       svelte: 5.56.3(@typescript-eslint/types@8.61.0)
+
+  svelte-tiny-virtual-list@2.1.2: {}
 
   svelte-toolbelt@0.7.1(svelte@5.56.3(@typescript-eslint/types@8.61.0)):
     dependencies:

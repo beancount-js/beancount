@@ -51,6 +51,37 @@ export const FLAG_UNREALIZED = "U";
 
 export const SOURCE_META = "__source__";
 export const DIRECTIVE_META = "__directive__";
+export const ID_META = "__id__";
+export const DUPLICATE_META = "__duplicate__";
+
+export const MISSING: { [key: string]: null } = new Proxy(
+  { MISSING: null },
+  {
+    get(_target, key) {
+      if (key === "toString") {
+        return () => "";
+      }
+      return null;
+    },
+
+    set() {
+      return true;
+    },
+  },
+);
+
+export type MissingType = typeof MISSING | null | undefined;
+
+export function isMissing(object: unknown): object is MissingType {
+  return object === MISSING;
+}
+
+export function resolveMissing<T>(value: T | MissingType): T | null {
+  if (isMissing(value)) {
+    return null;
+  }
+  return value ?? null;
+}
 
 // A set of valid booking method names for positions on accounts.
 export enum Booking {

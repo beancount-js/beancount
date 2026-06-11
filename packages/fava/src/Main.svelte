@@ -1,39 +1,66 @@
 <script lang="ts">
-  import Sidebar from "./components/sidebar/sidebar.svelte";
-  import { setLedger, useLedger } from "./context/ledger.svelte";
+  import { onMount, setContext } from "svelte";
+  import Dashboard from "./components/Dashboard.svelte";
+  import { ContextKey, createContext } from "./context";
+  import { createRouter, RouterKey } from "./router/router";
+  import { MainNav } from "./menu";
+  import { LedgerSource } from "./core/ledger";
+  import Editor from "./components/Editor.svelte";
+  import Errors from "./components/errors/Errors.svelte";
+  import JournalTable from "./components/JournalTable.svelte";
+  import IncomeStatement from "./components/IncomeStatement.svelte";
+  import BalanceSheet from "./components/BalanceSheet.svelte";
+  import TrialBalance from "./components/TrialBalance.svelte";
+  import Holdings from "./components/Holdings.svelte";
+  import Statistics from "./components/Statistics.svelte";
+  import Query from "./components/Query.svelte";
+  import AccountDetails from "./components/AccountDetails.svelte";
+  import ImportTable from "./components/ImportTable.svelte";
+  import ImportEditor from "./components/ImportEditor.svelte";
   import "@fontsource/source-code-pro";
   import "./codemirror/themes/base.scss";
-  import View from "./router/View.svelte";
-  import Errors from "./components/errors/Errors.svelte";
-  import Editor from "./components/Editor.svelte";
-  import BalanceSheet from "./components/BalanceSheet.svelte";
-  import IncomeStatement from "./components/IncomeStatement.svelte";
-  import TrialBalance from "./components/TrialBalance.svelte";
-  import JournalTable from "./components/journal-table/JournalTable.svelte";
 
-  setLedger({
-    path: window.location.pathname ?? "/editor",
-    routes: [
-      { path: "/errors", component: Errors },
-      { path: "/editor", component: Editor },
-      { path: "/journal", component: JournalTable},
-      { path: "/income_statement", component: IncomeStatement},
-      { path: "/balance_sheet", component: BalanceSheet},
-      { path: "/trial_balance", component: TrialBalance}
+  const LEDGER_KEY = "ledger";
+  const defaultLedger = ";; Beancount Ledger\n";
+
+  const context = createContext();
+  const navigation = createRouter(
+    [
+      { path: "/", element: BalanceSheet },
+      { path: "/income_statement", element: IncomeStatement },
+      { path: "/balance_sheet", element: BalanceSheet },
+      { path: "/trial_balance", element: TrialBalance },
+      { path: "/journal", element: JournalTable },
+      { path: "/errors", element: Errors },
+      { path: "/accounts", element: AccountDetails },
+      { path: "/account/:account", element: AccountDetails },
+      { path: "/holdings", element: Holdings },
+      { path: "/query", element: Query },
+      { path: "/editor", element: Editor },
+      { path: "/statistics", element: Statistics },
+      { path: "/records", element: ImportTable },
+      { path: "/import/editor", element: ImportEditor },
+      { path: "/directives", element: Editor },
     ],
-    contents: () => {
-      return localStorage.getItem("ledger") || ";; Beancount Ledger";
-    },
-    setContents: (value) => {
-      localStorage.setItem("ledger", value);
-    },
+    "/editor",
+  );
+
+  context.menu.set([MainNav]);
+  context.ledgerSource.set(
+    new LedgerSource(localStorage.getItem(LEDGER_KEY) || defaultLedger),
+  );
+
+  setContext(ContextKey, context);
+  setContext(RouterKey, navigation);
+
+  onMount(() => {
+    const unsub = context.ledgerSource.subscribe((source) => {
+      if (source) {
+        localStorage.setItem(LEDGER_KEY, source.toString());
+      }
+    });
+    return unsub;
   });
-  const ledger = useLedger();
-  const handler = ledger.navigation.routerLink;
 </script>
 
-<Sidebar>
-  <div class="p-3" use:handler>
-    <View />
-  </div>
-</Sidebar>
+<Dashboard />

@@ -1,4 +1,4 @@
-export { parent, isDescendantOf, accountOpenClose } from "./account";
+export { parent, isDescendantOf, accountOpenClose, matchesAccount } from "./account";
 export { sameSign, Amount } from "./amount";
 export { getWeight } from "./convert";
 export {
@@ -12,6 +12,11 @@ export {
   FLAG_WARNING,
   SOURCE_META,
   DIRECTIVE_META,
+  ID_META,
+  DUPLICATE_META,
+  MISSING,
+  isMissing,
+  resolveMissing,
   Booking,
   writeScalar,
   DirectiveBase,
@@ -53,6 +58,7 @@ export type {
   Flag,
   Directive,
   Directives,
+  MissingType,
 } from "./data";
 export {
   MAXIMUM_TOLERANCE,
@@ -90,6 +96,7 @@ export { PricePoint, BaseQuote, PriceMap } from "./prices";
 export {
   Conversion,
   getConversion,
+  conversionLabel,
   costOrValue,
   DEFAULT_CONVERSION,
 } from "./conversion";

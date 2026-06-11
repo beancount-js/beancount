@@ -3,7 +3,11 @@ import {
   Decimal,
   NumberSource,
   RoundingMode,
+  isValidNumber,
 } from "@beancount-js/parser";
+
+export { Decimal, isValidNumber };
+export type { NumberSource };
 
 export function sameSign(a: NumberSource, b: NumberSource) {
   const na = new Decimal(a);

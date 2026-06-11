@@ -1,10 +1,17 @@
 <script lang="ts">
+  import { afterUpdate } from "svelte";
   import { useNavigation } from "./router";
-  const navigation = useNavigation();
-  const NavComponent = $derived(navigation.activeRoute.route.component);
-  const params = $derived(navigation.activeRoute.properties.params);
+  const {
+    router: { activeRoute, navigating },
+  } = useNavigation();
+  afterUpdate(() => {
+    setTimeout(() => navigating.set(null));
+  });
 </script>
 
-<div>
-  <NavComponent {...params}></NavComponent>
-</div>
+{#if $navigating}
+  <p>Loading...</p>
+{/if}
+{#if $activeRoute.element}
+  <svelte:component this={$activeRoute.element} {...$activeRoute.params} />
+{/if}

@@ -1,21 +1,19 @@
 <script lang="ts">
-  import { useLedger } from "../../context/ledger.svelte";
+  import { useCtx } from "../../stores/format";
 
-  type Props = {
-    /** Difference to show. */
-    diff: number;
-    /** Number to show on hover. */
-    num: number;
-    /** The currency that both numbers are in. */
-    currency: string;
-  };
-  const ledger = useLedger();
-  let { diff, num, currency }: Props = $props();
+  const ctx = useCtx();
+
+  /** Difference to show. */
+  export let diff: number;
+  /** Number to show on hover. */
+  export let num: number;
+  /** The currency that both numbers are in. */
+  export let currency: string;
 </script>
 
 <br />
-<span class:positive={diff > 0} title={ledger.formatter.amount(num, currency)}>
-  ({ledger.formatter.num(diff, currency)})
+<span class:positive={diff > 0} title={$ctx.amount(num, currency)}>
+  ({$ctx.num(diff, currency)})
 </span>
 
 <style>

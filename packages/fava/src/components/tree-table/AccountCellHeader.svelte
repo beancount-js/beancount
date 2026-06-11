@@ -1,34 +1,73 @@
 <script lang="ts">
-  import Button from "$lib/components/ui/button/button.svelte";
-  import { useTreeTable } from "./state.svelte";
-  import UnfoldVertical from "lucide-svelte/icons/unfold-vertical";
-  import FoldVertical from "lucide-svelte/icons/fold-vertical";
+  import { getTreeTableContext } from "./helpers";
 
-  const treeState = useTreeTable();
+  const { toggled, collapseAll } = getTreeTableContext();
   const helpTitle =
     "Hold Shift while clicking to expand all children.\n" +
     "Hold Ctrl or Cmd while clicking to expand one level.";
 </script>
 
-<span title={helpTitle} class="group-hover:bg-muted/50 border">
-  {#if treeState.toggled.size}
-    <Button
-      variant="ghost"
-      size="xs"
+<span title={helpTitle}>
+  {#if $toggled.size}
+    <button
+      class="clickable-icon view-action"
       aria-label="Unfold All"
-      onclick={() => treeState.clearToggled()}
+      on:click={() => {
+        toggled.set(new Set());
+      }}
     >
-      <UnfoldVertical />
-    </Button>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="svg-icon lucide-unfold-vertical"
+      >
+        <path d="M12 22v-6"></path>
+        <path d="M12 8V2"></path>
+        <path d="M4 12H2"></path>
+        <path d="M10 12H8"></path>
+        <path d="M16 12h-2"></path>
+        <path d="M22 12h-2"></path>
+        <path d="m15 19-3 3-3-3"></path>
+        <path d="m15 5-3-3-3 3"></path>
+      </svg>
+    </button>
   {:else}
-    <Button
-      variant="ghost"
-      size="xs"
+    <button
+      class="clickable-icon view-action"
       aria-label="Fold All"
-      onclick={() => treeState.collapseAll()}
+      on:click={() => {
+        collapseAll();
+      }}
     >
-      <FoldVertical />
-    </Button>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="svg-icon lucide-fold-vertical"
+      >
+        <path d="M12 22v-6"></path>
+        <path d="M12 8V2"></path>
+        <path d="M4 12H2"></path>
+        <path d="M10 12H8"></path>
+        <path d="M16 12h-2"></path>
+        <path d="M22 12h-2"></path>
+        <path d="m15 19-3-3-3 3"></path>
+        <path d="m15 5-3 3-3-3"></path>
+      </svg>
+    </button>
   {/if}
 </span>
 

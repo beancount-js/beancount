@@ -11,6 +11,15 @@ export function isDescendantOf(parent: string, child: string): boolean {
   return child === parent || parent == "" || child.startsWith(`${parent}:`);
 }
 
+export function matchesAccount(account: unknown) {
+  return (
+    typeof account === "string" &&
+    /^((Assets|Equity|Liabilities|Income|Expenses):([A-Z][A-Za-z0-9_-]+:)*[A-Z][A-Za-z0-9_-]+)$/.test(
+      account.trim(),
+    )
+  );
+}
+
 export function parent(account: string) {
   const idx = account.lastIndexOf(":");
   if (idx !== -1) {
@@ -24,6 +33,8 @@ interface AccountOpenCloseProps {
   close: Close | null;
   updatedAt: DateTime;
 }
+
+export type AccountOpenCloseResponse = AccountOpenCloseProps;
 
 export function accountOpenClose(
   entries: Directives,

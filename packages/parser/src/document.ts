@@ -56,6 +56,10 @@ export interface ParseError {
   directives?: Directive[];
 }
 
+export function parseLedgerTree(contents: string): Tree {
+  return parser.configure({ strict: false }).parse(contents);
+}
+
 export class BeanCountDocument {
   readonly doc: Text;
   readonly tree: Tree;

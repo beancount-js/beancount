@@ -2,6 +2,9 @@ import { derived, writable, type Readable, type Writable } from "svelte/store";
 import { derivedArray } from "./stores";
 import { getContext } from "svelte";
 import type { MenuItem } from "./menu";
+import type { ImportConfig } from "./import/models";
+import type { ImportFile } from "./import/schema";
+import { ImportConfig as ImportConfigClass } from "./import/models";
 import {
   type BeancountOptions,
   Conversion,
@@ -30,6 +33,8 @@ export type Options = Record<string, unknown> & {
 };
 
 export interface ComponentContext {
+  importConfig: Writable<ImportConfig>;
+  importFile: Writable<ImportFile | null>;
   conversion: Writable<Conversion>;
   menu: Writable<Array<Array<MenuItem>>>;
   interval: Writable<Interval>;
@@ -70,6 +75,10 @@ export function createContext(): ComponentContext {
   const lastActiveChartName = writable<string | null>(null);
   const draftDirectives = writable<Directives>([]);
   const menu = writable<Array<Array<MenuItem>>>([]);
+  const importConfig = writable<ImportConfig>(
+    new ImportConfigClass("", "0.0.1", "dd/MM/yyyy", [], {}, []),
+  );
+  const importFile = writable<ImportFile | null>(null);
   const query = writable<string>();
   const bqlQuery = writable<string>();
   const predicate = derived([query], ([$query]) => {
@@ -170,6 +179,8 @@ export function createContext(): ComponentContext {
   );
 
   return {
+    importConfig,
+    importFile,
     ledgerOptions,
     menu,
     lastActiveChartName,

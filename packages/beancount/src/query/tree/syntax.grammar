@@ -1,0 +1,56 @@
+@top Log { 
+  Entry*
+}
+
+@skip { 
+  space | 
+  space newline 
+}
+
+Entry {
+  TREE* NodeName Range
+}
+
+Position {
+  Number ":" Number
+}
+
+Range {
+  "[" Position ".." Position "]" (( ":" Value)  )? 
+}
+
+Value {
+  Date |
+  Number |
+  String |
+  AccountName | 
+  Currency |
+  Flag
+}
+
+@tokens {
+   TREE { "|" | "│" | "|" "-" | "├─" | "└─" }
+   NodeName { $[a-zA-Z]$[a-zA-Z0-9_]* }
+   num {$[1-9]$[0-9]?$[0-9]? ("," " "* $[0-9]$[0-9]$[0-9])+ }
+   int { num | @digit+ }
+   frac { '.' @digit+ }
+   Number { "-" int frac? | int frac?} 
+   sep { "-" | "/" | "."}
+   Date { @digit @digit @digit @digit sep @digit @digit sep @digit @digit}
+   String { '"' (!["\\] | "\\" _)* '"' }
+   name { $[A-Z0-9]$[A-Za-z0-9-]* }
+   AccountName { $[A-Z]$[a-z]+ ":" (name ":")* name }
+   Currency { $[A-Z]$[A-Z0-9'_-]*$[A-Z0-9] }
+   Flag { "!" | "*"}
+  
+   space { @whitespace+ }
+   newline { $[\n] }
+
+   @precedence { AccountName Flag}
+   @precedence { Date, Number }
+
+
+   @precedence { space, newline }
+}
+
+@external propSource treeHighlighting from "./highlight"

@@ -62,6 +62,7 @@ import {
   Directives,
   sorted,
   SOURCE_META,
+  ID_META,
 } from "../core";
 
 export interface ParserProperties {
@@ -140,6 +141,7 @@ export class LedgerParser extends AbstractVisitor<void> {
     const entry = new LedgerEntry(pos, directive, this.document.content(pos));
     meta[DIRECTIVE_META] = entry;
     meta[SOURCE_META] = entry.content;
+    meta[ID_META] = directive.id;
     return meta;
   }
 

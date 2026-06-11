@@ -24,6 +24,21 @@ export function getConversion(s: string | null): Conversion {
   return CONVERSIONS[s] ?? DEFAULT_CONVERSION;
 }
 
+export function conversionLabel(
+  conversion: Conversion | string | null,
+): string {
+  switch (getConversion(typeof conversion === "string" ? conversion : null)) {
+    case Conversion.AT_COST:
+      return "At Cost";
+    case Conversion.AT_VALUE:
+      return "At Value";
+    case Conversion.UNITS:
+      return "Units";
+    default:
+      return "At Cost";
+  }
+}
+
 export interface ConversionContext {
   prices: PriceMap;
   date: DateTime;

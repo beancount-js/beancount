@@ -1,6 +1,7 @@
 import { Amount, Cost } from "@beancount-js/beancount";
 import { Decimal, formatDate } from "@beancount-js/parser";
 import { format } from "d3-format";
+import { utcFormat } from "d3-time-format";
 import { DateTime } from "luxon";
 
 export interface FormatterContext {
@@ -93,6 +94,9 @@ export function formatPercentage(number: number): string {
 }
 
 type DateFormatter = (date: DateTime) => string;
+
+/** Format the date as a ISO-8601 date string. */
+export const day = utcFormat("%Y-%m-%d");
 
 /** Date formatters for human consumption. */
 export const dateFormat: Record<

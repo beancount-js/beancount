@@ -16,10 +16,6 @@ export type TreeNode<S> = S & { readonly children: TreeNode<S>[] };
  *
  * This is a bit like d3-hierarchys stratify, but inserts implicit nodes that
  * are missing in the hierarchy.
- *
- * @param data - The data to generate the tree for.
- * @param id - A getter to obtain the node name for an input datum.
- * @param init - A getter for any extra properties to set on the node.
  */
 export function stratify<T, S = null>(
   data: Iterable<T>,
