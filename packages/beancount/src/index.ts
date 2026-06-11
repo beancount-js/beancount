@@ -1,3 +1,8 @@
+export {
+  loadString,
+  type LoadProps,
+  type DocumentLoader,
+} from "./parser/loader";
 export * from "./core";
 export * from "./utils";
 export { Decimal, isValidNumber } from "./core/amount";

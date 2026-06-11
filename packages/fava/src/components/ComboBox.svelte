@@ -11,7 +11,17 @@
 
   type ComboProps = {
     class?: string;
-    trigger?: Snippet<[{ props: Record<string, unknown> }]>;
+    trigger?: Snippet<
+      [
+        {
+          props: Record<string, unknown>;
+          value: string;
+          open: boolean;
+          hasSelection: boolean;
+          placeholder: string;
+        },
+      ]
+    >;
     items:
       | Array<{ label: string; value: string }>
       | (() => Array<{ label: string; value: string }>);
@@ -51,7 +61,13 @@
   let value = $state(selected);
   let triggerRef = $state<HTMLButtonElement>(null!);
 
-  const selectedValue = $derived(items.find((f) => f.value === value)?.label);
+  $effect(() => {
+    value = selected;
+  });
+
+  const selectedValue = $derived(
+    items.find((f) => f.value === selected)?.label ?? placeholder,
+  );
 
   // We want to refocus the trigger button when the user selects
   // an item from the list so users can continue navigating the
@@ -69,7 +85,13 @@
     <Popover.Trigger bind:ref={triggerRef}>
       {#snippet child({ props })}
         {#if trigger}
-          {@render trigger({ props: { ...props, value: selectedValue } })}
+          {@render trigger({
+            props,
+            value: selectedValue,
+            open,
+            hasSelection: !!selected,
+            placeholder,
+          })}
         {:else}
           <Button
             variant="outline"
@@ -79,6 +101,9 @@
             size="sm"
             aria-expanded={open}
           >
+            <span class={cn(!selected && "text-muted-foreground")}
+              >{selectedValue}</span
+            >
             <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
           </Button>
         {/if}

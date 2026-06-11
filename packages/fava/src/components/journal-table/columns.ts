@@ -18,33 +18,32 @@ import { urlForAccount } from "../../helpers";
 const accountSnippet = createRawSnippet<[DirectiveBase]>((getDirective) => {
   const directive = getDirective();
   return {
-    render: () =>  {
-       if(directive instanceof Transaction) {
-          return directive.payee 
-            ? `<span><strong>${directive.payee}</strong> <span>${directive.narration}</span></span>`
-            : `<span>${directive.narration}</span>`
-       } else if(directive instanceof Open || directive instanceof Balance) {
-          return `<a href="${urlForAccount(directive.account)}" class="hover:font-semibold">${directive.account}</a>`
-       }
-       return "<span></span>"
-    }
+    render: () => {
+      if (directive instanceof Transaction) {
+        return directive.payee
+          ? `<span><strong>${directive.payee}</strong> <span>${directive.narration}</span></span>`
+          : `<span>${directive.narration}</span>`;
+      } else if (directive instanceof Open || directive instanceof Balance) {
+        return `<a href="${urlForAccount(directive.account)}" class="hover:font-semibold">${directive.account}</a>`;
+      }
+      return "<span></span>";
+    },
   };
 });
 
 const typeAlias: Record<string, string> = {
-  "balance": "Bal"
+  balance: "Bal",
 };
-
 
 export const columns: ColumnDef<DirectiveBase>[] = [
   {
     accessorKey: "date",
-    cell: ({cell}) => formatDate(cell.getValue<DateTime>()),
+    cell: ({ cell }) => formatDate(cell.getValue<DateTime>()),
     header: "Date",
   },
   {
     accessorKey: "flag",
-    accessorFn: (row) =>  {
+    accessorFn: (row) => {
       if (row instanceof Transaction) {
         return row.flag;
       }
@@ -56,8 +55,8 @@ export const columns: ColumnDef<DirectiveBase>[] = [
     accessorKey: "account",
     header: "Account",
     accessorFn: (row) => row,
-    cell: ({row}) => {
+    cell: ({ row }) => {
       return renderSnippet(accountSnippet, row.getValue("account"));
-    }
+    },
   },
 ];

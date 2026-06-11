@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "checks": "turbo run checks",
     "dev": "turbo run dev --filter=@beancount-js/fava",
     "test": "turbo run test:run",
+    "test:e2e": "turbo run test:e2e --filter=@beancount-js/fava",
     "check": "turbo run check",
     "lint": "turbo run lint",
     "fmt": "turbo run fmt",

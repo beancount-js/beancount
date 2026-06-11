@@ -99,7 +99,13 @@ export type UseTableProperties = {
     balances: Record<string, Record<string, number>>;
     changes: Record<string, Record<string, number>>;
   };
-  types: Array<typeof Transaction | typeof Pad | typeof Balance | typeof Open | typeof Close>;
+  types: Array<
+    | typeof Transaction
+    | typeof Pad
+    | typeof Balance
+    | typeof Open
+    | typeof Close
+  >;
   account: string;
   sizer: (directive: Directive) => number;
 };
@@ -192,7 +198,7 @@ export function useTable(props: Partial<UseTableProperties> = {}) {
           date: 10,
         };
         directives.forEach((directive) => {
-          directive.accounts().forEach((acc) => {
+          directive.accounts.forEach((acc) => {
             if (acc.length > sizes.account) {
               sizes.account = acc.length;
             }

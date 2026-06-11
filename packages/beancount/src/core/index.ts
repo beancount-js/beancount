@@ -1,4 +1,9 @@
-export { parent, isDescendantOf, accountOpenClose, matchesAccount } from "./account";
+export {
+  parent,
+  isDescendantOf,
+  accountOpenClose,
+  matchesAccount,
+} from "./account";
 export { sameSign, Amount } from "./amount";
 export { getWeight } from "./convert";
 export {

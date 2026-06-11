@@ -4,7 +4,7 @@
   "description": "Beancount Core",
   "type": "module",
   "main": "dist/beancount.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "sideEffects": false,
   "dependencies": {
     "@beancount-js/codemirror-lang-beancount": "workspace:*",
@@ -28,13 +28,15 @@
   },
   "scripts": {
     "build": "vite build",
-    "lint": "eslint ./src",
+    "checks": "pnpm fmt:check && pnpm check-types",
+    "lint": "eslint ./src --max-warnings 0",
     "lint:fix": "eslint --fix ./src",
     "check-types": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "fmt": "prettier ./ --write"
+    "fmt": "prettier ./src --write",
+    "fmt:check": "prettier ./src --check"
   },
   "devDependencies": {
     "@lezer/generator": "^1.7.1",

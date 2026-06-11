@@ -69,7 +69,7 @@ function consume(input, offset, cb) {
 }
 
 function isDate(value) {
-  return /^\d{4}[-/]\d{2}[-/]\d{2}$/.test(value.trim().substring(0,10));
+  return /^\d{4}[-/]\d{2}[-/]\d{2}$/.test(value.trim().substring(0, 10));
 }
 
 function isAccount(value) {
@@ -86,7 +86,8 @@ function isDirective(value) {
     /^[A-Z!*]?\s*[A-Z][a-z]+:([A-Z0-9][A-Za-z0-9-]*:)*[A-Z0-9][A-Za-z0-9-]*/.test(
       value,
     ) ||
-    /^(option|plugin)\s*["`]/.test(value) || /^balance/.test(value)
+    /^(option|plugin)\s*["`]/.test(value) ||
+    /^balance/.test(value)
   );
 }
 

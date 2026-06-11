@@ -1,0 +1,435 @@
+BEANCOUNT-JS LEDGER / FAVA MIGRATION SUMMARY
+==============================================
+Document date: 2026-06-11
+Scope: Svelte 5 shell migration, obsidian/Fava parity fixes, e2e coverage,
+       Svelte 4 alignment audit, and unified checks tooling.
+
+
+1. OVERVIEW
+-----------
+
+This work migrated the Fava UI shell from Svelte 4 patterns to Svelte 5,
+ported missing views and functionality from the original Fava/Obsidian codebase,
+fixed several runtime crashes and UX regressions, added Playwright e2e tests,
+and introduced guardrail scripts (prettier, eslint, svelte-check, custom Svelte 5
+pattern checks) that run against source directories only—not dist/.
+
+
+2. WORKSPACE & INFRASTRUCTURE
+-----------------------------
+
+- Migrated npm workspaces to pnpm (workspace yaml, lockfile, packageManager field).
+- Wired root scripts through Turbo:
+    build, dev, test, test:e2e, check, lint, fmt, check-types, checks
+- Updated and pinned dependencies across all five packages; fixed breakages from upgrades.
+- Removed legacy App/Dashboard/context.ts patterns in favor of the new Svelte 5 shell.
+- Added/expanded README and TASKS.md gap inventory (phase-oriented migration plan).
+
+Packages in the monorepo:
+  - @beancount-js/beancount
+  - @beancount-js/parser
+  - @beancount-js/filters
+  - @beancount-js/codemirror-lang-beancount
+  - @beancount-js/fava
+
+
+3. FEATURE PORTING (PHASES COMPLETED)
+-------------------------------------
+
+Phase 1 — Shell
+  - Search bar, sidebar extras (errors badge, account/query pickers)
+  - Svelte 5 Dashboard / Main layout shell
+
+Phase 2 — Charts
+  - Ported charts/ directory
+  - ChartSwitcher on statement views
+
+Phase 3 — Views
+  - Holdings, Statistics, Query stack
+  - AccountDetails + register routes
+
+Phase 4 — Journal / Grid
+  - Ported grid/ + EditorDialog
+  - Restored full JournalTable functionality
+
+Phase 5 — Import
+  - Ported ingest package integration
+  - Standalone file handling + import routes/views
+
+Phase 6 — Cleanup
+  - Legacy code removal, README, expanded tests
+
+
+4. SVELTE 4 → 5 ALIGNMENT
+---------------------------
+
+4.1 Breaking pattern reference
+------------------------------
+
+| Svelte 4 (broken in Svelte 5)              | Svelte 5 fix                                      |
+|--------------------------------------------|---------------------------------------------------|
+| on:click on shadcn Button                  | onclick (Button uses $props; does not forward on:click) |
+| slot="trigger" let:builder                 | {#snippet trigger({ props, value, ... })}         |
+| builders={[builder]} on Popover.Trigger    | {...props} from trigger snippet                   |
+| row.accounts() as method call              | row.accounts as getter                            |
+| directive.accounts()                       | directive.accounts as getter                        |
+
+4.2 Components migrated to Svelte 5 patterns
+--------------------------------------------
+
+Dashboard.svelte
+  - Sidebar collapse: onclick on Button (not on:click)
+  - Deferred persistSidebarCollapsed via queueMicrotask
+  - ComboBox: migrated from slot="trigger" + builders={[builder]} to {#snippet trigger}
+  - Main content pane: min-w-0 overflow-hidden
+
+Main.svelte
+  - Wrapped app in Tooltip.Provider
+  - @fontsource/source-code-pro/400.css and /600.css
+
+Nav.svelte
+  - Tooltips use {#snippet child({ props })} (not asChild let:builder)
+
+ComboBox.svelte
+  - Snippet API: value, open, hasSelection, placeholder
+  - $effect syncs selected state
+
+Editor.svelte
+  - Save button uses onclick (keyboard Cmd/Ctrl+S still via CodeMirror keymap)
+
+Query.svelte, QueryBox.svelte, EditorDialog.svelte, ImportEditor.svelte,
+ImportTable.svelte, Search.svelte
+  - All shadcn Button on:click → onclick
+
+4.3 Svelte config
+-----------------
+
+packages/fava/svelte.config.js
+  - vitePreprocess()
+  - compilerOptions.runes: undefined (legacy + runes coexist during migration)
+
+packages/fava/tsconfig.json
+  - lib bumped to ES2021 (replaceAll, etc.)
+  - exclude: ../**/dist/** and ./dist/** (avoid type-checking bundled JS)
+
+
+5. RUNTIME & DATA FIXES
+-----------------------
+
+5.1 Account / Income / Balance views crash
+------------------------------------------
+
+Symptom: /#/account/Expenses threw "row.accounts is not a function"
+
+Root cause: Ledger row models expose accounts as a getter, not a method.
+
+Files fixed:
+  - packages/fava/src/components/JournalTable.svelte — row.accounts (not row.accounts())
+  - packages/fava/src/components/AccountTable.svelte — same + dateToMillis() for Luxon dates
+  - packages/fava/src/components/helpers.ts — directive.accounts (not accounts())
+
+5.2 Incomplete LedgerData
+-------------------------
+
+File: packages/fava/src/core/ledger-data-class.ts
+  - Full LedgerData implementation restored (fixes Income/Balance view data gaps)
+
+5.3 Chart date handling
+-----------------------
+
+File: packages/fava/src/charts/context.ts
+  - Luxon date handling corrected for chart rendering
+
+5.4 Editor save not persisting via button
+-----------------------------------------
+
+File: packages/fava/src/components/Editor.svelte
+  - Save button onclick wired correctly (was on:click on Svelte 5 Button)
+
+5.5 Sidebar ComboBox placeholders / selection
+---------------------------------------------
+
+File: packages/fava/src/components/Dashboard.svelte
+  - Query and Account comboboxes migrated to Svelte 5 snippet API (see 4.2)
+
+5.6 Workspace package types path (svelte-check false positives)
+--------------------------------------------------------------
+
+File: packages/beancount/package.json
+  - "types" corrected from "dist/index.d.ts" to "dist/src/index.d.ts"
+  - Before fix: svelte-check type-checked bundled beancount.js (~1100 false errors)
+  - After fix: svelte-check errors dropped from ~1521 to ~264 (real TS debt remains)
+
+
+6. UI, LAYOUT & STYLE FIXES
+---------------------------
+
+6.1 Obsidian / Fava style parity
+--------------------------------
+
+packages/fava/src/styles/ledger.css
+  - Source Code Pro font stack
+  - --treetable-expander CSS variable
+  - Budget-related CSS variables
+  - .dimmed utility
+  - .flex-table { position: relative } (fix expand/collapse icons on scroll)
+  - 12px .clickable-icon svg sizing
+  - .table-h-scroll for horizontal table scroll
+  - overflow-x: hidden on .scroll-container
+
+packages/fava/style.scss
+  - Sort-column arrow pseudo-elements
+
+packages/fava/src/components/tree-table/AccountCell.svelte
+  - position: relative on account cell span
+
+6.2 Horizontal scroll / viewport overflow
+-----------------------------------------
+
+Wrapped wide tables in .table-h-scroll:
+  - AccountDetails.svelte
+  - AccountTable.svelte
+  - IntervalTreeTable.svelte
+  - grid/Root.svelte
+
+Dashboard.svelte: main content pane min-w-0 overflow-hidden
+
+
+7. END-TO-END TESTS (PLAYWRIGHT)
+--------------------------------
+
+Location: packages/fava/e2e/
+
+Specs (8 tests total):
+  app.spec.ts
+    - loads saved ledger, persists edits, renders all tabs, collapses sidebar
+    - applies tree-table, scroll-container, and journal-table styles
+    - loads codemirror theme styles
+
+  editor-save.spec.ts
+    - save button persists replaced content across reload
+    - save button persists after clearing editor and entering new ledger
+
+  navigation.spec.ts
+    - sidebar navigation updates the hash route
+    - income statement renders without runtime errors
+    - account page renders without runtime errors
+
+Helpers (helpers.ts):
+  - seedLedger / clearLedger use init-script flag so reload does not reset localStorage
+  - saveLedgerWithButton, replaceEditorContent utilities
+
+Run:
+  cd packages/fava && pnpm test:e2e
+  # or from root:
+  pnpm test:e2e
+
+
+8. CHECKS TOOLING
+-----------------
+
+8.1 Root
+--------
+
+package.json:
+  "checks": "turbo run checks"
+
+turbo.json tasks added:
+  checks, fmt:check, check:svelte5
+
+8.2 Fava (primary UI package)
+-----------------------------
+
+packages/fava/package.json scripts:
+
+  fmt:check   prettier ./src ./e2e --check
+  fmt         prettier ./src ./e2e --write
+  lint        eslint on app-authored paths only (see below), --max-warnings 0
+  check:svelte5  node ./scripts/check-svelte5-patterns.mjs
+  check       svelte-check --tsconfig ./tsconfig.json --fail-on-warnings
+  checks      fmt:check && lint && check:svelte5 && check (all four, fails on errors/warnings)
+
+Lint scope (excludes generated shadcn under src/lib):
+  ./src/components
+  ./src/charts
+  ./src/grid
+  ./src/Main.svelte
+  ./src/router
+  ./e2e
+
+8.3 Custom Svelte 5 pattern guard
+---------------------------------
+
+File: packages/fava/scripts/check-svelte5-patterns.mjs
+
+Scans all .svelte under src/ except src/lib/components/ui/.
+
+Rules enforced:
+  - button-on-click:     <Button ... on:click= (must be onclick)
+  - legacy-trigger-slot: slot="trigger"
+  - bits-builders:       builders={[
+  - let-builder:         let:builder
+
+8.4 ESLint
+----------
+
+File: packages/fava/eslint.config.js
+
+  - Flat config with eslint-plugin-svelte, typescript-eslint parser
+  - Ignores: dist/, node_modules/, test-results/, src/lib/**
+  - Legacy Svelte rules disabled until runes migration (no-reactive-functions, etc.)
+  - no-restricted-syntax on Button on:click in src/components and src/charts
+  - ESLint pinned to v9 (v10 incompatible with eslint-plugin-svelte at time of setup)
+
+8.5 Prettier
+------------
+
+File: packages/fava/.prettierrc
+  - Plugins use package names (prettier-plugin-jsdoc, prettier-plugin-svelte,
+    prettier-plugin-tailwindcss) instead of fragile relative node_modules paths
+
+8.6 Other packages
+------------------
+
+beancount, parser, filters, codemirror-lang-beancount:
+  - Added fmt:check, checks scripts
+  - lint uses --max-warnings 0 where eslint is configured
+  - beancount checks: fmt:check + check-types only (no eslint config in package)
+  - parser: added prettier devDependency
+
+8.7 Current checks status (as of document date)
+-----------------------------------------------
+
+Fava — PASSING:
+  pnpm fmt:check
+  pnpm lint
+  pnpm check:svelte5
+
+Fava — FAILING (known baseline):
+  pnpm check (svelte-check): ~264 errors, 13 warnings in ~63 files
+  Primary categories: TS strictness, on:click typed as never on some wrappers,
+  duplicate Interval types (filters vs fava/src/lib/interval), yaml editor typings,
+  legacy export let components, module resolution in workspace deps.
+
+Library packages — PARTIAL:
+  fmt:check generally passes after formatting pass
+  check-types has pre-existing issues (grammar .d.ts paths, moduleResolution, chai dupes)
+
+
+9. SVELTE 4 AUDIT FINDINGS (REMAINING)
+--------------------------------------
+
+9.1 Resolved in app code
+------------------------
+
+  - No remaining <Button ... on:click= in packages/fava/src (grep clean)
+  - No slot="trigger" or builders={[ in app components (only in src/lib/components/ui)
+  - Dashboard ComboBox migration complete
+
+9.2 Still using Svelte 4 patterns (acceptable / deferred)
+---------------------------------------------------------
+
+export let props (~17 components under src/components):
+  TrialBalance, IntervalTreeTable*, AccountCell, QueryTable, QueryBox, Query,
+  Nav, ImportEditor, EditorDialog, Dashboard, AccountTable, AccountDetails,
+  TreeTable*, Diff, etc.
+  Note: Valid in Svelte 5 with runes: undefined; migrate to $props() over time.
+
+on:click on native elements and bits-ui Menubar (NOT shadcn Button):
+  Editor.svelte, ImportEditor.svelte, JournalTable.svelte, AccountTable.svelte,
+  AccountCell.svelte, AccountCellHeader.svelte
+  Note: Fine on <button> and Menubar.Item; different from Button forwarding issue.
+
+Named slots on Grid / VirtualList consumers:
+  JournalTable.svelte      — slot="header", slot="row"
+  AccountTable.svelte      — slot="header", slot="row"
+  ImportTable.svelte       — slot="row"
+  QueryTable.svelte        — slot="header", slot="item"
+  errors/Errors.svelte     — svelte:fragment slot="cell"
+  grid/Root.svelte         — defines slot name="header", name="row", name="cell"
+
+  Migration path: Refactor grid/Root.svelte to {#snippet} API and update all
+  table consumers. Largest remaining Svelte 4 surface area.
+
+Generated shadcn / bits-ui stubs (src/lib/components/ui/**):
+  - export let, on:click forwarding, let:builder on range-calendar components
+  - Intentionally excluded from check:svelte5 and focused eslint scope
+  - Update when shadcn-svelte registry provides Svelte 5 variants
+
+9.3 Svelte 5 snippets already in use
+------------------------------------
+
+  Dashboard.svelte (ComboBox triggers)
+  ComboBox.svelte
+  Nav.svelte (tooltip child snippet)
+  codemirror/extensions/combobox/comboWidget.svelte
+  Various src/lib/components/ui/* (calendar, menubar, select, sidebar)
+
+
+10. KEY FILE REFERENCE
+----------------------
+
+E2E:
+  packages/fava/e2e/app.spec.ts
+  packages/fava/e2e/editor-save.spec.ts
+  packages/fava/e2e/navigation.spec.ts
+  packages/fava/e2e/helpers.ts
+  packages/fava/playwright.config.ts
+
+Svelte 5 / UI:
+  packages/fava/src/components/Dashboard.svelte
+  packages/fava/src/components/ComboBox.svelte
+  packages/fava/src/components/Main.svelte (src/Main.svelte)
+  packages/fava/src/components/Nav.svelte
+  packages/fava/src/components/Editor.svelte
+
+Data / runtime:
+  packages/fava/src/core/ledger-data-class.ts
+  packages/fava/src/charts/context.ts
+  packages/fava/src/components/JournalTable.svelte
+  packages/fava/src/components/AccountTable.svelte
+  packages/fava/src/components/helpers.ts
+
+Styles:
+  packages/fava/src/styles/ledger.css
+  packages/fava/style.scss
+
+Checks:
+  packages/fava/eslint.config.js
+  packages/fava/svelte.config.js
+  packages/fava/scripts/check-svelte5-patterns.mjs
+  packages/fava/tsconfig.json
+  turbo.json
+  package.json (root)
+
+
+11. RECOMMENDED FOLLOW-UP
+-------------------------
+
+1. Grid slot → snippet migration (grid/Root.svelte + all table consumers)
+2. Reduce svelte-check baseline (~264 errors):
+   - onclick on bits-ui Menubar wrappers where typed as never
+   - Unify Interval type between @beancount-js/filters and fava/src/lib/interval
+   - Yaml editor typings (YamlEditor<T> properties)
+   - Incremental export let → $props() migration
+3. Wire pnpm checks into CI; consider splitting:
+   - checks:fast (fmt + lint + check:svelte5) for green gate
+   - check (svelte-check) as separate job until baseline cleared
+4. Library package check-types: fix grammar .d.ts export paths and moduleResolution
+5. Regenerate or update shadcn-svelte components under src/lib when upstream supports Svelte 5
+
+
+12. QUICK COMMAND REFERENCE
+---------------------------
+
+  pnpm build                    # build all packages
+  pnpm dev                      # fava dev server
+  pnpm test:e2e                 # playwright (fava)
+  pnpm checks                   # all package checks via turbo
+
+  cd packages/fava
+  pnpm checks                   # fmt + lint + svelte5 patterns + svelte-check
+  pnpm fmt:check
+  pnpm lint
+  pnpm check:svelte5
+  pnpm check

@@ -5,6 +5,7 @@
   import { createRouter, RouterKey } from "./router/router";
   import { MainNav } from "./menu";
   import { LedgerSource } from "./core/ledger";
+  import { createDocumentLoader, preloadIncludes } from "./lib/includes";
   import Editor from "./components/Editor.svelte";
   import Errors from "./components/errors/Errors.svelte";
   import JournalTable from "./components/JournalTable.svelte";
@@ -17,11 +18,14 @@
   import AccountDetails from "./components/AccountDetails.svelte";
   import ImportTable from "./components/ImportTable.svelte";
   import ImportEditor from "./components/ImportEditor.svelte";
-  import "@fontsource/source-code-pro";
+  import * as Tooltip from "$lib/components/ui/tooltip";
+  import "@fontsource/source-code-pro/400.css";
+  import "@fontsource/source-code-pro/600.css";
   import "./codemirror/themes/base.scss";
 
   const LEDGER_KEY = "ledger";
   const defaultLedger = ";; Beancount Ledger\n";
+  const loadProps = { documentLoader: createDocumentLoader() };
 
   const context = createContext();
   const navigation = createRouter(
@@ -47,13 +51,31 @@
 
   context.menu.set([MainNav]);
   context.ledgerSource.set(
-    new LedgerSource(localStorage.getItem(LEDGER_KEY) || defaultLedger),
+    new LedgerSource(
+      localStorage.getItem(LEDGER_KEY) || defaultLedger,
+      loadProps,
+    ),
   );
 
   setContext(ContextKey, context);
   setContext(RouterKey, navigation);
 
   onMount(() => {
+    void preloadIncludes(["sample.beancount"]).then(() => {
+      const stored = localStorage.getItem(LEDGER_KEY);
+      if (stored) {
+        context.ledgerSource.set(new LedgerSource(stored, loadProps));
+        return;
+      }
+      void fetch("/sample.beancount")
+        .then((res) => (res.ok ? res.text() : null))
+        .then((sample) => {
+          if (sample) {
+            context.ledgerSource.set(new LedgerSource(sample, loadProps));
+          }
+        });
+    });
+
     const unsub = context.ledgerSource.subscribe((source) => {
       if (source) {
         localStorage.setItem(LEDGER_KEY, source.toString());
@@ -63,4 +85,6 @@
   });
 </script>
 
-<Dashboard />
+<Tooltip.Provider delayDuration={0}>
+  <Dashboard />
+</Tooltip.Provider>

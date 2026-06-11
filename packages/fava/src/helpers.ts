@@ -4,7 +4,9 @@ export function urlFor(
   path: string,
   params?: Record<string, string | number | undefined>,
 ): string {
-  const url = `${path}`;
+  const url = path.startsWith("#")
+    ? path
+    : `#${path.startsWith("/") ? path : `/${path}`}`;
   const urlParams = new URLSearchParams();
   if (params) {
     Object.entries(params).forEach(([key, value]) => {

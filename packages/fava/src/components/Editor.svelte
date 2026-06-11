@@ -18,6 +18,7 @@
   import { goToLine, showGotoLine } from "../codemirror/extensions/gotoline";
   import { useContext } from "../context";
   import { LedgerSource } from "../core/ledger";
+  import { createDocumentLoader } from "../lib/includes";
   import { useNavigation } from "../router/router";
 
   const {
@@ -85,7 +86,11 @@
     }
   }
 
-  $: if (editor && $activeRoute.query["line"] && line !== $activeRoute.query["line"]) {
+  $: if (
+    editor &&
+    $activeRoute.query["line"] &&
+    line !== $activeRoute.query["line"]
+  ) {
     line = $activeRoute.query["line"];
     goToLine(editor, line);
   }
@@ -94,10 +99,10 @@
     if (formatOnSave) {
       formatLedger(editor);
     }
-    const source = new LedgerSource(
-      editor.state.doc.toString(),
-      $ledgerSource.props,
-    );
+    const source = new LedgerSource(editor.state.doc.toString(), {
+      ...$ledgerSource.props,
+      documentLoader: createDocumentLoader(),
+    });
     ledgerSource.set(source);
   }
 
@@ -136,7 +141,9 @@
               Format <Menubar.Shortcut class="pl-2">⌘ + D</Menubar.Shortcut>
             </Menubar.Item>
             <Menubar.Item inset on:click={() => toggleComment(editor)}>
-              Toggle Comment <Menubar.Shortcut class="pl-2">⌘ + /</Menubar.Shortcut>
+              Toggle Comment <Menubar.Shortcut class="pl-2"
+                >⌘ + /</Menubar.Shortcut
+              >
             </Menubar.Item>
             <Menubar.Item on:click={() => unfoldAll(editor)}>
               <UnfoldVertical class="mr-2 size-4" /> Open all folds
@@ -149,8 +156,12 @@
               <Menubar.SubTrigger class="pl-8">Find</Menubar.SubTrigger>
               <Menubar.SubContent>
                 <Menubar.Item on:click={showSearch}>Find...</Menubar.Item>
-                <Menubar.Item on:click={() => findNext(editor)}>Find Next</Menubar.Item>
-                <Menubar.Item on:click={() => findPrevious(editor)}>Find Previous</Menubar.Item>
+                <Menubar.Item on:click={() => findNext(editor)}
+                  >Find Next</Menubar.Item
+                >
+                <Menubar.Item on:click={() => findPrevious(editor)}
+                  >Find Previous</Menubar.Item
+                >
               </Menubar.SubContent>
             </Menubar.Sub>
           </Menubar.Content>
@@ -162,7 +173,7 @@
         size="sm"
         aria-label="Save Ledger"
         variant="default"
-        on:click={() => handleSave()}
+        onclick={() => handleSave()}
       >
         <Save class="mr-1 size-4" /> Save
       </Button>

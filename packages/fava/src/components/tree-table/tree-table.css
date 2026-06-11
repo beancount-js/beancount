@@ -1,69 +1,37 @@
 /* Collapsible trees
  *
- * some of the shared styles are in `journal-table.css`.
- *
- * The styles for .tree-table are not used in Fava anymore but are again provided
- * for extensions for the near future.
+ * Shared flex-table layout lives in journal-table.css.
  */
 
- .tree-table-new p {
-    margin-top: -1px;
-  }
-  
-  .tree-table-new p > span {
-    margin-right: -1px;
-    margin-top: -1px;
-  }
-  
-  .tree-table-new .num {
-    /** Space for about 14 characters, so a number like 1234512345.123 fits. */
-    width: 9em;
-  }
-  
-  .tree-table-new .other {
-    /** Space for about 18 (four more) characters, so an amount like 1234512345.123 USD fits. */
-    width: 12em;
-  }
-  
-  /* For two or more operating currencies, set a slightly smaller size. */
-  .two-currencies {
-    font-size: 0.9em;
-  }
-  
-  .two-currencies .num {
-    width: 8em;
-  }
-  
-  .two-currencies .other {
-    width: 11em;
-  }
- 
-  
-  /* stylelint-disable no-descending-specificity */
-
-.flex-table p,
-.flex-table li,
-.flex-table ul,
-.flex-table ol {
-  padding: 0;
-  margin: 0;
+.tree-table-new p {
+  margin-top: -1px;
 }
 
-.flex-table p {
-  display: flex;
+.tree-table-new p > span {
+  margin-right: -1px;
+  margin-top: -1px;
+  border: 1px solid var(--table-border-color);
 }
 
-.flex-table p > span {
-  flex-shrink: 0;
-  padding: 2px 4px;
+.tree-table-new .num {
+  /** Space for about 14 characters, so a number like 1234512345.123 fits. */
+  width: 9em;
 }
 
-.flex-table .num {
-  text-align: right;
+.tree-table-new .other {
+  /** Space for about 18 (four more) characters, so an amount like 1234512345.123 USD fits. */
+  width: 12em;
 }
 
-.flex-table .head p > span {
-  padding: 3px 4px;
-  color: hsl(var(--muted-foreground) / var(--tw-text-opacity, 1));
-  background-color: var(--table-header-background);
+/* For two or more operating currencies, set a slightly smaller size. */
+.two-currencies {
+  font-size: 0.9em;
+}
+
+.two-currencies .num {
+  width: 8em;
+}
+
+.two-currencies .other {
+  width: 11em;
 }

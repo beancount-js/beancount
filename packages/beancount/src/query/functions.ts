@@ -7,10 +7,7 @@ import {
 import { Position } from "../core/position";
 import { Amount, Decimal, isValidNumber } from "../core/amount";
 import { Inventory } from "../core/inventory";
-import {
-  CounterInventory,
-  SimpleCounterInventory,
-} from "../core/inventory";
+import { CounterInventory, SimpleCounterInventory } from "../core/inventory";
 import { Conversion, costOrValue } from "../core/conversion";
 import * as _ from "lodash";
 import { DateTime } from "luxon";

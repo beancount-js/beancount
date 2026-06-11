@@ -16,7 +16,7 @@
   import { Button } from "$lib/components/ui/button";
   import { ArrowUpDown } from "lucide-svelte";
   import type { PaneAPI } from "paneforge/dist/components/types";
-  import { derived } from "svelte/store";
+  import { writable } from "svelte/store";
   import { useLedger } from "./helpers";
   import { Query } from "@beancount-js/beancount";
   import { cn } from "$lib/utils";
@@ -32,40 +32,42 @@
 
   let pane: PaneAPI;
   let init: boolean = false;
+  const sidebarCollapsed = writable(false);
 
   $: showSidebar = menus.flat().length > 1;
 
-  $: isCollapsed = derived([ledgerData], ([$ledgerData]) => {
-    const value = $ledgerData.options.ledger.dashboard_collapsed;
-    if (pane) {
-      if (!init) {
-        init = true;
-        if (value && !pane.isCollapsed()) {
-          pane.collapse();
-        } else if (!value && !pane.isExpanded()) {
-          pane.expand();
-        }
-      }
+  $: if (pane && !init && $ledgerData) {
+    init = true;
+    sidebarCollapsed.set($ledgerData.options.ledger.dashboard_collapsed);
+    if ($sidebarCollapsed && !pane.isCollapsed()) {
+      pane.collapse();
+    } else if (!$sidebarCollapsed && !pane.isExpanded()) {
+      pane.expand();
     }
-    return value;
-  });
+  }
 
-  function onCollapse() {
+  function persistSidebarCollapsed(collapsed: boolean) {
     if (!init) {
       return;
     }
     ledgerSource.set(
-      $ledgerSource.withLedgerOption("dashboard_collapsed", "true"),
+      $ledgerSource.withLedgerOption(
+        "dashboard_collapsed",
+        collapsed ? "true" : "false",
+      ),
     );
   }
 
-  function onExpand() {
-    if (!init) {
-      return;
-    }
-    ledgerSource.set(
-      $ledgerSource.withLedgerOption("dashboard_collapsed", "false"),
-    );
+  function handleCollapse() {
+    sidebarCollapsed.set(true);
+    pane?.collapse();
+    queueMicrotask(() => persistSidebarCollapsed(true));
+  }
+
+  function handleExpand() {
+    sidebarCollapsed.set(false);
+    pane?.expand();
+    queueMicrotask(() => persistSidebarCollapsed(false));
   }
 
   $: getMenu = () => {
@@ -118,11 +120,11 @@
     if (!account) {
       return;
     } else if (account === "-") {
-      router.push("/accounts");
+      router.push("#/accounts");
       return;
     }
 
-    router.push("/account/" + account);
+    router.push("#/account/" + account);
   }
 
   function navigateToQuery(query: string) {
@@ -130,7 +132,7 @@
       return;
     }
     bqlQuery.set(query);
-    router.push("/query?qs=" + encodeURIComponent(query));
+    router.push("#/query?qs=" + encodeURIComponent(query));
   }
 </script>
 
@@ -138,21 +140,21 @@
   {#if showSidebar}
     <div class="flex w-full items-center">
       <div
-        data-collapsed={$isCollapsed}
+        data-collapsed={$sidebarCollapsed}
         class={cn("group flex flex-col gap-4 pb-2 data-[collapsed=true]:py-2", {
-          "min-w-[45px] max-w-[45px]": $isCollapsed,
+          "min-w-[45px] max-w-[45px]": $sidebarCollapsed,
         })}
       >
         <nav
           class="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2"
         >
-          {#if $isCollapsed}
+          {#if $sidebarCollapsed}
             <Button
               aria-label="Expand"
               size="icon"
               variant="ghost"
               class="size-9"
-              on:click={() => pane.expand()}
+              onclick={handleExpand}
             >
               <PanelLeftOpen class="size-5 text-primary/60" />
             </Button>
@@ -162,7 +164,7 @@
               size="icon"
               variant="ghost"
               class="size-9"
-              on:click={() => pane.collapse()}
+              onclick={handleCollapse}
             >
               <PanelLeftClose class="size-5 text-primary/60" />
             </Button>
@@ -177,21 +179,28 @@
       <Resizable.Pane
         collapsedSize={navCollapsedSize}
         collapsible
+        bind:pane
         class={cn("h-screen", {
-          "min-w-[175px]": !$isCollapsed,
-          "min-w-[45px] max-w-[45px]": $isCollapsed,
+          "min-w-[175px]": !$sidebarCollapsed,
+          "min-w-[45px] max-w-[45px]": $sidebarCollapsed,
         })}
         minSize={10}
         maxSize={15}
-        {onCollapse}
-        {onExpand}
+        onCollapse={() => {
+          sidebarCollapsed.set(true);
+          persistSidebarCollapsed(true);
+        }}
+        onExpand={() => {
+          sidebarCollapsed.set(false);
+          persistSidebarCollapsed(false);
+        }}
       >
         {#each menus as items, i}
-          <Nav isCollapsed={$isCollapsed} {items} />
+          <Nav isCollapsed={$sidebarCollapsed} {items} />
           {#if i == 0}
             {#if queries.length}
               <div
-                data-collapsed={$isCollapsed}
+                data-collapsed={$sidebarCollapsed}
                 class="group flex flex-col gap-4 pb-2 data-[collapsed=true]:py-2"
               >
                 <nav
@@ -200,42 +209,45 @@
                   <ComboBox
                     items={queries}
                     placeholder="Select Query"
-                    value={$activeRoute.query["qs"]}
+                    value={$activeRoute.query["qs"] ?? ""}
                     onValueChange={navigateToQuery}
                   >
-                    <svelte:fragment
-                      slot="trigger"
-                      let:builder
-                      let:open
-                      let:value
-                    >
-                      {#if $isCollapsed}
+                    {#snippet trigger({
+                      props,
+                      value: label,
+                      open: isOpen,
+                      hasSelection,
+                    })}
+                      {#if $sidebarCollapsed}
                         <Button
-                          builders={[builder]}
+                          {...props}
                           variant="ghost"
                           size="icon"
                           class="size-9"
+                          aria-expanded={isOpen}
                         >
                           <ChevronsRight class="size-4" />
-                          <span class="sr-only size-4">{value}</span>
+                          <span class="sr-only">{label}</span>
                         </Button>
                       {:else}
                         <Button
+                          {...props}
                           size="sm"
-                          builders={[builder]}
                           variant="ghost"
                           role="combobox"
-                          aria-expanded={open}
+                          aria-expanded={isOpen}
                           class="mx-1 w-full justify-start px-2"
                         >
-                          <ChevronsRight class="mr-2 size-4" />
+                          <ChevronsRight class="mr-2 size-4 shrink-0" />
                           <span
-                            class="max-w-[120px] overflow-hidden overflow-ellipsis text-xs"
-                            >{value}</span
+                            class={cn(
+                              "min-w-0 flex-1 overflow-hidden text-ellipsis text-xs",
+                              !hasSelection && "text-muted-foreground",
+                            )}>{label}</span
                           >
                         </Button>
                       {/if}
-                    </svelte:fragment>
+                    {/snippet}
                   </ComboBox>
                 </nav>
               </div>
@@ -243,7 +255,7 @@
             {#if accounts.length}
               <Separator />
               <div
-                data-collapsed={$isCollapsed}
+                data-collapsed={$sidebarCollapsed}
                 class:py-2={menus.length == 1}
                 class="group flex flex-col gap-4 pt-2 data-[collapsed=true]:py-2"
               >
@@ -253,43 +265,46 @@
                   <ComboBox
                     items={accounts}
                     groups={[accountGroups]}
-                    value={$activeRoute.params["account"]}
+                    value={$activeRoute.params["account"] ?? ""}
                     placeholder="Select Account"
                     onValueChange={navigateToAccount}
                   >
-                    <svelte:fragment
-                      slot="trigger"
-                      let:builder
-                      let:open
-                      let:value
-                    >
-                      {#if $isCollapsed}
+                    {#snippet trigger({
+                      props,
+                      value: label,
+                      open: isOpen,
+                      hasSelection,
+                    })}
+                      {#if $sidebarCollapsed}
                         <Button
-                          builders={[builder]}
+                          {...props}
                           variant="ghost"
                           size="icon"
                           class="size-9"
+                          aria-expanded={isOpen}
                         >
                           <ArrowUpDown class="size-4" />
-                          <span class="sr-only size-4">{value}</span>
+                          <span class="sr-only">{label}</span>
                         </Button>
                       {:else}
                         <Button
+                          {...props}
                           size="sm"
-                          builders={[builder]}
                           variant="ghost"
                           role="combobox"
-                          aria-expanded={open}
+                          aria-expanded={isOpen}
                           class="mx-1 w-full justify-start px-2"
                         >
-                          <ArrowUpDown class="mr-2 size-4" />
+                          <ArrowUpDown class="mr-2 size-4 shrink-0" />
                           <span
-                            class="max-w-[120px] overflow-hidden overflow-ellipsis text-xs"
-                            >{value}</span
+                            class={cn(
+                              "min-w-0 flex-1 overflow-hidden text-ellipsis text-xs",
+                              !hasSelection && "text-muted-foreground",
+                            )}>{label}</span
                           >
                         </Button>
                       {/if}
-                    </svelte:fragment>
+                    {/snippet}
                   </ComboBox>
                 </nav>
               </div>
@@ -302,9 +317,9 @@
       <Resizable.Handle
         class="hover:border-s-3 !cursor-col-resize border-s-2 border-solid border-border hover:border-foreground"
       />
-      <Resizable.Pane>
-        <div class="">
-          <div class="pr-2">
+      <Resizable.Pane class="min-w-0 overflow-hidden">
+        <div class="h-full min-w-0 overflow-hidden">
+          <div class="h-full min-w-0 overflow-hidden pr-2">
             <View />
           </div>
         </div>

@@ -143,7 +143,7 @@ export function useDataset<T>(
           }
         } else {
           let value = stringify(rowvalue);
-          if (value.contains("\n")) {
+          if (value.includes("\n")) {
             value = value
               .split("\n")
               .sort((a: string, b: string) => b.length - a.length)[0];

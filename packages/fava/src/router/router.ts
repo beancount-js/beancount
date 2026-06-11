@@ -1,9 +1,4 @@
-import {
-  getContext,
-  tick,
-  type Component,
-  type ComponentType,
-} from "svelte";
+import { getContext, tick, type Component, type ComponentType } from "svelte";
 import type { Unsubscriber } from "svelte/motion";
 import {
   derived,
@@ -44,6 +39,20 @@ export function normalizePath(path: string): string {
     path = "/" + path;
   }
   return path;
+}
+
+export function pathFromHash(hash: string = window.location.hash): string {
+  if (!hash || hash === "#") {
+    return "/editor";
+  }
+  return normalizePath(hash);
+}
+
+function syncHash(path: string) {
+  const hash = path.startsWith("?") ? path : `#${path}`;
+  if (window.location.hash !== hash) {
+    window.location.hash = hash;
+  }
 }
 
 class HistoryManager {
@@ -181,7 +190,7 @@ export class Router {
         replace
           ? this.history.replaceState(props)
           : this.history.pushState(props);
-        window.history.replaceState({}, "", props.path);
+        syncHash(props.path);
         return;
       }
     }
@@ -220,22 +229,34 @@ export function createRouter(
   routes: Array<Route>,
   path: string = "/",
 ): RouterContext {
-  const state = writable<string>(path);
+  const initialPath = pathFromHash();
+  const state = writable<string>(initialPath);
 
   const activeRoute = writable<RouteProperties>({
-    path,
+    path: initialPath,
     query: {},
     params: {},
   });
   const router = new Router(state, new HistoryManager(activeRoute));
   router.createRouter(routes);
-  router.set(path, true);
+  router.set(initialPath, true);
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("hashchange", () => {
+      const next = pathFromHash();
+      if (get(state) !== next) {
+        router.push(next);
+      }
+    });
+  }
 
   const isActive = derived(activeRoute, ($activeRoute) => {
     return (routePath: string): boolean => {
       routePath = normalizePath(routePath);
       const active = normalizePath($activeRoute.path);
-      return active === routePath || (routePath && active.startsWith(routePath));
+      return (
+        active === routePath || (routePath && active.startsWith(routePath))
+      );
     };
   });
 

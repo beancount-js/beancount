@@ -10,7 +10,7 @@
     AccountHierarchyNode,
   } from "./hierarchy";
   import { useCtx } from "../stores/format";
-    import { urlForAccount } from "../helpers";
+  import { urlForAccount } from "../helpers";
 
   const ctx = useCtx();
   const sunburstScale = useSunburstScale();
@@ -28,7 +28,6 @@
   let current: AccountHierarchyNode | null = null;
 
   // if-expression to run labelled statement on each change of root
-  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
   $: if (root) {
     current = null;
   }
@@ -69,7 +68,8 @@
         on:focus={() => {
           current = d;
         }}
-        class:fill-muted={current && !current.data.account.startsWith(d.data.account)}
+        class:fill-muted={current &&
+          !current.data.account.startsWith(d.data.account)}
         fill-rule="evenodd"
         fill={$sunburstScale(d.data.account)}
         d={arcShape(d)}
@@ -77,7 +77,7 @@
       />
     </a>
   {/each}
-  <text class="fill-current font-mono z-50" text-anchor="middle">
+  <text class="z-50 fill-current font-mono" text-anchor="middle">
     {(current ?? root).data.account}
   </text>
   <text class="fill-foreground/50" dy="1.2em" text-anchor="middle">

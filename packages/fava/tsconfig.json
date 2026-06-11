@@ -12,9 +12,7 @@
     "useDefineForClassFields": true,
 		"lib": [
         "DOM",
-        "ES5",
-        "ES6",
-        "ES7"
+        "ES2021"
     ],
 		"verbatimModuleSyntax": true,
     "paths": {
@@ -32,5 +30,7 @@
   ],
   "exclude": [
 		"./node_modules/**",
+		"../**/dist/**",
+		"./dist/**"
   ]
 }

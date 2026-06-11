@@ -96,7 +96,7 @@
         class="cm-line-editor cm-s-vars flex h-9 w-full rounded-md border bg-transparent px-3 py-1 pl-6 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-within:outline-ring focus-within:ring-2 focus-within:ring-ring data-[error=true]:bg-destructive/20"
       ></div>
       <Button
-        on:click={clearSearch}
+        onclick={clearSearch}
         variant="ghost"
         size="sm"
         class="absolute right-2 top-[50%] translate-y-[-50%]"

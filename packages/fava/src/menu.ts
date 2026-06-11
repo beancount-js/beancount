@@ -28,38 +28,38 @@ export interface MenuItem {
 export const MainNav: Array<MenuItem> = [
   {
     name: "Editor",
-    path: "/editor",
+    path: "#/editor",
     icon: Edit,
   },
   {
     name: "Income Statement",
-    path: "/income_statement",
+    path: "#/income_statement",
     icon: Wallet,
   },
   {
     name: "Balance Sheet",
-    path: "/balance_sheet",
+    path: "#/balance_sheet",
     icon: Scale,
   },
   {
     name: "Trial Balance",
-    path: "/trial_balance",
+    path: "#/trial_balance",
     icon: Weight,
   },
-  { name: "Journal", path: "/journal", icon: NotebookText },
+  { name: "Journal", path: "#/journal", icon: NotebookText },
   {
     name: "Holdings",
-    path: "/holdings",
+    path: "#/holdings",
     icon: ChartArea,
   },
   {
     name: "Statistics",
-    path: "/statistics",
+    path: "#/statistics",
     icon: ChartPie,
   },
   {
     name: "Query",
-    path: "/query",
+    path: "#/query",
     icon: Search,
   },
 ];

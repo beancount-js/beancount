@@ -18,7 +18,6 @@ import {
   Document,
   type ScalarType,
   SOURCE_META,
-  filterLedger,
 } from "@beancount-js/beancount";
 import type { AccountDetails } from "./account";
 import type { Options } from "../context";
@@ -37,7 +36,10 @@ import {
   md5,
 } from "@beancount-js/parser";
 import { DateTime } from "luxon";
-import type { Filter } from "@beancount-js/filters";
+import { LedgerData } from "./ledger-data-class";
+
+export { LedgerData } from "./ledger-data-class";
+export type { IntervalTree } from "./ledger-data-class";
 export interface LedgerTaxonomy {
   tags: Array<string>;
   links: Array<string>;
@@ -409,84 +411,5 @@ export class LedgerSource {
       `${custom.toString()}\n${this.doc.doc.toString()}`,
       this.props,
     );
-  }
-}
-
-export class LedgerData {
-  readonly accountDetails: Record<string, AccountDetails> = {};
-  readonly currencyNames: Record<string, string> = {};
-  readonly precisions: Record<string, number> = {};
-
-  #directives: Directives;
-
-  constructor(
-    directives: Directives,
-    readonly taxonomy: LedgerTaxonomy,
-    readonly prices: PriceMap,
-    readonly options: Options,
-    readonly errors: Array<LedgerError> = [],
-  ) {
-    this.#directives = directives;
-  }
-
-  copy(
-    data: Partial<{
-      readonly taxonomy: LedgerTaxonomy;
-      directives: Directives;
-      prices: PriceMap;
-      readonly options: Options;
-      readonly errors: Array<LedgerError>;
-    }>,
-  ) {
-    return new LedgerData(
-      data.directives ?? [...this.directives],
-      data.taxonomy ?? { ...this.taxonomy },
-      data.prices ?? this.prices,
-      data.options ?? { ...this.options },
-      data.errors ?? [...this.errors],
-    );
-  }
-
-  get directives(): Directives {
-    return [...this.#directives];
-  }
-
-  get tags(): Array<string> {
-    return this.taxonomy.tags;
-  }
-
-  get links(): Array<string> {
-    return this.taxonomy.links;
-  }
-
-  get currencies(): Array<string> {
-    return this.taxonomy.currencies;
-  }
-
-  get payees(): Array<string> {
-    return this.taxonomy.payees;
-  }
-
-  get accounts(): Array<string> {
-    return this.taxonomy.accounts;
-  }
-
-  get years(): Array<string> {
-    return this.taxonomy.years;
-  }
-
-  filter(filter?: Filter | string) {
-    if (!filter) {
-      return this;
-    }
-    const errors = [...this.errors];
-    const [filtered, filterErrors] = filterLedger(this.directives, filter);
-    if (filterErrors.length) {
-      errors.push(...filterErrors.map((it) => new LoadError(it)));
-    }
-    return this.copy({
-      directives: filtered,
-      errors,
-    });
   }
 }

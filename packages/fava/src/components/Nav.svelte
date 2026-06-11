@@ -1,14 +1,19 @@
 <script lang="ts">
   import * as Tooltip from "$lib/components/ui/tooltip";
-  import { Button } from "$lib/components/ui/button";
+  import { buttonVariants } from "$lib/components/ui/button";
   import { cn } from "$lib/utils";
   import type { MenuItem } from "../menu";
-  import { useNavigation } from "../router/router";
+  import { normalizePath, useNavigation } from "../router/router";
 
   export let isCollapsed: boolean;
   export let items: Array<MenuItem>;
 
-  const { isActive } = useNavigation();
+  const { isActive, router } = useNavigation();
+
+  function navigate(path: string, event: MouseEvent) {
+    event.preventDefault();
+    router.updateState(normalizePath(path));
+  }
 </script>
 
 <div
@@ -21,22 +26,29 @@
     {#each items as item}
       {@const active = $isActive(item.path)}
       {#if isCollapsed}
-        <Tooltip.Root openDelay={0}>
-          <Tooltip.Trigger asChild let:builder>
-            <Button
-              href={item.path}
-              builders={[builder]}
-              variant={active ? "default" : "ghost"}
-              size="icon"
-              class={cn("size-9")}
-            >
-              <svelte:component
-                this={item.icon}
-                class="size-4"
-                aria-hidden="true"
-              />
-              <span class="sr-only size-4">{item.name}</span>
-            </Button>
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            {#snippet child({ props })}
+              <a
+                {...props}
+                href={item.path}
+                class={cn(
+                  buttonVariants({
+                    variant: active ? "default" : "ghost",
+                    size: "icon",
+                  }),
+                  "size-9",
+                )}
+                onclick={(event) => navigate(item.path, event)}
+              >
+                <svelte:component
+                  this={item.icon}
+                  class="size-4"
+                  aria-hidden="true"
+                />
+                <span class="sr-only">{item.name}</span>
+              </a>
+            {/snippet}
           </Tooltip.Trigger>
           <Tooltip.Content side="right" class="flex items-center gap-4">
             {item.name}
@@ -48,13 +60,17 @@
           </Tooltip.Content>
         </Tooltip.Root>
       {:else}
-        <Button
+        <a
           href={item.path}
-          variant={active ? "default" : "ghost"}
-          size="sm"
-          class={cn("justify-start", {
-            "hover:text-primary-foreground": active,
-          })}
+          class={cn(
+            buttonVariants({
+              variant: active ? "default" : "ghost",
+              size: "sm",
+            }),
+            "justify-start",
+            { "hover:text-primary-foreground": active },
+          )}
+          onclick={(event) => navigate(item.path, event)}
         >
           <svelte:component
             this={item.icon}
@@ -71,7 +87,7 @@
               {item.label}
             </span>
           {/if}
-        </Button>
+        </a>
       {/if}
     {/each}
   </nav>

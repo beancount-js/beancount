@@ -9,10 +9,7 @@ import {
   type Directive,
   type Directives,
 } from "../core/data";
-import {
-  CounterInventory,
-  SimpleCounterInventory,
-} from "../core/inventory";
+import { CounterInventory, SimpleCounterInventory } from "../core/inventory";
 import { Query } from "./query";
 import * as _ from "lodash";
 import { accountOpenClose, type AccountOpenCloseResponse } from "../core/utils";

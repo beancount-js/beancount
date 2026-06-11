@@ -36,7 +36,7 @@
 </script>
 
 <ol
-  class="flex-table tree-table-new font-mono text-sm text-foreground"
+  class="flex-table tree-table-new text-sm text-foreground"
   class:wider={$operatingCurrency.length > 1}
 >
   <li class="head">

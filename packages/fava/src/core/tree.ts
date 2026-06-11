@@ -1,7 +1,17 @@
 import { parent } from "$lib/accounts";
 import { stratify } from "$lib/tree";
-import { Amount, Conversion, CounterInventory, DefaultMap, InventoryKey, Open, Transaction, type BeancountOptions, type Directives } from "@beancount-js/beancount";
-import  { Decimal } from "@beancount-js/parser";
+import {
+  Amount,
+  Conversion,
+  CounterInventory,
+  DefaultMap,
+  InventoryKey,
+  Open,
+  Transaction,
+  type BeancountOptions,
+  type Directives,
+} from "@beancount-js/beancount";
+import { Decimal } from "@beancount-js/parser";
 import type { AccountTreeNode } from "./account";
 
 export interface BalanceRecord {
@@ -210,21 +220,21 @@ export class Tree extends DefaultMap<string, TreeNode> {
 }
 
 export function createNode(tree: Tree, account: string) {
-    return stratify(
-            tree.get(account).accounts,
-            (id) => id,
-            (name) => {
-                const node = tree.get(name);
-                const entity: AccountTreeNode = {
-                    children: [],
-                    account: name,
-                    balance: node.balance.toRecord(),
-                    balanceChildren: node.balanceChildren.toRecord(),
-                    cost: {},
-                    costChildren: {},
-                    hasTxns: node.hasTxns,
-                };
-                return entity;
-            },
-        );
+  return stratify(
+    tree.get(account).accounts,
+    (id) => id,
+    (name) => {
+      const node = tree.get(name);
+      const entity: AccountTreeNode = {
+        children: [],
+        account: name,
+        balance: node.balance.toRecord(),
+        balanceChildren: node.balanceChildren.toRecord(),
+        cost: {},
+        costChildren: {},
+        hasTxns: node.hasTxns,
+      };
+      return entity;
+    },
+  );
 }

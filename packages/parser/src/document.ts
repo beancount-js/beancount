@@ -87,7 +87,7 @@ export class BeanCountDocument {
     return this.options.filename;
   }
 
-  #hash: string = ""
+  #hash: string = "";
   get hash() {
     if (this.#hash === "") {
       this.#hash = md5(this.contents);

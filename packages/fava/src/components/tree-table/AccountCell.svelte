@@ -56,8 +56,7 @@
           stroke-width="2"
           stroke-linecap="round"
           stroke-linejoin="round"
-          class="lucide lucide-chevron-right"
-          ><path d="m9 18 6-6-6-6" /></svg
+          class="lucide lucide-chevron-right"><path d="m9 18 6-6-6-6" /></svg
         >
       {:else}
         <svg
@@ -70,8 +69,7 @@
           stroke-width="2"
           stroke-linecap="round"
           stroke-linejoin="round"
-          class="lucide lucide-chevron-down"
-          ><path d="m6 9 6 6 6-6" /></svg
+          class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6" /></svg
         >
       {/if}
     </button>
@@ -93,6 +91,7 @@
   }
 
   span {
+    position: relative;
     display: flex;
     flex: 1;
     align-items: center;

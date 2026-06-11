@@ -1,4 +1,5 @@
 import { derived } from "svelte/store";
+import { DateTime } from "luxon";
 
 import { useContext } from "../context";
 import { useCurrentDateFormat } from "../stores/format";
@@ -35,7 +36,7 @@ export function useChartContext() {
       $currentDateFormat,
     ]): ChartContext => ({
       currencies: $operatingCurrenciesWithConversion,
-      dateFormat: $currentDateFormat,
+      dateFormat: (date: Date) => $currentDateFormat(DateTime.fromJSDate(date)),
     }),
   );
 }

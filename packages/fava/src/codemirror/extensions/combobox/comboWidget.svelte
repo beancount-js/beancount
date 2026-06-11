@@ -29,15 +29,17 @@
     {items}
     {onValueChange}
   >
-    {#snippet trigger({ props })}
+    {#snippet trigger({ props, value, open, hasSelection })}
       <Button
         variant="ghost"
         class="inline-block py-0 text-xs"
         {...props}
         role="combobox"
+        aria-expanded={open}
         size="xs"
       >
         <Edit class="size-2" />
+        <span class="sr-only">{value}</span>
       </Button>
     {/snippet}
   </ComboBox>

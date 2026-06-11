@@ -12,6 +12,7 @@
  */
 
 import { permute } from "d3-array";
+import { DateTime } from "luxon";
 import { type Writable } from "svelte/store";
 import { getNumber } from "@beancount-js/beancount";
 import { Decimal } from "@beancount-js/beancount";
@@ -88,7 +89,6 @@ function sortInternal<T, U>(
   const indices = Uint32Array.from(data, (_d, i) => i);
   const values = data.map(value);
   // values and indices are of the same length (as data), so this is safe
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   indices.sort((a, b) => {
     const va = values[a];
     const vb = values[b];
@@ -117,6 +117,19 @@ function nullWrapper(cmp: (a: any, b: any) => number) {
   };
 }
 
+function dateMillis(value: unknown): number {
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+  if (value instanceof DateTime) {
+    return value.toMillis();
+  }
+  if (typeof value === "string") {
+    return new Date(value).getTime();
+  }
+  return 0;
+}
+
 function getComparator(type: string): (a: any, b: any) => number {
   if (type === "amount" || type === "number") {
     return (a, b) => {
@@ -125,14 +138,7 @@ function getComparator(type: string): (a: any, b: any) => number {
       return na.minus(nb).number;
     };
   } else if (type === "date") {
-    return (a, b) => {
-      if (a instanceof Date || b instanceof Date) {
-        return (a?.getTime() ?? 0) - (b?.getTime() ?? 0);
-      } else if (typeof a === "string" && typeof b === "string") {
-        return new Date(a).getTime() - new Date(b).getTime();
-      }
-      return compareStrings(a, b);
-    };
+    return (a, b) => dateMillis(a) - dateMillis(b);
   }
   return (a, b) => compareStrings(a?.toString() || "", b?.toString() || "");
 }

@@ -43,7 +43,7 @@ export class Amount {
   }
 
   isDefined() {
-    if(!this.num) {
+    if (!this.num) {
       return false;
     }
     return true;
@@ -205,7 +205,7 @@ export class Amount {
   public toString(_numeric: boolean = false) {
     if (!this.isDefined()) {
       return "";
-    } 
+    }
     if (this.source) {
       return (this.source + " " + this.currency).trim();
     }

@@ -1,0 +1,102 @@
+.beancount {
+  --font-family: inherit;
+  --font-family-monospaced: "Source Code Pro", "Fira Mono", ui-monospace,
+    SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  --table-header-text: hsl(var(--muted-foreground));
+  --table-header-background: hsl(var(--muted));
+  --table-border-color: hsl(var(--border));
+  --table-border: hsl(var(--border));
+  --treetable-expander: #afc1d3;
+  --budget-negative: hsl(0 72.22% 50.59%);
+  --budget-positive: #3daf46;
+  --journal-postings: transparent;
+  --journal-metadata: hsl(var(--muted-foreground));
+  --journal-tag: hsl(var(--primary));
+  --journal-link: hsl(var(--muted-foreground));
+  --journal-hover-highlight: hsl(var(--muted) / 0.5);
+  --journal-posting-indicator: hsl(var(--primary));
+  --journal-metadata-indicator: hsl(var(--primary));
+  --text-color-lighter: hsl(var(--muted-foreground));
+  font-size: 0.9em;
+}
+
+.dark .beancount {
+  --treetable-expander: hsl(var(--muted-foreground));
+  --budget-negative: hsl(0 62.8% 50%);
+  --budget-positive: hsl(142 45% 45%);
+}
+
+.beancount .flex-table {
+  position: relative;
+  font-family: var(--font-family-monospaced);
+}
+
+.beancount .flex-table a {
+  text-decoration: none;
+}
+
+.beancount .flex-table .clickable-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.beancount .flex-table .clickable-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.beancount .dimmed {
+  opacity: 0.6;
+}
+
+.beancount .journal p {
+  border-bottom: 1px solid var(--table-border-color);
+}
+
+.scroll-container {
+  padding-bottom: 50vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: 100vh;
+  padding-top: 0.5em;
+  padding-right: 1em;
+}
+
+.scroll-container.no-bars {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scroll-container.no-bars::-webkit-scrollbar,
+.scroll-container:has(.scroll-container)::-webkit-scrollbar {
+  display: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scroll-container:has(.scroll-container) {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding-bottom: unset;
+}
+
+.scroll-container .scroll-container {
+  overflow: visible;
+  height: auto;
+  padding-right: unset;
+}
+
+.table-h-scroll {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
