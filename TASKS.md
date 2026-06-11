@@ -22,7 +22,7 @@ Source repo: `/Users/stevejuma/code/obsidian-ledger`
 
 - [x] Create TASKS.md migration tracker
 - [x] Migrate npm workspaces → pnpm
-- [ ] Update and pin dependencies across all packages
+- [x] Update and pin dependencies across all packages
 - [ ] Wire turborepo pipeline tasks
 
 ## Phase 1 — Shell & filters
