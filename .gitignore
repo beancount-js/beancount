@@ -1,3 +1,11 @@
 node_modules
 dist
 .turbo
+.cline
+.clinerules
+.changeyard
+
+
+# Changeyard local guard hooks
+.changeyard/bin/
+.changeyard/guards/
