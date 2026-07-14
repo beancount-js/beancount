@@ -174,7 +174,7 @@ export const mainTabs = [
     name: "Journal",
     path: /#\/journal\?ledger=.+$/,
     assert: async (page: Page) => {
-      await expect(page.locator(".bean-table.flex-table")).toBeVisible();
+      await expect(page.locator("[data-journal-table]")).toBeVisible();
       await expect(page.getByText("Coffee Shop")).toBeVisible();
     },
   },

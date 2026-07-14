@@ -1,444 +1,419 @@
 <script lang="ts">
-  import { formatDate } from "@beancount-js/parser";
-  import {
-    Balance,
-    Close,
-    Custom,
-    isInstanceOf,
-    Open,
-    Pad,
-    Query,
-    Transaction,
-    writeScalar,
-  } from "@beancount-js/beancount";
+  import type { DirectiveBase } from "@beancount-js/beancount";
   import { useContext } from "../context";
-  import { urlFor, urlForAccount, urlForDate } from "../helpers";
-  import { Grid } from "../grid";
-  import { derived, writable } from "svelte/store";
-  import type { Column } from "../grid/grid";
   import { useCtx } from "../stores/format";
-  import { UnfoldVertical, FoldVertical, Edit } from "lucide-svelte";
+  import { useNavigation } from "../router/router";
+  import { Button } from "$lib/components/ui/button";
+  import ChevronDown from "lucide-svelte/icons/chevron-down";
+  import ChevronUp from "lucide-svelte/icons/chevron-up";
+  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
+  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
+  import FileText from "lucide-svelte/icons/file-text";
+  import Info from "lucide-svelte/icons/info";
+  import JournalEditorSheet from "./JournalEditorSheet.svelte";
+  import {
+    groupJournalRecords,
+    journalRecords,
+    orderedBalanceEntries,
+    paginateJournalGroups,
+    postingAmount,
+    type JournalDateGroup,
+    type JournalRecord,
+  } from "./journal-table/model";
 
-  import { chunk } from "./helpers";
-  import EditorDialog from "./EditorDialog.svelte";
-  import { cn } from "$lib/utils";
-
-  // Duplicate detection is no longer annotated by the aligned core, but keep
-  // the renderer tolerant of ledgers that still carry the historical marker.
-  const DUPLICATE_META = "__duplicates__";
-  const { ledgerData } = useContext();
+  const PAGE_SIZES = [25, 50, 100];
+  const { conversion, ledgerData, ledgerSource, operatingCurrency } =
+    useContext();
+  const { activeRoute, router } = useNavigation();
   const ctx = useCtx();
 
-  const toggled = writable<Set<string>>(new Set<string>());
+  let selectedKeys = new Set<string>();
+  let expandedGroups = new Set<string>();
+  let expandedPageSignature = "";
+  let masterCheckbox: HTMLInputElement | undefined;
+  let selectedRecord: JournalRecord | undefined;
+  let editorOpen = false;
 
-  function getHeight(transaction: Transaction): number {
-    let size = 1;
-    size += Math.ceil(transaction.postings.length / 10) - 1;
-    if (transaction.tags.length) size++;
-    if (transaction.links.length) size++;
-    return size;
+  function setIndeterminate(node: HTMLInputElement, value: boolean) {
+    node.indeterminate = value;
+    return {
+      update(next: boolean) {
+        node.indeterminate = next;
+      },
+    };
   }
 
-  const model: Array<Column<any>> = [
-    {
-      id: "date",
-      name: "Date",
-      type: "date",
-      class: "border-solid border-r",
-      sortable: true,
-      value: (row) => formatDate(row.date),
-    },
-    {
-      id: "flag",
-      name: "F",
-      type: "text",
-      class: "border-solid border-r",
-      sortable: true,
-      value: (row) => row.flag,
-    },
-    {
-      id: "account",
-      name: "Account",
-      type: "account",
-      class: "border-solid border-r",
-      sortable: true,
-      value: (row: Transaction) => {
-        const postings = row.postings || [];
-        const data = Array.from(
-          { length: Math.ceil(postings.length / 10) - 1 },
-          () => "-",
-        );
-        if (!data.length && row.accounts.length) {
-          data.push([...row.accounts].sort((a, b) => b.length - a.length)[0]);
-        }
-        if (Array.isArray(row.tags) && row.tags.length) {
-          data.push([...row.tags].sort((a, b) => b.length - a.length)[0]);
-        }
-        if (Array.isArray(row.links) && row.links.length) {
-          data.push([...row.links].sort((a, b) => b.length - a.length)[0]);
-        }
-        const dups = (row.meta[DUPLICATE_META] || []) as Transaction[];
-        if (dups.length) {
-          dups.forEach((dup) => {
-            data.push("-");
-            if (dup.tags.length) {
-              data.push([...dup.tags].sort((a, b) => b.length - a.length)[0]);
-            }
-            if (dup.links.length) {
-              data.push([...dup.links].sort((a, b) => b.length - a.length)[0]);
-            }
-            data.push(
-              ...Array.from(
-                { length: Math.ceil(dup.postings.length / 10) - 1 },
-                () => "-",
-              ),
-            );
-            if (!$toggled.has(dup.id)) {
-              data.push(...dup.postings.map((it) => it.account));
-            }
-          });
-        }
-        if ($toggled.has(row.id)) {
-          return data;
-        }
-        // ${row.payee || ""} ${row.narration || ""}
-        data.push(...postings.map((it) => it.account));
-        console.log(data);
-        return data;
-      },
-    },
-    {
-      id: "units",
-      name: "Units",
-      type: "amount",
-      class: "border-solid border-r text-right",
-      value: (row: any) => {
-        if (row instanceof Transaction) {
-          return $toggled.has(row.id)
-            ? []
-            : (row.postings || []).map((it) => it.units);
-        } else if (row instanceof Balance) {
-          return row.amount;
-        }
-        return [];
-      },
-    },
-    {
-      id: "cost",
-      name: "Cost",
-      type: "amount",
-      class: "border-solid border-r text-right",
-      value: (row: Transaction) =>
-        $toggled.has(row.id) ? [] : (row.postings || []).map((it) => it.cost),
-    },
-    {
-      id: "price",
-      name: "Price",
-      type: "amount",
-      class: "border-solid text-right border-r",
-      value: (row: Transaction) =>
-        $toggled.has(row.id) ? [] : (row.postings || []).map((it) => it.price),
-    },
+  function updateRoute(values: Record<string, string | undefined>) {
+    const query = new URLSearchParams($activeRoute.query);
+    for (const [key, value] of Object.entries(values)) {
+      if (value) query.set(key, value);
+      else query.delete(key);
+    }
+    const next = query.toString();
+    router.updateState(next ? `?${next}` : "?");
+  }
+
+  function toggleRecord(key: string, checked?: boolean) {
+    const next = new Set(selectedKeys);
+    const select = checked ?? !next.has(key);
+    if (select) next.add(key);
+    else next.delete(key);
+    selectedKeys = next;
+  }
+
+  function toggleGroup(group: JournalDateGroup, checked?: boolean) {
+    const keys = group.records.map((record) => record.key);
+    const select = checked ?? !keys.every((key) => selectedKeys.has(key));
+    const next = new Set(selectedKeys);
+    keys.forEach((key) => (select ? next.add(key) : next.delete(key)));
+    selectedKeys = next;
+  }
+
+  function toggleVisible(checked?: boolean) {
+    const keys = visibleGroups.flatMap((group) =>
+      group.records.map((record) => record.key),
+    );
+    const select = checked ?? !keys.every((key) => selectedKeys.has(key));
+    const next = new Set(selectedKeys);
+    keys.forEach((key) => (select ? next.add(key) : next.delete(key)));
+    selectedKeys = next;
+  }
+
+  function toggleSummary(groupKey: string) {
+    const next = new Set(expandedGroups);
+    if (next.has(groupKey)) next.delete(groupKey);
+    else next.add(groupKey);
+    expandedGroups = next;
+  }
+
+  function openRecord(record: JournalRecord) {
+    selectedRecord = record;
+    editorOpen = true;
+    updateRoute({ record: record.key });
+  }
+
+  function handleRecordKeydown(event: KeyboardEvent, record: JournalRecord) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openRecord(record);
+    }
+  }
+
+  function balanceText(balance: Record<string, number>) {
+    const entries = orderedBalanceEntries(balance, $operatingCurrency);
+    return entries.length
+      ? entries
+          .map(([currency, amount]) => $ctx.money(amount, currency))
+          .join(" · ")
+      : "—";
+  }
+
+  function groupDate(group: JournalDateGroup) {
+    return group.date.toFormat("LLLL dd, yyyy").toUpperCase();
+  }
+
+  function recordAmount(record: JournalRecord) {
+    const amount = postingAmount(record);
+    return amount ? $ctx.money(amount) : "—";
+  }
+
+  $: balanceRoots = [
+    $ledgerSource.options.beancount.name_assets,
+    $ledgerSource.options.beancount.name_liabilities,
   ];
-  $: data = derived([ledgerData, toggled], ([$ledgerData]) => {
-    return $ledgerData.directives
-      .filter((it) =>
-        isInstanceOf(it, Transaction, Pad, Balance, Open, Close, Custom, Query),
-      )
-      .reverse();
-  });
-
-  function handleToggle(evt: MouseEvent, tx: Transaction) {
-    evt.preventDefault();
-    toggled.update((t) => {
-      const newSet = new Set(t);
-      const isToggled = newSet.has(tx.id);
-      if (isToggled) {
-        newSet.delete(tx.id);
-      } else {
-        newSet.add(tx.id);
-      }
-      return newSet;
-    });
+  $: records = journalRecords(
+    $ledgerData.directives as readonly DirectiveBase[],
+    balanceRoots,
+  );
+  $: balancesByDate = $ledgerSource.data.accountBalanceByDate(
+    $conversion,
+    ...balanceRoots,
+  );
+  $: groups = groupJournalRecords(records, balancesByDate);
+  $: validKeys = new Set(records.map((record) => record.key));
+  $: if ([...selectedKeys].some((key) => !validKeys.has(key))) {
+    selectedKeys = new Set(
+      [...selectedKeys].filter((key) => validKeys.has(key)),
+    );
   }
-
-  let rowHeight = 24;
-  $: now = new Date();
-
-  function dateToMillis(date: {
-    toMillis?: () => number;
-    getTime?: () => number;
-  }) {
-    return date.toMillis?.() ?? date.getTime?.() ?? 0;
+  $: pageSize = PAGE_SIZES.includes(Number($activeRoute.query.pageSize))
+    ? Number($activeRoute.query.pageSize)
+    : 50;
+  $: pages = paginateJournalGroups(groups, pageSize);
+  $: requestedPage = Math.max(1, Number($activeRoute.query.page) || 1);
+  $: page = Math.min(requestedPage, Math.max(1, pages.length));
+  $: visibleGroups = pages[page - 1] ?? [];
+  $: visibleKeys = visibleGroups.flatMap((group) =>
+    group.records.map((record) => record.key),
+  );
+  $: selectedVisibleCount = visibleKeys.filter((key) =>
+    selectedKeys.has(key),
+  ).length;
+  $: masterChecked =
+    Boolean(visibleKeys.length) && selectedVisibleCount === visibleKeys.length;
+  $: masterIndeterminate = selectedVisibleCount > 0 && !masterChecked;
+  $: if (masterCheckbox) masterCheckbox.indeterminate = masterIndeterminate;
+  $: pageSignature = visibleGroups.map((group) => group.key).join("|");
+  $: if (pageSignature && pageSignature !== expandedPageSignature) {
+    expandedPageSignature = pageSignature;
+    expandedGroups = new Set([visibleGroups[0]!.key]);
+  }
+  $: routeRecord = $activeRoute.query.record;
+  $: if (routeRecord) {
+    const record = records.find((item) => item.key === routeRecord);
+    if (record && record.key !== selectedRecord?.key) {
+      selectedRecord = record;
+      editorOpen = true;
+    }
+    if (!record) {
+      selectedRecord = undefined;
+      editorOpen = false;
+    }
+  } else if (editorOpen) {
+    editorOpen = false;
+    selectedRecord = undefined;
+  }
+  $: if (!editorOpen && selectedRecord && routeRecord === selectedRecord.key) {
+    selectedRecord = undefined;
+    updateRoute({ record: undefined });
   }
 </script>
 
-<div class="flex w-full flex-wrap justify-center p-3">
-  <Grid
-    height={window.innerHeight - 150}
-    padding={window.innerHeight / 2}
-    {rowHeight}
-    heightDiff={3}
-    {data}
-    {model}
-  >
-    <svelte:fragment slot="header" let:column>
-      {#if column.id == "date" && $data.length}
-        {#if !$toggled.size}
-          <button
-            class="clickable-icon view-action inline-block"
-            aria-label="Unfold All"
-            on:click={(evt) => {
-              evt.preventDefault();
-              evt.stopImmediatePropagation();
-              evt.stopPropagation();
-              toggled.set(new Set($ledgerData.directives.map((it) => it.id)));
-            }}
-          >
-            <UnfoldVertical />
-          </button>
-        {:else}
-          <button
-            class="clickable-icon view-action inline-block"
-            aria-label="Fold All"
-            on:click={(evt) => {
-              evt.preventDefault();
-              evt.stopImmediatePropagation();
-              evt.stopPropagation();
-              toggled.set(new Set());
-            }}
-          >
-            <FoldVertical />
-          </button>
-        {/if}
-        {column.name}
-      {:else}
-        {column.name}
-      {/if}
-    </svelte:fragment>
+<section class="h-full overflow-y-auto p-3 sm:p-5" data-journal-table>
+  <div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
     <div
-      slot="row"
-      class:opacity-45={value.date && dateToMillis(value.date) > now.getTime()}
-      let:size
-      let:value
-      let:styles
-      let:widths
-      class=""
-      style={`line-height: ${rowHeight - 4}px`}
+      class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
     >
-      {@const directive = value}
-      {#if directive instanceof Transaction}
-        <div style={`height: ${size}px`}>
-          {#each [directive, ...(directive.meta[DUPLICATE_META] || [])] as entry, i}
-            <li
-              class={cn(
-                "transaction cleared border-b border-l border-solid",
-                i > 0 && "bg-destructive/30 text-xs",
+      <input
+        bind:this={masterCheckbox}
+        use:setIndeterminate={masterIndeterminate}
+        type="checkbox"
+        class="size-4 rounded border-input text-primary focus:ring-ring"
+        aria-label="Select visible journal records"
+        checked={masterChecked}
+        onchange={(event) =>
+          toggleVisible((event.currentTarget as HTMLInputElement).checked)}
+      />
+      <span>Date</span>
+      <span class="text-right">Amount</span>
+    </div>
+
+    {#if !groups.length}
+      <div
+        class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+      >
+        No dated records match the current Journal filter.
+      </div>
+    {/if}
+
+    {#each visibleGroups as group}
+      {@const groupKeys = group.records.map((record) => record.key)}
+      {@const groupSelected = groupKeys.filter((key) =>
+        selectedKeys.has(key),
+      ).length}
+      {@const groupChecked = groupSelected === groupKeys.length}
+      {@const groupIndeterminate = groupSelected > 0 && !groupChecked}
+      {@const expanded = expandedGroups.has(group.key)}
+      <section
+        class:opacity-60={group.date.toMillis() > Date.now()}
+        class="overflow-hidden rounded-2xl bg-muted/80"
+        aria-labelledby={`journal-group-${group.key}`}
+      >
+        <div
+          class="grid grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] items-center gap-3 px-5 py-4"
+        >
+          <input
+            use:setIndeterminate={groupIndeterminate}
+            type="checkbox"
+            class="size-4 rounded border-input text-primary focus:ring-ring"
+            aria-label={`Select all ${group.records.length} records from ${groupDate(group)}`}
+            checked={groupChecked}
+            onchange={(event) =>
+              toggleGroup(
+                group,
+                (event.currentTarget as HTMLInputElement).checked,
               )}
-              style={`height: ${getHeight(entry) * rowHeight + ($toggled.has(entry.id) ? 0 : entry.postings.length * rowHeight)}px`}
+          />
+          <h2
+            id={`journal-group-${group.key}`}
+            class="truncate text-sm font-semibold tracking-wide text-foreground"
+          >
+            {groupDate(group)}
+            <span class="ml-2 text-muted-foreground"
+              >· {group.records.length}</span
             >
-              <p
-                style={`height: ${getHeight(entry) * rowHeight}px`}
-                data-style={`height: ${$toggled.has(entry.id) ? size : size - entry.postings.length * rowHeight}px`}
+          </h2>
+          <span
+            class="hidden max-w-[16rem] truncate text-right text-sm font-semibold tabular-nums sm:block"
+            title={balanceText(group.balance.final)}
+          >
+            {balanceText(group.balance.final)}
+          </span>
+          <button
+            type="button"
+            class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            title="Shows the net worth balance for this date"
+            aria-label="About this date's balance"
+          >
+            <Info class="size-4" />
+          </button>
+          <button
+            type="button"
+            class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            aria-expanded={expanded}
+            aria-controls={`journal-summary-${group.key}`}
+            aria-label={`${expanded ? "Hide" : "Show"} balance summary for ${groupDate(group)}`}
+            onclick={() => toggleSummary(group.key)}
+          >
+            {#if expanded}
+              <ChevronUp class="size-4" />
+            {:else}
+              <ChevronDown class="size-4" />
+            {/if}
+          </button>
+        </div>
+
+        {#if expanded}
+          <div
+            id={`journal-summary-${group.key}`}
+            class="grid gap-2 border-t border-dashed px-5 py-4 text-sm sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
+          >
+            <span>Start balance</span>
+            <span class="hidden border-t border-dashed sm:block"></span>
+            <span class="text-right font-semibold tabular-nums"
+              >{balanceText(group.balance.start)}</span
+            >
+            <span>Net cash flow</span>
+            <span class="hidden border-t border-dashed sm:block"></span>
+            <span class="text-right font-semibold tabular-nums"
+              >{balanceText(group.balance.change)}</span
+            >
+            <span>Final balance</span>
+            <span class="hidden border-t border-dashed sm:block"></span>
+            <span class="text-right font-bold tabular-nums"
+              >{balanceText(group.balance.final)}</span
+            >
+          </div>
+        {/if}
+
+        <div
+          class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+        >
+          {#each group.records as record, index}
+            <div
+              role="button"
+              tabindex="0"
+              class:rounded-b-xl={index === group.records.length - 1}
+              class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-5 py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={`Edit ${record.title}`}
+              onclick={() => openRecord(record)}
+              onkeydown={(event) => handleRecordKeydown(event, record)}
+            >
+              <input
+                type="checkbox"
+                class="size-4 rounded border-input text-primary focus:ring-ring"
+                aria-label={`Select ${record.title}`}
+                checked={selectedKeys.has(record.key)}
+                onclick={(event) => event.stopPropagation()}
+                onchange={(event) =>
+                  toggleRecord(
+                    record.key,
+                    (event.currentTarget as HTMLInputElement).checked,
+                  )}
+              />
+              <div
+                class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                aria-hidden="true"
               >
-                <span class="datecell" style={styles.date}>
-                  <a href={urlForDate(entry.date)}>{formatDate(entry.date)}</a>
-                  <EditorDialog directive={entry} />
-                </span>
-                <span class="flag" style={`${styles.flag}`}>{entry.flag}</span>
-                <span
-                  aria-label={`${entry.payee || ""} ${entry.narration || ""}`.trim()}
-                  class="description droptarget overflow-hidden text-ellipsis text-nowrap"
-                  style={`width: ${widths.account + widths.price + widths.cost - 1}px`}
-                >
-                  <strong class="payee">{entry.payee}</strong>
-                  {#if entry.narration}
-                    <span class="separator"></span>{entry.narration}
-                  {/if}
-                </span>
-                {#if entry.tags.length + entry.links.length > 0}
-                  <div
-                    class="absolute left-1 overflow-hidden py-1"
-                    style={`height: ${rowHeight * [entry.tags.length, entry.links.length].filter((it) => it > 0).length}px; top: ${rowHeight}px; width: ${widths.date + widths.flag + widths.account + (directive.postings.length < 10 ? widths.units : 0)}px;`}
-                  >
-                    {#each entry.tags as tag}
-                      <a href={`?query=%23${tag}`} class="mr-1"
-                        ><span class="cm-hashtag cm-hashtag-begin">#</span><span
-                          class="cm-hashtag cm-hashtag-end">{tag}</span
-                        ></a
-                      >
-                    {/each}
-                    {#each entry.links as link}
-                      <a href={`?query=^${link}`} class="mr-1"
-                        ><span class="cm-link">^</span><span
-                          class="cm-link hover:underline">{link}</span
-                        ></a
-                      >
-                    {/each}
-                  </div>
+                {#if record.directive.constructor.name === "Transaction"}
+                  {record.title.slice(0, 1).toUpperCase()}
+                {:else}
+                  <FileText class="size-4" />
                 {/if}
-                <button
-                  type="button"
-                  class="block h-auto"
-                  style={styles.units}
-                  on:click={(evt) => handleToggle(evt, entry)}
+              </div>
+              <div class="min-w-0">
+                <div class="truncate text-sm font-semibold">{record.title}</div>
+                <div class="mt-1 truncate text-xs text-muted-foreground">
+                  {record.detail}
+                </div>
+              </div>
+              <div
+                class="flex min-w-[6rem] flex-col items-end gap-1 text-right"
+              >
+                {#if record.counterpart}
+                  <span
+                    class="hidden max-w-40 truncate rounded-full border px-2 py-0.5 text-xs text-muted-foreground sm:block"
+                    >{record.counterpart}</span
+                  >
+                {:else}
+                  <span
+                    class="hidden rounded-full border px-2 py-0.5 text-xs capitalize text-muted-foreground sm:block"
+                    >{record.type}</span
+                  >
+                {/if}
+                <span class="text-sm font-semibold tabular-nums"
+                  >{recordAmount(record)}</span
                 >
-                  {#each chunk([...entry.postings], 10) as batch}
-                    <div
-                      class="indicators w-full"
-                      style="height: 24px; padding: 5px 0;"
-                    >
-                      {#each batch as p}
-                        <span class="!bg-foreground"></span>
-                      {/each}
-                    </div>
-                  {/each}
-                </button>
-                <span class="border-r"></span>
-              </p>
-              {#if !$toggled.has(entry.id)}
-                <ul class="postings h-full border-t">
-                  {#each entry.postings as posting}
-                    <li>
-                      <p>
-                        <span class="datecell" style={styles.date}></span>
-                        <span class="flag" style={styles.flag}
-                          >{posting.flag}</span
-                        >
-                        <span
-                          class="description droptarget"
-                          style={styles.account}
-                          ><a href={urlForAccount(posting.account)}
-                            >{posting.account}</a
-                          ></span
-                        >
-                        <span class="num border-l border-r" style={styles.units}
-                          >{$ctx.money(posting.units)}</span
-                        >
-                        <span class="num border-r" style={styles.cost}
-                          >{$ctx.money(posting.cost)}</span
-                        >
-                        <span class="num border-r" style={styles.price}
-                          >{$ctx.money(posting.price)}</span
-                        >
-                      </p>
-                    </li>
-                  {/each}
-                </ul>
-              {/if}
-            </li>
+              </div>
+            </div>
           {/each}
         </div>
-      {:else if directive instanceof Open}
-        <li class="border-b border-l" style={`height: ${size}px`}>
-          <p class="h-full">
-            <span class="datecell" style={styles.date}>
-              <a href={urlForDate(directive.date)}
-                >{formatDate(directive.date)}</a
-              >
-              <EditorDialog {directive} />
-            </span>
-            <span class="flag" style={styles.flag}
-              >{directive.directiveType.toLocaleLowerCase()}</span
-            >
-            <span
-              class="description droptarget border-r"
-              style={`width: ${widths.account + widths.units + widths.cost + widths.price}px`}
-            >
-              <a href={urlForAccount(directive.account)}>{directive.account}</a>
-            </span>
-          </p>
-        </li>
-      {:else if directive instanceof Pad}
-        <li class="border-b border-l" style={`height: ${size}px`}>
-          <p class="h-full">
-            <span class="datecell" style={styles.date}>
-              <a href={urlForDate(directive.date)}
-                >{formatDate(directive.date)}</a
-              >
-              <EditorDialog {directive} />
-            </span>
-            <span class="flag" style={styles.flag}
-              >{directive.directiveType.toLocaleLowerCase()}</span
-            >
-            <span
-              class="description droptarget border-r"
-              style={`width: ${widths.account + widths.units + widths.cost + widths.price}px`}
-            >
-              <a href={urlForAccount(directive.sourceAccount)}
-                >{directive.sourceAccount}</a
-              >
-              &nbsp;from&nbsp;
-              <a href={urlForAccount(directive.account)}>{directive.account}</a>
-            </span>
-          </p>
-        </li>
-      {:else if directive instanceof Balance}
-        <li class="border-b border-l" style={`height: ${size}px`}>
-          <p class="h-full">
-            <span class="datecell" style={styles.date}>
-              <a href={urlForDate(directive.date)}
-                >{formatDate(directive.date)}</a
-              >
-              <EditorDialog {directive} />
-            </span>
-            <span class="flag" style={styles.flag}>Bal</span>
-            <span class="description droptarget" style={styles.account}>
-              <a href={urlForAccount(directive.account)}>{directive.account}</a>
-            </span>
-            <span
-              class="num bal border-l border-r"
-              style={styles.units}
-              title="">{$ctx.money(directive.amount)}</span
-            >
-            <span
-              class="border-r"
-              style={`width: ${widths.cost + widths.price}px`}
-            ></span>
-          </p>
-        </li>
-      {:else if directive instanceof Query}
-        <li class="border-b border-l" style={`height: ${size}px`}>
-          <p class="h-full">
-            <span class="datecell" style={styles.date}>
-              <a href={urlForDate(directive.date)}
-                >{formatDate(directive.date)}</a
-              >
-              <EditorDialog {directive} />
-            </span>
-            <span class="flag" style={styles.flag}>Query</span>
-            <span
-              class="description"
-              style={`width: ${widths.description + widths.units + widths.cost + widths.price}px`}
-            >
-              <a
-                aria-label={directive.query}
-                href={urlFor("/query", { qs: directive.query })}
-                >{directive.name}</a
-              >
-            </span>
-          </p>
-        </li>
-      {:else if directive instanceof Custom}
-        <li class="border-b border-l" style={`height: ${size}px`}>
-          <p class="h-full">
-            <span class="datecell" style={styles.date}>
-              <a href={urlForDate(directive.date)}
-                >{formatDate(directive.date)}</a
-              >
-              <EditorDialog {directive} />
-            </span>
-            <span class="flag" style={styles.flag}>Custom</span>
-            <span
-              class="description"
-              style={`width: ${widths.description + widths.units + widths.cost + widths.price}px`}
-            >
-              <strong>{directive.type}</strong>
-              {writeScalar([...directive.values])}
-            </span>
-          </p>
-        </li>
-      {/if}
-    </div>
-  </Grid>
-</div>
+      </section>
+    {/each}
+
+    {#if pages.length > 1}
+      <nav
+        class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+        aria-label="Journal pages"
+      >
+        <span class="text-sm text-muted-foreground"
+          >Page {page} of {pages.length}</span
+        >
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-muted-foreground" for="journal-page-size"
+            >Records per page</label
+          >
+          <select
+            id="journal-page-size"
+            class="h-8 rounded-md border bg-background px-2 text-sm"
+            value={pageSize}
+            onchange={(event) =>
+              updateRoute({
+                pageSize: (event.currentTarget as HTMLSelectElement).value,
+                page: "1",
+              })}
+          >
+            {#each PAGE_SIZES as size}
+              <option value={size}>{size}</option>
+            {/each}
+          </select>
+          <Button
+            size="icon"
+            variant="outline"
+            aria-label="Previous Journal page"
+            disabled={page <= 1}
+            onclick={() => updateRoute({ page: String(page - 1) })}
+          >
+            <ChevronsLeft />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            aria-label="Next Journal page"
+            disabled={page >= pages.length}
+            onclick={() => updateRoute({ page: String(page + 1) })}
+          >
+            <ChevronsRight />
+          </Button>
+        </div>
+      </nav>
+    {/if}
+  </div>
+</section>
+
+{#if selectedRecord}
+  <JournalEditorSheet
+    directive={selectedRecord.directive}
+    bind:open={editorOpen}
+  />
+{/if}

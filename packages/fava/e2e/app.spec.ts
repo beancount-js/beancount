@@ -67,7 +67,7 @@ test.describe("ported styles", () => {
     await seedLedger(page, minimalLedger);
   });
 
-  test("applies tree-table, scroll-container, and journal-table styles", async ({
+  test("applies tree-table, scroll-container, and grouped journal styles", async ({
     page,
   }) => {
     await page.goto("/#/income_statement");
@@ -111,21 +111,21 @@ test.describe("ported styles", () => {
 
     await navigateTo(page, "Journal");
     await expect(page).toHaveURL(/#\/journal\?ledger=.+$/);
-    await expect(page.locator(".bean-table.flex-table")).toBeVisible({
+    await expect(page.locator("[data-journal-table]")).toBeVisible({
       timeout: 15_000,
     });
 
     const headerBackground = await page
-      .locator(".bean-table.flex-table .head p > span")
+      .locator("[data-journal-table] > div > div")
       .first()
       .evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(headerBackground).not.toBe("rgba(0, 0, 0, 0)");
 
-    const monoFont = await page
-      .locator(".bean-table.flex-table .num")
+    const groupRadius = await page
+      .locator("[data-journal-table] section[aria-labelledby]")
       .first()
-      .evaluate((el) => getComputedStyle(el).fontFamily);
-    expect(monoFont.toLowerCase()).toMatch(/mono|menlo|consolas/);
+      .evaluate((el) => getComputedStyle(el).borderRadius);
+    expect(parseFloat(groupRadius)).toBeGreaterThan(0);
   });
 
   test("loads codemirror theme styles", async ({ page }) => {

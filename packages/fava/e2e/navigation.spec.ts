@@ -71,6 +71,37 @@ test.describe("sample ledger navigation", () => {
       pageErrors.filter((message) => message.includes("reading 'copy'")),
     ).toHaveLength(0);
   });
+
+  test("journal groups records and opens a transaction sheet", async ({
+    page,
+  }) => {
+    await openEditor(page);
+    await navigateTo(page, "Journal");
+    await page.waitForSelector("[data-journal-table]");
+    await expect(page.getByText("Start balance")).toBeVisible();
+
+    const groupHeader = page
+      .locator("[data-journal-table] section > div:first-child")
+      .first();
+    await expect(groupHeader).toHaveCSS(
+      "grid-template-columns",
+      /.+ .+ .+ .+ .+/,
+    );
+
+    const records = page.locator(
+      "[data-journal-table] [role=button][aria-label^='Edit ']",
+    );
+    expect(await records.count()).toBeGreaterThan(0);
+    await records.first().click();
+    await expect(
+      page.getByRole("heading", { name: "Edit transaction" }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/#\/journal\?ledger=.+&record=.+$/);
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Edit transaction" }),
+    ).not.toBeVisible();
+  });
 });
 
 test.describe("account details", () => {
