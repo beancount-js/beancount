@@ -14,6 +14,8 @@
   export let nodes: ReadonlyArray<AccountTreeNode>;
   /** The budgets (per account a list per date range). */
   export let budgets: Record<string, AccountBudget[]>;
+  /** The account's depth in the rendered hierarchy. */
+  export let depth = 0;
 
   const { toggled, notShown } = getTreeTableContext();
 
@@ -26,7 +28,7 @@
 
 <li>
   <p>
-    <AccountCell {node} />
+    <AccountCell {node} {depth} />
     {#each nodes as n, index}
       {@const accountBudget = accountBudgets?.[index]}
       {@const hasBalance =
@@ -61,12 +63,13 @@
     {/each}
   </p>
   {#if !isToggled && children.some((n) => !$notShown.has(n.account))}
-    <ol>
+    <ol style={`--tree-closure-indent: ${depth}em;`}>
       {#each children as child, index (child.account)}
         {#if !$notShown.has(child.account)}
           <svelte:self
             nodes={nodes.map((n) => n.children[index] || {})}
             {budgets}
+            depth={depth + 1}
           />
         {/if}
       {/each}

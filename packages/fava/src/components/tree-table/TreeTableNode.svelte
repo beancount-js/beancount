@@ -15,6 +15,8 @@
   export let node: AccountTreeNode;
   /** Whether to invert all numbers (either `1` or `-1`). */
   export let invert: number;
+  /** The account's depth in the rendered hierarchy. */
+  export let depth = 0;
 
   const { toggled, notShown } = getTreeTableContext();
 
@@ -34,7 +36,7 @@
 
 <li>
   <p>
-    <AccountCell {node} />
+    <AccountCell {node} {depth} />
     {#each $operatingCurrency as currency}
       {@const num = shownBalance[currency]}
       {@const cost_num = shownCost?.[currency] ?? 0}
@@ -63,9 +65,9 @@
     </span>
   </p>
   {#if !isToggled && children.some((n) => !$notShown.has(n.account))}
-    <ol>
+    <ol style={`--tree-closure-indent: ${depth}em;`}>
       {#each children.filter((n) => !$notShown.has(n.account)) as child (child.account)}
-        <Self node={child} {invert} />
+        <Self node={child} {invert} depth={depth + 1} />
       {/each}
     </ol>
   {/if}

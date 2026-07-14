@@ -8,6 +8,8 @@
 
   /** The account node to render the name cell for. */
   export let node: AccountTreeNode;
+  /** The account's depth in the rendered hierarchy. */
+  export let depth = 0;
   $: ({ account, children } = node);
 
   function handleClick(event: MouseEvent) {
@@ -42,7 +44,11 @@
   }
 </script>
 
-<span class="droptarget" data-account-name={account}>
+<span
+  class="droptarget"
+  data-account-name={account}
+  style={`--account-indent: ${depth}em;`}
+>
   {#if children.length > 0}
     <button type="button" class="clickable-icon" on:click={handleClick}>
       {#if $toggled.has(account)}
@@ -98,37 +104,5 @@
     min-width: calc(14em - var(--account-indent, 0em));
     max-width: calc(30em - var(--account-indent, 0em));
     margin-left: var(--account-indent, 0);
-  }
-
-  :global(ol ol) span {
-    --account-indent: 1em;
-  }
-
-  :global(ol ol ol) span {
-    --account-indent: 2em;
-  }
-
-  :global(ol ol ol ol) span {
-    --account-indent: 3em;
-  }
-
-  :global(ol ol ol ol ol) span {
-    --account-indent: 4em;
-  }
-
-  :global(ol ol ol ol ol ol) span {
-    --account-indent: 5em;
-  }
-
-  :global(ol ol ol ol ol ol ol) span {
-    --account-indent: 6em;
-  }
-
-  :global(ol ol ol ol ol ol ol ol) span {
-    --account-indent: 7em;
-  }
-
-  :global(ol ol ol ol ol ol ol ol ol) span {
-    --account-indent: 8em;
   }
 </style>
