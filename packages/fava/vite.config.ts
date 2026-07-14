@@ -41,6 +41,8 @@ export default defineConfig((_cfg) => {
     },
     test: {
       environment: "jsdom",
+      include: ["src/**/*.spec.ts"],
+      exclude: ["e2e/**"],
     },
     build: {
       lib: {

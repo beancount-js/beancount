@@ -2,10 +2,11 @@
   "compilerOptions": {
     "strict": true,
     "target": "es6",
-    "module": "es2020",
+    "module": "esnext",
     "newLine": "lf",
     "declaration": true,
-    "moduleResolution": "node" 
+    "moduleResolution": "bundler"
   },
-  "include": ["src/*.ts"]
+  "include": ["src/index.ts", "src/highlight.ts", "src/**/*.d.ts"],
+  "exclude": ["src/**/*.spec.ts"]
 }

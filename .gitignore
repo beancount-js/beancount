@@ -9,3 +9,4 @@ dist
 # Changeyard local guard hooks
 .changeyard/bin/
 .changeyard/guards/
+*.timestamp-*.mjs
