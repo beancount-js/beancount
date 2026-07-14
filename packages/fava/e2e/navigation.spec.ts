@@ -61,7 +61,7 @@ test.describe("account details", () => {
     page.on("pageerror", (error) => pageErrors.push(error.message));
 
     await page.goto("/#/account/Expenses");
-    await page.waitForSelector("nav");
+    await page.waitForSelector("[data-ledger-file-row]");
     await expect(page).toHaveURL(/#\/account\/Expenses$/);
     await expect(page.getByRole("tab", { name: "Account Table" })).toBeVisible({
       timeout: 15_000,

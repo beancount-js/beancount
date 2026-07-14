@@ -22,10 +22,9 @@ test.describe("Docs-shell visual foundation", () => {
       workspaceHeader.getByRole("button", { name: "Toggle theme" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Collapse sidebar to project rail" }),
-    ).toBeVisible();
-    await expect(
-      workspaceHeader.getByRole("button", { name: "Toggle sidebar" }),
+      workspaceHeader.getByRole("button", {
+        name: "Collapse sidebar to project rail",
+      }),
     ).toBeVisible();
     await expect(
       page
@@ -41,6 +40,9 @@ test.describe("Docs-shell visual foundation", () => {
         Boolean(element.scrollWidth <= element.clientWidth),
       ),
     ).toBe(true);
+    await expect(
+      workspaceHeader.locator("button:visible").first(),
+    ).toHaveAttribute("aria-label", "Collapse sidebar to project rail");
 
     const lightShell = await page.evaluate(() => {
       const sidebar = document.querySelector<HTMLElement>(
@@ -64,6 +66,7 @@ test.describe("Docs-shell visual foundation", () => {
           y: mainRect.y,
           radius: getComputedStyle(main).borderRadius,
         },
+        sidebarBorder: getComputedStyle(sidebarFrame).borderRightWidth,
         sidebarToken: root.getPropertyValue("--sidebar").trim(),
       };
     });
@@ -71,6 +74,7 @@ test.describe("Docs-shell visual foundation", () => {
     expect(lightShell.font).toContain("DM Sans Variable");
     expect(lightShell.sidebar).toEqual({ x: 0, y: 0, width: 256 });
     expect(lightShell.main).toEqual({ x: 256, y: 8, radius: "14px" });
+    expect(lightShell.sidebarBorder).toBe("0px");
     expect(lightShell.sidebarToken).toBe("oklch(98.5% 0.008 295)");
 
     const tabBounds = await Promise.all(
@@ -94,16 +98,45 @@ test.describe("Docs-shell visual foundation", () => {
       page.getByRole("button", { name: /beancount-js-studio/ }),
     ).toBeVisible();
     await page.getByRole("button", { name: "Workspace" }).click();
+    await expect(
+      page.getByRole("button", { name: "Ledgers", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Folders", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Tags", exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Folders", exact: true }).click();
+    await expect(page.getByPlaceholder("Search folders")).toBeVisible();
+    await page.getByRole("button", { name: "Ledgers", exact: true }).click();
+    await expect(page.getByPlaceholder("Search ledgers")).toBeVisible();
+    await expect(
+      page.locator("[data-ledger-file-panels]").first(),
+    ).toContainText("Editor");
+    await page.getByRole("button", { name: "Tags", exact: true }).click();
+    await expect(
+      page.locator('[data-ledger-tag-row="credit-card"]'),
+    ).toBeVisible();
+    await page.locator('[data-ledger-tag-row="credit-card"]').click();
+    await expect(
+      page.getByRole("button", { name: "Remove #credit-card filter" }),
+    ).toBeVisible();
 
     const resizer = page.getByRole("slider", { name: "Resize sidebar" });
     const resizerBounds = await resizer.boundingBox();
     expect(resizerBounds).not.toBeNull();
     expect(resizerBounds!.y).toBe(16);
     expect(resizerBounds!.y + resizerBounds!.height).toBe(884);
+    const resizerLine = resizer.locator("span");
+    await expect(resizerLine).toHaveClass(/bg-transparent/);
+    await page.mouse.move(100, resizerBounds!.y + resizerBounds!.height / 2);
+    await expect(resizerLine).toHaveClass(/bg-transparent/);
     await page.mouse.move(
       resizerBounds!.x + resizerBounds!.width / 2,
       resizerBounds!.y + resizerBounds!.height / 2,
     );
+    await expect(resizerLine).toHaveClass(/bg-primary\/60/);
     await page.mouse.down();
     await page.mouse.move(
       resizerBounds!.x + resizerBounds!.width / 2 + 80,
@@ -142,7 +175,7 @@ test.describe("Docs-shell visual foundation", () => {
       workspaceHeader.getByRole("button", { name: "Toggle theme" }),
     ).toBeVisible();
 
-    await page
+    await workspaceHeader
       .getByRole("button", { name: "Collapse sidebar to project rail" })
       .click();
     await expect(
@@ -175,7 +208,7 @@ test.describe("Docs-shell visual foundation", () => {
       .toBe(48);
 
     await page.getByRole("button", { name: "Expand project rail" }).click();
-    await expect(page.getByRole("link", { name: "Editor" })).toBeVisible();
+    await expect(page.locator("[data-ledger-file-row]").first()).toBeVisible();
   });
 });
 

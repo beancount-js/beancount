@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import ChevronRight from "lucide-svelte/icons/chevron-right";
+  import ChevronLeft from "lucide-svelte/icons/chevron-left";
   import FolderOpen from "lucide-svelte/icons/folder-open";
   import LayoutPanelLeft from "lucide-svelte/icons/layout-panel-left";
   import Moon from "lucide-svelte/icons/moon";
@@ -158,7 +159,7 @@
   class="h-screen overflow-hidden bg-sidebar text-foreground"
   style={sidebarWidthStyle}
 >
-  <Sidebar.Root collapsible="icon" class="border-r-0">
+  <Sidebar.Root collapsible="icon" showBorder={false}>
     <div class="relative flex h-full min-h-0 flex-col">
       <div
         class="flex min-h-0 flex-1 flex-col group-data-[collapsible=icon]:hidden"
@@ -202,7 +203,7 @@
             >
           </div>
         </Sidebar.Header>
-        <Sidebar.Content>
+        <Sidebar.Content class="px-2 pb-3">
           {#if tab === "projects"}
             <Sidebar.Group>
               <Sidebar.GroupLabel>Current project</Sidebar.GroupLabel>
@@ -365,6 +366,14 @@
           aria-label="Show navigation"
           title="Show navigation"
         />
+        <Sidebar.Trigger
+          class="hidden size-8 md:inline-flex"
+          aria-label="Collapse sidebar to project rail"
+          title="Collapse sidebar"
+        >
+          <ChevronLeft />
+          <span class="sr-only">Collapse sidebar</span>
+        </Sidebar.Trigger>
         <span class="ml-1 min-w-0 truncate text-sm font-semibold">
           {snapshot?.project.name ?? "Beancount Studio"}
         </span>
@@ -386,11 +395,6 @@
               />
             </span>
           </Button>
-          <Sidebar.Trigger
-            class="hidden size-8 md:inline-flex"
-            aria-label="Toggle sidebar"
-            title="Toggle sidebar"
-          />
         </div>
       </div>
       <div class="min-h-0 min-w-0 flex-1 overflow-hidden">

@@ -27,21 +27,30 @@ test.describe("app workflow", () => {
     expect(stored).toContain("saved-by-e2e");
     expect(stored).toContain("Coffee Shop");
 
-    await expect(page.getByRole("button", { name: "Collapse" })).toBeVisible();
+    const workspaceHeader = page.locator("[data-slot=studio-workspace-header]");
+    await expect(
+      workspaceHeader.getByRole("button", {
+        name: "Collapse sidebar to project rail",
+      }),
+    ).toBeVisible();
     const expandedWidth = await getSidebarWidth(page);
-    await page.getByRole("button", { name: "Collapse" }).click();
-    await expect(page.getByRole("button", { name: "Expand" })).toBeVisible({
-      timeout: 10_000,
-    });
+    await workspaceHeader
+      .getByRole("button", { name: "Collapse sidebar to project rail" })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Expand project rail" }),
+    ).toBeVisible({ timeout: 10_000 });
     const collapsedWidth = await getSidebarWidth(page);
     expect(collapsedWidth).toBeLessThan(expandedWidth);
     await expect(
-      page.locator(".h-screen nav a[href='#/editor']").first(),
+      page.getByRole("button", { name: "Expand project rail" }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Expand" }).click();
-    await expect(page.getByRole("button", { name: "Collapse" })).toBeVisible({
-      timeout: 10_000,
-    });
+    await page.getByRole("button", { name: "Expand project rail" }).click();
+    await expect(
+      workspaceHeader.getByRole("button", {
+        name: "Collapse sidebar to project rail",
+      }),
+    ).toBeVisible({ timeout: 10_000 });
 
     for (const tab of mainTabs) {
       await navigateTo(page, tab.name);

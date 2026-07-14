@@ -3,7 +3,9 @@ import { untrack } from "svelte";
 const MOBILE_BREAKPOINT = 768;
 
 export class IsMobile {
-  #current = $state<boolean>(false);
+  #current = $state<boolean>(
+    typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT,
+  );
 
   constructor() {
     $effect(() => {

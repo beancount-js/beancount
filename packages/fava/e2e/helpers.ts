@@ -43,7 +43,7 @@ export async function clearLedger(page: Page) {
 
 export async function openEditor(page: Page) {
   await page.goto("/#/editor");
-  await page.waitForSelector("nav");
+  await page.waitForSelector("[data-ledger-file-row]");
 }
 
 export async function waitForEditorContent(
@@ -109,18 +109,23 @@ const navPaths: Record<string, string> = {
 };
 
 export async function navigateTo(page: Page, label: string) {
-  const href = navPaths[label];
-  if (!href) {
+  if (!navPaths[label]) {
     throw new Error(`Unknown nav label: ${label}`);
   }
-  await page.locator(`nav a[href="${href}"]`).first().click();
+  const panel = page
+    .locator("[data-ledger-file-panels] button")
+    .filter({ hasText: label })
+    .first();
+  await expect(panel).toBeVisible();
+  await panel.click();
 }
 
 export async function getSidebarWidth(page: Page) {
   return page.evaluate(() => {
-    const link = document.querySelector('a[href="#/editor"]');
-    const pane = link?.closest(".h-screen") as HTMLElement | null;
-    return pane?.getBoundingClientRect().width ?? 0;
+    const sidebar = document.querySelector<HTMLElement>(
+      "[data-sidebar=sidebar]",
+    );
+    return sidebar?.parentElement?.getBoundingClientRect().width ?? 0;
   });
 }
 

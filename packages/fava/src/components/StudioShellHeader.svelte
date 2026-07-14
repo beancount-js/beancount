@@ -15,22 +15,12 @@
     <p class="truncate text-sm font-semibold leading-tight">Beancount Studio</p>
     <p class="truncate text-xs text-muted-foreground">{projectName}</p>
   </div>
-  <div class="flex shrink-0 items-center">
-    <Sidebar.Trigger
-      class="hidden size-8 md:inline-flex"
-      aria-label="Collapse sidebar to project rail"
-      title="Collapse sidebar"
-    >
-      <ChevronLeft />
-      <span class="sr-only">Collapse sidebar</span>
-    </Sidebar.Trigger>
-    <Sidebar.Trigger
-      class="size-8 md:hidden"
-      aria-label="Close sidebar"
-      title="Close sidebar"
-    >
-      <ChevronLeft />
-      <span class="sr-only">Close sidebar</span>
-    </Sidebar.Trigger>
-  </div>
+  <Sidebar.Trigger
+    class="size-8 md:hidden"
+    aria-label="Close sidebar"
+    title="Close sidebar"
+  >
+    <ChevronLeft />
+    <span class="sr-only">Close sidebar</span>
+  </Sidebar.Trigger>
 </div>
