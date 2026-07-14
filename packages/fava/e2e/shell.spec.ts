@@ -27,6 +27,11 @@ test.describe("Docs-shell visual foundation", () => {
       }),
     ).toBeVisible();
     await expect(
+      workspaceHeader
+        .getByRole("button", { name: "Collapse sidebar to project rail" })
+        .locator("svg.lucide-panel-left"),
+    ).toBeVisible();
+    await expect(
       page
         .locator("[data-sidebar=header]")
         .getByRole("button", { name: "Toggle theme" }),
@@ -87,9 +92,27 @@ test.describe("Docs-shell visual foundation", () => {
     expect(Math.max(...tabWidths) - Math.min(...tabWidths)).toBeLessThan(1);
 
     await page.getByRole("button", { name: "Search" }).click();
+    const searchTab = page.locator("[data-slot=search-tab]");
+    await expect(searchTab.locator(".cm-line-editor")).toBeVisible();
     await expect(
-      page.locator("[data-slot=search-tab] .cm-line-editor"),
+      searchTab.getByRole("button", { name: "Clear search" }),
+    ).toHaveCount(0);
+    await expect(searchTab.locator(".cm-scroller")).toHaveCSS(
+      "scrollbar-gutter",
+      "auto",
+    );
+    await expect(searchTab.locator(".cm-scroller")).toHaveCSS(
+      "scrollbar-width",
+      "none",
+    );
+    await searchTab.getByRole("textbox").fill("income");
+    await expect(
+      searchTab.getByRole("button", { name: "Clear search" }),
     ).toBeVisible();
+    await searchTab.getByRole("button", { name: "Clear search" }).click();
+    await expect(
+      searchTab.getByRole("button", { name: "Clear search" }),
+    ).toHaveCount(0);
     await page.getByRole("button", { name: "Projects" }).click();
     await expect(
       page.getByText("Current project", { exact: true }),

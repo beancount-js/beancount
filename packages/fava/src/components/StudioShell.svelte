@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import ChevronRight from "lucide-svelte/icons/chevron-right";
-  import ChevronLeft from "lucide-svelte/icons/chevron-left";
   import FolderOpen from "lucide-svelte/icons/folder-open";
   import LayoutPanelLeft from "lucide-svelte/icons/layout-panel-left";
   import Moon from "lucide-svelte/icons/moon";
@@ -370,10 +369,7 @@
           class="hidden size-8 md:inline-flex"
           aria-label="Collapse sidebar to project rail"
           title="Collapse sidebar"
-        >
-          <ChevronLeft />
-          <span class="sr-only">Collapse sidebar</span>
-        </Sidebar.Trigger>
+        />
         <span class="ml-1 min-w-0 truncate text-sm font-semibold">
           {snapshot?.project.name ?? "Beancount Studio"}
         </span>

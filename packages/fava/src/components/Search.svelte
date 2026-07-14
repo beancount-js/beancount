@@ -3,7 +3,7 @@
   import { EditorView, keymap } from "@codemirror/view";
   import { EditorState } from "@codemirror/state";
   import { syntaxHighlighting } from "@codemirror/language";
-  import Button from "$lib/components/ui/button/button.svelte";
+  import { Button } from "$lib/components/ui/button";
   import { useContext } from "../context";
   import { useNavigation } from "../router/router";
   import { replaceContents } from "../codemirror/extensions/transactions";
@@ -21,9 +21,12 @@
   }, 500);
   const { predicate, query } = useContext();
   let editor: EditorView;
+  let hasSearchInput = false;
+
   function clearSearch() {
     query.set("");
     editor.dispatch(replaceContents(editor.state, ""));
+    hasSearchInput = false;
   }
 
   $: if ($activeRoute.query.query) {
@@ -39,6 +42,10 @@
   $: error = $predicate.errors?.length > 0;
 
   const codeMirror = (node: HTMLDivElement) => {
+    const syncHasSearchInput = () => {
+      hasSearchInput = Boolean(node.textContent?.trim());
+    };
+
     editor = new EditorView({
       state: EditorState.create({
         doc: $query,
@@ -62,7 +69,9 @@
           beancountFilter(),
           EditorView.updateListener.of((event) => {
             if (event.docChanged) {
-              handleSearch(event.state.doc.toString());
+              const searchContents = event.state.doc.toString();
+              hasSearchInput = Boolean(searchContents.trim());
+              handleSearch(searchContents);
               delay();
             }
           }),
@@ -81,6 +90,15 @@
       }),
       parent: node,
     });
+    syncHasSearchInput();
+    node.addEventListener("input", syncHasSearchInput);
+
+    return {
+      destroy() {
+        node.removeEventListener("input", syncHasSearchInput);
+        editor.destroy();
+      },
+    };
   };
 </script>
 
@@ -95,14 +113,33 @@
         data-error={error}
         class="cm-line-editor cm-s-vars flex h-9 w-full rounded-md border bg-transparent px-3 py-1 pl-6 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-within:outline-ring focus-within:ring-2 focus-within:ring-ring data-[error=true]:bg-destructive/20"
       ></div>
-      <Button
-        onclick={clearSearch}
-        variant="ghost"
-        size="sm"
-        class="absolute right-2 top-[50%] translate-y-[-50%]"
-      >
-        <CircleX class="size-4 text-muted-foreground" />
-      </Button>
+      {#if hasSearchInput}
+        <Button
+          type="button"
+          onclick={clearSearch}
+          variant="ghost"
+          size="icon"
+          class="absolute right-1 top-[50%] size-7 -translate-y-[50%]"
+          aria-label="Clear search"
+          title="Clear search"
+        >
+          <CircleX data-icon />
+        </Button>
+      {/if}
     </div>
   </form>
 </div>
+
+<style>
+  :global(.cm-line-editor .cm-scroller) {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-gutter: auto;
+    scrollbar-width: none;
+    scroll-padding-block-end: 0;
+  }
+
+  :global(.cm-line-editor .cm-scroller::-webkit-scrollbar) {
+    display: none;
+  }
+</style>
