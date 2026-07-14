@@ -98,8 +98,8 @@ test.describe("Docs-shell visual foundation", () => {
     const resizer = page.getByRole("slider", { name: "Resize sidebar" });
     const resizerBounds = await resizer.boundingBox();
     expect(resizerBounds).not.toBeNull();
-    expect(resizerBounds!.y).toBe(8);
-    expect(resizerBounds!.y + resizerBounds!.height).toBe(892);
+    expect(resizerBounds!.y).toBe(16);
+    expect(resizerBounds!.y + resizerBounds!.height).toBe(884);
     await page.mouse.move(
       resizerBounds!.x + resizerBounds!.width / 2,
       resizerBounds!.y + resizerBounds!.height / 2,

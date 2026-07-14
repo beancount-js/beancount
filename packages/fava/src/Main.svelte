@@ -49,6 +49,7 @@
   export let onAskAi: (
     question: string,
     context?: InlineAiRequest,
+    model?: string,
   ) => Promise<string>;
   export let onResourceUrl: (
     path: string,
@@ -138,17 +139,16 @@
     <svelte:fragment slot="workspace"><FavaNavigation /></svelte:fragment>
     <svelte:fragment slot="search"><Search /></svelte:fragment>
     <div class="h-full min-w-0 overflow-hidden" use:routerLink>
-      {#if snapshot}<View />{:else}<div
-          class="grid h-full place-items-center p-6 text-center text-muted-foreground"
-        >
-          {status || "Add a ledger project to begin."}
-        </div>{/if}
+      <View />
     </div>
+    <svelte:fragment slot="ai">
+      <AiDock
+        projectName={snapshot?.project.name ?? "Ledger"}
+        hasProject={Boolean(snapshot)}
+        {isWeb}
+        inlineRequest={inlineAiRequest}
+        onAsk={onAskAi}
+      />
+    </svelte:fragment>
   </StudioShell>
-  <AiDock
-    projectName={snapshot?.project.name ?? "Ledger"}
-    {isWeb}
-    inlineRequest={inlineAiRequest}
-    onAsk={onAskAi}
-  />
 </Tooltip.Provider>

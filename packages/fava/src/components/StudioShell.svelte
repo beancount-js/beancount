@@ -14,7 +14,9 @@
   } from "@beancount-js/workspace";
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { Button } from "$lib/components/ui/button";
+  import * as Empty from "$lib/components/ui/empty";
   import { Separator } from "$lib/components/ui/separator";
+  import { cn } from "$lib/utils";
   import {
     StructuredForm,
     createFormConfig,
@@ -41,6 +43,7 @@
   let path = "";
   let sidebarWidth = readStoredSidebarWidth();
   let resizing = false;
+  let hoveringResizer = false;
   let resizeStartX = 0;
   let resizeStartWidth = DEFAULT_SIDEBAR_WIDTH;
   let previousBodyCursor = "";
@@ -69,6 +72,11 @@
       return;
     }
     enteringPath = true;
+  }
+
+  async function openProject() {
+    tab = "projects";
+    await addProject();
   }
 
   async function submitPath() {
@@ -160,7 +168,7 @@
             projectName={snapshot?.project.name ?? "Loading project"}
           />
           <div
-            class="-mx-2 grid w-full grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
+            class="grid w-full grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
           >
             <Button
               variant="ghost"
@@ -272,7 +280,7 @@
                   variant="outline"
                   size="sm"
                   class="w-full justify-start"
-                  onclick={() => void addProject()}
+                  onclick={() => void openProject()}
                 >
                   <Plus data-icon="inline-start" /><span
                     >Open another project</span
@@ -288,11 +296,6 @@
             <slot name="workspace"></slot>
           {/if}
         </Sidebar.Content>
-        <Sidebar.Footer
-          ><p class="truncate text-xs text-muted-foreground">
-            {status}
-          </p></Sidebar.Footer
-        >
       </div>
 
       <div
@@ -322,7 +325,7 @@
       <div
         role="slider"
         tabindex="0"
-        class="group absolute -right-1.5 bottom-2 top-2 z-20 hidden w-3 cursor-col-resize items-stretch justify-center rounded-full bg-transparent outline-none group-data-[collapsible=icon]:hidden md:flex"
+        class="absolute -right-1.5 bottom-4 top-4 z-20 hidden w-3 cursor-col-resize items-stretch justify-center rounded-full bg-transparent outline-none group-data-[collapsible=icon]:hidden md:flex"
         aria-label="Resize sidebar"
         aria-orientation="vertical"
         aria-valuemin={MIN_SIDEBAR_WIDTH}
@@ -331,19 +334,27 @@
         title="Resize sidebar"
         onpointerdown={startSidebarResize}
         onkeydown={handleSidebarResizeKeydown}
+        onpointerenter={() => (hoveringResizer = true)}
+        onpointerleave={() => (hoveringResizer = false)}
+        onfocus={() => (hoveringResizer = true)}
+        onblur={() => (hoveringResizer = false)}
       >
         <span
-          class="my-2.5 w-px bg-transparent transition-colors group-hover:bg-primary/45 group-focus-visible:bg-primary/60 {resizing
-            ? 'bg-primary/60'
-            : ''}"
+          class={cn(
+            "my-2.5 w-px bg-transparent transition-colors",
+            (resizing || hoveringResizer) && "bg-primary/60",
+          )}
           aria-hidden="true"
         ></span>
       </div>
     </div>
   </Sidebar.Root>
-  <div data-slot="studio-workspace-shell" class="min-w-0 flex-1 p-2 md:pl-0">
+  <div
+    data-slot="studio-workspace-shell"
+    class="flex min-w-0 flex-1 gap-2 p-2 md:pl-0"
+  >
     <main
-      class="flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm dark:shadow-[0_2px_8px_oklch(0_0_0/0.5)]"
+      class="flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm dark:shadow-[0_2px_8px_oklch(0_0_0/0.5)]"
     >
       <div
         data-slot="studio-workspace-header"
@@ -355,7 +366,7 @@
           title="Show navigation"
         />
         <span class="ml-1 min-w-0 truncate text-sm font-semibold">
-          {snapshot?.project.name ?? "Loading project"}
+          {snapshot?.project.name ?? "Beancount Studio"}
         </span>
         <div class="ml-auto flex shrink-0 items-center gap-1">
           <Button
@@ -382,7 +393,34 @@
           />
         </div>
       </div>
-      <div class="min-h-0 min-w-0 flex-1 overflow-hidden"><slot></slot></div>
+      <div class="min-h-0 min-w-0 flex-1 overflow-hidden">
+        {#if snapshot}
+          <slot></slot>
+        {:else}
+          <Empty.Root>
+            <Empty.Header>
+              <Empty.Media variant="icon"><FolderOpen /></Empty.Media>
+              <Empty.Title>Open a ledger project</Empty.Title>
+              <Empty.Description>
+                Choose the folder that contains your Beancount entry file to
+                start working.
+              </Empty.Description>
+            </Empty.Header>
+            <Empty.Content>
+              <Button onclick={() => void openProject()}>
+                <FolderOpen data-icon="inline-start" />
+                Open project
+              </Button>
+              {#if status && !status.startsWith("Loading") && !status.startsWith("Add a local")}
+                <Empty.Description role="alert" class="text-destructive">
+                  {status}
+                </Empty.Description>
+              {/if}
+            </Empty.Content>
+          </Empty.Root>
+        {/if}
+      </div>
     </main>
+    <slot name="ai"></slot>
   </div>
 </Sidebar.Provider>

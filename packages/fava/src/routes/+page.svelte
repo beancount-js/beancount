@@ -3,7 +3,10 @@
   import { onMount } from "svelte";
   import Main from "../Main.svelte";
   import { BrowserWorkspaceAdapter } from "@beancount-js/web";
-  import type { ProjectSnapshot, ProjectSummary } from "@beancount-js/workspace";
+  import type {
+    ProjectSnapshot,
+    ProjectSummary,
+  } from "@beancount-js/workspace";
   import type { InlineAiRequest } from "../studio/workspace";
 
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
@@ -14,20 +17,27 @@
 
   async function responseJson<T>(response: Response): Promise<T> {
     const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error((body as { error?: string }).error ?? response.statusText);
+    if (!response.ok)
+      throw new Error(
+        (body as { error?: string }).error ?? response.statusText,
+      );
     return body as T;
   }
 
   async function refreshProjects() {
-    projects = isWeb && webWorkspace
-      ? await webWorkspace.listProjects()
-      : await responseJson<ProjectSummary[]>(await fetch("/api/projects"));
+    projects =
+      isWeb && webWorkspace
+        ? await webWorkspace.listProjects()
+        : await responseJson<ProjectSummary[]>(await fetch("/api/projects"));
   }
 
   async function selectProject(id: string) {
-    snapshot = isWeb && webWorkspace
-      ? await webWorkspace.readProject(id)
-      : await responseJson<ProjectSnapshot>(await fetch(`/api/projects/${encodeURIComponent(id)}`));
+    snapshot =
+      isWeb && webWorkspace
+        ? await webWorkspace.readProject(id)
+        : await responseJson<ProjectSnapshot>(
+            await fetch(`/api/projects/${encodeURIComponent(id)}`),
+          );
     status = `${snapshot.ledgerFiles.length} Beancount sources · ${snapshot.resources.length} resources`;
   }
 
@@ -35,14 +45,21 @@
     try {
       if (isWeb) {
         if (!webWorkspace || !browser || !("showDirectoryPicker" in window)) {
-          throw new Error("This browser does not support opening local folders.");
+          throw new Error(
+            "This browser does not support opening local folders.",
+          );
         }
-        const handle = await (window as Window & { showDirectoryPicker(): Promise<FileSystemDirectoryHandle> }).showDirectoryPicker();
+        const handle = await (
+          window as Window & {
+            showDirectoryPicker(): Promise<FileSystemDirectoryHandle>;
+          }
+        ).showDirectoryPicker();
         const project = await webWorkspace.addDirectory(handle);
         await refreshProjects();
         await selectProject(project.id);
       } else {
-        if (!path) throw new Error("Enter the path to a Beancount project folder.");
+        if (!path)
+          throw new Error("Enter the path to a Beancount project folder.");
         const project = await responseJson<{ id: string }>(
           await fetch("/api/projects", {
             method: "POST",
@@ -68,11 +85,14 @@
       return next;
     }
     await responseJson(
-      await fetch(`/api/projects/${encodeURIComponent(snapshot.project.id)}/files/${path.split("/").map(encodeURIComponent).join("/")}`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ contents }),
-      }),
+      await fetch(
+        `/api/projects/${encodeURIComponent(snapshot.project.id)}/files/${path.split("/").map(encodeURIComponent).join("/")}`,
+        {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ contents }),
+        },
+      ),
     );
     const next = await responseJson<ProjectSnapshot>(
       await fetch(`/api/projects/${encodeURIComponent(snapshot.project.id)}`),
@@ -82,15 +102,23 @@
     return next;
   }
 
-  async function askAi(question: string, context?: InlineAiRequest) {
-    if (isWeb) return "AI is available when this project is opened through the local Beancount Studio server.";
+  async function askAi(
+    question: string,
+    context?: InlineAiRequest,
+    model?: string,
+  ) {
+    if (isWeb)
+      return "AI is available when this project is opened through the local Beancount Studio server.";
     if (!snapshot) throw new Error("No project is selected.");
     const result = await responseJson<{ answer: string }>(
-      await fetch(`/api/projects/${encodeURIComponent(snapshot.project.id)}/ai`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ question, context }),
-      }),
+      await fetch(
+        `/api/projects/${encodeURIComponent(snapshot.project.id)}/ai`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ question, context, model }),
+        },
+      ),
     );
     return result.answer;
   }
@@ -103,8 +131,14 @@
       const bytes = await webWorkspace.readResource(snapshot.project.id, path);
       const body = new Uint8Array(bytes.byteLength);
       body.set(bytes);
-      const url = URL.createObjectURL(new Blob([body.buffer], { type: resource.mimeType }));
-      return { url, mimeType: resource.mimeType, revoke: () => URL.revokeObjectURL(url) };
+      const url = URL.createObjectURL(
+        new Blob([body.buffer], { type: resource.mimeType }),
+      );
+      return {
+        url,
+        mimeType: resource.mimeType,
+        revoke: () => URL.revokeObjectURL(url),
+      };
     }
     return {
       url: `/api/projects/${encodeURIComponent(snapshot.project.id)}/resources/${path.split("/").map(encodeURIComponent).join("/")}`,
@@ -134,9 +168,13 @@
       if (isWeb || !snapshot) return;
       try {
         const next = await responseJson<ProjectSnapshot>(
-          await fetch(`/api/projects/${encodeURIComponent(snapshot.project.id)}`),
+          await fetch(
+            `/api/projects/${encodeURIComponent(snapshot.project.id)}`,
+          ),
         );
-        if (JSON.stringify(next.revisions) !== JSON.stringify(snapshot.revisions)) {
+        if (
+          JSON.stringify(next.revisions) !== JSON.stringify(snapshot.revisions)
+        ) {
           snapshot = next;
           status = "Reloaded external filesystem changes";
         }
