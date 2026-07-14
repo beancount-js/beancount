@@ -87,7 +87,16 @@
   );
   const { activeFile } = workspace;
   const { activeRoute, routerLink } = navigation;
+  const utilityPageTitles: Record<string, string> = {
+    "/errors": "Errors",
+    "/records": "Import",
+    "/import/editor": "Import Editor",
+    "/directives": "Editor",
+    "/resource": "Resource",
+    "/404": "Page not found",
+  };
   let loadedSignature = "";
+  let pageTitle = "Beancount Studio";
 
   context.menu.set([MainNav]);
   setContext(ContextKey, context);
@@ -121,6 +130,24 @@
     applySnapshot(next);
   }
 
+  function titleForRoute(
+    path: string,
+    params: Record<string, string | undefined>,
+  ) {
+    const mainTab = MainNav.find((item) => item.path.slice(1) === path);
+    if (mainTab) return mainTab.name;
+
+    if (path === "/") return "Balance Sheet";
+    if (path === "/accounts") return "Accounts";
+    if (path.startsWith("/account/")) {
+      return params.account ? `Account: ${params.account}` : "Account";
+    }
+
+    return utilityPageTitles[path] ?? "Beancount Studio";
+  }
+
+  $: pageTitle = titleForRoute($activeRoute.path, $activeRoute.params);
+
   $: if (snapshot) {
     const signature = `${snapshot.project.id}:${snapshot.revisions.map((item) => item.revision).join(":")}`;
     if (signature !== loadedSignature) {
@@ -138,6 +165,7 @@
     {snapshot}
     {isWeb}
     {status}
+    {pageTitle}
     {onSelectProject}
     {onAddProject}
   >

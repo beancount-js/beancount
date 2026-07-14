@@ -55,6 +55,9 @@ test.describe("app workflow", () => {
     for (const tab of mainTabs) {
       await navigateTo(page, tab.name);
       await expect(page).toHaveURL(tab.path);
+      await expect(
+        workspaceHeader.getByText(tab.name, { exact: true }),
+      ).toBeVisible();
       await tab.assert(page);
     }
 

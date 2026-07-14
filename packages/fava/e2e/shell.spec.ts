@@ -10,7 +10,7 @@ test.describe("Docs-shell visual foundation", () => {
     await expect(
       page
         .locator("[data-slot=studio-workspace-header]")
-        .getByText("beancount-js-studio", { exact: true }),
+        .getByText("Editor", { exact: true }),
     ).toBeVisible();
   });
 
@@ -308,6 +308,20 @@ test.describe("Docs-shell visual foundation", () => {
     await page.getByRole("button", { name: "Expand project rail" }).click();
     await expect(page.locator("[data-ledger-file-row]").first()).toBeVisible();
   });
+
+  test("shows the active page name in the workspace header", async ({
+    page,
+  }) => {
+    const pageTitle = page.locator("[data-workspace-page-title]");
+
+    await expect(pageTitle).toHaveText("Editor");
+
+    await page.goto("/#/income_statement");
+    await expect(pageTitle).toHaveText("Income Statement");
+
+    await page.goto("/#/journal");
+    await expect(pageTitle).toHaveText("Journal");
+  });
 });
 
 test.describe("Docs-shell mobile navigation", () => {
@@ -320,7 +334,7 @@ test.describe("Docs-shell mobile navigation", () => {
     await expect(
       page
         .locator("[data-slot=studio-workspace-header]")
-        .getByText("beancount-js-studio", { exact: true }),
+        .getByText("Editor", { exact: true }),
     ).toBeVisible();
   });
 

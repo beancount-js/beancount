@@ -28,6 +28,7 @@
   export let snapshot: ProjectSnapshot | undefined;
   export let isWeb = false;
   export let status = "";
+  export let pageTitle = "Beancount Studio";
   export let onSelectProject: (id: string) => void | Promise<void>;
   export let onAddProject: (path?: string) => void | Promise<void>;
 
@@ -370,8 +371,11 @@
           aria-label="Collapse sidebar to project rail"
           title="Collapse sidebar"
         />
-        <span class="ml-1 min-w-0 truncate text-sm font-semibold">
-          {snapshot?.project.name ?? "Beancount Studio"}
+        <span
+          data-workspace-page-title
+          class="ml-1 min-w-0 truncate text-sm font-semibold"
+        >
+          {pageTitle}
         </span>
         <div class="ml-auto flex shrink-0 items-center gap-1">
           <Button
