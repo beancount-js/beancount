@@ -17,6 +17,7 @@
   import IntervalTreeTableNode from "./IntervalTreeTableNode.svelte";
   import type { DateRange } from "@beancount-js/filters";
   import { useCollapseAccount } from "../../stores/account";
+  import * as ScrollArea from "$lib/components/ui/scroll-area";
   const getNotShown = useGetNotShown();
   const currentTimeFilterDateFormat = useCurrentTimeFilterDateFormat();
 
@@ -61,7 +62,7 @@
   });
 </script>
 
-<div class="table-h-scroll w-full max-w-full">
+<ScrollArea.Root orientation="horizontal" class="w-full max-w-full">
   <ol class="flex-table tree-table-new pb-8">
     <li class="head">
       <p>
@@ -77,4 +78,4 @@
     </li>
     <IntervalTreeTableNode nodes={trees} {budgets} />
   </ol>
-</div>
+</ScrollArea.Root>

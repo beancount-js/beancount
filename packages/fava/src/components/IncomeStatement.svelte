@@ -8,6 +8,7 @@
   import { intervalLabel } from "../lib/interval";
   import { useContext } from "../context";
   import { useChartContext } from "../charts/context";
+  import ContentScrollArea from "./ContentScrollArea.svelte";
 
   const { ledgerData, conversion, interval, ledgerOptions } = useContext();
   const chartContext = useChartContext();
@@ -101,7 +102,7 @@
   ];
 </script>
 
-<div class="scroll-container">
+<ContentScrollArea contentClass="scroll-container">
   <div class="p-2">
     <ChartSwitcher {charts} />
   </div>
@@ -118,4 +119,4 @@
       </div>
     </div>
   </div>
-</div>
+</ContentScrollArea>

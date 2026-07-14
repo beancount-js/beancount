@@ -4,8 +4,8 @@
   import { derived, writable, type Readable } from "svelte/store";
   import { sortDataset, useSortableTable, type SortType } from "./sort";
   import Cell from "./Cell.svelte";
-  // import ScrollArea from "$lib/components/ui/scroll-area/scroll-area.svelte";
   import * as Alert from "$lib/components/ui/alert";
+  import * as ScrollArea from "$lib/components/ui/scroll-area";
   export let data: Readable<Array<any>>;
   export let height: number = 500;
   export let rowHeight: number = 20;
@@ -42,14 +42,13 @@
   $: ({ getSize, columns, styles, maxHeight, widths } = $table);
 </script>
 
-<!-- <ScrollArea orientation="both"> -->
 {#if !$sortedData.length}
   <Alert.Root variant="default" class="mt-4 border-solid text-xs">
     <Alert.Description class="whitespace-pre-wrap">No records</Alert.Description
     >
   </Alert.Root>
 {:else}
-  <div class="table-h-scroll w-full max-w-full">
+  <ScrollArea.Root orientation="horizontal" class="w-full max-w-full">
     <ol class="bean-table flex-table text-xs">
       <VirtualList
         height={Math.min(height, maxHeight)}
@@ -124,6 +123,5 @@
         </div>
       </VirtualList>
     </ol>
-  </div>
+  </ScrollArea.Root>
 {/if}
-<!-- </ScrollArea> -->

@@ -2,6 +2,7 @@
   import { highlightCode } from "@lezer/highlight";
   import { Parser } from "@lezer/common";
   import { classHighlighter } from "../codemirror/extensions/classHighlighter";
+  import * as ScrollArea from "$lib/components/ui/scroll-area";
   type HighlighterProps = {
     code: string;
     parser: Parser;
@@ -32,8 +33,6 @@
   };
 </script>
 
-<div>
-  <pre
-    class="overflow-x-auto whitespace-pre-wrap text-left"
-    use:useHighligter></pre>
-</div>
+<ScrollArea.Root orientation="horizontal" class="w-full">
+  <pre class="whitespace-pre-wrap text-left" use:useHighligter></pre>
+</ScrollArea.Root>

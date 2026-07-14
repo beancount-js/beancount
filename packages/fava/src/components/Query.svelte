@@ -46,6 +46,7 @@
   import { useContext } from "../context";
   import { classHighlighter } from "../codemirror/extensions/classHighlighter";
   import { onMount } from "svelte";
+  import ContentScrollArea from "./ContentScrollArea.svelte";
   const { history } = useNavigation();
   const ledgerData = useLedger();
 
@@ -166,7 +167,7 @@
   });
 </script>
 
-<div class="scroll-container no-bars p-4 pb-[60vh]">
+<ContentScrollArea contentClass="scroll-container p-4 pb-[60vh]">
   <div class="beancount-editor relative">
     <div class="flex justify-end">
       <Button size="sm" variant="ghost" onclick={formatCode}>
@@ -195,4 +196,4 @@
     </Alert.Root>
   {/if}
   <QueryBox queries={$queryHistory} {onDelete} {selected} />
-</div>
+</ContentScrollArea>

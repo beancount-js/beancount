@@ -390,7 +390,7 @@
           </div>
         {/if}
       </div>
-      <Tabs.Content value="categorized-records" class="overflow-auto font-mono">
+      <Tabs.Content value="categorized-records" class="font-mono">
         <Grid
           data={categorized}
           height={window.innerHeight - 150}

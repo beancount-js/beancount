@@ -28,6 +28,7 @@
   import { balances } from "../charts/line";
   import { useSortableTable, type SortType, sortDataset } from "../grid/sort";
   import { Position } from "@beancount-js/beancount";
+  import * as ScrollArea from "$lib/components/ui/scroll-area";
 
   export let height: number = 500;
   export let rowHeight: number = 20;
@@ -140,7 +141,7 @@
       >
     </Alert.Root>
   {/if}
-  <div class="overflow-x-auto">
+  <ScrollArea.Root orientation="horizontal" class="w-full">
     <div class="w-full pt-4">
       {#if chart}
         <div class="pb-2 text-xs">
@@ -264,5 +265,5 @@
         </VirtualList>
       </ol>
     </div>
-  </div>
+  </ScrollArea.Root>
 </div>

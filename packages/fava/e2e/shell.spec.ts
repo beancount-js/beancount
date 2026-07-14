@@ -134,9 +134,44 @@ test.describe("Docs-shell visual foundation", () => {
     await expect(page.getByPlaceholder("Search folders")).toBeVisible();
     await page.getByRole("button", { name: "Ledgers", exact: true }).click();
     await expect(page.getByPlaceholder("Search ledgers")).toBeVisible();
+    const collapsedLedger = page
+      .locator('[data-ledger-file-toggle][aria-expanded="false"]')
+      .first();
+    await expect(collapsedLedger).toBeVisible();
+    const collapsedLedgerPath = await collapsedLedger.getAttribute(
+      "data-ledger-file-toggle",
+    );
+    expect(collapsedLedgerPath).toBeTruthy();
+    const expandedLedger = page.locator(
+      `[data-ledger-file-toggle="${collapsedLedgerPath}"]`,
+    );
+    await expandedLedger.click();
+    await expect(expandedLedger).toHaveAttribute("aria-expanded", "true");
+    await expect(
+      page.locator(`[data-ledger-file-panels="${collapsedLedgerPath}"]`),
+    ).toContainText("Editor");
+    const selectedLedger = page.locator(
+      `[data-ledger-file-row="${collapsedLedgerPath}"]`,
+    );
+    await selectedLedger.click();
+    await expect(selectedLedger).toHaveAttribute("aria-current", "page");
     await expect(
       page.locator("[data-ledger-file-panels]").first(),
     ).toContainText("Editor");
+
+    const viewportScroll = await page.evaluate(() => ({
+      document: {
+        clientHeight: document.documentElement.clientHeight,
+        scrollHeight: document.documentElement.scrollHeight,
+      },
+      contentAreas: document.querySelectorAll("[data-content-scroll-area]")
+        .length,
+    }));
+    expect(viewportScroll.document.scrollHeight).toBe(
+      viewportScroll.document.clientHeight,
+    );
+    expect(viewportScroll.contentAreas).toBeGreaterThan(0);
+
     await page.getByRole("button", { name: "Tags", exact: true }).click();
     const leafTag = page.locator('[data-ledger-tag-row="credit-card"]');
     await expect(leafTag).toBeVisible();

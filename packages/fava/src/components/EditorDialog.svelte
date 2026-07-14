@@ -19,6 +19,7 @@
   import { beancountCompletion } from "../codemirror/beancount/autocomplete";
   import { cn } from "$lib/utils";
   import type { Text } from "@codemirror/state";
+  import * as ScrollArea from "$lib/components/ui/scroll-area";
   const { ledgerSource } = useContext();
   export let directive: Directive;
   let dialogOpen = false;
@@ -119,11 +120,13 @@
           >{directive.meta["filename"]}:{directive.meta["lineno"]}</Dialog.Title
         >
       </Dialog.Header>
-      <div class="overflow-auto p-4 pl-0">
-        <div class="beancount-editor relative">
-          <div use:codeMirror={directive} class="min-h-[300px]"></div>
+      <ScrollArea.Root class="max-h-[60vh]">
+        <div class="p-4 pl-0">
+          <div class="beancount-editor relative">
+            <div use:codeMirror={directive} class="min-h-[300px]"></div>
+          </div>
         </div>
-      </div>
+      </ScrollArea.Root>
       <Dialog.Footer>
         <Button type="submit" onclick={handleSave}>Save</Button>
       </Dialog.Footer>

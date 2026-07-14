@@ -1,8 +1,10 @@
 <script lang="ts">
   import Button from "$lib/components/ui/button/button.svelte";
   import * as Tabs from "$lib/components/ui/tabs";
+  import * as ScrollArea from "$lib/components/ui/scroll-area";
   import { urlFor } from "../helpers";
   import QueryTable from "./QueryTable.svelte";
+  import ContentScrollArea from "./ContentScrollArea.svelte";
   let innerHeight = 500;
   const queries: Array<{
     id: string;
@@ -76,15 +78,17 @@
 </script>
 
 <svelte:window bind:innerHeight />
-<div class="scroll-container no-bars p-4">
-  <Tabs.Root class="w-full overflow-auto" {value} onValueChange={handleChange}>
-    <div class="max-w-max">
-      <Tabs.List>
-        {#each queries as query}
-          <Tabs.Trigger value={query.id}>{query.name}</Tabs.Trigger>
-        {/each}
-      </Tabs.List>
-    </div>
+<ContentScrollArea contentClass="scroll-container p-4">
+  <Tabs.Root class="w-full" {value} onValueChange={handleChange}>
+    <ScrollArea.Root orientation="horizontal" class="w-full">
+      <div class="w-max pr-3">
+        <Tabs.List>
+          {#each queries as query}
+            <Tabs.Trigger value={query.id}>{query.name}</Tabs.Trigger>
+          {/each}
+        </Tabs.List>
+      </div>
+    </ScrollArea.Root>
     {#each queries as query}
       <Tabs.Content value={query.id}>
         <Button
@@ -102,4 +106,4 @@
       </Tabs.Content>
     {/each}
   </Tabs.Root>
-</div>
+</ContentScrollArea>

@@ -6,6 +6,7 @@
   import ChartSwitcher from "../charts/ChartSwitcher.svelte";
   import { balances } from "../charts/line";
   import { useContext } from "../context";
+  import ContentScrollArea from "./ContentScrollArea.svelte";
 
   const { ledgerData, conversion, interval, ledgerOptions } = useContext();
 
@@ -78,7 +79,7 @@
   ];
 </script>
 
-<div class="scroll-container">
+<ContentScrollArea contentClass="scroll-container">
   <div class="p-2">
     <ChartSwitcher {charts} />
   </div>
@@ -94,4 +95,4 @@
       </div>
     </div>
   </div>
-</div>
+</ContentScrollArea>

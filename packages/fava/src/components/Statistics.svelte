@@ -2,6 +2,7 @@
   import Button from "$lib/components/ui/button/button.svelte";
   import { urlFor } from "../helpers";
   import QueryTable from "./QueryTable.svelte";
+  import ContentScrollArea from "./ContentScrollArea.svelte";
   let innerHeight = 500;
   const queries: Array<{
     name: string;
@@ -41,7 +42,7 @@
 </script>
 
 <svelte:window bind:innerHeight />
-<div class="scroll-container overflow-auto">
+<ContentScrollArea contentClass="scroll-container">
   <div class="flex">
     <div class="flex w-full flex-row flex-wrap justify-center">
       {#each queries as query}
@@ -63,4 +64,4 @@
       {/each}
     </div>
   </div>
-</div>
+</ContentScrollArea>

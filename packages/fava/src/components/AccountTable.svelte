@@ -189,7 +189,7 @@
 </script>
 
 <div class="">
-  <div class="table-h-scroll w-full max-w-full">
+  <div class="w-full max-w-full">
     <Grid
       height={window.innerHeight - 150}
       padding={window.innerHeight / 2}

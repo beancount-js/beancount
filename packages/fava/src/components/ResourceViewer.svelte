@@ -5,6 +5,7 @@
   import { Button } from "$lib/components/ui/button";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
+  import * as ScrollArea from "$lib/components/ui/scroll-area";
 
   const { router } = useNavigation();
   const { activeRoute } = router;
@@ -28,14 +29,18 @@
     text = "";
     error = "";
     if (!resource) {
-      error = "This resource is not referenced by the active Beancount project.";
+      error =
+        "This resource is not referenced by the active Beancount project.";
       return;
     }
     try {
       const next = await resourceUrl(resource.path);
       url = next.url;
       revoke = next.revoke;
-      if (resource.mimeType.startsWith("text/") || /(?:json|yaml|csv)/.test(resource.mimeType)) {
+      if (
+        resource.mimeType.startsWith("text/") ||
+        /(?:json|yaml|csv)/.test(resource.mimeType)
+      ) {
         text = await (await fetch(url)).text();
       }
     } catch (reason) {
@@ -48,18 +53,45 @@
 
 <section class="flex h-full min-h-0 flex-col gap-3 p-4">
   <div class="flex items-center justify-between gap-3">
-    <div class="min-w-0"><p class="text-sm font-medium">{resource?.path ?? "Resource"}</p><p class="text-xs text-muted-foreground">{resource?.mimeType ?? "Unavailable"}</p></div>
-    {#if url}<Button variant="outline" size="sm" onclick={() => window.open(url, "_blank", "noopener,noreferrer")}><ExternalLink data-icon="inline-start" /> Open</Button>{/if}
+    <div class="min-w-0">
+      <p class="text-sm font-medium">{resource?.path ?? "Resource"}</p>
+      <p class="text-xs text-muted-foreground">
+        {resource?.mimeType ?? "Unavailable"}
+      </p>
+    </div>
+    {#if url}<Button
+        variant="outline"
+        size="sm"
+        onclick={() => window.open(url, "_blank", "noopener,noreferrer")}
+        ><ExternalLink data-icon="inline-start" /> Open</Button
+      >{/if}
   </div>
   {#if error}
-    <div class="flex items-center gap-2 rounded-md border border-destructive/30 p-3 text-sm text-destructive"><FileWarning /> {error}</div>
+    <div
+      class="flex items-center gap-2 rounded-md border border-destructive/30 p-3 text-sm text-destructive"
+    >
+      <FileWarning />
+      {error}
+    </div>
   {:else if resource?.mimeType.startsWith("image/") && url}
-    <div class="min-h-0 flex-1 overflow-auto rounded-md border bg-muted p-3"><img src={url} alt={resource.path} class="mx-auto max-w-full" /></div>
+    <ScrollArea.Root class="min-h-0 flex-1 rounded-md border bg-muted">
+      <div class="p-3">
+        <img src={url} alt={resource.path} class="mx-auto max-w-full" />
+      </div>
+    </ScrollArea.Root>
   {:else if resource?.mimeType === "application/pdf" && url}
-    <iframe title={resource.path} src={url} class="min-h-0 flex-1 rounded-md border bg-muted"></iframe>
+    <iframe
+      title={resource.path}
+      src={url}
+      class="min-h-0 flex-1 rounded-md border bg-muted"
+    ></iframe>
   {:else if text}
-    <pre class="min-h-0 flex-1 overflow-auto rounded-md border bg-muted p-3 text-sm">{text}</pre>
+    <ScrollArea.Root class="min-h-0 flex-1 rounded-md border bg-muted">
+      <pre class="p-3 text-sm">{text}</pre>
+    </ScrollArea.Root>
   {:else}
-    <div class="rounded-md border p-4 text-sm text-muted-foreground">Loading resource…</div>
+    <div class="rounded-md border p-4 text-sm text-muted-foreground">
+      Loading resource…
+    </div>
   {/if}
 </section>

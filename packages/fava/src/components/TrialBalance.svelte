@@ -8,6 +8,7 @@
   import { useContext } from "../context";
   import type { LedgerData } from "../lib/ledger-data";
   import type { Readable } from "svelte/store";
+  import ContentScrollArea from "./ContentScrollArea.svelte";
 
   const context = useContext();
 
@@ -48,7 +49,7 @@
   );
 </script>
 
-<div class="scroll-container">
+<ContentScrollArea contentClass="scroll-container">
   <div class="w-full">
     <div class="p-2">
       <Tabs.Root value={charts[0].account} class="">
@@ -70,4 +71,4 @@
       <TreeTableComponent tree={node} end={null}></TreeTableComponent>
     </div>
   </div>
-</div>
+</ContentScrollArea>

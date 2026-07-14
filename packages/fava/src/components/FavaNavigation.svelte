@@ -157,26 +157,32 @@
     return items;
   }
 
-  function isFileExpanded(path: string) {
-    if (Object.hasOwn(expandedFilePaths, path)) {
-      return expandedFilePaths[path]!;
+  function isFileExpanded(
+    path: string,
+    expandedPaths: Record<string, boolean> = expandedFilePaths,
+  ) {
+    if (Object.hasOwn(expandedPaths, path)) {
+      return expandedPaths[path]!;
     }
     return path === $activeFile;
   }
 
   function toggleLedgerFile(path: string) {
-    if ($activeFile === path) {
-      expandedFilePaths = { [path]: !isFileExpanded(path) };
-      return;
-    }
+    expandedFilePaths = {
+      ...expandedFilePaths,
+      [path]: !isFileExpanded(path),
+    };
+  }
+
+  function selectLedgerFile(path: string) {
     activeFile.set(path);
-    expandedFilePaths = { [path]: true };
+    expandedFilePaths = { ...expandedFilePaths, [path]: true };
     router.push("#/editor");
   }
 
   function openLedgerPanel(path: string, panel: MenuItem) {
     activeFile.set(path);
-    expandedFilePaths = { [path]: true };
+    expandedFilePaths = { ...expandedFilePaths, [path]: true };
     router.push(panel.path);
   }
 
@@ -604,35 +610,51 @@
   depth: number;
   showPath: boolean;
 })}
-  {@const expanded = isFileExpanded(file.path)}
+  {@const expanded = isFileExpanded(file.path, expandedFilePaths)}
   {@const active = file.path === $activeFile}
   <div class="min-w-0" data-ledger-file-node={file.path}>
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
+    <div
       class={cn(
-        "relative h-8 w-full min-w-0 justify-start gap-1 pr-1 text-xs font-semibold",
+        "relative flex h-8 min-w-0 items-center rounded-md text-xs font-semibold transition-colors",
         active
-          ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-          : "text-sidebar-foreground hover:bg-background hover:text-sidebar-accent-foreground",
+          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm ring-1 ring-sidebar-ring"
+          : "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
       )}
       style={fileRowStyle(depth)}
-      aria-current={active ? "page" : undefined}
-      aria-expanded={expanded}
-      data-ledger-file-row={file.path}
-      onclick={() => toggleLedgerFile(file.path)}
     >
       {@render IndentGuides({ depth })}
-      <ChevronRight
-        data-icon="inline-start"
-        class={cn("transition-transform", expanded && "rotate-90")}
-      />
-      <FileText data-icon="inline-start" />
-      <span class="min-w-0 flex-1 truncate text-left"
-        >{showPath ? file.path : ledgerFileName(file.path)}</span
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        class="relative z-10 size-7 shrink-0 rounded-sm p-0 hover:bg-background/70"
+        aria-label={expanded
+          ? `Collapse ${ledgerFileName(file.path)}`
+          : `Expand ${ledgerFileName(file.path)}`}
+        aria-expanded={expanded}
+        data-ledger-file-toggle={file.path}
+        onclick={() => toggleLedgerFile(file.path)}
       >
-    </Button>
+        <ChevronRight
+          data-icon
+          class={cn("transition-transform", expanded && "rotate-90")}
+        />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs font-semibold hover:bg-background/70"
+        aria-current={active ? "page" : undefined}
+        data-ledger-file-row={file.path}
+        onclick={() => selectLedgerFile(file.path)}
+      >
+        <FileText data-icon="inline-start" />
+        <span class="min-w-0 flex-1 truncate text-left"
+          >{showPath ? file.path : ledgerFileName(file.path)}</span
+        >
+      </Button>
+    </div>
     {#if expanded}
       <div class="min-w-0" data-ledger-file-panels={file.path}>
         {#each menuItems as panel (panel.path)}

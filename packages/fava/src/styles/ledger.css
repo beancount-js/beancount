@@ -64,39 +64,6 @@
 
 .scroll-container {
   padding-bottom: 50vh;
-  overflow-x: hidden;
-  overflow-y: auto;
-  height: 100vh;
   padding-top: 0.5em;
   padding-right: 1em;
-}
-
-.scroll-container.no-bars {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.scroll-container.no-bars::-webkit-scrollbar,
-.scroll-container:has(.scroll-container)::-webkit-scrollbar {
-  display: none;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.scroll-container:has(.scroll-container) {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-  padding-bottom: unset;
-}
-
-.scroll-container .scroll-container {
-  overflow: visible;
-  height: auto;
-  padding-right: unset;
-}
-
-.table-h-scroll {
-  display: block;
-  max-width: 100%;
-  overflow-x: auto;
 }

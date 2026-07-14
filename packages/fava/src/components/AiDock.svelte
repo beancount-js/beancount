@@ -6,6 +6,7 @@
   import Sparkles from "lucide-svelte/icons/sparkles";
   import { Button } from "$lib/components/ui/button";
   import * as Select from "$lib/components/ui/select";
+  import * as ScrollArea from "$lib/components/ui/scroll-area";
   import type { InlineAiRequest } from "../studio/workspace";
 
   type ModelOption = {
@@ -213,8 +214,9 @@
         </Button>
       </div>
       {#if reply}
-        <pre
-          class="min-h-0 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-3 text-sm">{reply}</pre>
+        <ScrollArea.Root class="min-h-0 flex-1 rounded-md bg-muted">
+          <pre class="whitespace-pre-wrap p-3 text-sm">{reply}</pre>
+        </ScrollArea.Root>
       {/if}
     </div>
   </section>
