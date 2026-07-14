@@ -736,8 +736,6 @@
             class={cn("transition-transform", expanded && "rotate-90")}
           />
         </Button>
-      {:else}
-        <span class="size-7 shrink-0" aria-hidden="true"></span>
       {/if}
       <Button
         type="button"

@@ -115,10 +115,12 @@ test.describe("Docs-shell visual foundation", () => {
       page.locator("[data-ledger-file-panels]").first(),
     ).toContainText("Editor");
     await page.getByRole("button", { name: "Tags", exact: true }).click();
+    const leafTag = page.locator('[data-ledger-tag-row="credit-card"]');
+    await expect(leafTag).toBeVisible();
     await expect(
-      page.locator('[data-ledger-tag-row="credit-card"]'),
-    ).toBeVisible();
-    await page.locator('[data-ledger-tag-row="credit-card"]').click();
+      leafTag.locator("xpath=../span[contains(@class, 'size-7')]"),
+    ).toHaveCount(0);
+    await leafTag.click();
     await expect(
       page.getByRole("button", { name: "Remove #credit-card filter" }),
     ).toBeVisible();
