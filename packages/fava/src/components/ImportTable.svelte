@@ -4,7 +4,7 @@
   import * as Tabs from "$lib/components/ui/tabs";
   import { useLedger } from "./helpers";
   import ComboBox from "./ComboBox.svelte";
-  import { resolveMissing, Transaction } from "@beancount-js/beancount";
+  import { Transaction } from "@beancount-js/beancount";
   import { derived } from "svelte/store";
   import { useContext } from "../context";
   import type { FormInputEvent } from "$lib/components/ui/input";
@@ -13,7 +13,7 @@
   import EditorDialog from "./EditorDialog.svelte";
   import { Text } from "@codemirror/state";
   import type { Match } from "../import/models";
-  import { parseLedgerTree } from "@beancount-js/parser";
+  import { rawParser as ledgerParser } from "@beancount-js/codemirror-lang-beancount";
   import type { SyntaxNodeRef } from "@lezer/common";
   import { DateTime } from "luxon";
   import { formatDate } from "@beancount-js/parser";
@@ -198,7 +198,7 @@
 
     if (account && row.directive) {
       const doc = Text.of(row.directive.toString().split("\n"));
-      const tree = parseLedgerTree(doc.toString());
+      const tree = ledgerParser.parse(doc.toString());
       let updated: Text | null = null;
       tree.cursor().iterate((node: SyntaxNodeRef) => {
         if (updated) {
@@ -264,10 +264,8 @@
           if (column.type === "amount") {
             value.class = "pr-1 text-right";
             return (
-              resolveMissing(
-                row.directive?.postings.find((it) => it.account === acc.name)
-                  ?.units,
-              ) ?? _.get(row.data, column.id)
+              row.directive?.postings.find((it) => it.account === acc.name)
+                ?.units ?? _.get(row.data, column.id)
             );
           } else if (column.type === "date") {
             const date: Date = DateTime.fromFormat(

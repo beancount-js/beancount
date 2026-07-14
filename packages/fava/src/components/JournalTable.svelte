@@ -4,7 +4,6 @@
     Balance,
     Close,
     Custom,
-    DUPLICATE_META,
     isInstanceOf,
     Open,
     Pad,
@@ -23,6 +22,10 @@
   import { chunk } from "./helpers";
   import EditorDialog from "./EditorDialog.svelte";
   import { cn } from "$lib/utils";
+
+  // Duplicate detection is no longer annotated by the aligned core, but keep
+  // the renderer tolerant of ledgers that still carry the historical marker.
+  const DUPLICATE_META = "__duplicates__";
   const { ledgerData } = useContext();
   const ctx = useCtx();
 

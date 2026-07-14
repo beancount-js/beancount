@@ -5,7 +5,6 @@ import {
   filterTransactions,
   FLAG_UNREALIZED,
   isDescendantOf,
-  LedgerDatabase,
   LoadError,
   Price,
   Transaction,
@@ -13,7 +12,6 @@ import {
   type Directives,
   type LedgerError,
   type PriceMap,
-  type QueryResult,
 } from "@beancount-js/beancount";
 import { DateRange, type Filter } from "@beancount-js/filters";
 import { formatDate } from "@beancount-js/parser";
@@ -45,7 +43,6 @@ export class LedgerData {
 
   readonly transactions: ReadonlyArray<Transaction>;
   readonly tree: Tree;
-  readonly db: LedgerDatabase;
   readonly dateFirst: DateTime | null = null;
   readonly dateLast: DateTime | null = null;
 
@@ -89,7 +86,6 @@ export class LedgerData {
     this.#directives = directives;
     this.transactions = filterTransactions(this.directives);
     this.tree = new Tree({ entries: this.directives });
-    this.db = new LedgerDatabase(this);
 
     for (const [name, account] of Object.entries(
       accountOpenClose(this.directives),
@@ -168,16 +164,12 @@ export class LedgerData {
     return this.taxonomy.years;
   }
 
-  query(qs: string): QueryResult {
-    return this.db.query(qs);
-  }
-
   filter(filter?: Filter | string) {
     if (!filter) {
       return this;
     }
     const errors = [...this.errors];
-    const [filtered, filterErrors] = filterLedger(this.directives, filter);
+    const [[filtered], filterErrors] = filterLedger(this.directives, filter);
     if (filterErrors.length) {
       errors.push(...filterErrors.map((it) => new LoadError(it)));
     }

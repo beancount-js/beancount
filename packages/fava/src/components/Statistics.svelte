@@ -11,9 +11,9 @@
     {
       name: "Postings per Account",
       query: `
-            SELECT 
-                account,
-                count(account)
+            SELECT account, count(account)
+            FROM postings
+            GROUP BY account
             `,
     },
     {
@@ -21,20 +21,18 @@
       query: `
             SELECT
                 account,
-                last(date) as [Last Entry],
-                units(sum(position)) as Balance
-            WHERE account_sortkey(account) ~ "^[01]"
+                max(date) AS last_entry,
+                sum(number) AS balance
+            FROM postings
             GROUP BY account
-            ORDER BY 2 DESC
+            ORDER BY last_entry DESC
             `,
     },
     {
       name: "Entries Per Type",
       query: `
-            raw SELECT 
-                type,
-                count(type)
-            FROM directives
+            SELECT type, count(type)
+            FROM entries
             GROUP BY type
             `,
     },

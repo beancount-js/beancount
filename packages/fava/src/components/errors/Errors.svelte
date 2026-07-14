@@ -5,7 +5,6 @@
   import { useContext } from "../../context";
   import { Cell, Grid } from "../../grid";
   import type { Column } from "../../grid/grid";
-  import { LanguageRecord } from "@beancount-js/beancount";
   import { Custom, isDirective } from "@beancount-js/beancount";
   const { ledgerData, predicate } = useContext();
 
@@ -67,9 +66,7 @@
         if (typeof row === "string") {
           return "-";
         } else if (row instanceof ValidationError) {
-          return row.entry
-            ? LanguageRecord.beancount(row.entry.toString())
-            : "";
+          return row.entry?.toString() ?? "";
         } else {
           return row.node;
         }

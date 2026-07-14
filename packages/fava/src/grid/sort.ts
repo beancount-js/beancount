@@ -14,8 +14,8 @@
 import { permute } from "d3-array";
 import { DateTime } from "luxon";
 import { type Writable } from "svelte/store";
-import { getNumber } from "@beancount-js/beancount";
-import { Decimal } from "@beancount-js/beancount";
+import { Amount } from "@beancount-js/beancount";
+import { Decimal } from "@beancount-js/parser";
 
 export type SortOrder = "asc" | "desc" | "none";
 type SortDirection = 1 | -1;
@@ -128,6 +128,23 @@ function dateMillis(value: unknown): number {
     return new Date(value).getTime();
   }
   return 0;
+}
+
+function getNumber(value: unknown): Decimal | null {
+  if (value instanceof Decimal) {
+    return value;
+  }
+  if (value instanceof Amount) {
+    return value.units;
+  }
+  if (typeof value === "number" || typeof value === "string") {
+    try {
+      return new Decimal(value);
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 function getComparator(type: string): (a: any, b: any) => number {

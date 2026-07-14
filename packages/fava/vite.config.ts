@@ -29,6 +29,10 @@ export default defineConfig({
         replacement: fileURLToPath(new URL("../beancount/src/index.ts", import.meta.url)),
       },
       {
+        find: "@beancount-js/beanquery",
+        replacement: fileURLToPath(new URL("../beanquery/src/index.ts", import.meta.url)),
+      },
+      {
         find: "@beancount-js/parser",
         replacement: fileURLToPath(new URL("../parser/src/index.ts", import.meta.url)),
       },

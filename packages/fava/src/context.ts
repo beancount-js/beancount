@@ -105,7 +105,7 @@ export function createContext(): ComponentContext {
       ];
       const errors = [...($predicate.errors || [])];
       if ($predicate.predicate) {
-        const [filtered, filterErrors] = filterLedger(
+        const [[filtered], filterErrors] = filterLedger(
           directives,
           $predicate.predicate,
         );

@@ -1,7 +1,12 @@
 import { derived, type Readable } from "svelte/store";
 import { formatDate, Decimal, isValidNumber } from "@beancount-js/parser";
-import { Amount, matchesAccount, Position } from "@beancount-js/beancount";
-import { RecordInventory } from "@beancount-js/beancount";
+import { DateTime } from "luxon";
+import {
+  Amount,
+  Inventory,
+  matchesAccount,
+  Position,
+} from "@beancount-js/beancount";
 import { useCtx } from "../stores/format";
 
 export type ColumnDef = {
@@ -40,11 +45,22 @@ export function stringify(value: any): string {
     return formatDate(value);
   }
 
+  if (value instanceof DateTime) {
+    return value.toISODate() ?? "";
+  }
+
   if (value instanceof Position) {
     if (value.cost) {
       return (value.units.toString() + "\n" + value.cost.toString()).trim();
     }
     return value.units.toString();
+  }
+
+  if (value instanceof Inventory) {
+    return [...value.values()]
+      .map((position) => stringify(position))
+      .join("\n")
+      .replace(/\s+$/, "");
   }
 
   if (Array.isArray(value)) {
@@ -81,6 +97,10 @@ export function getCellType(obj: any) {
     return "date";
   }
 
+  if (obj instanceof DateTime) {
+    return "date";
+  }
+
   if (
     obj instanceof Position ||
     obj instanceof Amount ||
@@ -93,7 +113,7 @@ export function getCellType(obj: any) {
     return "number";
   }
 
-  if (obj instanceof RecordInventory) {
+  if (obj instanceof Inventory) {
     return "inventory";
   }
 
@@ -187,9 +207,9 @@ export function useDataset(
           }
         }
 
-        if (rowvalue instanceof RecordInventory) {
-          for (const [currency, amount] of Object.entries(rowvalue.value)) {
-            const value = $ctx.amount(amount, currency);
+        if (rowvalue instanceof Inventory) {
+          for (const position of rowvalue.values()) {
+            const value = $ctx.money(position.units);
             if (value.length > columnSize[key].length) {
               columnSize[key] = value;
             }

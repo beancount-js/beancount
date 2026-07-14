@@ -9,24 +9,21 @@ import {
   Conversion,
   CounterInventory,
   Cost,
-  Decimal,
+  Inventory,
   isDescendantOf,
   isInstanceOf,
-  isValidNumber,
   matchesAccount,
   Open,
   Pad,
   Position,
-  resolveMissing,
   Transaction,
   type CostSpec,
   type Directive,
   type Directives,
-  type MissingType,
 } from "@beancount-js/beancount";
-import { formatDate } from "@beancount-js/parser";
+import { Decimal, formatDate, isValidNumber } from "@beancount-js/parser";
+import { DateTime } from "luxon";
 import { useCtx } from "../stores/format";
-import { RecordInventory } from "@beancount-js/beancount";
 
 export function useLedger(filter?: Filter): Readable<LedgerData> {
   const { ledgerData, predicate } = useContext();
@@ -129,12 +126,11 @@ export function useTable(props: Partial<UseTableProperties> = {}) {
         .filter((it) => isInstanceOf(it, ...types))
         .reverse();
 
-      const costValues = (cost: Cost | CostSpec | MissingType) => {
+      const costValues = (cost: Cost | CostSpec | null | undefined) => {
         const values: Array<string> = [];
-        cost = resolveMissing(cost);
         if (cost && cost instanceof Cost) {
           values.push($ctx.money(cost.amount));
-          values.push(formatDate(resolveMissing(cost.date)));
+          values.push(formatDate(cost.date));
           values.push(cost.label);
         }
         return values.filter((it) => it?.trim()).map((it) => it.trim());
@@ -302,11 +298,22 @@ export function stringify(value: unknown): string {
     return formatDate(value);
   }
 
+  if (value instanceof DateTime) {
+    return value.toISODate() ?? "";
+  }
+
   if (value instanceof Position) {
     if (value.cost) {
       return (value.units.toString() + "\n" + value.cost.toString()).trim();
     }
     return value.units.toString();
+  }
+
+  if (value instanceof Inventory) {
+    return [...value.values()]
+      .map((position) => stringify(position))
+      .join("\n")
+      .replace(/\s+$/, "");
   }
 
   if (Array.isArray(value)) {
@@ -343,6 +350,10 @@ export function getCellType(obj: unknown) {
     return "date";
   }
 
+  if (obj instanceof DateTime) {
+    return "date";
+  }
+
   if (
     obj instanceof Position ||
     obj instanceof Amount ||
@@ -355,7 +366,7 @@ export function getCellType(obj: unknown) {
     return "number";
   }
 
-  if (obj instanceof RecordInventory) {
+  if (obj instanceof Inventory) {
     return "inventory";
   }
 
@@ -449,9 +460,9 @@ export function useDataset(
           }
         }
 
-        if (rowvalue instanceof RecordInventory) {
-          for (const [currency, amount] of Object.entries(rowvalue.value)) {
-            const value = $ctx.amount(amount as number, currency);
+        if (rowvalue instanceof Inventory) {
+          for (const position of rowvalue.values()) {
+            const value = $ctx.money(position.units);
             if (value.length > columnSize[key].length) {
               columnSize[key] = value;
             }

@@ -1,8 +1,7 @@
 <script lang="ts">
-  import Highlighter from "../components/Highlighter.svelte";
-  import { Amount, Decimal } from "@beancount-js/beancount";
-  import { formatDate } from "@beancount-js/parser";
-  import { LanguageRecord, RecordInventory } from "@beancount-js/beancount";
+  import { Amount, Inventory } from "@beancount-js/beancount";
+  import { Decimal, formatDate } from "@beancount-js/parser";
+  import { DateTime } from "luxon";
   import { stringify } from "../components/helpers";
   import { urlForAccount } from "../helpers";
   import { useCtx } from "../stores/format";
@@ -41,12 +40,12 @@
       style={`height: ${height - 1}px; line-height: ${height - 1}px; `}
       >{@html value}</span
     >
-  {:else if value instanceof RecordInventory}
-    {#each Object.entries(value) as [currency, num]}
+  {:else if value instanceof Inventory}
+    {#each [...value.values()] as position}
       <span
         class="block text-right"
         style={`height: ${height - 1}px; line-height: ${height - 1}px; `}
-        >{$ctx.money(num, currency)}</span
+        >{$ctx.money(position.units)}</span
       >
     {/each}
   {:else if Array.isArray(value)}
@@ -55,23 +54,17 @@
         <svelte:self value={item} {height} {type} depth={depth + 1} />
       </div>
     {/each}
-  {:else if value instanceof Date}
+  {:else if value instanceof Date || value instanceof DateTime}
     <span
       class="block"
       style={`height: ${height - 1}px; line-height: ${height - 1}px; `}
-      >{formatDate(value)}</span
+      >{formatDate(value instanceof DateTime ? value.toJSDate() : value)}</span
     >
   {:else if value instanceof Amount || value instanceof Decimal}
     <span
       class="block text-right"
       style={`height: ${height - 1}px; line-height: ${height - 1}px; `}
       >{value.zero ? "" : $ctx.money(value)}</span
-    >
-  {:else if value instanceof LanguageRecord}
-    {@const lines = countLines(value.code)}
-    {@const cellHeight = `height: ${height * lines - 1}px; line-height: ${height - 1}px; `}
-    <span class="block" style={cellHeight}
-      ><Highlighter code={value.code} parser={value.parser}></Highlighter></span
     >
   {:else}
     {@const rowval = stringify(value)}

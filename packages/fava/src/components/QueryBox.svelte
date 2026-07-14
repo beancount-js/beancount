@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Accordion from "$lib/components/ui/accordion/index.js";
   import Highlighter from "./Highlighter.svelte";
-  import { sqlParser } from "@beancount-js/beancount";
+  import { parser as bqlParser } from "@beancount-js/beanquery";
   import QueryTable from "./QueryTable.svelte";
   import { type QueryHistory } from "../stores/query";
   import { cn } from "$lib/utils";
@@ -66,7 +66,7 @@
     >
       <Accordion.Trigger class="px-2 text-xs hover:no-underline ">
         <div class="flex w-full flex-1 items-center justify-between">
-          <Highlighter code={query.query} parser={sqlParser} />
+          <Highlighter code={query.query} parser={bqlParser} />
           <div>
             <Button variant="ghost" onclick={(evt) => handleCopy(evt, query)}>
               <Copy class="size-4" />

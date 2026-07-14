@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@beancount-js/beancount": "workspace:*",
+    "@beancount-js/beanquery": "workspace:*",
     "@beancount-js/codemirror-lang-beancount": "workspace:*",
     "@beancount-js/filters": "workspace:*",
     "@beancount-js/forms": "workspace:*",
@@ -39,7 +40,6 @@
     "@tanstack/svelte-virtual": "^3.10.9",
     "@tanstack/table-core": "^8.20.5",
     "ajv": "^8.17.1",
-    "alasql": "^4.5.2",
     "big.js": "^6.2.2",
     "compromise": "^14.14.2",
     "d3-array": "^3.2.4",
@@ -58,7 +58,6 @@
     "papaparse": "^5.4.1",
     "prettier-plugin-svelte": "^3.3.2",
     "rrule": "^2.8.1",
-    "sql-formatter": "^15.4.6",
     "svelte-tiny-virtual-list": "^2.0.5",
     "urlpattern-polyfill": "^10.0.0",
     "vaul-svelte": "^0.3.2",

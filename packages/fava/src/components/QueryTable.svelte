@@ -5,15 +5,11 @@
   import { TriangleAlert } from "lucide-svelte";
   import { derived, writable } from "svelte/store";
   import { stringify, useDataset, useLedger, type Columns } from "./helpers";
-  import {
-    LedgerDatabase,
-    LanguageRecord,
-    RecordInventory,
-  } from "@beancount-js/beancount";
+  import { Inventory } from "@beancount-js/beancount";
   import { useCtx } from "../stores/format";
-  import { formatDate } from "@beancount-js/parser";
+  import { Decimal, formatDate } from "@beancount-js/parser";
+  import { DateTime } from "luxon";
   import { urlForAccount } from "../helpers";
-  import Highlighter from "./Highlighter.svelte";
   import { matchesAccount } from "@beancount-js/beancount";
   import { Tree } from "../core/tree";
   import {
@@ -21,13 +17,14 @@
     SimpleCounterInventory,
   } from "@beancount-js/beancount";
   import { DefaultMap } from "@beancount-js/beancount";
-  import { Amount, Decimal } from "@beancount-js/beancount";
+  import { Amount } from "@beancount-js/beancount";
   import type { FavaChart } from "../charts";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import Chart from "../charts/Chart.svelte";
   import { balances } from "../charts/line";
   import { useSortableTable, type SortType, sortDataset } from "../grid/sort";
   import { Position } from "@beancount-js/beancount";
+  import { runBql } from "@beancount-js/beanquery";
   import * as ScrollArea from "$lib/components/ui/scroll-area";
 
   export let height: number = 500;
@@ -68,9 +65,9 @@
         const acc = row[account.id];
         const amount = row[inventory.id];
         if (acc) {
-          if (amount instanceof RecordInventory) {
-            for (const [currency, value] of Object.entries(amount.value)) {
-              accountBalances.get(acc).add(new Amount(value, currency));
+          if (amount instanceof Inventory) {
+            for (const position of amount.values()) {
+              accountBalances.get(acc).add(position.units, position.cost);
             }
           } else if (amount instanceof Amount) {
             accountBalances.get(acc).add(amount);
@@ -114,8 +111,10 @@
     if (!query) {
       return { data: [] };
     }
-    const response = $ledgerData.query(query);
-    return response;
+    return runBql($ledgerData.directives, query, {
+      options: $ledgerData.options.beancount,
+      errors: $ledgerData.errors,
+    });
   });
 
   $: data = derived([queryResult, sortOrder], ([$queryResult, $sortOrder]) => {
@@ -192,10 +191,10 @@
                         ><a href={urlForAccount(row[col.id])}>{row[col.id]}</a
                         ></span
                       >
-                    {:else if row[col.id] instanceof RecordInventory}
-                      {#each Object.entries(row[col.id].value) as [currency, num]}
+                    {:else if row[col.id] instanceof Inventory}
+                      {#each [...row[col.id].values()] as position}
                         <span class="block text-right" style={cellHeight}
-                          >{$ctx.money(num, currency)}</span
+                          >{$ctx.money(position.units)}</span
                         >
                       {/each}
                     {:else if Array.isArray(row[col.id])}
@@ -211,15 +210,10 @@
                             >
                           {:else if item instanceof Amount || item instanceof Decimal}
                             {$ctx.money(item)}
-                          {:else if item instanceof Date}
-                            {formatDate(item)}
-                          {:else if item instanceof LanguageRecord}
-                            <span class="block" style={cellHeight}
-                              ><Highlighter
-                                code={item.code}
-                                parser={item.parser}
-                              ></Highlighter></span
-                            >
+                          {:else if item instanceof Date || item instanceof DateTime}
+                            {formatDate(
+                              item instanceof DateTime ? item.toJSDate() : item,
+                            )}
                           {:else}
                             <span
                               class:whitespace-pre={lines > 1}
@@ -229,23 +223,17 @@
                           {/if}
                         </div>
                       {/each}
-                    {:else if row[col.id] instanceof Date}
+                    {:else if row[col.id] instanceof Date || row[col.id] instanceof DateTime}
                       <span class="block" style={cellHeight}
-                        >{formatDate(row[col.id])}</span
+                        >{formatDate(
+                          row[col.id] instanceof DateTime
+                            ? row[col.id].toJSDate()
+                            : row[col.id],
+                        )}</span
                       >
                     {:else if row[col.id] instanceof Amount || row[col.id] instanceof Decimal}
                       <span class="block" style={cellHeight}
                         >{row[col.id] == 0 ? "" : $ctx.money(row[col.id])}</span
-                      >
-                    {:else if row[col.id] instanceof LanguageRecord}
-                      {@const rowval = stringify(row[col.id].code)}
-                      {@const lines = countLines(rowval)}
-                      {@const cellHeight = `height: ${rowHeight * lines - 1}px; line-height: ${rowHeight - 1}px; `}
-                      <span class="block" style={cellHeight}
-                        ><Highlighter
-                          code={row[col.id].code}
-                          parser={row[col.id].parser}
-                        ></Highlighter></span
                       >
                     {:else}
                       {@const rowval = stringify(row[col.id])}

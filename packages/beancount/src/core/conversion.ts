@@ -25,6 +25,22 @@ export function getConversion(s: string | null): Conversion {
   return CONVERSIONS[s] ?? DEFAULT_CONVERSION;
 }
 
+// Studio's report controls present the conversion mode to users. Keep this
+// display helper with the shared conversion model rather than duplicating the
+// mapping in individual Svelte components.
+export function conversionLabel(
+  conversion: Conversion | string | null,
+): string {
+  switch (getConversion(typeof conversion === "string" ? conversion : null)) {
+    case Conversion.AT_COST:
+      return "At Cost";
+    case Conversion.AT_VALUE:
+      return "At Value";
+    case Conversion.UNITS:
+      return "Units";
+  }
+}
+
 export interface ConversionContext {
   prices: PriceMap;
   date: DateTime;

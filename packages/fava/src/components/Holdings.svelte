@@ -16,15 +16,14 @@
       name: "Holdings",
       query: `
             SELECT account,
-                units(sum(position)) as units,
-                cost_number as cost,
-                first(getprice(currency, cost_currency)) as price,
-                cost(sum(position)) as book_value,
-                value(sum(position)) as market_value,
-                cost_date as acquisition_date
-            WHERE account_sortkey(account) ~ "^[01]"
-            GROUP BY account, cost_date, currency, cost_currency, cost_number, account_sortkey(account)
-            ORDER BY account_sortkey(account), currency, cost_date
+                currency,
+                sum(number) AS units,
+                cost_number AS cost,
+                cost_currency,
+                cost_date AS acquisition_date
+            FROM postings
+            GROUP BY account, currency, cost_number, cost_currency, cost_date
+            ORDER BY account, currency, cost_date
             `,
     },
     {
@@ -32,40 +31,31 @@
       name: "Holdings by Account",
       query: `
             SELECT account,
-                units(sum(position)) as units,
-                cost(sum(position)) as book_value,
-                value(sum(position)) as market_value,
-                safediv((abs(sum(number(value(position)))) - abs(sum(number(cost(position))))), sum(number(cost(position)))) * 100 as unrealized_profit_pct
-            WHERE account_sortkey(account) ~ "^[01]"
-            GROUP BY account, cost_currency, account_sortkey(account), currency
-            ORDER BY account_sortkey(account), currency
+                currency,
+                sum(number) AS units
+            FROM postings
+            GROUP BY account, currency
+            ORDER BY account, currency
             `,
     },
     {
       id: "holdings-by-currency",
       name: "Holdings by Currency",
       query: `
-            SELECT
-                units(sum(position)) as units,
-                SAFEDIV(number(only(first(cost_currency), cost(sum(position)))), number(only(first(currency), units(sum(position))))) as average_cost,
-                cost(sum(position)) as book_value,
-                value(sum(position)) as market_value,
-                safediv((abs(sum(number(value(position)))) - abs(sum(number(cost(position))))), sum(number(cost(position)))) * 100 as unrealized_profit_pct
-            WHERE account_sortkey(account) ~ "^[01]"
-            GROUP BY currency, cost_currency
-            ORDER BY currency, cost_currency
+            SELECT currency,
+                sum(number) AS units
+            FROM postings
+            GROUP BY currency
+            ORDER BY currency
             `,
     },
     {
       id: "holdings-by-cost-currency",
       name: "Holdings by Cost currency",
       query: `
-            SELECT
-                units(sum(position)) as units,
-                cost(sum(position)) as book_value,
-                value(sum(position)) as market_value,
-                safediv((abs(sum(number(value(position)))) - abs(sum(number(cost(position))))), sum(number(cost(position)))) * 100 as unrealized_profit_pct
-            WHERE account_sortkey(account) ~ "^[01]"
+            SELECT cost_currency,
+                sum(number) AS units
+            FROM postings
             GROUP BY cost_currency
             ORDER BY cost_currency
             `,

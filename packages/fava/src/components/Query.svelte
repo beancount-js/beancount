@@ -15,8 +15,6 @@
   } from "@codemirror/language";
   import Button from "$lib/components/ui/button/button.svelte";
   import { useNavigation } from "../router/router";
-  import { sql, PostgreSQL } from "@codemirror/lang-sql";
-  import { bqlCompletion } from "../bql/autocomplete";
   import {
     autocompletion,
     closeBrackets,
@@ -32,10 +30,10 @@
     indentMore,
     indentLess,
   } from "@codemirror/commands";
-  import { TriangleAlert, LetterText } from "lucide-svelte";
+  import { TriangleAlert } from "lucide-svelte";
   import { lintGutter } from "@codemirror/lint";
   import { useLedger } from "./helpers";
-  import { formatSQL } from "@beancount-js/beancount";
+  import { bql } from "@beancount-js/beanquery";
   import { replaceContents } from "../codemirror/extensions/transactions";
   import QueryBox from "./QueryBox.svelte";
   import {
@@ -52,7 +50,7 @@
 
   let editor: EditorView;
   let activeRoute = history.activeRoute;
-  export let qs: string = formatSQL($activeRoute.query["qs"] ?? "");
+  export let qs: string = $activeRoute.query["qs"] ?? "";
   export let selected: string = "";
 
   let error: unknown;
@@ -64,12 +62,8 @@
         doc: query,
         extensions: [
           EditorView.lineWrapping,
-          sql({
-            dialect: PostgreSQL,
-          }),
-          autocompletion({
-            override: [bqlCompletion],
-          }),
+          bql(),
+          autocompletion(),
           closeBrackets(),
           bracketMatching(),
           lineNumbers(),
@@ -145,15 +139,6 @@
     queryHistory.add(query);
   };
 
-  function formatCode() {
-    editor.dispatch(
-      replaceContents(
-        editor.state,
-        formatSQL(editor.state.doc.toString().trim()),
-      ),
-    );
-  }
-
   $: onDelete = (query: QueryHistory) => {
     queryHistory.remove(query.hash);
   };
@@ -169,11 +154,6 @@
 
 <ContentScrollArea contentClass="scroll-container p-4 pb-[60vh]">
   <div class="beancount-editor relative">
-    <div class="flex justify-end">
-      <Button size="sm" variant="ghost" onclick={formatCode}>
-        <LetterText class="size-4" />
-      </Button>
-    </div>
     <div
       use:codeMirror={query}
       data-error={!!error}

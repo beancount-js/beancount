@@ -1,9 +1,8 @@
 import { derived, type Readable } from "svelte/store";
 import { useCtx } from "../stores/format";
 import { formatDate } from "@beancount-js/parser";
-import { Position } from "@beancount-js/beancount";
-import { RecordInventory } from "@beancount-js/beancount";
-import { isMissing } from "@beancount-js/beancount";
+import { DateTime } from "luxon";
+import { Inventory, Position } from "@beancount-js/beancount";
 
 function getCircularReplacer() {
   const ancestors: Array<any> = [];
@@ -25,12 +24,16 @@ function getCircularReplacer() {
 }
 
 function rawStringify(value: any): string {
-  if (value === null || value === undefined || isMissing(value)) {
+  if (value === null || value === undefined) {
     return "";
   }
 
   if (value instanceof Date) {
     return formatDate(value);
+  }
+
+  if (value instanceof DateTime) {
+    return value.toISODate() ?? "";
   }
 
   if (value instanceof Position) {
@@ -134,9 +137,9 @@ export function useDataset<T>(
           return;
         }
 
-        if (rowvalue instanceof RecordInventory) {
-          for (const [currency, amount] of Object.entries(rowvalue.value)) {
-            const value = $ctx.amount(amount, currency);
+        if (rowvalue instanceof Inventory) {
+          for (const position of rowvalue.values()) {
+            const value = $ctx.money(position.units);
             if (value.length > columnSize[key].length) {
               columnSize[key] = value;
             }

@@ -3,7 +3,10 @@ import { resolve } from "path";
 import { lezer } from "@lezer/generator/rollup";
 import dts from "vite-plugin-dts";
 export default defineConfig({
-  plugins: [lezer(), dts({ rollupTypes: true })],
+  // Beanquery deliberately exposes parser and query submodules. Keep their
+  // declarations as files instead of asking the declaration bundler to fold
+  // directory exports into one entry point.
+  plugins: [lezer(), dts({ rollupTypes: false })],
   esbuild: {
     minifyIdentifiers: false,
   },
