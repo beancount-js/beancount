@@ -154,10 +154,25 @@ test.describe("ported styles", () => {
     );
     expect(intervalHeaderBackground).not.toBe("rgba(0, 0, 0, 0)");
 
-    const intervalCellBorder = await intervalHeader.evaluate(
-      (el) => getComputedStyle(el).borderTopWidth,
-    );
-    expect(parseFloat(intervalCellBorder)).toBeGreaterThan(0);
+    const intervalCellBorders = await intervalHeader.evaluate((el) => {
+      const firstDataCell = el
+        .closest("ol")
+        ?.querySelector("li:not(.head) p > span");
+      if (!firstDataCell)
+        throw new Error("Interval table data cell is missing");
+      return {
+        headerTop: getComputedStyle(el).borderTopWidth,
+        headerBottom: getComputedStyle(el).borderBottomWidth,
+        dataTop: getComputedStyle(firstDataCell).borderTopWidth,
+        dataBottom: getComputedStyle(firstDataCell).borderBottomWidth,
+        rowMarginTop: getComputedStyle(firstDataCell.parentElement!).marginTop,
+      };
+    });
+    expect(parseFloat(intervalCellBorders.headerTop)).toBeGreaterThan(0);
+    expect(parseFloat(intervalCellBorders.headerBottom)).toBeGreaterThan(0);
+    expect(parseFloat(intervalCellBorders.dataTop)).toBe(0);
+    expect(parseFloat(intervalCellBorders.dataBottom)).toBeGreaterThan(0);
+    expect(parseFloat(intervalCellBorders.rowMarginTop)).toBe(0);
 
     const headerCells = intervalTable.locator(".head p > span");
     expect(await headerCells.count()).toBeGreaterThan(1);
@@ -181,6 +196,48 @@ test.describe("ported styles", () => {
     expect(Math.max(...accountCellOffsets)).toBeGreaterThan(
       Math.min(...accountCellOffsets),
     );
+
+    const stickyColumnState = await intervalTable.evaluate((table) => {
+      const viewport = table.closest("[data-scroll-area-content]")
+        ?.parentElement as HTMLElement | null;
+      const headerCell = table.querySelector(".head p > span");
+      if (!viewport || !headerCell) {
+        throw new Error("Interval table scroll viewport is unavailable");
+      }
+
+      viewport.scrollLeft = 240;
+      const state = {
+        scrollLeft: viewport.scrollLeft,
+        viewportLeft: viewport.getBoundingClientRect().left,
+        headerLeft: headerCell.getBoundingClientRect().left,
+        accountOffsets: Array.from(
+          table.querySelectorAll("[data-account-name]"),
+        ).map((cell) => cell.getBoundingClientRect().left),
+      };
+      viewport.scrollLeft = 0;
+      return state;
+    });
+    expect(stickyColumnState.scrollLeft).toBeGreaterThan(0);
+    expect(
+      Math.abs(stickyColumnState.headerLeft - stickyColumnState.viewportLeft),
+    ).toBeLessThanOrEqual(1);
+    expect(Math.max(...stickyColumnState.accountOffsets)).toBeGreaterThan(
+      Math.min(...stickyColumnState.accountOffsets),
+    );
+
+    const indentMask = await intervalTable
+      .locator("[data-account-name]")
+      .evaluateAll((cells) => {
+        const nestedCell = cells.find(
+          (cell) => parseFloat(getComputedStyle(cell).marginLeft) > 0,
+        );
+        if (!nestedCell) return undefined;
+        return {
+          boxShadow: getComputedStyle(nestedCell).boxShadow,
+        };
+      });
+    if (!indentMask) throw new Error("Nested account indent mask is missing");
+    expect(indentMask.boxShadow).not.toBe("none");
 
     const dimmedCells = intervalTable.locator(".dimmed");
     expect(await dimmedCells.count()).toBeGreaterThan(0);
