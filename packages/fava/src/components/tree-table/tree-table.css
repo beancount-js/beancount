@@ -23,18 +23,19 @@
   width: 12em;
 }
 
-/* Account Changes and Balances use a dense, spreadsheet-like treatment. */
-.interval-tree-table {
+/* Account activity and financial statements use a dense, spreadsheet-like
+ * hierarchy treatment. */
+.hierarchy-tree-table {
   --treetable-expander: var(--muted-foreground);
   font-size: 0.875rem;
 }
 
-.interval-tree-table.tree-table-new p {
+.hierarchy-tree-table.tree-table-new p {
   /* Use one bottom edge per data row. Vertical overlap hides borders below rows. */
   margin-top: 0;
 }
 
-.interval-tree-table.tree-table-new p > span {
+.hierarchy-tree-table.tree-table-new p > span {
   /* Retain a single shared vertical edge and gaps for indented accounts. */
   margin-top: 0;
   margin-right: -1px;
@@ -45,7 +46,7 @@
 /* The final child row begins one indent step farther right than its parent's
  * next sibling. Fill only that exposed top-edge segment—adding a full border
  * here would duplicate the final child's bottom edge. */
-.interval-tree-table.tree-table-new
+.hierarchy-tree-table.tree-table-new
   li:has(> ol)
   + li
   > p
@@ -60,30 +61,30 @@
   background-color: var(--border);
 }
 
-.interval-tree-table li > p > span:first-child {
+.hierarchy-tree-table li > p > span:first-child {
   position: sticky;
   left: 0;
   z-index: 1;
   background-color: var(--background);
 }
 
-.interval-tree-table li > p > span[data-account-name] {
+.hierarchy-tree-table li > p > span[data-account-name] {
   left: var(--account-indent, 0);
   box-shadow: calc(-1 * var(--account-indent, 0)) 0 0 0 var(--background);
 }
 
-.interval-tree-table.flex-table .head p > span {
+.hierarchy-tree-table.flex-table .head p > span {
   font-family: inherit;
   color: var(--muted-foreground);
   background-color: var(--muted);
   border-width: 1px !important;
 }
 
-.interval-tree-table.flex-table .head p > span:first-child {
+.hierarchy-tree-table.flex-table .head p > span:first-child {
   z-index: 2;
 }
 
-.interval-tree-table .clickable-icon svg {
+.hierarchy-tree-table .clickable-icon svg {
   width: 12px;
   height: 12px;
 }

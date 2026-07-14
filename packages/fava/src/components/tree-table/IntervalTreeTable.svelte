@@ -64,7 +64,7 @@
 
 <ScrollArea.Root orientation="horizontal" class="w-full max-w-full">
   <ol
-    class="flex-table tree-table-new interval-tree-table pb-8 font-mono"
+    class="flex-table tree-table-new hierarchy-tree-table interval-tree-table pb-8 font-mono"
     data-interval-tree-table
   >
     <li class="head">

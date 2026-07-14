@@ -36,8 +36,9 @@
 </script>
 
 <ol
-  class="flex-table tree-table-new text-sm text-foreground"
+  class="flex-table tree-table-new hierarchy-tree-table statement-tree-table font-mono text-sm text-foreground"
   class:wider={$operatingCurrency.length > 1}
+  data-statement-tree-table
 >
   <li class="head">
     <p>

@@ -67,47 +67,59 @@ test.describe("ported styles", () => {
     await seedLedger(page, minimalLedger);
   });
 
-  test("applies tree-table, scroll-container, and grouped journal styles", async ({
+  test("aligns financial-statement hierarchy tables with account tables", async ({
     page,
   }) => {
-    await page.goto("/#/income_statement");
-    await expect(page.locator(".tree-table-new").first()).toBeVisible();
+    for (const path of [
+      "/#/income_statement",
+      "/#/balance_sheet",
+      "/#/trial_balance",
+    ]) {
+      await page.goto(path);
+      const statementTables = page.locator("[data-statement-tree-table]");
+      const statementTable = statementTables.first();
+      await expect(statementTable).toBeVisible({ timeout: 15_000 });
+      expect(await statementTables.count()).toBeGreaterThan(0);
 
-    const numWidth = await page
-      .locator(".tree-table-new .num")
-      .first()
-      .evaluate((el) => getComputedStyle(el).width);
-    expect(parseFloat(numWidth)).toBeGreaterThan(100);
+      const tableFont = await statementTable.evaluate(
+        (el) => getComputedStyle(el).fontFamily,
+      );
+      expect(tableFont.toLowerCase()).toContain("source code pro");
+      const tableFontSize = await statementTable.evaluate(
+        (el) => getComputedStyle(el).fontSize,
+      );
+      expect(parseFloat(tableFontSize)).toBe(14);
 
-    const cellBorder = await page
-      .locator(".tree-table-new p > span")
-      .first()
-      .evaluate((el) => getComputedStyle(el).borderTopWidth);
-    expect(parseFloat(cellBorder)).toBeGreaterThan(0);
+      const headerCell = statementTable.locator(".head p > span").first();
+      const headerStyles = await headerCell.evaluate((el) => ({
+        background: getComputedStyle(el).backgroundColor,
+        top: getComputedStyle(el).borderTopWidth,
+        bottom: getComputedStyle(el).borderBottomWidth,
+      }));
+      expect(headerStyles.background).not.toBe("rgba(0, 0, 0, 0)");
+      expect(parseFloat(headerStyles.top)).toBeGreaterThan(0);
+      expect(parseFloat(headerStyles.bottom)).toBeGreaterThan(0);
 
-    const expanderIcon = page
-      .locator(".tree-table-new .clickable-icon svg")
-      .first();
-    if (await expanderIcon.count()) {
+      const dataCell = statementTable.locator("li:not(.head) p > span").first();
+      const dataCellStyles = await dataCell.evaluate((el) => ({
+        top: getComputedStyle(el).borderTopWidth,
+        bottom: getComputedStyle(el).borderBottomWidth,
+        position: getComputedStyle(el).position,
+      }));
+      expect(parseFloat(dataCellStyles.top)).toBe(0);
+      expect(parseFloat(dataCellStyles.bottom)).toBeGreaterThan(0);
+      expect(dataCellStyles.position).toBe("sticky");
+
+      const expanderIcon = statementTable
+        .locator(".clickable-icon svg")
+        .first();
       const iconSize = await expanderIcon.evaluate((el) => ({
         width: getComputedStyle(el).width,
         height: getComputedStyle(el).height,
       }));
-      expect(parseFloat(iconSize.width)).toBeLessThanOrEqual(13);
-      expect(parseFloat(iconSize.height)).toBeLessThanOrEqual(13);
+      expect(parseFloat(iconSize.width)).toBe(12);
+      expect(parseFloat(iconSize.height)).toBe(12);
     }
-
-    const tableFont = await page
-      .locator(".tree-table-new")
-      .first()
-      .evaluate((el) => getComputedStyle(el).fontFamily);
-    expect(tableFont.toLowerCase()).toContain("source code pro");
-
-    const scrollOverflow = await page
-      .locator(".scroll-container")
-      .first()
-      .evaluate((el) => getComputedStyle(el).overflowY);
-    expect(scrollOverflow).toBe("auto");
 
     await navigateTo(page, "Journal");
     await expect(page).toHaveURL(/#\/journal\?ledger=.+$/);
