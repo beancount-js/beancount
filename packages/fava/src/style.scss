@@ -83,12 +83,21 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body {
+    @apply h-full overflow-hidden;
+  }
   body {
     @apply bg-sidebar text-foreground;
   }
   html {
     @apply font-sans;
   }
+}
+
+.tooltip {
+  position: fixed;
+  pointer-events: none;
 }
 
 div[role="menu"] {

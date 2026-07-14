@@ -152,7 +152,7 @@
   });
 </script>
 
-<ContentScrollArea contentClass="scroll-container p-4 pb-[60vh]">
+<ContentScrollArea contentClass="scroll-container p-4">
   <div class="beancount-editor relative">
     <div
       use:codeMirror={query}

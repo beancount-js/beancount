@@ -244,7 +244,7 @@
   </div>
   <ContentScrollArea
     class="min-h-0 flex-1"
-    contentClass="scroll-container pb-[60vh] pt-0"
+    contentClass="scroll-container pt-0"
   >
     <div class="beancount-editor relative">
       <div
