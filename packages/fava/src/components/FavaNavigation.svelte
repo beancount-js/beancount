@@ -31,7 +31,7 @@
     filterLedgerFiles,
     filterLedgerFolderTree,
     filterLedgerTagsByPathMatch,
-    ledgerFileName,
+    ledgerFileLabel,
     ledgerFolderAncestorIds,
     normalizeLedgerTag,
     type LedgerFolderNode,
@@ -77,7 +77,9 @@
   $: expandableFolderIds = folderTree
     ? collectExpandableLedgerFolderIds(folderTree)
     : [];
-  $: hasCollapsedFolders = expandableFolderIds.some((id) => !isFolderOpen(id));
+  $: hasCollapsedFolders = expandableFolderIds.some(
+    (id) => !isFolderOpen(id, folderOpenNodes),
+  );
   $: filteredTags = filterLedgerTagsByPathMatch(tagSummaries, tagQuery);
   $: tagTree = createLedgerTagTree(filteredTags);
   $: queries = $ledgerSource.directives
@@ -177,7 +179,7 @@
   function selectLedgerFile(path: string) {
     activeFile.set(path);
     expandedFilePaths = { ...expandedFilePaths, [path]: true };
-    router.push("#/editor");
+    router.push("#/journal");
   }
 
   function openLedgerPanel(path: string, panel: MenuItem) {
@@ -211,13 +213,19 @@
     else collapseAllFiles();
   }
 
-  function isFolderOpen(id: string) {
-    if (Object.hasOwn(folderOpenNodes, id)) return folderOpenNodes[id]!;
+  function isFolderOpen(
+    id: string,
+    openNodes: Record<string, boolean> = folderOpenNodes,
+  ) {
+    if (Object.hasOwn(openNodes, id)) return openNodes[id]!;
     return ledgerFolderAncestorIds($activeFile).includes(id);
   }
 
   function toggleFolder(id: string) {
-    folderOpenNodes = { ...folderOpenNodes, [id]: !isFolderOpen(id) };
+    folderOpenNodes = {
+      ...folderOpenNodes,
+      [id]: !isFolderOpen(id, folderOpenNodes),
+    };
   }
 
   function toggleAllFolders() {
@@ -226,12 +234,18 @@
     );
   }
 
-  function isTagOpen(tag: string) {
-    return tagOpenNodes[tag] ?? true;
+  function isTagOpen(
+    tag: string,
+    openNodes: Record<string, boolean> = tagOpenNodes,
+  ) {
+    return openNodes[tag] ?? true;
   }
 
   function toggleTag(tag: string) {
-    tagOpenNodes = { ...tagOpenNodes, [tag]: !isTagOpen(tag) };
+    tagOpenNodes = {
+      ...tagOpenNodes,
+      [tag]: !isTagOpen(tag, tagOpenNodes),
+    };
   }
 
   function selectTag(tag: string) {
@@ -399,7 +413,7 @@
         data-ledger-list
       >
         {#each visibleLedgerFiles as file (file.path)}
-          {@render LedgerFileRow({ file, depth: 0, showPath: true })}
+          {@render LedgerFileRow({ file, depth: 0 })}
         {:else}
           <p class="px-2 text-xs text-muted-foreground">
             {ledgerQuery.trim() || selectedTags.length
@@ -601,24 +615,15 @@
   {/if}
 </div>
 
-{#snippet LedgerFileRow({
-  file,
-  depth,
-  showPath,
-}: {
-  file: ProjectFile;
-  depth: number;
-  showPath: boolean;
-})}
+{#snippet LedgerFileRow({ file, depth }: { file: ProjectFile; depth: number })}
   {@const expanded = isFileExpanded(file.path, expandedFilePaths)}
   {@const active = file.path === $activeFile}
+  {@const label = ledgerFileLabel(file)}
   <div class="min-w-0" data-ledger-file-node={file.path}>
     <div
       class={cn(
         "relative flex h-8 min-w-0 items-center rounded-md text-xs font-semibold transition-colors",
-        active
-          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm ring-1 ring-sidebar-ring"
-          : "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+        "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
       )}
       style={fileRowStyle(depth)}
     >
@@ -628,9 +633,7 @@
         variant="ghost"
         size="icon"
         class="relative z-10 size-7 shrink-0 rounded-sm p-0 hover:bg-background/70"
-        aria-label={expanded
-          ? `Collapse ${ledgerFileName(file.path)}`
-          : `Expand ${ledgerFileName(file.path)}`}
+        aria-label={expanded ? `Collapse ${label}` : `Expand ${label}`}
         aria-expanded={expanded}
         data-ledger-file-toggle={file.path}
         onclick={() => toggleLedgerFile(file.path)}
@@ -645,14 +648,12 @@
         variant="ghost"
         size="sm"
         class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs font-semibold hover:bg-background/70"
-        aria-current={active ? "page" : undefined}
         data-ledger-file-row={file.path}
+        title={file.path}
         onclick={() => selectLedgerFile(file.path)}
       >
         <FileText data-icon="inline-start" />
-        <span class="min-w-0 flex-1 truncate text-left"
-          >{showPath ? file.path : ledgerFileName(file.path)}</span
-        >
+        <span class="min-w-0 flex-1 truncate text-left">{label}</span>
       </Button>
     </div>
     {#if expanded}
@@ -689,7 +690,7 @@
   node: LedgerFolderNode;
   depth?: number;
 })}
-  {@const expanded = isFolderOpen(node.id)}
+  {@const expanded = isFolderOpen(node.id, folderOpenNodes)}
   <div class="min-w-0" data-ledger-folder-node={node.id}>
     <Button
       type="button"
@@ -716,7 +717,7 @@
     {#if expanded}
       <div class="min-w-0" data-ledger-folder-children={node.id}>
         {#each node.files as file (file.path)}
-          {@render LedgerFileRow({ file, depth: depth + 1, showPath: false })}
+          {@render LedgerFileRow({ file, depth: depth + 1 })}
         {/each}
         {#each node.children as child (child.id)}
           {@render FolderNode({ node: child, depth: depth + 1 })}
@@ -733,7 +734,8 @@
   node: LedgerTagTreeNode;
   depth?: number;
 })}
-  {@const expanded = node.children.length > 0 && isTagOpen(node.tag)}
+  {@const expanded =
+    node.children.length > 0 && isTagOpen(node.tag, tagOpenNodes)}
   <div class="min-w-0" data-ledger-tag-node={node.tag}>
     <div
       class="relative flex min-w-0 items-center gap-1"

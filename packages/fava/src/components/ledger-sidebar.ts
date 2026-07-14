@@ -37,6 +37,23 @@ export function ledgerFileName(path: string) {
   return normalizedPath(path).split("/").at(-1) || path;
 }
 
+/** Returns a ledger's display title, falling back to its filename. */
+export function ledgerFileLabel(file: Pick<ProjectFile, "path" | "contents">) {
+  const titleMatch = file.contents.match(
+    /^\s*option\s+"title"\s+("(?:[^"\\]|\\.)*")\s*(?:;.*)?$/mu,
+  );
+  if (titleMatch?.[1]) {
+    try {
+      const title = JSON.parse(titleMatch[1]);
+      if (typeof title === "string" && title.trim()) return title.trim();
+    } catch {
+      // Use the filename when the option value is not a valid quoted string.
+    }
+  }
+
+  return ledgerFileName(file.path);
+}
+
 export function normalizeLedgerTag(tag: string) {
   return tag.trim().replace(/^#+/, "").replaceAll("\\", "/");
 }

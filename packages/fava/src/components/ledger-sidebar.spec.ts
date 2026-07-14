@@ -7,6 +7,7 @@ import {
   createLedgerTagTree,
   filterLedgerFiles,
   filterLedgerFolderTree,
+  ledgerFileLabel,
 } from "./ledger-sidebar";
 
 const files: ProjectFile[] = [
@@ -25,6 +26,21 @@ const files: ProjectFile[] = [
 ];
 
 describe("ledger sidebar helpers", () => {
+  it("uses a ledger title for its label and falls back to the filename", () => {
+    expect(
+      ledgerFileLabel({
+        path: "tax/2026/return.beancount",
+        contents: 'option "title" "2026 Tax Return"',
+      }),
+    ).toBe("2026 Tax Return");
+    expect(
+      ledgerFileLabel({
+        path: "tax/2026/return.beancount",
+        contents: "2026-01-01 open Assets:Bank",
+      }),
+    ).toBe("return.beancount");
+  });
+
   it("groups ledger files into a path hierarchy", () => {
     const tree = createLedgerFolderTree(files);
 

@@ -75,7 +75,7 @@
       { path: "/directives", element: Editor },
       { path: "/resource", element: ResourceViewer },
     ],
-    "/editor",
+    "/journal",
   );
   let inlineAiRequest: InlineAiRequest | undefined;
   const workspace = createStudioWorkspace(

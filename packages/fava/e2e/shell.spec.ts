@@ -132,6 +132,13 @@ test.describe("Docs-shell visual foundation", () => {
     ).toBeVisible();
     await page.getByRole("button", { name: "Folders", exact: true }).click();
     await expect(page.getByPlaceholder("Search folders")).toBeVisible();
+    const packagesFolder = page.locator('[data-ledger-folder-row="packages"]');
+    await expect(packagesFolder).toHaveAttribute("aria-expanded", "false");
+    await packagesFolder.click();
+    await expect(packagesFolder).toHaveAttribute("aria-expanded", "true");
+    await expect(
+      page.locator('[data-ledger-folder-children="packages"]'),
+    ).toContainText("fava");
     await page.getByRole("button", { name: "Ledgers", exact: true }).click();
     await expect(page.getByPlaceholder("Search ledgers")).toBeVisible();
     const collapsedLedger = page
@@ -154,7 +161,21 @@ test.describe("Docs-shell visual foundation", () => {
       `[data-ledger-file-row="${collapsedLedgerPath}"]`,
     );
     await selectedLedger.click();
-    await expect(selectedLedger).toHaveAttribute("aria-current", "page");
+    await expect(selectedLedger).not.toHaveAttribute("aria-current");
+    await expect(page).toHaveURL(/#\/journal$/);
+    const selectedLedgerPanels = page.locator(
+      `[data-ledger-file-panels="${collapsedLedgerPath}"]`,
+    );
+    await expect(
+      selectedLedgerPanels.getByRole("button", {
+        name: "Journal",
+        exact: true,
+      }),
+    ).toHaveAttribute("aria-current", "page");
+    await selectedLedgerPanels
+      .getByRole("button", { name: "Editor", exact: true })
+      .click();
+    await expect(page).toHaveURL(/#\/editor$/);
     await expect(
       page.locator("[data-ledger-file-panels]").first(),
     ).toContainText("Editor");
