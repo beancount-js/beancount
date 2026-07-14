@@ -23,6 +23,12 @@ export type JournalRecord = {
   type: string;
   posting?: Posting;
   counterpart?: string;
+  postings?: JournalPosting[];
+};
+
+export type JournalPosting = {
+  account: string;
+  amount?: Amount;
 };
 
 export type JournalBalance = {
@@ -88,6 +94,19 @@ function transactionRecord(
   const counterpart = transaction.postings.find(
     (item) => item !== posting,
   )?.account;
+  const postings = transaction.postings.map((item) => ({
+    account: item.account,
+    amount: item.units?.isDefined() ? item.units : undefined,
+  }));
+  const missingAmount = postings.filter((item) => !item.amount);
+  const definedAmount = postings.filter((item) => item.amount);
+  if (
+    postings.length === 2 &&
+    missingAmount.length === 1 &&
+    definedAmount.length === 1
+  ) {
+    missingAmount[0]!.amount = definedAmount[0]!.amount!.neg();
+  }
   const title = transaction.payee || transaction.narration || "Transaction";
   const detail = [transaction.payee, transaction.narration]
     .filter(
@@ -104,6 +123,7 @@ function transactionRecord(
     type: transaction.flag || "Transaction",
     posting,
     counterpart,
+    postings,
   };
 }
 
@@ -139,6 +159,7 @@ function directiveRecord(
         cost: null,
         price: null,
       } as Posting,
+      postings: [{ account: directive.account, amount: directive.amount }],
     };
   }
   if (directive instanceof Query) {

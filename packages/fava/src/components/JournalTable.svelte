@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { DirectiveBase } from "@beancount-js/beancount";
+  import type { Amount, DirectiveBase } from "@beancount-js/beancount";
   import { useContext } from "../context";
   import { useCtx } from "../stores/format";
   import { useNavigation } from "../router/router";
@@ -113,8 +113,11 @@
   }
 
   function recordAmount(record: JournalRecord) {
-    const amount = postingAmount(record);
-    return amount ? $ctx.money(amount) : "—";
+    return postingAmountText(postingAmount(record));
+  }
+
+  function postingAmountText(amount: Amount | undefined) {
+    return amount ? $ctx.money(amount, amount.currency ?? undefined) : "—";
   }
 
   $: balanceRoots = [
@@ -316,7 +319,7 @@
               role="button"
               tabindex="0"
               class:rounded-b-xl={index === group.records.length - 1}
-              class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+              class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
               aria-label={`Edit ${record.title}`}
               onclick={() => openRecord(record)}
               onkeydown={(event) => handleRecordKeydown(event, record)}
@@ -349,23 +352,33 @@
                   {record.detail}
                 </div>
               </div>
-              <div
-                class="flex min-w-[6rem] flex-col items-end gap-1 text-right"
-              >
-                {#if record.counterpart}
-                  <span
-                    class="hidden max-w-40 truncate rounded-full border px-2 py-0.5 text-xs text-muted-foreground sm:block"
-                    >{record.counterpart}</span
-                  >
+              <div class="flex min-w-0 flex-col gap-1 text-right">
+                {#if record.postings?.length}
+                  {#each record.postings as posting}
+                    <div
+                      class="grid min-w-0 grid-cols-[minmax(0,1fr)_8rem] items-center gap-3"
+                      data-journal-posting
+                    >
+                      <span
+                        class="truncate text-left text-xs text-muted-foreground"
+                        title={posting.account}>{posting.account}</span
+                      >
+                      <span class="text-sm font-semibold tabular-nums"
+                        >{postingAmountText(posting.amount)}</span
+                      >
+                    </div>
+                  {/each}
                 {:else}
                   <span
-                    class="hidden rounded-full border px-2 py-0.5 text-xs capitalize text-muted-foreground sm:block"
+                    class="self-end rounded-full border px-2 py-0.5 text-xs capitalize text-muted-foreground"
                     >{record.type}</span
                   >
+                  {#if record.posting}
+                    <span class="text-sm font-semibold tabular-nums"
+                      >{recordAmount(record)}</span
+                    >
+                  {/if}
                 {/if}
-                <span class="text-sm font-semibold tabular-nums"
-                  >{recordAmount(record)}</span
-                >
               </div>
             </div>
           {/each}

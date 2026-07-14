@@ -113,6 +113,24 @@ test.describe("sample ledger navigation", () => {
       "[data-journal-table] [role=button][aria-label^='Edit ']",
     );
     expect(await records.count()).toBeGreaterThan(0);
+    await expect(records.first().locator("[data-journal-posting]")).toHaveCount(
+      2,
+    );
+    const postingColumns = await page
+      .locator("[data-journal-posting]")
+      .evaluateAll((elements) =>
+        elements.map(
+          (element) => getComputedStyle(element).gridTemplateColumns,
+        ),
+      );
+    expect([...new Set(postingColumns)]).toHaveLength(1);
+    expect(postingColumns[0]).toMatch(/128px$/);
+    const accountTextAlignments = await page
+      .locator("[data-journal-posting] > span:first-child")
+      .evaluateAll((elements) =>
+        elements.map((element) => getComputedStyle(element).textAlign),
+      );
+    expect([...new Set(accountTextAlignments)]).toEqual(["left"]);
     await records.first().click();
     await expect(
       page.getByRole("heading", { name: "Edit transaction" }),

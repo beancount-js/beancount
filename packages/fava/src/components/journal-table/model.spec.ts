@@ -59,6 +59,36 @@ describe("grouped journal model", () => {
 
     expect(record?.posting?.account).toBe("Liabilities:Card");
     expect(record?.counterpart).toBe("Expenses:Food");
+    expect(
+      record?.postings?.map((posting) => ({
+        account: posting.account,
+        amount: posting.amount?.toString(),
+      })),
+    ).toEqual([
+      { account: "Liabilities:Card", amount: "25 USD" },
+      { account: "Expenses:Food", amount: "-25 USD" },
+    ]);
+  });
+
+  test("shows the balancing value for a two-posting transaction", () => {
+    const record = journalRecords([
+      new Transaction(
+        DateTime.fromISO("2026-04-03"),
+        "*",
+        "Pure Gym",
+        "Gym",
+        [],
+        [],
+        [
+          new Posting("Assets:Checking", new Amount("-12.99", "GBP")),
+          new Posting("Expenses:Home:Lifestyle", new Amount()),
+        ],
+      ),
+    ])[0];
+
+    expect(
+      record?.postings?.map((posting) => posting.amount?.toString()),
+    ).toEqual(["-12.99 GBP", "12.99 GBP"]);
   });
 
   test("paginates whole date groups and leaves an oversized group intact", () => {
