@@ -26,11 +26,28 @@
 /* Account Changes and Balances use a dense, spreadsheet-like treatment. */
 .interval-tree-table {
   --treetable-expander: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.interval-tree-table.tree-table-new p {
+  margin-top: 0;
 }
 
 .interval-tree-table.tree-table-new p > span {
-  /* Override the global Tailwind border reset for the data grid cells. */
-  border: 1px solid var(--border) !important;
+  /* Draw each shared grid edge once rather than overlap full cell borders. */
+  margin-top: 0;
+  margin-right: 0;
+  border: 0 !important;
+  border-right: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.interval-tree-table.tree-table-new .head p > span {
+  border-top: 1px solid var(--border) !important;
+}
+
+.interval-tree-table.tree-table-new li > p > span:first-child {
+  border-left: 1px solid var(--border) !important;
 }
 
 .interval-tree-table.flex-table .head p > span {

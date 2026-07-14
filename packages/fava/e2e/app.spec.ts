@@ -143,6 +143,10 @@ test.describe("ported styles", () => {
       (el) => getComputedStyle(el).fontFamily,
     );
     expect(intervalTableFont.toLowerCase()).toContain("source code pro");
+    const intervalTableFontSize = await intervalTable.evaluate(
+      (el) => getComputedStyle(el).fontSize,
+    );
+    expect(parseFloat(intervalTableFontSize)).toBe(14);
 
     const intervalHeader = intervalTable.locator(".head p > span").first();
     const intervalHeaderBackground = await intervalHeader.evaluate(
@@ -154,6 +158,24 @@ test.describe("ported styles", () => {
       (el) => getComputedStyle(el).borderTopWidth,
     );
     expect(parseFloat(intervalCellBorder)).toBeGreaterThan(0);
+
+    const adjacentHeaderCell = intervalTable.locator(".head p > span").nth(1);
+    const sharedEdge = await adjacentHeaderCell.evaluate((el) => ({
+      left: getComputedStyle(el).borderLeftWidth,
+      previousRight: getComputedStyle(el.previousElementSibling!)
+        .borderRightWidth,
+    }));
+    expect(parseFloat(sharedEdge.left)).toBe(0);
+    expect(parseFloat(sharedEdge.previousRight)).toBe(1);
+
+    const accountCellOffsets = await intervalTable
+      .locator("[data-account-name]")
+      .evaluateAll((cells) =>
+        cells.map((cell) => cell.getBoundingClientRect().left),
+      );
+    expect(Math.max(...accountCellOffsets)).toBeGreaterThan(
+      Math.min(...accountCellOffsets),
+    );
 
     const intervalExpander = intervalTable
       .locator(".clickable-icon svg")
