@@ -162,7 +162,11 @@ test.describe("Docs-shell visual foundation", () => {
     );
     await selectedLedger.click();
     await expect(selectedLedger).not.toHaveAttribute("aria-current");
-    await expect(page).toHaveURL(/#\/journal$/);
+    await expect(page).toHaveURL(
+      new RegExp(
+        `#\\/journal\\?ledger=${encodeURIComponent(collapsedLedgerPath!)}`,
+      ),
+    );
     const selectedLedgerPanels = page.locator(
       `[data-ledger-file-panels="${collapsedLedgerPath}"]`,
     );
@@ -172,10 +176,23 @@ test.describe("Docs-shell visual foundation", () => {
         exact: true,
       }),
     ).toHaveAttribute("aria-current", "page");
-    await selectedLedgerPanels
-      .getByRole("button", { name: "Editor", exact: true })
-      .click();
-    await expect(page).toHaveURL(/#\/editor$/);
+    const editorPanel = selectedLedgerPanels.getByRole("button", {
+      name: "Editor",
+      exact: true,
+    });
+    await editorPanel.click();
+    await expect(page).toHaveURL(
+      new RegExp(
+        `#\\/editor\\?ledger=${encodeURIComponent(collapsedLedgerPath!)}`,
+      ),
+    );
+    await expect(editorPanel).toHaveAttribute("aria-current", "page");
+    await expect(
+      selectedLedgerPanels.getByRole("button", {
+        name: "Journal",
+        exact: true,
+      }),
+    ).not.toHaveAttribute("aria-current");
     await expect(
       page.locator("[data-ledger-file-panels]").first(),
     ).toContainText("Editor");

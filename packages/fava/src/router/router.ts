@@ -24,6 +24,7 @@ export interface RouteProperties {
 export interface RouterContext {
   router: Router;
   history: HistoryManager;
+  activeRoute: Writable<RouteProperties>;
   push: (path: string) => void;
   isActive: Readable<(path: string) => boolean>;
   routerLink: (el: HTMLElement) => { destroy: () => void };
@@ -41,9 +42,12 @@ export function normalizePath(path: string): string {
   return path;
 }
 
-export function pathFromHash(hash: string = window.location.hash): string {
+export function pathFromHash(
+  hash: string = window.location.hash,
+  fallbackPath: string = "/editor",
+): string {
   if (!hash || hash === "#") {
-    return "/editor";
+    return normalizePath(fallbackPath);
   }
   return normalizePath(hash);
 }
@@ -190,7 +194,7 @@ export class Router {
         replace
           ? this.history.replaceState(props)
           : this.history.pushState(props);
-        syncHash(props.path);
+        syncHash(path);
         return;
       }
     }
@@ -229,7 +233,7 @@ export function createRouter(
   routes: Array<Route>,
   path: string = "/",
 ): RouterContext {
-  const initialPath = pathFromHash();
+  const initialPath = pathFromHash(undefined, path);
   const state = writable<string>(initialPath);
 
   const activeRoute = writable<RouteProperties>({
@@ -297,6 +301,7 @@ export function createRouter(
   return {
     router,
     history: router.history,
+    activeRoute: router.activeRoute,
     isActive,
     push: (routePath: string) => {
       router.push(routePath);

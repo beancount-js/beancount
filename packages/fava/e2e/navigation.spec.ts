@@ -18,19 +18,41 @@ test.describe("sample ledger navigation", () => {
     await waitForEditorContent(page, "Account Ledger");
 
     await navigateTo(page, "Income Statement");
-    await expect(page).toHaveURL(/#\/income_statement$/);
+    await expect(page).toHaveURL(/#\/income_statement\?ledger=.+$/);
+    await expect(
+      page
+        .locator("[data-ledger-file-panels] button")
+        .filter({ hasText: "Income Statement" })
+        .first(),
+    ).toHaveAttribute("aria-current", "page");
     await expect(page.locator(".tree-table-new").first()).toBeVisible();
 
     await navigateTo(page, "Balance Sheet");
-    await expect(page).toHaveURL(/#\/balance_sheet$/);
+    await expect(page).toHaveURL(/#\/balance_sheet\?ledger=.+$/);
     await expect(page.locator(".tree-table-new").first()).toBeVisible();
 
     await navigateTo(page, "Journal");
-    await expect(page).toHaveURL(/#\/journal$/);
+    await expect(page).toHaveURL(/#\/journal\?ledger=.+$/);
 
     await navigateTo(page, "Editor");
-    await expect(page).toHaveURL(/#\/editor$/);
+    await expect(page).toHaveURL(/#\/editor\?ledger=.+$/);
     await expect(page.locator(".beancount-editor .cm-editor")).toBeVisible();
+    await expect(
+      page
+        .locator("[data-ledger-file-panels] button")
+        .filter({ hasText: "Editor" })
+        .first(),
+    ).toHaveAttribute("aria-current", "page");
+
+    await page.reload();
+    await page.waitForSelector("[data-ledger-file-row]");
+    await expect(page).toHaveURL(/#\/editor\?ledger=.+$/);
+    await expect(
+      page
+        .locator("[data-ledger-file-panels] button")
+        .filter({ hasText: "Editor" })
+        .first(),
+    ).toHaveAttribute("aria-current", "page");
   });
 
   test("income statement renders without runtime errors", async ({ page }) => {
@@ -40,7 +62,7 @@ test.describe("sample ledger navigation", () => {
     await openEditor(page);
     await waitForEditorContent(page, "Account Ledger");
     await navigateTo(page, "Income Statement");
-    await expect(page).toHaveURL(/#\/income_statement$/);
+    await expect(page).toHaveURL(/#\/income_statement\?ledger=.+$/);
     await expect(page.locator(".tree-table-new").first()).toBeVisible({
       timeout: 15_000,
     });

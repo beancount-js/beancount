@@ -132,7 +132,7 @@ export async function getSidebarWidth(page: Page) {
 export const mainTabs = [
   {
     name: "Editor",
-    path: /#\/editor$/,
+    path: /#\/editor\?ledger=.+$/,
     assert: async (page: Page) => {
       await expect(page.locator(".beancount-editor .cm-editor")).toBeVisible();
       await expect(page.locator(".beancount-editor .cm-content")).toContainText(
@@ -145,7 +145,7 @@ export const mainTabs = [
   },
   {
     name: "Income Statement",
-    path: /#\/income_statement$/,
+    path: /#\/income_statement\?ledger=.+$/,
     assert: async (page: Page) => {
       await expect(page.locator(".tree-table-new").first()).toBeVisible();
       await expect(
@@ -155,7 +155,7 @@ export const mainTabs = [
   },
   {
     name: "Balance Sheet",
-    path: /#\/balance_sheet$/,
+    path: /#\/balance_sheet\?ledger=.+$/,
     assert: async (page: Page) => {
       await expect(page.locator(".tree-table-new").first()).toBeVisible();
       await expect(
@@ -165,14 +165,14 @@ export const mainTabs = [
   },
   {
     name: "Trial Balance",
-    path: /#\/trial_balance$/,
+    path: /#\/trial_balance\?ledger=.+$/,
     assert: async (page: Page) => {
       await expect(page.locator(".tree-table-new").first()).toBeVisible();
     },
   },
   {
     name: "Journal",
-    path: /#\/journal$/,
+    path: /#\/journal\?ledger=.+$/,
     assert: async (page: Page) => {
       await expect(page.locator(".bean-table.flex-table")).toBeVisible();
       await expect(page.getByText("Coffee Shop")).toBeVisible();
@@ -180,7 +180,7 @@ export const mainTabs = [
   },
   {
     name: "Holdings",
-    path: /#\/holdings$/,
+    path: /#\/holdings\?ledger=.+$/,
     assert: async (page: Page) => {
       await expect(
         page.getByRole("tab", { name: "Holdings", exact: true }),
@@ -190,14 +190,14 @@ export const mainTabs = [
   },
   {
     name: "Statistics",
-    path: /#\/statistics$/,
+    path: /#\/statistics\?ledger=.+$/,
     assert: async (page: Page) => {
       await expect(page.getByText("Postings per Account")).toBeVisible();
     },
   },
   {
     name: "Query",
-    path: /#\/query$/,
+    path: /#\/query\?ledger=.+$/,
     assert: async (page: Page) => {
       await expect(page.locator(".beancount-editor .cm-editor")).toBeVisible();
       await expect(page.getByRole("button", { name: "Search" })).toBeVisible();

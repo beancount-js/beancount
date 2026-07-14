@@ -86,7 +86,7 @@
     },
   );
   const { activeFile } = workspace;
-  const { routerLink } = navigation;
+  const { activeRoute, routerLink } = navigation;
   let loadedSignature = "";
 
   context.menu.set([MainNav]);
@@ -96,9 +96,14 @@
 
   function applySnapshot(next: ProjectSnapshot) {
     workspace.snapshot.set(next);
-    const available = next.ledgerFiles.some((file) => file.path === $activeFile)
-      ? $activeFile
-      : next.project.entryFile;
+    const selectedRouteLedger = $activeRoute.query["ledger"];
+    const available = next.ledgerFiles.some(
+      (file) => file.path === selectedRouteLedger,
+    )
+      ? selectedRouteLedger
+      : next.ledgerFiles.some((file) => file.path === $activeFile)
+        ? $activeFile
+        : next.project.entryFile;
     workspace.activeFile.set(available);
     context.ledgerSource.set(
       LedgerSource.fromProject(

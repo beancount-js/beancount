@@ -66,6 +66,15 @@
   let selectedTags: string[] = [];
 
   $: files = $snapshot?.ledgerFiles ?? [];
+  $: selectedRouteLedger = $activeRoute.query["ledger"];
+  $: if (
+    selectedRouteLedger &&
+    selectedRouteLedger !== $activeFile &&
+    files.some((file) => file.path === selectedRouteLedger)
+  ) {
+    activeFile.set(selectedRouteLedger);
+    expandedFilePaths = { ...expandedFilePaths, [selectedRouteLedger]: true };
+  }
   $: menuItems = getMenu();
   $: tagSummaries = createLedgerTagSummaries(files);
   $: filteredByTags = filterLedgerFiles(files, "", selectedTags);
@@ -179,17 +188,24 @@
   function selectLedgerFile(path: string) {
     activeFile.set(path);
     expandedFilePaths = { ...expandedFilePaths, [path]: true };
-    router.push("#/journal");
+    router.push(ledgerPanelPath(path, "#/journal"));
   }
 
   function openLedgerPanel(path: string, panel: MenuItem) {
     activeFile.set(path);
     expandedFilePaths = { ...expandedFilePaths, [path]: true };
-    router.push(panel.path);
+    router.push(ledgerPanelPath(path, panel.path));
   }
 
-  function isPanelActive(panel: MenuItem) {
-    return panel.path.replace(/^#/, "").split("?")[0] === $activeRoute.path;
+  function ledgerPanelPath(ledgerPath: string, panelPath: string) {
+    const [path, query = ""] = panelPath.slice(1).split("?", 2);
+    const parameters = new URLSearchParams(query);
+    parameters.set("ledger", ledgerPath);
+    return `${path}?${parameters.toString()}`;
+  }
+
+  function isPanelActive(panel: MenuItem, routePath: string) {
+    return panel.path.replace(/^#/, "").split("?")[0] === routePath;
   }
 
   function expandAllFiles() {
@@ -665,12 +681,14 @@
             size="sm"
             class={cn(
               "relative h-8 w-full justify-start rounded-md pr-2 text-xs",
-              active && isPanelActive(panel)
+              active && isPanelActive(panel, $activeRoute.path)
                 ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
                 : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
             )}
             style={filePanelStyle(depth)}
-            aria-current={active && isPanelActive(panel) ? "page" : undefined}
+            aria-current={active && isPanelActive(panel, $activeRoute.path)
+              ? "page"
+              : undefined}
             onclick={() => openLedgerPanel(file.path, panel)}
           >
             {@render IndentGuides({ depth: depth + 1 })}

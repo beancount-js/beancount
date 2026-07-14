@@ -110,7 +110,7 @@ test.describe("ported styles", () => {
     expect(scrollOverflow).toBe("auto");
 
     await navigateTo(page, "Journal");
-    await expect(page).toHaveURL(/#\/journal$/);
+    await expect(page).toHaveURL(/#\/journal\?ledger=.+$/);
     await expect(page.locator(".bean-table.flex-table")).toBeVisible({
       timeout: 15_000,
     });
