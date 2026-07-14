@@ -63,7 +63,10 @@
 </script>
 
 <ScrollArea.Root orientation="horizontal" class="w-full max-w-full">
-  <ol class="flex-table tree-table-new pb-8">
+  <ol
+    class="flex-table tree-table-new interval-tree-table pb-8 font-mono"
+    data-interval-tree-table
+  >
     <li class="head">
       <p>
         <AccountCellHeader />

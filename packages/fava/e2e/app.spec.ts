@@ -128,6 +128,52 @@ test.describe("ported styles", () => {
     expect(parseFloat(groupRadius)).toBeGreaterThan(0);
   });
 
+  test("styles Account Changes and Balances as interval tables", async ({
+    page,
+  }) => {
+    await page.goto("/#/account/Assets");
+    const changesTab = page.getByRole("tab", { name: "Changes (Monthly)" });
+    await expect(changesTab).toBeVisible({ timeout: 15_000 });
+    await changesTab.click();
+    await expect(changesTab).toHaveAttribute("aria-selected", "true");
+
+    const intervalTable = page.locator("[data-interval-tree-table]:visible");
+    await expect(intervalTable).toHaveCount(1);
+    const intervalTableFont = await intervalTable.evaluate(
+      (el) => getComputedStyle(el).fontFamily,
+    );
+    expect(intervalTableFont.toLowerCase()).toContain("source code pro");
+
+    const intervalHeader = intervalTable.locator(".head p > span").first();
+    const intervalHeaderBackground = await intervalHeader.evaluate(
+      (el) => getComputedStyle(el).backgroundColor,
+    );
+    expect(intervalHeaderBackground).not.toBe("rgba(0, 0, 0, 0)");
+
+    const intervalCellBorder = await intervalHeader.evaluate(
+      (el) => getComputedStyle(el).borderTopWidth,
+    );
+    expect(parseFloat(intervalCellBorder)).toBeGreaterThan(0);
+
+    const intervalExpander = intervalTable
+      .locator(".clickable-icon svg")
+      .first();
+    await expect(intervalExpander).toBeVisible();
+    const intervalIconSize = await intervalExpander.evaluate((el) => ({
+      width: getComputedStyle(el).width,
+      height: getComputedStyle(el).height,
+    }));
+    expect(parseFloat(intervalIconSize.width)).toBe(12);
+    expect(parseFloat(intervalIconSize.height)).toBe(12);
+
+    const balancesTab = page.getByRole("tab", { name: "Balances (Monthly)" });
+    await balancesTab.click();
+    await expect(balancesTab).toHaveAttribute("aria-selected", "true");
+    await expect(
+      page.locator("[data-interval-tree-table]:visible"),
+    ).toHaveCount(1);
+  });
+
   test("loads codemirror theme styles", async ({ page }) => {
     await page.goto("/#/editor");
     await waitForEditorContent(page, "E2E Test Ledger");

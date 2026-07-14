@@ -23,6 +23,27 @@
   width: 12em;
 }
 
+/* Account Changes and Balances use a dense, spreadsheet-like treatment. */
+.interval-tree-table {
+  --treetable-expander: var(--muted-foreground);
+}
+
+.interval-tree-table.tree-table-new p > span {
+  /* Override the global Tailwind border reset for the data grid cells. */
+  border: 1px solid var(--border) !important;
+}
+
+.interval-tree-table.flex-table .head p > span {
+  font-family: inherit;
+  color: var(--muted-foreground);
+  background-color: var(--muted);
+}
+
+.interval-tree-table .clickable-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
 /* For two or more operating currencies, set a slightly smaller size. */
 .two-currencies {
   font-size: 0.9em;
