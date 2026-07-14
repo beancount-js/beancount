@@ -2,7 +2,7 @@ import { Decimal, formatDate } from "@beancount-js/parser";
 import { Price, type Directives } from "./data";
 import { DefaultKeyedMap } from "./map";
 import { DateTime } from "luxon";
-import { bisectLeftWithKey } from "../utils";
+import { bisectRightWithKey } from "../utils";
 
 export class PricePoint {
   constructor(
@@ -151,12 +151,12 @@ export class PriceMap {
       return prices[prices.length - 1];
     }
 
-    const index = bisectLeftWithKey(prices, date.toMillis(), (item) =>
+    const index = bisectRightWithKey(prices, date.toMillis(), (item) =>
       item.date.toMillis(),
     );
     if (index == 0) {
       return null;
     }
-    return prices[index];
+    return prices[index - 1];
   }
 }

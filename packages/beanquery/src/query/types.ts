@@ -236,7 +236,7 @@ export function isEqual(a: any, b: any): boolean {
     );
   } else if (typeof a.isEqual === "function") {
     return a.isEqual(b);
-  } else if (typeof b.isEqual === "function") {
+  } else if (typeof b?.isEqual === "function") {
     return b.isEqual(a);
   }
   return a === b;

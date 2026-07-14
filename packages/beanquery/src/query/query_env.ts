@@ -670,8 +670,9 @@ export function toNumber(a: unknown): number | null {
 createFunction(typeName(Decimal), [Object], Decimal, toDecimal);
 
 createFunction("number", [Amount], Decimal, number, true);
-function number(x: Amount) {
-  return x.value;
+createFunction("number", [Position], Decimal, number, true);
+function number(x: Amount | Position) {
+  return x instanceof Position ? x.units.value : x.value;
 }
 
 function toDecimal(a: unknown): Decimal | null {
@@ -971,7 +972,10 @@ function join(x: Set<unknown> | unknown[]) {
 }
 
 createFunction("only", [String, Inventory], Amount, only, true);
-function only(currency: string, inv: Inventory) {
+function only(currency: string, inv: Inventory | Position) {
+  if (inv instanceof Position) {
+    return inv.units.currency === currency ? inv.units : null;
+  }
   return inv.currencyUnits(currency);
 }
 

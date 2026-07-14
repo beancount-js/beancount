@@ -619,7 +619,7 @@ export class PostingsTable extends BeancountTable {
     return null;
   }
 
-  @Column(Decimal, "cost_currency")
+  @Column(String, "cost_currency")
   costCurrency(context: Row | Record<string, unknown>) {
     if (!(context instanceof Row)) {
       return getValueByDotNotation(context, "cost_currency");
