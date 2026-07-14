@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import {
-  minimalLedger,
   navigateTo,
   openEditor,
   seedLedger,
@@ -144,26 +143,128 @@ test.describe("sample ledger navigation", () => {
 });
 
 test.describe("account details", () => {
-  test.beforeEach(async ({ page }) => {
-    await seedLedger(page, minimalLedger);
-  });
-
   test("account page renders without runtime errors", async ({ page }) => {
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
 
-    await page.goto("/#/account/Expenses");
+    await page.goto("/#/account/Assets:Checking");
     await page.waitForSelector("[data-ledger-file-row]");
-    await expect(page).toHaveURL(/#\/account\/Expenses$/);
+    await expect(page).toHaveURL(/#\/account\/Assets:Checking\??$/);
     await expect(page.getByRole("tab", { name: "Account Table" })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(
-      page.locator(".payee").filter({ hasText: "Coffee Shop" }),
-    ).toBeVisible({
+    await expect(page.locator("[data-account-activity-table]")).toBeVisible({
       timeout: 15_000,
     });
+    await expect(page.getByText("Balance", { exact: true })).toBeVisible();
+    const activityRecords = page.locator(
+      "[data-account-activity-table] [role=button][aria-label^='Edit ']",
+    );
+    await expect(activityRecords.first()).toBeVisible();
+    await expect(
+      page.getByText("Final balance", { exact: true }),
+    ).toBeVisible();
+
+    const [masterCheckboxX, groupCheckboxX, recordCheckboxX] =
+      await Promise.all([
+        page
+          .getByLabel("Select visible account activity records")
+          .evaluate((element) => element.getBoundingClientRect().x),
+        page
+          .locator(
+            "[data-account-activity-table] input[aria-label^='Select all']",
+          )
+          .first()
+          .evaluate((element) => element.getBoundingClientRect().x),
+        page
+          .locator(
+            "[data-account-activity-table] [role=button] input[type=checkbox]",
+          )
+          .first()
+          .evaluate((element) => element.getBoundingClientRect().x),
+      ]);
+    expect([groupCheckboxX, recordCheckboxX]).toEqual([
+      masterCheckboxX,
+      masterCheckboxX,
+    ]);
+    const firstGroupCheckbox = page
+      .locator("[data-account-activity-table] input[aria-label^='Select all']")
+      .first();
+    const firstRecordCheckbox = page
+      .locator(
+        "[data-account-activity-table] [role=button] input[type=checkbox]",
+      )
+      .first();
+    await firstGroupCheckbox.check();
+    await expect(firstRecordCheckbox).toBeChecked();
+
+    const groupToggle = page.locator("[data-activity-group-toggle]").first();
+    await groupToggle.click();
+    await expect(
+      page.getByText("Start balance", { exact: true }),
+    ).not.toBeVisible();
+    await groupToggle.click();
+    await expect(
+      page.getByText("Start balance", { exact: true }),
+    ).toBeVisible();
+
+    const postingColumns = await page
+      .locator("[data-account-posting]")
+      .evaluateAll((elements) =>
+        elements.map(
+          (element) => getComputedStyle(element).gridTemplateColumns,
+        ),
+      );
+    expect([...new Set(postingColumns)]).toHaveLength(1);
+    expect(postingColumns[0]).toMatch(/128px$/);
+    await expect(
+      page.locator("[data-account-posting]").first().getByRole("link"),
+    ).toHaveText(/^Assets:Checking/);
+
+    await activityRecords.first().click();
+    await expect(
+      page.getByRole("heading", { name: "Edit transaction" }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/#\/account\/Assets:Checking\?record=.+$/);
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Edit transaction" }),
+    ).not.toBeVisible();
+    await expect(page).toHaveURL(/#\/account\/Assets:Checking\??$/);
+
+    const accountLink = page.locator("[data-account-posting] a").first();
+    const previousUrl = page.url();
+    await accountLink.click();
+    await expect.poll(() => page.url()).not.toBe(previousUrl);
+    await expect(
+      page.getByRole("heading", { name: "Edit transaction" }),
+    ).not.toBeVisible();
 
     expect(pageErrors).toHaveLength(0);
+  });
+});
+
+test.describe("account activity pagination", () => {
+  test("keeps date groups intact while paginating account activity", async ({
+    page,
+  }) => {
+    await page.goto("/#/account/Assets:Checking?pageSize=25");
+    await expect(page.locator("[data-account-activity-table]")).toBeVisible({
+      timeout: 15_000,
+    });
+    const firstDateGroup = page
+      .locator("[data-account-activity-table] [role=heading]")
+      .first();
+    const firstDate = await firstDateGroup.innerText();
+    await expect(
+      page.getByRole("navigation", { name: "Account activity pages" }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Next Account activity page" })
+      .click();
+    await expect(page).toHaveURL(
+      /#\/account\/Assets:Checking\?pageSize=25&page=2$/,
+    );
+    await expect(firstDateGroup).not.toHaveText(firstDate);
   });
 });

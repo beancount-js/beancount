@@ -1,0 +1,478 @@
+<script lang="ts">
+  import type { Amount, DirectiveBase } from "@beancount-js/beancount";
+  import { useContext } from "../context";
+  import { useCtx } from "../stores/format";
+  import { urlForAccount } from "../helpers";
+  import { useNavigation } from "../router/router";
+  import { Button } from "$lib/components/ui/button";
+  import ChevronDown from "lucide-svelte/icons/chevron-down";
+  import ChevronUp from "lucide-svelte/icons/chevron-up";
+  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
+  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
+  import FileText from "lucide-svelte/icons/file-text";
+  import Info from "lucide-svelte/icons/info";
+  import JournalEditorSheet from "./JournalEditorSheet.svelte";
+  import {
+    groupJournalRecords,
+    journalRecords,
+    orderedBalanceEntries,
+    paginateJournalGroups,
+    postingAmount,
+    type JournalDateGroup,
+    type JournalRecord,
+  } from "./journal-table/model";
+
+  const PAGE_SIZES = [25, 50, 100];
+  const { operatingCurrency } = useContext();
+  const { activeRoute, router } = useNavigation();
+  const ctx = useCtx();
+
+  export let directives: readonly DirectiveBase[] = [];
+  export let balancesByDate: Record<string, Record<string, number>> = {};
+  export let balanceRoots: readonly string[] = [];
+  export let focusedAccount: string | undefined = undefined;
+  export let tableId = "journal-table";
+  export let recordLabel = "journal";
+  export let pageLabel = "Journal";
+  export let amountHeading = "Amount";
+  export let balanceDescription = "Shows the net worth balance for this date";
+  export let emptyMessage =
+    "No dated records match the current Journal filter.";
+  export let linkAccounts = false;
+
+  let selectedKeys = new Set<string>();
+  let expandedGroups = new Set<string>();
+  let expandedPageSignature = "";
+  let masterCheckbox: HTMLInputElement | undefined;
+  let selectedRecord: JournalRecord | undefined;
+  let editorOpen = false;
+
+  function setIndeterminate(node: HTMLInputElement, value: boolean) {
+    node.indeterminate = value;
+    return {
+      update(next: boolean) {
+        node.indeterminate = next;
+      },
+    };
+  }
+
+  function updateRoute(values: Record<string, string | undefined>) {
+    const query = new URLSearchParams($activeRoute.query);
+    for (const [key, value] of Object.entries(values)) {
+      if (value) query.set(key, value);
+      else query.delete(key);
+    }
+    const next = query.toString();
+    router.updateState(next ? `?${next}` : "?");
+  }
+
+  function toggleRecord(key: string, checked?: boolean) {
+    const next = new Set(selectedKeys);
+    const select = checked ?? !next.has(key);
+    if (select) next.add(key);
+    else next.delete(key);
+    selectedKeys = next;
+  }
+
+  function toggleGroup(group: JournalDateGroup, checked?: boolean) {
+    const keys = group.records.map((record) => record.key);
+    const select = checked ?? !keys.every((key) => selectedKeys.has(key));
+    const next = new Set(selectedKeys);
+    keys.forEach((key) => (select ? next.add(key) : next.delete(key)));
+    selectedKeys = next;
+  }
+
+  function toggleVisible(checked?: boolean) {
+    const keys = visibleGroups.flatMap((group) =>
+      group.records.map((record) => record.key),
+    );
+    const select = checked ?? !keys.every((key) => selectedKeys.has(key));
+    const next = new Set(selectedKeys);
+    keys.forEach((key) => (select ? next.add(key) : next.delete(key)));
+    selectedKeys = next;
+  }
+
+  function toggleSummary(groupKey: string) {
+    const next = new Set(expandedGroups);
+    if (next.has(groupKey)) next.delete(groupKey);
+    else next.add(groupKey);
+    expandedGroups = next;
+  }
+
+  function openRecord(record: JournalRecord) {
+    selectedRecord = record;
+    editorOpen = true;
+    updateRoute({ record: record.key });
+  }
+
+  function handleRecordKeydown(event: KeyboardEvent, record: JournalRecord) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openRecord(record);
+    }
+  }
+
+  function stopRowClick(event: MouseEvent) {
+    event.stopPropagation();
+  }
+
+  function balanceText(balance: Record<string, number>) {
+    const entries = orderedBalanceEntries(balance, $operatingCurrency);
+    return entries.length
+      ? entries
+          .map(([currency, amount]) => $ctx.money(amount, currency))
+          .join(" · ")
+      : "—";
+  }
+
+  function groupDate(group: JournalDateGroup) {
+    return group.date.toFormat("LLLL dd, yyyy").toUpperCase();
+  }
+
+  function recordAmount(record: JournalRecord) {
+    return postingAmountText(postingAmount(record));
+  }
+
+  function postingAmountText(amount: Amount | undefined) {
+    return amount ? $ctx.money(amount, amount.currency ?? undefined) : "—";
+  }
+
+  $: records = journalRecords(directives, balanceRoots, focusedAccount);
+  $: groups = groupJournalRecords(records, balancesByDate);
+  $: validKeys = new Set(records.map((record) => record.key));
+  $: if ([...selectedKeys].some((key) => !validKeys.has(key))) {
+    selectedKeys = new Set(
+      [...selectedKeys].filter((key) => validKeys.has(key)),
+    );
+  }
+  $: pageSize = PAGE_SIZES.includes(Number($activeRoute.query.pageSize))
+    ? Number($activeRoute.query.pageSize)
+    : 50;
+  $: pages = paginateJournalGroups(groups, pageSize);
+  $: requestedPage = Math.max(1, Number($activeRoute.query.page) || 1);
+  $: page = Math.min(requestedPage, Math.max(1, pages.length));
+  $: visibleGroups = pages[page - 1] ?? [];
+  $: visibleKeys = visibleGroups.flatMap((group) =>
+    group.records.map((record) => record.key),
+  );
+  $: selectedVisibleCount = visibleKeys.filter((key) =>
+    selectedKeys.has(key),
+  ).length;
+  $: masterChecked =
+    Boolean(visibleKeys.length) && selectedVisibleCount === visibleKeys.length;
+  $: masterIndeterminate = selectedVisibleCount > 0 && !masterChecked;
+  $: if (masterCheckbox) masterCheckbox.indeterminate = masterIndeterminate;
+  $: pageSignature = visibleGroups.map((group) => group.key).join("|");
+  $: if (pageSignature && pageSignature !== expandedPageSignature) {
+    expandedPageSignature = pageSignature;
+    expandedGroups = new Set([visibleGroups[0]!.key]);
+  }
+  $: routeRecord = $activeRoute.query.record;
+  $: if (routeRecord) {
+    const record = records.find((item) => item.key === routeRecord);
+    if (record && record.key !== selectedRecord?.key) {
+      selectedRecord = record;
+      editorOpen = true;
+    }
+    if (!record) {
+      selectedRecord = undefined;
+      editorOpen = false;
+    }
+  } else if (editorOpen) {
+    editorOpen = false;
+    selectedRecord = undefined;
+  }
+  $: if (!editorOpen && selectedRecord && routeRecord === selectedRecord.key) {
+    selectedRecord = undefined;
+    updateRoute({ record: undefined });
+  }
+</script>
+
+<section
+  class="h-full overflow-y-auto p-3 sm:p-5"
+  data-activity-table={tableId}
+  data-journal-table={tableId === "journal-table" ? "" : undefined}
+  data-account-activity-table={tableId === "account-activity-table"
+    ? ""
+    : undefined}
+>
+  <div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
+    <div
+      class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+    >
+      <input
+        bind:this={masterCheckbox}
+        use:setIndeterminate={masterIndeterminate}
+        type="checkbox"
+        class="size-4 rounded border-input text-primary focus:ring-ring"
+        aria-label={`Select visible ${recordLabel} records`}
+        checked={masterChecked}
+        onchange={(event) =>
+          toggleVisible((event.currentTarget as HTMLInputElement).checked)}
+      />
+      <span>Date</span>
+      <span class="text-right">{amountHeading}</span>
+    </div>
+
+    {#if !groups.length}
+      <div
+        class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+      >
+        {emptyMessage}
+      </div>
+    {/if}
+
+    {#each visibleGroups as group}
+      {@const groupKeys = group.records.map((record) => record.key)}
+      {@const groupSelected = groupKeys.filter((key) =>
+        selectedKeys.has(key),
+      ).length}
+      {@const groupChecked = groupSelected === groupKeys.length}
+      {@const groupIndeterminate = groupSelected > 0 && !groupChecked}
+      {@const expanded = expandedGroups.has(group.key)}
+      {@const groupId = `${tableId}-group-${group.key}`}
+      {@const summaryId = `${tableId}-summary-${group.key}`}
+      <section
+        class:opacity-60={group.date.toMillis() > Date.now()}
+        class="overflow-hidden rounded-2xl bg-muted/80"
+        aria-labelledby={groupId}
+      >
+        <div
+          class="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-5 py-4"
+        >
+          <input
+            use:setIndeterminate={groupIndeterminate}
+            type="checkbox"
+            class="size-4 rounded border-input text-primary focus:ring-ring"
+            aria-label={`Select all ${group.records.length} records from ${groupDate(group)}`}
+            checked={groupChecked}
+            onchange={(event) =>
+              toggleGroup(
+                group,
+                (event.currentTarget as HTMLInputElement).checked,
+              )}
+          />
+          <button
+            type="button"
+            class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+            data-activity-group-toggle
+            data-journal-group-toggle={tableId === "journal-table"
+              ? ""
+              : undefined}
+            aria-expanded={expanded}
+            aria-controls={summaryId}
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${groupDate(group)}`}
+            onclick={() => toggleSummary(group.key)}
+          >
+            <span
+              id={groupId}
+              role="heading"
+              aria-level="2"
+              class="truncate text-sm font-semibold tracking-wide text-foreground"
+            >
+              {groupDate(group)}
+              <span class="ml-2 text-muted-foreground"
+                >· {group.records.length}</span
+              >
+            </span>
+            <span
+              class="hidden max-w-[16rem] shrink-0 truncate text-right text-sm font-semibold tabular-nums sm:block"
+              title={balanceText(group.balance.final)}
+            >
+              {balanceText(group.balance.final)}
+            </span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            title={balanceDescription}
+            aria-label="About this date's balance"
+          >
+            <Info class="size-4" />
+          </button>
+          <button
+            type="button"
+            class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            aria-expanded={expanded}
+            aria-controls={summaryId}
+            aria-label={`${expanded ? "Hide" : "Show"} balance summary for ${groupDate(group)}`}
+            onclick={() => toggleSummary(group.key)}
+          >
+            {#if expanded}
+              <ChevronUp class="size-4" />
+            {:else}
+              <ChevronDown class="size-4" />
+            {/if}
+          </button>
+        </div>
+
+        {#if expanded}
+          <div
+            id={summaryId}
+            class="grid gap-2 border-t border-dashed px-5 py-4 text-sm sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
+          >
+            <span>Start balance</span>
+            <span class="hidden border-t border-dashed sm:block"></span>
+            <span class="text-right font-semibold tabular-nums"
+              >{balanceText(group.balance.start)}</span
+            >
+            <span>Net cash flow</span>
+            <span class="hidden border-t border-dashed sm:block"></span>
+            <span class="text-right font-semibold tabular-nums"
+              >{balanceText(group.balance.change)}</span
+            >
+            <span>Final balance</span>
+            <span class="hidden border-t border-dashed sm:block"></span>
+            <span class="text-right font-bold tabular-nums"
+              >{balanceText(group.balance.final)}</span
+            >
+          </div>
+        {/if}
+
+        <div
+          class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+        >
+          {#each group.records as record, index}
+            <div
+              role="button"
+              tabindex="0"
+              class:rounded-b-xl={index === group.records.length - 1}
+              class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={`Edit ${record.title}`}
+              onclick={() => openRecord(record)}
+              onkeydown={(event) => handleRecordKeydown(event, record)}
+            >
+              <input
+                type="checkbox"
+                class="size-4 rounded border-input text-primary focus:ring-ring"
+                aria-label={`Select ${record.title}`}
+                checked={selectedKeys.has(record.key)}
+                onclick={(event) => event.stopPropagation()}
+                onchange={(event) =>
+                  toggleRecord(
+                    record.key,
+                    (event.currentTarget as HTMLInputElement).checked,
+                  )}
+              />
+              <div
+                class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                aria-hidden="true"
+              >
+                {#if record.directive.constructor.name === "Transaction"}
+                  {record.title.slice(0, 1).toUpperCase()}
+                {:else}
+                  <FileText class="size-4" />
+                {/if}
+              </div>
+              <div class="min-w-0">
+                <div class="truncate text-sm font-semibold">{record.title}</div>
+                <div class="mt-1 truncate text-xs text-muted-foreground">
+                  {record.detail}
+                </div>
+              </div>
+              <div class="flex min-w-0 flex-col gap-1 text-right">
+                {#if record.postings?.length}
+                  {#each record.postings as posting}
+                    <div
+                      class="grid min-w-0 grid-cols-[minmax(0,1fr)_8rem] items-center gap-3"
+                      data-activity-posting
+                      data-journal-posting={tableId === "journal-table"
+                        ? ""
+                        : undefined}
+                      data-account-posting={tableId === "account-activity-table"
+                        ? ""
+                        : undefined}
+                    >
+                      {#if linkAccounts}
+                        <a
+                          class="truncate text-left text-xs text-muted-foreground hover:text-primary hover:underline"
+                          href={urlForAccount(posting.account)}
+                          onclick={stopRowClick}
+                          title={posting.account}>{posting.account}</a
+                        >
+                      {:else}
+                        <span
+                          class="truncate text-left text-xs text-muted-foreground"
+                          title={posting.account}>{posting.account}</span
+                        >
+                      {/if}
+                      <span class="text-sm font-semibold tabular-nums"
+                        >{postingAmountText(posting.amount)}</span
+                      >
+                    </div>
+                  {/each}
+                {:else}
+                  <span
+                    class="self-end rounded-full border px-2 py-0.5 text-xs capitalize text-muted-foreground"
+                    >{record.type}</span
+                  >
+                  {#if record.posting}
+                    <span class="text-sm font-semibold tabular-nums"
+                      >{recordAmount(record)}</span
+                    >
+                  {/if}
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+      </section>
+    {/each}
+
+    {#if pages.length > 1}
+      <nav
+        class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+        aria-label={`${pageLabel} pages`}
+      >
+        <span class="text-sm text-muted-foreground"
+          >Page {page} of {pages.length}</span
+        >
+        <div class="flex items-center gap-2">
+          <label
+            class="text-sm text-muted-foreground"
+            for={`${tableId}-page-size`}>Records per page</label
+          >
+          <select
+            id={`${tableId}-page-size`}
+            class="h-8 rounded-md border bg-background px-2 text-sm"
+            value={pageSize}
+            onchange={(event) =>
+              updateRoute({
+                pageSize: (event.currentTarget as HTMLSelectElement).value,
+                page: "1",
+              })}
+          >
+            {#each PAGE_SIZES as size}
+              <option value={size}>{size}</option>
+            {/each}
+          </select>
+          <Button
+            size="icon"
+            variant="outline"
+            aria-label={`Previous ${pageLabel} page`}
+            disabled={page <= 1}
+            onclick={() => updateRoute({ page: String(page - 1) })}
+          >
+            <ChevronsLeft />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            aria-label={`Next ${pageLabel} page`}
+            disabled={page >= pages.length}
+            onclick={() => updateRoute({ page: String(page + 1) })}
+          >
+            <ChevronsRight />
+          </Button>
+        </div>
+      </nav>
+    {/if}
+  </div>
+</section>
+
+{#if selectedRecord}
+  <JournalEditorSheet
+    directive={selectedRecord.directive}
+    bind:open={editorOpen}
+  />
+{/if}

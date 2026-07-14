@@ -5,6 +5,7 @@
   import { useContext } from "../context";
   import { AccountFilter } from "@beancount-js/filters";
   import { urlForAccount } from "../helpers";
+  import AccountActivityTable from "./AccountActivityTable.svelte";
   import AccountTable from "./AccountTable.svelte";
   import * as Tabs from "$lib/components/ui/tabs";
   import type { AccountTreeNode } from "../lib/models";
@@ -141,7 +142,11 @@
               {/if}
             </Tabs.List>
             <Tabs.Content value="account-table">
-              <AccountTable {account} {onValueChange}></AccountTable>
+              {#if account}
+                <AccountActivityTable {account} />
+              {:else}
+                <AccountTable {account} {onValueChange} />
+              {/if}
             </Tabs.Content>
             {#if changeTreeNodes.length > 0}
               <Tabs.Content value="changes">

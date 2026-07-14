@@ -3,6 +3,7 @@ import {
   Close,
   Custom,
   DirectiveBase,
+  isDescendantOf,
   Open,
   Pad,
   Query,
@@ -84,17 +85,29 @@ function isBalanceSheetPosting(posting: Posting, roots: readonly string[]) {
 function transactionRecord(
   transaction: Transaction,
   balanceSheetRoots: readonly string[],
+  focusedAccount?: string,
 ): Omit<JournalRecord, "key" | "date" | "dateKey"> {
-  const posting =
-    transaction.postings.find(
-      (item) =>
-        isBalanceSheetPosting(item, balanceSheetRoots) &&
-        item.units?.isDefined(),
-    ) ?? transaction.postings.find((item) => item.units?.isDefined());
-  const counterpart = transaction.postings.find(
+  const transactionPostings = focusedAccount
+    ? [
+        ...transaction.postings.filter((item) =>
+          isDescendantOf(focusedAccount, item.account),
+        ),
+        ...transaction.postings.filter(
+          (item) => !isDescendantOf(focusedAccount, item.account),
+        ),
+      ]
+    : transaction.postings;
+  const posting = focusedAccount
+    ? transactionPostings.find((item) => item.units?.isDefined())
+    : (transactionPostings.find(
+        (item) =>
+          isBalanceSheetPosting(item, balanceSheetRoots) &&
+          item.units?.isDefined(),
+      ) ?? transactionPostings.find((item) => item.units?.isDefined()));
+  const counterpart = transactionPostings.find(
     (item) => item !== posting,
   )?.account;
-  const postings = transaction.postings.map((item) => ({
+  const postings = transactionPostings.map((item) => ({
     account: item.account,
     amount: item.units?.isDefined() ? item.units : undefined,
   }));
@@ -119,7 +132,7 @@ function transactionRecord(
     directive: transaction,
     title,
     detail:
-      detail || transaction.postings.map((item) => item.account).join(" · "),
+      detail || transactionPostings.map((item) => item.account).join(" · "),
     type: transaction.flag || "Transaction",
     posting,
     counterpart,
@@ -191,12 +204,13 @@ function directiveRecord(
 function toRecord(
   directive: DirectiveBase,
   balanceSheetRoots: readonly string[],
+  focusedAccount?: string,
 ): JournalRecord | undefined {
   if (!directive.date) return undefined;
   const date = directive.date;
   const base =
     directive instanceof Transaction
-      ? transactionRecord(directive, balanceSheetRoots)
+      ? transactionRecord(directive, balanceSheetRoots, focusedAccount)
       : directiveRecord(directive);
   return {
     ...base,
@@ -213,10 +227,11 @@ function toRecord(
 export function journalRecords(
   directives: readonly DirectiveBase[],
   balanceSheetRoots: readonly string[] = DEFAULT_BALANCE_SHEET_ROOTS,
+  focusedAccount?: string,
 ) {
   const records: JournalRecord[] = [];
   for (const directive of directives) {
-    const record = toRecord(directive, balanceSheetRoots);
+    const record = toRecord(directive, balanceSheetRoots, focusedAccount);
     if (record) records.push(record);
   }
   return records;

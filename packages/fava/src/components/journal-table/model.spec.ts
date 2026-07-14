@@ -71,24 +71,60 @@ describe("grouped journal model", () => {
   });
 
   test("shows the balancing value for a two-posting transaction", () => {
-    const record = journalRecords([
-      new Transaction(
-        DateTime.fromISO("2026-04-03"),
-        "*",
-        "Pure Gym",
-        "Gym",
-        [],
-        [],
-        [
-          new Posting("Assets:Checking", new Amount("-12.99", "GBP")),
-          new Posting("Expenses:Home:Lifestyle", new Amount()),
-        ],
-      ),
-    ])[0];
+    const record = journalRecords(
+      [
+        new Transaction(
+          DateTime.fromISO("2026-04-03"),
+          "*",
+          "Pure Gym",
+          "Gym",
+          [],
+          [],
+          [
+            new Posting("Assets:Checking", new Amount("-12.99", "GBP")),
+            new Posting("Expenses:Home:Lifestyle", new Amount()),
+          ],
+        ),
+      ],
+      ["Assets", "Liabilities"],
+      "Assets:Checking",
+    )[0];
 
     expect(
       record?.postings?.map((posting) => posting.amount?.toString()),
     ).toEqual(["-12.99 GBP", "12.99 GBP"]);
+  });
+
+  test("orders a focused account and descendants before counterpostings", () => {
+    const record = journalRecords(
+      [
+        new Transaction(
+          DateTime.fromISO("2026-04-03"),
+          "*",
+          "Household transfer",
+          "Move money",
+          [],
+          [],
+          [
+            new Posting("Expenses:Food", new Amount("-20", "USD")),
+            new Posting("Assets:Checking:Joint", new Amount("20", "USD")),
+            new Posting("Liabilities:Card", new Amount()),
+          ],
+        ),
+      ],
+      ["Assets", "Liabilities"],
+      "Assets:Checking",
+    )[0];
+
+    expect(record?.posting?.account).toBe("Assets:Checking:Joint");
+    expect(record?.postings?.map((posting) => posting.account)).toEqual([
+      "Assets:Checking:Joint",
+      "Expenses:Food",
+      "Liabilities:Card",
+    ]);
+    expect(
+      record?.postings?.map((posting) => posting.amount?.toString()),
+    ).toEqual(["20 USD", "-20 USD", undefined]);
   });
 
   test("paginates whole date groups and leaves an oversized group intact", () => {
