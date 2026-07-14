@@ -131,7 +131,7 @@ test.describe("ported styles", () => {
   test("styles Account Changes and Balances as interval tables", async ({
     page,
   }) => {
-    await page.goto("/#/account/Assets");
+    await page.goto("/#/account/Expenses");
     const changesTab = page.getByRole("tab", { name: "Changes (Monthly)" });
     await expect(changesTab).toBeVisible({ timeout: 15_000 });
     await changesTab.click();
@@ -173,6 +173,27 @@ test.describe("ported styles", () => {
     expect(parseFloat(intervalCellBorders.dataTop)).toBe(0);
     expect(parseFloat(intervalCellBorders.dataBottom)).toBeGreaterThan(0);
     expect(parseFloat(intervalCellBorders.rowMarginTop)).toBe(0);
+
+    const branchBoundaryBorder = await intervalTable.evaluate((table) => {
+      const branchBoundaryAccountCell = table.querySelector(
+        "li:has(> ol) + li > p > [data-account-name]",
+      );
+      if (!branchBoundaryAccountCell) {
+        throw new Error("Branch boundary account cell is missing");
+      }
+      return {
+        borderTop: getComputedStyle(branchBoundaryAccountCell).borderTopWidth,
+        segmentHeight: getComputedStyle(branchBoundaryAccountCell, "::before")
+          .height,
+        segmentTop: getComputedStyle(branchBoundaryAccountCell, "::before").top,
+        segmentWidth: getComputedStyle(branchBoundaryAccountCell, "::before")
+          .width,
+      };
+    });
+    expect(parseFloat(branchBoundaryBorder.borderTop)).toBe(0);
+    expect(parseFloat(branchBoundaryBorder.segmentHeight)).toBe(1);
+    expect(parseFloat(branchBoundaryBorder.segmentTop)).toBe(-1);
+    expect(parseFloat(branchBoundaryBorder.segmentWidth)).toBeGreaterThan(0);
 
     const headerCells = intervalTable.locator(".head p > span");
     expect(await headerCells.count()).toBeGreaterThan(1);

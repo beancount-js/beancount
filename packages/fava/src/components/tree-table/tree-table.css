@@ -42,6 +42,24 @@
   border-width: 0 1px 1px !important;
 }
 
+/* The final child row begins one indent step farther right than its parent's
+ * next sibling. Fill only that exposed top-edge segment—adding a full border
+ * here would duplicate the final child's bottom edge. */
+.interval-tree-table.tree-table-new
+  li:has(> ol)
+  + li
+  > p
+  > span[data-account-name]::before {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 1em;
+  height: 1px;
+  pointer-events: none;
+  content: "";
+  background-color: var(--border);
+}
+
 .interval-tree-table li > p > span:first-child {
   position: sticky;
   left: 0;
