@@ -2,16 +2,18 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import { cn } from "$lib/utils.js";
   import PanelLeft from "lucide-svelte/icons/panel-left";
-  import type { ComponentProps } from "svelte";
+  import type { ComponentProps, Snippet } from "svelte";
   import { useSidebar } from "./context.svelte.js";
 
   let {
     ref = $bindable(null),
     class: className,
     onclick,
+    children,
     ...restProps
   }: ComponentProps<typeof Button> & {
     onclick?: (e: MouseEvent) => void;
+    children?: Snippet;
   } = $props();
 
   const sidebar = useSidebar();
@@ -29,6 +31,10 @@
   class={cn("h-7 w-7", className)}
   {...restProps}
 >
-  <PanelLeft />
-  <span class="sr-only">Toggle Sidebar</span>
+  {#if children}
+    {@render children()}
+  {:else}
+    <PanelLeft />
+    <span class="sr-only">Toggle Sidebar</span>
+  {/if}
 </Button>

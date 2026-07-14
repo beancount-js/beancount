@@ -1,9 +1,6 @@
 <script lang="ts">
-  import Moon from "lucide-svelte/icons/moon";
-  import Sun from "lucide-svelte/icons/sun";
-  import { toggleMode } from "mode-watcher";
+  import ChevronLeft from "lucide-svelte/icons/chevron-left";
   import * as Sidebar from "$lib/components/ui/sidebar";
-  import { Button } from "$lib/components/ui/button";
 
   export let projectName = "No project";
 </script>
@@ -19,40 +16,21 @@
     <p class="truncate text-xs text-muted-foreground">{projectName}</p>
   </div>
   <div class="flex shrink-0 items-center">
-    <Button
-      variant="ghost"
-      size="icon"
-      class="size-8"
-      aria-label="Toggle theme"
-      title="Toggle theme"
-      onclick={toggleMode}
-    >
-      <span class="relative grid place-items-center">
-        <Sun
-          class="transition-[transform,opacity] motion-reduce:transition-none dark:-rotate-90 dark:opacity-0"
-        />
-        <Moon
-          class="absolute rotate-90 opacity-0 transition-[transform,opacity] motion-reduce:transition-none dark:rotate-0 dark:opacity-100"
-        />
-      </span>
-    </Button>
     <Sidebar.Trigger
       class="hidden size-8 md:inline-flex"
-      aria-label="Collapse sidebar"
+      aria-label="Collapse sidebar to project rail"
       title="Collapse sidebar"
-    />
+    >
+      <ChevronLeft />
+      <span class="sr-only">Collapse sidebar</span>
+    </Sidebar.Trigger>
     <Sidebar.Trigger
       class="size-8 md:hidden"
       aria-label="Close sidebar"
       title="Close sidebar"
-    />
+    >
+      <ChevronLeft />
+      <span class="sr-only">Close sidebar</span>
+    </Sidebar.Trigger>
   </div>
-</div>
-
-<div class="hidden justify-center group-data-[collapsible=icon]:flex">
-  <Sidebar.Trigger
-    class="size-8"
-    aria-label="Expand sidebar"
-    title="Expand sidebar"
-  />
 </div>

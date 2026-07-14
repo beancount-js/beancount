@@ -1,7 +1,6 @@
 <script lang="ts">
   import { ShieldX, Sparkles } from "lucide-svelte";
   import Nav from "./Nav.svelte";
-  import Search from "./Search.svelte";
   import ComboBox from "./ComboBox.svelte";
   import { accountIcon, type MenuItem } from "../menu";
   import { useContext } from "../context";
@@ -76,10 +75,9 @@
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col" use:routerLink>
-  <Search />
   <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-3">
     {#each menus as items, index}
-      <Nav isCollapsed={sidebar.state === "collapsed"} {items} />
+      <Nav {items} />
       {#if sidebar.state !== "collapsed" && index === 0 && queries.length}
         <ComboBox
           items={queries}
@@ -88,8 +86,16 @@
           onValueChange={navigateToQuery}
         >
           {#snippet trigger({ props, value: label, hasSelection })}
-            <Button {...props} size="sm" variant="ghost" role="combobox" class="w-full justify-start">
-              <span class="truncate" class:text-muted-foreground={!hasSelection}>{label}</span>
+            <Button
+              {...props}
+              size="sm"
+              variant="ghost"
+              role="combobox"
+              class="w-full justify-start"
+            >
+              <span class="truncate" class:text-muted-foreground={!hasSelection}
+                >{label}</span
+              >
             </Button>
           {/snippet}
         </ComboBox>
@@ -103,8 +109,16 @@
           onValueChange={navigateToAccount}
         >
           {#snippet trigger({ props, value: label, hasSelection })}
-            <Button {...props} size="sm" variant="ghost" role="combobox" class="w-full justify-start">
-              <span class="truncate" class:text-muted-foreground={!hasSelection}>{label}</span>
+            <Button
+              {...props}
+              size="sm"
+              variant="ghost"
+              role="combobox"
+              class="w-full justify-start"
+            >
+              <span class="truncate" class:text-muted-foreground={!hasSelection}
+                >{label}</span
+              >
             </Button>
           {/snippet}
         </ComboBox>
@@ -117,7 +131,12 @@
       <div class="flex flex-col gap-1">
         <p class="px-2 text-xs font-medium text-muted-foreground">Resources</p>
         {#each $snapshot.resources as resource (resource.path)}
-          <Button variant="ghost" size="sm" class="w-full justify-start" onclick={() => openResource(resource.path)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            class="w-full justify-start"
+            onclick={() => openResource(resource.path)}
+          >
             <Sparkles data-icon="inline-start" />
             <span class="truncate">{resource.path}</span>
           </Button>

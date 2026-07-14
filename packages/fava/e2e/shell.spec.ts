@@ -7,17 +7,31 @@ test.describe("Docs-shell visual foundation", () => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.addInitScript(() => localStorage.clear());
     await page.goto("/#/editor");
+    await expect(
+      page
+        .locator("[data-slot=studio-workspace-header]")
+        .getByText("beancount-js-studio", { exact: true }),
+    ).toBeVisible();
   });
 
   test("matches desktop shell geometry and persists the chosen theme", async ({
     page,
   }) => {
+    const workspaceHeader = page.locator("[data-slot=studio-workspace-header]");
     await expect(
-      page.getByRole("button", { name: "Toggle theme" }),
+      workspaceHeader.getByRole("button", { name: "Toggle theme" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Collapse sidebar" }),
+      page.getByRole("button", { name: "Collapse sidebar to project rail" }),
     ).toBeVisible();
+    await expect(
+      workspaceHeader.getByRole("button", { name: "Toggle sidebar" }),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator("[data-sidebar=header]")
+        .getByRole("button", { name: "Toggle theme" }),
+    ).toHaveCount(0);
     const appName = page
       .locator("[data-sidebar=header]")
       .getByText("Beancount Studio", { exact: true });
@@ -59,7 +73,54 @@ test.describe("Docs-shell visual foundation", () => {
     expect(lightShell.main).toEqual({ x: 256, y: 8, radius: "14px" });
     expect(lightShell.sidebarToken).toBe("oklch(98.5% 0.008 295)");
 
-    await page.getByRole("button", { name: "Toggle theme" }).click();
+    const tabBounds = await Promise.all(
+      ["Projects", "Workspace", "Search"].map((name) =>
+        page.getByRole("button", { name }).boundingBox(),
+      ),
+    );
+    expect(tabBounds.every((bounds) => bounds)).toBe(true);
+    const tabWidths = tabBounds.map((bounds) => bounds!.width);
+    expect(Math.max(...tabWidths) - Math.min(...tabWidths)).toBeLessThan(1);
+
+    await page.getByRole("button", { name: "Search" }).click();
+    await expect(
+      page.locator("[data-slot=search-tab] .cm-line-editor"),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Projects" }).click();
+    await expect(
+      page.getByText("Current project", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /beancount-js-studio/ }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Workspace" }).click();
+
+    const resizer = page.getByRole("slider", { name: "Resize sidebar" });
+    const resizerBounds = await resizer.boundingBox();
+    expect(resizerBounds).not.toBeNull();
+    expect(resizerBounds!.y).toBe(8);
+    expect(resizerBounds!.y + resizerBounds!.height).toBe(892);
+    await page.mouse.move(
+      resizerBounds!.x + resizerBounds!.width / 2,
+      resizerBounds!.y + resizerBounds!.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      resizerBounds!.x + resizerBounds!.width / 2 + 80,
+      resizerBounds!.y + resizerBounds!.height / 2,
+    );
+    await page.mouse.up();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.querySelector<HTMLElement>("main")!.getBoundingClientRect()
+              .x,
+        ),
+      )
+      .toBe(336);
+
+    await workspaceHeader.getByRole("button", { name: "Toggle theme" }).click();
     await expect
       .poll(() =>
         page.evaluate(() =>
@@ -78,13 +139,21 @@ test.describe("Docs-shell visual foundation", () => {
       )
       .toBe("dark");
     await expect(
-      page.getByRole("button", { name: "Toggle theme" }),
+      workspaceHeader.getByRole("button", { name: "Toggle theme" }),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Collapse sidebar" }).click();
+    await page
+      .getByRole("button", { name: "Collapse sidebar to project rail" })
+      .click();
     await expect(
-      page.getByRole("button", { name: "Expand sidebar" }),
+      page.getByRole("button", { name: "Expand project rail" }),
     ).toBeVisible();
+    expect(
+      await page
+        .getByRole("button", { name: "Expand project rail" })
+        .locator("span")
+        .evaluate((element) => getComputedStyle(element).writingMode),
+    ).toBe("vertical-rl");
     await expect
       .poll(() =>
         page.evaluate(
@@ -104,6 +173,9 @@ test.describe("Docs-shell visual foundation", () => {
         ),
       )
       .toBe(48);
+
+    await page.getByRole("button", { name: "Expand project rail" }).click();
+    await expect(page.getByRole("link", { name: "Editor" })).toBeVisible();
   });
 });
 
@@ -114,6 +186,11 @@ test.describe("Docs-shell mobile navigation", () => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.addInitScript(() => localStorage.clear());
     await page.goto("/#/editor");
+    await expect(
+      page
+        .locator("[data-slot=studio-workspace-header]")
+        .getByText("beancount-js-studio", { exact: true }),
+    ).toBeVisible();
   });
 
   test("keeps the sidebar reachable at phone widths", async ({ page }) => {

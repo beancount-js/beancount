@@ -11,7 +11,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "check:svelte5": "node ./scripts/check-svelte5-patterns.mjs",
     "checks": "pnpm fmt:check && pnpm lint && pnpm check:svelte5 && pnpm check",
-    "dev": "vite",
+    "dev": "BEANCOUNT_STUDIO_PROJECT_ROOT=${BEANCOUNT_STUDIO_PROJECT_ROOT:-../..} BEANCOUNT_STUDIO_ENTRY_FILE=${BEANCOUNT_STUDIO_ENTRY_FILE:-sample.beancount} vite",
     "fmt": "prettier ./src ./e2e --write",
     "fmt:check": "prettier ./src ./e2e --check",
     "lint": "eslint ./src --max-warnings 0",

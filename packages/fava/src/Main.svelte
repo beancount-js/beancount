@@ -1,6 +1,9 @@
 <script lang="ts">
   import { setContext } from "svelte";
-  import type { ProjectSnapshot, ProjectSummary } from "@beancount-js/workspace";
+  import type {
+    ProjectSnapshot,
+    ProjectSummary,
+  } from "@beancount-js/workspace";
   import { ContextKey, createContext } from "./context";
   import { createRouter, RouterKey } from "./router/router";
   import { MainNav } from "./menu";
@@ -18,12 +21,17 @@
   import ImportTable from "./components/ImportTable.svelte";
   import ImportEditor from "./components/ImportEditor.svelte";
   import FavaNavigation from "./components/FavaNavigation.svelte";
+  import Search from "./components/Search.svelte";
   import StudioShell from "./components/StudioShell.svelte";
   import AiDock from "./components/AiDock.svelte";
   import ResourceViewer from "./components/ResourceViewer.svelte";
   import View from "./router/View.svelte";
   import * as Tooltip from "$lib/components/ui/tooltip";
-  import { createStudioWorkspace, setStudioWorkspace, type InlineAiRequest } from "./studio/workspace";
+  import {
+    createStudioWorkspace,
+    setStudioWorkspace,
+    type InlineAiRequest,
+  } from "./studio/workspace";
   import "@fontsource/source-code-pro/400.css";
   import "@fontsource/source-code-pro/600.css";
   import "./codemirror/themes/base.scss";
@@ -34,9 +42,17 @@
   export let status = "";
   export let onSelectProject: (id: string) => Promise<void>;
   export let onAddProject: (path?: string) => Promise<void>;
-  export let onSaveFile: (path: string, contents: string) => Promise<ProjectSnapshot>;
-  export let onAskAi: (question: string, context?: InlineAiRequest) => Promise<string>;
-  export let onResourceUrl: (path: string) => Promise<{ url: string; mimeType: string; revoke?: () => void }>;
+  export let onSaveFile: (
+    path: string,
+    contents: string,
+  ) => Promise<ProjectSnapshot>;
+  export let onAskAi: (
+    question: string,
+    context?: InlineAiRequest,
+  ) => Promise<string>;
+  export let onResourceUrl: (
+    path: string,
+  ) => Promise<{ url: string; mimeType: string; revoke?: () => void }>;
 
   const context = createContext();
   const navigation = createRouter(
@@ -61,9 +77,13 @@
     "/editor",
   );
   let inlineAiRequest: InlineAiRequest | undefined;
-  const workspace = createStudioWorkspace(saveFile, onResourceUrl, (request) => {
-    inlineAiRequest = request;
-  });
+  const workspace = createStudioWorkspace(
+    saveFile,
+    onResourceUrl,
+    (request) => {
+      inlineAiRequest = request;
+    },
+  );
   const { activeFile } = workspace;
   const { routerLink } = navigation;
   let loadedSignature = "";
@@ -82,7 +102,10 @@
     context.ledgerSource.set(
       LedgerSource.fromProject(
         next.project.entryFile,
-        next.ledgerFiles.map((file) => ({ path: file.path, contents: file.contents })),
+        next.ledgerFiles.map((file) => ({
+          path: file.path,
+          contents: file.contents,
+        })),
       ),
     );
   }
@@ -104,10 +127,22 @@
 </script>
 
 <Tooltip.Provider delayDuration={0}>
-  <StudioShell {projects} {snapshot} {isWeb} {status} {onSelectProject} {onAddProject}>
+  <StudioShell
+    {projects}
+    {snapshot}
+    {isWeb}
+    {status}
+    {onSelectProject}
+    {onAddProject}
+  >
     <svelte:fragment slot="workspace"><FavaNavigation /></svelte:fragment>
+    <svelte:fragment slot="search"><Search /></svelte:fragment>
     <div class="h-full min-w-0 overflow-hidden" use:routerLink>
-      {#if snapshot}<View />{:else}<div class="grid h-full place-items-center p-6 text-center text-muted-foreground">{status || "Add a ledger project to begin."}</div>{/if}
+      {#if snapshot}<View />{:else}<div
+          class="grid h-full place-items-center p-6 text-center text-muted-foreground"
+        >
+          {status || "Add a ledger project to begin."}
+        </div>{/if}
     </div>
   </StudioShell>
   <AiDock
