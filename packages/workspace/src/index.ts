@@ -51,6 +51,21 @@ export interface ProjectResource {
   updatedAt?: string;
 }
 
+export type ProjectDiscoveryIssueKind =
+  | "missing-include"
+  | "missing-resource"
+  | "outside-root"
+  | "invalid-reference"
+  | "read-error";
+
+/** A reference which was declared by a ledger but could not be made available. */
+export interface ProjectDiscoveryIssue {
+  kind: ProjectDiscoveryIssueKind;
+  message: string;
+  sourcePath?: string;
+  referencedPath?: string;
+}
+
 export interface FileRevision {
   path: string;
   revision: string;
@@ -59,8 +74,12 @@ export interface FileRevision {
 
 export interface ProjectSnapshot {
   project: ProjectConfig;
-  files: ProjectFile[];
+  /** Editable Beancount sources only. */
+  ledgerFiles: ProjectFile[];
+  /** Referenced local files, intentionally returned without their contents. */
+  resources: ProjectResource[];
   revisions: FileRevision[];
+  issues: ProjectDiscoveryIssue[];
 }
 
 export interface AiSessionRecord<TSession = unknown> {

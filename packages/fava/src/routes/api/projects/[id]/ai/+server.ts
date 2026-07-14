@@ -27,12 +27,22 @@ export async function POST({
     question,
     sessionId = crypto.randomUUID(),
     model,
+    context,
   } = await request.json();
   if (typeof question !== "string" || !question.trim()) {
     return json({ error: "A question is required." }, { status: 400 });
   }
   const workspace = await serverWorkspace();
   const snapshot = await workspace.readProject(params.id);
+  const selected =
+    context &&
+    typeof context === "object" &&
+    typeof (context as { path?: unknown }).path === "string" &&
+    snapshot.ledgerFiles.some(
+      (file) => file.path === (context as { path: string }).path,
+    )
+      ? context
+      : undefined;
   const previous = (await workspace.readAiSession(
     params.id,
     sessionId,
@@ -45,7 +55,7 @@ export async function POST({
   const answer = await askCodexAboutLedger({
     cwd: snapshot.project.root ?? process.cwd(),
     model: typeof model === "string" ? model : undefined,
-    prompt: `You are Beancount Studio's account-state assistant. Answer only from the bounded ledger snapshot below. Do not suggest commands, edits, or actions. If data is insufficient, say so plainly.\n\nConversation:\n${history}\n\nQuestion: ${question}\n\nLedger snapshot:\n${ledgerContext(snapshot.files)}`,
+    prompt: `You are Beancount Studio's account-state assistant. Answer only from the bounded ledger snapshot below. Do not suggest commands, edits, or actions. If data is insufficient, say so plainly.\n\nConversation:\n${history}\n\nQuestion: ${question}\n\n${selected ? `Selected source context: ${JSON.stringify(selected)}\n\n` : ""}Ledger snapshot:\n${ledgerContext(snapshot.ledgerFiles)}`,
   });
   const session: AiSessionRecord<ChatSession> = {
     projectId: params.id,

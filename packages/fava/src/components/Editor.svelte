@@ -17,26 +17,37 @@
   import { foldAll } from "../codemirror/extensions/foldAll";
   import { goToLine, showGotoLine } from "../codemirror/extensions/gotoline";
   import { useContext } from "../context";
-  import { LedgerSource } from "../core/ledger";
-  import { createDocumentLoader } from "../lib/includes";
   import { useNavigation } from "../router/router";
+  import { useStudioWorkspace } from "../studio/workspace";
+  import Sparkles from "lucide-svelte/icons/sparkles";
 
   const {
     router: { activeRoute },
   } = useNavigation();
   const { ledgerSource } = useContext();
+  const { snapshot, activeFile: workspaceActiveFile, saveFile, requestInlineAi } =
+    useStudioWorkspace();
 
   let formatOnSave = true;
   let editor: EditorView;
   let line = "";
+  let dirty = false;
+  let replacingContents = false;
+  let loadedPath = "";
 
-  const codeMirror = (node: HTMLDivElement, qs: string) => {
+  const codeMirror = (
+    node: HTMLDivElement,
+    source: { path: string; contents: string },
+  ) => {
     editor = new EditorView({
       state: EditorState.create({
-        doc: qs,
+        doc: source.contents,
         extensions: [
           basicSetup,
           ledgerSetup(() => $ledgerSource),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged && !replacingContents) dirty = true;
+          }),
           keymap.of([
             {
               key: "Ctrl-s",
@@ -51,16 +62,28 @@
       }),
       parent: node,
     });
+    loadedPath = source.path;
+    dirty = false;
 
     if (line) {
       goToLine(editor, line);
     }
     return {
-      update(qs: string) {
-        if (qs) {
+      update(next: { path: string; contents: string }) {
+        const nextPath = next.path;
+        // Do not let the filesystem polling loop overwrite an unsaved edit.
+        // A deliberate source-file switch always loads that source instead.
+        if (
+          loadedPath !== nextPath ||
+          (!dirty && editor.state.doc.toString() !== next.contents)
+        ) {
+          replacingContents = true;
           editor.dispatch({
-            ...replaceContents(editor.state, qs),
+            ...replaceContents(editor.state, next.contents),
           });
+          replacingContents = false;
+          loadedPath = nextPath;
+          dirty = false;
         }
       },
       destroy() {},
@@ -95,16 +118,32 @@
     goToLine(editor, line);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (formatOnSave) {
       formatLedger(editor);
     }
-    const source = new LedgerSource(editor.state.doc.toString(), {
-      ...$ledgerSource.props,
-      documentLoader: createDocumentLoader(),
-    });
-    ledgerSource.set(source);
+    if (!$snapshot || !$workspaceActiveFile) return;
+    await saveFile($workspaceActiveFile, editor.state.doc.toString());
+    dirty = false;
   }
+
+  function askAiAboutSelection() {
+    if (!editor || !$workspaceActiveFile) return;
+    const selection = editor.state.selection.main;
+    const text = editor.state.sliceDoc(selection.from, selection.to).trim();
+    const fromLine = editor.state.doc.lineAt(selection.from).number;
+    const toLine = editor.state.doc.lineAt(selection.to).number;
+    requestInlineAi({
+      path: $workspaceActiveFile,
+      text: text.slice(0, 4_000),
+      fromLine,
+      toLine,
+    });
+  }
+
+  $: activeFile = $snapshot?.ledgerFiles.find(
+    (file) => file.path === $workspaceActiveFile,
+  );
 
   onMount(function () {
     document.addEventListener("showSearch", showSearch);
@@ -123,6 +162,17 @@
         <Menubar.Menu>
           <Menubar.Trigger>File</Menubar.Trigger>
           <Menubar.Content>
+            <Menubar.Sub>
+              <Menubar.SubTrigger class="pl-8">Open source</Menubar.SubTrigger>
+              <Menubar.SubContent>
+                {#each $snapshot?.ledgerFiles ?? [] as file (file.path)}
+                  <Menubar.CheckboxItem
+                    checked={file.path === $workspaceActiveFile}
+                    on:click={() => workspaceActiveFile.set(file.path)}
+                  >{file.path}</Menubar.CheckboxItem>
+                {/each}
+              </Menubar.SubContent>
+            </Menubar.Sub>
             <Menubar.CheckboxItem
               bind:checked={formatOnSave}
               on:click={() => (formatOnSave = !formatOnSave)}
@@ -164,6 +214,10 @@
                 >
               </Menubar.SubContent>
             </Menubar.Sub>
+            <Menubar.Separator />
+            <Menubar.Item on:click={askAiAboutSelection}>
+              <Sparkles class="mr-2 size-4" /> Ask AI about selection
+            </Menubar.Item>
           </Menubar.Content>
         </Menubar.Menu>
       </Menubar.Root>
@@ -173,7 +227,7 @@
         size="sm"
         aria-label="Save Ledger"
         variant="default"
-        onclick={() => handleSave()}
+        onclick={() => void handleSave()}
       >
         <Save class="mr-1 size-4" /> Save
       </Button>
@@ -182,6 +236,6 @@
 </div>
 <div class="scroll-container pb-[60vh] pt-0">
   <div class="beancount-editor relative">
-    <div use:codeMirror={$ledgerSource.doc.contents}></div>
+    <div use:codeMirror={{ path: activeFile?.path ?? "", contents: activeFile?.contents ?? "" }}></div>
   </div>
 </div>

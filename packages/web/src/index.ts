@@ -1,7 +1,9 @@
+import { DocumentDirective, IncludeDirective, parseDocument } from "@beancount-js/parser";
 import type {
   AiSessionRecord,
   FileRevision,
   ProjectConfig,
+  ProjectDiscoveryIssue,
   ProjectFile,
   ProjectResource,
   ProjectSnapshot,
@@ -16,6 +18,15 @@ type BrowserProject = {
   sessions: Map<string, AiSessionRecord>;
 };
 
+type Discovery = {
+  ledgerPaths: string[];
+  resourcePaths: string[];
+  issues: ProjectDiscoveryIssue[];
+};
+
+const LEDGER = /\.(bean|beancount|ledger)$/i;
+const REGISTRY_KEY = "beancount-studio:browser-projects";
+
 function now() {
   return new Date().toISOString();
 }
@@ -25,58 +36,71 @@ function identifier() {
 }
 
 function safePath(path: string) {
-  if (
-    !path ||
-    path.startsWith("/") ||
-    path.split("/").some((part) => !part || part === "." || part === "..")
-  ) {
+  if (!path || path.startsWith("/") || path.split("/").some((part) => !part || part === "." || part === "..")) {
     throw new Error(`Project file path escapes its root: ${path}`);
   }
   return path;
 }
 
+function resolveReference(sourcePath: string, reference: string) {
+  if (!reference || reference.startsWith("/") || reference.includes("\\")) {
+    throw new Error(`Project file path escapes its root: ${reference}`);
+  }
+  const parts = sourcePath.split("/").slice(0, -1);
+  for (const part of reference.split("/")) {
+    if (!part || part === ".") continue;
+    if (part === "..") {
+      if (!parts.length) throw new Error(`Project file path escapes its root: ${reference}`);
+      parts.pop();
+    } else {
+      parts.push(part);
+    }
+  }
+  return safePath(parts.join("/"));
+}
+
 function mimeTypeFor(path: string) {
   const extension = path.slice(path.lastIndexOf(".")).toLowerCase();
   return (
-    (
-      {
-        ".bean": "text/plain; charset=utf-8",
-        ".beancount": "text/plain; charset=utf-8",
-        ".ledger": "text/plain; charset=utf-8",
-        ".md": "text/markdown; charset=utf-8",
-        ".json": "application/json",
-        ".yaml": "application/yaml",
-        ".yml": "application/yaml",
-        ".csv": "text/csv; charset=utf-8",
-        ".pdf": "application/pdf",
-        ".png": "image/png",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-      } as Record<string, string>
-    )[extension] ?? "application/octet-stream"
+    ({
+      ".bean": "text/plain; charset=utf-8",
+      ".beancount": "text/plain; charset=utf-8",
+      ".ledger": "text/plain; charset=utf-8",
+      ".txt": "text/plain; charset=utf-8",
+      ".md": "text/markdown; charset=utf-8",
+      ".json": "application/json",
+      ".yaml": "application/yaml",
+      ".yml": "application/yaml",
+      ".csv": "text/csv; charset=utf-8",
+      ".pdf": "application/pdf",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".gif": "image/gif",
+      ".svg": "image/svg+xml",
+    } as Record<string, string>)[extension] ?? "application/octet-stream"
   );
 }
 
-async function filesFromDirectory(
-  handle: FileSystemDirectoryHandle,
-  prefix = "",
-): Promise<ProjectFile[]> {
-  const files: ProjectFile[] = [];
-  const entries = (
-    handle as unknown as {
-      values(): AsyncIterable<FileSystemHandle>;
-    }
-  ).values();
+async function fileHandleFor(root: FileSystemDirectoryHandle, path: string, create = false) {
+  const parts = safePath(path).split("/");
+  const name = parts.pop()!;
+  let directory = root;
+  for (const part of parts) directory = await directory.getDirectoryHandle(part, { create });
+  return directory.getFileHandle(name, { create });
+}
+
+async function ledgerFilesFromDirectory(handle: FileSystemDirectoryHandle, prefix = ""): Promise<ProjectFile[]> {
+  const result: ProjectFile[] = [];
+  const entries = (handle as unknown as { values(): AsyncIterable<FileSystemHandle> }).values();
   for await (const entry of entries) {
-    if (entry.name === ".beancount-js") continue;
+    if (entry.name === ".beancount-js" || entry.name === ".git" || entry.name === "node_modules") continue;
     const path = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.kind === "directory") {
-      files.push(
-        ...(await filesFromDirectory(entry as FileSystemDirectoryHandle, path)),
-      );
-    } else {
+      result.push(...(await ledgerFilesFromDirectory(entry as FileSystemDirectoryHandle, path)));
+    } else if (LEDGER.test(path)) {
       const file = await (entry as FileSystemFileHandle).getFile();
-      files.push({
+      result.push({
         path,
         contents: await file.text(),
         mimeType: file.type || mimeTypeFor(path),
@@ -85,69 +109,57 @@ async function filesFromDirectory(
       });
     }
   }
-  return files.sort((a, b) => a.path.localeCompare(b.path));
+  return result.sort((a, b) => a.path.localeCompare(b.path));
 }
 
-async function fileHandleFor(
-  root: FileSystemDirectoryHandle,
-  path: string,
-  create = false,
-) {
-  const parts = safePath(path).split("/");
-  const name = parts.pop()!;
-  let directory = root;
-  for (const part of parts) {
-    directory = await directory.getDirectoryHandle(part, { create });
-  }
-  return directory.getFileHandle(name, { create });
+function issue(kind: ProjectDiscoveryIssue["kind"], message: string, sourcePath?: string, referencedPath?: string) {
+  return { kind, message, sourcePath, referencedPath } satisfies ProjectDiscoveryIssue;
 }
 
-/**
- * A browser workspace can keep several directory handles open at once. When a
- * directory is not available, callers can seed an in-memory project from OPFS
- * or an imported file set; the interface remains identical to the server.
- */
 export class BrowserWorkspaceAdapter implements WorkspaceAdapter {
   private readonly projects = new Map<string, BrowserProject>();
 
+  private persistRegistry() {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(
+      REGISTRY_KEY,
+      JSON.stringify([...this.projects.values()].map(({ config }) => config)),
+    );
+  }
+
   async addDirectory(handle: FileSystemDirectoryHandle, entryFile?: string) {
-    const files = await filesFromDirectory(handle);
+    const files = await ledgerFilesFromDirectory(handle);
     const entry =
       entryFile ??
-      files.find((file) => /^main\.(bean|beancount|ledger)$/i.test(file.path))
-        ?.path ??
-      files.find((file) => /\.(bean|beancount|ledger)$/i.test(file.path))?.path;
-    if (!entry)
-      throw new Error("No Beancount entry file was found in this directory.");
+      files.find((file) => /^main\.(bean|beancount|ledger)$/i.test(file.path))?.path ??
+      files.find((file) => !file.path.includes("/"))?.path ??
+      files[0]?.path;
+    if (!entry) throw new Error("No Beancount entry file was found in this directory.");
     const timestamp = now();
+    const existing = [...this.projects.values()].find((project) => project.handle?.name === handle.name);
     const config: ProjectConfig = {
       version: 1,
-      id: identifier(),
+      id: existing?.config.id ?? identifier(),
       name: handle.name,
       entryFile: entry,
-      createdAt: timestamp,
+      createdAt: existing?.config.createdAt ?? timestamp,
       updatedAt: timestamp,
     };
     this.projects.set(config.id, {
       config,
       handle,
       files: new Map(files.map((file) => [file.path, file])),
-      sessions: new Map(),
+      sessions: existing?.sessions ?? new Map(),
     });
+    this.persistRegistry();
     return config;
   }
 
   async addOpfsProject(name = "Browser workspace") {
-    if (!navigator.storage?.getDirectory) {
-      throw new Error("This browser does not support OPFS storage.");
-    }
+    if (!navigator.storage?.getDirectory) throw new Error("This browser does not support OPFS storage.");
     const root = await navigator.storage.getDirectory();
-    const handle = await root.getDirectoryHandle("beancount-studio", {
-      create: true,
-    });
-    const ledger = await handle.getFileHandle("main.beancount", {
-      create: true,
-    });
+    const handle = await root.getDirectoryHandle("beancount-studio", { create: true });
+    const ledger = await handle.getFileHandle("main.beancount", { create: true });
     const existing = await ledger.getFile();
     if (!existing.size) {
       const writable = await ledger.createWritable();
@@ -166,83 +178,139 @@ export class BrowserWorkspaceAdapter implements WorkspaceAdapter {
     return project;
   }
 
+  private async sourceFor(project: BrowserProject, path: string) {
+    const cached = project.files.get(path);
+    if (cached) return cached;
+    if (!project.handle) throw new Error(`Ledger file not found: ${path}`);
+    const file = await (await fileHandleFor(project.handle, path)).getFile();
+    const source: ProjectFile = {
+      path,
+      contents: await file.text(),
+      mimeType: file.type || mimeTypeFor(path),
+      updatedAt: new Date(file.lastModified).toISOString(),
+      size: file.size,
+    };
+    project.files.set(path, source);
+    return source;
+  }
+
+  private async discover(project: BrowserProject): Promise<Discovery> {
+    const ledgerPaths = new Set(project.files.keys());
+    ledgerPaths.add(project.config.entryFile);
+    const queue = [...ledgerPaths].sort();
+    const seen = new Set<string>();
+    const resources = new Set<string>();
+    const issues: ProjectDiscoveryIssue[] = [];
+
+    while (queue.length) {
+      const path = queue.shift()!;
+      if (seen.has(path)) continue;
+      seen.add(path);
+      let source: ProjectFile;
+      try {
+        source = await this.sourceFor(project, path);
+      } catch (error) {
+        issues.push(issue(path === project.config.entryFile ? "read-error" : "missing-include", `Unable to read Beancount source ${path}: ${String(error)}`, path));
+        continue;
+      }
+      const document = parseDocument(source.contents, { strict: false, filename: path, bookingMethod: "DEFAULT", attributes: { filename: path } });
+      for (const directive of document.directives) {
+        if (directive instanceof IncludeDirective) {
+          try {
+            const includePath = resolveReference(path, directive.value);
+            await this.sourceFor(project, includePath);
+            if (!ledgerPaths.has(includePath)) ledgerPaths.add(includePath);
+            if (!seen.has(includePath)) queue.push(includePath);
+          } catch (error) {
+            issues.push(issue(String(error).includes("escapes") ? "outside-root" : "missing-include", `Unable to include ${directive.value}: ${String(error)}`, path, directive.value));
+          }
+        }
+        if (directive instanceof DocumentDirective) {
+          try {
+            const resourcePath = resolveReference(path, directive.path);
+            if (project.handle) await fileHandleFor(project.handle, resourcePath);
+            resources.add(resourcePath);
+          } catch (error) {
+            issues.push(issue(String(error).includes("escapes") ? "outside-root" : "missing-resource", `Unable to load document ${directive.path}: ${String(error)}`, path, directive.path));
+          }
+        }
+      }
+    }
+    return { ledgerPaths: [...ledgerPaths].sort(), resourcePaths: [...resources].sort(), issues };
+  }
+
   async listProjects(): Promise<ProjectSummary[]> {
     return [...this.projects.values()]
-      .map(({ config }) => ({
-        id: config.id,
-        name: config.name,
-        entryFile: config.entryFile,
-        updatedAt: config.updatedAt,
-      }))
+      .map(({ config }) => ({ id: config.id, name: config.name, entryFile: config.entryFile, updatedAt: config.updatedAt }))
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
 
   async readProject(projectId: string): Promise<ProjectSnapshot> {
     const project = this.project(projectId);
-    const files = [...project.files.values()].sort((a, b) =>
-      a.path.localeCompare(b.path),
+    const discovery = await this.discover(project);
+    const ledgerFiles = await Promise.all(discovery.ledgerPaths.map((path) => this.sourceFor(project, path)));
+    const resources = await Promise.all(
+      discovery.resourcePaths.map(async (path) => {
+        const file = project.handle
+          ? await (await fileHandleFor(project.handle, path)).getFile()
+          : undefined;
+        return {
+          path,
+          mimeType: file?.type || mimeTypeFor(path),
+          size: file?.size ?? 0,
+          updatedAt: file ? new Date(file.lastModified).toISOString() : project.config.updatedAt,
+        };
+      }),
     );
     return {
       project: project.config,
-      files,
-      revisions: files.map((file) => ({
-        path: file.path,
-        revision: `${file.size}:${file.updatedAt}`,
-        updatedAt: file.updatedAt ?? project.config.updatedAt,
-      })),
+      ledgerFiles,
+      resources,
+      revisions: ledgerFiles.map((file) => ({ path: file.path, revision: `${file.size}:${file.updatedAt}`, updatedAt: file.updatedAt ?? project.config.updatedAt })),
+      issues: discovery.issues,
     };
   }
 
   async saveProject(config: ProjectConfig) {
     const project = this.project(config.id);
     project.config = config;
+    this.persistRegistry();
   }
 
   async readFile(projectId: string, path: string) {
-    const file = this.project(projectId).files.get(safePath(path));
-    if (!file) throw new Error(`Project file not found: ${path}`);
-    return file;
+    const project = this.project(projectId);
+    const safe = safePath(path);
+    if (!(await this.discover(project)).ledgerPaths.includes(safe)) throw new Error(`Ledger file not found: ${path}`);
+    return this.sourceFor(project, safe);
   }
 
   async writeFile(projectId: string, file: ProjectFile): Promise<FileRevision> {
     const project = this.project(projectId);
     const path = safePath(file.path);
+    if (!(await this.discover(project)).ledgerPaths.includes(path)) throw new Error(`Ledger file not found: ${path}`);
     const updatedAt = now();
-    const next = {
-      ...file,
-      path,
-      updatedAt,
-      size: new TextEncoder().encode(file.contents).length,
-    };
+    const next = { ...file, path, updatedAt, size: new TextEncoder().encode(file.contents).length };
     project.files.set(path, next);
     project.config = { ...project.config, updatedAt };
     if (project.handle) {
-      const handle = await fileHandleFor(project.handle, path, true);
-      const writable = await handle.createWritable();
+      const writable = await (await fileHandleFor(project.handle, path)).createWritable();
       await writable.write(file.contents);
       await writable.close();
     }
+    this.persistRegistry();
     return { path, revision: `${next.size}:${updatedAt}`, updatedAt };
   }
 
   async listResources(projectId: string): Promise<ProjectResource[]> {
-    return [...this.project(projectId).files.values()].map((file) => ({
-      path: file.path,
-      mimeType: file.mimeType ?? mimeTypeFor(file.path),
-      size: file.size ?? new TextEncoder().encode(file.contents).length,
-      updatedAt: file.updatedAt,
-    }));
+    return (await this.readProject(projectId)).resources;
   }
 
   async readResource(projectId: string, path: string): Promise<Uint8Array> {
     const project = this.project(projectId);
-    if (project.handle) {
-      const file = await (await fileHandleFor(project.handle, path)).getFile();
-      return new Uint8Array(await file.arrayBuffer());
-    }
-    return new TextEncoder().encode(
-      (await this.readFile(projectId, path)).contents,
-    );
+    const safe = safePath(path);
+    if (!(await this.discover(project)).resourcePaths.includes(safe)) throw new Error(`Resource not found: ${path}`);
+    if (!project.handle) throw new Error(`Resource not available: ${path}`);
+    return new Uint8Array(await (await (await fileHandleFor(project.handle, safe)).getFile()).arrayBuffer());
   }
 
   async readAiSession(projectId: string, sessionId: string) {
@@ -250,8 +318,7 @@ export class BrowserWorkspaceAdapter implements WorkspaceAdapter {
   }
 
   async writeAiSession(projectId: string, session: AiSessionRecord) {
-    if (session.projectId !== projectId)
-      throw new Error("Cannot write a session for another project.");
+    if (session.projectId !== projectId) throw new Error("Cannot write a session for another project.");
     this.project(projectId).sessions.set(session.sessionId, session);
   }
 }

@@ -1,11 +1,13 @@
 import {
   filterTransactions,
+  loadProjectSources,
   loadString,
   PriceMap,
   Transaction,
   type Directives,
   type LedgerError,
   type LoadProps,
+  type ProjectSource,
   Custom,
   optionKey,
   LoadError,
@@ -210,11 +212,11 @@ function extractCurrencies(entity: Posting | Directive): string[] {
 }
 
 export class LedgerSource {
-  readonly directives: Directives;
-  readonly options: Options;
-  readonly transactions: ReadonlyArray<Transaction>;
-  readonly errors: Array<LedgerError> = [];
-  readonly prices: PriceMap;
+  directives!: Directives;
+  options!: Options;
+  transactions!: ReadonlyArray<Transaction>;
+  errors: Array<LedgerError> = [];
+  prices!: PriceMap;
 
   constructor(
     contents: string,
@@ -222,12 +224,26 @@ export class LedgerSource {
       logTimings: console.log,
     },
   ) {
-    const [directives, errors, beancountOptions] = loadString(contents, props);
+    this.apply(loadString(contents, props));
+  }
+
+  /** Build the complete ledger state from an entry file and its project source map. */
+  static fromProject(
+    entryFile: string,
+    sources: Iterable<ProjectSource> | Record<string, string>,
+    props: Partial<LoadProps> = {},
+  ) {
+    const source = new LedgerSource("", props);
+    source.apply(loadProjectSources(entryFile, sources, props));
+    return source;
+  }
+
+  private apply([directives, errors, beancountOptions]: ReturnType<typeof loadString>) {
     const [favaOptions, favaErrors] = parseFavaOptions(directives);
     const [ledgerOptions, ledgerErrors] = parseLedgerOptions(directives);
 
     this.directives = directives;
-    this.errors.push(...[...errors, ...favaErrors, ...ledgerErrors]);
+    this.errors = [...errors, ...favaErrors, ...ledgerErrors];
     this.transactions = filterTransactions(directives);
     this.options = {
       beancount: beancountOptions,
@@ -235,6 +251,9 @@ export class LedgerSource {
       ledger: ledgerOptions,
     };
     this.prices = new PriceMap(directives);
+    this.#ledgerData = undefined as unknown as LedgerData;
+    this.#taxonomy = undefined as unknown as LedgerTaxonomy;
+    this.#hash = "";
   }
 
   #ledgerData!: LedgerData;

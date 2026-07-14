@@ -5,7 +5,7 @@ import { describe, expect, test } from "vitest";
 import { FilesystemWorkspaceAdapter } from "./workspace-adapter";
 
 describe("FilesystemWorkspaceAdapter", () => {
-  test("registers a folder, reads resources, and keeps metadata in the project", async () => {
+  test("registers a folder and exposes only ledger sources and declared resources", async () => {
     const root = await mkdtemp(join(tmpdir(), "beancount-studio-project-"));
     const config = await mkdtemp(join(tmpdir(), "beancount-studio-config-"));
     await mkdir(join(root, "accounts"));
@@ -15,7 +15,7 @@ describe("FilesystemWorkspaceAdapter", () => {
     );
     await writeFile(
       join(root, "accounts", "cash.beancount"),
-      "2024-01-01 open Assets:Cash\n",
+      '2024-01-01 open Assets:Cash\n2024-01-02 document Assets:Cash "../receipt.pdf"\n',
     );
     await writeFile(join(root, "receipt.pdf"), "pdf");
     const adapter = new FilesystemWorkspaceAdapter({ configDirectory: config });
@@ -27,16 +27,14 @@ describe("FilesystemWorkspaceAdapter", () => {
     ]);
 
     const snapshot = await adapter.readProject(project.id);
-    expect(snapshot.files.map((file) => file.path)).toEqual([
+    expect(snapshot.ledgerFiles.map((file) => file.path)).toEqual([
       "accounts/cash.beancount",
       "main.beancount",
-      "receipt.pdf",
     ]);
-    expect(
-      (await adapter.listResources(project.id)).find(
-        (file) => file.path === "receipt.pdf",
-      ),
-    ).toMatchObject({ mimeType: "application/pdf", size: 3 });
+    expect(snapshot.resources.map((file) => file.path)).toEqual(["receipt.pdf"]);
+    expect(await adapter.listResources(project.id)).toEqual([
+      expect.objectContaining({ path: "receipt.pdf", mimeType: "application/pdf", size: 3 }),
+    ]);
 
     await adapter.writeFile(project.id, {
       path: "accounts/cash.beancount",
@@ -45,11 +43,13 @@ describe("FilesystemWorkspaceAdapter", () => {
     expect(
       await readFile(join(root, "accounts", "cash.beancount"), "utf8"),
     ).toContain("Assets:Cash");
-    expect(
-      JSON.parse(
-        await readFile(join(root, ".beancount-js", "project.json"), "utf8"),
-      ),
-    ).toMatchObject({ id: project.id });
+    await expect(readFile(join(root, ".beancount-js", "project.json"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(adapter.readFile(project.id, "receipt.pdf")).rejects.toThrow(
+      "Ledger file not found",
+    );
+    await expect(adapter.readResource(project.id, "accounts/cash.beancount")).rejects.toThrow(
+      "Resource not found",
+    );
   });
 
   test("does not allow a caller to read outside a project", async () => {

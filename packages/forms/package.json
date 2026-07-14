@@ -8,6 +8,9 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./core": "./src/core.ts"
+    "./core": "./src/core.ts",
+    "./components/StructuredForm.svelte": "./src/components/StructuredForm.svelte",
+    "./components/FormViewRenderer.svelte": "./src/components/FormViewRenderer.svelte",
+    "./components/YamlBackedForm.svelte": "./src/components/YamlBackedForm.svelte"
   }
 }
