@@ -3,26 +3,26 @@
   --font-family-monospaced: "Source Code Pro", "Fira Mono", ui-monospace,
     SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
     monospace;
-  --table-header-text: hsl(var(--muted-foreground));
-  --table-header-background: hsl(var(--muted));
-  --table-border-color: hsl(var(--border));
-  --table-border: hsl(var(--border));
+  --table-header-text: var(--muted-foreground);
+  --table-header-background: var(--muted);
+  --table-border-color: var(--border);
+  --table-border: var(--border);
   --treetable-expander: #afc1d3;
   --budget-negative: hsl(0 72.22% 50.59%);
   --budget-positive: #3daf46;
   --journal-postings: transparent;
-  --journal-metadata: hsl(var(--muted-foreground));
-  --journal-tag: hsl(var(--primary));
-  --journal-link: hsl(var(--muted-foreground));
-  --journal-hover-highlight: hsl(var(--muted) / 0.5);
-  --journal-posting-indicator: hsl(var(--primary));
-  --journal-metadata-indicator: hsl(var(--primary));
-  --text-color-lighter: hsl(var(--muted-foreground));
+  --journal-metadata: var(--muted-foreground);
+  --journal-tag: var(--primary);
+  --journal-link: var(--muted-foreground);
+  --journal-hover-highlight: color-mix(in srgb, var(--muted) 50%, transparent);
+  --journal-posting-indicator: var(--primary);
+  --journal-metadata-indicator: var(--primary);
+  --text-color-lighter: var(--muted-foreground);
   font-size: 0.9em;
 }
 
 .dark .beancount {
-  --treetable-expander: hsl(var(--muted-foreground));
+  --treetable-expander: var(--muted-foreground);
   --budget-negative: hsl(0 62.8% 50%);
   --budget-positive: hsl(142 45% 45%);
 }

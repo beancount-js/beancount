@@ -34,10 +34,13 @@
                 href={item.path}
                 class={cn(
                   buttonVariants({
-                    variant: active ? "default" : "ghost",
+                    variant: "ghost",
                     size: "icon",
                   }),
-                  "size-9",
+                  "size-9 border",
+                  active
+                    ? "border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                    : "border-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 )}
                 onclick={(event) => navigate(item.path, event)}
               >
@@ -64,11 +67,13 @@
           href={item.path}
           class={cn(
             buttonVariants({
-              variant: active ? "default" : "ghost",
+              variant: "ghost",
               size: "sm",
             }),
-            "justify-start",
-            { "hover:text-primary-foreground": active },
+            "justify-start border",
+            active
+              ? "border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+              : "border-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
           )}
           onclick={(event) => navigate(item.path, event)}
         >
@@ -79,11 +84,7 @@
           />
           {item.name}
           {#if item.label}
-            <span
-              class={cn("ml-auto", {
-                "text-background": active,
-              })}
-            >
+            <span class="ml-auto text-muted-foreground">
               {item.label}
             </span>
           {/if}

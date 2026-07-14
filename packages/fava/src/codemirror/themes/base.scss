@@ -229,13 +229,13 @@
 }
 
 .cm-editor .cm-gutters {
-  background: hsl(var(--background));
+  background: var(--background);
   border: none;
   font-size: 12px;
 }
 
 .cm-editor .cm-gutter .cm-gutterElement.cm-activeLineGutter {
-  color: hsl(var(--ring));
+  color: var(--ring);
   background: none;
 }
 
