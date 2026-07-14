@@ -122,6 +122,23 @@ test.describe("ported styles", () => {
       }));
       expect(parseFloat(iconSize.width)).toBe(12);
       expect(parseFloat(iconSize.height)).toBe(12);
+
+      if (path === "/#/trial_balance") {
+        const alignment = await statementTable.evaluate((el) => {
+          const wrapper = el.parentElement;
+          if (!wrapper) throw new Error("Missing Trial Balance table wrapper");
+
+          const table = el.getBoundingClientRect();
+          const container = wrapper.getBoundingClientRect();
+          return {
+            tableLeft: table.left,
+            centeredLeft: container.left + (container.width - table.width) / 2,
+          };
+        });
+        expect(
+          Math.abs(alignment.tableLeft - alignment.centeredLeft),
+        ).toBeLessThan(1);
+      }
     }
 
     await navigateTo(page, "Journal");

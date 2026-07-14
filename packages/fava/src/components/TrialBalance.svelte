@@ -67,8 +67,10 @@
         </div>
       </Tabs.Root>
     </div>
-    <div class="flex flex-wrap justify-start pl-4">
-      <TreeTableComponent tree={node} end={null}></TreeTableComponent>
+    <div class="flex justify-center">
+      <div class="p-2">
+        <TreeTableComponent tree={node} end={null}></TreeTableComponent>
+      </div>
     </div>
   </div>
 </ContentScrollArea>
