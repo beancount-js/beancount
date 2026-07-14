@@ -159,14 +159,19 @@ test.describe("ported styles", () => {
     );
     expect(parseFloat(intervalCellBorder)).toBeGreaterThan(0);
 
-    const adjacentHeaderCell = intervalTable.locator(".head p > span").nth(1);
+    const headerCells = intervalTable.locator(".head p > span");
+    expect(await headerCells.count()).toBeGreaterThan(1);
+    const adjacentHeaderCell = headerCells.nth(1);
     const sharedEdge = await adjacentHeaderCell.evaluate((el) => ({
       left: getComputedStyle(el).borderLeftWidth,
       previousRight: getComputedStyle(el.previousElementSibling!)
         .borderRightWidth,
+      previousMarginRight: getComputedStyle(el.previousElementSibling!)
+        .marginRight,
     }));
-    expect(parseFloat(sharedEdge.left)).toBe(0);
+    expect(parseFloat(sharedEdge.left)).toBe(1);
     expect(parseFloat(sharedEdge.previousRight)).toBe(1);
+    expect(parseFloat(sharedEdge.previousMarginRight)).toBe(-1);
 
     const accountCellOffsets = await intervalTable
       .locator("[data-account-name]")
@@ -176,6 +181,13 @@ test.describe("ported styles", () => {
     expect(Math.max(...accountCellOffsets)).toBeGreaterThan(
       Math.min(...accountCellOffsets),
     );
+
+    const dimmedCells = intervalTable.locator(".dimmed");
+    expect(await dimmedCells.count()).toBeGreaterThan(0);
+    const dimmedOpacity = await dimmedCells
+      .nth(0)
+      .evaluate((el) => getComputedStyle(el).opacity);
+    expect(dimmedOpacity).toBe("0.8");
 
     const intervalExpander = intervalTable
       .locator(".clickable-icon svg")

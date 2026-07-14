@@ -30,24 +30,14 @@
 }
 
 .interval-tree-table.tree-table-new p {
-  margin-top: 0;
+  margin-top: -1px;
 }
 
 .interval-tree-table.tree-table-new p > span {
-  /* Draw each shared grid edge once rather than overlap full cell borders. */
+  /* Match Fava's overlapped grid while retaining gaps for indented accounts. */
   margin-top: 0;
-  margin-right: 0;
-  border: 0 !important;
-  border-right: 1px solid var(--border) !important;
-  border-bottom: 1px solid var(--border) !important;
-}
-
-.interval-tree-table.tree-table-new .head p > span {
-  border-top: 1px solid var(--border) !important;
-}
-
-.interval-tree-table.tree-table-new li > p > span:first-child {
-  border-left: 1px solid var(--border) !important;
+  margin-right: -1px;
+  border: 1px solid var(--border) !important;
 }
 
 .interval-tree-table.flex-table .head p > span {

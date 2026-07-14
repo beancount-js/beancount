@@ -54,8 +54,8 @@
   height: 12px;
 }
 
-.beancount .dimmed {
-  opacity: 0.6;
+.dimmed {
+  opacity: 0.8;
 }
 
 .beancount .journal p {
