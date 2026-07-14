@@ -1,14 +1,16 @@
-import { BeancountOptions } from "../core";
+import type { BeancountOptions } from "../core";
 import type { Directives } from "../core/data";
 import { autoInsertOpen } from "../plugins/autoaccount";
+import { creditCard } from "../plugins/creditcard";
 import { forecast } from "../plugins/forecast";
 import { checkBalance } from "./balance";
 import { pad } from "./pad";
 import type { ValidationError } from "./validation";
 
-export type Plugin = (
+export type PluginSpec = (
   entries: Directives,
   options: BeancountOptions,
+  arg?: string,
 ) => [Directives, Array<ValidationError>];
 
 export const PLUGINS_PRE = [];
@@ -17,7 +19,7 @@ export const PLUGINS_POST = ["beancount.ops.pad", "beancount.ops.balance"];
 
 export interface PluginType {
   id: string;
-  plugin: Plugin;
+  plugin: PluginSpec;
   order: number;
 }
 
@@ -41,5 +43,10 @@ export const Plugins: Record<string, PluginType> = {
     plugin: forecast,
     order: 0,
     id: "beancount.plugins.forecast",
+  },
+  "beancount.plugins.creditcard": {
+    plugin: creditCard,
+    order: 0,
+    id: "beancount.plugins.creditcard",
   },
 };

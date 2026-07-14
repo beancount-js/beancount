@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
-import { getDuration, Interval, writeString } from "./parser";
+import { getDuration, writeString } from "./parser";
+import type { Interval } from "./parser";
 
 export enum FilterType {
   OR = "OR",
@@ -46,16 +47,16 @@ export class DateRange {
     }
   }
 
-  intervals(interval: Interval, unit: number = 1): Array<Date> {
-    const dates: Array<Date> = [];
+  intervals(interval: Interval, unit: number = 1): Array<DateTime> {
+    const dates: Array<DateTime> = [];
     let start: DateTime = this.from;
     if (this.inclusivity.startsWith("[")) {
-      dates.push(this.from.toJSDate());
+      dates.push(this.from);
       start = start.plus(getDuration(interval, unit));
     }
 
     while (start < this.to) {
-      dates.push(start.toJSDate());
+      dates.push(start);
       start = start.plus(getDuration(interval, unit));
     }
     return dates;
@@ -170,7 +171,9 @@ export abstract class AbstractFilterVisitor<T> implements FilterVisitor<T> {
     } else if (filter instanceof BooleanFilter) {
       return this.visitBooleanFilter(filter, entity, context);
     }
-    return false;
+    throw new Error(
+      `Unrecognized filter value (${filter}). This sometimes happens because multiple instances of @beancount-js/filter are loaded, breaking instanceof checks.`,
+    );
   }
 }
 
@@ -235,13 +238,8 @@ export class TextFilter extends Filter {
     super();
   }
 
-  #pattern!: PatternFilter;
   pattern(flags: string = "ig") {
-    if (this.#pattern) {
-      return this.#pattern;
-    }
-    this.#pattern = PatternFilter.of(this.value, flags);
-    return this.#pattern;
+    return PatternFilter.of(this.value, flags);
   }
 
   static of(value: string) {
@@ -279,13 +277,12 @@ export class AccountFilter extends Filter {
     super();
   }
 
-  #pattern!: PatternFilter;
   pattern(flags: string = "ig") {
-    if (this.#pattern) {
-      return this.#pattern;
-    }
-    this.#pattern = PatternFilter.of(this.value, flags);
-    return this.#pattern;
+    return PatternFilter.of(this.value, flags);
+  }
+
+  public toString() {
+    return `account: ${this.value}`;
   }
 
   static of(value: string) {

@@ -1,25 +1,27 @@
 import { DateTime } from "luxon";
 import {
-  Account,
   Amount,
   Attributes,
-  AttributeValue,
   CodeBlock,
   Comments,
   Cost,
   CostSpec,
-  Currency,
   DatedDirective,
   Directive,
-  Flag,
   Node,
   NumberExpression,
   Position,
+} from "./models";
+import type {
+  Account,
+  AttributeValue,
+  Currency,
+  Flag,
   Numeric,
 } from "./models";
 import { checksum } from "./hash";
 import { formatDate, writeAttribute, writeString } from "./parser";
-import { DocumentVisitor } from "./visitor";
+import type { DocumentVisitor } from "./visitor";
 import { Decimal } from "./number";
 
 export type BookingMethod =
@@ -61,9 +63,7 @@ export class Link extends Node {
   }
 }
 
-/**
- * YYYY-MM-DD open Account [ConstraintCurrency,...] ["BookingMethod"]
- */
+/** YYYY-MM-DD open Account [ConstraintCurrency,...] ["BookingMethod"] */
 export class OpenDirective extends DatedDirective {
   constructor(
     readonly position: Position,
@@ -133,9 +133,7 @@ export class OpenDirective extends DatedDirective {
   }
 }
 
-/**
- * YYYY-MM-DD close Account
- */
+/** YYYY-MM-DD close Account */
 export class CloseDirective extends DatedDirective {
   constructor(
     readonly position: Position,
@@ -180,9 +178,7 @@ export class CloseDirective extends DatedDirective {
   }
 }
 
-/**
- * YYYY-MM-DD commodity Currency
- */
+/** YYYY-MM-DD commodity Currency */
 export class CommodityDirective extends DatedDirective {
   constructor(
     readonly position: Position,
@@ -225,9 +221,7 @@ export class CommodityDirective extends DatedDirective {
   }
 }
 
-/**
- * YYYY-MM-DD price Commodity Price
- */
+/** YYYY-MM-DD price Commodity Price */
 export class PriceDirective extends DatedDirective {
   constructor(
     readonly position: Position,
@@ -279,9 +273,7 @@ export class PriceDirective extends DatedDirective {
   }
 }
 
-/**
- * YYYY-MM-DD custom TypeName Value1 ...
- */
+/** YYYY-MM-DD custom TypeName Value1 ... */
 export class CustomDirective extends DatedDirective {
   constructor(
     readonly position: Position,
@@ -333,9 +325,7 @@ export class CustomDirective extends DatedDirective {
   }
 }
 
-/**
- * plugin ModuleName StringConfig
- */
+/** Plugin ModuleName StringConfig */
 export class PluginDirective extends Directive {
   constructor(
     readonly position: Position,
@@ -383,9 +373,7 @@ export class PluginDirective extends Directive {
   }
 }
 
-/**
- * option Name Value
- */
+/** Option Name Value */
 export class OptionDirective extends Directive {
   constructor(
     readonly position: Position,
@@ -432,9 +420,7 @@ export class OptionDirective extends Directive {
   }
 }
 
-/**
- * event Type Description
- */
+/** Event Type Description */
 export class EventDirective extends DatedDirective {
   constructor(
     readonly position: Position,
@@ -486,9 +472,7 @@ export class EventDirective extends DatedDirective {
   }
 }
 
-/**
- * include Filename
- */
+/** Include Filename */
 export class IncludeDirective extends Directive {
   constructor(
     readonly position: Position,
@@ -527,9 +511,7 @@ export class IncludeDirective extends Directive {
   }
 }
 
-/**
- * poptag #[tag]
- */
+/** Poptag #[tag] */
 export class PopTagDirective extends Directive {
   constructor(
     readonly position: Position,
@@ -568,9 +550,7 @@ export class PopTagDirective extends Directive {
   }
 }
 
-/**
- * pushtag #[tag]
- */
+/** Pushtag #[tag] */
 export class PushTagDirective extends Directive {
   popTag?: PopTagDirective;
 
@@ -613,9 +593,7 @@ export class PushTagDirective extends Directive {
   }
 }
 
-/**
- * YYYY-MM-DD document Account PathToDocument [..<#tags>] [...<#links>]
- */
+/** YYYY-MM-DD document Account PathToDocument [..<#tags>] [...<#links>] */
 export class DocumentDirective extends DatedDirective {
   constructor(
     readonly position: Position,
@@ -680,8 +658,8 @@ export class DocumentDirective extends DatedDirective {
 }
 
 /**
- * YYYY-MM-DD [txn|Flag] [[Payee] Narration] [Flag] Account Amount [{Cost}] [@ Price] [Flag] Account Amount [{Cost}] [@ Price] ...
-
+ * YYYY-MM-DD [txn|Flag] [[Payee] Narration] [Flag] Account Amount [{Cost}] [@
+ * Price] [Flag] Account Amount [{Cost}] [@ Price] ...
  */
 export class TransactionDirective extends DatedDirective {
   constructor(
@@ -767,9 +745,7 @@ export class TransactionDirective extends DatedDirective {
   }
 }
 
-/**
- * [Flag] Account Amount [{Cost}] [@ Price]
- */
+/** [Flag] Account Amount [{Cost}] [@ Price] */
 export class Posting extends Directive {
   transaction!: TransactionDirective;
 
@@ -836,9 +812,7 @@ export class Posting extends Directive {
   }
 }
 
-/**
- * YYYY-MM-DD query Name SqlContents
- */
+/** YYYY-MM-DD query Name SqlContents */
 export class QueryDirective extends DatedDirective {
   constructor(
     readonly position: Position,
@@ -888,9 +862,7 @@ export class QueryDirective extends DatedDirective {
   }
 }
 
-/**
- * YYYY-MM-DD note Account Narrative [..<#tags>] [...<#links>]
- */
+/** YYYY-MM-DD note Account Narrative [..<#tags>] [...<#links>] */
 export class NoteDirective extends DatedDirective {
   constructor(
     readonly position: Position,
@@ -951,9 +923,7 @@ export class NoteDirective extends DatedDirective {
   }
 }
 
-/**
- * YYYY-MM-DD balance Account Amount
- */
+/** YYYY-MM-DD balance Account Amount */
 export class BalanceDirective extends DatedDirective {
   constructor(
     readonly position: Position,
@@ -1019,9 +989,7 @@ export class BalanceDirective extends DatedDirective {
   }
 }
 
-/**
- * YYYY-MM-DD pad <SourceAccount> <TargetAccount>
- */
+/** YYYY-MM-DD pad <SourceAccount> <TargetAccount> */
 export class PadDirective extends DatedDirective {
   constructor(
     readonly position: Position,

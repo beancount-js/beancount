@@ -9,7 +9,7 @@
     "noImplicitAny": true,
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "importHelpers": true,
     "lib": ["DOM", "ES5", "ES6", "ES7", "ES2019", "ES2022"],
     "checkJs": false,
@@ -17,9 +17,9 @@
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "sourceMap": true
   },
-  "include": ["**/*.ts", "**/*.js", "**/*.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.d.ts", "vitest.ts"],
   "exclude": ["node_modules"]
 }

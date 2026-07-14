@@ -1,5 +1,6 @@
-import { DateTime, DateTimeOptions } from "luxon";
-import { AttributeValue } from "./models";
+import { DateTime } from "luxon";
+import type { DateTimeOptions } from "luxon";
+import type { AttributeValue } from "./models";
 
 export function formatDate(
   date: Date | null | DateTime,

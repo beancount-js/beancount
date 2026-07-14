@@ -1,4 +1,4 @@
-import { BeancountOptions } from "../core";
+import type { BeancountOptions } from "../core";
 import { isDescendantOf } from "../core/account";
 import {
   Balance,

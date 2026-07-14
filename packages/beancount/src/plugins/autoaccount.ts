@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { Open, sorted, type Directives } from "../core/data";
+import type { BeancountOptions } from "../core";
 import type { ValidationError } from "../ops/validation";
-import { BeancountOptions } from "../core";
 
 function accountsUseMap(entries: Directives) {
   entries = sorted([...entries]);

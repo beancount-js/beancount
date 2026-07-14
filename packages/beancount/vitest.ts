@@ -1,12 +1,12 @@
-import { format } from "@beancount-js/parser";
 import { expect } from "vitest";
 
 import "vitest";
-import { dedent } from "./src/parser/loader";
+import { loadString } from "./src/parser/loader";
+import { DirectiveBase, LedgerOption } from "./src/core/data";
 export {};
 
 interface CustomMatchers<R = unknown> {
-  toMatchDirective: (expected: string) => R;
+  toMatchDirective: (expected: string | DirectiveBase[]) => R;
 }
 
 declare module "vitest" {
@@ -15,14 +15,29 @@ declare module "vitest" {
   interface AsymmetricMatchersContaining extends CustomMatchers {}
 }
 
+function normalizeLedger(input: string) {
+  const [inputDirectives] = loadString(input);
+  return inputDirectives
+    .filter((it) => !(it instanceof LedgerOption))
+    .map((it) => it.toString())
+    .sort()
+    .join("\n");
+}
+
 expect.extend({
   toMatchDirective(received, expected) {
     const { isNot } = this;
-    if (typeof received !== "string") {
+    let input = received;
+    if (Array.isArray(received)) {
+      input = received
+        .map((it) => it.toString())
+        .join("\n")
+        .trim();
+    } else if (typeof received !== "string") {
       throw new Error("expected inputs to be a string");
     }
-    const actual = format(dedent(received)).replaceAll(/\n\n+/g, "\n\n").trim();
-    expected = format(dedent(expected)).replaceAll(/\n\n+/g, "\n\n").trim();
+    const actual = normalizeLedger(input);
+    expected = normalizeLedger(expected);
     return {
       pass: actual === expected,
       message: () => `Expected directives to${isNot ? " not" : ""} match`,

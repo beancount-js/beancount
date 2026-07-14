@@ -8,14 +8,15 @@ import {
   FilterType,
   LinkFilter,
   NumberFilter,
-  Op,
   PatternFilter,
   TagFilter,
   TextFilter,
 } from "./filters";
+import type { Op } from "./filters";
 import { parser } from "./query.grammar";
 import { Tree, type SyntaxNode, type SyntaxNodeRef } from "@lezer/common";
-import { DateTime, Duration, DurationLikeObject } from "luxon";
+import { DateTime, Duration } from "luxon";
+import type { DurationLikeObject } from "luxon";
 
 export function isValidNumber(value: string) {
   value = value.trim().replaceAll(/[,]/g, "");
@@ -80,18 +81,27 @@ const intervalAliases: Record<string, string> = {
   q: "quarter",
   Q: "quarter",
   y: "year",
+  yr: "year",
   Y: "year",
   M: "month",
+  mon: "month",
+  mth: "month",
   w: "week",
+  wk: "week",
   W: "week",
   d: "day",
+  dy: "day",
   D: "day",
   now: "day",
   today: "day",
   h: "hour",
+  hr: "hour",
+  hrs: "hours",
   H: "hour",
   m: "minute",
+  min: "minute",
   s: "second",
+  sec: "second",
   S: "second",
 };
 
@@ -198,6 +208,10 @@ export class DateType {
   }
 
   div(interval: Interval) {
+    // `/month` rounds the date down to the beginning of that interval while
+    // preserving the original range duration. For example, `now/month` is
+    // the first day of the current month, whereas `month/month` remains the
+    // whole current month.
     return new DateType(this.dt.startOf(interval), this.duration);
   }
 
@@ -567,7 +581,9 @@ export class Parser {
             ),
           );
         } else {
-          this.errors.push(`Invalid DateExpr: ${exprValue}`);
+          this.errors.push(
+            `Invalid DateExpr: ${exprValue} : ${node.toString()}`,
+          );
         }
         return false;
       } else if (value.name === "Integer") {

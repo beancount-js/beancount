@@ -1,13 +1,6 @@
-import {
-  Currency,
-  Decimal,
-  NumberSource,
-  RoundingMode,
-  isValidNumber,
-} from "@beancount-js/parser";
-
-export { Decimal, isValidNumber };
-export type { NumberSource };
+import { Decimal } from "@beancount-js/parser";
+import type { Currency, NumberSource, RoundingMode } from "@beancount-js/parser";
+import type { Typing } from "./data";
 
 export function sameSign(a: NumberSource, b: NumberSource) {
   const na = new Decimal(a);
@@ -24,22 +17,29 @@ export function sameSign(a: NumberSource, b: NumberSource) {
 export class Amount {
   private num: Decimal | null;
   readonly currency: string | null;
-  readonly source: string;
 
   constructor(
     source: NumberSource | Amount = null,
     currency: Currency | null = null,
+    precision?: number,
   ) {
     if (source instanceof Amount) {
-      this.source = source.source;
       this.num = source.num;
       this.currency = currency ?? source.currency;
     } else {
-      this.source = source?.toString() ?? "";
       this.num =
-        source != null && source != undefined ? new Decimal(source) : null;
+        source != null && source != undefined
+          ? new Decimal(source, precision)
+          : null;
       this.currency = currency;
     }
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      units: Decimal,
+      currency: String,
+    };
   }
 
   isDefined() {
@@ -65,6 +65,7 @@ export class Amount {
     return new Amount(
       props.units ?? this.units,
       props.currency ?? this.currency,
+      this.precision,
     );
   }
 
@@ -102,6 +103,10 @@ export class Amount {
     return this.value.number;
   }
 
+  get precision() {
+    return this.value.precision;
+  }
+
   get value(): Decimal {
     if (!this.units) {
       throw new Error("Missing units on number");
@@ -113,7 +118,7 @@ export class Amount {
     if (value instanceof Amount) {
       return this.quantize(value.value);
     }
-    return this.with(this.value.quantize(value));
+    return new Amount(this.value.quantize(value), this.currency);
   }
 
   public eq(amount: NumberSource | Amount) {
@@ -199,15 +204,12 @@ export class Amount {
   }
 
   public scaleb(exponent: number): Amount {
-    return this.with(this.value.scaleb(exponent));
+    return new Amount(this.value.scaleb(exponent), this.currency);
   }
 
   public toString(_numeric: boolean = false) {
     if (!this.isDefined()) {
       return "";
-    }
-    if (this.source) {
-      return (this.source + " " + this.currency).trim();
     }
     return `${this.units} ${this.currency}`.trim();
   }

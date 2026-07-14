@@ -60,6 +60,21 @@ function keepLastPerDay(prices: Array<PricePoint>) {
   return response;
 }
 
+export function getLastPriceEntries(entries: Directives, date: DateTime) {
+  const priceEntryMap: Record<string, Price> = {};
+
+  for (const entry of entries) {
+    if (date && entry.date && entry.date >= date) {
+      break;
+    }
+    if (entry instanceof Price) {
+      const baseQuote = new BaseQuote(entry.currency, entry.amount.currency);
+      priceEntryMap[baseQuote.hash] = entry;
+    }
+  }
+  return Object.values(priceEntryMap);
+}
+
 export class PriceMap {
   readonly forwardPairs: Array<BaseQuote> = [];
   readonly map: DefaultKeyedMap<BaseQuote, Array<PricePoint>> =

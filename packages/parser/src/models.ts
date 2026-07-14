@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { Decimal, parseNumber } from "./number.js";
 import { formatDate, writeAttribute, writeString } from "./parser.js";
-import { DocumentVisitor } from "./visitor.js";
+import type { DocumentVisitor } from "./visitor.js";
 import { checksum } from "./hash.js";
 
 /** `[from, to, line]` */
@@ -100,7 +100,7 @@ export abstract class NodeBase extends Node {
     super(position);
   }
 
-  /** Create a copy of this node.  */
+  /** Create a copy of this node. */
   clone(): NodeBase {
     const copy: NodeBase = Object.create(
       Object.getPrototypeOf(this),

@@ -86,6 +86,7 @@ export const beanCountOptionsSchema = z.object({
   account_previous_conversions: account,
   account_previous_earnings: account,
   account_rounding: account,
+  account_unrealized_gains: account,
   allow_deprecated_none_for_tags_and_links: bool,
   allow_pipe_separator: bool,
   booking_method: bookingSchema,
@@ -133,12 +134,13 @@ export function defaultBeancountOptions(
     account_previous_balances: "Opening-Balances",
     account_previous_conversions: "Conversions:Previous",
     account_previous_earnings: "Earnings:Previous",
+    account_unrealized_gains: "Unrealized",
     account_rounding: "Rounding",
     allow_deprecated_none_for_tags_and_links: false,
     allow_pipe_separator: false,
     booking_method: Booking.STRICT,
     commodities: [],
-    conversion_currency: "",
+    conversion_currency: "NOTHING",
     include: [],
     files: [],
     documents: [],
@@ -161,4 +163,91 @@ export function defaultBeancountOptions(
     title: "",
     ...props,
   };
+}
+
+export class AccountTypes {
+  constructor(readonly options: BeancountOptions = defaultBeancountOptions()) {}
+
+  get types() {
+    return [
+      this.assets,
+      this.liabilities,
+      this.equity,
+      this.income,
+      this.expenses,
+    ];
+  }
+
+  sortKey(account: string): [number, string] {
+    const type = this.accountType(account);
+    const types = this.types;
+    if (types.includes(type)) {
+      return [types.findIndex((it) => it == type), account];
+    }
+    return [types.length, account];
+  }
+
+  get assets() {
+    return this.options.name_assets;
+  }
+
+  get liabilities() {
+    return this.options.name_liabilities;
+  }
+
+  get equity() {
+    return this.options.name_equity;
+  }
+
+  get income() {
+    return this.options.name_income;
+  }
+
+  get expenses() {
+    return this.options.name_expenses;
+  }
+
+  get unrealizedAccount() {
+    return `${this.options.name_income}:${this.options.account_unrealized_gains}`;
+  }
+
+  get previousEarnings() {
+    return `${this.equity}:${this.options.account_previous_earnings}`;
+  }
+
+  get previousBalances() {
+    return `${this.equity}:${this.options.account_previous_balances}`;
+  }
+
+  get previousConversions() {
+    return `${this.equity}:${this.options.account_previous_conversions}`;
+  }
+
+  get currentEarnings() {
+    return `${this.equity}:${this.options.account_current_earnings}`;
+  }
+
+  get currentConversions() {
+    return `${this.equity}:${this.options.account_current_conversions}`;
+  }
+
+  accountType(account: string) {
+    return account.split(":", 2)[0];
+  }
+
+  isIncomeAccount(account: string) {
+    return [this.income, this.expenses].includes(this.accountType(account));
+  }
+
+  previousAccounts() {
+    return [
+      this.previousEarnings,
+      this.previousBalances,
+      this.previousConversions,
+    ];
+  }
+
+  currentAccounts() {
+    return [this.currentEarnings, this.currentConversions];
+  }
 }

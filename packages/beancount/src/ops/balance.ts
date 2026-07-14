@@ -4,8 +4,8 @@ import {
   Transaction,
   isDescendantOf,
   accountOpenClose,
-  BeancountOptions,
 } from "../core";
+import type { BeancountOptions } from "../core";
 import { ValidationError } from "./validation";
 import { RealAccount } from "../core/realization";
 import { Decimal } from "@beancount-js/parser";
@@ -63,6 +63,7 @@ export function checkBalance(
     if (entry instanceof Transaction) {
       entry.postings.forEach((posting) => {
         const acc = root.get(posting.account);
+
         // The account will have been created only if we're meant to track it.
         if (acc && posting.units) {
           // Note: Always allow negative lots for the purpose of balancing.

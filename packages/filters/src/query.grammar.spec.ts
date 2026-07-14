@@ -47,7 +47,7 @@ const testCases: Record<string, Array<{ input: string; expected: string }>> = {
     },
     {
       input: "-#tag",
-      expected: "Filter(Expr(ExprNot(MINUS,Expr(Value(Tag)))))",
+      expected: "Filter(Expr(ExprNot(NOT(MINUS),Expr(Value(Tag)))))",
     },
     {
       input: "^link",
@@ -55,7 +55,7 @@ const testCases: Record<string, Array<{ input: string; expected: string }>> = {
     },
     {
       input: "-^link",
-      expected: "Filter(Expr(ExprNot(MINUS,Expr(Value(Link)))))",
+      expected: "Filter(Expr(ExprNot(NOT(MINUS),Expr(Value(Link)))))",
     },
   ],
   "Filter by amount": [
@@ -76,7 +76,7 @@ const testCases: Record<string, Array<{ input: string; expected: string }>> = {
     {
       input: `-payee:"restaurant"`,
       expected:
-        "Filter(Expr(ExprNot(MINUS,Expr(TermExpr(Key,OP,Value(String))))))",
+        "Filter(Expr(ExprNot(NOT(MINUS),Expr(TermExpr(Key,OP,Value(String))))))",
     },
     {
       input: `narration:'Dinner with Joe'`,

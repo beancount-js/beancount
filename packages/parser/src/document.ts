@@ -1,11 +1,10 @@
 import { parser } from "@beancount-js/codemirror-lang-beancount";
 import { Text } from "./text";
-import { SyntaxNode, SyntaxNodeRef, Tree } from "@lezer/common";
+import { Tree, type SyntaxNode, type SyntaxNodeRef } from "@lezer/common";
 import {
   Amount,
   Attribute,
   Attributes,
-  AttributeValue,
   CodeBlock,
   LineComment,
   Comments,
@@ -15,10 +14,10 @@ import {
   NumberExpression,
   Position,
 } from "./models";
-import { DocumentVisitor } from "./visitor";
+import type { AttributeValue } from "./models";
+import type { DocumentVisitor } from "./visitor";
 import {
   BalanceDirective,
-  BookingMethod,
   CloseDirective,
   CommodityDirective,
   CustomDirective,
@@ -39,6 +38,7 @@ import {
   Tag,
   TransactionDirective,
 } from "./directives";
+import type { BookingMethod } from "./directives";
 import { parseDate, readString } from "./parser";
 import { Decimal, parseNumber } from "./number";
 import { md5 } from "./hash";
@@ -54,10 +54,6 @@ export interface ParseError {
   position: Position;
   message: string;
   directives?: Directive[];
-}
-
-export function parseLedgerTree(contents: string): Tree {
-  return parser.configure({ strict: false }).parse(contents);
 }
 
 export class BeanCountDocument {

@@ -1,10 +1,12 @@
 import { getWeight } from "./convert";
-import { Posting } from "./data";
+import { Posting, Transaction } from "./data";
+import type { Directives } from "./data";
 import { Inventory } from "./inventory";
 import { Cost } from "./position";
 import { Amount } from "./amount";
 import { Decimal } from "@beancount-js/parser";
-import { BeancountOptions } from "./options";
+import type { BeancountOptions } from "./options";
+import { DateTime } from "luxon";
 
 export const MAXIMUM_TOLERANCE = new Decimal(0.5);
 export const MAX_TOLERANCE_DIGITS = 5;
@@ -177,4 +179,25 @@ export function quantizeWithTolerance(
     }
   }
   return amount;
+}
+
+export function computeEntriesBalance(
+  entries: Directives,
+  prefix: string = "",
+  date?: DateTime | null,
+) {
+  const totalBalance = new Inventory();
+  for (const entry of entries) {
+    if (entry instanceof Transaction) {
+      if (!(!date || (entry.date && entry.date < date))) {
+        break;
+      }
+      for (const posting of entry.postings) {
+        if (posting.account.startsWith(prefix)) {
+          totalBalance.addPosting(posting);
+        }
+      }
+    }
+  }
+  return totalBalance;
 }

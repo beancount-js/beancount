@@ -1,5 +1,5 @@
 import { Decimal } from "@beancount-js/parser";
-import { BeancountOptions } from "../core";
+import type { BeancountOptions } from "../core";
 import { Amount } from "../core/amount";
 import {
   Booking,

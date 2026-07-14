@@ -10,15 +10,17 @@ import {
   Document,
   sorted,
 } from "../core";
-import { Plugins, PluginType } from "../ops/plugins";
+import {
+  Plugins,
+  PLUGINS_AUTO,
+  PLUGINS_POST,
+  PLUGINS_PRE,
+  type PluginType,
+} from "../ops/plugins";
 import { parseLedger } from "./parser";
 import { BeanCountDocument } from "@beancount-js/parser";
 import { validate } from "../ops/validation";
 import { book } from "./booking";
-
-export const PLUGINS_PRE = [];
-export const PLUGINS_AUTO = [];
-export const PLUGINS_POST = ["beancount.ops.pad", "beancount.ops.balance"];
 
 export type DocumentLogger = (message: string) => void;
 export type DocumentLoader = (
@@ -443,15 +445,16 @@ export function loadBeancountOptions(
   const beancount = beanCountOptionsSchema.strict().safeParse(source);
 
   if (!beancount.success) {
-    beancount.error.errors.forEach((error: ZodIssue) => {
+    beancount.error.issues.forEach((error: ZodIssue) => {
       const key =
         error.code === ZodIssueCode.unrecognized_keys
           ? error.keys[0]
           : error.path[0];
+      const keyString = String(key);
       errors.push(
         new LoadError(
-          `${key}: ${error.message}${error.code ? ` (${error.code})` : ""}`,
-          { error, lineno: optionDirectives[key]?.lineno ?? 0 },
+          `${keyString}: ${error.message}${error.code ? ` (${error.code})` : ""}`,
+          { error, lineno: optionDirectives[keyString]?.lineno ?? 0 },
         ),
       );
     });

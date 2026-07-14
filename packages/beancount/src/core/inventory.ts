@@ -4,7 +4,8 @@ import { sameSign } from "./amount";
 import { Cost, CostSpec, Position } from "./position";
 import { Decimal } from "@beancount-js/parser";
 import { DefaultKeyedMap, DefaultMap } from "./map";
-import { Conversion, ConversionContext, costOrValue } from "./conversion";
+import { Conversion, costOrValue } from "./conversion";
+import type { ConversionContext } from "./conversion";
 
 export enum MatchResult {
   // A new lot was created.
@@ -17,23 +18,25 @@ export enum MatchResult {
   IGNORED = 4,
 }
 
-export class Inventory {
-  #values: Record<string, Position> = {};
-  constructor() {}
+export class Inventory extends Map<string, Position> {
+  constructor(...positions: Position[] | Array<Position[]>) {
+    super();
+    positions.flat().forEach((it) => this.addPosition(it));
+  }
 
   get empty() {
     return this.length == 0;
   }
 
   get length() {
-    return Object.keys(this.#values).length;
+    return this.size;
   }
 
   isReducedBy(amount: Amount) {
     if (amount.zero) {
       return false;
     }
-    for (const [_, pos] of Object.entries(this.#values)) {
+    for (const [_, pos] of this.entries()) {
       const units = pos.units;
       if (
         amount.currency === units.currency &&
@@ -45,20 +48,40 @@ export class Inventory {
     return false;
   }
 
+  reduce(reducer: (value: Position, key?: string) => Amount) {
+    const counter = new Inventory();
+    for (const [key, value] of this.entries()) {
+      const amount = reducer(value, key);
+      counter.addAmount(amount);
+    }
+    return counter;
+  }
+
   copy() {
     const inventory = new Inventory();
-    Object.keys(this.#values).forEach((k) => {
-      inventory.#values[k] = this.#values[k].copy();
-    });
+    for (const [key, value] of this.entries()) {
+      inventory.set(key, value);
+    }
     return inventory;
   }
 
   get positions(): Array<Position> {
-    return Object.keys(this.#values).map((k) => this.#values[k]);
+    return [...this.values()];
+  }
+
+  isEmpty() {
+    return this.size == 0;
   }
 
   public toString(showDetails: boolean = false) {
-    return this.positions.map((it) => it.toString(showDetails)).join(", ");
+    if (this.size == 0) {
+      return "";
+    }
+    return (
+      "(" +
+      this.positions.map((it) => it.toString(showDetails)).join(", ") +
+      ")"
+    );
   }
 
   get currencies(): Array<Currency> {
@@ -167,7 +190,7 @@ export class Inventory {
   ): [Position | null, MatchResult] {
     const key =
       `${units?.currency?.toString() || ""} ${cost?.toString(true) || ""}`.trim();
-    const pos = this.#values[key];
+    const pos = this.get(key) ?? null;
 
     if (!units) {
       return [pos, MatchResult.IGNORED];
@@ -180,15 +203,15 @@ export class Inventory {
         : MatchResult.REDUCED;
       const number = pos.units.add(units);
       if (number.zero) {
-        delete this.#values[key];
+        this.delete(key);
       } else {
-        this.#values[key] = new Position(number, cost);
+        this.set(key, new Position(number, cost));
       }
     } else if (units.zero) {
       booking = MatchResult.IGNORED;
     } else {
       booking = MatchResult.CREATED;
-      this.#values[key] = new Position(units, cost);
+      this.set(key, new Position(units, cost));
     }
     return [pos, booking];
   }
@@ -202,7 +225,10 @@ export class Inventory {
    *   that that was modified, and where 'matched' is a MatchResult enum that
    *   hints at how the lot was booked to this inventory.
    */
-  public addPosition(position: Position): [Position | null, MatchResult] {
+  public addPosition(position: {
+    units: Amount;
+    cost?: Cost | null;
+  }): [Position | null, MatchResult] {
     return this.addAmount(position.units, position.cost);
   }
 
@@ -215,9 +241,9 @@ export class Inventory {
 
   public addInventory(inventory: Inventory) {
     if (this.empty) {
-      Object.keys(inventory.#values).forEach((key) => {
-        this.#values[key] = inventory.#values[key];
-      });
+      for (const [key, value] of inventory.entries()) {
+        this.set(key, value);
+      }
       return this;
     } else {
       inventory.positions.forEach((p) => this.addPosition(p));
@@ -239,6 +265,10 @@ export class SimpleCounterInventory extends DefaultMap<string, Amount> {
       }
     }
     return data;
+  }
+
+  toAmounts(): Amount[] {
+    return [...this.values()];
   }
 
   add(number: Amount | null) {
@@ -373,6 +403,19 @@ export class CounterInventory extends DefaultKeyedMap<InventoryKey, Decimal> {
     context: Partial<ConversionContext> = {},
   ): Record<string, number> {
     return this.convert(conversion, context).toRecord();
+  }
+
+  toAmounts(
+    conversion: Conversion = Conversion.AT_COST,
+    context: Partial<ConversionContext> = {},
+  ): Amount[] {
+    const amounts: Amount[] = [];
+    for (const [currency, value] of Object.entries(
+      this.toRecord(conversion, context),
+    )) {
+      amounts.push(new Amount(value, currency));
+    }
+    return amounts;
   }
 
   public addInventory(inventory: CounterInventory | SimpleCounterInventory) {

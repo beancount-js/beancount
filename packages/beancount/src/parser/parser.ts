@@ -25,19 +25,18 @@ import {
   BeanCountDocument,
   Position,
   Attributes,
-  ParserOptions,
   Decimal,
   NumberExpression,
-  Numeric,
-  AttributeValue,
   parseDocument,
+} from "@beancount-js/parser";
+import type {
+  AttributeValue,
+  Numeric,
+  ParserOptions,
   ParseError,
 } from "@beancount-js/parser";
 import {
-  Directive as BeancountDirective,
   Plugin,
-  Metadata,
-  ScalarType,
   Document,
   Query,
   CodeBlock,
@@ -59,10 +58,14 @@ import {
   CostSpec,
   Event,
   DIRECTIVE_META,
-  Directives,
   sorted,
   SOURCE_META,
-  ID_META,
+} from "../core";
+import type {
+  Directive as BeancountDirective,
+  Directives,
+  Metadata,
+  ScalarType,
 } from "../core";
 
 export interface ParserProperties {
@@ -141,7 +144,6 @@ export class LedgerParser extends AbstractVisitor<void> {
     const entry = new LedgerEntry(pos, directive, this.document.content(pos));
     meta[DIRECTIVE_META] = entry;
     meta[SOURCE_META] = entry.content;
-    meta[ID_META] = directive.id;
     return meta;
   }
 
@@ -256,9 +258,7 @@ export class LedgerParser extends AbstractVisitor<void> {
     this.directives.push(plugin);
   };
 
-  private visitNumber(
-    number: Numeric | null | undefined | null,
-  ): null | Decimal {
+  private visitNumber(number: Numeric | null | undefined): null | Decimal {
     if (number === null || number === undefined) {
       return null;
     } else if (number instanceof Decimal) {

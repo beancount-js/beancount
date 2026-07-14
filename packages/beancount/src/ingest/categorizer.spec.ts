@@ -25,6 +25,6 @@ describe("Categorizer.RecordMatcher", () => {
       Memo: "AKUOM MA              \tMARY AKUOM BGC\t",
       $Account: "Expenses:Uncategorized",
     };
-    expect(categorizer.directive(input, "Expenses:Food")).toEqual("");
+    expect(categorizer.directive(input, "Expenses:Food")).toBeNull();
   });
 });

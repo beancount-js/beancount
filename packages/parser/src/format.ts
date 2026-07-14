@@ -51,12 +51,12 @@ const WIDE_CHARS = [
 ];
 
 /**
-   * Compute the frequencies of the given elements and return the most frequent.
-   *
-   * @param iterable A collection of hashable elements.
-   * @returns The most frequent element. If there are no elements in the iterable,
-        return None.
-   */
+ * Compute the frequencies of the given elements and return the most frequent.
+ *
+ * @param iterable A collection of hashable elements.
+ * @returns The most frequent element. If there are no elements in the iterable,
+ *   return None.
+ */
 function computeMostFrequent(iterable: Array<number>): number {
   const frequencies = iterable.reduce<Map<string, number>>((prev, current) => {
     const key = current.toString();
@@ -77,12 +77,12 @@ function computeMostFrequent(iterable: Array<number>): number {
 }
 
 /**
-   * Normalize whitespace before lines that has some indent and an account name.
-   *
-   * @param match_pairs A list of (prefix, number, rest) tuples.
-   * @returns Another list of (prefix, number, rest) tuples, where prefix may have been
-        adjusted with a different whitespace prefix.
-   */
+ * Normalize whitespace before lines that has some indent and an account name.
+ *
+ * @param match_pairs A list of (prefix, number, rest) tuples.
+ * @returns Another list of (prefix, number, rest) tuples, where prefix may have
+ *   been adjusted with a different whitespace prefix.
+ */
 function normalizeIndentWhitespace(
   matchPairs: Array<MatchPair>,
 ): Array<MatchPair> {
@@ -130,21 +130,23 @@ function findMatches(line: string, ...patterns: RegExp[]) {
 }
 
 /**
-   * Reformat Beancount input to align all the numbers at the same column.
-   * @param contents A string, Beancount input syntax to reformat.
-   * @param prefixWidth An integer, the width in characters to render the account
-          name to. If this is not specified, a good value is selected
-          automatically from the contents of the file.
-   * @param numWidth An integer, the width to render each number. If this is not
-          specified, a good value is selected automatically from the contents of
-          the file.
-   * @param currencyColumn An integer, the column at which to align the currencies.
-          If given, this overrides the other options.
-   * @param fixedCJKWidth Whether to treat CJK aka East Asian characters as two letters width on alignment.
-   * @returns A string, reformatted Beancount input with all the number aligned.
-        No other changes than whitespace changes should be present between that
-        return value and the input contents.
-   */
+ * Reformat Beancount input to align all the numbers at the same column.
+ *
+ * @param contents A string, Beancount input syntax to reformat.
+ * @param prefixWidth An integer, the width in characters to render the account
+ *   name to. If this is not specified, a good value is selected automatically
+ *   from the contents of the file.
+ * @param numWidth An integer, the width to render each number. If this is not
+ *   specified, a good value is selected automatically from the contents of the
+ *   file.
+ * @param currencyColumn An integer, the column at which to align the
+ *   currencies. If given, this overrides the other options.
+ * @param fixedCJKWidth Whether to treat CJK aka East Asian characters as two
+ *   letters width on alignment.
+ * @returns A string, reformatted Beancount input with all the number aligned.
+ *   No other changes than whitespace changes should be present between that
+ *   return value and the input contents.
+ */
 function alignBeancount(
   contents: string,
   prefixWidth?: number,
@@ -245,9 +247,11 @@ function alignBeancount(
 /**
  * MIT License From Lencerf/vscode-beancount
  * https://github.com/Lencerf/vscode-beancount/master/src/formatter.ts#L117
- * @param prefix prefix content
- * @param fixedCJKWidth whether to treat CJK aka East Asian characters as two letters width
- * @returns prefix width
+ *
+ * @param prefix Prefix content
+ * @param fixedCJKWidth Whether to treat CJK aka East Asian characters as two
+ *   letters width
+ * @returns Prefix width
  */
 function getPrefixWidth(prefix: string, fixedCJKWidth?: boolean): number {
   if (!fixedCJKWidth) {
@@ -260,11 +264,13 @@ function getPrefixWidth(prefix: string, fixedCJKWidth?: boolean): number {
 }
 
 /**
- * padEnd prefix with blank space
- * @param prefix prefix to pad
- * @param maxPrefixWidth max prefix width
- * @param fixedCJKWidth whether to treat CJK aka East Asian characters as two letters width
- * @returns pad prefix
+ * PadEnd prefix with blank space
+ *
+ * @param prefix Prefix to pad
+ * @param maxPrefixWidth Max prefix width
+ * @param fixedCJKWidth Whether to treat CJK aka East Asian characters as two
+ *   letters width
+ * @returns Pad prefix
  */
 function padPrefix(
   prefix: string,
@@ -287,7 +293,7 @@ function padPrefix(
  * Format contents.
  *
  * @param contents Contents waiting to be formatted.
- * @param config format argument
+ * @param config Format argument
  */
 export function format(contents: string, opts?: FormatOptions): string {
   // Align the contents.

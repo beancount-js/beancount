@@ -1,6 +1,7 @@
 import { Decimal, formatDate, writeString } from "@beancount-js/parser";
 import { Amount } from "./amount";
 import { DateTime } from "luxon";
+import type { Typing } from "./data";
 
 /** A variant of Amount that also includes a date and a label. */
 export class Cost {
@@ -19,6 +20,14 @@ export class Cost {
 
   get currency() {
     return this.amount?.currency || "";
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      amount: Amount,
+      label: String,
+    };
   }
 
   public toString(showDetails: boolean = true) {
@@ -153,6 +162,13 @@ export class Position {
     readonly units: Amount,
     readonly cost: Cost | null = null,
   ) {}
+
+  static typings(): Record<string, Typing> {
+    return {
+      units: Amount,
+      cost: Cost,
+    };
+  }
 
   copy(
     data: Partial<{

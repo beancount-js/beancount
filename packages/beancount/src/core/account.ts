@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
-import { Close, Directives, Open } from "./data";
+import { Close, Open } from "./data";
+import type { Directives } from "./data";
 
 /**
  * Check whether an account is a descendant of another.
@@ -33,8 +34,6 @@ interface AccountOpenCloseProps {
   close: Close | null;
   updatedAt: DateTime;
 }
-
-export type AccountOpenCloseResponse = AccountOpenCloseProps;
 
 export function accountOpenClose(
   entries: Directives,

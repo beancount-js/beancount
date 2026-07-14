@@ -1,4 +1,4 @@
-import { BeancountOptions } from "../core";
+import type { BeancountOptions } from "../core";
 import {
   type Account,
   Balance,
@@ -8,12 +8,12 @@ import {
   filterTransactions,
   Note,
   Open,
-  Directive,
   Document,
   isDirective,
 } from "../core/data";
+import type { Directive } from "../core/data";
 import { computeResidual, inferTolerances } from "../core/interpolate";
-import { LedgerError } from "../parser/loader";
+import type { LedgerError } from "../parser/loader";
 
 export class ValidationError extends Error implements LedgerError {
   readonly context: Record<string, unknown>;

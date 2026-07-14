@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import type { CounterInventory } from "./inventory";
 import { BaseQuote, type PriceMap } from "./prices";
 import { Amount } from "./amount";
+import { Cost, CostSpec } from "./position";
 
 export enum Conversion {
   AT_COST = "AT_COST",
@@ -24,24 +25,20 @@ export function getConversion(s: string | null): Conversion {
   return CONVERSIONS[s] ?? DEFAULT_CONVERSION;
 }
 
-export function conversionLabel(
-  conversion: Conversion | string | null,
-): string {
-  switch (getConversion(typeof conversion === "string" ? conversion : null)) {
-    case Conversion.AT_COST:
-      return "At Cost";
-    case Conversion.AT_VALUE:
-      return "At Value";
-    case Conversion.UNITS:
-      return "Units";
-    default:
-      return "At Cost";
-  }
-}
-
 export interface ConversionContext {
   prices: PriceMap;
   date: DateTime;
+}
+
+export function getCost(entry: {
+  units: Amount;
+  cost?: Cost | CostSpec | null;
+}) {
+  const cost = entry.cost;
+  if (cost instanceof Cost && cost.amount) {
+    return cost.amount.mul(entry.units);
+  }
+  return entry.units;
 }
 
 export function costOrValue(

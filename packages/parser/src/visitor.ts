@@ -18,7 +18,7 @@ import {
   QueryDirective,
   TransactionDirective,
 } from "./directives";
-import { Directive } from "./models";
+import type { Directive } from "./models";
 
 export interface DocumentVisitor<T> {
   visit: (directive: Directive) => T;

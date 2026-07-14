@@ -1,9 +1,10 @@
 import { DateTime } from "luxon";
-import { Metadata, sorted, Transaction, type Directives } from "../core/data";
+import { sorted, Transaction, type Directives } from "../core/data";
 import { ValidationError } from "../ops/validation";
 import { RRule, type Options as FrequencyOptions } from "rrule";
 import { DateFilter, parseQuery } from "@beancount-js/filters";
-import { BeancountOptions } from "../core";
+import { yamlProcessor } from "../core";
+import type { BeancountOptions } from "../core";
 import { z } from "zod";
 
 /**
@@ -97,21 +98,23 @@ export const forecastOptions = z.object({
   end: z.string().optional(),
 });
 
+const forcastSchema = z.preprocess(yamlProcessor, forecastOptions);
+
 const PERIOD_PATTERN =
   /(^.*)\[(MONTHLY|YEARLY|WEEKLY|DAILY)(\s+SKIP\s+([1-9][0-9]*)\s+TIME.?)?(\s+REPEAT\s+([1-9][0-9]*)\s+TIME.?)?(\s+UNTIL\s+([0-9-]+))?\]/;
 export function forecast(
   entries: Directives,
-  options: BeancountOptions,
-  metadata: Metadata = {},
+  _options: BeancountOptions,
+  arg: string = "",
 ): [Directives, Array<ValidationError>] {
   let now: DateTime = DateTime.now();
   const errors: Array<ValidationError> = [];
-  const props = forecastOptions.safeParse(metadata).data ?? {};
+  const props = arg ? (forcastSchema.safeParse(arg).data ?? {}) : {};
 
   if (props.now) {
     now = resolveDate(props.now, now, {
       message: "Invalid forcast value for 'now'",
-      meta: metadata,
+      meta: props,
       now,
       errors,
     });
@@ -135,32 +138,12 @@ export function forecast(
       let end = now.endOf("year");
       const declaredEnd = entry.meta["end"] || props["end"];
       if (declaredEnd) {
-        const [predicate, parseErrors] = parseQuery(declaredEnd.toString(), {
+        end = resolveDate(declaredEnd?.toString(), end, {
+          message: `Invalid forcast value for 'end': '${declaredEnd}'`,
+          meta: props,
           now,
+          errors,
         });
-        if (parseErrors.length) {
-          errors.push(
-            new ValidationError(
-              `Invalid forcast value for 'end': '${declaredEnd}'\n - ${parseErrors.join("\n - ")}`,
-              {
-                source: entry.meta,
-                entry,
-              },
-            ),
-          );
-        } else if (predicate instanceof DateFilter) {
-          end = predicate.range.endInclusive;
-        } else {
-          errors.push(
-            new ValidationError(
-              `Invalid forcast value for 'end': '${declaredEnd}'`,
-              {
-                source: entry.meta,
-                entry,
-              },
-            ),
-          );
-        }
       }
       if (!match) {
         match =
@@ -173,9 +156,11 @@ export function forecast(
           rule
             .between(entry.date.toUTC().toJSDate(), end.toUTC().toJSDate())
             .forEach((date) => {
+              const dt = DateTime.fromISO(date.toISOString(), { zone: "utc" });
               newEntries.push(
                 entry.copy({
-                  date: DateTime.fromISO(date.toISOString(), { zone: "utc" }),
+                  date: dt,
+                  flag: dt > now ? "!" : entry.flag,
                   narration: match![1],
                 }),
               );
@@ -190,9 +175,11 @@ export function forecast(
           rule
             .between(entry.date.toUTC().toJSDate(), end.toUTC().toJSDate())
             .forEach((date) => {
+              const dt = DateTime.fromISO(date.toISOString(), { zone: "utc" });
               newEntries.push(
                 entry.copy({
-                  date: DateTime.fromISO(date.toISOString(), { zone: "utc" }),
+                  date: dt,
+                  flag: dt > now ? "!" : entry.flag,
                   narration: match![1],
                 }),
               );
@@ -238,9 +225,11 @@ export function forecast(
 
       const rule = new RRule(ruleOpts);
       rule.all().forEach((date) => {
+        const dt = DateTime.fromISO(date.toISOString(), { zone: "utc" });
         newEntries.push(
           entry.copy({
-            date: DateTime.fromISO(date.toISOString(), { zone: "utc" }),
+            date: dt,
+            flag: dt > now ? "!" : entry.flag,
             narration: match[1],
           }),
         );

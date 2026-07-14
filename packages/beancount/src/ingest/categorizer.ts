@@ -1,7 +1,7 @@
 import { Amount } from "../core/amount";
 import { Posting, Transaction } from "../core/data";
 import { DateTime } from "luxon";
-import { LedgerSource } from "../core/ledger-data";
+import { loadString } from "../parser/loader";
 
 export type Matchers = Record<string, Array<string>>;
 
@@ -115,11 +115,11 @@ export interface GroupedRecords {
 export interface CategorizerProps {
   posting: Matcher;
   accounts: Matcher;
-  dateFormat: string;
-  account: string;
-  currency: string;
-  columns: Array<string>;
-  defaultAccount: string;
+  dateFormat?: string;
+  account?: string;
+  currency?: string;
+  columns?: Array<string>;
+  defaultAccount?: string;
 }
 
 export class Categorizer {
@@ -150,16 +150,11 @@ export class Categorizer {
 
     if (data["__source__"]) {
       meta["__import__"] = input;
-      const source = new LedgerSource(data["__source__"], {
+      const [directives, errors] = loadString(data["__source__"], {
         transform: false,
-        attributes: {
-          filename: "import.ledger",
-          lineno: "1",
-          ...meta,
-        },
       });
-      if (source.errors.length === 0 && source.directives.length === 1) {
-        const directive = source.directives[0];
+      if (errors.length === 0 && directives.length === 1) {
+        const directive = directives[0];
         if (directive instanceof Transaction) {
           return directive;
         } else {
@@ -171,15 +166,22 @@ export class Categorizer {
       } else {
         console.error(
           "Categorizer:directive unable to process source: ",
-          source.errors,
-          source.directives,
+            errors,
+            directives,
         );
       }
     }
 
     try {
+      const date = DateTime.fromFormat(
+        data["date"],
+        this.props.dateFormat ?? "yyyy-MM-dd",
+      );
+      if (!date.isValid) {
+        return null;
+      }
       return new Transaction(
-        DateTime.fromFormat(data["date"], this.props.dateFormat).toJSDate(),
+        date,
         "*",
         data["payee"],
         data["narration"],
@@ -188,10 +190,10 @@ export class Categorizer {
         data["amount"]
           ? [
               new Posting(
-                this.props.account,
+                this.props.account ?? this.props.defaultAccount ?? "",
                 new Amount(
                   data["amount"],
-                  data["currency"] ?? this.props.currency,
+                  data["currency"] ?? this.props.currency ?? "",
                 ),
               ),
               new Posting(account),

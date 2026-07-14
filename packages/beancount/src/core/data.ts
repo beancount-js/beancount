@@ -51,37 +51,6 @@ export const FLAG_UNREALIZED = "U";
 
 export const SOURCE_META = "__source__";
 export const DIRECTIVE_META = "__directive__";
-export const ID_META = "__id__";
-export const DUPLICATE_META = "__duplicate__";
-
-export const MISSING: { [key: string]: null } = new Proxy(
-  { MISSING: null },
-  {
-    get(_target, key) {
-      if (key === "toString") {
-        return () => "";
-      }
-      return null;
-    },
-
-    set() {
-      return true;
-    },
-  },
-);
-
-export type MissingType = typeof MISSING | null | undefined;
-
-export function isMissing(object: unknown): object is MissingType {
-  return object === MISSING;
-}
-
-export function resolveMissing<T>(value: T | MissingType): T | null {
-  if (isMissing(value)) {
-    return null;
-  }
-  return value ?? null;
-}
 
 // A set of valid booking method names for positions on accounts.
 export enum Booking {
@@ -159,10 +128,12 @@ export function writeScalar(value: ScalarType | Array<ScalarType>): string {
   return value.toString();
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export type Typing = Function | [Typing] | Array<Typing>;
+
 export abstract class DirectiveBase {
   abstract get accounts(): ReadonlyArray<string>;
   abstract get directiveType(): string;
-
   constructor(
     readonly meta: Metadata = {},
     readonly date: DateTime | null = null,
@@ -227,6 +198,16 @@ export class Open extends DirectiveBase {
     super(meta);
   }
 
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      account: String,
+      currencies: [String],
+      booking: String,
+      meta: Object,
+    };
+  }
+
   get directiveType(): string {
     return "open";
   }
@@ -265,6 +246,14 @@ export class Close extends DirectiveBase {
     readonly meta: Metadata = {},
   ) {
     super(meta);
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      account: String,
+      meta: Object,
+    };
   }
 
   get directiveType(): string {
@@ -310,6 +299,14 @@ export class Commodity extends DirectiveBase {
     super(meta);
   }
 
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      currency: String,
+      meta: Object,
+    };
+  }
+
   get directiveType(): string {
     return "commodity";
   }
@@ -352,6 +349,15 @@ export class Pad extends DirectiveBase {
     readonly meta: Metadata = {},
   ) {
     super(meta);
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      account: String,
+      sourceAccount: String,
+      meta: Object,
+    };
   }
 
   get directiveType(): string {
@@ -403,6 +409,17 @@ export class Balance extends DirectiveBase {
     readonly meta: Metadata = {},
   ) {
     super(meta);
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      account: String,
+      amount: Amount,
+      diff: Amount,
+      tolerance: String,
+      meta: Object,
+    };
   }
 
   copy(
@@ -471,6 +488,17 @@ export class Posting {
     readonly flag: Flag = "",
     readonly meta: Metadata = {},
   ) {}
+
+  static typings(): Record<string, Typing> {
+    return {
+      account: String,
+      units: Amount,
+      cost: Cost,
+      price: Amount,
+      flag: String,
+      meta: Object,
+    };
+  }
 
   get accounts(): ReadonlyArray<Account> {
     return [this.account];
@@ -567,6 +595,19 @@ export class Transaction extends DirectiveBase {
     super(meta);
   }
 
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      flag: String,
+      payee: String,
+      narration: String,
+      tags: [String],
+      links: [String],
+      postings: [Posting],
+      meta: Object,
+    };
+  }
+
   copy(
     data: Partial<{
       date: DateTime;
@@ -636,6 +677,13 @@ export class TxnPosting extends DirectiveBase {
     super(txn.meta, txn.date);
   }
 
+  static typings(): Record<string, Typing> {
+    return {
+      ...Transaction.typings(),
+      ...Posting.typings(),
+    };
+  }
+
   get accounts(): readonly string[] {
     return this.txn.accounts;
   }
@@ -691,6 +739,17 @@ export class Note extends DirectiveBase {
     readonly meta: Metadata = {},
   ) {
     super(meta);
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      account: String,
+      comment: String,
+      tags: [String],
+      links: [String],
+      meta: Object,
+    };
   }
 
   get directiveType(): string {
@@ -760,6 +819,15 @@ export class Event extends DirectiveBase {
     super(meta);
   }
 
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      type: String,
+      description: String,
+      meta: Object,
+    };
+  }
+
   get directiveType(): string {
     return "event";
   }
@@ -799,6 +867,15 @@ export class Query extends DirectiveBase {
     readonly meta: Metadata = {},
   ) {
     super(meta);
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      name: String,
+      queryString: [String, CodeBlock],
+      meta: Object,
+    };
   }
 
   get directiveType(): string {
@@ -844,6 +921,14 @@ export class LedgerOption extends DirectiveBase {
     super(meta);
   }
 
+  static typings(): Record<string, Typing> {
+    return {
+      key: String,
+      value: String,
+      meta: Object,
+    };
+  }
+
   get directiveType(): string {
     return "option";
   }
@@ -865,6 +950,13 @@ export class LedgerInclude extends DirectiveBase {
     readonly meta: Metadata = {},
   ) {
     super(meta);
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      path: String,
+      meta: Object,
+    };
   }
 
   get directiveType(): string {
@@ -889,6 +981,14 @@ export class Plugin extends DirectiveBase {
     readonly meta: Metadata = {},
   ) {
     super(meta);
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      name: String,
+      options: [String, CodeBlock],
+      meta: Object,
+    };
   }
 
   get directiveType(): string {
@@ -942,6 +1042,15 @@ export class Price extends DirectiveBase {
     super(meta);
   }
 
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      currency: String,
+      amount: Amount,
+      meta: Object,
+    };
+  }
+
   get directiveType(): string {
     return "price";
   }
@@ -991,6 +1100,17 @@ export class Document extends DirectiveBase {
     readonly meta: Metadata = {},
   ) {
     super(meta);
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      account: String,
+      filename: String,
+      tags: [String],
+      links: [String],
+      meta: Object,
+    };
   }
 
   get directiveType(): string {
@@ -1045,6 +1165,15 @@ export class Custom extends DirectiveBase {
     readonly meta: Metadata = {},
   ) {
     super(meta);
+  }
+
+  static typings(): Record<string, Typing> {
+    return {
+      date: DateTime,
+      type: String,
+      values: [Object],
+      meta: Object,
+    };
   }
 
   copy(

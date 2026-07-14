@@ -17,15 +17,15 @@
 }
 
 ExprAnd {
-  Expr !and (@specialize<Key, "and"> | @specialize<Key, "AND">)? Expr 
+  Expr !and AND { ("&&" | @specialize<Key, "and"> | @specialize<Key, "AND"> | @specialize<AccountName, "AND">)? } Expr 
 }
 
 ExprOr {
-  Expr !or ("," | @specialize<Key, "or"> | @specialize<Key, "OR">) Expr 
+  Expr !or OR {("," | "||" | @specialize<Key, "or"> | @specialize<Key, "OR"> | @specialize<AccountName, "OR">)} Expr 
 }
 
 ExprNot {
-  !not (MINUS | @specialize<Key, "not"> | @specialize<Key, "NOT">) Expr 
+  !not NOT { (MINUS | @specialize<Key, "not"> | @specialize<Key, "NOT"> | @specialize<AccountName, "NOT">) } Expr 
 }
 
 TermExpr {
@@ -79,29 +79,29 @@ Duration {
 
 Interval {
   Date |
-  @specialize<Key, "Q"> | // year
-  @specialize<Key, "q"> |  
-  @specialize<Key, "quarters"> |  
-  @specialize<Key, "Y"> | // year
-  @specialize<Key, "y"> |  
-  @specialize<Key, "years"> |  
-  @specialize<Key, "M"> | // month
-  @specialize<Key, "months"> |  
-  @specialize<Key, "w"> |         // week
-  @specialize<Key, "weeks"> |  
-  @specialize<Key, "W">
-  @specialize<Key, "d"> |         // day
-  @specialize<Key, "D">
-  @specialize<Key, "days"> |  
-  @specialize<Key, "h"> |         // hour
-  @specialize<Key, "H"> | // hour
-  @specialize<Key, "hour"> |  
-  @specialize<Key, "hours"> |  
-  @specialize<Key, "m"> |         // minutes
-  @specialize<Key, "minute"> |  
+  @specialize<Key, "Q">       | // quarter 
+  @specialize<Key, "q">       |  
+  @specialize<Key, "Y">       | // year
+  @specialize<Key, "y">       |  
+  @specialize<Key, "yr">       |  
+  @specialize<Key, "M">       | // month
+  @specialize<Key, "mon">     | 
+  @specialize<Key, "mth">     | 
+  @specialize<Key, "w">       | // week
+  @specialize<Key, "W">       |
+  @specialize<Key, "d">       | // day
+  @specialize<Key, "D">       |
+  @specialize<Key, "h">       | // hour
+  @specialize<Key, "H">       | 
+  @specialize<Key, "hr">      | 
+  @specialize<Key, "hrs">     |  
+  @specialize<Key, "hours">   |  
+  @specialize<Key, "m">       | // minutes
+  @specialize<Key, "min">     |  
   @specialize<Key, "minutes"> |  
-  @specialize<Key, "s">           // seconds
-  @specialize<Key, "second"> |  
+  @specialize<Key, "s">       | // seconds
+  @specialize<Key, "sec">     |  
+  @specialize<Key, "S">       |  
   @specialize<Key, "seconds"> 
 }
 
@@ -119,7 +119,7 @@ Interval {
    int { num | @digit+ }
    frac { '.' @digit+ }
    Integer { int frac? | int frac? }
-   DATE { "year" | "now" | "today" | "month" | "day" | "week" | "quarter" | "(year)" | "(month)" | "(day)" | "(week)" | "(quarter)"  }
+   DATE { "now" | "today" | "year" | "years" | "month" | "months" | "day" | "days" | "week" | "weeks" | "quarter" | "quarters" | "(year)" | "(month)" | "(day)" | "(week)" | "(quarter)"  }
    Year { INT INT INT INT }
    Quarter { Year "-" "Q" INT}
    Week { Year "-" "W" INT INT?}
@@ -127,8 +127,8 @@ Interval {
    Day { Year "-" INT INT "-" INT INT }
    Tag { "#" $[a-zA-Z0-9_-]+}
    Link { "^" $[a-zA-Z0-9_-]+ }
-   name { $[A-Z.*]$[A-Za-z0-9-.*]* }
-   AccountName { name ":"? (name ":")* name }
+   name { $[A-Z.*]$[A-Za-z0-9-.*]+ }
+   AccountName { name ( ":" name)* }
    @precedence { Integer Year}
    @precedence { Day Month Week Quarter Integer }
    @precedence { DATE  Key }

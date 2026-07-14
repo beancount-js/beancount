@@ -3,18 +3,18 @@ import {
   AccountFilter,
   BooleanFilter,
   DateFilter,
+  DateRange,
   FieldFilter,
   Filter,
   FilterType,
   LinkFilter,
   NumberFilter,
   PatternFilter,
-  QueryParserOptions,
   TagFilter,
   TextFilter,
-  VisitorContext,
   parseQuery,
 } from "@beancount-js/filters";
+import type { QueryParserOptions, VisitorContext } from "@beancount-js/filters";
 import {
   DirectiveBase,
   Note,
@@ -24,9 +24,8 @@ import {
   Balance,
   Posting,
   isDirective,
-  Directives,
-  Directive,
 } from "./data";
+import type { Directive, Directives } from "./data";
 import { Decimal, isValidNumber, parseDate } from "@beancount-js/parser";
 import { Cost } from "./position";
 
@@ -242,6 +241,59 @@ export class BeancountFilter extends AbstractFilterVisitor<
         );
       case "date":
         return filter.value.accept(this, entity, { op: filter.op });
+      case "date.day":
+        return filter.value.accept(
+          this,
+          typeof entity === "string" ? entity : entity.date?.day?.toString(),
+          { op: filter.op },
+        );
+      case "date.month":
+        return filter.value.accept(
+          this,
+          typeof entity === "string" ? entity : entity.date?.month?.toString(),
+          { op: filter.op },
+        );
+      case "date.year":
+        return filter.value.accept(
+          this,
+          typeof entity === "string" ? entity : entity.date?.year?.toString(),
+          { op: filter.op },
+        );
+      case "date.week":
+        return filter.value.accept(
+          this,
+          typeof entity === "string"
+            ? entity
+            : entity.date?.weekNumber?.toString(),
+          { op: filter.op },
+        );
+      case "date.quarter":
+        return filter.value.accept(
+          this,
+          typeof entity === "string"
+            ? entity
+            : entity.date?.quarter?.toString(),
+          { op: filter.op },
+        );
+      case "date.weekday":
+        return filter.value.accept(
+          this,
+          typeof entity === "string"
+            ? entity
+            : entity.date?.weekday?.toString(),
+          { op: filter.op },
+        );
+      case "date.ms":
+      case "date.timestamp":
+      case "date.milliseconds":
+      case "timestamp":
+        return filter.value.accept(
+          this,
+          typeof entity === "string"
+            ? entity
+            : entity.date?.toMillis()?.toString(),
+          { op: filter.op },
+        );
       case "account":
         return typeof entity === "string"
           ? filter.value.accept(this, entity, { op: filter.op })
@@ -407,25 +459,27 @@ export function filterLedger(
   directives: Directives,
   query: string | Filter,
   options: QueryParserOptions = {},
-): [Directives, Array<string>, Filter] {
+): [[Directives, Directives], Array<string>, Filter] {
   if (typeof query !== "string") {
-    return [
-      directives.filter((it) => beancountFilter.accept(query, it, { op: ":" })),
-      [],
-      query,
-    ];
+    if (!query) {
+      return [[directives, []], [], query];
+    }
+    const matches: Directives = [];
+    const filtered: Directives = [];
+    directives.forEach((entry) => {
+      if (beancountFilter.accept(query, entry, { op: ":" })) {
+        matches.push(entry);
+      } else {
+        filtered.push(entry);
+      }
+    });
+
+    return [[matches, filtered], [], query];
   }
 
   const [filter, errors] = parseQuery(query.toString(), options);
   if (errors.length) {
-    return [[], errors, filter];
+    return [[[], []], errors, filter];
   }
-  if (!filter) {
-    return [directives, [], filter];
-  }
-  return [
-    directives.filter((it) => beancountFilter.accept(filter, it, { op: ":" })),
-    [],
-    filter,
-  ];
+  return filterLedger(directives, filter);
 }

@@ -26,13 +26,13 @@
   "dependencies": {
     "@beancount-js/codemirror-lang-beancount": "workspace:*",
     "@lezer/common": "^1.2.3",
-    "luxon": "^3.5.0",
-    "big.js": "^6.2.1"
+    "luxon": "^3.7.2",
+    "big.js": "^7.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
-    "@types/luxon": "^3.4.2",
-    "@types/big.js": "^6.2.2",
+    "@types/luxon": "^3.7.1",
+    "@types/big.js": "^7.0.0",
     "dedent": "^1.5.3",
     "vite-plugin-dts": "^4.3.0",
     "tslib": "^2.6.2",

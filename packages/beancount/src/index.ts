@@ -1,26 +1,16 @@
-export {
-  loadString,
-  loadProjectSources,
-  normalizeProjectPath,
-  resolveProjectInclude,
-  type LoadProps,
-  type DocumentLoader,
-  type DocumentIncludeResolver,
-  type ProjectSource,
-  type ProjectSourceMap,
-} from "./parser/loader";
+// Shared core exports follow the current Beancount model used by beanquery.
 export * from "./core";
 export * from "./utils";
-export { Decimal, isValidNumber } from "./core/amount";
-export * from "./ops/validation";
+export * from "./ops";
 export * from "./parser/parser";
 export * from "./parser/loader";
-export {
-  LanguageRecord,
-  RecordInventory,
-  LedgerDatabase,
-  formatSQL,
-  sqlParser,
-  type QueryResult,
-} from "./query/db";
-export { getNumber } from "./query/functions";
+export * from "./plugins/autoaccount";
+export * from "./plugins/budget";
+export * from "./plugins/creditcard";
+export * from "./plugins/forecast";
+
+// Studio retains its import-categorisation API while its filesystem workspace
+// is the source of truth for project documents.
+export * from "./ingest/categorizer";
+export * from "./ingest/classifiers";
+export * from "./ingest/store";

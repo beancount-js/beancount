@@ -85,7 +85,7 @@ describe("Filter", () => {
       : [testCase.query];
     queries.forEach((query) => {
       test(`${testCase.description || ""} ${query}`.trim(), () => {
-        const [filtered, errors] = filterLedger(directives, query);
+        const [[filtered], errors] = filterLedger(directives, query);
         expect(errors).toEqual([]);
         expect(
           filtered.map((it) => `${it.directiveType}:${formatDate(it.date)}`),

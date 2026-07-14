@@ -42,8 +42,8 @@ export function countDecimalPlaces(input: number | string): number {
 }
 
 export class Decimal {
-  static readonly ZERO: Decimal = new Decimal(0);
-  static readonly ONE: Decimal = new Decimal(1);
+  static readonly ZERO: Decimal = new Decimal("0.00");
+  static readonly ONE: Decimal = new Decimal("1.00");
 
   private num: Big | undefined;
   private source: string;
@@ -54,7 +54,7 @@ export class Decimal {
    * @param value A Decimal instance.
    * @param currency A string, the currency symbol to use.
    */
-  constructor(value: NumberSource) {
+  constructor(value: NumberSource, precision?: number) {
     if (typeof value === "string") {
       if (value === "") {
         this.source = "";
@@ -70,11 +70,16 @@ export class Decimal {
       this.source = value.toString();
       this.num = Big(value);
     } else if (value instanceof Decimal) {
-      this.source = value.value;
-      this.num = Big(value.source);
+      this.source = value.source;
+      this.num = value.num;
     } else {
       this.source = "";
       this.num = undefined;
+    }
+
+    if (precision && this.num && this.precision < precision) {
+      this.source = this.toFixed(Math.abs(precision));
+      this.num = new Big(this.source);
     }
   }
 
@@ -94,7 +99,7 @@ export class Decimal {
       throw new Error("Missing units on number");
     }
 
-    const num = this.resolve(value);
+    const num = new Decimal(value instanceof Decimal ? value.value : value);
     const e = num.exponent;
     if (e < 0) {
       return new Decimal(this.num.toFixed(Math.abs(e), roundingMode));
@@ -107,7 +112,7 @@ export class Decimal {
       value: string | number;
     }> = {},
   ) {
-    return new Decimal(data.value || this.value);
+    return new Decimal(data.value || this.value, this.precision);
   }
 
   get zero() {
@@ -135,12 +140,23 @@ export class Decimal {
     return countDecimalPlaces(this.source || this.value) * -1;
   }
 
+  get precision() {
+    if (this.num === undefined) {
+      throw new Error("Missing units on number");
+    }
+    return countDecimalPlaces(this.source || this.value);
+  }
+
   public scaleb(exponent: number) {
     return new Decimal(this.value).mul(Math.pow(10, exponent));
   }
 
   toFixed(dp?: number, roundingMode?: RoundingMode) {
     return this.num?.toFixed(dp, roundingMode);
+  }
+
+  toScale(dp?: number, roundingMode?: RoundingMode) {
+    return new Decimal(this.toFixed(dp, roundingMode));
   }
 
   public eq(amount: NumberSource) {
@@ -163,7 +179,7 @@ export class Decimal {
       throw new Error("Missing units on number");
     }
 
-    return new Decimal(this.num.plus(value.num).toString());
+    return new Decimal(this.num.plus(value.num).toString(), this.precision);
   }
 
   public minus(amount: NumberSource) {
@@ -171,7 +187,7 @@ export class Decimal {
     if (this.num === undefined || value.num === undefined) {
       throw new Error("Missing units on number");
     }
-    return new Decimal(this.num.minus(value.num).toString());
+    return new Decimal(this.num.minus(value.num).toString(), this.precision);
   }
 
   public lt(amount: NumberSource) {
@@ -211,7 +227,7 @@ export class Decimal {
     if (this.num === undefined || value.num === undefined) {
       throw new Error("Missing units on number");
     }
-    return new Decimal(this.num.mul(value.num).toString());
+    return new Decimal(this.num.mul(value.num).toString(), this.precision);
   }
 
   public div(amount: NumberSource) {
@@ -219,7 +235,7 @@ export class Decimal {
     if (this.num === undefined || value.num === undefined) {
       throw new Error("Missing units on number");
     }
-    return new Decimal(this.num.div(value.num).toString());
+    return new Decimal(this.num.div(value.num).toString(), this.precision);
   }
 
   public add(amount: NumberSource) {
@@ -227,7 +243,7 @@ export class Decimal {
     if (this.num === undefined || value.num === undefined) {
       throw new Error("Missing units on number");
     }
-    return new Decimal(this.num.add(value.num).toString());
+    return new Decimal(this.num.add(value.num).toString(), this.precision);
   }
 
   public sub(amount: NumberSource) {
@@ -235,25 +251,25 @@ export class Decimal {
     if (this.num === undefined || value.num === undefined) {
       throw new Error("Missing units on number");
     }
-    return new Decimal(this.num.sub(value.num).toString());
+    return new Decimal(this.num.sub(value.num).toString(), this.precision);
   }
 
   public neg() {
     if (this.num === undefined) {
       throw new Error("Missing units on number");
     }
-    return new Decimal(this.num.neg().toString());
+    return new Decimal(this.num.neg().toString(), this.precision);
   }
 
   public abs() {
     if (this.num === undefined) {
       throw new Error("Missing units on number");
     }
-    return new Decimal(this.num.abs().toString());
+    return new Decimal(this.num.abs().toString(), this.precision);
   }
 
   private resolve(amount: NumberSource) {
-    return new Decimal(amount);
+    return new Decimal(amount, this.precision);
   }
 
   public toString(numeric: boolean = false) {
