@@ -220,7 +220,7 @@
         aria-labelledby={`journal-group-${group.key}`}
       >
         <div
-          class="grid grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] items-center gap-3 px-5 py-4"
+          class="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-5 py-4"
         >
           <input
             use:setIndeterminate={groupIndeterminate}
@@ -234,21 +234,33 @@
                 (event.currentTarget as HTMLInputElement).checked,
               )}
           />
-          <h2
-            id={`journal-group-${group.key}`}
-            class="truncate text-sm font-semibold tracking-wide text-foreground"
+          <button
+            type="button"
+            class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+            data-journal-group-toggle
+            aria-expanded={expanded}
+            aria-controls={`journal-summary-${group.key}`}
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${groupDate(group)}`}
+            onclick={() => toggleSummary(group.key)}
           >
-            {groupDate(group)}
-            <span class="ml-2 text-muted-foreground"
-              >· {group.records.length}</span
+            <span
+              id={`journal-group-${group.key}`}
+              role="heading"
+              aria-level="2"
+              class="truncate text-sm font-semibold tracking-wide text-foreground"
             >
-          </h2>
-          <span
-            class="hidden max-w-[16rem] truncate text-right text-sm font-semibold tabular-nums sm:block"
-            title={balanceText(group.balance.final)}
-          >
-            {balanceText(group.balance.final)}
-          </span>
+              {groupDate(group)}
+              <span class="ml-2 text-muted-foreground"
+                >· {group.records.length}</span
+              >
+            </span>
+            <span
+              class="hidden max-w-[16rem] shrink-0 truncate text-right text-sm font-semibold tabular-nums sm:block"
+              title={balanceText(group.balance.final)}
+            >
+              {balanceText(group.balance.final)}
+            </span>
+          </button>
           <button
             type="button"
             class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -304,7 +316,7 @@
               role="button"
               tabindex="0"
               class:rounded-b-xl={index === group.records.length - 1}
-              class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-5 py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+              class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
               aria-label={`Edit ${record.title}`}
               onclick={() => openRecord(record)}
               onkeydown={(event) => handleRecordKeydown(event, record)}

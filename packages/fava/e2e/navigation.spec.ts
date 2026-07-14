@@ -83,10 +83,31 @@ test.describe("sample ledger navigation", () => {
     const groupHeader = page
       .locator("[data-journal-table] section > div:first-child")
       .first();
-    await expect(groupHeader).toHaveCSS(
-      "grid-template-columns",
-      /.+ .+ .+ .+ .+/,
-    );
+    await expect(groupHeader).toHaveCSS("grid-template-columns", /.+ .+ .+ .+/);
+
+    const [masterCheckboxX, groupCheckboxX, recordCheckboxX] =
+      await Promise.all([
+        page
+          .getByLabel("Select visible journal records")
+          .evaluate((element) => element.getBoundingClientRect().x),
+        page
+          .locator("[data-journal-table] input[aria-label^='Select all']")
+          .first()
+          .evaluate((element) => element.getBoundingClientRect().x),
+        page
+          .locator("[data-journal-table] [role=button] input[type=checkbox]")
+          .first()
+          .evaluate((element) => element.getBoundingClientRect().x),
+      ]);
+    expect([groupCheckboxX, recordCheckboxX]).toEqual([
+      masterCheckboxX,
+      masterCheckboxX,
+    ]);
+
+    await groupHeader.locator("[data-journal-group-toggle]").click();
+    await expect(page.getByText("Start balance")).not.toBeVisible();
+    await groupHeader.locator("[data-journal-group-toggle]").click();
+    await expect(page.getByText("Start balance")).toBeVisible();
 
     const records = page.locator(
       "[data-journal-table] [role=button][aria-label^='Edit ']",
