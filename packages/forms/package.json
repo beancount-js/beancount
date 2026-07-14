@@ -1,0 +1,13 @@
+{
+  "name": "@beancount-js/forms",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./core": "./src/core.ts"
+  }
+}

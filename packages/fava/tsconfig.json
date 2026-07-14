@@ -1,36 +1,24 @@
 {
-  "extends": "@tsconfig/svelte/tsconfig.json",
+  "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
     "allowJs": true,
-		"checkJs": true,
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"resolveJsonModule": true,
-		"skipLibCheck": true,
-		"sourceMap": true,
-		"strict": true,
+    "checkJs": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
     "useDefineForClassFields": true,
-		"lib": [
-        "DOM",
-        "ES2021"
-    ],
-		"verbatimModuleSyntax": true,
-    "paths": {
-      "$lib": ["./src/lib"],
-      "$lib/*": ["./src/lib/*"]
-    }
+    "verbatimModuleSyntax": true
   },
   "include": [
-		"./src/**/*.js",
-		"./src/**/*.ts",
-		"./src/**/*.svelte",
-		"./tests/**/*.js",
-		"./tests/**/*.ts",
-		"./tests/**/*.svelte",
-  ],
-  "exclude": [
-		"./node_modules/**",
-		"../**/dist/**",
-		"./dist/**"
+    ".svelte-kit/ambient.d.ts",
+    ".svelte-kit/non-ambient.d.ts",
+    ".svelte-kit/types/**/$types.d.ts",
+    "src/app.d.ts",
+    "src/routes/**/*.ts",
+    "src/routes/**/*.svelte",
+    "src/lib/server/**/*.ts"
   ]
 }

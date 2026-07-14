@@ -1,0 +1,12 @@
+{
+  "name": "@beancount-js/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "beancount-js": "./bin/beancount-js.mjs"
+  },
+  "scripts": {
+    "start": "node ./bin/beancount-js.mjs"
+  }
+}

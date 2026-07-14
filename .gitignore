@@ -10,3 +10,6 @@ dist
 .changeyard/bin/
 .changeyard/guards/
 *.timestamp-*.mjs
+packages/fava/.svelte-kit/
+packages/fava/build-server/
+packages/fava/build-web/

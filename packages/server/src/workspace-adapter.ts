@@ -237,11 +237,15 @@ export class FilesystemWorkspaceAdapter implements WorkspaceAdapter {
     return {
       project,
       files,
-      revisions: files.map((file) => ({
-        path: file.path,
-        revision: revision(new TextEncoder().encode(file.contents)),
-        updatedAt: file.updatedAt ?? project.updatedAt,
-      })),
+      revisions: await Promise.all(
+        files.map(async (file) => ({
+          path: file.path,
+          revision: revision(
+            await fs.readFile(this.absolutePath(project.root, file.path)),
+          ),
+          updatedAt: file.updatedAt ?? project.updatedAt,
+        })),
+      ),
     };
   }
 
