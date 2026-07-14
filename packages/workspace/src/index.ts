@@ -44,6 +44,13 @@ export interface ProjectFile {
   size?: number;
 }
 
+export interface ProjectResource {
+  path: string;
+  mimeType: string;
+  size: number;
+  updatedAt?: string;
+}
+
 export interface FileRevision {
   path: string;
   revision: string;
@@ -69,6 +76,8 @@ export interface WorkspaceAdapter<TSession = unknown> {
   saveProject(project: ProjectConfig): Promise<void>;
   readFile(projectId: string, path: string): Promise<ProjectFile>;
   writeFile(projectId: string, file: ProjectFile): Promise<FileRevision>;
+  listResources(projectId: string): Promise<ProjectResource[]>;
+  readResource(projectId: string, path: string): Promise<Uint8Array>;
   readAiSession(
     projectId: string,
     sessionId: string,
