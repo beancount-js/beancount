@@ -30,6 +30,19 @@ export type DocumentLoader = (
   },
 ) => string;
 
+/** A source file supplied by a filesystem, browser directory, or in-memory store. */
+export interface ProjectSource {
+  path: string;
+  contents: string;
+}
+
+export type ProjectSourceMap = Record<string, string>;
+
+export type DocumentIncludeResolver = (
+  parentPath: string,
+  includePath: string,
+) => string;
+
 export function dedent(str: string) {
   const smallestIndent = Math.min(
     ...str
@@ -85,6 +98,7 @@ interface LoadProps {
   logErrors?: DocumentLogger;
 
   documentLoader?: DocumentLoader;
+  includeResolver?: DocumentIncludeResolver;
 }
 
 export type { LoadProps };
@@ -138,6 +152,46 @@ function normPath(path: string): string {
 }
 
 /**
+ * Normalise a path relative to a project root. Absolute paths and paths which
+ * escape that root are rejected so a project cannot load arbitrary files.
+ */
+export function normalizeProjectPath(path: string): string {
+  const input = path.replace(/\\/g, "/");
+  if (!input || input.startsWith("/")) {
+    throw new LoadError(`Project file path must be relative: "${path}"`);
+  }
+  const parts: string[] = [];
+  for (const part of input.split("/")) {
+    if (!part || part === ".") continue;
+    if (part === "..") {
+      if (!parts.length) {
+        throw new LoadError(`Project file path escapes its root: "${path}"`);
+      }
+      parts.pop();
+      continue;
+    }
+    parts.push(part);
+  }
+  if (!parts.length) {
+    throw new LoadError(`Project file path must name a file: "${path}"`);
+  }
+  return parts.join("/");
+}
+
+export function resolveProjectInclude(
+  parentPath: string,
+  includePath: string,
+): string {
+  const parent = normalizeProjectPath(parentPath);
+  const parentDirectory = parent.includes("/")
+    ? parent.slice(0, parent.lastIndexOf("/"))
+    : "";
+  return normalizeProjectPath(
+    parentDirectory ? `${parentDirectory}/${includePath}` : includePath,
+  );
+}
+
+/**
  * Open a Beancount input string, parse it, run transformations and validate.
  * @param contents  A Beancount input string.
  * @param props
@@ -152,11 +206,47 @@ export function loadString(contents: string, props: Partial<LoadProps> = {}) {
   return parseRecursive([[contents, false]], opts);
 }
 
+/**
+ * Parse an entry file plus its recursive includes from a bounded project
+ * source-map. This is intentionally independent from Node's filesystem so the
+ * exact same ledger can run in the server and browser adapters.
+ */
+export function loadProjectSources(
+  entryFile: string,
+  sources: Iterable<ProjectSource> | ProjectSourceMap,
+  props: Partial<LoadProps> = {},
+) {
+  const sourceMap: ProjectSourceMap = {};
+  const records =
+    Symbol.iterator in Object(sources)
+      ? (sources as Iterable<ProjectSource>)
+      : Object.entries(sources as ProjectSourceMap).map(([path, contents]) => ({
+          path,
+          contents,
+        }));
+  for (const source of records) {
+    const path = normalizeProjectPath(source.path);
+    if (path in sourceMap) {
+      throw new LoadError(`Duplicate project source: "${path}"`, { path });
+    }
+    sourceMap[path] = source.contents;
+  }
+  const root = normalizeProjectPath(entryFile);
+  return parseRecursive([[root, true]], {
+    transform: true,
+    plugins: {},
+    dedent: false,
+    ...props,
+    includeResolver: resolveProjectInclude,
+    documentLoader: (filename) => sourceMap[filename],
+  });
+}
+
 export function parseRecursive(
   sources: Array<[string, boolean]> | string,
   props: LoadProps,
 ): [Directives, Array<LedgerError>, BeancountOptions] {
-  const { logTimings, documentLoader } = props;
+  const { logTimings, documentLoader, includeResolver } = props;
   if (typeof sources === "string") {
     return parseRecursive([[sources, false]], props);
   }
@@ -244,7 +334,25 @@ export function parseRecursive(
           }),
       );
 
-      doc.sources.forEach((it) => sourceStack.push([it, true]));
+      doc.sources.forEach((it) => {
+        try {
+          sourceStack.push([
+            includeResolver
+              ? includeResolver(sourceFileName, it)
+              : normPath(it),
+            true,
+          ]);
+        } catch (error) {
+          parseErrors.push(
+            error instanceof LoadError
+              ? error.with({ file: sourceFileName })
+              : new LoadError(`Failed to resolve include "${it}"`, {
+                  file: sourceFileName,
+                  error,
+                }),
+          );
+        }
+      });
 
       parseErrors.push(
         ...doc.errors.map(

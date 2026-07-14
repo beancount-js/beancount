@@ -1,7 +1,13 @@
 export {
   loadString,
+  loadProjectSources,
+  normalizeProjectPath,
+  resolveProjectInclude,
   type LoadProps,
   type DocumentLoader,
+  type DocumentIncludeResolver,
+  type ProjectSource,
+  type ProjectSourceMap,
 } from "./parser/loader";
 export * from "./core";
 export * from "./utils";
