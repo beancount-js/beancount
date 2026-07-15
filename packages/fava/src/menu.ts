@@ -15,6 +15,7 @@ import {
   ChartArea,
   ChartPie,
   Edit,
+  LayoutDashboard,
 } from "lucide-svelte";
 import { urlForAccount } from "./helpers";
 export interface MenuItem {
@@ -26,6 +27,11 @@ export interface MenuItem {
 }
 
 export const MainNav: Array<MenuItem> = [
+  {
+    name: "Dashboard",
+    path: "#/dashboard",
+    icon: LayoutDashboard,
+  },
   {
     name: "Editor",
     path: "#/editor",

@@ -1,0 +1,363 @@
+<script lang="ts">
+  import { ArrowDownRight, ArrowUpRight } from "lucide-svelte";
+  import { conversionLabel, getConversion } from "@beancount-js/beancount";
+
+  import { useContext } from "../context";
+  import { useCtx } from "../stores/format";
+  import ContentScrollArea from "./ContentScrollArea.svelte";
+  import DashboardDonut from "./dashboard/DashboardDonut.svelte";
+  import DashboardFlow from "./dashboard/DashboardFlow.svelte";
+  import DashboardLine from "./dashboard/DashboardLine.svelte";
+  import DashboardSection from "./dashboard/DashboardSection.svelte";
+  import DashboardTreeTable from "./dashboard/DashboardTreeTable.svelte";
+  import {
+    createDashboardData,
+    dashboardCurrencies,
+    dashboardPeriodLabels,
+    type DashboardPeriod,
+  } from "./dashboard/model";
+  import { urlForAccount } from "../helpers";
+
+  const { ledgerData, ledgerOptions, conversion } = useContext();
+  const ctx = useCtx();
+
+  const periods: DashboardPeriod[] = ["ytd", "1y", "3y", "all"];
+  let period: DashboardPeriod = "ytd";
+  let selectedCurrency = "";
+
+  $: currencies = dashboardCurrencies($ledgerData);
+  $: if (!currencies.includes(selectedCurrency)) {
+    selectedCurrency = currencies[0] ?? "";
+  }
+  $: dashboard = createDashboardData(
+    $ledgerData,
+    $ledgerOptions,
+    $conversion,
+    period,
+    selectedCurrency,
+  );
+
+  function updateConversion(event: Event) {
+    conversion.set(
+      getConversion((event.currentTarget as HTMLSelectElement).value),
+    );
+  }
+
+  function updateCurrency(event: Event) {
+    selectedCurrency = (event.currentTarget as HTMLSelectElement).value;
+  }
+</script>
+
+<ContentScrollArea contentClass="scroll-container">
+  <main class="mx-auto w-full max-w-[1440px] px-4 pb-7 pt-5 md:px-6 lg:px-8">
+    <header
+      class="mb-6 flex flex-col gap-4 border-b border-border/80 pb-5 lg:flex-row lg:items-end lg:justify-between"
+    >
+      <div>
+        <p
+          class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+        >
+          Overview
+        </p>
+        <h1 class="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+          Financial dashboard
+        </h1>
+        <p class="mt-1.5 text-sm text-muted-foreground">
+          Actual ledger activity through today, with your active query applied.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <div
+          class="flex rounded-lg border border-border bg-muted/65 p-1"
+          role="tablist"
+          aria-label="Dashboard period"
+        >
+          {#each periods as option}
+            <button
+              class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+              class:bg-background={period === option}
+              class:text-foreground={period === option}
+              class:shadow-sm={period === option}
+              class:text-muted-foreground={period !== option}
+              aria-selected={period === option}
+              role="tab"
+              on:click={() => (period = option)}
+            >
+              {dashboardPeriodLabels[option]}
+            </button>
+          {/each}
+        </div>
+        {#if currencies.length > 1}
+          <select
+            class="h-8 w-24 rounded-md border border-input bg-background px-2 text-xs font-medium shadow-sm outline-none focus:ring-1 focus:ring-ring"
+            aria-label="Display currency"
+            value={dashboard.currency}
+            on:change={updateCurrency}
+          >
+            {#each currencies as currency}
+              <option value={currency}>{currency}</option>
+            {/each}
+          </select>
+        {:else if dashboard.currency}
+          <span
+            class="rounded-md border border-border bg-muted/55 px-3 py-2 font-mono text-xs text-foreground"
+          >
+            {dashboard.currency}
+          </span>
+        {/if}
+        <select
+          class="h-8 w-32 rounded-md border border-input bg-background px-2 text-xs font-medium shadow-sm outline-none focus:ring-1 focus:ring-ring"
+          aria-label="Valuation method"
+          value={$conversion}
+          on:change={updateConversion}
+        >
+          <option value="AT_COST">At Cost</option>
+          <option value="AT_VALUE">At Market Value</option>
+          <option value="UNITS">Units</option>
+        </select>
+      </div>
+    </header>
+
+    <section
+      class="mb-6 grid gap-px overflow-hidden rounded-xl border border-border/80 bg-border/80 sm:grid-cols-2 xl:grid-cols-4"
+      aria-label="Period summary"
+    >
+      <div class="bg-card px-5 py-4">
+        <p
+          class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+        >
+          Income
+        </p>
+        <p
+          class="mt-2 font-mono text-xl font-semibold tabular-nums text-foreground"
+        >
+          {$ctx.amount(dashboard.income, dashboard.currency)}
+        </p>
+      </div>
+      <div class="bg-card px-5 py-4">
+        <p
+          class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+        >
+          Outflows
+        </p>
+        <p
+          class="mt-2 font-mono text-xl font-semibold tabular-nums text-foreground"
+        >
+          {$ctx.amount(dashboard.expenses, dashboard.currency)}
+        </p>
+      </div>
+      <div class="bg-card px-5 py-4">
+        <p
+          class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+        >
+          Net cash flow
+        </p>
+        <p
+          class:positive={dashboard.cashFlow >= 0}
+          class:negative={dashboard.cashFlow < 0}
+          class="mt-2 flex items-center gap-1.5 font-mono text-xl font-semibold tabular-nums"
+        >
+          {#if dashboard.cashFlow >= 0}
+            <ArrowUpRight class="size-4" aria-hidden="true" />
+          {:else}
+            <ArrowDownRight class="size-4" aria-hidden="true" />
+          {/if}
+          {$ctx.amount(dashboard.cashFlow, dashboard.currency)}
+        </p>
+      </div>
+      <div class="bg-card px-5 py-4">
+        <p
+          class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+        >
+          Net worth
+        </p>
+        <p
+          class="mt-2 font-mono text-xl font-semibold tabular-nums text-foreground"
+        >
+          {$ctx.amount(dashboard.netWorth, dashboard.currency)}
+        </p>
+        <p
+          class:positive={dashboard.netWorthChange >= 0}
+          class:negative={dashboard.netWorthChange < 0}
+          class="mt-1 font-mono text-xs tabular-nums"
+        >
+          {$ctx.amount(dashboard.netWorthChange, dashboard.currency)} in this period
+        </p>
+      </div>
+    </section>
+
+    <div class="grid gap-6">
+      <DashboardSection
+        id="dashboard-cash-flow"
+        title="Cash flow"
+        eyebrow={dashboardPeriodLabels[period]}
+      >
+        <DashboardFlow
+          inflows={dashboard.inflows}
+          outflows={dashboard.outflows}
+          currency={dashboard.currency}
+          formatter={$ctx.amount}
+        />
+      </DashboardSection>
+
+      <DashboardSection
+        id="dashboard-outflows"
+        title="Outflows"
+        eyebrow="Where money went"
+      >
+        <div
+          class="grid divide-y divide-border/80 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)] lg:divide-x lg:divide-y-0"
+        >
+          <DashboardDonut
+            categories={dashboard.expenseCategories}
+            currency={dashboard.currency}
+            formatter={$ctx.amount}
+          />
+          <div class="p-4 sm:p-5">
+            <div
+              class="mb-2 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-4 border-b border-border/80 px-2 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+            >
+              <span>Category</span><span>Share</span><span>Value</span>
+            </div>
+            {#if dashboard.expenseCategories.length}
+              {#each dashboard.expenseCategories as category (category.account)}
+                <a
+                  href={category.account === "Other"
+                    ? undefined
+                    : urlForAccount(category.account)}
+                  class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-4 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-muted/65"
+                >
+                  <span class="flex min-w-0 items-center gap-2">
+                    <span
+                      class="size-2.5 shrink-0 rounded-full"
+                      style={`background: ${category.color}`}
+                    ></span>
+                    <span class="truncate font-medium text-foreground"
+                      >{category.label}</span
+                    >
+                  </span>
+                  <span
+                    class="font-mono text-xs tabular-nums text-muted-foreground"
+                  >
+                    {dashboard.expenses
+                      ? ((category.value / dashboard.expenses) * 100).toFixed(1)
+                      : "0.0"}%
+                  </span>
+                  <span class="font-mono text-sm tabular-nums text-foreground"
+                    >{$ctx.amount(category.value, dashboard.currency)}</span
+                  >
+                </a>
+              {/each}
+            {:else}
+              <p class="px-2 py-6 text-sm text-muted-foreground">
+                No outflows match this period.
+              </p>
+            {/if}
+          </div>
+        </div>
+      </DashboardSection>
+
+      <DashboardSection
+        id="dashboard-balance-sheet"
+        title="Balance sheet"
+        eyebrow="Current position"
+      >
+        <div class="grid gap-px bg-border/80 xl:grid-cols-3">
+          <section class="bg-card p-4 sm:p-5">
+            <div class="mb-3 flex items-baseline justify-between gap-3">
+              <h2 class="text-sm font-semibold text-foreground">Assets</h2>
+              <a
+                class="text-xs font-medium text-primary hover:underline"
+                href={urlForAccount($ledgerOptions.beancount.name_assets)}
+                >View account</a
+              >
+            </div>
+            <DashboardTreeTable
+              tree={dashboard.assets}
+              currency={dashboard.currency}
+              formatter={$ctx.amount}
+              label="Balance"
+            />
+          </section>
+          <section class="bg-card p-4 sm:p-5">
+            <div class="mb-3 flex items-baseline justify-between gap-3">
+              <h2 class="text-sm font-semibold text-foreground">Liabilities</h2>
+              <a
+                class="text-xs font-medium text-primary hover:underline"
+                href={urlForAccount($ledgerOptions.beancount.name_liabilities)}
+                >View account</a
+              >
+            </div>
+            <DashboardTreeTable
+              tree={dashboard.liabilities}
+              currency={dashboard.currency}
+              formatter={$ctx.amount}
+              label="Balance"
+            />
+          </section>
+          <section class="bg-card p-4 sm:p-5">
+            <div class="mb-3 flex items-baseline justify-between gap-3">
+              <h2 class="text-sm font-semibold text-foreground">Equity</h2>
+              <a
+                class="text-xs font-medium text-primary hover:underline"
+                href={urlForAccount($ledgerOptions.beancount.name_equity)}
+                >View account</a
+              >
+            </div>
+            <DashboardTreeTable
+              tree={dashboard.equity}
+              currency={dashboard.currency}
+              formatter={$ctx.amount}
+              label="Balance"
+            />
+          </section>
+        </div>
+      </DashboardSection>
+
+      <DashboardSection
+        id="dashboard-net-worth"
+        title="Net worth"
+        eyebrow="Trend"
+      >
+        <div
+          class="border-b border-border/80 px-5 py-4 sm:flex sm:items-end sm:justify-between"
+        >
+          <div>
+            <p
+              class="font-mono text-2xl font-semibold tabular-nums text-foreground"
+            >
+              {$ctx.amount(dashboard.netWorth, dashboard.currency)}
+            </p>
+            <p class="mt-1 text-sm text-muted-foreground">
+              Assets and liabilities, valued {conversionLabel(
+                $conversion,
+              ).toLowerCase()}.
+            </p>
+          </div>
+          <p
+            class:positive={dashboard.netWorthChange >= 0}
+            class:negative={dashboard.netWorthChange < 0}
+            class="mt-2 font-mono text-sm tabular-nums sm:mt-0"
+          >
+            {$ctx.amount(dashboard.netWorthChange, dashboard.currency)} change
+          </p>
+        </div>
+        <DashboardLine
+          points={dashboard.netWorthPoints}
+          currency={dashboard.currency}
+          formatter={$ctx.amount}
+        />
+      </DashboardSection>
+    </div>
+  </main>
+</ContentScrollArea>
+
+<style>
+  .positive {
+    color: hsl(var(--chart-2));
+  }
+
+  .negative {
+    color: hsl(var(--destructive));
+  }
+</style>

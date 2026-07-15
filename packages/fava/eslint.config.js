@@ -13,12 +13,18 @@ const svelte5RestrictedPatterns = [
   },
 ];
 
-/** Rules that assume Svelte 5 runes/snippets; off until legacy components are migrated. */
+/**
+ * Rules that assume Svelte 5 runes/snippets; off until legacy components are
+ * migrated.
+ */
 const legacySvelteRulesOff = {
   "svelte/no-reactive-functions": "off",
   "svelte/no-reactive-literals": "off",
   "svelte/no-reactive-reassign": "off",
   "svelte/require-each-key": "off",
+  // Fava uses its own hash router, so SvelteKit's pathname resolver cannot
+  // resolve internal report links such as `#/account/Assets`.
+  "svelte/no-navigation-without-resolve": "off",
   "svelte/prefer-svelte-reactivity": "off",
   "svelte/infinite-reactive-loop": "off",
   "svelte/no-immutable-reactive-statements": "off",

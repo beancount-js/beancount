@@ -11,6 +11,7 @@
   import Editor from "./components/Editor.svelte";
   import Errors from "./components/errors/Errors.svelte";
   import JournalTable from "./components/JournalTable.svelte";
+  import FinancialDashboard from "./components/FinancialDashboard.svelte";
   import IncomeStatement from "./components/IncomeStatement.svelte";
   import BalanceSheet from "./components/BalanceSheet.svelte";
   import TrialBalance from "./components/TrialBalance.svelte";
@@ -59,6 +60,7 @@
   const navigation = createRouter(
     [
       { path: "/", element: BalanceSheet },
+      { path: "/dashboard", element: FinancialDashboard },
       { path: "/income_statement", element: IncomeStatement },
       { path: "/balance_sheet", element: BalanceSheet },
       { path: "/trial_balance", element: TrialBalance },
