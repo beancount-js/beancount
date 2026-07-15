@@ -21,6 +21,12 @@ export interface PluginType {
   id: string;
   plugin: PluginSpec;
   order: number;
+  /**
+   * Built-in plugins opt out explicitly when they have no configuration
+   * contract. External plugins remain configurable by default, matching
+   * Beancount's raw third-argument plugin API.
+   */
+  supportsConfig?: boolean;
 }
 
 export const Plugins: Record<string, PluginType> = {
@@ -28,25 +34,30 @@ export const Plugins: Record<string, PluginType> = {
     plugin: pad,
     order: 10,
     id: "beancount.ops.pad",
+    supportsConfig: false,
   },
   "beancount.ops.balance": {
     plugin: checkBalance,
     order: 0,
     id: "beancount.ops.balance",
+    supportsConfig: false,
   },
   "beancount.plugins.auto": {
     plugin: autoInsertOpen,
     order: 0,
     id: "beancount.plugins.auto",
+    supportsConfig: false,
   },
   "beancount.plugins.forecast": {
     plugin: forecast,
     order: 0,
     id: "beancount.plugins.forecast",
+    supportsConfig: true,
   },
   "beancount.plugins.creditcard": {
     plugin: creditCard,
     order: 0,
     id: "beancount.plugins.creditcard",
+    supportsConfig: true,
   },
 };

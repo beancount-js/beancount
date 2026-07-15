@@ -109,7 +109,19 @@ export function forecast(
 ): [Directives, Array<ValidationError>] {
   let now: DateTime = DateTime.now();
   const errors: Array<ValidationError> = [];
-  const props = arg ? (forecastSchema.safeParse(arg).data ?? {}) : {};
+  const configuration = arg ? forecastSchema.safeParse(arg) : undefined;
+  if (configuration && !configuration.success) {
+    return [
+      entries,
+      [
+        new ValidationError(
+          `Invalid forecast plugin configuration: ${configuration.error.issues.map((issue) => issue.message).join(", ")}`,
+          { configuration: arg },
+        ),
+      ],
+    ];
+  }
+  const props = configuration?.data ?? {};
 
   if (props.now) {
     now = resolveDate(props.now, now, {

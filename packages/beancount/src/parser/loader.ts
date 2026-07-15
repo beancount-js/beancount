@@ -1,15 +1,15 @@
-import { ZodIssue, ZodIssueCode } from "zod";
+import { ZodIssueCode } from "zod";
+import type { ZodIssue } from "zod";
 import {
-  BeancountOptions,
   beanCountOptionsSchema,
   defaultBeancountOptions,
-  Directives,
   LedgerOption,
   optionKey,
   Plugin,
   Document,
   sorted,
 } from "../core";
+import type { BeancountOptions, Directives } from "../core";
 import {
   Plugins,
   PLUGINS_AUTO,
@@ -44,6 +44,14 @@ export type DocumentIncludeResolver = (
   parentPath: string,
   includePath: string,
 ) => string;
+
+/**
+ * Studio adapters can supply a raw default configuration for declared plugins.
+ * The loader deliberately keeps the values opaque so plugins own their own
+ * configuration format, just as they do in Beancount.
+ */
+export type PluginDefaults = Record<string, string>;
+export type PluginDefaultsResolver = (entries: Directives) => PluginDefaults;
 
 export function dedent(str: string) {
   const smallestIndent = Math.min(
@@ -84,6 +92,8 @@ export class LoadError extends Error implements LedgerError {
 interface LoadProps {
   transform: boolean;
   plugins: Record<string, PluginType>;
+  /** Default raw configuration keyed by declared plugin name. */
+  pluginDefaults?: PluginDefaultsResolver;
   /**
    * A boolean, if set, remove the whitespace in front of the lines.
    */
@@ -486,32 +496,109 @@ export function runTransformations(
   errors.push(...bookingErrors);
   response = updatedEntries;
 
-  const declaredPlugins =
-    options.plugin_processing_mode === "default"
-      ? [PLUGINS_PRE, options.plugin, PLUGINS_AUTO, PLUGINS_POST]
-      : [options.plugin];
+  type PluginInvocation = {
+    name: string;
+    plugin: PluginType;
+    configuration?: string;
+    directive?: Plugin;
+  };
 
-  const plugins: Array<PluginType> = declaredPlugins
-    .map((values) =>
-      values
-        .map((name) => {
-          const plugin = props.plugins[name] ?? Plugins[name];
-          if (!plugin) {
-            errors.push(new LoadError(`Unsupported plugin: ${name}`));
-          }
-          return plugin;
-        })
-        .filter((it) => it)
-        .sort((a, b) => b.order - a.order),
-    )
-    .flat();
+  const pluginDefaults = props.pluginDefaults?.(entries) ?? {};
+  const declaredPluginNames = new Set<string>();
+  const declared: PluginInvocation[] = [];
 
-  plugins.forEach((plugin) => {
-    logTime("beancount.plugin." + plugin.id, props.logTimings, 2, () => {
-      const [updatedEntries, pluginErrors] = plugin.plugin(response, options);
-      response = sorted(updatedEntries);
-      errors.push(...pluginErrors);
+  entries.forEach((entry) => {
+    if (!(entry instanceof Plugin)) return;
+    declaredPluginNames.add(entry.name);
+    const plugin = props.plugins[entry.name] ?? Plugins[entry.name];
+    // Unknown declarations are already reported while loading Beancount options.
+    if (!plugin) return;
+    declared.push({
+      name: entry.name,
+      plugin,
+      configuration:
+        entry.options === undefined
+          ? pluginDefaults[entry.name]
+          : typeof entry.options === "string"
+            ? entry.options
+            : entry.options.code,
+      directive: entry,
     });
+  });
+
+  Object.keys(pluginDefaults).forEach((name) => {
+    if (!declaredPluginNames.has(name)) {
+      errors.push(
+        new LoadError(
+          `Plugin configuration provided for undeclared plugin ${name}`,
+          { plugin: name },
+        ),
+      );
+    }
+  });
+
+  const defaults = (names: string[]): PluginInvocation[] =>
+    names
+      .map((name) => {
+        const plugin = props.plugins[name] ?? Plugins[name];
+        if (!plugin) {
+          errors.push(new LoadError(`Unsupported plugin: ${name}`));
+          return undefined;
+        }
+        return { name, plugin };
+      })
+      .filter((invocation): invocation is PluginInvocation => !!invocation)
+      .sort((a, b) => b.plugin.order - a.plugin.order);
+
+  const invocations =
+    options.plugin_processing_mode === "default"
+      ? [
+          ...defaults(PLUGINS_PRE),
+          ...declared,
+          ...defaults(PLUGINS_AUTO),
+          ...defaults(PLUGINS_POST),
+        ]
+      : declared;
+
+  invocations.forEach((invocation) => {
+    if (
+      invocation.configuration !== undefined &&
+      invocation.plugin.supportsConfig === false
+    ) {
+      errors.push(
+        new LoadError(
+          `Plugin ${invocation.name} does not support configuration`,
+          {
+            directive: invocation.directive,
+            lineno: invocation.directive?.lineno,
+          },
+        ),
+      );
+      return;
+    }
+    logTime(
+      "beancount.plugin." + invocation.plugin.id,
+      props.logTimings,
+      2,
+      () => {
+        const [updatedEntries, pluginErrors] = invocation.plugin.plugin(
+          response,
+          options,
+          invocation.configuration,
+        );
+        response = sorted(updatedEntries);
+        pluginErrors.forEach((error) => {
+          if (invocation.directive) {
+            error.with({
+              plugin: invocation.name,
+              directive: invocation.directive,
+              lineno: invocation.directive.lineno,
+            });
+          }
+          errors.push(error);
+        });
+      },
+    );
   });
 
   errors.push(...validate(response, options));

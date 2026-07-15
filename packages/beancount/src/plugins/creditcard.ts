@@ -1,17 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Decimal } from "@beancount-js/parser";
-import {
-  Amount,
-  Balance,
-  Pad,
-  sorted,
-  Transaction,
-} from "../core";
+import { Amount, Balance, Pad, sorted, Transaction } from "../core";
 import type { BeancountOptions, Directives } from "../core";
 import { ValidationError } from "../ops/validation";
 import { z } from "zod";
 import { LoadError } from "../parser/loader";
-import { decimal } from "../core/options";
+import { decimal, yamlProcessor } from "../core/options";
 import { RRule } from "rrule";
 import { DateTime } from "luxon";
 
@@ -31,6 +25,40 @@ export const creditCardOptions = z.object({
   fixedPayment: decimal.optional(),
   padAccount: z.string().optional(),
 });
+
+/** Configuration for the plugin declaration itself, not transaction metadata. */
+export const creditCardPluginOptions = z
+  .object({
+    tag: z.string().min(1).optional(),
+  })
+  .strict();
+
+const creditCardPluginSchema = z.preprocess(
+  yamlProcessor,
+  creditCardPluginOptions,
+);
+
+function pluginTag(configuration: string | undefined): {
+  tag: string;
+  error?: ValidationError;
+} {
+  if (!configuration) return { tag: "cc" };
+
+  const parsed = creditCardPluginSchema.safeParse(configuration);
+  if (parsed.success) return { tag: parsed.data.tag ?? "cc" };
+
+  // Preserve the original plain-string configuration (`plugin ... "cc"`).
+  // Structured settings are YAML objects and must validate against the schema.
+  if (!/[\n:{\[]/.test(configuration)) return { tag: configuration };
+
+  return {
+    tag: "cc",
+    error: new ValidationError(
+      `Invalid credit-card plugin configuration: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`,
+      { configuration },
+    ),
+  };
+}
 
 export type CreatePaymentScheduleRequest = {
   /** The current credit card balance. e.g., 10000 */
@@ -173,10 +201,12 @@ export const createPaymentSchedule = (
 export function creditCard(
   entries: Directives,
   options: BeancountOptions,
-  tag?: string,
+  configuration?: string,
 ): [Directives, Array<ValidationError>] {
-  const tagName = tag || "cc";
   const errors: Array<ValidationError> = [];
+  const config = pluginTag(configuration);
+  if (config.error) return [entries, [config.error]];
+  const tagName = config.tag;
   const creditCardEntries: Transaction[] = [];
   const filteredEntries: Directives = [];
   const newEntries: Directives = [];

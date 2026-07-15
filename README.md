@@ -25,6 +25,29 @@ pnpm dev
 
 `pnpm dev` starts the Fava UI dev server. The ledger contents persist in `localStorage` under the key `ledger`.
 
+## Plugin configuration
+
+Plugin declarations follow Beancount's standard three-argument contract: the optional second string is passed to the plugin unchanged as its configuration.
+
+```beancount
+plugin "beancount.plugins.forecast" "
+  end: (month)-10
+"
+```
+
+Studio also supports global defaults through `ledger-option`. These seed a declared plugin only when it has no inline configuration; they never enable a plugin on their own.
+
+```beancount
+2024-01-01 custom "ledger-option" "plugins" "
+  beancount.plugins.forecast:
+    end: (month)-10
+"
+
+plugin "beancount.plugins.forecast"
+```
+
+Inline configuration wins over the global default. The built-in forecast plugin accepts `now` and `end`; the credit-card plugin accepts `{ tag: ... }` as YAML and continues to support its legacy plain tag string. The auto-account, pad, and balance plugins do not accept configuration.
+
 ### Useful filters
 
 ```bash

@@ -5,6 +5,7 @@ import {
   loadString,
   resolveProjectInclude,
 } from "./loader";
+import type { PluginType } from "../ops/plugins";
 
 describe("Loader", () => {
   test("loadString", () => {
@@ -97,5 +98,84 @@ describe("Loader", () => {
     expect(() =>
       resolveProjectInclude("main.beancount", "../outside.beancount"),
     ).toThrow('Project file path escapes its root: "../outside.beancount"');
+  });
+
+  test("passes each declared plugin configuration in source order", () => {
+    const configurations: Array<string | undefined> = [];
+    const plugins: Record<string, PluginType> = {
+      "example.plugin": {
+        id: "example.plugin",
+        order: 0,
+        plugin(entries, _options, configuration) {
+          configurations.push(configuration);
+          return [entries, []];
+        },
+      },
+    };
+
+    const [, errors, options] = loadString(
+      `
+        plugin "example.plugin" "first"
+        plugin "example.plugin" "
+          setting: second
+        "
+      `,
+      { dedent: true, plugins },
+    );
+
+    expect(errors).toEqual([]);
+    expect(options.plugin).toEqual(["example.plugin"]);
+    expect(configurations).toHaveLength(2);
+    expect(configurations[0]).toBe("first");
+    expect(configurations[1]).toContain("setting: second");
+  });
+
+  test("uses plugin defaults only when a declaration omits its configuration", () => {
+    const configurations: Array<string | undefined> = [];
+    const plugins: Record<string, PluginType> = {
+      "example.plugin": {
+        id: "example.plugin",
+        order: 0,
+        plugin(entries, _options, configuration) {
+          configurations.push(configuration);
+          return [entries, []];
+        },
+      },
+    };
+
+    const [, errors] = loadString(
+      `
+        plugin "example.plugin"
+        plugin "example.plugin" "inline: value"
+      `,
+      {
+        dedent: true,
+        plugins,
+        pluginDefaults: () => ({ "example.plugin": "default: value" }),
+      },
+    );
+
+    expect(errors).toEqual([]);
+    expect(configurations).toEqual(["default: value", "inline: value"]);
+  });
+
+  test("reports configuration for built-in plugins that do not support it", () => {
+    const [, errors] = loadString(
+      'plugin "beancount.plugins.auto" "unexpected"',
+    );
+
+    expect(errors.map((error) => error.message)).toContain(
+      "Plugin beancount.plugins.auto does not support configuration",
+    );
+  });
+
+  test("reports global configuration that does not declare a plugin", () => {
+    const [, errors] = loadString("", {
+      pluginDefaults: () => ({ "example.plugin": "enabled: true" }),
+    });
+
+    expect(errors.map((error) => error.message)).toContain(
+      "Plugin configuration provided for undeclared plugin example.plugin",
+    );
   });
 });

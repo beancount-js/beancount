@@ -7,6 +7,7 @@ import {
   type Directives,
   type LedgerError,
   type LoadProps,
+  type PluginDefaults,
   type ProjectSource,
   Custom,
   optionKey,
@@ -39,6 +40,7 @@ import {
 } from "@beancount-js/parser";
 import { DateTime } from "luxon";
 import { LedgerData } from "./ledger-data-class";
+import { stringify } from "yaml";
 
 export { LedgerData } from "./ledger-data-class";
 export type { IntervalTree } from "./ledger-data-class";
@@ -190,6 +192,22 @@ export function parseLedgerOptions(
   }
 }
 
+/**
+ * Convert Studio's structured ledger-option plugin defaults back to the raw
+ * configuration string expected by Beancount plugins. A plugin declaration
+ * remains responsible for enabling the plugin; these only seed declarations
+ * that omit an inline configuration.
+ */
+function resolveLedgerPluginDefaults(directives: Directives): PluginDefaults {
+  const [options] = parseLedgerOptions(directives);
+  return Object.fromEntries(
+    Object.entries(options.plugins).map(([name, config]) => [
+      name,
+      stringify(config),
+    ]),
+  );
+}
+
 function extractCurrencies(entity: Posting | Directive): string[] {
   if (entity instanceof Transaction) {
     return entity.postings.map((it) => extractCurrencies(it)).flat();
@@ -218,27 +236,38 @@ export class LedgerSource {
   errors: Array<LedgerError> = [];
   prices!: PriceMap;
 
+  readonly props: Partial<LoadProps>;
+
   constructor(
     contents: string,
-    readonly props: Partial<LoadProps> = {
+    props: Partial<LoadProps> = {
       logTimings: console.log,
     },
   ) {
-    this.apply(loadString(contents, props));
+    this.props = {
+      ...props,
+      pluginDefaults: resolveLedgerPluginDefaults,
+    };
+    this.apply(loadString(contents, this.props));
   }
 
-  /** Build the complete ledger state from an entry file and its project source map. */
+  /**
+   * Build the complete ledger state from an entry file and its project source
+   * map.
+   */
   static fromProject(
     entryFile: string,
     sources: Iterable<ProjectSource> | Record<string, string>,
     props: Partial<LoadProps> = {},
   ) {
     const source = new LedgerSource("", props);
-    source.apply(loadProjectSources(entryFile, sources, props));
+    source.apply(loadProjectSources(entryFile, sources, source.props));
     return source;
   }
 
-  private apply([directives, errors, beancountOptions]: ReturnType<typeof loadString>) {
+  private apply([directives, errors, beancountOptions]: ReturnType<
+    typeof loadString
+  >) {
     const [favaOptions, favaErrors] = parseFavaOptions(directives);
     const [ledgerOptions, ledgerErrors] = parseLedgerOptions(directives);
 
