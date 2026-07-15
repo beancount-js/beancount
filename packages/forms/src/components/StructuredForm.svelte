@@ -11,10 +11,29 @@
   export let onChange: (value: TRoot) => void | Promise<void> = () => {};
 </script>
 
-<div class="cv-structured-form" data-form-id={config.id} data-view={view}>
+<div
+  class="beancount-structured-form cv-structured-form"
+  data-form-id={config.id}
+  data-view={view}
+>
   {#each config.fields as field (field.id)}
-    <FormFieldRenderer root={value} {field} {view} {context} {issues} {readonly} {onChange} />
+    <FormFieldRenderer
+      root={value}
+      {field}
+      {view}
+      {context}
+      {issues}
+      {readonly}
+      {onChange}
+    />
   {/each}
 </div>
 
-<style>.cv-structured-form { display: grid; gap: .75rem; min-width: 0; }</style>
+<style>
+  .beancount-structured-form,
+  .cv-structured-form {
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+</style>

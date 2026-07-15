@@ -6,11 +6,25 @@
   "peerDependencies": {
     "svelte": "^5.0.0"
   },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.18.3",
+    "@codemirror/commands": "^6.7.1",
+    "@codemirror/lang-json": "^6.0.1",
+    "@codemirror/lang-yaml": "^6.1.1",
+    "@codemirror/language": "^6.10.3",
+    "@codemirror/lint": "^6.8.3",
+    "@codemirror/search": "^6.5.8",
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/view": "^6.35.0",
+    "@lezer/highlight": "^1.2.1"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./core": "./src/core.ts",
     "./components/StructuredForm.svelte": "./src/components/StructuredForm.svelte",
     "./components/FormViewRenderer.svelte": "./src/components/FormViewRenderer.svelte",
-    "./components/YamlBackedForm.svelte": "./src/components/YamlBackedForm.svelte"
+    "./components/YamlBackedForm.svelte": "./src/components/YamlBackedForm.svelte",
+    "./components/CodeEditor.svelte": "./src/components/CodeEditor.svelte",
+    "./components/JsonBackedForm.svelte": "./src/components/JsonBackedForm.svelte"
   }
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ArrowLeft from "lucide-svelte/icons/arrow-left";
   import ChevronRight from "lucide-svelte/icons/chevron-right";
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
@@ -6,6 +7,7 @@
   import Folder from "lucide-svelte/icons/folder";
   import FolderTree from "lucide-svelte/icons/folder-tree";
   import Hash from "lucide-svelte/icons/hash";
+  import ImportIcon from "lucide-svelte/icons/import";
   import List from "lucide-svelte/icons/list";
   import ListFilter from "lucide-svelte/icons/list-filter";
   import ShieldX from "lucide-svelte/icons/shield-x";
@@ -53,7 +55,7 @@
   const ledgerData = useLedger();
   const { router } = useNavigation();
   const { activeRoute } = router;
-  const { snapshot, activeFile } = useStudioWorkspace();
+  const { snapshot, activeFile, ledgerSidebarMode } = useStudioWorkspace();
 
   let workspaceView: WorkspaceView = initialState.view ?? "ledgers";
   let tagsViewMode: TagsViewMode = initialState.tagsViewMode ?? "tree";
@@ -74,6 +76,20 @@
   ) {
     activeFile.set(selectedRouteLedger);
     expandedFilePaths = { ...expandedFilePaths, [selectedRouteLedger]: true };
+  }
+  $: selectedLedger = files.find((file) => file.path === $activeFile);
+  $: if (!selectedLedger && $ledgerSidebarMode === "settings") {
+    ledgerSidebarMode.set("workspace");
+  }
+  $: if (
+    $ledgerSidebarMode === "settings" &&
+    selectedLedger &&
+    !isFileExpanded(selectedLedger.path)
+  ) {
+    expandedFilePaths = {
+      ...expandedFilePaths,
+      [selectedLedger.path]: true,
+    };
   }
   $: menuItems = getMenu();
   $: tagSummaries = createLedgerTagSummaries(files);
@@ -195,6 +211,20 @@
     activeFile.set(path);
     expandedFilePaths = { ...expandedFilePaths, [path]: true };
     router.push(ledgerPanelPath(path, panel.path));
+  }
+
+  function closeLedgerSettings() {
+    ledgerSidebarMode.set("workspace");
+  }
+
+  function openLedgerSetting(panelPath: string) {
+    if (!selectedLedger) return;
+    activeFile.set(selectedLedger.path);
+    router.push(ledgerPanelPath(selectedLedger.path, panelPath));
+  }
+
+  function isLedgerSettingActive(panelPath: string) {
+    return panelPath.slice(1).split("?", 1)[0] === $activeRoute.path;
   }
 
   function ledgerPanelPath(ledgerPath: string, panelPath: string) {
@@ -325,309 +355,369 @@
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col gap-3">
-  <div class="flex items-center justify-between gap-2 px-2">
-    <p class="text-xs font-medium uppercase text-muted-foreground">Ledgers</p>
-    <span class="text-xs tabular-nums text-muted-foreground"
-      >{files.length}</span
+  {#if $ledgerSidebarMode === "settings" && selectedLedger}
+    <div
+      class="flex min-h-0 flex-1 flex-col gap-3"
+      data-ledger-settings-sidebar
     >
-  </div>
+      <div class="flex items-center gap-2 px-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          class="size-7 shrink-0"
+          aria-label="Back to ledger navigation"
+          title="Back to ledger navigation"
+          onclick={closeLedgerSettings}
+        >
+          <ArrowLeft />
+        </Button>
+        <div class="min-w-0">
+          <p class="text-xs font-medium uppercase text-muted-foreground">
+            Settings
+          </p>
+          <p class="truncate text-xs font-medium text-sidebar-foreground">
+            {ledgerFileLabel(selectedLedger)}
+          </p>
+        </div>
+      </div>
 
-  <div
-    class="grid grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-1"
-    aria-label="Ledger navigation views"
-  >
-    {#each [{ id: "ledgers", label: "Ledgers" }, { id: "folders", label: "Folders" }, { id: "tags", label: "Tags" }] as view (view.id)}
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        class={cn(
-          "h-7 text-xs",
-          workspaceView === view.id
-            ? "border border-sidebar-border bg-background shadow-sm hover:bg-background"
-            : "hover:bg-background",
-        )}
-        aria-pressed={workspaceView === view.id}
-        onclick={() => (workspaceView = view.id as WorkspaceView)}
-      >
-        {view.label}
-      </Button>
-    {/each}
-  </div>
-
-  {#if workspaceView === "ledgers"}
-    <div class="flex items-center gap-1">
-      <label class="relative min-w-0 flex-1">
-        <ListFilter
-          class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          bind:value={ledgerQuery}
-          placeholder="Search ledgers"
-          class="h-8 bg-sidebar pl-8 text-xs"
-        />
-      </label>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        class="size-7"
-        aria-label={hasCollapsedFiles()
-          ? "Expand all ledgers"
-          : "Collapse all ledgers"}
-        title={hasCollapsedFiles()
-          ? "Expand all ledgers"
-          : "Collapse all ledgers"}
-        disabled={!visibleLedgerFiles.length}
-        onclick={toggleAllFiles}
-      >
-        {#if hasCollapsedFiles()}
-          <ChevronsUpDown data-icon />
-        {:else}
-          <ChevronsDownUp data-icon />
-        {/if}
-      </Button>
-    </div>
-
-    {#if selectedTags.length}
-      <div
-        class="flex flex-wrap items-center gap-1 rounded-md border border-sidebar-border bg-background/55 p-1.5 text-xs text-muted-foreground"
-        aria-label="Selected tag filters"
-      >
-        {#each selectedTags as tag (tag)}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            class="h-6 max-w-full gap-1 rounded-full px-2 text-[11px] text-primary hover:bg-primary/10"
-            aria-label={`Remove #${tag} filter`}
-            onclick={() => removeTag(tag)}
-          >
-            <Hash data-icon="inline-start" />
-            <span class="truncate">{tag}</span>
-            <X data-icon="inline-end" />
-          </Button>
-        {/each}
+      <div class="flex min-h-0 flex-1 flex-col gap-1">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          class="ml-auto h-6 px-2 text-[11px]"
-          onclick={() => (selectedTags = [])}
+          class={cn(
+            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+            isLedgerSettingActive("#/records")
+              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+          )}
+          aria-current={isLedgerSettingActive("#/records") ? "page" : undefined}
+          onclick={() => openLedgerSetting("#/records")}
         >
-          Clear
+          <ImportIcon data-icon="inline-start" />
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-medium">Import</span>
+            <span class="block truncate text-[11px] text-muted-foreground"
+              >Review imported records and sources</span
+            >
+          </span>
         </Button>
       </div>
-    {/if}
-
-    <ScrollArea.Root
-      class="-mr-2 min-h-0 min-w-0 flex-1"
-      data-ledger-scroll-area
-    >
-      <div
-        class="flex min-w-0 flex-col gap-1 overflow-x-hidden pr-4"
-        data-ledger-list
-      >
-        {#each visibleLedgerFiles as file (file.path)}
-          {@render LedgerFileRow({ file, depth: 0 })}
-        {:else}
-          <p class="px-2 text-xs text-muted-foreground">
-            {ledgerQuery.trim() || selectedTags.length
-              ? "No ledgers match the current filter."
-              : "No ledger files found."}
-          </p>
-        {/each}
-
-        {#if queries.length || accounts.length || $snapshot?.resources.length}
-          <div
-            class="mt-2 flex flex-col gap-2 border-t border-sidebar-border pt-3"
-          >
-            <p class="px-2 text-xs font-medium uppercase text-muted-foreground">
-              Ledger tools
-            </p>
-            {#if queries.length}
-              <ComboBox
-                items={queries}
-                placeholder="Select query"
-                value={$activeRoute.query["qs"] ?? ""}
-                onValueChange={navigateToQuery}
-              >
-                {#snippet trigger({ props, value: label, hasSelection })}
-                  <Button
-                    {...props}
-                    size="sm"
-                    variant="ghost"
-                    role="combobox"
-                    class="w-full justify-start"
-                  >
-                    <span
-                      class="truncate"
-                      class:text-muted-foreground={!hasSelection}>{label}</span
-                    >
-                  </Button>
-                {/snippet}
-              </ComboBox>
-            {/if}
-            {#if accounts.length}
-              <ComboBox
-                items={accounts}
-                groups={[accountGroups]}
-                value={$activeRoute.params["account"] ?? ""}
-                placeholder="Select account"
-                onValueChange={navigateToAccount}
-              >
-                {#snippet trigger({ props, value: label, hasSelection })}
-                  <Button
-                    {...props}
-                    size="sm"
-                    variant="ghost"
-                    role="combobox"
-                    class="w-full justify-start"
-                  >
-                    <span
-                      class="truncate"
-                      class:text-muted-foreground={!hasSelection}>{label}</span
-                    >
-                  </Button>
-                {/snippet}
-              </ComboBox>
-            {/if}
-            {#each $snapshot?.resources ?? [] as resource (resource.path)}
-              <Button
-                variant="ghost"
-                size="sm"
-                class="w-full justify-start"
-                onclick={() => openResource(resource.path)}
-              >
-                <Sparkles data-icon="inline-start" />
-                <span class="truncate">{resource.path}</span>
-              </Button>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    </ScrollArea.Root>
-  {:else if workspaceView === "folders"}
-    <div class="flex items-center gap-1">
-      <label class="relative min-w-0 flex-1">
-        <ListFilter
-          class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          bind:value={folderQuery}
-          placeholder="Search folders"
-          class="h-8 bg-sidebar pl-8 text-xs"
-        />
-      </label>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        class="size-7"
-        aria-label={hasCollapsedFolders
-          ? "Expand all filesystem folders"
-          : "Collapse all filesystem folders"}
-        title={hasCollapsedFolders
-          ? "Expand all filesystem folders"
-          : "Collapse all filesystem folders"}
-        disabled={!expandableFolderIds.length}
-        onclick={toggleAllFolders}
-      >
-        {#if hasCollapsedFolders}
-          <ChevronsUpDown data-icon />
-        {:else}
-          <ChevronsDownUp data-icon />
-        {/if}
-      </Button>
     </div>
-
-    <ScrollArea.Root
-      class="-mr-2 min-h-0 min-w-0 flex-1"
-      data-folder-scroll-area
-    >
-      <div
-        class="flex min-w-0 flex-col gap-1 overflow-x-hidden pr-4"
-        data-folder-list
-      >
-        {#if folderTree}
-          {@render FolderNode({ node: folderTree })}
-        {:else}
-          <p class="px-2 text-xs text-muted-foreground">
-            No folders match the current filter.
-          </p>
-        {/if}
-      </div>
-    </ScrollArea.Root>
   {:else}
-    <div class="flex items-center gap-1">
-      <label class="relative min-w-0 flex-1">
-        <ListFilter
-          class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          bind:value={tagQuery}
-          placeholder="Search tags"
-          class="h-8 bg-sidebar pl-8 text-xs"
-        />
-      </label>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        class="size-7 shrink-0 border border-sidebar-border bg-background shadow-sm hover:bg-background"
-        aria-label={tagsViewMode === "tree"
-          ? "Showing tag hierarchy. Switch to flat tags."
-          : "Showing flat tags. Switch to tag hierarchy."}
-        title={tagsViewMode === "tree"
-          ? "Showing tag hierarchy. Switch to flat tags."
-          : "Showing flat tags. Switch to tag hierarchy."}
-        aria-pressed={tagsViewMode === "tree"}
-        onclick={() =>
-          (tagsViewMode = tagsViewMode === "tree" ? "flat" : "tree")}
+    <div class="flex items-center justify-between gap-2 px-2">
+      <p class="text-xs font-medium uppercase text-muted-foreground">Ledgers</p>
+      <span class="text-xs tabular-nums text-muted-foreground"
+        >{files.length}</span
       >
-        {#if tagsViewMode === "tree"}
-          <FolderTree data-icon />
-        {:else}
-          <List data-icon />
-        {/if}
-      </Button>
     </div>
 
-    <ScrollArea.Root class="-mr-2 min-h-0 min-w-0 flex-1" data-tags-scroll-area>
-      <div
-        class="flex min-w-0 flex-col gap-1 overflow-x-hidden pr-4"
-        data-tags-list
-      >
-        {#if tagsViewMode === "tree"}
-          {#each tagTree as node (node.tag)}
-            {@render TagTreeNode({ node })}
+    <div
+      class="grid grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-1"
+      aria-label="Ledger navigation views"
+    >
+      {#each [{ id: "ledgers", label: "Ledgers" }, { id: "folders", label: "Folders" }, { id: "tags", label: "Tags" }] as view (view.id)}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          class={cn(
+            "h-7 text-xs",
+            workspaceView === view.id
+              ? "border border-sidebar-border bg-background shadow-sm hover:bg-background"
+              : "hover:bg-background",
+          )}
+          aria-pressed={workspaceView === view.id}
+          onclick={() => (workspaceView = view.id as WorkspaceView)}
+        >
+          {view.label}
+        </Button>
+      {/each}
+    </div>
+
+    {#if workspaceView === "ledgers"}
+      <div class="flex items-center gap-1">
+        <label class="relative min-w-0 flex-1">
+          <ListFilter
+            class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            bind:value={ledgerQuery}
+            placeholder="Search ledgers"
+            class="h-8 bg-sidebar pl-8 text-xs"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          class="size-7"
+          aria-label={hasCollapsedFiles()
+            ? "Expand all ledgers"
+            : "Collapse all ledgers"}
+          title={hasCollapsedFiles()
+            ? "Expand all ledgers"
+            : "Collapse all ledgers"}
+          disabled={!visibleLedgerFiles.length}
+          onclick={toggleAllFiles}
+        >
+          {#if hasCollapsedFiles()}
+            <ChevronsUpDown data-icon />
           {:else}
-            <p class="px-2 text-xs text-muted-foreground">
-              No tags match the current filter.
-            </p>
-          {/each}
-        {:else}
-          {#each filteredTags as tag (tag.tag)}
+            <ChevronsDownUp data-icon />
+          {/if}
+        </Button>
+      </div>
+
+      {#if selectedTags.length}
+        <div
+          class="flex flex-wrap items-center gap-1 rounded-md border border-sidebar-border bg-background/55 p-1.5 text-xs text-muted-foreground"
+          aria-label="Selected tag filters"
+        >
+          {#each selectedTags as tag (tag)}
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              class="h-8 w-full min-w-0 justify-start gap-2 px-2 text-xs text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
-              title={`#${tag.tag}`}
-              onclick={() => selectTag(tag.tag)}
+              class="h-6 max-w-full gap-1 rounded-full px-2 text-[11px] text-primary hover:bg-primary/10"
+              aria-label={`Remove #${tag} filter`}
+              onclick={() => removeTag(tag)}
             >
               <Hash data-icon="inline-start" />
-              <span class="min-w-0 flex-1 truncate text-left">{tag.tag}</span>
-              <span class="text-[10px] tabular-nums">{tag.fileCount}</span>
+              <span class="truncate">{tag}</span>
+              <X data-icon="inline-end" />
             </Button>
+          {/each}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            class="ml-auto h-6 px-2 text-[11px]"
+            onclick={() => (selectedTags = [])}
+          >
+            Clear
+          </Button>
+        </div>
+      {/if}
+
+      <ScrollArea.Root
+        class="-mr-2 min-h-0 min-w-0 flex-1"
+        data-ledger-scroll-area
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1 overflow-x-hidden pr-4"
+          data-ledger-list
+        >
+          {#each visibleLedgerFiles as file (file.path)}
+            {@render LedgerFileRow({ file, depth: 0 })}
           {:else}
             <p class="px-2 text-xs text-muted-foreground">
-              No tags match the current filter.
+              {ledgerQuery.trim() || selectedTags.length
+                ? "No ledgers match the current filter."
+                : "No ledger files found."}
             </p>
           {/each}
-        {/if}
+
+          {#if queries.length || accounts.length || $snapshot?.resources.length}
+            <div
+              class="mt-2 flex flex-col gap-2 border-t border-sidebar-border pt-3"
+            >
+              <p
+                class="px-2 text-xs font-medium uppercase text-muted-foreground"
+              >
+                Ledger tools
+              </p>
+              {#if queries.length}
+                <ComboBox
+                  items={queries}
+                  placeholder="Select query"
+                  value={$activeRoute.query["qs"] ?? ""}
+                  onValueChange={navigateToQuery}
+                >
+                  {#snippet trigger({ props, value: label, hasSelection })}
+                    <Button
+                      {...props}
+                      size="sm"
+                      variant="ghost"
+                      role="combobox"
+                      class="w-full justify-start"
+                    >
+                      <span
+                        class="truncate"
+                        class:text-muted-foreground={!hasSelection}
+                        >{label}</span
+                      >
+                    </Button>
+                  {/snippet}
+                </ComboBox>
+              {/if}
+              {#if accounts.length}
+                <ComboBox
+                  items={accounts}
+                  groups={[accountGroups]}
+                  value={$activeRoute.params["account"] ?? ""}
+                  placeholder="Select account"
+                  onValueChange={navigateToAccount}
+                >
+                  {#snippet trigger({ props, value: label, hasSelection })}
+                    <Button
+                      {...props}
+                      size="sm"
+                      variant="ghost"
+                      role="combobox"
+                      class="w-full justify-start"
+                    >
+                      <span
+                        class="truncate"
+                        class:text-muted-foreground={!hasSelection}
+                        >{label}</span
+                      >
+                    </Button>
+                  {/snippet}
+                </ComboBox>
+              {/if}
+              {#each $snapshot?.resources ?? [] as resource (resource.path)}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="w-full justify-start"
+                  onclick={() => openResource(resource.path)}
+                >
+                  <Sparkles data-icon="inline-start" />
+                  <span class="truncate">{resource.path}</span>
+                </Button>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      </ScrollArea.Root>
+    {:else if workspaceView === "folders"}
+      <div class="flex items-center gap-1">
+        <label class="relative min-w-0 flex-1">
+          <ListFilter
+            class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            bind:value={folderQuery}
+            placeholder="Search folders"
+            class="h-8 bg-sidebar pl-8 text-xs"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          class="size-7"
+          aria-label={hasCollapsedFolders
+            ? "Expand all filesystem folders"
+            : "Collapse all filesystem folders"}
+          title={hasCollapsedFolders
+            ? "Expand all filesystem folders"
+            : "Collapse all filesystem folders"}
+          disabled={!expandableFolderIds.length}
+          onclick={toggleAllFolders}
+        >
+          {#if hasCollapsedFolders}
+            <ChevronsUpDown data-icon />
+          {:else}
+            <ChevronsDownUp data-icon />
+          {/if}
+        </Button>
       </div>
-    </ScrollArea.Root>
+
+      <ScrollArea.Root
+        class="-mr-2 min-h-0 min-w-0 flex-1"
+        data-folder-scroll-area
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1 overflow-x-hidden pr-4"
+          data-folder-list
+        >
+          {#if folderTree}
+            {@render FolderNode({ node: folderTree })}
+          {:else}
+            <p class="px-2 text-xs text-muted-foreground">
+              No folders match the current filter.
+            </p>
+          {/if}
+        </div>
+      </ScrollArea.Root>
+    {:else}
+      <div class="flex items-center gap-1">
+        <label class="relative min-w-0 flex-1">
+          <ListFilter
+            class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            bind:value={tagQuery}
+            placeholder="Search tags"
+            class="h-8 bg-sidebar pl-8 text-xs"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          class="size-7 shrink-0 border border-sidebar-border bg-background shadow-sm hover:bg-background"
+          aria-label={tagsViewMode === "tree"
+            ? "Showing tag hierarchy. Switch to flat tags."
+            : "Showing flat tags. Switch to tag hierarchy."}
+          title={tagsViewMode === "tree"
+            ? "Showing tag hierarchy. Switch to flat tags."
+            : "Showing flat tags. Switch to tag hierarchy."}
+          aria-pressed={tagsViewMode === "tree"}
+          onclick={() =>
+            (tagsViewMode = tagsViewMode === "tree" ? "flat" : "tree")}
+        >
+          {#if tagsViewMode === "tree"}
+            <FolderTree data-icon />
+          {:else}
+            <List data-icon />
+          {/if}
+        </Button>
+      </div>
+
+      <ScrollArea.Root
+        class="-mr-2 min-h-0 min-w-0 flex-1"
+        data-tags-scroll-area
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1 overflow-x-hidden pr-4"
+          data-tags-list
+        >
+          {#if tagsViewMode === "tree"}
+            {#each tagTree as node (node.tag)}
+              {@render TagTreeNode({ node })}
+            {:else}
+              <p class="px-2 text-xs text-muted-foreground">
+                No tags match the current filter.
+              </p>
+            {/each}
+          {:else}
+            {#each filteredTags as tag (tag.tag)}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="h-8 w-full min-w-0 justify-start gap-2 px-2 text-xs text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
+                title={`#${tag.tag}`}
+                onclick={() => selectTag(tag.tag)}
+              >
+                <Hash data-icon="inline-start" />
+                <span class="min-w-0 flex-1 truncate text-left">{tag.tag}</span>
+                <span class="text-[10px] tabular-nums">{tag.fileCount}</span>
+              </Button>
+            {:else}
+              <p class="px-2 text-xs text-muted-foreground">
+                No tags match the current filter.
+              </p>
+            {/each}
+          {/if}
+        </div>
+      </ScrollArea.Root>
+    {/if}
   {/if}
 </div>
 

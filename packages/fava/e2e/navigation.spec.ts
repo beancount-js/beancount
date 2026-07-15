@@ -58,6 +58,40 @@ test.describe("sample ledger navigation", () => {
     ).toHaveAttribute("aria-current", "page");
   });
 
+  test("moves Import into the selected ledger settings sidebar", async ({
+    page,
+  }) => {
+    await openEditor(page);
+    await waitForEditorContent(page, "Account Ledger");
+
+    const settingsButton = page.getByRole("button", {
+      name: "Ledger settings",
+    });
+    await expect(settingsButton).toBeVisible();
+    await settingsButton.click();
+
+    const settingsSidebar = page.locator("[data-ledger-settings-sidebar]");
+    await expect(settingsSidebar).toBeVisible();
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Import/ }),
+    ).toBeVisible();
+    await expect(page.locator("[data-ledger-file-panels]")).toHaveCount(0);
+
+    await settingsSidebar.getByRole("button", { name: /Import/ }).click();
+    await expect(page).toHaveURL(/#\/records\?ledger=.+$/);
+
+    await page
+      .getByRole("button", { name: "Back to ledger navigation" })
+      .click();
+    await expect(page.locator("[data-ledger-settings-sidebar]")).toHaveCount(0);
+    await expect(
+      page.locator("[data-ledger-file-panels]").first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Import", exact: true }),
+    ).toHaveCount(0);
+  });
+
   test("loads report data for the ledger selected in the URL", async ({
     page,
   }) => {

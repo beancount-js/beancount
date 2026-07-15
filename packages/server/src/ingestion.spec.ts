@@ -67,6 +67,88 @@ describe("FilesystemIngestionStore", () => {
     expect(await store.readConfig("project")).toEqual(config());
   });
 
+  test("round-trips the full JSON API source configuration", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-test-"),
+    );
+    directories.push(directory);
+    const store = new FilesystemIngestionStore(directory);
+    const full = config();
+    full.sources[0] = {
+      ...full.sources[0],
+      destinationPath: "imports/bank.beancount",
+      defaultCurrency: "GBP",
+      allowedAccountRoots: ["Expenses", "Assets"],
+      aiEnabled: true,
+      merchantEnrichment: {
+        enabled: true,
+        aiEnabled: true,
+        countryCode: "gb",
+        brandfetch: {
+          enabled: true,
+          apiKeySecretRef: "env:BRANDFETCH_API_KEY",
+          clientId: "  test-client  ",
+          allowNameSearch: true,
+          allowTransactionLookup: true,
+          assetMode: "cache",
+          cacheContentAllowed: true,
+          ttlDays: 14,
+        },
+      },
+      api: {
+        endpoint: "https://api.example.test/transactions",
+        allowedHosts: [" API.EXAMPLE.TEST "],
+        secretRef: "env:BANK_API_TOKEN",
+        recordsPath: "payload.records",
+        query: { account: "current" },
+        pagination: {
+          cursorQueryParam: "cursor",
+          nextCursorPath: "next.cursor",
+        },
+      },
+      mapping: {
+        id: "id",
+        date: "posted_at",
+        amount: "value.amount",
+        currency: "value.currency",
+        merchant: "merchant.name",
+        payee: "payee",
+        narration: "description",
+        status: "status",
+        dateFormat: "yyyy-MM-dd",
+        amountSign: "invert",
+      },
+      rules: [
+        {
+          merchant: "Coffee shop",
+          merchantId: "merchant:coffee-shop",
+          account: "Expenses:Food:Coffee",
+          sourceAccount: "Assets:Bank:Checking",
+          direction: "debit",
+        },
+      ],
+    };
+
+    await store.writeConfig("project", full);
+
+    await expect(store.readConfig("project")).resolves.toEqual({
+      version: 1,
+      sources: [
+        expect.objectContaining({
+          ...full.sources[0],
+          allowedAccountRoots: ["Expenses", "Assets"],
+          api: expect.objectContaining({
+            allowedHosts: ["api.example.test"],
+          }),
+          merchantEnrichment: expect.objectContaining({
+            countryCode: "GB",
+            brandfetch: expect.objectContaining({ clientId: "test-client" }),
+          }),
+        }),
+      ],
+    });
+  });
+
   test("rejects non-local HTTP endpoints before a run can use a credential", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-test-"),

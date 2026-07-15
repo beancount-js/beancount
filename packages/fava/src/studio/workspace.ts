@@ -9,9 +9,12 @@ export type InlineAiRequest = {
   toLine: number;
 };
 
+export type LedgerSidebarMode = "workspace" | "settings";
+
 export interface StudioWorkspaceContext {
   snapshot: Writable<ProjectSnapshot | undefined>;
   activeFile: Writable<string>;
+  ledgerSidebarMode: Writable<LedgerSidebarMode>;
   saveFile: (path: string, contents: string) => Promise<void>;
   resourceUrl: (path: string) => Promise<{ url: string; mimeType: string; revoke?: () => void }>;
   requestInlineAi: (request: InlineAiRequest) => void;
@@ -27,6 +30,7 @@ export function createStudioWorkspace(
   return {
     snapshot: writable<ProjectSnapshot | undefined>(),
     activeFile: writable(""),
+    ledgerSidebarMode: writable<LedgerSidebarMode>("workspace"),
     saveFile,
     resourceUrl,
     requestInlineAi,

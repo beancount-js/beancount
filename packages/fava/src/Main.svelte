@@ -92,7 +92,7 @@
   const utilityPageTitles: Record<string, string> = {
     "/errors": "Errors",
     "/records": "Import",
-    "/import/editor": "Import Editor",
+    "/import/editor": "Sources",
     "/directives": "Editor",
     "/resource": "Resource",
     "/404": "Page not found",

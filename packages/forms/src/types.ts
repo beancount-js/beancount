@@ -42,19 +42,49 @@ export type FormFieldRenderArgs<TRoot, TContext, TValue> = {
   updateRoot: (value: TRoot) => void | Promise<void>;
 };
 
-export type FormRendererProps<TRoot, TContext, TValue> = FormFieldRenderArgs<TRoot, TContext, TValue> & Record<string, unknown>;
-export type FormCustomRenderer<TRoot, TContext, TValue> = Component<FormRendererProps<TRoot, TContext, TValue>>;
+export type FormRendererProps<TRoot, TContext, TValue> = FormFieldRenderArgs<
+  TRoot,
+  TContext,
+  TValue
+> &
+  Record<string, unknown>;
+export type FormCustomRenderer<TRoot, TContext, TValue> = Component<
+  FormRendererProps<TRoot, TContext, TValue>
+>;
 export type FormRendererDescriptor<TRoot, TContext, TValue> = {
   component: FormCustomRenderer<TRoot, TContext, TValue>;
   wrapper?: "field" | "none";
   interactive?: boolean;
   align?: FormFieldAlign;
   as?: FormFieldWrapper;
-  props?: Record<string, unknown> | ((args: FormFieldRenderArgs<TRoot, TContext, TValue>) => Record<string, unknown>);
+  props?:
+    | Record<string, unknown>
+    | ((
+        args: FormFieldRenderArgs<TRoot, TContext, TValue>,
+      ) => Record<string, unknown>);
 };
-export type FormRendererMap<TRoot, TContext, TValue> = Partial<Record<FormViewName | "default", FormRendererDescriptor<TRoot, TContext, TValue>>>;
-export type FormOptionSource<TRoot, TContext, TValue> = FormOption[] | ((args: Pick<FormFieldRenderArgs<TRoot, TContext, TValue>, "root" | "value" | "field" | "context">) => FormOption[]);
-export type FormStringSource<TRoot, TContext, TValue> = string[] | ((args: Pick<FormFieldRenderArgs<TRoot, TContext, TValue>, "root" | "value" | "field" | "context">) => string[]);
+export type FormRendererMap<TRoot, TContext, TValue> = Partial<
+  Record<
+    FormViewName | "default",
+    FormRendererDescriptor<TRoot, TContext, TValue>
+  >
+>;
+export type FormOptionSource<TRoot, TContext, TValue> =
+  | FormOption[]
+  | ((
+      args: Pick<
+        FormFieldRenderArgs<TRoot, TContext, TValue>,
+        "root" | "value" | "field" | "context"
+      >,
+    ) => FormOption[]);
+export type FormStringSource<TRoot, TContext, TValue> =
+  | string[]
+  | ((
+      args: Pick<
+        FormFieldRenderArgs<TRoot, TContext, TValue>,
+        "root" | "value" | "field" | "context"
+      >,
+    ) => string[]);
 
 export type FormFieldConfig<TRoot, TContext = undefined, TValue = unknown> = {
   id: string;
@@ -88,4 +118,15 @@ export type FormConfig<TRoot, TContext = undefined> = {
   defaultView?: FormViewName;
 };
 
-export type YamlBackedFormConfig<TRoot, TContext = undefined> = FormConfig<TRoot, TContext> & { yamlLabel?: string };
+export type YamlBackedFormConfig<TRoot, TContext = undefined> = FormConfig<
+  TRoot,
+  TContext
+> & { yamlLabel?: string };
+
+/** A structured form that can switch to an authoritative JSON source draft. */
+export type JsonBackedFormConfig<TRoot, TContext = undefined> = FormConfig<
+  TRoot,
+  TContext
+> & {
+  jsonLabel?: string;
+};
