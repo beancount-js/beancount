@@ -125,17 +125,24 @@ test.describe("sample ledger navigation", () => {
     expect([...new Set(postingColumns)]).toHaveLength(1);
     expect(postingColumns[0]).toMatch(/128px$/);
     const accountTextAlignments = await page
-      .locator("[data-journal-posting] > span:first-child")
+      .locator("[data-journal-posting] > a:first-child")
       .evaluateAll((elements) =>
         elements.map((element) => getComputedStyle(element).textAlign),
       );
     expect([...new Set(accountTextAlignments)]).toEqual(["left"]);
+    const accountLink = page.locator("[data-journal-posting] a").first();
+    await expect(accountLink).toHaveText(/^(Assets|Liabilities):/);
     await records.first().click();
     await expect(
       page.getByRole("heading", { name: "Edit transaction" }),
     ).toBeVisible();
     await expect(page).toHaveURL(/#\/journal\?ledger=.+&record=.+$/);
     await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Edit transaction" }),
+    ).not.toBeVisible();
+    await accountLink.click();
+    await expect(page).toHaveURL(/#\/account\/.+$/);
     await expect(
       page.getByRole("heading", { name: "Edit transaction" }),
     ).not.toBeVisible();

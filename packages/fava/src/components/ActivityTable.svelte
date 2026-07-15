@@ -137,6 +137,10 @@
     event.stopPropagation();
   }
 
+  function stopRowKeydown(event: KeyboardEvent) {
+    event.stopPropagation();
+  }
+
   function balanceText(balance: Record<string, number>) {
     const entries = orderedBalanceEntries(balance, $operatingCurrency);
     return entries.length
@@ -441,6 +445,7 @@
                           class="truncate text-left text-xs text-muted-foreground hover:text-primary hover:underline"
                           href={urlForAccount(posting.account)}
                           onclick={stopRowClick}
+                          onkeydown={stopRowKeydown}
                           title={posting.account}>{posting.account}</a
                         >
                       {:else}

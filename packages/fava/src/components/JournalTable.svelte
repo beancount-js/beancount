@@ -25,4 +25,5 @@
   amountHeading="Amount"
   balanceDescription="Shows the net worth balance for this date"
   emptyMessage="No dated records match the current Journal filter."
+  linkAccounts={true}
 />
