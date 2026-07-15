@@ -78,7 +78,7 @@ test.describe("sample ledger navigation", () => {
     await expect(page.locator("[data-ledger-file-panels]")).toHaveCount(0);
 
     await settingsSidebar.getByRole("button", { name: /Import/ }).click();
-    await expect(page).toHaveURL(/#\/records\?ledger=.+$/);
+    await expect(page).toHaveURL(/#\/import\/editor\?ledger=.+$/);
 
     await page
       .getByRole("button", { name: "Back to ledger navigation" })

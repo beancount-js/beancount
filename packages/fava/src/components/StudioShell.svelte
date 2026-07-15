@@ -23,6 +23,7 @@
     textField,
   } from "@beancount-js/forms";
   import StudioShellHeader from "./StudioShellHeader.svelte";
+  import IngestionHeaderActions from "./IngestionHeaderActions.svelte";
 
   export let projects: ProjectSummary[] = [];
   export let snapshot: ProjectSnapshot | undefined;
@@ -167,6 +168,7 @@
         <Sidebar.Header class="gap-3">
           <StudioShellHeader
             projectName={snapshot?.project.name ?? "Loading project"}
+            onOpenLedgerSettings={() => (tab = "workspace")}
           />
           <div
             class="grid w-full grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
@@ -377,7 +379,13 @@
         >
           {pageTitle}
         </span>
-        <div class="ml-auto flex shrink-0 items-center gap-1">
+        <div class="ml-auto flex shrink-0 items-center gap-2">
+          <div
+            data-slot="studio-workspace-header-actions"
+            class="flex min-w-0 items-center gap-2"
+          >
+            <IngestionHeaderActions />
+          </div>
           <Button
             variant="ghost"
             size="icon"

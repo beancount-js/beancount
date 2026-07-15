@@ -78,9 +78,6 @@
     expandedFilePaths = { ...expandedFilePaths, [selectedRouteLedger]: true };
   }
   $: selectedLedger = files.find((file) => file.path === $activeFile);
-  $: if (!selectedLedger && $ledgerSidebarMode === "settings") {
-    ledgerSidebarMode.set("workspace");
-  }
   $: if (
     $ledgerSidebarMode === "settings" &&
     selectedLedger &&
@@ -218,9 +215,10 @@
   }
 
   function openLedgerSetting(panelPath: string) {
-    if (!selectedLedger) return;
-    activeFile.set(selectedLedger.path);
-    router.push(ledgerPanelPath(selectedLedger.path, panelPath));
+    const ledgerPath = selectedLedger?.path ?? files[0]?.path;
+    if (!ledgerPath) return;
+    activeFile.set(ledgerPath);
+    router.push(ledgerPanelPath(ledgerPath, panelPath));
   }
 
   function isLedgerSettingActive(panelPath: string) {
@@ -355,7 +353,7 @@
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col gap-3">
-  {#if $ledgerSidebarMode === "settings" && selectedLedger}
+  {#if $ledgerSidebarMode === "settings"}
     <div
       class="flex min-h-0 flex-1 flex-col gap-3"
       data-ledger-settings-sidebar
@@ -376,9 +374,6 @@
           <p class="text-xs font-medium uppercase text-muted-foreground">
             Settings
           </p>
-          <p class="truncate text-xs font-medium text-sidebar-foreground">
-            {ledgerFileLabel(selectedLedger)}
-          </p>
         </div>
       </div>
 
@@ -389,18 +384,23 @@
           size="sm"
           class={cn(
             "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("#/records")
+            isLedgerSettingActive("#/import/editor") ||
+              isLedgerSettingActive("#/records")
               ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
               : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
           )}
-          aria-current={isLedgerSettingActive("#/records") ? "page" : undefined}
-          onclick={() => openLedgerSetting("#/records")}
+          aria-current={isLedgerSettingActive("#/import/editor") ||
+          isLedgerSettingActive("#/records")
+            ? "page"
+            : undefined}
+          disabled={files.length === 0}
+          onclick={() => openLedgerSetting("#/import/editor")}
         >
           <ImportIcon data-icon="inline-start" />
           <span class="min-w-0 flex-1">
             <span class="block text-xs font-medium">Import</span>
             <span class="block truncate text-[11px] text-muted-foreground"
-              >Review imported records and sources</span
+              >Configure sources and review imports</span
             >
           </span>
         </Button>

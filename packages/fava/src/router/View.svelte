@@ -1,9 +1,10 @@
 <script lang="ts">
   import { afterUpdate } from "svelte";
   import { useNavigation } from "./router";
-  const {
-    router: { activeRoute, navigating },
-  } = useNavigation();
+
+  const { activeRoute, router } = useNavigation();
+  const { navigating } = router;
+
   afterUpdate(() => {
     setTimeout(() => navigating.set(null));
   });
@@ -13,5 +14,7 @@
   <p>Loading...</p>
 {/if}
 {#if $activeRoute.element}
-  <svelte:component this={$activeRoute.element} {...$activeRoute.params} />
+  {#key $activeRoute.path}
+    <svelte:component this={$activeRoute.element} {...$activeRoute.params} />
+  {/key}
 {/if}

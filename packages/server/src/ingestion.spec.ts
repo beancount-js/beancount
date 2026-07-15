@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import {
   categoryAccountsForSource,
+  expandIngestionSource,
   FilesystemIngestionStore,
   merchantAdvisorLabel,
   type IngestionConfig,
@@ -177,6 +178,107 @@ describe("FilesystemIngestionStore", () => {
         "Income:Salary",
       ]),
     ).toEqual(["Expenses:Food:Groceries"]);
+  });
+
+  test("persists grouped connections and expands per linked account", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-test-"),
+    );
+    directories.push(directory);
+    const store = new FilesystemIngestionStore(directory);
+    const grouped: IngestionConfig = {
+      version: 1,
+      sources: [
+        {
+          id: "lunchflow",
+          name: "Lunch Flow",
+          kind: "json-api",
+          api: {
+            baseUrl: "https://lunchflow.app/api/v1",
+            allowedHosts: ["lunchflow.app"],
+            secretRef: "env:LUNCHFLOW_API_KEY",
+            authScheme: "x-api-key",
+            recordsPath: "transactions",
+          },
+          mapping: {
+            id: "id",
+            date: "date",
+            amount: "amount",
+            merchant: "merchant",
+            narration: "description",
+            status: "isPending",
+          },
+          accounts: [
+            {
+              id: "42",
+              name: "Current",
+              sourceAccount: "Assets:Bank:Current",
+              defaultCurrency: "GBP",
+            },
+            {
+              id: "99",
+              name: "Amex",
+              sourceAccount: "Liabilities:Credit:Amex",
+              defaultCurrency: "GBP",
+            },
+          ],
+          rules: [],
+        },
+      ],
+    };
+
+    await store.writeConfig("project", grouped);
+    const persisted = await store.readConfig("project");
+    expect(persisted.sources[0].api.baseUrl).toBe(
+      "https://lunchflow.app/api/v1",
+    );
+    expect(persisted.sources[0].api.endpoint).toBeUndefined();
+    expect(persisted.sources[0].accounts).toHaveLength(2);
+
+    const targets = expandIngestionSource(persisted.sources[0]);
+    expect(targets.map((target) => target.sourceId)).toEqual([
+      "lunchflow:42",
+      "lunchflow:99",
+    ]);
+    expect(targets[0].api.endpoint).toBe(
+      "https://lunchflow.app/api/v1/accounts/42/transactions",
+    );
+    expect(
+      categoryAccountsForSource(persisted.sources[0], [
+        "Assets:Bank:Current",
+        "Liabilities:Credit:Amex",
+        "Expenses:Food",
+      ]),
+    ).toEqual(["Expenses:Food"]);
+  });
+
+  test("rejects grouped sources without linked accounts", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-test-"),
+    );
+    directories.push(directory);
+    const store = new FilesystemIngestionStore(directory);
+
+    await expect(
+      store.writeConfig("project", {
+        version: 1,
+        sources: [
+          {
+            id: "lunchflow",
+            name: "Lunch Flow",
+            kind: "json-api",
+            api: {
+              baseUrl: "https://lunchflow.app/api/v1",
+              allowedHosts: ["lunchflow.app"],
+              secretRef: "env:LUNCHFLOW_API_KEY",
+            },
+            mapping: { date: "date", amount: "amount" },
+            accounts: [],
+            rules: [],
+          },
+        ],
+      }),
+    ).rejects.toThrow("at least one linked account");
   });
 
   test("persists confirmed merchants as Markdown profiles and resolves source aliases", async () => {

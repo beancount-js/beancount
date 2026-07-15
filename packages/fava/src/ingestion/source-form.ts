@@ -1,5 +1,7 @@
 import type { FormValidationIssue } from "@beancount-js/forms";
+import { isGroupedJsonApiSource } from "@beancount-js/beangulp";
 import type { IngestionConfigResponse, IngestionSource } from "./types";
+import { isEnvSecretNameValid, isSecretConfigured } from "./secret-ref";
 import { parse, stringify } from "yaml";
 
 export type EditableIngestionSource = Omit<
@@ -22,6 +24,11 @@ export const exampleIngestionConfig: EditableIngestionConfig = {
       sourceAccount: "Assets:Bank:Checking",
       defaultCurrency: "GBP",
       aiEnabled: false,
+      setup: [
+        "1. Go to [api.example.com](https://api.example.com) and create an API key.",
+        "2. Paste the API key below (or switch to Environment and enter a variable name) and connect.",
+        "3. Then head to Review imports to fetch and categorise.",
+      ].join("\n"),
       merchantEnrichment: {
         enabled: true,
         aiEnabled: false,
@@ -118,16 +125,25 @@ export function parseEditableIngestionConfig(
       if (item.kind !== "json-api") {
         throw new Error(`Source ${index + 1} kind must be json-api.`);
       }
-      for (const key of ["id", "name", "sourceAccount"]) {
+      for (const key of ["id", "name"]) {
         if (typeof item[key] !== "string") {
           throw new Error(`Source ${index + 1} ${key} must be a string.`);
         }
       }
+      const grouped = Array.isArray(item.accounts);
+      if (!grouped && typeof item.sourceAccount !== "string") {
+        throw new Error(`Source ${index + 1} sourceAccount must be a string.`);
+      }
       const api = asRecord(item.api, `Source ${index + 1} api`);
-      for (const key of ["endpoint", "secretRef"]) {
-        if (typeof api[key] !== "string") {
-          throw new Error(`Source ${index + 1} api.${key} must be a string.`);
+      if (typeof api.secretRef !== "string") {
+        throw new Error(`Source ${index + 1} api.secretRef must be a string.`);
+      }
+      if (grouped) {
+        if (typeof api.baseUrl !== "string") {
+          throw new Error(`Source ${index + 1} api.baseUrl must be a string.`);
         }
+      } else if (typeof api.endpoint !== "string") {
+        throw new Error(`Source ${index + 1} api.endpoint must be a string.`);
       }
       const mapping = asRecord(item.mapping, `Source ${index + 1} mapping`);
       for (const key of ["date", "amount"]) {
@@ -139,6 +155,23 @@ export function parseEditableIngestionConfig(
       }
       if (!Array.isArray(item.rules)) {
         throw new Error(`Source ${index + 1} rules must be an array.`);
+      }
+      if (grouped) {
+        for (const [accountIndex, account] of (
+          item.accounts as unknown[]
+        ).entries()) {
+          const row = asRecord(
+            account,
+            `Source ${index + 1} account ${accountIndex + 1}`,
+          );
+          for (const key of ["id", "name", "sourceAccount"]) {
+            if (typeof row[key] !== "string") {
+              throw new Error(
+                `Source ${index + 1} account ${accountIndex + 1} ${key} must be a string.`,
+              );
+            }
+          }
+        }
       }
       const {
         credentialAvailable: _credentialAvailable,
@@ -196,6 +229,44 @@ function isLocalHttp(url: URL) {
   );
 }
 
+function validateUrlField(
+  value: string,
+  allowedHosts: readonly string[] | undefined,
+  fieldId: string,
+  sourceIndex: number,
+  issues: FormValidationIssue[],
+) {
+  const field = (id: string, message: string): FormValidationIssue => ({
+    fieldId: id,
+    path: `sources.${sourceIndex}.${id}`,
+    message,
+    severity: "error",
+  });
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" && !isLocalHttp(url)) {
+      issues.push(
+        field(fieldId, "Use HTTPS, except for localhost development."),
+      );
+    }
+    if (
+      allowedHosts?.length &&
+      !allowedHosts.some(
+        (host) => host.trim().toLowerCase() === url.hostname.toLowerCase(),
+      )
+    ) {
+      issues.push(
+        field(
+          "api.allowedHosts",
+          "The endpoint host must be in the allowlist.",
+        ),
+      );
+    }
+  } catch {
+    issues.push(field(fieldId, "Enter a valid API URL."));
+  }
+}
+
 function sourceIssues(
   source: EditableIngestionSource,
   sourceIndex: number,
@@ -207,6 +278,7 @@ function sourceIssues(
     severity: "error",
   });
   const issues: FormValidationIssue[] = [];
+  const grouped = isGroupedJsonApiSource(source);
 
   if (!source.id?.trim())
     issues.push(field("id", "A source identifier is required."));
@@ -217,42 +289,85 @@ function sourceIssues(
   }
   if (!source.name?.trim())
     issues.push(field("name", "A source name is required."));
-  if (!source.sourceAccount?.trim()) {
-    issues.push(field("sourceAccount", "A source account is required."));
-  }
-  if (!source.api?.endpoint?.trim()) {
-    issues.push(field("api.endpoint", "An API endpoint is required."));
+
+  if (grouped) {
+    if (!source.api?.baseUrl?.trim()) {
+      issues.push(field("api.baseUrl", "A base API URL is required."));
+    } else {
+      validateUrlField(
+        source.api.baseUrl,
+        source.api.allowedHosts,
+        "api.baseUrl",
+        sourceIndex,
+        issues,
+      );
+    }
+    if (!source.accounts?.length) {
+      issues.push(
+        field(
+          "accounts",
+          "Add at least one linked account to this connection.",
+        ),
+      );
+    } else {
+      const seen = new Set<string>();
+      source.accounts.forEach((account, accountIndex) => {
+        const prefix = `accounts.${accountIndex}`;
+        if (!account.id?.trim()) {
+          issues.push(field(`${prefix}.id`, "An account id is required."));
+        } else if (!/^[a-zA-Z0-9_-]+$/.test(account.id)) {
+          issues.push(
+            field(
+              `${prefix}.id`,
+              "Use letters, numbers, hyphens, and underscores only.",
+            ),
+          );
+        } else if (seen.has(account.id)) {
+          issues.push(
+            field(`${prefix}.id`, "Linked account identifiers must be unique."),
+          );
+        } else {
+          seen.add(account.id);
+        }
+        if (!account.name?.trim()) {
+          issues.push(field(`${prefix}.name`, "An account name is required."));
+        }
+        if (!account.sourceAccount?.trim()) {
+          issues.push(
+            field(
+              `${prefix}.sourceAccount`,
+              "A Beancount source account is required.",
+            ),
+          );
+        }
+      });
+    }
   } else {
-    try {
-      const endpoint = new URL(source.api.endpoint);
-      if (endpoint.protocol !== "https:" && !isLocalHttp(endpoint)) {
-        issues.push(
-          field("api.endpoint", "Use HTTPS, except for localhost development."),
-        );
-      }
-      if (
-        source.api.allowedHosts?.length &&
-        !source.api.allowedHosts.some(
-          (host) =>
-            host.trim().toLowerCase() === endpoint.hostname.toLowerCase(),
-        )
-      ) {
-        issues.push(
-          field(
-            "api.allowedHosts",
-            "The endpoint host must be in the allowlist.",
-          ),
-        );
-      }
-    } catch {
-      issues.push(field("api.endpoint", "Enter a valid API URL."));
+    if (!source.sourceAccount?.trim()) {
+      issues.push(field("sourceAccount", "A source account is required."));
+    }
+    if (!source.api?.endpoint?.trim()) {
+      issues.push(field("api.endpoint", "An API endpoint is required."));
+    } else {
+      validateUrlField(
+        source.api.endpoint,
+        source.api.allowedHosts,
+        "api.endpoint",
+        sourceIndex,
+        issues,
+      );
     }
   }
-  if (!source.api?.secretRef?.startsWith("env:")) {
+
+  if (!isSecretConfigured(source.api?.secretRef)) {
+    issues.push(
+      field("api.secretRef", "Enter an API key or environment variable name."),
+    );
+  } else if (!isEnvSecretNameValid(source.api.secretRef)) {
     issues.push(
       field(
         "api.secretRef",
-        "Use an environment secret reference such as env:BANK_API_TOKEN.",
+        "Environment variable names may use letters, numbers, and underscores.",
       ),
     );
   }
@@ -273,13 +388,22 @@ function sourceIssues(
     );
   }
   const brandfetch = enrichment?.brandfetch;
-  if (brandfetch?.enabled && !brandfetch.apiKeySecretRef?.startsWith("env:")) {
-    issues.push(
-      field(
-        "merchantEnrichment.brandfetch.apiKeySecretRef",
-        "Brandfetch needs an env: API key reference.",
-      ),
-    );
+  if (brandfetch?.enabled) {
+    if (!isSecretConfigured(brandfetch.apiKeySecretRef)) {
+      issues.push(
+        field(
+          "merchantEnrichment.brandfetch.apiKeySecretRef",
+          "Enter a Brandfetch API key or environment variable name.",
+        ),
+      );
+    } else if (!isEnvSecretNameValid(brandfetch.apiKeySecretRef)) {
+      issues.push(
+        field(
+          "merchantEnrichment.brandfetch.apiKeySecretRef",
+          "Environment variable names may use letters, numbers, and underscores.",
+        ),
+      );
+    }
   }
   if (brandfetch?.assetMode === "cache" && !brandfetch.cacheContentAllowed) {
     issues.push(
@@ -352,10 +476,22 @@ export function newIngestionSource(
     name: "New source",
     kind: "json-api",
     sourceAccount: "",
-    api: { endpoint: "", secretRef: "env:" },
+    api: { endpoint: "", secretRef: "" },
     mapping: { date: "", amount: "" },
     rules: [],
   };
+}
+
+export function sourceFromSample(
+  template: EditableIngestionSource,
+  sources: readonly EditableIngestionSource[],
+): EditableIngestionSource {
+  const copy = clone(template);
+  const taken = new Set(sources.map((source) => source.id));
+  if (!copy.id || taken.has(copy.id)) {
+    copy.id = sourceIdForNewSource(sources);
+  }
+  return copy;
 }
 
 export function duplicateIngestionSource(

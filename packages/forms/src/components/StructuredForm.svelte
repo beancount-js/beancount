@@ -8,11 +8,13 @@
   export let context: TContext;
   export let issues: FormValidationIssue[] = [];
   export let readonly = false;
+  export let embedded = false;
   export let onChange: (value: TRoot) => void | Promise<void> = () => {};
 </script>
 
 <div
   class="beancount-structured-form cv-structured-form"
+  class:beancount-structured-form--embedded={embedded}
   data-form-id={config.id}
   data-view={view}
 >
@@ -33,7 +35,12 @@
   .beancount-structured-form,
   .cv-structured-form {
     display: grid;
-    gap: 0.75rem;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: var(--beancount-form-control-column-gap, 1rem);
     min-width: 0;
+  }
+
+  .beancount-structured-form--embedded {
+    display: contents;
   }
 </style>

@@ -6,15 +6,12 @@
   import { useStudioWorkspace } from "../studio/workspace";
 
   export let projectName = "No project";
+  export let onOpenLedgerSettings: (() => void) | undefined = undefined;
 
-  const { snapshot, activeFile, ledgerSidebarMode } = useStudioWorkspace();
-
-  $: selectedLedger = $snapshot?.ledgerFiles.find(
-    (file) => file.path === $activeFile,
-  );
+  const { ledgerSidebarMode } = useStudioWorkspace();
 
   function openLedgerSettings() {
-    if (!selectedLedger) return;
+    onOpenLedgerSettings?.();
     ledgerSidebarMode.set("settings");
   }
 </script>
@@ -29,20 +26,19 @@
     <p class="truncate text-sm font-semibold leading-tight">Beancount Studio</p>
     <p class="truncate text-xs text-muted-foreground">{projectName}</p>
   </div>
-  {#if selectedLedger}
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      class="size-8 shrink-0"
-      aria-label="Ledger settings"
-      title="Ledger settings"
-      data-ledger-settings-toggle
-      onclick={openLedgerSettings}
-    >
-      <Settings />
-    </Button>
-  {/if}
+  <Button
+    type="button"
+    variant="ghost"
+    size="icon"
+    class="size-8 shrink-0"
+    aria-label="Ledger settings"
+    title="Ledger settings"
+    data-ledger-settings-toggle
+    aria-pressed={$ledgerSidebarMode === "settings"}
+    onclick={openLedgerSettings}
+  >
+    <Settings />
+  </Button>
   <Sidebar.Trigger
     class="size-8 md:hidden"
     aria-label="Close sidebar"

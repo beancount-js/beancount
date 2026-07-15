@@ -1,66 +1,101 @@
 <script lang="ts">
   import {
+    FormAddButton,
     YamlBackedForm,
     type FormValidationIssue,
   } from "@beancount-js/forms";
-  import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
-  import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
-  import Copy from "lucide-svelte/icons/copy";
   import FileCode2 from "lucide-svelte/icons/file-code-2";
   import Plus from "lucide-svelte/icons/plus";
-  import Trash2 from "lucide-svelte/icons/trash-2";
-  import { Button } from "$lib/components/ui/button";
+  import { onDestroy } from "svelte";
   import * as Alert from "$lib/components/ui/alert";
   import * as Empty from "$lib/components/ui/empty";
-  import { Switch } from "$lib/components/ui/switch";
+  import { useNavigation } from "../router/router";
+  import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import {
+    ingestionSamples,
+    type IngestionSample,
+  } from "../ingestion/samples";
+  import { isGroupedJsonApiSource } from "@beancount-js/beangulp";
+  import {
     duplicateIngestionSource,
     editableIngestionConfig,
-    exampleIngestionConfig,
     newIngestionSource,
     parseEditableIngestionYaml,
     serializeEditableIngestionYaml,
+    sourceFromSample,
+    sourceIdForNewSource,
     validateEditableIngestionConfig,
     type EditableIngestionConfig,
     type EditableIngestionSource,
   } from "../ingestion/source-form";
   import type { IngestionConfigResponse } from "../ingestion/types";
+  import IngestionConnectWizard from "./IngestionConnectWizard.svelte";
   import IngestionSourceForm, {
-    sourceFormSections,
+    sourceFormSectionIds,
   } from "./IngestionSourceForm.svelte";
+  import IngestionSourcesPreview from "./IngestionSourcesPreview.svelte";
 
-  const { snapshot } = useStudioWorkspace();
+  const { snapshot, activeFile } = useStudioWorkspace();
+  const { router } = useNavigation();
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
 
   type EditorMode = "form" | "yaml";
+  type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
 
-  let config: EditableIngestionConfig | undefined;
-  let loadedConfig: IngestionConfigResponse | undefined;
-  let yamlText = "";
-  let yamlError = "";
-  let status = "";
-  let selectedSourceIndex = -1;
-  let mode: EditorMode = "form";
-  let loadedProjectId = "";
-  let saving = false;
-  let openSourceSections: string[] = [...sourceFormSections];
+  let config = $state<EditableIngestionConfig | undefined>(undefined);
+  let loadedConfig = $state<IngestionConfigResponse | undefined>(undefined);
+  let yamlText = $state("");
+  let yamlError = $state("");
+  let status = $state("");
+  let mode = $state<EditorMode>("form");
+  let previewMode = $state(true);
+  let loadedProjectId = $state("");
+  let saving = $state(false);
+  let saveState = $state<SaveState>("idle");
+  let saveTimer: number | null = null;
+  /** Open section ids keyed by source index. Missing key = fully expanded. */
+  let openBySourceIndex = $state<Record<number, string[]>>({});
+  let connectSample = $state<IngestionSample | undefined>(undefined);
 
-  $: selectedSource =
-    selectedSourceIndex >= 0 ? config?.sources[selectedSourceIndex] : undefined;
-  $: selectedServerSource = loadedConfig?.sources.find(
-    (source) => source.id === selectedSource?.id,
+  const validationIssues = $derived(
+    config ? validateEditableIngestionConfig(config) : [],
   );
-  $: validationIssues = config ? validateEditableIngestionConfig(config) : [];
-  $: selectedIssues = validationIssues.filter((issue) =>
-    issue.path?.startsWith(`sources.${selectedSourceIndex}.`),
+  const existingAccountIds = $derived(
+    (config?.sources ?? []).flatMap((source) =>
+      isGroupedJsonApiSource(source)
+        ? (source.accounts ?? []).map((account) => account.id)
+        : [],
+    ),
+  );
+  const sectionsCollapsedAll = $derived(
+    config
+      ? config.sources.some((source, index) => {
+          const expected = sourceFormSectionIds(
+            source.rules?.length ?? 0,
+            isGroupedJsonApiSource(source),
+          );
+          const open = openBySourceIndex[index] ?? expected;
+          return open.length !== expected.length;
+        })
+      : false,
+  );
+  const saveHint = $derived(
+    saveState === "dirty"
+      ? "Unsaved changes…"
+      : saveState === "saving"
+        ? "Saving…"
+        : saveState === "saved"
+          ? "Saved"
+          : saveState === "error"
+            ? "Save failed"
+            : "",
   );
 
   async function load() {
     if (!$snapshot || isWeb) return;
     try {
-      const priorSourceId = config?.sources[selectedSourceIndex]?.id;
       const response = await ingestionJson<IngestionConfigResponse>(
         ingestionPath($snapshot.project.id),
       );
@@ -68,79 +103,157 @@
       loadedConfig = response;
       config = draft;
       yamlText = serializeEditableIngestionYaml(draft);
-      selectedSourceIndex = draft.sources.findIndex(
-        (source) => source.id === priorSourceId,
-      );
-      if (selectedSourceIndex < 0)
-        selectedSourceIndex = draft.sources.length ? 0 : -1;
+      expandAllSections(draft.sources);
       loadedProjectId = $snapshot.project.id;
       yamlError = "";
+      saveState = "idle";
       status =
-        "Credentials use environment references such as env:BANK_API_TOKEN; token values are never saved here.";
+        "API keys can be stored inline in the local config, or referenced from the environment as env:NAME.";
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
+      saveState = "error";
     }
   }
 
-  function selectSource(index: number) {
-    selectedSourceIndex = index;
-    mode = "form";
-    yamlError = "";
-    openSourceSections = [...sourceFormSections];
+  function expandAllSections(sources: EditableIngestionSource[]) {
+    const next: Record<number, string[]> = {};
+    sources.forEach((source, index) => {
+      next[index] = sourceFormSectionIds(
+        source.rules?.length ?? 0,
+        isGroupedJsonApiSource(source),
+      );
+    });
+    openBySourceIndex = next;
   }
 
-  function updateSelectedSource(next: EditableIngestionSource) {
-    if (!config || selectedSourceIndex < 0) return;
+  function collapseAllSections() {
+    if (!config) return;
+    const next: Record<number, string[]> = {};
+    config.sources.forEach((_, index) => {
+      next[index] = [];
+    });
+    openBySourceIndex = next;
+  }
+
+  function openSectionsFor(
+    index: number,
+    ruleCount: number,
+    grouped = false,
+  ) {
+    return (
+      openBySourceIndex[index] ?? sourceFormSectionIds(ruleCount, grouped)
+    );
+  }
+
+  function setOpenSectionsFor(index: number, sections: string[]) {
+    openBySourceIndex = { ...openBySourceIndex, [index]: sections };
+  }
+
+  function remapOpenSectionsAfterRemove(removedIndex: number) {
+    const next: Record<number, string[]> = {};
+    for (const [key, value] of Object.entries(openBySourceIndex)) {
+      const index = Number(key);
+      if (!Number.isInteger(index)) continue;
+      if (index < removedIndex) next[index] = value;
+      else if (index > removedIndex) next[index - 1] = value;
+    }
+    openBySourceIndex = next;
+  }
+
+  function updateSource(index: number, next: EditableIngestionSource) {
+    if (!config) return;
     config = {
       ...config,
-      sources: config.sources.map((source, index) =>
-        index === selectedSourceIndex ? next : source,
+      sources: config.sources.map((source, sourceIndex) =>
+        sourceIndex === index ? next : source,
       ),
     };
+    scheduleSave();
   }
 
   function addSource() {
     if (!config) return;
     const source = newIngestionSource(config.sources);
+    const index = config.sources.length;
     config = { ...config, sources: [...config.sources, source] };
-    selectedSourceIndex = config.sources.length - 1;
     mode = "form";
-    openSourceSections = [...sourceFormSections];
-  }
-
-  function duplicateSource() {
-    if (!config || !selectedSource) return;
-    const source = duplicateIngestionSource(selectedSource, config.sources);
-    config = { ...config, sources: [...config.sources, source] };
-    selectedSourceIndex = config.sources.length - 1;
-    mode = "form";
-    openSourceSections = [...sourceFormSections];
-  }
-
-  function removeSource() {
-    if (!config || selectedSourceIndex < 0 || !selectedSource) return;
-    if (
-      !confirm(
-        `Remove ${selectedSource.name}? This only changes the local draft until you save.`,
-      )
-    )
-      return;
-    const sources = config.sources.filter(
-      (_, index) => index !== selectedSourceIndex,
+    setOpenSectionsFor(
+      index,
+      sourceFormSectionIds(
+        source.rules?.length ?? 0,
+        isGroupedJsonApiSource(source),
+      ),
     );
-    config = { ...config, sources };
-    selectedSourceIndex = Math.min(selectedSourceIndex, sources.length - 1);
+    scheduleSave();
   }
 
-  function useExample() {
-    config = structuredClone(exampleIngestionConfig);
-    selectedSourceIndex = config.sources.length ? 0 : -1;
-    yamlText = serializeEditableIngestionYaml(config);
-    yamlError = "";
+  function connectSampleDirect(sample: IngestionSample) {
+    if (!config) return;
+    const source = sourceFromSample(sample.template, config.sources);
+    appendConnectedSource(source);
+  }
+
+  function openConnectProvider(sample: IngestionSample) {
+    if (!sample.provider) {
+      connectSampleDirect(sample);
+      return;
+    }
+    connectSample = sample;
+  }
+
+  function appendConnectedSource(source: EditableIngestionSource) {
+    if (!config) return;
+    let next = source;
+    const taken = new Set(config.sources.map((item) => item.id));
+    if (!next.id || taken.has(next.id)) {
+      next = { ...next, id: sourceIdForNewSource(config.sources) };
+    }
+    const index = config.sources.length;
+    config = { ...config, sources: [...config.sources, next] };
+    setOpenSectionsFor(
+      index,
+      sourceFormSectionIds(
+        next.rules?.length ?? 0,
+        isGroupedJsonApiSource(next),
+      ),
+    );
+    scheduleSave();
+  }
+
+  function completeConnectWizard(source: EditableIngestionSource) {
+    appendConnectedSource(source);
+    connectSample = undefined;
+  }
+
+  function duplicateSource(index: number) {
+    if (!config) return;
+    const current = config.sources[index];
+    if (!current) return;
+    const source = duplicateIngestionSource(current, config.sources);
+    const nextIndex = config.sources.length;
+    config = { ...config, sources: [...config.sources, source] };
     mode = "form";
-    openSourceSections = [...sourceFormSections];
-    status =
-      "Example source added to the local draft. Save sources to persist it.";
+    setOpenSectionsFor(
+      nextIndex,
+      sourceFormSectionIds(
+        source.rules?.length ?? 0,
+        isGroupedJsonApiSource(source),
+      ),
+    );
+    scheduleSave();
+  }
+
+  function removeSource(index: number) {
+    if (!config) return;
+    const current = config.sources[index];
+    if (!current) return;
+    if (!confirm(`Remove ${current.name}?`)) return;
+    config = {
+      ...config,
+      sources: config.sources.filter((_, sourceIndex) => sourceIndex !== index),
+    };
+    remapOpenSectionsAfterRemove(index);
+    scheduleSave();
   }
 
   function setYamlMode(pressed: boolean) {
@@ -154,18 +267,21 @@
     if (applyYaml()) mode = "form";
   }
 
-  function applyYaml() {
+  function togglePreviewMode() {
+    previewMode = !previewMode;
+    if (previewMode) mode = "form"; // leave yaml when entering preview
+  }
+
+  function applyYaml(options?: { schedule?: boolean }) {
     try {
-      const priorSourceId = selectedSource?.id;
       const next = parseEditableIngestionYaml(yamlText);
       config = next;
-      selectedSourceIndex = next.sources.findIndex(
-        (source) => source.id === priorSourceId,
-      );
-      if (selectedSourceIndex < 0)
-        selectedSourceIndex = next.sources.length ? 0 : -1;
+      expandAllSections(next.sources);
       yamlError = "";
-      status = "YAML changes applied to the local source draft.";
+      if (options?.schedule !== false) {
+        status = "YAML applied. Changes save automatically.";
+        scheduleSave();
+      }
       return true;
     } catch (error) {
       yamlError = error instanceof Error ? error.message : String(error);
@@ -180,10 +296,9 @@
   }
 
   function toggleAllSections() {
-    openSourceSections =
-      openSourceSections.length === sourceFormSections.length
-        ? []
-        : [...sourceFormSections];
+    if (!config) return;
+    if (sectionsCollapsedAll) expandAllSections(config.sources);
+    else collapseAllSections();
   }
 
   function firstInvalidSource(issues: FormValidationIssue[]) {
@@ -193,79 +308,128 @@
     return Number.isInteger(index) ? index : undefined;
   }
 
-  async function save() {
-    if (!$snapshot || !config) return;
-    if (mode === "yaml" && !applyYaml()) return;
+  function issuesForSource(index: number) {
+    return validationIssues.filter((issue) =>
+      issue.path?.startsWith(`sources.${index}.`),
+    );
+  }
+
+  function serverSourceFor(source: EditableIngestionSource) {
+    return loadedConfig?.sources.find((item) => item.id === source.id);
+  }
+
+  function openReviewImports() {
+    const ledgerPath =
+      $activeFile ||
+      $snapshot?.ledgerFiles[0]?.path ||
+      $snapshot?.project.entryFile;
+    if (!ledgerPath) {
+      router.push("/records");
+      return;
+    }
+    const parameters = new URLSearchParams();
+    parameters.set("ledger", ledgerPath);
+    router.push(`/records?${parameters.toString()}`);
+  }
+
+  function scheduleSave() {
+    if (isWeb || !$snapshot || !config) return;
+    saveState = "dirty";
+    if (saveTimer) window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => {
+      void saveNow();
+    }, 1200);
+  }
+
+  async function saveNow() {
+    if (!$snapshot || !config || isWeb) return;
+    if (saveTimer) {
+      window.clearTimeout(saveTimer);
+      saveTimer = null;
+    }
+    if (mode === "yaml" && !applyYaml({ schedule: false })) return;
     const issues = validateEditableIngestionConfig(config);
     if (issues.length) {
-      selectedSourceIndex = firstInvalidSource(issues) ?? selectedSourceIndex;
+      const invalidIndex = firstInvalidSource(issues);
+      if (invalidIndex !== undefined) {
+        const invalid = config.sources[invalidIndex];
+        setOpenSectionsFor(
+          invalidIndex,
+          sourceFormSectionIds(
+            invalid?.rules?.length ?? 0,
+            invalid ? isGroupedJsonApiSource(invalid) : false,
+          ),
+        );
+      }
       mode = "form";
       status =
         "Resolve the highlighted source validation errors before saving.";
+      saveState = "error";
       return;
     }
 
     saving = true;
+    saveState = "saving";
+    status = "Saving…";
     try {
       await ingestionJson(ingestionPath($snapshot.project.id), {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(config),
       });
-      status = "Ingestion sources saved.";
-      await load();
+      const response = await ingestionJson<IngestionConfigResponse>(
+        ingestionPath($snapshot.project.id),
+      );
+      loadedConfig = response;
+      // Concurrent scheduleSave during the await leaves dirty + a pending timer.
+      if (saveState !== "dirty") {
+        status = "Saved.";
+        saveState = "saved";
+      }
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
+      saveState = "error";
     } finally {
       saving = false;
     }
   }
 
-  $: if ($snapshot && !isWeb && loadedProjectId !== $snapshot.project.id) {
-    void load();
-  }
+  $effect(() => {
+    const project = $snapshot;
+    if (project && !isWeb && loadedProjectId !== project.project.id) {
+      void load();
+    }
+  });
+
+  $effect(() => {
+    if (isWeb) return;
+    ingestionHeaderActions.set({
+      saveHint,
+      configReady: Boolean(config),
+      sectionsCollapsedAll,
+      yamlMode: mode === "yaml",
+      previewMode,
+      onToggleCollapse: toggleAllSections,
+      onYamlMode: setYamlMode,
+      onTogglePreview: togglePreviewMode,
+      onReviewImports: openReviewImports,
+    });
+  });
+
+  onDestroy(() => {
+    ingestionHeaderActions.set(null);
+    if (saveTimer) window.clearTimeout(saveTimer);
+    if (saveState === "dirty") void saveNow();
+  });
 </script>
 
 <section
-  class="h-full overflow-y-auto p-3 sm:p-5"
+  class={previewMode
+    ? "h-full overflow-y-auto p-4 sm:p-6"
+    : "h-full overflow-y-auto p-6 sm:p-8 lg:p-10"}
   data-ingestion-sources-editor
 >
   <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
-    <header
-      class="flex flex-wrap items-start justify-between gap-4 border-b pb-5"
-    >
-      <h1 class="text-xl font-semibold">Sources</h1>
-      {#if !isWeb}
-        <div class="flex flex-wrap items-center justify-end gap-2">
-          <div class="flex items-center gap-2">
-            <Switch
-              id="ingestion-yaml-mode"
-              checked={mode === "yaml"}
-              aria-label="YAML mode"
-              onCheckedChange={setYamlMode}
-            />
-            <label for="ingestion-yaml-mode" class="text-sm font-semibold"
-              >YAML</label
-            >
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            data-testid="ingestion-use-example"
-            onclick={useExample}>Use example</Button
-          >
-          <Button
-            size="sm"
-            disabled={saving || !config}
-            onclick={() => void save()}>Save sources</Button
-          >
-          <Button size="sm" variant="outline" href="#/records"
-            >Review imports</Button
-          >
-        </div>
-      {/if}
-    </header>
-
     {#if isWeb}
       <Alert.Root>
         <FileCode2 />
@@ -286,135 +450,94 @@
         </Empty.Header>
       </Empty.Root>
     {:else}
-      <YamlBackedForm
-        yamlMode={mode === "yaml"}
-        {yamlText}
-        {yamlError}
-        yamlLabel="Ingestion sources YAML editor"
-        yamlApplyLabel="Apply YAML"
-        onYamlChange={(value) => {
-          yamlText = value;
-        }}
-        onYamlApply={() => {
-          void applyYaml();
-        }}
-        onYamlReset={resetYaml}
-      >
-        <div class="flex min-w-0 flex-col gap-6">
-          <section class="border-b pb-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 class="text-sm font-semibold">Sources</h2>
-              <div class="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  aria-label="Add source"
-                  onclick={addSource}
-                  ><Plus data-icon="inline-start" />Add source</Button
-                >
-                <Button size="sm" variant="outline" onclick={useExample}>
-                  Use example
-                </Button>
-              </div>
-            </div>
-            <div
-              class="mt-3 flex flex-wrap gap-2"
-              aria-label="Configured sources"
-            >
-              {#each config.sources as source, index (source.id || index)}
-                <Button
-                  variant={index === selectedSourceIndex
-                    ? "secondary"
-                    : "outline"}
-                  size="sm"
-                  class="h-auto max-w-full justify-start py-1.5 text-left"
-                  onclick={() => selectSource(index)}
-                >
-                  <span class="min-w-0">
-                    <span class="block truncate"
-                      >{source.name || "Untitled source"}</span
-                    >
-                    <span
-                      class="block truncate font-mono text-[11px] text-muted-foreground"
-                    >
-                      {source.id || "missing-id"}
-                    </span>
-                  </span>
-                </Button>
-              {:else}
-                <p class="py-2 text-sm text-muted-foreground">
-                  Add a source to begin.
-                </p>
-              {/each}
-            </div>
-          </section>
-
-          {#if selectedSource}
-            <section class="min-w-0">
-              <div
-                class="mb-4 flex flex-wrap items-start justify-between gap-3 border-b pb-4"
-              >
-                <div class="min-w-0">
-                  <h2 class="truncate text-lg font-semibold">
-                    {selectedSource.name || "Untitled source"}
-                  </h2>
-                  <p class="truncate font-mono text-xs text-muted-foreground">
-                    {selectedSource.id || "missing-id"}
-                  </p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    aria-label={openSourceSections.length ===
-                    sourceFormSections.length
-                      ? "Collapse all source sections"
-                      : "Expand all source sections"}
-                    onclick={toggleAllSections}
-                  >
-                    {#if openSourceSections.length === sourceFormSections.length}
-                      <ChevronsDownUp />
-                    {:else}
-                      <ChevronsUpDown />
-                    {/if}
-                  </Button>
-                  <Button size="sm" variant="outline" onclick={duplicateSource}>
-                    <Copy data-icon="inline-start" />Duplicate
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onclick={removeSource}
-                  >
-                    <Trash2 data-icon="inline-start" />Remove
-                  </Button>
-                </div>
-              </div>
-              <IngestionSourceForm
-                source={selectedSource}
-                accounts={loadedConfig?.accounts ?? []}
-                issues={selectedIssues}
-                credentialAvailable={selectedServerSource?.credentialAvailable}
-                merchantCredentialAvailable={selectedServerSource?.merchantCredentialAvailable}
-                openSections={openSourceSections}
-                onOpenSectionsChange={(sections) =>
-                  (openSourceSections = sections)}
-                onChange={updateSelectedSource}
+      <div class="flex min-w-0 flex-col gap-6">
+        <YamlBackedForm
+          yamlMode={mode === "yaml"}
+          {yamlText}
+          {yamlError}
+          yamlLabel="Ingestion sources YAML editor"
+          yamlApplyLabel="Apply YAML"
+          onYamlChange={(value) => {
+            yamlText = value;
+          }}
+          onYamlApply={() => {
+            void applyYaml();
+          }}
+          onYamlReset={resetYaml}
+        >
+          <div class="flex min-w-0 flex-col gap-8">
+            {#if previewMode}
+              <IngestionSourcesPreview
+                sources={config.sources}
+                samples={ingestionSamples}
+                {saving}
+                onChange={(index, next) => updateSource(index, next)}
+                onConnectSample={connectSampleDirect}
+                onConnectProvider={openConnectProvider}
+                onSave={() => void saveNow()}
               />
-            </section>
-          {:else}
-            <Empty.Root class="min-h-64 border">
-              <Empty.Header>
-                <Empty.Media variant="icon"><Plus /></Empty.Media>
-                <Empty.Title>No source selected</Empty.Title>
-                <Empty.Description
-                  >Add a source or load the example configuration.</Empty.Description
-                >
-              </Empty.Header>
-            </Empty.Root>
-          {/if}
-        </div>
-      </YamlBackedForm>
+            {:else}
+              {#each config.sources as source, index (source.id || index)}
+                {@const serverSource = serverSourceFor(source)}
+                <IngestionSourceForm
+                  {source}
+                  accounts={loadedConfig?.accounts ?? []}
+                  issues={issuesForSource(index)}
+                  credentialAvailable={serverSource?.credentialAvailable}
+                  merchantCredentialAvailable={serverSource?.merchantCredentialAvailable}
+                  openSections={openSectionsFor(
+                    index,
+                    source.rules?.length ?? 0,
+                    isGroupedJsonApiSource(source),
+                  )}
+                  onOpenSectionsChange={(sections) =>
+                    setOpenSectionsFor(index, sections)}
+                  onChange={(next) => updateSource(index, next)}
+                  onDuplicate={() => duplicateSource(index)}
+                  onRemove={() => removeSource(index)}
+                />
+              {:else}
+                <Empty.Root class="min-h-48 border">
+                  <Empty.Header>
+                    <Empty.Media variant="icon">
+                      <button
+                        type="button"
+                        class="inline-flex size-full items-center justify-center"
+                        aria-label="Add source"
+                        onclick={addSource}
+                      >
+                        <Plus />
+                      </button>
+                    </Empty.Media>
+                    <Empty.Title>No sources yet</Empty.Title>
+                    <Empty.Description
+                      >Add a source to get started.</Empty.Description
+                    >
+                  </Empty.Header>
+                </Empty.Root>
+              {/each}
+
+              {#if config.sources.length}
+                <div class="flex justify-end">
+                  <FormAddButton label="Add source" onclick={addSource} />
+                </div>
+              {/if}
+            {/if}
+          </div>
+        </YamlBackedForm>
+      </div>
+    {/if}
+
+    {#if connectSample?.provider}
+      <IngestionConnectWizard
+        sample={connectSample}
+        ledgerAccounts={loadedConfig?.accounts ?? []}
+        {existingAccountIds}
+        onCancel={() => {
+          connectSample = undefined;
+        }}
+        onComplete={completeConnectWizard}
+      />
     {/if}
 
     {#if status}

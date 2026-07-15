@@ -24,7 +24,7 @@
 
 {#if as === "div"}
   <div
-    class="beancount-form-field"
+    class="beancount-form-field cv-form-field"
     data-align={align}
     data-control-id={controlId}
     data-invalid={invalid || undefined}
@@ -45,7 +45,7 @@
   </div>
 {:else}
   <label
-    class="beancount-form-field"
+    class="beancount-form-field cv-form-field"
     data-align={align}
     data-control-id={controlId}
     data-invalid={invalid || undefined}
@@ -65,43 +65,59 @@
 {/if}
 
 <style>
-  :global(.beancount-structured-form) {
+  :global(.beancount-structured-form),
+  :global(.cv-structured-form) {
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr);
-    column-gap: var(--beancount-form-control-column-gap, 1rem);
+    column-gap: var(
+      --beancount-form-control-column-gap,
+      var(--cv-control-column-gap, 1rem)
+    );
     min-width: 0;
   }
 
-  .beancount-form-field {
+  .beancount-form-field,
+  .cv-form-field {
     --beancount-form-control-column-gap: 1rem;
+    --cv-control-column-gap: 1rem;
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr);
     column-gap: var(--beancount-form-control-column-gap);
     row-gap: 0;
     align-items: start;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid
+      var(--cv-form-border, var(--beancount-form-border, var(--border)));
   }
 
   @supports (grid-template-columns: subgrid) {
-    :global(.beancount-structured-form) > .beancount-form-field {
+    :global(.beancount-structured-form) > .beancount-form-field,
+    :global(.cv-structured-form) > .cv-form-field,
+    :global(.beancount-structured-form) > .cv-form-field,
+    :global(.cv-structured-form) > .beancount-form-field {
       grid-column: 1 / -1;
       grid-template-columns: subgrid;
       column-gap: var(--beancount-form-control-column-gap);
     }
   }
 
-  .beancount-form-field[data-align="center"] {
+  .beancount-form-field[data-align="center"],
+  .cv-form-field[data-align="center"] {
     align-items: stretch;
   }
 
-  .beancount-form-field > span {
-    color: var(--muted-foreground);
+  .beancount-form-field > span,
+  .cv-form-field > span {
+    color: var(
+      --cv-form-muted,
+      var(--beancount-form-muted, var(--muted-foreground))
+    );
     font-size: 0.75rem;
     font-weight: 500;
     padding-top: 0.45rem;
   }
 
-  .beancount-form-field[data-align="center"] > span {
+  .beancount-form-field[data-align="center"] > span,
+  .cv-form-field[data-align="center"] > span {
     display: flex;
     align-items: center;
     min-height: 2.65rem;
@@ -120,7 +136,8 @@
     list-style: none;
   }
 
-  .beancount-form-field[data-align="center"] .beancount-form-field-control {
+  .beancount-form-field[data-align="center"] .beancount-form-field-control,
+  .cv-form-field[data-align="center"] .beancount-form-field-control {
     display: flex;
     align-items: center;
     min-height: 2.65rem;
@@ -129,15 +146,21 @@
   }
 
   .beancount-form-field-control :global(input),
-  .beancount-form-field-control :global(textarea) {
+  .beancount-form-field-control :global(textarea),
+  .beancount-form-field-control :global(select),
+  .beancount-form-field-control :global(output) {
     width: 100%;
     min-width: 0;
     border: 0;
     border-radius: 0;
     border-bottom: 0;
     background: transparent;
-    color: var(--foreground);
+    color: var(
+      --cv-form-foreground,
+      var(--beancount-form-foreground, var(--foreground))
+    );
     font: inherit;
+    font-size: 0.875rem;
     line-height: 1.45;
     padding: 0.35rem 0;
   }
@@ -150,17 +173,29 @@
     white-space: pre-wrap;
   }
 
+  .beancount-form-field-control :global(input::placeholder),
+  .beancount-form-field-control :global(textarea::placeholder) {
+    color: var(
+      --cv-form-muted,
+      var(--beancount-form-muted, var(--muted-foreground))
+    );
+  }
+
   .beancount-form-field-control :global(input:focus),
   .beancount-form-field-control :global(input:focus-visible),
   .beancount-form-field-control :global(textarea:focus),
-  .beancount-form-field-control :global(textarea:focus-visible) {
+  .beancount-form-field-control :global(textarea:focus-visible),
+  .beancount-form-field-control :global(select:focus),
+  .beancount-form-field-control :global(select:focus-visible) {
     outline: 0;
     box-shadow: none;
   }
 
   @media (max-width: 720px) {
     .beancount-form-field,
-    :global(.beancount-structured-form) > .beancount-form-field {
+    .cv-form-field,
+    :global(.beancount-structured-form) > .beancount-form-field,
+    :global(.cv-structured-form) > .cv-form-field {
       grid-column: auto;
       grid-template-columns: 1fr;
       row-gap: 0.25rem;

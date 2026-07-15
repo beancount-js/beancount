@@ -19,13 +19,27 @@
   data-slot="switch"
   data-size={size}
   class={cn(
-    "data-checked:bg-primary data-unchecked:bg-input aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 dark:data-unchecked:bg-input/80 shadow-xs focus-visible:ring-3 aria-invalid:ring-3 group/switch data-disabled:cursor-not-allowed data-disabled:opacity-50 peer relative inline-flex shrink-0 items-center rounded-full border border-transparent outline-none transition-all after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-ring/50 data-[size=default]:h-[18.4px] data-[size=sm]:h-[14px] data-[size=default]:w-[32px] data-[size=sm]:w-[24px]",
+    "peer relative inline-flex shrink-0 items-center rounded-full border outline-none transition-all",
+    "shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3",
+    "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 aria-invalid:ring-3",
+    "data-[state=checked]:bg-primary data-[state=checked]:border-primary",
+    "data-[state=unchecked]:bg-muted-foreground/25 data-[state=unchecked]:border-border",
+    "dark:data-[state=unchecked]:bg-input/80",
+    "data-disabled:cursor-not-allowed data-disabled:opacity-50",
+    "after:absolute after:-inset-x-3 after:-inset-y-2",
+    "group/switch data-[size=default]:h-[18.4px] data-[size=sm]:h-[14px] data-[size=default]:w-[32px] data-[size=sm]:w-[24px]",
     className,
   )}
   {...restProps}
 >
   <SwitchPrimitive.Thumb
     data-slot="switch-thumb"
-    class="dark:data-unchecked:bg-foreground dark:data-checked:bg-primary-foreground group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 rtl:data-[state=checked]:translate-x-[calc(-100%)]"
+    class={cn(
+      "pointer-events-none block rounded-full bg-background ring-0 transition-transform",
+      "dark:data-[state=unchecked]:bg-foreground dark:data-[state=checked]:bg-primary-foreground",
+      "group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3",
+      "data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0",
+      "rtl:data-[state=checked]:translate-x-[calc(-100%+2px)]",
+    )}
   />
 </SwitchPrimitive.Root>

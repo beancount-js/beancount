@@ -8,8 +8,10 @@ import {
   parseEditableIngestionYaml,
   serializeEditableIngestionConfig,
   serializeEditableIngestionYaml,
+  sourceFromSample,
   validateEditableIngestionConfig,
 } from "./source-form";
+import { ingestionSamples } from "./samples";
 
 describe("ingestion source form draft", () => {
   test("removes server-computed source properties without changing editable values", () => {
@@ -101,13 +103,58 @@ describe("ingestion source form draft", () => {
     );
   });
 
+  test("keeps sample template ids when connecting unless already taken", () => {
+    const lunchflow = ingestionSamples.find((sample) => sample.id === "lunchflow");
+    expect(lunchflow).toBeDefined();
+    const connected = sourceFromSample(lunchflow!.template, []);
+    expect(connected.id).toBe("lunchflow");
+    expect(connected.api.baseUrl).toBe("https://lunchflow.app/api/v1");
+    expect(connected.accounts).toEqual([]);
+
+    const conflict = sourceFromSample(lunchflow!.template, [connected]);
+    expect(conflict.id).toBe("source");
+  });
+
+  test("validates grouped connections separately from standalone sources", () => {
+    const lunchflow = ingestionSamples.find(
+      (sample) => sample.id === "lunchflow",
+    )!;
+    const draft = {
+      version: 1 as const,
+      sources: [
+        {
+          ...structuredClone(lunchflow.template),
+          api: {
+            ...lunchflow.template.api,
+            secretRef: "env:LUNCHFLOW_API_KEY",
+          },
+          accounts: [
+            {
+              id: "42",
+              name: "Current",
+              sourceAccount: "Assets:Bank:Current",
+            },
+          ],
+        },
+      ],
+    };
+    expect(validateEditableIngestionConfig(draft)).toEqual([]);
+
+    draft.sources[0].accounts = [];
+    expect(
+      validateEditableIngestionConfig(draft).some(
+        (issue) => issue.fieldId === "accounts",
+      ),
+    ).toBe(true);
+  });
+
   test("reports client-side constraints before the server save boundary", () => {
     expect(validateEditableIngestionConfig(exampleIngestionConfig)).toEqual([]);
 
     const invalid = structuredClone(exampleIngestionConfig);
     invalid.sources[0].id = "bad identifier";
     invalid.sources[0].api.endpoint = "http://api.example.test/transactions";
-    invalid.sources[0].api.secretRef = "plain-token";
+    invalid.sources[0].api.secretRef = "";
     invalid.sources.push({ ...structuredClone(invalid.sources[0]) });
 
     const issues = validateEditableIngestionConfig(invalid);

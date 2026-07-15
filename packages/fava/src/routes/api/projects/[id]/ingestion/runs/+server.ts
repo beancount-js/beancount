@@ -21,7 +21,12 @@ export async function POST({
   request: Request;
 }) {
   try {
-    const { sourceId, model } = await request.json();
+    const body = await request.json();
+    const { sourceId, model, accountId } = body as {
+      sourceId?: unknown;
+      model?: unknown;
+      accountId?: unknown;
+    };
     if (typeof sourceId !== "string")
       return json({ error: "A sourceId is required." }, { status: 400 });
     const workspace = await serverWorkspace();
@@ -35,15 +40,20 @@ export async function POST({
     );
     const store = serverIngestion();
     const source = await store.source(params.id, sourceId);
-    const run = await ingestSource(
+    let state = await store.readState(params.id);
+    const runs = await ingestSource(
       source,
-      await store.readState(params.id),
+      state,
       entries,
       typeof model === "string" ? model : undefined,
       { projectId: params.id, store },
+      typeof accountId === "string" ? { accountId } : undefined,
     );
-    await store.saveRun(params.id, run);
-    return json(run, { status: 201 });
+    for (const run of runs) {
+      await store.saveRun(params.id, run);
+      state = await store.readState(params.id);
+    }
+    return json(runs.length === 1 ? runs[0] : { runs }, { status: 201 });
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });
   }

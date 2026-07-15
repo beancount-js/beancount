@@ -11,16 +11,194 @@ import type {
 } from "./types";
 
 export interface JsonApiSourceConfig {
-  endpoint: string;
+  /**
+   * Full transactions URL for a standalone source.
+   * Grouped connections use `baseUrl` instead and derive per-account endpoints.
+   */
+  endpoint?: string;
+  /**
+   * Provider API root for multi-account connections
+   * (e.g. `https://lunchflow.app/api/v1`).
+   */
+  baseUrl?: string;
   /** Optional host allowlist; host names only, without paths or schemes. */
   allowedHosts?: string[];
   secretRef: string;
+  /**
+   * How the resolved secret is sent.
+   * - `bearer` (default): `Authorization: Bearer <secret>`
+   * - `x-api-key`: `X-API-Key: <secret>`
+   */
+  authScheme?: "bearer" | "x-api-key";
   recordsPath?: string;
   query?: Record<string, string>;
   pagination?: {
     cursorQueryParam: string;
     nextCursorPath: string;
   };
+}
+
+/** Linked bank account under a grouped JSON API connection. */
+export interface JsonApiLinkedAccount {
+  /** Remote provider account id. */
+  id: string;
+  name: string;
+  sourceAccount: string;
+  defaultCurrency?: string;
+}
+
+export function isGroupedJsonApiSource(source: {
+  accounts?: readonly unknown[] | undefined;
+}): boolean {
+  return Array.isArray(source.accounts);
+}
+
+/** Build `{baseUrl}/accounts/{id}/transactions`. */
+export function jsonApiAccountTransactionsEndpoint(
+  baseUrl: string,
+  accountId: string,
+) {
+  const base = baseUrl.replace(/\/+$/, "");
+  return `${base}/accounts/${encodeURIComponent(accountId)}/transactions`;
+}
+
+/** Stable ingest / cursor key for a nested account under a connection. */
+export function jsonApiAccountSourceId(
+  connectionId: string,
+  accountId: string,
+) {
+  return `${connectionId}:${accountId}`;
+}
+
+function assertSafeUrl(
+  value: string,
+  allowedHosts: readonly string[] | undefined,
+  label: string,
+) {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`${label} must be a valid URL.`);
+  }
+  const isLocalHttp =
+    url.protocol === "http:" &&
+    (url.hostname === "localhost" ||
+      url.hostname === "127.0.0.1" ||
+      url.hostname === "::1");
+  if (url.protocol !== "https:" && !isLocalHttp) {
+    throw new Error(
+      `${label} must use HTTPS (HTTP is allowed only for localhost).`,
+    );
+  }
+  const hosts = allowedHosts
+    ?.map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+  if (hosts?.length && !hosts.includes(url.hostname.toLowerCase())) {
+    throw new Error(
+      `${label} host ${url.hostname} is not in this source's allowlist.`,
+    );
+  }
+  return url;
+}
+
+export type DiscoveredJsonApiAccount = {
+  id: string;
+  name: string;
+  currency?: string;
+  institutionName?: string;
+  status?: string;
+  iban?: string;
+};
+
+/**
+ * Discover remote accounts from `{baseUrl}/accounts` (or a custom path).
+ * Secrets are resolved by the caller via `resolveSecret`.
+ */
+export async function discoverJsonApiAccounts(options: {
+  baseUrl: string;
+  secretRef: string;
+  authScheme?: "bearer" | "x-api-key";
+  allowedHosts?: readonly string[];
+  accountsPath?: string;
+  resolveSecret: (reference: string) => Promise<string | undefined>;
+  fetch?: typeof globalThis.fetch;
+  signal?: AbortSignal;
+}): Promise<DiscoveredJsonApiAccount[]> {
+  if (!options.secretRef.trim()) {
+    throw new Error("An API key (or env: reference) is required.");
+  }
+  const base = assertSafeUrl(
+    options.baseUrl,
+    options.allowedHosts,
+    "JSON API base URL",
+  );
+  const path = (options.accountsPath ?? "accounts").replace(/^\/+/, "");
+  const url = new URL(path, `${base.origin}${base.pathname.replace(/\/+$/, "")}/`);
+  assertSafeUrl(url.toString(), options.allowedHosts, "JSON API accounts URL");
+
+  const token = await options.resolveSecret(options.secretRef);
+  if (!token) {
+    throw new Error(`Unable to resolve credential ${options.secretRef}.`);
+  }
+  const request = options.fetch ?? globalThis.fetch;
+  if (!request) {
+    throw new Error("No Fetch implementation is available.");
+  }
+
+  const authHeaders: Record<string, string> =
+    options.authScheme === "x-api-key"
+      ? { "x-api-key": token }
+      : { authorization: `Bearer ${token}` };
+  const response = await request(url, {
+    method: "GET",
+    headers: {
+      ...authHeaders,
+      accept: "application/json",
+    },
+    redirect: "error",
+    signal: options.signal,
+  });
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Invalid API key or insufficient permissions.");
+    }
+    throw new Error(`Account discovery failed with status ${response.status}.`);
+  }
+
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("Account discovery response was not valid JSON.");
+  }
+
+  const list = Array.isArray(body)
+    ? body
+    : Array.isArray((body as { accounts?: unknown })?.accounts)
+      ? (body as { accounts: unknown[] }).accounts
+      : null;
+  if (!list) {
+    throw new Error("Account discovery response did not include an accounts array.");
+  }
+
+  return list.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const record = item as Record<string, unknown>;
+    const id = scalar(record.id);
+    const name = scalar(record.name);
+    if (!id || !name) return [];
+    return [
+      {
+        id,
+        name,
+        currency: scalar(record.currency),
+        institutionName: scalar(record.institution_name ?? record.institutionName),
+        status: scalar(record.status),
+        iban: scalar(record.iban),
+      } satisfies DiscoveredJsonApiAccount,
+    ];
+  });
 }
 
 export interface JsonMappingConfig {
@@ -59,29 +237,14 @@ function scalar(value: unknown): string | undefined {
 }
 
 function safeEndpoint(config: JsonApiSourceConfig) {
-  const url = new URL(config.endpoint);
-  const isLocalHttp =
-    url.protocol === "http:" &&
-    (url.hostname === "localhost" ||
-      url.hostname === "127.0.0.1" ||
-      url.hostname === "::1");
-  if (url.protocol !== "https:" && !isLocalHttp) {
-    throw new Error(
-      "JSON API sources must use HTTPS (HTTP is allowed only for localhost).",
-    );
+  if (!config.endpoint?.trim()) {
+    throw new Error("JSON API sources need an endpoint URL.");
   }
-  const allowedHosts = config.allowedHosts
-    ?.map((host) => host.trim().toLowerCase())
-    .filter(Boolean);
-  if (
-    allowedHosts?.length &&
-    !allowedHosts.includes(url.hostname.toLowerCase())
-  ) {
-    throw new Error(
-      `JSON API endpoint host ${url.hostname} is not in this source's allowlist.`,
-    );
-  }
-  return url;
+  return assertSafeUrl(
+    config.endpoint,
+    config.allowedHosts,
+    "JSON API endpoint",
+  );
 }
 
 function retryDelay(response: Response | undefined, attempt: number) {
@@ -146,10 +309,14 @@ export class JsonApiSource
       let failure: unknown;
       for (let attempt = 0; attempt < 3; attempt += 1) {
         try {
+          const authHeaders: Record<string, string> =
+            config.authScheme === "x-api-key"
+              ? { "x-api-key": token }
+              : { authorization: `Bearer ${token}` };
           response = await request(url, {
             method: "GET",
             headers: {
-              authorization: `Bearer ${token}`,
+              ...authHeaders,
               accept: "application/json",
             },
             redirect: "error",
@@ -252,6 +419,10 @@ export class JsonMappingNormalizer implements NormalizerPlugin<JsonRecord> {
           ? amount.slice(1)
           : `-${amount}`
         : amount;
+    const pending =
+      statusValue === "pending" ||
+      statusValue === "true" ||
+      statusValue === "1";
 
     return {
       ok: true,
@@ -265,7 +436,7 @@ export class JsonMappingNormalizer implements NormalizerPlugin<JsonRecord> {
         merchant,
         payee,
         narration,
-        status: statusValue === "pending" ? "pending" : "posted",
+        status: pending ? "pending" : "posted",
         fetchedAt: context.fetchedAt,
         metadata: {
           raw_fingerprint: md5(JSON.stringify(record)),

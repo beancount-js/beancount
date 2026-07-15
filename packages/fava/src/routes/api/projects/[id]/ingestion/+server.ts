@@ -10,6 +10,13 @@ function message(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function credentialAvailable(reference: string | undefined) {
+  if (!reference?.trim()) return false;
+  if (!reference.startsWith("env:")) return true;
+  const name = reference.slice("env:".length);
+  return Boolean(name && process.env[name]);
+}
+
 export async function GET({ params }: { params: { id: string } }) {
   const snapshot = await (await serverWorkspace()).readProject(params.id);
   const [entries] = loadProjectSources(
@@ -24,18 +31,11 @@ export async function GET({ params }: { params: { id: string } }) {
     ...config,
     sources: config.sources.map((source) => ({
       ...source,
-      credentialAvailable:
-        source.api.secretRef.startsWith("env:") &&
-        Boolean(process.env[source.api.secretRef.slice(4)]),
+      credentialAvailable: credentialAvailable(source.api.secretRef),
       merchantCredentialAvailable:
         source.merchantEnrichment?.brandfetch?.enabled === true &&
-        source.merchantEnrichment.brandfetch.apiKeySecretRef.startsWith(
-          "env:",
-        ) &&
-        Boolean(
-          process.env[
-            source.merchantEnrichment.brandfetch.apiKeySecretRef.slice(4)
-          ],
+        credentialAvailable(
+          source.merchantEnrichment.brandfetch.apiKeySecretRef,
         ),
       allowedAccounts: categoryAccountsForSource(
         source,

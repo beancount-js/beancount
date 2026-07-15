@@ -14,12 +14,18 @@ import {
   normalizeMerchant,
   sortSuggestions,
   transactionFingerprint,
+  discoverJsonApiAccounts,
+  isGroupedJsonApiSource,
+  jsonApiAccountSourceId,
+  jsonApiAccountTransactionsEndpoint,
   type CategorizationContext,
   type CategorizerPlugin,
   type CategoryEvidence,
   type CategorySuggestion,
+  type DiscoveredJsonApiAccount,
   type ImportProposal,
   type IngestionRun,
+  type JsonApiLinkedAccount,
   type JsonApiSourceConfig,
   type JsonMappingConfig,
   type MerchantRule,
@@ -61,15 +67,23 @@ export interface IngestionSourceDefinition {
   id: string;
   name: string;
   kind: "json-api";
-  sourceAccount: string;
+  /**
+   * Beancount asset account for standalone sources.
+   * Grouped connections set this per nested `accounts[]` entry instead.
+   */
+  sourceAccount?: string;
   destinationPath?: string;
   defaultCurrency?: string;
   allowedAccountRoots?: string[];
   aiEnabled?: boolean;
+  /** Markdown shown in the connection preview setup callout. */
+  setup?: string;
   merchantEnrichment?: MerchantEnrichmentConfig;
   api: JsonApiSourceConfig;
   mapping: JsonMappingConfig;
   rules: MerchantRule[];
+  /** Nested bank accounts for multi-account providers (e.g. Lunch Flow). */
+  accounts?: JsonApiLinkedAccount[];
 }
 
 export interface IngestionConfig {
@@ -145,10 +159,15 @@ function validateMerchantEnrichment(
     throw new Error("merchantEnrichment.brandfetch.enabled must be a boolean.");
   if (
     brandfetch.enabled &&
-    (!brandfetch.apiKeySecretRef ||
-      !brandfetch.apiKeySecretRef.startsWith("env:"))
+    (!brandfetch.apiKeySecretRef || !brandfetch.apiKeySecretRef.trim())
   ) {
-    throw new Error("Brandfetch needs an env: API key reference.");
+    throw new Error("Brandfetch needs an API key or env: variable reference.");
+  }
+  if (
+    brandfetch.apiKeySecretRef?.startsWith("env:") &&
+    !brandfetch.apiKeySecretRef.slice("env:".length).trim()
+  ) {
+    throw new Error("Brandfetch env: references need a variable name.");
   }
   if (brandfetch.assetMode === "cache" && !brandfetch.cacheContentAllowed) {
     throw new Error(
@@ -178,6 +197,59 @@ function validateMerchantEnrichment(
   } satisfies MerchantEnrichmentConfig;
 }
 
+function validateHttpsUrl(
+  value: string,
+  allowedHosts: readonly string[] | undefined,
+  label: string,
+) {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`${label} must be a valid URL.`);
+  }
+  const isLocalHttp =
+    url.protocol === "http:" &&
+    (url.hostname === "localhost" ||
+      url.hostname === "127.0.0.1" ||
+      url.hostname === "::1");
+  if (url.protocol !== "https:" && !isLocalHttp) {
+    throw new Error(
+      `${label} must use HTTPS (HTTP is allowed only for localhost).`,
+    );
+  }
+  const hosts = allowedHosts
+    ?.map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+  if (hosts?.length && !hosts.includes(url.hostname.toLowerCase())) {
+    throw new Error(`${label} is not in this source's allowlist.`);
+  }
+  return { url, allowedHosts: hosts };
+}
+
+function validateLinkedAccount(account: JsonApiLinkedAccount, index: number) {
+  if (!account.id?.trim()) {
+    throw new Error(`Linked account ${index + 1} needs an id.`);
+  }
+  if (!/^[a-zA-Z0-9_-]+$/.test(account.id)) {
+    throw new Error(
+      `Linked account ${index + 1} id may use only letters, numbers, hyphens, and underscores.`,
+    );
+  }
+  if (!account.name?.trim()) {
+    throw new Error(`Linked account ${index + 1} needs a name.`);
+  }
+  if (!account.sourceAccount?.trim()) {
+    throw new Error(`Linked account ${index + 1} needs a source account.`);
+  }
+  return {
+    id: account.id.trim(),
+    name: account.name.trim(),
+    sourceAccount: account.sourceAccount.trim(),
+    defaultCurrency: account.defaultCurrency?.trim() || undefined,
+  } satisfies JsonApiLinkedAccount;
+}
+
 function validateSource(
   source: IngestionSourceDefinition,
 ): IngestionSourceDefinition {
@@ -187,51 +259,92 @@ function validateSource(
     throw new Error(
       "Only JSON API sources are supported in the first release.",
     );
-  if (!source.sourceAccount.trim())
-    throw new Error("A source account is required.");
-  if (!source.api?.endpoint || !source.api.secretRef?.startsWith("env:")) {
+  if (!source.api?.secretRef?.trim()) {
     throw new Error(
-      "JSON API sources need an endpoint and an env: credential reference.",
+      "JSON API sources need an API key (or env: reference).",
     );
   }
-  let endpoint: URL;
-  try {
-    endpoint = new URL(source.api.endpoint);
-  } catch {
-    throw new Error("JSON API sources need a valid endpoint URL.");
-  }
-  const isLocalHttp =
-    endpoint.protocol === "http:" &&
-    (endpoint.hostname === "localhost" ||
-      endpoint.hostname === "127.0.0.1" ||
-      endpoint.hostname === "::1");
-  if (endpoint.protocol !== "https:" && !isLocalHttp) {
-    throw new Error(
-      "JSON API sources must use HTTPS (HTTP is allowed only for localhost).",
-    );
-  }
-  const allowedHosts = source.api.allowedHosts
-    ?.map((host) => host.trim().toLowerCase())
-    .filter(Boolean);
   if (
-    allowedHosts?.length &&
-    !allowedHosts.includes(endpoint.hostname.toLowerCase())
+    source.api.secretRef.startsWith("env:") &&
+    !source.api.secretRef.slice("env:".length).trim()
   ) {
-    throw new Error("The JSON API endpoint is not in this source's allowlist.");
+    throw new Error("Environment credential references need a variable name.");
   }
   if (!source.mapping?.date || !source.mapping.amount) {
     throw new Error("JSON API mappings need date and amount paths.");
   }
+  if (source.setup !== undefined && typeof source.setup !== "string") {
+    throw new Error("Source setup must be markdown text.");
+  }
+
+  const grouped = isGroupedJsonApiSource(source);
+  let allowedHosts: string[] | undefined;
+  let api: JsonApiSourceConfig;
+  let accounts: JsonApiLinkedAccount[] | undefined;
+  let sourceAccount: string | undefined;
+
+  if (grouped) {
+    if (!source.api.baseUrl?.trim()) {
+      throw new Error(
+        "Grouped JSON API sources need an api.baseUrl (for example https://lunchflow.app/api/v1).",
+      );
+    }
+    const validated = validateHttpsUrl(
+      source.api.baseUrl,
+      source.api.allowedHosts,
+      "JSON API base URL",
+    );
+    allowedHosts = validated.allowedHosts;
+    if (!source.accounts?.length) {
+      throw new Error(
+        "Grouped JSON API sources need at least one linked account.",
+      );
+    }
+    accounts = source.accounts.map(validateLinkedAccount);
+    const accountIds = new Set(accounts.map((account) => account.id));
+    if (accountIds.size !== accounts.length) {
+      throw new Error("Linked account identifiers must be unique.");
+    }
+    api = {
+      ...source.api,
+      baseUrl: source.api.baseUrl.replace(/\/+$/, ""),
+      endpoint: undefined,
+      allowedHosts,
+    };
+    sourceAccount = undefined;
+  } else {
+    if (!source.sourceAccount?.trim()) {
+      throw new Error("A source account is required.");
+    }
+    if (!source.api.endpoint?.trim()) {
+      throw new Error(
+        "JSON API sources need an endpoint and an API key (or env: reference).",
+      );
+    }
+    const validated = validateHttpsUrl(
+      source.api.endpoint,
+      source.api.allowedHosts,
+      "JSON API endpoint",
+    );
+    allowedHosts = validated.allowedHosts;
+    api = { ...source.api, allowedHosts };
+    sourceAccount = source.sourceAccount.trim();
+    accounts = undefined;
+  }
+
   return {
     ...source,
-    api: { ...source.api, allowedHosts },
+    sourceAccount,
+    accounts,
+    setup: source.setup?.trim() || undefined,
+    api,
     rules: source.rules ?? [],
     allowedAccountRoots: source.allowedAccountRoots?.filter(Boolean),
     merchantEnrichment: validateMerchantEnrichment(source.merchantEnrichment),
   };
 }
 
-/** Local persistence for configurations and actionable, normalized runs. Tokens are never written. */
+/** Local persistence for configurations and actionable, normalized runs. */
 export class FilesystemIngestionStore {
   readonly merchants: FilesystemMerchantStore;
 
@@ -459,6 +572,12 @@ export function categoryAccountsForSource(
   source: IngestionSourceDefinition,
   accounts: readonly string[],
 ) {
+  const linkedSourceAccounts = isGroupedJsonApiSource(source)
+    ? (source.accounts ?? []).map((account) => account.sourceAccount)
+    : source.sourceAccount
+      ? [source.sourceAccount]
+      : [];
+  const excluded = new Set(linkedSourceAccounts);
   const scoped = source.allowedAccountRoots?.length
     ? accounts.filter((account) =>
         source.allowedAccountRoots!.some(
@@ -467,8 +586,87 @@ export function categoryAccountsForSource(
       )
     : accounts;
   return [...new Set(scoped)]
-    .filter((account) => account && account !== source.sourceAccount)
+    .filter((account) => account && !excluded.has(account))
     .sort();
+}
+
+export type ExpandedIngestionTarget = {
+  sourceId: string;
+  sourceAccount: string;
+  defaultCurrency?: string;
+  api: JsonApiSourceConfig;
+};
+
+/** Expand a standalone or grouped source into concrete fetch targets. */
+export function expandIngestionSource(
+  source: IngestionSourceDefinition,
+  options?: { accountId?: string },
+): ExpandedIngestionTarget[] {
+  if (isGroupedJsonApiSource(source)) {
+    const baseUrl = source.api.baseUrl?.trim();
+    if (!baseUrl) {
+      throw new Error("Grouped JSON API sources need an api.baseUrl.");
+    }
+    const linked = source.accounts ?? [];
+    const selected = options?.accountId
+      ? linked.filter((account) => account.id === options.accountId)
+      : linked;
+    if (options?.accountId && !selected.length) {
+      throw new Error(
+        `Unknown linked account ${options.accountId} on source ${source.id}.`,
+      );
+    }
+    if (!selected.length) {
+      throw new Error(`Source ${source.id} has no linked accounts to ingest.`);
+    }
+    return selected.map((account) => ({
+      sourceId: jsonApiAccountSourceId(source.id, account.id),
+      sourceAccount: account.sourceAccount,
+      defaultCurrency: account.defaultCurrency ?? source.defaultCurrency,
+      api: {
+        ...source.api,
+        endpoint: jsonApiAccountTransactionsEndpoint(baseUrl, account.id),
+      },
+    }));
+  }
+
+  if (!source.sourceAccount?.trim() || !source.api.endpoint?.trim()) {
+    throw new Error(
+      `Source ${source.id} needs a sourceAccount and api.endpoint.`,
+    );
+  }
+  return [
+    {
+      sourceId: source.id,
+      sourceAccount: source.sourceAccount,
+      defaultCurrency: source.defaultCurrency,
+      api: source.api as JsonApiSourceConfig & { endpoint: string },
+    },
+  ];
+}
+
+function resolveIngestionSecret(reference: string) {
+  if (!reference?.trim()) return undefined;
+  if (reference.startsWith("env:")) {
+    const name = reference.slice("env:".length);
+    return name ? process.env[name] : undefined;
+  }
+  return reference;
+}
+
+/** Discover remote accounts for a grouped provider connection. */
+export async function discoverIngestionAccounts(options: {
+  baseUrl: string;
+  secretRef: string;
+  authScheme?: "bearer" | "x-api-key";
+  allowedHosts?: readonly string[];
+  accountsPath?: string;
+}): Promise<DiscoveredJsonApiAccount[]> {
+  validateHttpsUrl(options.baseUrl, options.allowedHosts, "JSON API base URL");
+  return discoverJsonApiAccounts({
+    ...options,
+    resolveSecret: async (reference) => resolveIngestionSecret(reference),
+  });
 }
 
 function safeCodexEnvironment() {
@@ -951,8 +1149,10 @@ function merchantResolversFor(
       ),
     );
   const providerConfig = enrichment.brandfetch;
-  const apiKey = providerConfig?.apiKeySecretRef.startsWith("env:")
-    ? process.env[providerConfig.apiKeySecretRef.slice("env:".length)]
+  const apiKey = providerConfig?.apiKeySecretRef
+    ? providerConfig.apiKeySecretRef.startsWith("env:")
+      ? process.env[providerConfig.apiKeySecretRef.slice("env:".length)]
+      : providerConfig.apiKeySecretRef
     : undefined;
   if (providerConfig?.enabled && apiKey) {
     resolvers.push(
@@ -971,38 +1171,67 @@ export async function ingestSource(
   entries: readonly Directive[],
   model?: string,
   merchantContext?: IngestMerchantContext,
+  options?: { accountId?: string },
 ) {
-  const allAccounts = [...new Set(entries.flatMap((entry) => entry.accounts))]
-    .filter(Boolean)
-    .sort();
-  const availableAccounts = categoryAccountsForSource(source, allAccounts);
-  const categorizers: CategorizerPlugin[] = [
-    new MerchantRuleCategorizer(source.rules),
-    new HistoricalCategorizer(),
-    new RecurringCategorizer(),
-  ];
-  if (source.aiEnabled) categorizers.push(new CodexCategorizer({ model }));
-  return runIngestion({
-    source: new JsonApiSource(),
-    sourceConfig: source.api,
-    sourceId: source.id,
-    sourceAccount: source.sourceAccount,
-    normalizer: new JsonMappingNormalizer(source.mapping),
-    categorizers,
-    merchantResolvers: merchantResolversFor(source, model, merchantContext),
-    history: historySamplesFromEntries(entries),
-    availableAccounts,
-    existingImportIds: new Set(state.seenImportIds),
-    existingFingerprints: new Set(state.seenFingerprints),
-    cursor: state.cursors[source.id],
-    defaultCurrency: source.defaultCurrency,
-    sourceContext: {
-      resolveSecret: async (reference) =>
-        reference.startsWith("env:")
-          ? process.env[reference.slice("env:".length)]
-          : undefined,
-    },
-  });
+  const targets = expandIngestionSource(source, options);
+  const runs: IngestionRun[] = [];
+  let seenImportIds = [...state.seenImportIds];
+  let seenFingerprints = [...state.seenFingerprints];
+
+  for (const target of targets) {
+    const allAccounts = [...new Set(entries.flatMap((entry) => entry.accounts))]
+      .filter(Boolean)
+      .sort();
+    const availableAccounts = categoryAccountsForSource(
+      {
+        ...source,
+        sourceAccount: target.sourceAccount,
+        accounts: undefined,
+      },
+      allAccounts,
+    );
+    const categorizers: CategorizerPlugin[] = [
+      new MerchantRuleCategorizer(source.rules),
+      new HistoricalCategorizer(),
+      new RecurringCategorizer(),
+    ];
+    if (source.aiEnabled) categorizers.push(new CodexCategorizer({ model }));
+    const run = await runIngestion({
+      source: new JsonApiSource(),
+      sourceConfig: target.api,
+      sourceId: target.sourceId,
+      sourceAccount: target.sourceAccount,
+      normalizer: new JsonMappingNormalizer(source.mapping),
+      categorizers,
+      merchantResolvers: merchantResolversFor(source, model, merchantContext),
+      history: historySamplesFromEntries(entries),
+      availableAccounts,
+      existingImportIds: new Set(seenImportIds),
+      existingFingerprints: new Set(seenFingerprints),
+      cursor: state.cursors[target.sourceId],
+      defaultCurrency: target.defaultCurrency,
+      sourceContext: {
+        resolveSecret: async (reference) => resolveIngestionSecret(reference),
+      },
+    });
+    runs.push(run);
+    seenImportIds = [
+      ...seenImportIds,
+      ...run.proposals
+        .filter((proposal) => proposal.status !== "invalid")
+        .map((proposal) => proposal.importId),
+    ];
+    seenFingerprints = [
+      ...seenFingerprints,
+      ...run.proposals.flatMap((proposal) =>
+        proposal.transaction
+          ? [transactionFingerprint(proposal.transaction)]
+          : [],
+      ),
+    ];
+  }
+
+  return runs;
 }
 
 /** Re-run deterministic category evidence after a merchant is explicitly confirmed. */

@@ -2,28 +2,68 @@
   export const sourceFormSections = [
     "source-details",
     "api",
+    "query-parameters",
     "mapping",
     "rules",
     "enrichment",
   ] as const;
+
+  export const groupedSourceFormSections = [
+    "source-details",
+    "api",
+    "linked-accounts",
+    "query-parameters",
+    "mapping",
+    "rules",
+    "enrichment",
+  ] as const;
+
+  export function ruleSectionId(index: number) {
+    return `rule-${index}`;
+  }
+
+  export function sourceFormSectionIds(ruleCount: number, grouped = false) {
+    const sections = grouped ? groupedSourceFormSections : sourceFormSections;
+    return [
+      ...sections,
+      ...Array.from({ length: ruleCount }, (_, index) => ruleSectionId(index)),
+    ];
+  }
 </script>
 
 <script lang="ts">
   import {
-    FormField as IngestionFormRow,
+    CollapsibleItemList,
+    EntryActions,
+    FormAddButton,
+    FormField,
     FormSectionHeader,
+    StructuredForm,
     type FormValidationIssue,
   } from "@beancount-js/forms";
-  import type {
-    BrandfetchEnrichmentConfig,
-    MerchantEnrichmentConfig,
-  } from "@beancount-js/server";
-  import type { MerchantRule } from "@beancount-js/beangulp";
-  import { Button } from "$lib/components/ui/button";
+  import {
+    isGroupedJsonApiSource,
+    type JsonApiLinkedAccount,
+    type MerchantRule,
+  } from "@beancount-js/beangulp";
+  import Copy from "lucide-svelte/icons/copy";
+  import { untrack } from "svelte";
   import { Input } from "$lib/components/ui/input";
-  import * as Select from "$lib/components/ui/select";
-  import { Switch } from "$lib/components/ui/switch";
   import type { EditableIngestionSource } from "../ingestion/source-form";
+  import {
+    createRuleForm,
+    sourceApiForm,
+    sourceApiGroupedForm,
+    sourceBrandfetchForm,
+    sourceDetailsForm,
+    sourceDetailsGroupedForm,
+    sourceEnrichmentDetailsForm,
+    sourceEnrichmentForm,
+    sourceMappingForm,
+    sourcePaginationForm,
+    type SourceFormContext,
+  } from "../ingestion/source-form-config";
+  import ComboBox from "./ComboBox.svelte";
 
   type KeyValue = [string, string];
 
@@ -36,6 +76,8 @@
     openSections = [...sourceFormSections],
     onOpenSectionsChange = () => {},
     onChange,
+    onDuplicate = () => {},
+    onRemove = () => {},
   }: {
     source: EditableIngestionSource;
     accounts?: string[];
@@ -45,42 +87,69 @@
     openSections?: string[];
     onOpenSectionsChange?: (sections: string[]) => void;
     onChange: (source: EditableIngestionSource) => void;
+    onDuplicate?: () => void;
+    onRemove?: () => void;
   } = $props();
 
-  const defaultBrandfetch: BrandfetchEnrichmentConfig = {
-    enabled: false,
-    apiKeySecretRef: "env:BRANDFETCH_API_KEY",
-    assetMode: "hotlink",
-  };
-  const mappingFields = [
-    { key: "id", label: "Import ID" },
-    { key: "date", label: "Date" },
-    { key: "amount", label: "Amount" },
-    { key: "currency", label: "Currency" },
-    { key: "merchant", label: "Merchant" },
-    { key: "payee", label: "Payee" },
-    { key: "narration", label: "Narration" },
-    { key: "status", label: "Status" },
-    { key: "dateFormat", label: "Date format" },
-  ] as const;
+  let queryDraft: KeyValue[] = $state([]);
 
-  function messages(fieldId: string) {
-    return issues
-      .filter((issue) => issue.fieldId === fieldId)
-      .map((issue) => issue.message);
+  const grouped = $derived(isGroupedJsonApiSource(source));
+  const detailsForm = $derived(
+    grouped ? sourceDetailsGroupedForm : sourceDetailsForm,
+  );
+  const apiForm = $derived(grouped ? sourceApiGroupedForm : sourceApiForm);
+  const formContext = $derived({
+    accounts,
+    credentialAvailable,
+    merchantCredentialAvailable,
+  } satisfies SourceFormContext);
+  const accountItems = $derived(
+    accounts.map((account) => ({ label: account, value: account })),
+  );
+
+  const detailsIssues = $derived(augmentCredentialIssues(issues));
+
+  const sourceQueryFingerprint = $derived(
+    `${source.id}:${JSON.stringify(source.api.query ?? {})}`,
+  );
+
+  function queryObjectFromDraft(entries: KeyValue[]) {
+    return Object.fromEntries(
+      entries
+        .map(([key, value]) => [key.trim(), value] as KeyValue)
+        .filter(([key]) => Boolean(key)),
+    );
   }
 
-  function invalid(fieldId: string) {
-    return messages(fieldId).length > 0;
-  }
+  // Sync draft from parent when the source identity or persisted query changes
+  // (source switch / YAML apply). Blank in-progress rows live only in draft.
+  $effect(() => {
+    const fingerprint = sourceQueryFingerprint;
+    const draftFingerprint = untrack(
+      () => `${source.id}:${JSON.stringify(queryObjectFromDraft(queryDraft))}`,
+    );
+    if (fingerprint !== draftFingerprint) {
+      queryDraft = Object.entries(source.api.query ?? {});
+    }
+  });
 
-  function optional(value: string) {
-    const next = value.trim();
-    return next || undefined;
-  }
-
-  function change(next: EditableIngestionSource) {
-    onChange(next);
+  function augmentCredentialIssues(base: FormValidationIssue[]) {
+    const next = [...base];
+    if (credentialAvailable === false) {
+      next.push({
+        fieldId: "api.secretRef",
+        message: "Credential is not available in this environment",
+        severity: "warning",
+      });
+    }
+    if (merchantCredentialAvailable === false) {
+      next.push({
+        fieldId: "merchantEnrichment.brandfetch.apiKeySecretRef",
+        message: "Brandfetch credential is not available",
+        severity: "warning",
+      });
+    }
+    return next;
   }
 
   function isSectionOpen(section: string) {
@@ -95,80 +164,79 @@
     );
   }
 
-  function updateApi(key: string, value: unknown) {
-    change({ ...source, api: { ...source.api, [key]: value } });
+  function commitQueryObject(entries: KeyValue[]) {
+    const query = queryObjectFromDraft(entries);
+    onChange({
+      ...source,
+      api: {
+        ...source.api,
+        query: Object.keys(query).length ? query : undefined,
+      },
+    });
   }
 
-  function updateMapping(key: string, value: unknown) {
-    change({ ...source, mapping: { ...source.mapping, [key]: value } });
+  function addQueryParam() {
+    queryDraft = [...queryDraft, ["", ""]];
   }
 
-  function updateStringList(
-    parent: "api" | "source",
-    key: string,
-    value: string,
-  ) {
-    const list = value
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-    if (parent === "api") {
-      change({
-        ...source,
-        api: { ...source.api, [key]: list.length ? list : undefined },
-      });
-      return;
-    }
-    change({ ...source, [key]: list.length ? list : undefined });
+  function patchQueryDraft(index: number, part: 0 | 1, value: string) {
+    const next = [...queryDraft];
+    const current = next[index] ?? ["", ""];
+    next[index] = part === 0 ? [value, current[1]] : [current[0], value];
+    queryDraft = next;
+    commitQueryObject(next);
   }
 
-  function queryEntries(): KeyValue[] {
-    return Object.entries(source.api.query ?? {});
-  }
-
-  function updateQuery(entries: KeyValue[]) {
-    const query = Object.fromEntries(
-      entries
-        .map(([key, value]) => [key.trim(), value] as KeyValue)
-        .filter(([key]) => Boolean(key)),
-    );
-    updateApi("query", Object.keys(query).length ? query : undefined);
-  }
-
-  function patchQuery(index: number, part: 0 | 1, value: string) {
-    const entries = queryEntries();
-    const current = entries[index] ?? ["", ""];
-    entries[index] = part === 0 ? [value, current[1]] : [current[0], value];
-    updateQuery(entries);
+  function moveQuery(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= queryDraft.length) return;
+    const next = [...queryDraft];
+    const [item] = next.splice(index, 1);
+    next.splice(target, 0, item!);
+    queryDraft = next;
+    commitQueryObject(next);
   }
 
   function removeQuery(index: number) {
-    updateQuery(queryEntries().filter((_, itemIndex) => itemIndex !== index));
+    const next = queryDraft.filter((_, itemIndex) => itemIndex !== index);
+    queryDraft = next;
+    commitQueryObject(next);
   }
 
-  function updatePagination(
-    key: "cursorQueryParam" | "nextCursorPath",
-    value: string,
+  function linkedAccounts() {
+    return source.accounts ?? [];
+  }
+
+  function updateLinkedAccount(
+    index: number,
+    patch: Partial<JsonApiLinkedAccount>,
   ) {
-    const current = source.api.pagination;
-    updateApi(
-      "pagination",
-      current
-        ? { ...current, [key]: value }
-        : {
-            cursorQueryParam: key === "cursorQueryParam" ? value : "",
-            nextCursorPath: key === "nextCursorPath" ? value : "",
-          },
-    );
+    const current = linkedAccounts();
+    onChange({
+      ...source,
+      accounts: current.map((account, itemIndex) =>
+        itemIndex === index ? { ...account, ...patch } : account,
+      ),
+    });
   }
 
-  function togglePagination(enabled: boolean) {
-    updateApi(
-      "pagination",
-      enabled
-        ? { cursorQueryParam: "cursor", nextCursorPath: "next_cursor" }
-        : undefined,
-    );
+  function removeLinkedAccount(index: number) {
+    onChange({
+      ...source,
+      accounts: linkedAccounts().filter(
+        (_, itemIndex) => itemIndex !== index,
+      ),
+    });
+  }
+
+  function moveLinkedAccount(index: number, direction: -1 | 1) {
+    const current = linkedAccounts();
+    const target = index + direction;
+    if (target < 0 || target >= current.length) return;
+    const next = [...current];
+    const [item] = next.splice(index, 1);
+    next.splice(target, 0, item!);
+    onChange({ ...source, accounts: next });
   }
 
   function rules() {
@@ -176,741 +244,385 @@
   }
 
   function updateRules(next: MerchantRule[]) {
-    change({ ...source, rules: next });
+    onChange({ ...source, rules: next });
   }
 
-  function patchRule(index: number, key: keyof MerchantRule, value: string) {
-    const next = rules().map((rule, itemIndex) =>
-      itemIndex === index ? { ...rule, [key]: optional(value) } : rule,
-    );
+  function remapOpenRuleSections(
+    mapper: (ruleIndex: number) => number | null,
+  ) {
+    const next = openSections
+      .map((id) => {
+        const match = /^rule-(\d+)$/.exec(id);
+        if (!match) return id;
+        const mapped = mapper(Number(match[1]));
+        return mapped === null ? null : ruleSectionId(mapped);
+      })
+      .filter((id): id is string => id !== null);
+    onOpenSectionsChange(next);
+  }
+
+  function moveRule(index: number, direction: -1 | 1) {
+    const current = rules();
+    const target = index + direction;
+    if (target < 0 || target >= current.length) return;
+    const next = [...current];
+    const [item] = next.splice(index, 1);
+    next.splice(target, 0, item!);
     updateRules(next);
+    remapOpenRuleSections((ruleIndex) => {
+      if (ruleIndex === index) return target;
+      if (ruleIndex === target) return index;
+      return ruleIndex;
+    });
   }
 
   function addRule() {
+    const index = rules().length;
+    const expected = sourceFormSectionIds(index, grouped);
+    const expandedAll =
+      openSections.length === expected.length &&
+      expected.every((id) => openSections.includes(id));
     updateRules([...rules(), { merchant: "", account: "" }]);
+    if (expandedAll) {
+      onOpenSectionsChange([...openSections, ruleSectionId(index)]);
+    }
   }
 
   function removeRule(index: number) {
     updateRules(rules().filter((_, itemIndex) => itemIndex !== index));
-  }
-
-  function updateEnrichment(next: MerchantEnrichmentConfig | undefined) {
-    change({ ...source, merchantEnrichment: next });
-  }
-
-  function patchEnrichment(
-    key: keyof MerchantEnrichmentConfig,
-    value: unknown,
-  ) {
-    const current = source.merchantEnrichment ?? { enabled: false };
-    updateEnrichment({ ...current, [key]: value });
-  }
-
-  function toggleEnrichment(enabled: boolean) {
-    updateEnrichment(enabled ? { enabled: false } : undefined);
-  }
-
-  function updateBrandfetch(next: BrandfetchEnrichmentConfig | undefined) {
-    const current = source.merchantEnrichment ?? { enabled: false };
-    updateEnrichment({ ...current, brandfetch: next });
-  }
-
-  function patchBrandfetch(
-    key: keyof BrandfetchEnrichmentConfig,
-    value: unknown,
-  ) {
-    updateBrandfetch({
-      ...(source.merchantEnrichment?.brandfetch ?? defaultBrandfetch),
-      [key]: value,
+    remapOpenRuleSections((ruleIndex) => {
+      if (ruleIndex === index) return null;
+      if (ruleIndex > index) return ruleIndex - 1;
+      return ruleIndex;
     });
   }
 
-  function toggleBrandfetch(enabled: boolean) {
-    updateBrandfetch(enabled ? { ...defaultBrandfetch } : undefined);
+  function updateRuleMerchant(index: number, merchant: string) {
+    const nextMerchant = merchant.trim() || undefined;
+    const current = rules();
+    updateRules(
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, merchant: nextMerchant } : item,
+      ),
+    );
+  }
+
+  function updateSourceName(name: string) {
+    onChange({ ...source, name });
   }
 </script>
-
-<datalist id="ingestion-source-accounts">
-  {#each accounts as account}
-    <option value={account}></option>
-  {/each}
-</datalist>
 
 <div class="ingestion-source-sections" data-ingestion-source-form>
   <section class="ingestion-source-section">
     <FormSectionHeader
-      title="Source details"
+      title={source.name ?? ""}
+      titleLabel="Name"
+      titlePlaceholder="Add Name"
+      disclosureTitle={source.name || "source"}
       open={isSectionOpen("source-details")}
+      movable={false}
+      removable={true}
+      removeLabel={`Remove ${source.name || "source"}`}
+      onTitleChange={updateSourceName}
+      onRemove={onRemove}
       onToggle={() => toggleSection("source-details")}
-    />
+    >
+      {#snippet actions()}
+        <button
+          type="button"
+          class="ingestion-source-duplicate"
+          aria-label={`Duplicate ${source.name || "source"}`}
+          onclick={onDuplicate}
+        >
+          <Copy />
+        </button>
+      {/snippet}
+    </FormSectionHeader>
     {#if isSectionOpen("source-details")}
-      <div class="beancount-structured-form ingestion-structured-form">
-        <IngestionFormRow
-          label="Identifier"
-          controlId="ingestion-source-id"
-          invalid={invalid("id")}
-          messages={messages("id")}
-        >
-          <Input
-            id="ingestion-source-id"
-            value={source.id}
-            aria-invalid={invalid("id") || undefined}
-            oninput={(event) =>
-              change({ ...source, id: event.currentTarget.value })}
-          />
-        </IngestionFormRow>
-        <IngestionFormRow
-          label="Name"
-          controlId="ingestion-source-name"
-          invalid={invalid("name")}
-          messages={messages("name")}
-        >
-          <Input
-            id="ingestion-source-name"
-            value={source.name}
-            aria-invalid={invalid("name") || undefined}
-            oninput={(event) =>
-              change({ ...source, name: event.currentTarget.value })}
-          />
-        </IngestionFormRow>
-        <IngestionFormRow
-          label="Source account"
-          controlId="ingestion-source-account"
-          invalid={invalid("sourceAccount")}
-          messages={messages("sourceAccount")}
-        >
-          <Input
-            id="ingestion-source-account"
-            list="ingestion-source-accounts"
-            value={source.sourceAccount}
-            aria-invalid={invalid("sourceAccount") || undefined}
-            oninput={(event) =>
-              change({ ...source, sourceAccount: event.currentTarget.value })}
-          />
-        </IngestionFormRow>
-        <IngestionFormRow
-          label="Destination file"
-          controlId="ingestion-destination-path"
-        >
-          <Input
-            id="ingestion-destination-path"
-            value={source.destinationPath ?? ""}
-            placeholder="Project entry file"
-            oninput={(event) =>
-              change({
-                ...source,
-                destinationPath: optional(event.currentTarget.value),
-              })}
-          />
-        </IngestionFormRow>
-        <IngestionFormRow
-          label="Default currency"
-          controlId="ingestion-default-currency"
-        >
-          <Input
-            id="ingestion-default-currency"
-            value={source.defaultCurrency ?? ""}
-            placeholder="GBP"
-            oninput={(event) =>
-              change({
-                ...source,
-                defaultCurrency: optional(
-                  event.currentTarget.value,
-                )?.toUpperCase(),
-              })}
-          />
-        </IngestionFormRow>
-        <IngestionFormRow
-          label="Allowed account roots"
-          controlId="ingestion-account-roots"
-        >
-          <Input
-            id="ingestion-account-roots"
-            value={(source.allowedAccountRoots ?? []).join(", ")}
-            placeholder="Expenses, Income"
-            oninput={(event) =>
-              updateStringList(
-                "source",
-                "allowedAccountRoots",
-                event.currentTarget.value,
-              )}
-          />
-        </IngestionFormRow>
-      </div>
-    {/if}
-  </section>
+      <div class="ingestion-section-body ingestion-source-nested">
+        <StructuredForm
+          value={source}
+          config={detailsForm}
+          context={formContext}
+          issues={detailsIssues}
+          onChange={onChange}
+        />
 
-  <section class="ingestion-source-section">
-    <FormSectionHeader
-      title="JSON API"
-      open={isSectionOpen("api")}
-      onToggle={() => toggleSection("api")}
-    />
-    {#if isSectionOpen("api")}
-      <div class="beancount-structured-form ingestion-structured-form">
-        <IngestionFormRow
-          label="Endpoint"
-          controlId="ingestion-api-endpoint"
-          invalid={invalid("api.endpoint")}
-          messages={messages("api.endpoint")}
-        >
-          <Input
-            id="ingestion-api-endpoint"
-            type="url"
-            value={source.api.endpoint}
-            aria-invalid={invalid("api.endpoint") || undefined}
-            placeholder="https://api.example.com/transactions"
-            oninput={(event) =>
-              updateApi("endpoint", event.currentTarget.value)}
+        <section class="ingestion-source-section">
+          <FormSectionHeader
+            title="JSON API"
+            open={isSectionOpen("api")}
+            editable={false}
+            titleToggleable={true}
+            movable={false}
+            removable={false}
+            onToggle={() => toggleSection("api")}
           />
-        </IngestionFormRow>
-        <IngestionFormRow
-          label="Credential reference"
-          controlId="ingestion-api-secret-ref"
-          invalid={invalid("api.secretRef")}
-          messages={messages("api.secretRef")}
-        >
-          <Input
-            id="ingestion-api-secret-ref"
-            value={source.api.secretRef}
-            aria-invalid={invalid("api.secretRef") || undefined}
-            placeholder="env:BANK_API_TOKEN"
-            oninput={(event) =>
-              updateApi("secretRef", event.currentTarget.value)}
-          />
-          {#if credentialAvailable !== undefined}
-            <p
-              class={credentialAvailable
-                ? "mt-1.5 text-xs text-emerald-600"
-                : "mt-1.5 text-xs text-destructive"}
-            >
-              {credentialAvailable
-                ? "Credential available"
-                : "Credential is not available in this environment"}
-            </p>
-          {/if}
-        </IngestionFormRow>
-        <IngestionFormRow
-          label="Records path"
-          controlId="ingestion-api-records-path"
-        >
-          <Input
-            id="ingestion-api-records-path"
-            value={source.api.recordsPath ?? ""}
-            placeholder="transactions"
-            oninput={(event) =>
-              updateApi("recordsPath", optional(event.currentTarget.value))}
-          />
-        </IngestionFormRow>
-        <IngestionFormRow
-          label="Allowed hosts"
-          controlId="ingestion-api-allowed-hosts"
-          invalid={invalid("api.allowedHosts")}
-          messages={messages("api.allowedHosts")}
-        >
-          <Input
-            id="ingestion-api-allowed-hosts"
-            value={(source.api.allowedHosts ?? []).join(", ")}
-            placeholder="api.example.com"
-            aria-invalid={invalid("api.allowedHosts") || undefined}
-            oninput={(event) =>
-              updateStringList(
-                "api",
-                "allowedHosts",
-                event.currentTarget.value,
-              )}
-          />
-        </IngestionFormRow>
-        <IngestionFormRow label="Cursor pagination" align="center">
-          <Switch
-            size="sm"
-            checked={Boolean(source.api.pagination)}
-            aria-label="Configure cursor pagination"
-            onCheckedChange={togglePagination}
-          />
-        </IngestionFormRow>
-        {#if source.api.pagination}
-          <div
-            class="beancount-structured-form ingestion-structured-form nested-form"
-          >
-            <IngestionFormRow
-              label="Cursor parameter"
-              controlId="ingestion-pagination-cursor"
-            >
-              <Input
-                id="ingestion-pagination-cursor"
-                value={source.api.pagination.cursorQueryParam}
-                oninput={(event) =>
-                  updatePagination(
-                    "cursorQueryParam",
-                    event.currentTarget.value,
-                  )}
-              />
-            </IngestionFormRow>
-            <IngestionFormRow
-              label="Next cursor path"
-              controlId="ingestion-pagination-next"
-            >
-              <Input
-                id="ingestion-pagination-next"
-                value={source.api.pagination.nextCursorPath}
-                oninput={(event) =>
-                  updatePagination("nextCursorPath", event.currentTarget.value)}
-              />
-            </IngestionFormRow>
-          </div>
-        {/if}
-        <div class="border-t py-3">
-          <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 class="text-sm font-medium">Query parameters</h3>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onclick={() => updateQuery([...queryEntries(), ["", ""]])}
-              >Add parameter</Button
-            >
-          </div>
-          {#if queryEntries().length}
-            <div class="grid gap-2">
-              {#each queryEntries() as [key, value], index (index)}
-                <div
-                  class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2"
-                >
-                  <Input
-                    value={key}
-                    aria-label={`Query parameter ${index + 1} name`}
-                    placeholder="name"
-                    oninput={(event) =>
-                      patchQuery(index, 0, event.currentTarget.value)}
+          {#if isSectionOpen("api")}
+            <div class="ingestion-section-body">
+              <div class="beancount-structured-form">
+                <StructuredForm
+                  value={source}
+                  config={apiForm}
+                  context={formContext}
+                  issues={detailsIssues}
+                  embedded
+                  onChange={onChange}
+                />
+                {#if source.api.pagination}
+                  <StructuredForm
+                    value={source}
+                    config={sourcePaginationForm}
+                    context={formContext}
+                    issues={detailsIssues}
+                    embedded
+                    onChange={onChange}
                   />
-                  <Input
-                    {value}
-                    aria-label={`Query parameter ${index + 1} value`}
-                    placeholder="value"
-                    oninput={(event) =>
-                      patchQuery(index, 1, event.currentTarget.value)}
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    aria-label={`Remove query parameter ${index + 1}`}
-                    onclick={() => removeQuery(index)}>Remove</Button
-                  >
-                </div>
-              {/each}
-            </div>
-          {:else}
-            <p class="text-sm text-muted-foreground">
-              No static query parameters.
-            </p>
-          {/if}
-        </div>
-      </div>
-    {/if}
-  </section>
-
-  <section class="ingestion-source-section">
-    <FormSectionHeader
-      title="Record mapping"
-      open={isSectionOpen("mapping")}
-      onToggle={() => toggleSection("mapping")}
-    />
-    {#if isSectionOpen("mapping")}
-      <div class="beancount-structured-form ingestion-structured-form">
-        {#each mappingFields as field (field.key)}
-          <IngestionFormRow
-            label={field.label}
-            controlId={`ingestion-mapping-${field.key}`}
-            invalid={invalid(`mapping.${field.key}`)}
-            messages={messages(`mapping.${field.key}`)}
-          >
-            <Input
-              id={`ingestion-mapping-${field.key}`}
-              value={source.mapping[field.key] ?? ""}
-              aria-invalid={invalid(`mapping.${field.key}`) || undefined}
-              oninput={(event) =>
-                updateMapping(field.key, optional(event.currentTarget.value))}
-            />
-          </IngestionFormRow>
-        {/each}
-        <IngestionFormRow label="Amount sign" controlId="ingestion-amount-sign">
-          <Select.Root
-            type="single"
-            value={source.mapping.amountSign ?? "as-is"}
-            onValueChange={(value) =>
-              updateMapping(
-                "amountSign",
-                value === "as-is" ? undefined : value,
-              )}
-          >
-            <Select.Trigger id="ingestion-amount-sign" aria-label="Amount sign">
-              <span
-                >{source.mapping.amountSign === "invert"
-                  ? "Invert"
-                  : "As-is"}</span
-              >
-            </Select.Trigger>
-            <Select.Content>
-              <Select.Group>
-                <Select.Item value="as-is" label="As-is" />
-                <Select.Item value="invert" label="Invert" />
-              </Select.Group>
-            </Select.Content>
-          </Select.Root>
-        </IngestionFormRow>
-      </div>
-    {/if}
-  </section>
-
-  <section class="ingestion-source-section">
-    <FormSectionHeader
-      title="Merchant rules"
-      open={isSectionOpen("rules")}
-      onToggle={() => toggleSection("rules")}
-    />
-    {#if isSectionOpen("rules")}
-      <div class="flex flex-col gap-3">
-        <div class="flex justify-end">
-          <Button size="sm" variant="outline" onclick={addRule}>Add rule</Button
-          >
-        </div>
-        {#if rules().length}
-          {#each rules() as rule, index (index)}
-            <section class="border-b" aria-label={`Merchant rule ${index + 1}`}>
-              <div class="flex items-center justify-between gap-3 py-2.5">
-                <h3 class="text-sm font-medium">Rule {index + 1}</h3>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onclick={() => removeRule(index)}
-                >
-                  Remove rule
-                </Button>
+                {/if}
               </div>
-              <div
-                class="beancount-structured-form ingestion-structured-form nested-form"
+
+              <CollapsibleItemList
+                title="Query parameters"
+                addLabel="parameter"
+                count={queryDraft.length}
+                open={isSectionOpen("query-parameters")}
+                onToggle={() => toggleSection("query-parameters")}
+                onAdd={addQueryParam}
               >
-                <IngestionFormRow
-                  label="Merchant"
-                  controlId={`ingestion-rule-${index}-merchant`}
-                >
-                  <Input
-                    id={`ingestion-rule-${index}-merchant`}
-                    value={rule.merchant ?? ""}
-                    oninput={(event) =>
-                      patchRule(index, "merchant", event.currentTarget.value)}
-                  />
-                </IngestionFormRow>
-                <IngestionFormRow
-                  label="Merchant ID"
-                  controlId={`ingestion-rule-${index}-merchant-id`}
-                >
-                  <Input
-                    id={`ingestion-rule-${index}-merchant-id`}
-                    value={rule.merchantId ?? ""}
-                    oninput={(event) =>
-                      patchRule(index, "merchantId", event.currentTarget.value)}
-                  />
-                </IngestionFormRow>
-                <IngestionFormRow
-                  label="Category account"
-                  controlId={`ingestion-rule-${index}-account`}
-                >
-                  <Input
-                    id={`ingestion-rule-${index}-account`}
-                    list="ingestion-source-accounts"
-                    value={rule.account}
-                    oninput={(event) =>
-                      patchRule(index, "account", event.currentTarget.value)}
-                  />
-                </IngestionFormRow>
-                <IngestionFormRow
-                  label="Match source account"
-                  controlId={`ingestion-rule-${index}-source-account`}
-                >
-                  <Input
-                    id={`ingestion-rule-${index}-source-account`}
-                    list="ingestion-source-accounts"
-                    value={rule.sourceAccount ?? ""}
-                    oninput={(event) =>
-                      patchRule(
-                        index,
-                        "sourceAccount",
-                        event.currentTarget.value,
-                      )}
-                  />
-                </IngestionFormRow>
-                <IngestionFormRow
-                  label="Direction"
-                  controlId={`ingestion-rule-${index}-direction`}
-                >
-                  <Select.Root
-                    type="single"
-                    value={rule.direction ?? "any"}
-                    onValueChange={(value) =>
-                      patchRule(
-                        index,
-                        "direction",
-                        value === "any" ? "" : value,
-                      )}
+                {#each queryDraft as [key, value], index (index)}
+                  <EntryActions
+                    {index}
+                    total={queryDraft.length}
+                    removeLabel={`Remove query parameter ${index + 1}`}
+                    onMove={(direction) => moveQuery(index, direction)}
+                    onRemove={() => removeQuery(index)}
                   >
-                    <Select.Trigger
-                      id={`ingestion-rule-${index}-direction`}
-                      aria-label={`Rule ${index + 1} direction`}
-                    >
-                      <span>{rule.direction ?? "Any direction"}</span>
-                    </Select.Trigger>
-                    <Select.Content>
-                      <Select.Group>
-                        <Select.Item value="any" label="Any direction" />
-                        <Select.Item value="debit" label="Debit" />
-                        <Select.Item value="credit" label="Credit" />
-                      </Select.Group>
-                    </Select.Content>
-                  </Select.Root>
-                </IngestionFormRow>
-              </div>
-            </section>
-          {/each}
-        {:else}
-          <div class="flex justify-end border-b py-3">
-            <Button size="sm" variant="outline" onclick={addRule}
-              >Add rule</Button
-            >
-          </div>
-        {/if}
-      </div>
-    {/if}
-  </section>
-
-  <section class="ingestion-source-section">
-    <FormSectionHeader
-      title="Categorisation and enrichment"
-      open={isSectionOpen("enrichment")}
-      onToggle={() => toggleSection("enrichment")}
-    />
-    {#if isSectionOpen("enrichment")}
-      <div class="beancount-structured-form ingestion-structured-form">
-        <IngestionFormRow label="AI categorisation" align="center">
-          <Switch
-            size="sm"
-            checked={source.aiEnabled === true}
-            aria-label="Enable AI categorisation"
-            onCheckedChange={(value) =>
-              change({ ...source, aiEnabled: value || undefined })}
-          />
-        </IngestionFormRow>
-        <IngestionFormRow label="Merchant enrichment" align="center">
-          <Switch
-            size="sm"
-            checked={Boolean(source.merchantEnrichment)}
-            aria-label="Configure merchant enrichment"
-            onCheckedChange={toggleEnrichment}
-          />
-        </IngestionFormRow>
-
-        {#if source.merchantEnrichment}
-          <div
-            class="beancount-structured-form ingestion-structured-form nested-form"
-          >
-            <IngestionFormRow label="Enable enrichment" align="center">
-              <Switch
-                size="sm"
-                checked={source.merchantEnrichment.enabled}
-                aria-label="Enable merchant enrichment"
-                onCheckedChange={(value) => patchEnrichment("enabled", value)}
-              />
-            </IngestionFormRow>
-            <IngestionFormRow label="Use AI for enrichment" align="center">
-              <Switch
-                size="sm"
-                checked={source.merchantEnrichment.aiEnabled === true}
-                aria-label="Enable AI merchant enrichment"
-                onCheckedChange={(value) =>
-                  patchEnrichment("aiEnabled", value || undefined)}
-              />
-            </IngestionFormRow>
-            <IngestionFormRow
-              label="Country code"
-              controlId="ingestion-enrichment-country"
-              invalid={invalid("merchantEnrichment.countryCode")}
-              messages={messages("merchantEnrichment.countryCode")}
-            >
-              <Input
-                id="ingestion-enrichment-country"
-                value={source.merchantEnrichment.countryCode ?? ""}
-                placeholder="GB"
-                aria-invalid={invalid("merchantEnrichment.countryCode") ||
-                  undefined}
-                oninput={(event) =>
-                  patchEnrichment(
-                    "countryCode",
-                    optional(event.currentTarget.value)?.toUpperCase(),
-                  )}
-              />
-            </IngestionFormRow>
-            <IngestionFormRow label="Brandfetch" align="center">
-              <Switch
-                size="sm"
-                checked={Boolean(source.merchantEnrichment.brandfetch)}
-                aria-label="Configure Brandfetch"
-                onCheckedChange={toggleBrandfetch}
-              />
-            </IngestionFormRow>
-
-            {#if source.merchantEnrichment.brandfetch}
-              <div
-                class="beancount-structured-form ingestion-structured-form nested-form"
-              >
-                <IngestionFormRow label="Enable Brandfetch" align="center">
-                  <Switch
-                    size="sm"
-                    checked={source.merchantEnrichment.brandfetch.enabled}
-                    aria-label="Enable Brandfetch"
-                    onCheckedChange={(value) =>
-                      patchBrandfetch("enabled", value)}
-                  />
-                </IngestionFormRow>
-                <IngestionFormRow label="Allow name search" align="center">
-                  <Switch
-                    size="sm"
-                    checked={source.merchantEnrichment.brandfetch
-                      .allowNameSearch === true}
-                    aria-label="Allow Brandfetch name search"
-                    onCheckedChange={(value) =>
-                      patchBrandfetch("allowNameSearch", value || undefined)}
-                  />
-                </IngestionFormRow>
-                <IngestionFormRow
-                  label="Allow transaction lookup"
-                  align="center"
-                >
-                  <Switch
-                    size="sm"
-                    checked={source.merchantEnrichment.brandfetch
-                      .allowTransactionLookup === true}
-                    aria-label="Allow Brandfetch transaction lookup"
-                    onCheckedChange={(value) =>
-                      patchBrandfetch(
-                        "allowTransactionLookup",
-                        value || undefined,
-                      )}
-                  />
-                </IngestionFormRow>
-                <IngestionFormRow label="Allow content caching" align="center">
-                  <Switch
-                    size="sm"
-                    checked={source.merchantEnrichment.brandfetch
-                      .cacheContentAllowed === true}
-                    aria-label="Allow Brandfetch cache content"
-                    onCheckedChange={(value) =>
-                      patchBrandfetch(
-                        "cacheContentAllowed",
-                        value || undefined,
-                      )}
-                  />
-                </IngestionFormRow>
-                <IngestionFormRow
-                  label="API key reference"
-                  controlId="ingestion-brandfetch-api-key"
-                  invalid={invalid(
-                    "merchantEnrichment.brandfetch.apiKeySecretRef",
-                  )}
-                  messages={messages(
-                    "merchantEnrichment.brandfetch.apiKeySecretRef",
-                  )}
-                >
-                  <Input
-                    id="ingestion-brandfetch-api-key"
-                    value={source.merchantEnrichment.brandfetch.apiKeySecretRef}
-                    aria-invalid={invalid(
-                      "merchantEnrichment.brandfetch.apiKeySecretRef",
-                    ) || undefined}
-                    oninput={(event) =>
-                      patchBrandfetch(
-                        "apiKeySecretRef",
-                        event.currentTarget.value,
-                      )}
-                  />
-                  {#if merchantCredentialAvailable !== undefined}
-                    <p
-                      class={merchantCredentialAvailable
-                        ? "mt-1.5 text-xs text-emerald-600"
-                        : "mt-1.5 text-xs text-destructive"}
-                    >
-                      {merchantCredentialAvailable
-                        ? "Brandfetch credential available"
-                        : "Brandfetch credential is not available"}
-                    </p>
-                  {/if}
-                </IngestionFormRow>
-                <IngestionFormRow
-                  label="Client ID"
-                  controlId="ingestion-brandfetch-client-id"
-                >
-                  <Input
-                    id="ingestion-brandfetch-client-id"
-                    value={source.merchantEnrichment.brandfetch.clientId ?? ""}
-                    oninput={(event) =>
-                      patchBrandfetch(
-                        "clientId",
-                        optional(event.currentTarget.value),
-                      )}
-                  />
-                </IngestionFormRow>
-                <IngestionFormRow
-                  label="Asset mode"
-                  controlId="ingestion-brandfetch-asset-mode"
-                >
-                  <Select.Root
-                    type="single"
-                    value={source.merchantEnrichment.brandfetch.assetMode ??
-                      "hotlink"}
-                    onValueChange={(value) =>
-                      patchBrandfetch("assetMode", value)}
-                  >
-                    <Select.Trigger
-                      id="ingestion-brandfetch-asset-mode"
-                      aria-label="Brandfetch asset mode"
-                    >
-                      <span
-                        >{source.merchantEnrichment.brandfetch.assetMode ??
-                          "hotlink"}</span
+                    <div class="beancount-structured-form">
+                      <FormField label="Name" controlId={`query-${index}-name`}>
+                        <Input
+                          id={`query-${index}-name`}
+                          value={key}
+                          aria-label={`Query parameter ${index + 1} name`}
+                          placeholder="Add name"
+                          oninput={(event) =>
+                            patchQueryDraft(index, 0, event.currentTarget.value)}
+                        />
+                      </FormField>
+                      <FormField
+                        label="Value"
+                        controlId={`query-${index}-value`}
                       >
-                    </Select.Trigger>
-                    <Select.Content>
-                      <Select.Group>
-                        <Select.Item value="hotlink" label="Hotlink" />
-                        <Select.Item value="cache" label="Cache" />
-                      </Select.Group>
-                    </Select.Content>
-                  </Select.Root>
-                </IngestionFormRow>
-                <IngestionFormRow
-                  label="Cache TTL (days)"
-                  controlId="ingestion-brandfetch-ttl"
-                >
-                  <Input
-                    id="ingestion-brandfetch-ttl"
-                    type="number"
-                    min="1"
-                    max="29"
-                    value={source.merchantEnrichment.brandfetch.ttlDays ?? ""}
-                    oninput={(event) =>
-                      patchBrandfetch(
-                        "ttlDays",
-                        event.currentTarget.value
-                          ? Number(event.currentTarget.value)
-                          : undefined,
-                      )}
-                  />
-                </IngestionFormRow>
+                        <Input
+                          id={`query-${index}-value`}
+                          {value}
+                          aria-label={`Query parameter ${index + 1} value`}
+                          placeholder="Add value"
+                          oninput={(event) =>
+                            patchQueryDraft(index, 1, event.currentTarget.value)}
+                        />
+                      </FormField>
+                    </div>
+                  </EntryActions>
+                {/each}
+              </CollapsibleItemList>
+            </div>
+          {/if}
+        </section>
+
+        {#if grouped}
+          <section class="ingestion-source-section">
+            <FormSectionHeader
+              title="Linked accounts"
+              open={isSectionOpen("linked-accounts")}
+              editable={false}
+              titleToggleable={true}
+              movable={false}
+              removable={false}
+              onToggle={() => toggleSection("linked-accounts")}
+            />
+            {#if isSectionOpen("linked-accounts")}
+              <div class="ingestion-section-body">
+                {#each linkedAccounts() as account, index (account.id)}
+                  <EntryActions
+                    {index}
+                    total={linkedAccounts().length}
+                    removeLabel={`Remove linked account ${account.name || account.id}`}
+                    onMove={(direction) => moveLinkedAccount(index, direction)}
+                    onRemove={() => removeLinkedAccount(index)}
+                  >
+                    <div class="beancount-structured-form">
+                      <FormField
+                        label="Name"
+                        controlId={`linked-account-${index}-name`}
+                      >
+                        <Input
+                          id={`linked-account-${index}-name`}
+                          value={account.name}
+                          aria-label={`Linked account ${index + 1} name`}
+                          oninput={(event) =>
+                            updateLinkedAccount(index, {
+                              name: event.currentTarget.value,
+                            })}
+                        />
+                      </FormField>
+                      <FormField
+                        label="Id"
+                        controlId={`linked-account-${index}-id`}
+                      >
+                        <Input
+                          id={`linked-account-${index}-id`}
+                          value={account.id}
+                          readonly
+                          aria-label={`Linked account ${index + 1} id`}
+                        />
+                      </FormField>
+                      <FormField
+                        label="Source account"
+                        controlId={`linked-account-${index}-source`}
+                        as="div"
+                      >
+                        <ComboBox
+                          items={accountItems}
+                          value={account.sourceAccount ?? ""}
+                          placeholder="Select account"
+                          onValueChange={(value) =>
+                            updateLinkedAccount(index, {
+                              sourceAccount: value,
+                            })}
+                        />
+                      </FormField>
+                    </div>
+                  </EntryActions>
+                {/each}
               </div>
             {/if}
-          </div>
+          </section>
         {/if}
+
+        <section class="ingestion-source-section">
+          <FormSectionHeader
+            title="Record mapping"
+            open={isSectionOpen("mapping")}
+            editable={false}
+            titleToggleable={true}
+            movable={false}
+            removable={false}
+            onToggle={() => toggleSection("mapping")}
+          />
+          {#if isSectionOpen("mapping")}
+            <div class="ingestion-section-body">
+              <StructuredForm
+                value={source}
+                config={sourceMappingForm}
+                context={formContext}
+                issues={detailsIssues}
+                onChange={onChange}
+              />
+            </div>
+          {/if}
+        </section>
+
+        <section class="ingestion-source-section">
+          <FormSectionHeader
+            title="Merchant rules"
+            open={isSectionOpen("rules")}
+            editable={false}
+            titleToggleable={true}
+            movable={false}
+            removable={false}
+            onToggle={() => toggleSection("rules")}
+          />
+          {#if isSectionOpen("rules")}
+            <div class="ingestion-section-body">
+              {#each rules() as rule, index (index)}
+                <div
+                  class="ingestion-rule"
+                  aria-label={`Merchant rule ${index + 1}`}
+                >
+                  <FormSectionHeader
+                    title={rule.merchant ?? ""}
+                    titleLabel="Merchant"
+                    titlePlaceholder="Add Merchant"
+                    {index}
+                    total={rules().length}
+                    open={isSectionOpen(ruleSectionId(index))}
+                    removeLabel={`Remove rule ${index + 1}`}
+                    onTitleChange={(value) => updateRuleMerchant(index, value)}
+                    onMove={(direction) => moveRule(index, direction)}
+                    onRemove={() => removeRule(index)}
+                    onToggle={() => toggleSection(ruleSectionId(index))}
+                  />
+                  {#if isSectionOpen(ruleSectionId(index))}
+                    <div class="ingestion-rule-body">
+                      <StructuredForm
+                        value={rule}
+                        config={createRuleForm(index)}
+                        context={formContext}
+                        onChange={(next) => {
+                          const current = rules();
+                          updateRules(
+                            current.map((item, itemIndex) =>
+                              itemIndex === index ? next : item,
+                            ),
+                          );
+                        }}
+                      />
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+              <div class="ingestion-array-footer">
+                <FormAddButton label="Add rule" onclick={addRule} />
+              </div>
+            </div>
+          {/if}
+        </section>
+
+        <section class="ingestion-source-section">
+          <FormSectionHeader
+            title="Categorisation and enrichment"
+            open={isSectionOpen("enrichment")}
+            editable={false}
+            titleToggleable={true}
+            movable={false}
+            removable={false}
+            onToggle={() => toggleSection("enrichment")}
+          />
+          {#if isSectionOpen("enrichment")}
+            <div class="ingestion-section-body">
+              <div class="beancount-structured-form">
+                <StructuredForm
+                  value={source}
+                  config={sourceEnrichmentForm}
+                  context={formContext}
+                  issues={detailsIssues}
+                  embedded
+                  onChange={onChange}
+                />
+                {#if source.merchantEnrichment}
+                  <StructuredForm
+                    value={source}
+                    config={sourceEnrichmentDetailsForm}
+                    context={formContext}
+                    issues={detailsIssues}
+                    embedded
+                    onChange={onChange}
+                  />
+                  {#if source.merchantEnrichment.brandfetch}
+                    <StructuredForm
+                      value={source}
+                      config={sourceBrandfetchForm}
+                      context={formContext}
+                      issues={detailsIssues}
+                      embedded
+                      onChange={onChange}
+                    />
+                  {/if}
+                {/if}
+              </div>
+            </div>
+          {/if}
+        </section>
       </div>
     {/if}
   </section>
@@ -927,15 +639,65 @@
     min-width: 0;
   }
 
-  .ingestion-source-section > :global(.beancount-structured-form),
-  .ingestion-source-section > .flex {
+  .ingestion-section-body {
     margin-top: 0.75rem;
-    padding-left: 2rem;
+    padding-left: 0.5rem;
+    min-width: 0;
+    display: grid;
+    gap: 0.75rem;
   }
 
-  .nested-form {
-    margin-left: 1rem;
-    padding-left: 1rem;
-    border-left: 1px solid var(--border);
+  .ingestion-source-nested {
+    gap: 1.5rem;
+    /* Room for nested disclosure chevrons */
+    padding-left: 1.5rem;
+  }
+
+  .ingestion-array-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .ingestion-rule {
+    min-width: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .ingestion-rule-body {
+    padding-left: 0.5rem;
+    min-width: 0;
+  }
+
+  .ingestion-source-duplicate {
+    display: grid;
+    width: 1.25rem;
+    height: 1.25rem;
+    place-items: center;
+    border: 0;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: var(
+      --cv-form-muted,
+      var(--beancount-form-muted, var(--muted-foreground))
+    );
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .ingestion-source-duplicate :global(svg) {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .ingestion-source-duplicate:hover,
+  .ingestion-source-duplicate:focus-visible {
+    color: var(
+      --cv-form-foreground,
+      var(--beancount-form-foreground, var(--foreground))
+    );
+    outline: 0;
   }
 </style>
