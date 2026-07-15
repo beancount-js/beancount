@@ -50,14 +50,16 @@
     </div>
     <span
       class:dimmed={!amount}
-      class="flex items-center justify-end gap-1.5 px-3 text-right font-mono text-[13px] tabular-nums"
+      class="grid grid-cols-[2.6rem_minmax(0,1fr)] items-center gap-1.5 px-3 text-right font-mono text-[13px] tabular-nums"
     >
       <span
         class:invisible={!amount}
-        class="text-[10px] tracking-[-0.16em] text-primary"
+        class="justify-self-start text-[10px] tracking-[-0.16em] text-primary"
         aria-hidden="true">▍▍▍▍▍</span
       >
-      <span>{amount ? `${weight.toFixed(1)}%` : "—"}</span>
+      <span class="justify-self-end"
+        >{amount ? `${weight.toFixed(1)}%` : "—"}</span
+      >
     </span>
     <span
       class:dimmed={!amount}

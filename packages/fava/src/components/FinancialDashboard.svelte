@@ -17,6 +17,7 @@
     type DashboardPeriod,
   } from "./dashboard/model";
   import { urlForAccount } from "../helpers";
+  import * as Select from "$lib/components/ui/select/index.js";
   import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
 
   const { ledgerData, ledgerOptions, conversion } = useContext();
@@ -48,9 +49,8 @@
     selectedCurrency = (event.currentTarget as HTMLSelectElement).value;
   }
 
-  function updatePeriod(event: Event) {
-    period = (event.currentTarget as HTMLSelectElement)
-      .value as DashboardPeriod;
+  function updatePeriod(value: string) {
+    period = value as DashboardPeriod;
   }
 </script>
 
@@ -70,16 +70,26 @@
         </h1>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <select
-          class="h-8 w-36 rounded-md border border-input bg-background px-2 text-xs font-medium shadow-sm outline-none focus:ring-1 focus:ring-ring"
-          aria-label="Dashboard period"
+        <Select.Root
+          type="single"
           value={period}
-          on:change={updatePeriod}
+          controlledValue
+          onValueChange={updatePeriod}
         >
-          {#each periods as option}
-            <option value={option}>{dashboardPeriodLabels[option]}</option>
-          {/each}
-        </select>
+          <Select.Trigger
+            class="h-8 w-36 text-xs font-medium"
+            aria-label="Dashboard period"
+          >
+            {dashboardPeriodLabels[period]}
+          </Select.Trigger>
+          <Select.Content>
+            {#each periods as option}
+              <Select.Item value={option}>
+                {dashboardPeriodLabels[option]}
+              </Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
         {#if currencies.length > 1}
           <select
             class="h-8 w-24 rounded-md border border-input bg-background px-2 text-xs font-medium shadow-sm outline-none focus:ring-1 focus:ring-ring"

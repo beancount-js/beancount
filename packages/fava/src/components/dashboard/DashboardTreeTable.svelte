@@ -9,6 +9,15 @@
   export let formatter: (value: number, currency: string) => string;
   export let multiplier = 1;
 
+  const contributionColors = [
+    "#7667d9",
+    "#3c8ce7",
+    "#36a981",
+    "#dd8b45",
+    "#d96478",
+    "#8491b6",
+  ];
+
   let collapsed = new Set<string>();
 
   $: roots = tree.account === "" ? tree.children : [tree];
@@ -16,6 +25,27 @@
     (sum, root) => sum + (root.balanceChildren[currency] ?? 0) * multiplier,
     0,
   );
+  $: contributionNodes = roots.flatMap((root) =>
+    root.children.length ? root.children : [root],
+  );
+  $: contributionTotal = contributionNodes.reduce(
+    (sum, node) =>
+      sum + Math.abs((node.balanceChildren[currency] ?? 0) * multiplier),
+    0,
+  );
+  $: contributions = contributionNodes
+    .map((node, index) => {
+      const amount = (node.balanceChildren[currency] ?? 0) * multiplier;
+      return {
+        account: node.account,
+        amount,
+        color: contributionColors[index % contributionColors.length],
+        percentage: contributionTotal
+          ? (Math.abs(amount) / contributionTotal) * 100
+          : 0,
+      };
+    })
+    .filter((contribution) => contribution.amount);
 
   function toggle(account: string) {
     const next = new Set(collapsed);
@@ -38,15 +68,34 @@
     >
   </div>
   <div
-    class="mt-3 h-2 w-full rounded-full bg-primary/80"
-    aria-hidden="true"
-  ></div>
-  <div class="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-    <span class="size-2.5 rounded-full bg-primary" aria-hidden="true"></span>
-    <span>{title}</span>
-    <span class="font-mono text-xs tabular-nums text-foreground"
-      >{total ? "100%" : "—"}</span
-    >
+    class="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-muted"
+    role="img"
+    aria-label={`${title} category contributions`}
+  >
+    {#each contributions as contribution (contribution.account)}
+      <span
+        class="h-full first:rounded-l-full last:rounded-r-full"
+        style={`width: ${contribution.percentage}%; background: ${contribution.color}`}
+        title={`${contribution.account}: ${formatter(contribution.amount, currency)}`}
+      ></span>
+    {/each}
+  </div>
+  <div
+    class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground"
+  >
+    {#each contributions as contribution (contribution.account)}
+      <span class="flex items-center gap-2">
+        <span
+          class="size-2.5 shrink-0 rounded-full"
+          style={`background: ${contribution.color}`}
+          aria-hidden="true"
+        ></span>
+        <span>{contribution.account.split(":").at(-1)}</span>
+        <span class="font-mono text-xs tabular-nums text-foreground"
+          >{contribution.percentage.toFixed(1)}%</span
+        >
+      </span>
+    {/each}
   </div>
   <div
     class="mt-4 overflow-x-auto rounded-2xl border border-border/80 bg-card p-1"
