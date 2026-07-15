@@ -12,7 +12,7 @@ import {
   type Posting,
 } from "@beancount-js/beancount";
 import { formatDate } from "@beancount-js/parser";
-import type { DateTime } from "luxon";
+import { DateTime } from "luxon";
 
 export type JournalRecord = {
   key: string;
@@ -298,20 +298,21 @@ export function paginateJournalGroups(
 }
 
 /**
- * Return all activity for the Transactions view, or only future-dated payments
- * for Upcoming. Upcoming payments are ordered from the nearest date onwards.
+ * Split activity at the local calendar-day boundary: Transactions includes
+ * today and earlier, while Upcoming contains later dates only. Upcoming
+ * payments are ordered from the nearest date onwards.
  */
 export function filterJournalGroupsByTimeframe(
   groups: readonly JournalDateGroup[],
   timeframe: JournalTimeframe,
   now: DateTime = DateTime.now(),
 ) {
-  if (timeframe === "transactions") return groups;
-
-  const startOfToday = now.startOf("day").toMillis();
-  return groups
-    .filter((group) => group.date.startOf("day").toMillis() > startOfToday)
-    .reverse();
+  const today = now.toISODate() ?? "";
+  const upcoming = (group: JournalDateGroup) => group.key > today;
+  const matching = groups.filter((group) =>
+    timeframe === "upcoming" ? upcoming(group) : !upcoming(group),
+  );
+  return timeframe === "upcoming" ? matching.reverse() : matching;
 }
 
 export function orderedBalanceEntries(

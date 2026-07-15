@@ -144,7 +144,7 @@ describe("grouped journal model", () => {
     ]);
   });
 
-  test("shows all transactions and orders future payments from nearest to furthest", () => {
+  test("splits transactions through today from future payments", () => {
     const records = journalRecords([
       transaction("2026-04-05", "Later payment", "5"),
       transaction("2026-04-04", "Next payment", "4"),
@@ -158,7 +158,7 @@ describe("grouped journal model", () => {
       filterJournalGroupsByTimeframe(groups, "transactions", now).map(
         (group) => group.key,
       ),
-    ).toEqual(["2026-04-05", "2026-04-04", "2026-04-03", "2026-04-02"]);
+    ).toEqual(["2026-04-03", "2026-04-02"]);
     expect(
       filterJournalGroupsByTimeframe(groups, "upcoming", now).map(
         (group) => group.key,
