@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ArrowDownRight, ArrowUpRight } from "lucide-svelte";
-  import { conversionLabel, getConversion } from "@beancount-js/beancount";
+  import { conversionLabel, type Conversion } from "@beancount-js/beancount";
 
   import { useContext } from "../context";
   import { useCtx } from "../stores/format";
@@ -17,6 +17,7 @@
     type DashboardPeriod,
   } from "./dashboard/model";
   import { urlForAccount } from "../helpers";
+  import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
 
   const { ledgerData, ledgerOptions, conversion } = useContext();
   const ctx = useCtx();
@@ -37,21 +38,26 @@
     selectedCurrency,
   );
 
-  function updateConversion(event: Event) {
-    conversion.set(
-      getConversion((event.currentTarget as HTMLSelectElement).value),
-    );
+  function updateConversion(value: string | string[] | undefined) {
+    if (typeof value === "string") {
+      conversion.set(value as Conversion);
+    }
   }
 
   function updateCurrency(event: Event) {
     selectedCurrency = (event.currentTarget as HTMLSelectElement).value;
+  }
+
+  function updatePeriod(event: Event) {
+    period = (event.currentTarget as HTMLSelectElement)
+      .value as DashboardPeriod;
   }
 </script>
 
 <ContentScrollArea contentClass="scroll-container">
   <main class="mx-auto w-full max-w-[1440px] px-4 pb-7 pt-5 md:px-6 lg:px-8">
     <header
-      class="mb-6 flex flex-col gap-4 border-b border-border/80 pb-5 lg:flex-row lg:items-end lg:justify-between"
+      class="mb-6 flex flex-col gap-4 border-b border-border/80 pb-5 lg:flex-row lg:items-center lg:justify-between"
     >
       <div>
         <p
@@ -62,31 +68,18 @@
         <h1 class="mt-1 text-2xl font-semibold tracking-tight text-foreground">
           Financial dashboard
         </h1>
-        <p class="mt-1.5 text-sm text-muted-foreground">
-          Actual ledger activity through today, with your active query applied.
-        </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <div
-          class="flex rounded-lg border border-border bg-muted/65 p-1"
-          role="tablist"
+        <select
+          class="h-8 w-36 rounded-md border border-input bg-background px-2 text-xs font-medium shadow-sm outline-none focus:ring-1 focus:ring-ring"
           aria-label="Dashboard period"
+          value={period}
+          on:change={updatePeriod}
         >
           {#each periods as option}
-            <button
-              class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
-              class:bg-background={period === option}
-              class:text-foreground={period === option}
-              class:shadow-sm={period === option}
-              class:text-muted-foreground={period !== option}
-              aria-selected={period === option}
-              role="tab"
-              on:click={() => (period = option)}
-            >
-              {dashboardPeriodLabels[option]}
-            </button>
+            <option value={option}>{dashboardPeriodLabels[option]}</option>
           {/each}
-        </div>
+        </select>
         {#if currencies.length > 1}
           <select
             class="h-8 w-24 rounded-md border border-input bg-background px-2 text-xs font-medium shadow-sm outline-none focus:ring-1 focus:ring-ring"
@@ -105,16 +98,29 @@
             {dashboard.currency}
           </span>
         {/if}
-        <select
-          class="h-8 w-32 rounded-md border border-input bg-background px-2 text-xs font-medium shadow-sm outline-none focus:ring-1 focus:ring-ring"
+        <ToggleGroup.Root
+          type="single"
           aria-label="Valuation method"
           value={$conversion}
-          on:change={updateConversion}
+          onValueChange={updateConversion}
+          class="!gap-0 rounded-lg border border-border bg-muted/65 p-1"
         >
-          <option value="AT_COST">At Cost</option>
-          <option value="AT_VALUE">At Market Value</option>
-          <option value="UNITS">Units</option>
-        </select>
+          <ToggleGroup.Item
+            value="AT_COST"
+            class="!h-6 !min-w-0 !px-2.5 text-xs text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            >At Cost</ToggleGroup.Item
+          >
+          <ToggleGroup.Item
+            value="AT_VALUE"
+            class="!h-6 !min-w-0 !px-2.5 text-xs text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            >At Market Value</ToggleGroup.Item
+          >
+          <ToggleGroup.Item
+            value="UNITS"
+            class="!h-6 !min-w-0 !px-2.5 text-xs text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            >Units</ToggleGroup.Item
+          >
+        </ToggleGroup.Root>
       </div>
     </header>
 
@@ -215,9 +221,11 @@
           />
           <div class="p-4 sm:p-5">
             <div
-              class="mb-2 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-4 border-b border-border/80 px-2 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+              class="mb-2 grid grid-cols-[minmax(0,1fr)_5.5rem_9rem] gap-4 border-b border-border/80 px-2 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
             >
-              <span>Category</span><span>Share</span><span>Value</span>
+              <span>Category</span><span class="text-right">Share</span><span
+                class="text-right">Value</span
+              >
             </div>
             {#if dashboard.expenseCategories.length}
               {#each dashboard.expenseCategories as category (category.account)}
@@ -225,25 +233,26 @@
                   href={category.account === "Other"
                     ? undefined
                     : urlForAccount(category.account)}
-                  class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-4 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-muted/65"
+                  class="grid grid-cols-[minmax(0,1fr)_5.5rem_9rem] items-center gap-4 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-muted/65"
                 >
                   <span class="flex min-w-0 items-center gap-2">
                     <span
                       class="size-2.5 shrink-0 rounded-full"
                       style={`background: ${category.color}`}
                     ></span>
-                    <span class="truncate font-medium text-foreground"
-                      >{category.label}</span
+                    <span class="break-words font-medium text-foreground"
+                      >{category.account}</span
                     >
                   </span>
                   <span
-                    class="font-mono text-xs tabular-nums text-muted-foreground"
+                    class="text-right font-mono text-xs tabular-nums text-muted-foreground"
                   >
                     {dashboard.expenses
                       ? ((category.value / dashboard.expenses) * 100).toFixed(1)
                       : "0.0"}%
                   </span>
-                  <span class="font-mono text-sm tabular-nums text-foreground"
+                  <span
+                    class="text-right font-mono text-sm tabular-nums text-foreground"
                     >{$ctx.amount(category.value, dashboard.currency)}</span
                   >
                 </a>
@@ -262,55 +271,28 @@
         title="Balance sheet"
         eyebrow="Current position"
       >
-        <div class="grid gap-px bg-border/80 xl:grid-cols-3">
-          <section class="bg-card p-4 sm:p-5">
-            <div class="mb-3 flex items-baseline justify-between gap-3">
-              <h2 class="text-sm font-semibold text-foreground">Assets</h2>
-              <a
-                class="text-xs font-medium text-primary hover:underline"
-                href={urlForAccount($ledgerOptions.beancount.name_assets)}
-                >View account</a
-              >
-            </div>
-            <DashboardTreeTable
-              tree={dashboard.assets}
-              currency={dashboard.currency}
-              formatter={$ctx.amount}
-              label="Balance"
-            />
-          </section>
-          <section class="bg-card p-4 sm:p-5">
-            <div class="mb-3 flex items-baseline justify-between gap-3">
-              <h2 class="text-sm font-semibold text-foreground">Liabilities</h2>
-              <a
-                class="text-xs font-medium text-primary hover:underline"
-                href={urlForAccount($ledgerOptions.beancount.name_liabilities)}
-                >View account</a
-              >
-            </div>
-            <DashboardTreeTable
-              tree={dashboard.liabilities}
-              currency={dashboard.currency}
-              formatter={$ctx.amount}
-              label="Balance"
-            />
-          </section>
-          <section class="bg-card p-4 sm:p-5">
-            <div class="mb-3 flex items-baseline justify-between gap-3">
-              <h2 class="text-sm font-semibold text-foreground">Equity</h2>
-              <a
-                class="text-xs font-medium text-primary hover:underline"
-                href={urlForAccount($ledgerOptions.beancount.name_equity)}
-                >View account</a
-              >
-            </div>
-            <DashboardTreeTable
-              tree={dashboard.equity}
-              currency={dashboard.currency}
-              formatter={$ctx.amount}
-              label="Balance"
-            />
-          </section>
+        <div class="grid gap-8 p-4 sm:p-6">
+          <DashboardTreeTable
+            title="Assets"
+            href={urlForAccount($ledgerOptions.beancount.name_assets)}
+            tree={dashboard.assets}
+            currency={dashboard.currency}
+            formatter={$ctx.amount}
+          />
+          <DashboardTreeTable
+            title="Liabilities"
+            href={urlForAccount($ledgerOptions.beancount.name_liabilities)}
+            tree={dashboard.liabilities}
+            currency={dashboard.currency}
+            formatter={$ctx.amount}
+          />
+          <DashboardTreeTable
+            title="Equity"
+            href={urlForAccount($ledgerOptions.beancount.name_equity)}
+            tree={dashboard.equity}
+            currency={dashboard.currency}
+            formatter={$ctx.amount}
+          />
         </div>
       </DashboardSection>
 

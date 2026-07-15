@@ -7,6 +7,8 @@
   export let currency = "";
   export let formatter: (value: number, currency: string) => string;
 
+  let hovered: DashboardCategory | undefined;
+
   const arcGenerator = arc<PieArcDatum<DashboardCategory>>()
     .innerRadius(64)
     .outerRadius(98)
@@ -17,6 +19,7 @@
     .value((entry) => entry.value)
     .sort(null)(categories);
   $: total = categories.reduce((sum, entry) => sum + entry.value, 0);
+  $: centerCategory = hovered;
 </script>
 
 <div class="grid min-h-64 place-items-center p-4">
@@ -32,6 +35,13 @@
           href={arcDatum.data.account === "Other"
             ? undefined
             : urlForAccount(arcDatum.data.account)}
+          class:dimmed={Boolean(
+            hovered && hovered.account !== arcDatum.data.account,
+          )}
+          on:mouseenter={() => (hovered = arcDatum.data)}
+          on:mouseleave={() => (hovered = undefined)}
+          on:focus={() => (hovered = arcDatum.data)}
+          on:blur={() => (hovered = undefined)}
         >
           <path d={arcGenerator(arcDatum) ?? ""} fill={arcDatum.data.color}>
             <title
@@ -40,9 +50,11 @@
           </path>
         </a>
       {/each}
-      <text text-anchor="middle" y="-7" class="donut-label">Outflows</text>
+      <text text-anchor="middle" y="-7" class="donut-label"
+        >{centerCategory?.label ?? "Outflows"}</text
+      >
       <text text-anchor="middle" y="16" class="donut-value"
-        >{formatter(total, currency)}</text
+        >{formatter(centerCategory?.value ?? total, currency)}</text
       >
     </svg>
   {:else}
@@ -69,7 +81,7 @@
     transition: opacity 120ms ease;
   }
 
-  a:hover path {
-    opacity: 0.78;
+  a.dimmed path {
+    opacity: 0.2;
   }
 </style>

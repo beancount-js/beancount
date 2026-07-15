@@ -8,6 +8,7 @@
   export let currency: string;
   export let formatter: (value: number, currency: string) => string;
   export let multiplier = 1;
+  export let total = 0;
   export let depth = 0;
   export let collapsed: Set<string>;
   export let toggle: (account: string) => void;
@@ -16,11 +17,12 @@
   $: isCollapsed = collapsed.has(node.account);
   $: amount = (node.balanceChildren[currency] ?? 0) * multiplier;
   $: name = node.account.split(":").at(-1) ?? node.account;
+  $: weight = total ? (Math.abs(amount) / Math.abs(total)) * 100 : 0;
 </script>
 
 <li>
   <div
-    class="grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border/70 text-sm last:border-b-0"
+    class="grid min-h-10 grid-cols-[minmax(0,1fr)_6rem_9rem] items-center border-b border-border/70 text-sm"
   >
     <div
       class="flex min-w-0 items-center gap-1 py-1.5 pr-3"
@@ -48,6 +50,17 @@
     </div>
     <span
       class:dimmed={!amount}
+      class="flex items-center justify-end gap-1.5 px-3 text-right font-mono text-[13px] tabular-nums"
+    >
+      <span
+        class:invisible={!amount}
+        class="text-[10px] tracking-[-0.16em] text-primary"
+        aria-hidden="true">▍▍▍▍▍</span
+      >
+      <span>{amount ? `${weight.toFixed(1)}%` : "—"}</span>
+    </span>
+    <span
+      class:dimmed={!amount}
       class="px-3 text-right font-mono text-[13px] tabular-nums"
     >
       {amount ? formatter(amount, currency) : "—"}
@@ -61,6 +74,7 @@
           {currency}
           {formatter}
           {multiplier}
+          {total}
           depth={depth + 1}
           {collapsed}
           {toggle}
