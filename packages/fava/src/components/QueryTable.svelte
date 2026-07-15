@@ -141,13 +141,13 @@
     </Alert.Root>
   {/if}
   <ScrollArea.Root orientation="horizontal" class="w-full">
-    <div class="w-full pt-4">
+    <div class="w-full pr-3 pt-4">
       {#if chart}
         <div class="pb-2 text-xs">
           <Chart {chart} hideButtons />
         </div>
       {/if}
-      <ol class="bean-table flex-table text-xs">
+      <ol class="bean-table flex-table font-mono text-xs">
         <VirtualList
           height={Math.min(height, maxHeight)}
           width="max-content"
@@ -155,7 +155,7 @@
           itemSize={getSize}
         >
           <li
-            class="head sticky top-0 z-10 border-b border-l border-t border-solid"
+            class="head sticky top-0 z-10 border-b border-l border-t border-solid bg-muted tracking-wide [font-variant-caps:all-small-caps]"
             slot="header"
           >
             <p use:useSortableTable={sortOrder}>

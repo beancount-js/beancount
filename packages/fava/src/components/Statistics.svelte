@@ -53,11 +53,7 @@
               href={urlFor("/query", { qs: query.query })}>Query</Button
             >
           </div>
-          <QueryTable
-            query={query.query}
-            height={(innerHeight - 250) / 2}
-            padding={(innerHeight - 250) / 4}
-          />
+          <QueryTable query={query.query} height={(innerHeight - 250) / 2} />
         </div>
       {/each}
     </div>

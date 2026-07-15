@@ -9,6 +9,7 @@
   import { Copy, Trash } from "lucide-svelte";
   import { useContext } from "../context";
   import { useLedger } from "./helpers";
+  import { nextOpenQueryState } from "./query-box";
   export let queries: Array<QueryHistory>;
   export let height: number = 500;
   export let selected: string = "";
@@ -24,18 +25,7 @@
   $: values = Object.keys(isOpen).filter((k) => isOpen[k] === true);
 
   function handleChange(items: string[] | undefined) {
-    items = items || [];
-    isOpen = [...Object.keys(isOpen), ...items].reduce(
-      (acc: Record<string, boolean>, key: string) => {
-        if (items.contains(key)) {
-          acc[key] = true;
-        } else if (isOpen[key] !== undefined) {
-          acc[key] = false;
-        }
-        return acc;
-      },
-      {},
-    );
+    isOpen = nextOpenQueryState(isOpen, items);
   }
 
   function handleCopy(evt: MouseEvent, query: QueryHistory) {
