@@ -45,6 +45,8 @@ export type JournalDateGroup = {
   balance: JournalBalance;
 };
 
+export type JournalTimeframe = "transactions" | "upcoming";
+
 const DEFAULT_BALANCE_SHEET_ROOTS = ["Assets", "Liabilities"];
 
 function cloneBalance(value: Record<string, number> | undefined) {
@@ -293,6 +295,23 @@ export function paginateJournalGroups(
   }
   if (page.length) pages.push(page);
   return pages;
+}
+
+/**
+ * Return all activity for the Transactions view, or only future-dated payments
+ * for Upcoming. Upcoming payments are ordered from the nearest date onwards.
+ */
+export function filterJournalGroupsByTimeframe(
+  groups: readonly JournalDateGroup[],
+  timeframe: JournalTimeframe,
+  now: DateTime = DateTime.now(),
+) {
+  if (timeframe === "transactions") return groups;
+
+  const startOfToday = now.startOf("day").toMillis();
+  return groups
+    .filter((group) => group.date.startOf("day").toMillis() > startOfToday)
+    .reverse();
 }
 
 export function orderedBalanceEntries(

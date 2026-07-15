@@ -1,10 +1,12 @@
 <script lang="ts">
   import type { Amount, DirectiveBase } from "@beancount-js/beancount";
+  import { DateTime } from "luxon";
   import { useContext } from "../context";
   import { useCtx } from "../stores/format";
   import { urlForAccount } from "../helpers";
   import { useNavigation } from "../router/router";
   import { Button } from "$lib/components/ui/button";
+  import * as ToggleGroup from "$lib/components/ui/toggle-group";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronUp from "lucide-svelte/icons/chevron-up";
   import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
@@ -13,6 +15,7 @@
   import Info from "lucide-svelte/icons/info";
   import JournalEditorSheet from "./JournalEditorSheet.svelte";
   import {
+    filterJournalGroupsByTimeframe,
     groupJournalRecords,
     journalRecords,
     orderedBalanceEntries,
@@ -20,6 +23,7 @@
     postingAmount,
     type JournalDateGroup,
     type JournalRecord,
+    type JournalTimeframe,
   } from "./journal-table/model";
 
   const PAGE_SIZES = [25, 50, 100];
@@ -46,6 +50,8 @@
   let masterCheckbox: HTMLInputElement | undefined;
   let selectedRecord: JournalRecord | undefined;
   let editorOpen = false;
+  let timeframe: JournalTimeframe = "transactions";
+  let toggleValue: JournalTimeframe = "transactions";
 
   function setIndeterminate(node: HTMLInputElement, value: boolean) {
     node.indeterminate = value;
@@ -64,6 +70,21 @@
     }
     const next = query.toString();
     router.updateState(next ? `?${next}` : "?");
+  }
+
+  function setTimeframe(value: string | undefined) {
+    if (value !== "transactions" && value !== "upcoming") {
+      toggleValue = timeframe;
+      return;
+    }
+    const next: JournalTimeframe = value;
+    toggleValue = next;
+    if (next === timeframe) return;
+    updateRoute({
+      view: next === "upcoming" ? "upcoming" : undefined,
+      page: "1",
+      record: undefined,
+    });
   }
 
   function toggleRecord(key: string, checked?: boolean) {
@@ -137,8 +158,21 @@
     return amount ? $ctx.money(amount, amount.currency ?? undefined) : "—";
   }
 
-  $: records = journalRecords(directives, balanceRoots, focusedAccount);
-  $: groups = groupJournalRecords(records, balancesByDate);
+  $: timeframe =
+    $activeRoute.query.view === "upcoming" ? "upcoming" : "transactions";
+  $: toggleValue = timeframe;
+  $: allRecords = journalRecords(directives, balanceRoots, focusedAccount);
+  $: allGroups = groupJournalRecords(allRecords, balancesByDate);
+  $: groups = filterJournalGroupsByTimeframe(
+    allGroups,
+    timeframe,
+    DateTime.now(),
+  );
+  $: records = groups.flatMap((group) => group.records);
+  $: shownEmptyMessage =
+    timeframe === "upcoming"
+      ? "No upcoming dated records match the current filter."
+      : emptyMessage;
   $: validKeys = new Set(records.map((record) => record.key));
   $: if ([...selectedKeys].some((key) => !validKeys.has(key))) {
     selectedKeys = new Set(
@@ -197,6 +231,26 @@
     : undefined}
 >
   <div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
+    <ToggleGroup.Root
+      type="single"
+      bind:value={toggleValue}
+      aria-label="Activity timeframe"
+      class="!gap-0 self-start rounded-lg bg-muted p-1"
+      data-activity-timeframe-toggle
+      onValueChange={setTimeframe}
+    >
+      <ToggleGroup.Item
+        value="transactions"
+        class="!h-7 !min-w-0 !px-6 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+        >Transactions</ToggleGroup.Item
+      >
+      <ToggleGroup.Item
+        value="upcoming"
+        class="!h-7 !min-w-0 !px-6 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+        >Upcoming</ToggleGroup.Item
+      >
+    </ToggleGroup.Root>
+
     <div
       class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
     >
@@ -218,7 +272,7 @@
       <div
         class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
       >
-        {emptyMessage}
+        {shownEmptyMessage}
       </div>
     {/if}
 
@@ -233,7 +287,6 @@
       {@const groupId = `${tableId}-group-${group.key}`}
       {@const summaryId = `${tableId}-summary-${group.key}`}
       <section
-        class:opacity-60={group.date.toMillis() > Date.now()}
         class="overflow-hidden rounded-2xl bg-muted/80"
         aria-labelledby={groupId}
       >

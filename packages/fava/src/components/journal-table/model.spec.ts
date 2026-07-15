@@ -3,6 +3,7 @@ import { Amount, Custom, Posting, Transaction } from "@beancount-js/beancount";
 import { DateTime } from "luxon";
 import {
   groupJournalRecords,
+  filterJournalGroupsByTimeframe,
   journalRecords,
   paginateJournalGroups,
 } from "./model";
@@ -141,5 +142,27 @@ describe("grouped journal model", () => {
       ["2026-04-03"],
       ["2026-04-02", "2026-04-01"],
     ]);
+  });
+
+  test("shows all transactions and orders future payments from nearest to furthest", () => {
+    const records = journalRecords([
+      transaction("2026-04-05", "Later payment", "5"),
+      transaction("2026-04-04", "Next payment", "4"),
+      transaction("2026-04-03", "Today", "3"),
+      transaction("2026-04-02", "Yesterday", "2"),
+    ]);
+    const groups = groupJournalRecords(records, {});
+    const now = DateTime.fromISO("2026-04-03T12:00:00");
+
+    expect(
+      filterJournalGroupsByTimeframe(groups, "transactions", now).map(
+        (group) => group.key,
+      ),
+    ).toEqual(["2026-04-05", "2026-04-04", "2026-04-03", "2026-04-02"]);
+    expect(
+      filterJournalGroupsByTimeframe(groups, "upcoming", now).map(
+        (group) => group.key,
+      ),
+    ).toEqual(["2026-04-04", "2026-04-05"]);
   });
 });
