@@ -12,8 +12,13 @@ import {
   type MerchantResolution,
 } from "@beancount-js/beangulp";
 import type { DownloadedBrandAsset } from "./brandfetch";
+import { projectIngestionRoot } from "./paths";
 
 const PROFILE_VERSION = 1;
+
+export type ProjectRootResolver = (
+  projectId: string,
+) => string | Promise<string>;
 
 interface MerchantProfile {
   merchant: MerchantIdentity;
@@ -234,28 +239,27 @@ function suppressionKey(sourceId: string, normalizedLabel: string) {
 export class FilesystemMerchantStore {
   private readonly locks = new Map<string, Promise<void>>();
 
-  constructor(readonly configDirectory: string) {}
+  constructor(private readonly resolveProjectRoot: ProjectRootResolver) {}
 
-  private root(project: string) {
+  private async root(project: string) {
+    const projectRoot = await this.resolveProjectRoot(safeProject(project));
+    return join(projectIngestionRoot(projectRoot), "merchants");
+  }
+
+  private async profilePath(project: string, merchantId: string) {
     return join(
-      this.configDirectory,
-      "projects",
-      safeProject(project),
-      "ingestion",
-      "merchants",
+      await this.root(project),
+      safeMerchantId(merchantId),
+      "profile.md",
     );
   }
 
-  private profilePath(project: string, merchantId: string) {
-    return join(this.root(project), safeMerchantId(merchantId), "profile.md");
+  private async eventsPath(project: string) {
+    return join(await this.root(project), "merchant-events.jsonl");
   }
 
-  private eventsPath(project: string) {
-    return join(this.root(project), "merchant-events.jsonl");
-  }
-
-  private indexPath(project: string) {
-    return join(this.root(project), "index.json");
+  private async indexPath(project: string) {
+    return join(await this.root(project), "index.json");
   }
 
   private async withLock<T>(project: string, work: () => Promise<T>) {
@@ -284,7 +288,7 @@ export class FilesystemMerchantStore {
 
   private async readEvents(project: string): Promise<MerchantEvent[]> {
     try {
-      const contents = await fs.readFile(this.eventsPath(project), "utf8");
+      const contents = await fs.readFile(await this.eventsPath(project), "utf8");
       return contents
         .split("\n")
         .filter(Boolean)
@@ -305,7 +309,7 @@ export class FilesystemMerchantStore {
   }
 
   private async appendEvent(project: string, event: MerchantEvent) {
-    const path = this.eventsPath(project);
+    const path = await this.eventsPath(project);
     await fs.mkdir(dirname(path), { recursive: true, mode: 0o700 });
     await fs.appendFile(path, `${JSON.stringify(event)}\n`, { mode: 0o600 });
     await fs.chmod(path, 0o600);
@@ -313,7 +317,7 @@ export class FilesystemMerchantStore {
 
   private async readProfile(project: string, merchantId: string) {
     const contents = await fs.readFile(
-      this.profilePath(project, merchantId),
+      await this.profilePath(project, merchantId),
       "utf8",
     );
     return parseProfile(contents);
@@ -321,14 +325,14 @@ export class FilesystemMerchantStore {
 
   private async writeProfile(project: string, profile: MerchantProfile) {
     await this.write(
-      this.profilePath(project, profile.merchant.merchantId),
+      await this.profilePath(project, profile.merchant.merchantId),
       renderProfile(profile),
     );
   }
 
   private async profiles(project: string) {
     try {
-      const entries = await fs.readdir(this.root(project), {
+      const entries = await fs.readdir(await this.root(project), {
         withFileTypes: true,
       });
       const profiles: MerchantProfile[] = [];
@@ -377,7 +381,7 @@ export class FilesystemMerchantStore {
       suppressions: [...(await this.suppressions(project))].sort(),
     };
     await this.write(
-      this.indexPath(project),
+      await this.indexPath(project),
       `${JSON.stringify(index, null, 2)}\n`,
     );
   }
@@ -561,7 +565,10 @@ export class FilesystemMerchantStore {
       const profile = await this.readProfile(project, merchantId);
       const filename = `logo-${asset.sha256}.${asset.extension}`;
       await this.write(
-        join(dirname(this.profilePath(project, merchantId)), filename),
+        join(
+          dirname(await this.profilePath(project, merchantId)),
+          filename,
+        ),
         asset.bytes,
       );
       profile.merchant.brand = {
@@ -615,7 +622,7 @@ export class FilesystemMerchantStore {
     const asset = merchant.brand?.asset;
     if (!asset || Date.parse(asset.expiresAt) <= Date.now()) return undefined;
     const path = join(
-      dirname(this.profilePath(project, merchantId)),
+      dirname(await this.profilePath(project, merchantId)),
       asset.filename,
     );
     try {

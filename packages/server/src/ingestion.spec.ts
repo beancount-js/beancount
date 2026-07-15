@@ -20,6 +20,16 @@ afterEach(async () => {
   );
 });
 
+function storeFor(directory: string) {
+  return new FilesystemIngestionStore({
+    resolveProjectRoot: (project) => join(directory, project),
+  });
+}
+
+function ingestionPath(directory: string, project: string, ...parts: string[]) {
+  return join(directory, project, ".beancount", "ingestion", ...parts);
+}
+
 function config(
   endpoint = "https://api.example.test/transactions",
 ): IngestionConfig {
@@ -55,12 +65,12 @@ describe("FilesystemIngestionStore", () => {
       join(tmpdir(), "beancount-js-ingestion-test-"),
     );
     directories.push(directory);
-    const store = new FilesystemIngestionStore(directory);
+    const store = storeFor(directory);
 
     await store.writeConfig("project", config());
 
     const persisted = await readFile(
-      join(directory, "projects", "project", "ingestion", "sources.json"),
+      ingestionPath(directory, "project", "sources.json"),
       "utf8",
     );
     expect(persisted).toContain("env:BANK_API_TOKEN");
@@ -73,7 +83,7 @@ describe("FilesystemIngestionStore", () => {
       join(tmpdir(), "beancount-js-ingestion-test-"),
     );
     directories.push(directory);
-    const store = new FilesystemIngestionStore(directory);
+    const store = storeFor(directory);
     const full = config();
     full.sources[0] = {
       ...full.sources[0],
@@ -155,7 +165,7 @@ describe("FilesystemIngestionStore", () => {
       join(tmpdir(), "beancount-js-ingestion-test-"),
     );
     directories.push(directory);
-    const store = new FilesystemIngestionStore(directory);
+    const store = storeFor(directory);
 
     await expect(
       store.writeConfig(
@@ -185,7 +195,7 @@ describe("FilesystemIngestionStore", () => {
       join(tmpdir(), "beancount-js-ingestion-test-"),
     );
     directories.push(directory);
-    const store = new FilesystemIngestionStore(directory);
+    const store = storeFor(directory);
     const grouped: IngestionConfig = {
       version: 1,
       sources: [
@@ -252,33 +262,34 @@ describe("FilesystemIngestionStore", () => {
     ).toEqual(["Expenses:Food"]);
   });
 
-  test("rejects grouped sources without linked accounts", async () => {
+  test("allows grouped connections before any accounts are linked", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-test-"),
     );
     directories.push(directory);
-    const store = new FilesystemIngestionStore(directory);
+    const store = storeFor(directory);
 
-    await expect(
-      store.writeConfig("project", {
-        version: 1,
-        sources: [
-          {
-            id: "lunchflow",
-            name: "Lunch Flow",
-            kind: "json-api",
-            api: {
-              baseUrl: "https://lunchflow.app/api/v1",
-              allowedHosts: ["lunchflow.app"],
-              secretRef: "env:LUNCHFLOW_API_KEY",
-            },
-            mapping: { date: "date", amount: "amount" },
-            accounts: [],
-            rules: [],
+    await store.writeConfig("project", {
+      version: 1,
+      sources: [
+        {
+          id: "lunchflow",
+          name: "Lunch Flow",
+          kind: "json-api",
+          api: {
+            baseUrl: "https://lunchflow.app/api/v1",
+            allowedHosts: ["lunchflow.app"],
+            secretRef: "env:LUNCHFLOW_API_KEY",
           },
-        ],
-      }),
-    ).rejects.toThrow("at least one linked account");
+          mapping: { date: "date", amount: "amount" },
+          accounts: [],
+          rules: [],
+        },
+      ],
+    });
+    await expect(store.readConfig("project")).resolves.toMatchObject({
+      sources: [{ id: "lunchflow", accounts: [] }],
+    });
   });
 
   test("persists confirmed merchants as Markdown profiles and resolves source aliases", async () => {
@@ -286,7 +297,7 @@ describe("FilesystemIngestionStore", () => {
       join(tmpdir(), "beancount-js-ingestion-test-"),
     );
     directories.push(directory);
-    const store = new FilesystemIngestionStore(directory);
+    const store = storeFor(directory);
 
     const merchant = await store.merchants.confirm("project", {
       sourceId: "bank",
@@ -309,11 +320,9 @@ describe("FilesystemIngestionStore", () => {
     });
 
     const profile = await readFile(
-      join(
+      ingestionPath(
         directory,
-        "projects",
         "project",
-        "ingestion",
         "merchants",
         merchant.merchantId,
         "profile.md",
@@ -332,7 +341,7 @@ describe("FilesystemIngestionStore", () => {
       store.merchants.resolve("project", "another-bank", "TESCO STORES 1234"),
     ).resolves.toBeUndefined();
     await expect(
-      new FilesystemIngestionStore(directory).merchants.resolve(
+      storeFor(directory).merchants.resolve(
         "project",
         "bank",
         "TESCO STORES 1234",
@@ -366,16 +375,158 @@ describe("FilesystemIngestionStore", () => {
     ).resolves.toBeUndefined();
     await expect(
       readFile(
-        join(
+        ingestionPath(
           directory,
-          "projects",
           "project",
-          "ingestion",
           "merchants",
           "merchant-events.jsonl",
         ),
         "utf8",
       ),
     ).resolves.toContain('"type":"cleared-suppression"');
+  });
+
+  test("persists sync jobs and fails interrupted ones", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-sync-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    await store.writeConfig("project", config());
+
+    const job = {
+      id: "sync:test-1",
+      projectId: "project",
+      sourceId: "bank",
+      status: "running" as const,
+      startedAt: "2026-07-16T00:00:00.000Z",
+      progress: { stage: "fetch" as const, message: "Fetching…" },
+      runIds: [],
+    };
+    await store.saveSyncJob("project", job);
+    await expect(store.readSyncJob("project", job.id)).resolves.toMatchObject({
+      id: job.id,
+      status: "running",
+    });
+    await expect(store.findActiveSyncJob("project", "bank")).resolves.toMatchObject(
+      { id: job.id },
+    );
+
+    expect(await store.failInterruptedSyncJobs("project")).toBe(1);
+    await expect(store.readSyncJob("project", job.id)).resolves.toMatchObject({
+      status: "failed",
+      error: expect.stringContaining("restarted"),
+    });
+    await expect(store.findActiveSyncJob("project", "bank")).resolves.toBeNull();
+  });
+
+  test("sourceForRunSourceId resolves grouped account run ids", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-source-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    const grouped: IngestionConfig = {
+      version: 1,
+      sources: [
+        {
+          id: "lunchflow",
+          name: "Lunch Flow",
+          kind: "json-api",
+          api: {
+            baseUrl: "https://www.lunchflow.app/api/v1",
+            allowedHosts: ["www.lunchflow.app", "lunchflow.app"],
+            secretRef: "env:LUNCHFLOW_API_KEY",
+          },
+          mapping: { date: "date", amount: "amount" },
+          rules: [],
+          accounts: [
+            {
+              id: "starling",
+              name: "Personal",
+              sourceAccount: "Assets:Checking:Starling",
+            },
+          ],
+        },
+      ],
+    };
+    await store.writeConfig("project", grouped);
+    await expect(
+      store.sourceForRunSourceId("project", "lunchflow:starling"),
+    ).resolves.toMatchObject({ id: "lunchflow" });
+  });
+
+  test("patchProposal updates transaction fields tags and metadata", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-patch-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    await store.writeConfig("project", config());
+    await store.saveRun("project", {
+      id: "run:patch-1",
+      sourceId: "bank",
+      startedAt: "2026-07-16T00:00:00.000Z",
+      completedAt: "2026-07-16T00:00:01.000Z",
+      proposals: [
+        {
+          id: "proposal:1",
+          importId: "bank:txn-1",
+          status: "needs-review",
+          suggestions: [],
+          issues: [],
+          transaction: {
+            sourceId: "bank",
+            sourceAccount: "Assets:Bank:Checking",
+            bookedAt: "2026-07-01",
+            amount: "-12.00",
+            currency: "GBP",
+            narration: "Coffee",
+            status: "posted",
+            fetchedAt: "2026-07-16T00:00:00.000Z",
+            metadata: { note: "old" },
+          },
+        },
+      ],
+      summary: {
+        total: 1,
+        ready: 0,
+        needsReview: 1,
+        duplicates: 0,
+        invalid: 0,
+        held: 0,
+      },
+    });
+
+    const updated = await store.patchProposal(
+      "project",
+      "run:patch-1",
+      "proposal:1",
+      {
+        account: "Expenses:Food:Dining",
+        transaction: {
+          bookedAt: "2026-07-02",
+          amount: "-13.50",
+          currency: "GBP",
+          payee: "Cafe Nero",
+          narration: "Latte",
+          tags: ["food", "coffee"],
+          links: ["receipt-1"],
+          metadata: { note: "edited", tip: "yes" },
+        },
+      },
+    );
+    const proposal = updated.proposals[0];
+    expect(proposal.status).toBe("ready");
+    expect(proposal.selectedAccount).toBe("Expenses:Food:Dining");
+    expect(proposal.transaction).toMatchObject({
+      bookedAt: "2026-07-02",
+      amount: "-13.50",
+      payee: "Cafe Nero",
+      narration: "Latte",
+      tags: ["food", "coffee"],
+      links: ["receipt-1"],
+      metadata: { note: "edited", tip: "yes" },
+    });
   });
 });

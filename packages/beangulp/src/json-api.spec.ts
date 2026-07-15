@@ -280,4 +280,83 @@ describe("grouped JSON API helpers", () => {
       }),
     ).rejects.toThrow("allowlist");
   });
+
+  test("surfaces nested network failure details from fetch", async () => {
+    await expect(
+      discoverJsonApiAccounts({
+        baseUrl: "https://lunchflow.app/api/v1",
+        secretRef: "inline-key",
+        authScheme: "x-api-key",
+        allowedHosts: ["lunchflow.app"],
+        resolveSecret: async () => "secret",
+        fetch: async () => {
+          throw new TypeError("fetch failed", {
+            cause: Object.assign(new Error("getaddrinfo ENOTFOUND"), {
+              code: "ENOTFOUND",
+            }),
+          });
+        },
+      }),
+    ).rejects.toThrow(/Could not reach .*ENOTFOUND/);
+  });
+
+  test("follows apex→www redirects within the allowlist", async () => {
+    const requests: string[] = [];
+    const accounts = await discoverJsonApiAccounts({
+      baseUrl: "https://lunchflow.app/api/v1",
+      secretRef: "inline-key",
+      authScheme: "x-api-key",
+      allowedHosts: ["lunchflow.app"],
+      resolveSecret: async () => "secret",
+      fetch: async (input) => {
+        const url = String(input);
+        requests.push(url);
+        if (url === "https://lunchflow.app/api/v1/accounts") {
+          return new Response(null, {
+            status: 308,
+            headers: {
+              location: "https://www.lunchflow.app/api/v1/accounts",
+            },
+          });
+        }
+        return new Response(
+          JSON.stringify({
+            accounts: [{ id: "1", name: "Current", currency: "GBP" }],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    });
+    expect(requests).toEqual([
+      "https://lunchflow.app/api/v1/accounts",
+      "https://www.lunchflow.app/api/v1/accounts",
+    ]);
+    expect(accounts).toEqual([
+      {
+        id: "1",
+        name: "Current",
+        currency: "GBP",
+        institutionName: undefined,
+        status: undefined,
+        iban: undefined,
+      },
+    ]);
+  });
+
+  test("includes upstream error bodies for non-OK responses", async () => {
+    await expect(
+      discoverJsonApiAccounts({
+        baseUrl: "https://lunchflow.app/api/v1",
+        secretRef: "inline-key",
+        authScheme: "x-api-key",
+        allowedHosts: ["lunchflow.app"],
+        resolveSecret: async () => "secret",
+        fetch: async () =>
+          new Response(JSON.stringify({ message: "quota exceeded" }), {
+            status: 429,
+            headers: { "content-type": "application/json" },
+          }),
+      }),
+    ).rejects.toThrow(/429.*quota exceeded/);
+  });
 });

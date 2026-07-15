@@ -19,7 +19,7 @@ export type IngestionSample = {
   category: string;
   description: string;
   badge?: string;
-  /** When set, Connect opens account discovery instead of a blind copy. */
+  /** Optional provider metadata (kept for catalog display / discover defaults). */
   provider?: IngestionSampleProvider;
   template: EditableIngestionSource;
 };
@@ -33,8 +33,8 @@ const lunchFlowSource: EditableIngestionSource = {
   aiEnabled: false,
   setup: [
     "1. Go to [Lunch Flow](https://lunchflow.app/) and create an API key.",
-    "2. Paste the API key below, then load and select the bank accounts to import.",
-    "3. Map each account to a Beancount source account and connect.",
+    "2. Paste the API key and confirm the base URL below, then save the connection.",
+    "3. Open **Settings → Accounts** to load and link the bank accounts you want to import.",
   ].join("\n"),
   merchantEnrichment: {
     enabled: true,
@@ -47,8 +47,8 @@ const lunchFlowSource: EditableIngestionSource = {
     },
   },
   api: {
-    baseUrl: "https://lunchflow.app/api/v1",
-    allowedHosts: ["lunchflow.app"],
+    baseUrl: "https://www.lunchflow.app/api/v1",
+    allowedHosts: ["lunchflow.app", "www.lunchflow.app"],
     secretRef: "",
     authScheme: "x-api-key",
     recordsPath: "transactions",
@@ -80,7 +80,7 @@ export const ingestionSamples: IngestionSample[] = [
     badge: "Beta",
     provider: {
       id: "lunchflow",
-      baseUrl: "https://lunchflow.app/api/v1",
+      baseUrl: "https://www.lunchflow.app/api/v1",
       accountsPath: "accounts",
     },
     template: structuredClone(lunchFlowSource),

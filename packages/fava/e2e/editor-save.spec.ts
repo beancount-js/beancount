@@ -3,7 +3,9 @@ import {
   clearLedger,
   minimalLedger,
   openEditor,
+  readProjectLedger,
   replaceEditorContent,
+  restoreSampleLedger,
   saveLedgerWithButton,
   seedLedger,
   waitForEditorContent,
@@ -21,6 +23,10 @@ option "operating_currency" "USD"
 `;
 
 test.describe("editor save", () => {
+  test.afterEach(async ({ page }) => {
+    await restoreSampleLedger(page);
+  });
+
   test("save button persists replaced content across reload", async ({
     page,
   }) => {
@@ -36,9 +42,9 @@ test.describe("editor save", () => {
       "E2E Save Button",
     );
 
-    await saveLedgerWithButton(page);
+    await saveLedgerWithButton(page, "E2E Save Button");
 
-    const stored = await page.evaluate(() => localStorage.getItem("ledger"));
+    const stored = await readProjectLedger(page);
     expect(stored).toContain("E2E Save Button");
     expect(stored).toContain("E2E Button Save Ledger");
     expect(stored).not.toContain("Coffee Shop");
@@ -63,7 +69,7 @@ test.describe("editor save", () => {
     await replaceEditorContent(page, freshLedger);
     await saveLedgerWithButton(page, "E2E Save Button");
 
-    const stored = await page.evaluate(() => localStorage.getItem("ledger"));
+    const stored = await readProjectLedger(page);
     expect(stored).toContain("E2E Save Button");
 
     await page.reload();

@@ -12,6 +12,7 @@
     "check:svelte5": "node ./scripts/check-svelte5-patterns.mjs",
     "checks": "pnpm fmt:check && pnpm lint && pnpm check:svelte5 && pnpm check",
     "dev": "BEANCOUNT_STUDIO_PROJECT_ROOT=${BEANCOUNT_STUDIO_PROJECT_ROOT:-../..} BEANCOUNT_STUDIO_ENTRY_FILE=${BEANCOUNT_STUDIO_ENTRY_FILE:-sample.beancount} vite",
+    "ai:mcp": "node ./scripts/run-ts.mjs ./src/lib/ai/cli/mcp-server.ts",
     "fmt": "prettier ./src ./e2e --write",
     "fmt:check": "prettier ./src ./e2e --check",
     "lint": "eslint ./src --max-warnings 0",

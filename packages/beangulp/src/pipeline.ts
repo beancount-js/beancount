@@ -7,11 +7,19 @@ import {
 import type {
   CategorySuggestion,
   ImportProposal,
+  IngestionProgress,
   IngestionRequest,
   IngestionRun,
   MerchantResolution,
   NormalizedTransaction,
 } from "./types";
+
+async function emitProgress(
+  request: IngestionRequest<unknown, unknown>,
+  progress: IngestionProgress,
+) {
+  await request.onProgress?.(progress);
+}
 
 export function transactionFingerprint(transaction: NormalizedTransaction) {
   return md5(
@@ -148,13 +156,32 @@ export async function runIngestion<Config, Record>(
   >();
   let cursor = request.cursor;
   let row = 0;
+  let pagesFetched = 0;
+  const importedBefore = proposals.length;
+
+  await emitProgress(request as IngestionRequest<unknown, unknown>, {
+    stage: "fetch",
+    message: "Fetching transactions…",
+    pagesFetched: 0,
+    seen: 0,
+    imported: 0,
+  });
 
   for await (const page of request.source.read(request.sourceConfig, {
     sourceId: request.sourceId,
     cursor,
     ...request.sourceContext,
   })) {
+    pagesFetched += 1;
     cursor = page.nextCursor;
+    await emitProgress(request as IngestionRequest<unknown, unknown>, {
+      stage: "fetch",
+      message: `Fetched page ${pagesFetched}${page.records.length ? ` (${page.records.length} records)` : ""}`,
+      pagesFetched,
+      seen: proposals.length,
+      imported: proposals.filter((proposal) => proposal.status !== "duplicate")
+        .length,
+    });
     for (const record of page.records) {
       row += 1;
       const normalized = request.normalizer.normalize(record, {
@@ -271,9 +298,27 @@ export async function runIngestion<Config, Record>(
       knownProposalIds.add(proposalId);
       proposals.push(proposal);
     }
+    await emitProgress(request as IngestionRequest<unknown, unknown>, {
+      stage: "process",
+      message: `Processed ${proposals.length - importedBefore} transaction${
+        proposals.length - importedBefore === 1 ? "" : "s"
+      }`,
+      pagesFetched,
+      seen: proposals.length,
+      imported: proposals.filter((proposal) => proposal.status !== "duplicate")
+        .length,
+    });
   }
 
   const completedAt = new Date().toISOString();
+  const summary = statusSummary(proposals);
+  await emitProgress(request as IngestionRequest<unknown, unknown>, {
+    stage: "complete",
+    message: `Finished ${summary.total} proposal${summary.total === 1 ? "" : "s"}`,
+    pagesFetched,
+    seen: summary.total,
+    imported: summary.total - summary.duplicates,
+  });
   return {
     id: `run:${md5(`${request.sourceId}:${startedAt}`)}`,
     sourceId: request.sourceId,
@@ -281,7 +326,7 @@ export async function runIngestion<Config, Record>(
     completedAt,
     cursor,
     proposals,
-    summary: statusSummary(proposals),
+    summary,
   };
 }
 

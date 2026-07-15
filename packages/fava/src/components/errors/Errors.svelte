@@ -93,7 +93,7 @@
     >
       {#if index === 0}
         <span {style} class="border-r">
-          <a href={`#/editor?line=${value}`}>{value}</a>
+          <a href={`/editor?line=${value}`}>{value}</a>
         </span>
       {:else}
         <Cell class={column.class} {style} {value} type={column.type} {height}

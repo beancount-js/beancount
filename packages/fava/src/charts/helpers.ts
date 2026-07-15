@@ -11,7 +11,7 @@ import { useContext } from "../context";
  * @returns A URL for the given interval.
  */
 export function urlForTimeFilter(date: Date): string {
-  return "#/";
+  return "/balance_sheet";
 }
 
 /**

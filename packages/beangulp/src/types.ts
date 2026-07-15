@@ -46,8 +46,26 @@ export interface NormalizedTransaction {
   narration: string;
   status: "posted" | "pending";
   fetchedAt: string;
+  tags?: readonly string[];
+  links?: readonly string[];
   metadata: Record<string, string>;
 }
+
+/** Editable fields for review-import proposal patches. */
+export type NormalizedTransactionPatch = Partial<
+  Pick<
+    NormalizedTransaction,
+    | "bookedAt"
+    | "amount"
+    | "currency"
+    | "merchant"
+    | "payee"
+    | "narration"
+    | "tags"
+    | "links"
+    | "metadata"
+  >
+>;
 
 export type NormalizeResult =
   | { ok: true; transaction: NormalizedTransaction }
@@ -241,6 +259,24 @@ export interface ProposalHook {
   ): Promise<ImportProposal>;
 }
 
+export type IngestionProgressStage =
+  | "account"
+  | "fetch"
+  | "process"
+  | "complete";
+
+/** Optional progress callbacks for long-running ingest fetches. */
+export interface IngestionProgress {
+  stage: IngestionProgressStage;
+  message: string;
+  accountIndex?: number;
+  accountTotal?: number;
+  accountName?: string;
+  pagesFetched?: number;
+  seen?: number;
+  imported?: number;
+}
+
 export interface IngestionRequest<Config, Record> {
   source: SourcePlugin<Config, Record>;
   sourceConfig: Config;
@@ -258,6 +294,7 @@ export interface IngestionRequest<Config, Record> {
   defaultCurrency?: string;
   fetchedAt?: string;
   sourceContext?: Omit<SourceContext, "sourceId" | "cursor">;
+  onProgress?: (progress: IngestionProgress) => void | Promise<void>;
 }
 
 export interface IngestionRun {

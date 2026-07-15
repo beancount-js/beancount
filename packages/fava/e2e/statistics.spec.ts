@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-import { sampleLedger, seedLedger } from "./helpers";
+import { gotoStudio, sampleLedger, seedLedger } from "./helpers";
 
 test("Statistics shows one full-height table at a time", async ({ page }) => {
   await seedLedger(page, sampleLedger);
-  await page.goto("/#/statistics");
+  await gotoStudio(page, "/statistics");
 
   await expect(
     page.getByRole("tab", { name: "Postings per Account", exact: true }),
@@ -50,7 +50,7 @@ test("Query results use the page container for vertical scrolling", async ({
   page,
 }) => {
   await seedLedger(page, sampleLedger);
-  await page.goto("/#/query?qs=SELECT%20account%20FROM%20postings");
+  await gotoStudio(page, "/query?qs=SELECT%20account%20FROM%20postings");
 
   const table = page.locator("[data-query-table]");
   await expect(table).toBeVisible();

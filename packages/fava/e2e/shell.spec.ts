@@ -1,4 +1,13 @@
 import { expect, test } from "@playwright/test";
+import { gotoStudio, resolveProjectId } from "./helpers";
+
+test("redirects / to the active project path", async ({ page }) => {
+  const projectId = await resolveProjectId(page);
+  await page.goto("/");
+  await expect(page).toHaveURL(
+    new RegExp(`/${encodeURIComponent(projectId)}/?(\\?|#|$)`),
+  );
+});
 
 test.describe("Docs-shell visual foundation", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
@@ -6,7 +15,7 @@ test.describe("Docs-shell visual foundation", () => {
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.addInitScript(() => localStorage.clear());
-    await page.goto("/#/editor");
+    await gotoStudio(page, "/editor");
     await expect(
       page
         .locator("[data-slot=studio-workspace-header]")
@@ -162,10 +171,12 @@ test.describe("Docs-shell visual foundation", () => {
     );
     await selectedLedger.click();
     await expect(selectedLedger).not.toHaveAttribute("aria-current");
+    const journalStem = collapsedLedgerPath!.replace(
+      /\.(beancount|bean|ledger)$/i,
+      "",
+    );
     await expect(page).toHaveURL(
-      new RegExp(
-        `#\\/journal\\?ledger=${encodeURIComponent(collapsedLedgerPath!)}`,
-      ),
+      new RegExp(`/ledger/${journalStem.replaceAll("/", "\\/")}/journal/?`),
     );
     const selectedLedgerPanels = page.locator(
       `[data-ledger-file-panels="${collapsedLedgerPath}"]`,
@@ -182,9 +193,7 @@ test.describe("Docs-shell visual foundation", () => {
     });
     await editorPanel.click();
     await expect(page).toHaveURL(
-      new RegExp(
-        `#\\/editor\\?ledger=${encodeURIComponent(collapsedLedgerPath!)}`,
-      ),
+      new RegExp(`/ledger/${journalStem.replaceAll("/", "\\/")}/editor/?`),
     );
     await expect(editorPanel).toHaveAttribute("aria-current", "page");
     await expect(
@@ -316,10 +325,10 @@ test.describe("Docs-shell visual foundation", () => {
 
     await expect(pageTitle).toHaveText("Editor");
 
-    await page.goto("/#/income_statement");
+    await gotoStudio(page, "/income_statement");
     await expect(pageTitle).toHaveText("Income Statement");
 
-    await page.goto("/#/journal");
+    await gotoStudio(page, "/journal");
     await expect(pageTitle).toHaveText("Journal");
   });
 });
@@ -330,7 +339,7 @@ test.describe("Docs-shell mobile navigation", () => {
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.addInitScript(() => localStorage.clear());
-    await page.goto("/#/editor");
+    await gotoStudio(page, "/editor");
     await expect(
       page
         .locator("[data-slot=studio-workspace-header]")

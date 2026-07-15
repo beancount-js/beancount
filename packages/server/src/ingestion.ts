@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
   JsonApiSource,
@@ -24,7 +24,9 @@ import {
   type CategorySuggestion,
   type DiscoveredJsonApiAccount,
   type ImportProposal,
+  type IngestionProgress,
   type IngestionRun,
+  type NormalizedTransactionPatch,
   type JsonApiLinkedAccount,
   type JsonApiSourceConfig,
   type JsonMappingConfig,
@@ -39,7 +41,11 @@ import {
   brandfetchLogoUrl,
   isValidDomain,
 } from "./brandfetch";
-import { FilesystemMerchantStore } from "./merchant";
+import {
+  FilesystemMerchantStore,
+  type ProjectRootResolver,
+} from "./merchant";
+import { projectIngestionRoot } from "./paths";
 
 const VERSION = 1;
 const RUN_LIMIT = 20;
@@ -91,18 +97,57 @@ export interface IngestionConfig {
   sources: IngestionSourceDefinition[];
 }
 
+export type IngestionSyncJobStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed";
+
+export interface IngestionSyncJobProgress {
+  stage: IngestionProgress["stage"] | "queued" | "saving";
+  message: string;
+  accountIndex?: number;
+  accountTotal?: number;
+  accountName?: string;
+  pagesFetched?: number;
+  seen?: number;
+  imported?: number;
+}
+
+export interface IngestionSyncJobSummary {
+  seen: number;
+  imported: number;
+  ready: number;
+  needsReview: number;
+  duplicates: number;
+  invalid: number;
+  held: number;
+}
+
+export interface IngestionSyncJob {
+  id: string;
+  projectId: string;
+  sourceId: string;
+  status: IngestionSyncJobStatus;
+  startedAt: string;
+  completedAt?: string;
+  error?: string;
+  progress: IngestionSyncJobProgress;
+  runIds: string[];
+  summary?: IngestionSyncJobSummary;
+}
+
+export interface IngestProgressOptions {
+  accountId?: string;
+  onProgress?: (progress: IngestionProgress) => void | Promise<void>;
+}
+
 interface IngestionState {
   version: 1;
   cursors: Record<string, string | undefined>;
   seenImportIds: string[];
   seenFingerprints: string[];
   runs: IngestionRun[];
-}
-
-function defaultDirectory() {
-  return (
-    process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config", "beancount-js")
-  );
 }
 
 function projectId(value: string) {
@@ -295,12 +340,7 @@ function validateSource(
       "JSON API base URL",
     );
     allowedHosts = validated.allowedHosts;
-    if (!source.accounts?.length) {
-      throw new Error(
-        "Grouped JSON API sources need at least one linked account.",
-      );
-    }
-    accounts = source.accounts.map(validateLinkedAccount);
+    accounts = (source.accounts ?? []).map(validateLinkedAccount);
     const accountIds = new Set(accounts.map((account) => account.id));
     if (accountIds.size !== accounts.length) {
       throw new Error("Linked account identifiers must be unique.");
@@ -344,22 +384,23 @@ function validateSource(
   };
 }
 
+export type FilesystemIngestionStoreOptions = {
+  resolveProjectRoot: ProjectRootResolver;
+};
+
 /** Local persistence for configurations and actionable, normalized runs. */
 export class FilesystemIngestionStore {
   readonly merchants: FilesystemMerchantStore;
+  private readonly resolveProjectRoot: ProjectRootResolver;
 
-  constructor(readonly configDirectory = defaultDirectory()) {
-    this.merchants = new FilesystemMerchantStore(configDirectory);
+  constructor(options: FilesystemIngestionStoreOptions) {
+    this.resolveProjectRoot = options.resolveProjectRoot;
+    this.merchants = new FilesystemMerchantStore(options.resolveProjectRoot);
   }
 
-  private path(project: string, name: string) {
-    return join(
-      this.configDirectory,
-      "projects",
-      projectId(project),
-      "ingestion",
-      name,
-    );
+  private async path(project: string, name: string) {
+    const root = await this.resolveProjectRoot(projectId(project));
+    return join(projectIngestionRoot(root), name);
   }
 
   private async write(path: string, value: unknown) {
@@ -373,7 +414,7 @@ export class FilesystemIngestionStore {
   }
 
   async readConfig(project: string) {
-    return readJson(this.path(project, "sources.json"), configDefaults());
+    return readJson(await this.path(project, "sources.json"), configDefaults());
   }
 
   async writeConfig(project: string, config: IngestionConfig) {
@@ -381,18 +422,18 @@ export class FilesystemIngestionStore {
     if (new Set(sources.map((source) => source.id)).size !== sources.length) {
       throw new Error("Ingestion source identifiers must be unique.");
     }
-    await this.write(this.path(project, "sources.json"), {
+    await this.write(await this.path(project, "sources.json"), {
       version: VERSION,
       sources,
     });
   }
 
   async readState(project: string) {
-    return readJson(this.path(project, "state.json"), stateDefaults());
+    return readJson(await this.path(project, "state.json"), stateDefaults());
   }
 
   private async writeState(project: string, state: IngestionState) {
-    await this.write(this.path(project, "state.json"), state);
+    await this.write(await this.path(project, "state.json"), state);
   }
 
   async source(project: string, id: string) {
@@ -400,6 +441,20 @@ export class FilesystemIngestionStore {
     const source = config.sources.find((item) => item.id === id);
     if (!source) throw new Error(`Unknown ingestion source: ${id}`);
     return source;
+  }
+
+  /** Resolve a connection id from a run's sourceId (`connection` or `connection:account`). */
+  async sourceForRunSourceId(project: string, runSourceId: string) {
+    const config = await this.readConfig(project);
+    const exact = config.sources.find((item) => item.id === runSourceId);
+    if (exact) return exact;
+    const separator = runSourceId.indexOf(":");
+    if (separator > 0) {
+      const connectionId = runSourceId.slice(0, separator);
+      const grouped = config.sources.find((item) => item.id === connectionId);
+      if (grouped) return grouped;
+    }
+    throw new Error(`Unknown ingestion source: ${runSourceId}`);
   }
 
   async saveRun(project: string, run: IngestionRun) {
@@ -442,11 +497,113 @@ export class FilesystemIngestionStore {
     return run;
   }
 
+  private async syncJobPath(project: string, jobId: string) {
+    return this.path(project, join("sync-jobs", `${jobId}.json`));
+  }
+
+  private async syncJobsDirectory(project: string) {
+    return this.path(project, "sync-jobs");
+  }
+
+  async saveSyncJob(project: string, job: IngestionSyncJob) {
+    await this.write(await this.syncJobPath(project, job.id), job);
+    return job;
+  }
+
+  async readSyncJob(project: string, jobId: string) {
+    try {
+      return JSON.parse(
+        await fs.readFile(await this.syncJobPath(project, jobId), "utf8"),
+      ) as IngestionSyncJob;
+    } catch (error: unknown) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        throw new Error(`Unknown sync job: ${jobId}`);
+      }
+      throw error;
+    }
+  }
+
+  async listSyncJobs(project: string) {
+    const directory = await this.syncJobsDirectory(project);
+    let names: string[];
+    try {
+      names = await fs.readdir(directory);
+    } catch (error: unknown) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+      throw error;
+    }
+    const jobs: IngestionSyncJob[] = [];
+    for (const name of names) {
+      if (!name.endsWith(".json")) continue;
+      try {
+        jobs.push(
+          JSON.parse(
+            await fs.readFile(join(directory, name), "utf8"),
+          ) as IngestionSyncJob,
+        );
+      } catch {
+        // Ignore corrupt job files.
+      }
+    }
+    return jobs.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  }
+
+  async findActiveSyncJob(project: string, sourceId: string) {
+    const jobs = await this.listSyncJobs(project);
+    return (
+      jobs.find(
+        (job) =>
+          job.sourceId === sourceId &&
+          (job.status === "queued" || job.status === "running"),
+      ) ?? null
+    );
+  }
+
+  async latestSyncJob(project: string, sourceId?: string) {
+    const jobs = await this.listSyncJobs(project);
+    if (!sourceId) return jobs[0] ?? null;
+    return jobs.find((job) => job.sourceId === sourceId) ?? null;
+  }
+
+  /** Mark in-flight jobs as failed after a process restart. */
+  async failInterruptedSyncJobs(project: string) {
+    const jobs = await this.listSyncJobs(project);
+    const interrupted = jobs.filter(
+      (job) => job.status === "queued" || job.status === "running",
+    );
+    for (const job of interrupted) {
+      await this.saveSyncJob(project, {
+        ...job,
+        status: "failed",
+        completedAt: new Date().toISOString(),
+        error: "Sync interrupted because the server restarted.",
+        progress: {
+          ...job.progress,
+          stage: "complete",
+          message: "Sync interrupted because the server restarted.",
+        },
+      });
+    }
+    return interrupted.length;
+  }
+
   async updateProposal(
     project: string,
     runId: string,
     proposalId: string,
     account: string,
+  ) {
+    return this.patchProposal(project, runId, proposalId, { account });
+  }
+
+  async patchProposal(
+    project: string,
+    runId: string,
+    proposalId: string,
+    patch: {
+      account?: string;
+      transaction?: NormalizedTransactionPatch;
+    },
   ) {
     const state = await this.readState(project);
     const run = state.runs.find((item) => item.id === runId);
@@ -459,35 +616,92 @@ export class FilesystemIngestionStore {
         proposal.status === "invalid" ||
         proposal.status === "held"
       ) {
-        throw new Error("This proposal cannot be categorised.");
+        throw new Error("This proposal cannot be edited.");
       }
-      // A user choosing an already-suggested account is still an explicit
-      // category decision. Preserve it through merchant re-categorisation.
-      const suggestions = [
-        ...proposal.suggestions.filter((item) => item.method !== "manual"),
-        {
-          account,
-          rawScore: 1,
-          scoreKind: "manual" as const,
-          support: 1,
-          hard: true,
-          method: "manual" as const,
-          explanation: `Manually categorised as ${account}.`,
-          evidence: [
-            {
-              id: `manual:${proposal.id}:${account}`,
-              kind: "manual" as const,
-              summary: "Manual account selection",
-            },
-          ],
-        },
-      ];
-      return {
-        ...proposal,
-        selectedAccount: account,
-        suggestions,
-        status: "ready" as const,
-      };
+
+      let next = { ...proposal, transaction: { ...proposal.transaction } };
+      if (patch.transaction) {
+        const tx = patch.transaction;
+        if (tx.bookedAt !== undefined) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(tx.bookedAt)) {
+            throw new Error("bookedAt must be an ISO calendar date (YYYY-MM-DD).");
+          }
+          next.transaction!.bookedAt = tx.bookedAt;
+        }
+        if (tx.amount !== undefined) {
+          if (!/^-?\d+(\.\d+)?$/.test(tx.amount.trim())) {
+            throw new Error("amount must be a decimal number.");
+          }
+          next.transaction!.amount = tx.amount.trim();
+        }
+        if (tx.currency !== undefined) {
+          next.transaction!.currency = tx.currency.trim().toUpperCase();
+        }
+        if (tx.merchant !== undefined) {
+          next.transaction!.merchant = tx.merchant.trim() || undefined;
+        }
+        if (tx.payee !== undefined) {
+          next.transaction!.payee = tx.payee.trim() || undefined;
+        }
+        if (tx.narration !== undefined) {
+          next.transaction!.narration = tx.narration;
+        }
+        if (tx.tags !== undefined) {
+          next.transaction!.tags = [...tx.tags]
+            .map((tag) => tag.trim())
+            .filter(Boolean);
+        }
+        if (tx.links !== undefined) {
+          next.transaction!.links = [...tx.links]
+            .map((link) => link.trim())
+            .filter(Boolean);
+        }
+        if (tx.metadata !== undefined) {
+          const metadata: Record<string, string> = {};
+          for (const [key, value] of Object.entries(tx.metadata)) {
+            const cleanKey = key.trim();
+            if (!cleanKey) continue;
+            metadata[cleanKey] = String(value);
+          }
+          next.transaction!.metadata = metadata;
+        }
+      }
+
+      if (patch.account !== undefined) {
+        const account = patch.account;
+        const suggestions = [
+          ...next.suggestions.filter((item) => item.method !== "manual"),
+          {
+            account,
+            rawScore: 1,
+            scoreKind: "manual" as const,
+            support: 1,
+            hard: true,
+            method: "manual" as const,
+            explanation: `Manually categorised as ${account}.`,
+            evidence: [
+              {
+                id: `manual:${next.id}:${account}`,
+                kind: "manual" as const,
+                summary: "Manual account selection",
+              },
+            ],
+          },
+        ];
+        next = {
+          ...next,
+          selectedAccount: account,
+          suggestions,
+          status: "ready",
+        };
+      } else if (
+        next.selectedAccount &&
+        next.status === "needs-review"
+      ) {
+        // Keep status if only metadata/date fields changed.
+      }
+
+      return next;
     });
     const updated = { ...run, proposals, summary: summarize(proposals) };
     state.runs = state.runs.map((item) => (item.id === runId ? updated : item));
@@ -1171,14 +1385,30 @@ export async function ingestSource(
   entries: readonly Directive[],
   model?: string,
   merchantContext?: IngestMerchantContext,
-  options?: { accountId?: string },
+  options?: IngestProgressOptions,
 ) {
   const targets = expandIngestionSource(source, options);
   const runs: IngestionRun[] = [];
   let seenImportIds = [...state.seenImportIds];
   let seenFingerprints = [...state.seenFingerprints];
+  const accountTotal = targets.length;
 
-  for (const target of targets) {
+  for (const [index, target] of targets.entries()) {
+    const linked = source.accounts?.find(
+      (account) =>
+        jsonApiAccountSourceId(source.id, account.id) === target.sourceId,
+    );
+    const accountName = linked?.name ?? target.sourceAccount;
+    const accountIndex = index + 1;
+    await options?.onProgress?.({
+      stage: "account",
+      message: `Syncing ${accountName} (${accountIndex} of ${accountTotal})`,
+      accountIndex,
+      accountTotal,
+      accountName,
+      seen: 0,
+      imported: 0,
+    });
     const allAccounts = [...new Set(entries.flatMap((entry) => entry.accounts))]
       .filter(Boolean)
       .sort();
@@ -1212,6 +1442,14 @@ export async function ingestSource(
       defaultCurrency: target.defaultCurrency,
       sourceContext: {
         resolveSecret: async (reference) => resolveIngestionSecret(reference),
+      },
+      onProgress: async (progress) => {
+        await options?.onProgress?.({
+          ...progress,
+          accountIndex,
+          accountTotal,
+          accountName,
+        });
       },
     });
     runs.push(run);

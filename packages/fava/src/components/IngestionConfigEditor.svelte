@@ -31,7 +31,6 @@
     type EditableIngestionSource,
   } from "../ingestion/source-form";
   import type { IngestionConfigResponse } from "../ingestion/types";
-  import IngestionConnectWizard from "./IngestionConnectWizard.svelte";
   import IngestionSourceForm, {
     sourceFormSectionIds,
   } from "./IngestionSourceForm.svelte";
@@ -57,17 +56,9 @@
   let saveTimer: number | null = null;
   /** Open section ids keyed by source index. Missing key = fully expanded. */
   let openBySourceIndex = $state<Record<number, string[]>>({});
-  let connectSample = $state<IngestionSample | undefined>(undefined);
 
   const validationIssues = $derived(
     config ? validateEditableIngestionConfig(config) : [],
-  );
-  const existingAccountIds = $derived(
-    (config?.sources ?? []).flatMap((source) =>
-      isGroupedJsonApiSource(source)
-        ? (source.accounts ?? []).map((account) => account.id)
-        : [],
-    ),
   );
   const sectionsCollapsedAll = $derived(
     config
@@ -193,14 +184,6 @@
     appendConnectedSource(source);
   }
 
-  function openConnectProvider(sample: IngestionSample) {
-    if (!sample.provider) {
-      connectSampleDirect(sample);
-      return;
-    }
-    connectSample = sample;
-  }
-
   function appendConnectedSource(source: EditableIngestionSource) {
     if (!config) return;
     let next = source;
@@ -218,11 +201,6 @@
       ),
     );
     scheduleSave();
-  }
-
-  function completeConnectWizard(source: EditableIngestionSource) {
-    appendConnectedSource(source);
-    connectSample = undefined;
   }
 
   function duplicateSource(index: number) {
@@ -319,17 +297,11 @@
   }
 
   function openReviewImports() {
-    const ledgerPath =
-      $activeFile ||
-      $snapshot?.ledgerFiles[0]?.path ||
-      $snapshot?.project.entryFile;
-    if (!ledgerPath) {
-      router.push("/records");
-      return;
-    }
-    const parameters = new URLSearchParams();
-    parameters.set("ledger", ledgerPath);
-    router.push(`/records?${parameters.toString()}`);
+    router.push("/records");
+  }
+
+  function openManageAccounts() {
+    router.push("/import/accounts");
   }
 
   function scheduleSave() {
@@ -473,7 +445,7 @@
                 {saving}
                 onChange={(index, next) => updateSource(index, next)}
                 onConnectSample={connectSampleDirect}
-                onConnectProvider={openConnectProvider}
+                onManageAccounts={openManageAccounts}
                 onSave={() => void saveNow()}
               />
             {:else}
@@ -526,18 +498,6 @@
           </div>
         </YamlBackedForm>
       </div>
-    {/if}
-
-    {#if connectSample?.provider}
-      <IngestionConnectWizard
-        sample={connectSample}
-        ledgerAccounts={loadedConfig?.accounts ?? []}
-        {existingAccountIds}
-        onCancel={() => {
-          connectSample = undefined;
-        }}
-        onComplete={completeConnectWizard}
-      />
     {/if}
 
     {#if status}

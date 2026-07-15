@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 import {
+  gotoStudio,
   navigateTo,
   openEditor,
+  restoreSampleLedger,
   seedLedger,
   sampleLedger,
   waitForEditorContent,
@@ -12,12 +14,16 @@ test.describe("sample ledger navigation", () => {
     await seedLedger(page, sampleLedger);
   });
 
-  test("sidebar navigation updates the hash route", async ({ page }) => {
+  test.afterEach(async ({ page }) => {
+    await restoreSampleLedger(page);
+  });
+
+  test("sidebar navigation updates the path route", async ({ page }) => {
     await openEditor(page);
     await waitForEditorContent(page, "Account Ledger");
 
     await navigateTo(page, "Income Statement");
-    await expect(page).toHaveURL(/#\/income_statement\?ledger=.+$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/income-statement\/?/);
     await expect(
       page
         .locator("[data-ledger-file-panels] button")
@@ -29,16 +35,16 @@ test.describe("sample ledger navigation", () => {
     ).toBeVisible();
 
     await navigateTo(page, "Balance Sheet");
-    await expect(page).toHaveURL(/#\/balance_sheet\?ledger=.+$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/balance-sheet\/?/);
     await expect(
       page.locator("[data-statement-summary-tree-table]").first(),
     ).toBeVisible();
 
     await navigateTo(page, "Journal");
-    await expect(page).toHaveURL(/#\/journal\?ledger=.+$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/journal\/?/);
 
     await navigateTo(page, "Editor");
-    await expect(page).toHaveURL(/#\/editor\?ledger=.+$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/editor\/?/);
     await expect(page.locator(".beancount-editor .cm-editor")).toBeVisible();
     await expect(
       page
@@ -49,7 +55,7 @@ test.describe("sample ledger navigation", () => {
 
     await page.reload();
     await page.waitForSelector("[data-ledger-file-row]");
-    await expect(page).toHaveURL(/#\/editor\?ledger=.+$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/editor\/?/);
     await expect(
       page
         .locator("[data-ledger-file-panels] button")
@@ -75,10 +81,23 @@ test.describe("sample ledger navigation", () => {
     await expect(
       settingsSidebar.getByRole("button", { name: /Import/ }),
     ).toBeVisible();
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Accounts/ }),
+    ).toBeVisible();
     await expect(page.locator("[data-ledger-file-panels]")).toHaveCount(0);
 
     await settingsSidebar.getByRole("button", { name: /Import/ }).click();
-    await expect(page).toHaveURL(/#\/import\/editor\?ledger=.+$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/settings\/?/);
+
+    await settingsSidebar.getByRole("button", { name: /Accounts/ }).click();
+    await expect(page).toHaveURL(/\/ledger\/.+\/settings\/accounts\/?/);
+    await expect(
+      page.locator("[data-ingestion-accounts-setup]"),
+    ).toBeVisible();
+    // Empty or connected: page should not offer review-import Fetch as primary CTA.
+    await expect(
+      page.getByRole("button", { name: "Fetch transactions" }),
+    ).toHaveCount(0);
 
     await page
       .getByRole("button", { name: "Back to ledger navigation" })
@@ -92,10 +111,28 @@ test.describe("sample ledger navigation", () => {
     ).toHaveCount(0);
   });
 
+  test("review imports uses Force re-fetch instead of primary Fetch", async ({
+    page,
+  }) => {
+    await gotoStudio(page, "/records?ledger=sample.beancount");
+    await expect(page.locator("[data-ingestion-review]")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByRole("heading", { name: "Review imports" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Force re-fetch" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Fetch transactions" }),
+    ).toHaveCount(0);
+  });
+
   test("loads report data for the ledger selected in the URL", async ({
     page,
   }) => {
-    await page.goto("/#/journal?ledger=sample-budgets.beancount");
+    await gotoStudio(page, "/journal?ledger=sample-budgets.beancount");
     await page.waitForSelector("[data-journal-table]");
 
     await expect(
@@ -113,7 +150,7 @@ test.describe("sample ledger navigation", () => {
     await openEditor(page);
     await waitForEditorContent(page, "Account Ledger");
     await navigateTo(page, "Income Statement");
-    await expect(page).toHaveURL(/#\/income_statement\?ledger=.+$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/income-statement\/?/);
     await expect(
       page.locator("[data-statement-summary-tree-table]").first(),
     ).toBeVisible({ timeout: 15_000 });
@@ -188,13 +225,13 @@ test.describe("sample ledger navigation", () => {
     await expect(
       page.getByRole("heading", { name: "Edit transaction" }),
     ).toBeVisible();
-    await expect(page).toHaveURL(/#\/journal\?ledger=.+&record=.+$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/journal\/\?.*record=/);
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(
       page.getByRole("heading", { name: "Edit transaction" }),
     ).not.toBeVisible();
     await accountLink.click();
-    await expect(page).toHaveURL(/#\/account\/.+$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/account\//);
     await expect(
       page.getByRole("heading", { name: "Edit transaction" }),
     ).not.toBeVisible();
@@ -206,9 +243,9 @@ test.describe("account details", () => {
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
 
-    await page.goto("/#/account/Assets:Checking");
+    await gotoStudio(page, "/account/Assets:Checking");
     await page.waitForSelector("[data-ledger-file-row]");
-    await expect(page).toHaveURL(/#\/account\/Assets:Checking\??$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/?/);
     await expect(page.getByRole("tab", { name: "Account Table" })).toBeVisible({
       timeout: 15_000,
     });
@@ -284,17 +321,23 @@ test.describe("account details", () => {
     await expect(
       page.getByRole("heading", { name: "Edit transaction" }),
     ).toBeVisible();
-    await expect(page).toHaveURL(/#\/account\/Assets:Checking\?record=.+$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/\?.*record=/);
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(
       page.getByRole("heading", { name: "Edit transaction" }),
     ).not.toBeVisible();
-    await expect(page).toHaveURL(/#\/account\/Assets:Checking\??$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/?/);
 
-    const accountLink = page.locator("[data-account-posting] a").first();
-    const previousUrl = page.url();
-    await accountLink.click();
-    await expect.poll(() => page.url()).not.toBe(previousUrl);
+    const otherAccountLink = page
+      .locator("[data-account-posting] a")
+      .filter({ hasNotText: /^Assets:Checking$/ })
+      .first();
+    await expect(otherAccountLink).toBeVisible();
+    await otherAccountLink.click();
+    await expect(page).toHaveURL(/\/ledger\/.+\/account\//);
+    await expect(page).not.toHaveURL(
+      /\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/?$/,
+    );
     await expect(
       page.getByRole("heading", { name: "Edit transaction" }),
     ).not.toBeVisible();
@@ -307,7 +350,7 @@ test.describe("account activity pagination", () => {
   test("keeps date groups intact while paginating account activity", async ({
     page,
   }) => {
-    await page.goto("/#/account/Assets:Checking?pageSize=25");
+    await gotoStudio(page, "/account/Assets:Checking:Starling?pageSize=5");
     await expect(page.locator("[data-account-activity-table]")).toBeVisible({
       timeout: 15_000,
     });
@@ -322,7 +365,7 @@ test.describe("account activity pagination", () => {
       .getByRole("button", { name: "Next Account activity page" })
       .click();
     await expect(page).toHaveURL(
-      /#\/account\/Assets:Checking\?pageSize=25&page=2$/,
+      /\/ledger\/.+\/account\/Assets(?::|%3A)Checking(?::|%3A)Starling\/?\?.*pageSize=5.*page=2/,
     );
     await expect(firstDateGroup).not.toHaveText(firstDate);
   });

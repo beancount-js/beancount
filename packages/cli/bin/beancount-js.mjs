@@ -13,8 +13,8 @@ const arguments_ = process.argv.slice(2);
 function usage() {
   console.log(`Usage: beancount-js [folder] [--port 4173] [--host 127.0.0.1] [--entry file]
 
-Starts Beancount Studio for a project folder. The folder's project metadata is
-stored in .beancount-js and the global project picker is stored under XDG config.`);
+Starts Beancount Studio for a project folder. Project-local data lives in
+.beancount/; the global project registry is under XDG config (beancount-js).`);
 }
 
 if (arguments_.includes("--help") || arguments_.includes("-h")) {
@@ -51,7 +51,28 @@ try {
   if (build.status !== 0) process.exit(build.status ?? 1);
 }
 
-console.log(`Beancount Studio: http://${host}:${port}`);
+const origin = `http://${host}:${port}`;
+
+async function resolveStudioUrl() {
+  for (let attempt = 0; attempt < 75; attempt += 1) {
+    try {
+      const response = await fetch(`${origin}/api/projects`);
+      if (response.ok) {
+        const projects = await response.json();
+        const projectId = Array.isArray(projects) ? projects[0]?.id : undefined;
+        if (typeof projectId === "string" && projectId) {
+          return `${origin}/${encodeURIComponent(projectId)}/`;
+        }
+        return `${origin}/`;
+      }
+    } catch {
+      // Server still starting.
+    }
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 200));
+  }
+  return `${origin}/`;
+}
+
 const child = spawn(process.execPath, [serverEntry], {
   cwd: studioDirectory,
   stdio: "inherit",
@@ -65,3 +86,6 @@ const child = spawn(process.execPath, [serverEntry], {
   },
 });
 child.on("exit", (code) => process.exit(code ?? 0));
+
+const studioUrl = await resolveStudioUrl();
+console.log(`Beancount Studio: ${studioUrl}`);

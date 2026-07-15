@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { sampleLedger, seedLedger } from "./helpers";
+import { gotoStudio, sampleLedger, seedLedger } from "./helpers";
 
 test.describe("financial dashboard", () => {
   test.beforeEach(async ({ page }) => {
     await seedLedger(page, sampleLedger);
-    await page.goto("/#/dashboard");
+    await gotoStudio(page, "/dashboard");
     await expect(page.locator("[data-dashboard-flow]")).toBeVisible({
       timeout: 15_000,
     });
@@ -61,10 +61,10 @@ test.describe("financial dashboard", () => {
     await expect(tooltip).not.toBeVisible();
 
     const accountLink = page.locator(
-      '[data-dashboard-flow] a[href="#/account/Expenses:Interest/"]',
+      '[data-dashboard-flow] a[href*="/account/Expenses"][href*="Interest"]',
     );
     await accountLink.click();
-    await expect(page).toHaveURL(/#\/account\/Expenses:Interest\/?$/);
+    await expect(page).toHaveURL(/\/ledger\/.+\/account\/Expenses(?::|%3A)Interest\/?/);
   });
 
   test("renders aligned, collapsible balance trees", async ({ page }) => {

@@ -45,13 +45,19 @@ export function proposalTransaction(proposal: ImportProposal, account: string) {
     if (merchant.domain) metadata.merchant_domain = merchant.domain;
   }
 
+  for (const [key, value] of Object.entries(transaction.metadata ?? {})) {
+    if (value === undefined || value === null) continue;
+    if (key in metadata) continue;
+    metadata[key] = value;
+  }
+
   return new Transaction(
     date,
     "*",
     merchant?.canonicalName ?? transaction.payee ?? transaction.merchant ?? "",
     transaction.narration,
-    [],
-    [],
+    [...(transaction.tags ?? [])],
+    [...(transaction.links ?? [])],
     [
       new Posting(
         transaction.sourceAccount,

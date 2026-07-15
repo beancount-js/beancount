@@ -1,5 +1,16 @@
 /** Shared project and storage contracts for server and static-web runtimes. */
 
+export {
+  PROJECT_ID_COLLISION_SUFFIX_LENGTH,
+  RESERVED_PROJECT_IDS,
+  createProjectId,
+  createProjectIdCollisionSuffix,
+  isUuidProjectId,
+  projectIdIndexFromProjects,
+  toProjectIdBase,
+  type ProjectIdIndex,
+} from "./project-id";
+
 export type BeancountStudioRuntime = "server" | "web";
 
 export interface RuntimeCapabilities {

@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-import { sampleLedger, seedLedger } from "./helpers";
+import { gotoStudio, sampleLedger, seedLedger } from "./helpers";
 
 test("Holdings uses the page container for vertical scrolling", async ({
   page,
 }) => {
   await seedLedger(page, sampleLedger);
-  await page.goto("/#/holdings");
+  await gotoStudio(page, "/holdings");
 
   const table = page.locator("[data-query-table]");
   await expect(table).toBeVisible();

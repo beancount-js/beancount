@@ -38,7 +38,7 @@ export async function POST({
     const snapshot = await workspace.readProject(params.id);
     const store = serverIngestion();
     const run = await store.run(params.id, params.runId);
-    const source = await store.source(params.id, run.sourceId);
+    const source = await store.sourceForRunSourceId(params.id, run.sourceId);
     const destinationPath =
       source.destinationPath ?? snapshot.project.entryFile;
     const destination = snapshot.ledgerFiles.find(

@@ -7,7 +7,17 @@ import {
   type Writable,
   get,
 } from "svelte/store";
+import { goto } from "$app/navigation";
+import { page } from "$app/stores";
 import { URLPattern } from "urlpattern-polyfill";
+import {
+  buildLedgerHref,
+  ledgerStemForPath,
+  parseLedgerAndView,
+  resolveLedgerPath,
+  splitViewAndQuery,
+} from "../lib/ledger-route";
+import { getStudioRouteEnv, setStudioRouteEnv } from "../lib/studio-route-env";
 
 export interface Route {
   path: string;
@@ -28,6 +38,7 @@ export interface RouterContext {
   push: (path: string) => void;
   isActive: Readable<(path: string) => boolean>;
   routerLink: (el: HTMLElement) => { destroy: () => void };
+  destroy?: () => void;
 }
 
 export const RouterKey = Symbol("routerContext");
@@ -40,23 +51,6 @@ export function normalizePath(path: string): string {
     path = "/" + path;
   }
   return path;
-}
-
-export function pathFromHash(
-  hash: string = window.location.hash,
-  fallbackPath: string = "/editor",
-): string {
-  if (!hash || hash === "#") {
-    return normalizePath(fallbackPath);
-  }
-  return normalizePath(hash);
-}
-
-function syncHash(path: string) {
-  const hash = path.startsWith("?") ? path : `#${path}`;
-  if (window.location.hash !== hash) {
-    window.location.hash = hash;
-  }
 }
 
 class HistoryManager {
@@ -146,9 +140,32 @@ class HistoryManager {
   }
 }
 
+function pathnameToViewPath(pathname: string): {
+  viewPath: string;
+  query: Record<string, string>;
+  params: Record<string, string>;
+  ledgerStem: string;
+} | null {
+  const segments = pathname.split("/").filter(Boolean);
+  // /{projectId}/ledger/...
+  const ledgerIndex = segments.indexOf("ledger");
+  if (ledgerIndex < 0 || ledgerIndex >= segments.length - 1) return null;
+  const rest = segments.slice(ledgerIndex + 1);
+  const parsed = parseLedgerAndView(rest);
+  if (!parsed) return null;
+  return {
+    viewPath: parsed.viewPath,
+    query: {},
+    params: parsed.params,
+    ledgerStem: parsed.ledgerStem,
+  };
+}
+
 export class Router {
   private routes: Array<{ route: Route; pattern: URLPattern }> = [];
   private subscribers: Array<Unsubscriber> = [];
+  private syncingFromPage = false;
+  private suppressStateWatch = false;
   readonly navigating: Writable<{ from: string; to: string } | null> =
     writable(null);
 
@@ -169,11 +186,14 @@ export class Router {
     this.routes = routes.map((route) => {
       return { route, pattern: new URLPattern({ pathname: route.path }) };
     });
-    const watcher = this.state.subscribe(this.set.bind(this));
+    const watcher = this.state.subscribe((path) => {
+      if (this.suppressStateWatch) return;
+      void this.set(path, false);
+    });
     this.subscribers.push(watcher);
   }
 
-  set(path: string, replace: boolean = false) {
+  private matchRoute(path: string): RouteProperties | null {
     path = normalizePath(path);
     for (const route of this.routes) {
       const href = `ledger:${path}`;
@@ -185,25 +205,118 @@ export class Router {
             query[key] = value;
           }
         }
-        const props: RouteProperties = {
+        return {
           path: found.pathname.input,
           element: route.route.element,
           query,
           params: found.pathname.groups,
         };
-        replace
-          ? this.history.replaceState(props)
-          : this.history.pushState(props);
-        syncHash(path);
-        return;
       }
     }
+    return null;
+  }
 
-    this.history.pushState({
-      path: "/404",
-      query: {},
-      params: { path },
+  async set(
+    path: string,
+    replace: boolean = false,
+    options: { syncBrowser?: boolean } = {},
+  ) {
+    path = normalizePath(path);
+    const props =
+      this.matchRoute(path) ??
+      ({
+        path: "/404",
+        query: {},
+        params: { path },
+      } satisfies RouteProperties);
+
+    // Drop legacy ledger query — ledger lives in the pathname now
+    const { ledger: _legacyLedger, ...query } = props.query;
+    const nextProps = { ...props, query };
+
+    replace
+      ? this.history.replaceState(nextProps)
+      : this.history.pushState(nextProps);
+
+    const shouldSync =
+      options.syncBrowser !== false && !this.syncingFromPage;
+    if (shouldSync) {
+      await this.syncBrowserUrl(nextProps, replace);
+    }
+  }
+
+  private async syncBrowserUrl(props: RouteProperties, replace: boolean) {
+    const env = getStudioRouteEnv();
+    if (!env.projectId || !env.ledgerStem || typeof window === "undefined") {
+      return;
+    }
+    const href = buildLedgerHref(
+      env.projectId,
+      env.ledgerStem,
+      props.path,
+      props.query,
+    );
+    const current = `${window.location.pathname}${window.location.search}`;
+    const normalizedCurrent = current.endsWith("/")
+      ? current
+      : `${current.split("?")[0]}/`.replace(/\/+$/, "/") +
+        (window.location.search || "");
+    if (href === current || href === normalizedCurrent) return;
+    await goto(href, {
+      replaceState: replace,
+      keepFocus: true,
+      noScroll: true,
     });
+  }
+
+  /** Apply the current SvelteKit page URL onto the in-app router. */
+  applyPageUrl(pathname: string, searchParams: URLSearchParams) {
+    const parsed = pathnameToViewPath(pathname);
+    if (!parsed) return;
+
+    const env = getStudioRouteEnv();
+    const resolved =
+      resolveLedgerPath(parsed.ledgerStem, env.availableLedgers) ??
+      (env.availableLedgers.includes(parsed.ledgerStem)
+        ? parsed.ledgerStem
+        : env.ledgerPath);
+    if (resolved) {
+      setStudioRouteEnv({
+        ledgerPath: resolved,
+        ledgerStem: ledgerStemForPath(resolved, env.availableLedgers),
+      });
+    }
+
+    const query: Record<string, string> = {};
+    for (const [key, value] of searchParams) {
+      if (key !== "ledger") query[key] = value;
+    }
+
+    let viewWithQuery = parsed.viewPath;
+    const search = new URLSearchParams(query).toString();
+    if (search) viewWithQuery = `${parsed.viewPath}?${search}`;
+
+    this.syncingFromPage = true;
+    this.suppressStateWatch = true;
+    try {
+      const props =
+        this.matchRoute(viewWithQuery) ??
+        ({
+          path: parsed.viewPath,
+          query,
+          params: parsed.params,
+        } satisfies RouteProperties);
+      // Merge account params from path parse
+      props.params = { ...props.params, ...parsed.params };
+      props.query = { ...props.query, ...query };
+      this.history.replaceState(props);
+      this.state.set(
+        search ? `${parsed.viewPath}?${search}` : parsed.viewPath,
+      );
+    } finally {
+      this.suppressStateWatch = false;
+      this.syncingFromPage = false;
+    }
   }
 
   get activeRoute() {
@@ -231,26 +344,39 @@ export class Router {
 
 export function createRouter(
   routes: Array<Route>,
-  path: string = "/",
+  path: string = "/journal",
 ): RouterContext {
-  const initialPath = pathFromHash(undefined, path);
+  let bootstrap = path;
+  if (typeof window !== "undefined") {
+    const fromPage = pathnameToViewPath(window.location.pathname);
+    if (fromPage) {
+      const search = window.location.search.replace(/^\?/, "");
+      bootstrap = search
+        ? `${fromPage.viewPath}?${search}`
+        : fromPage.viewPath;
+    }
+  }
+  const { viewPath, query } = splitViewAndQuery(bootstrap);
+  const initialPath =
+    Object.keys(query).length > 0
+      ? `${viewPath}?${new URLSearchParams(query)}`
+      : viewPath;
   const state = writable<string>(initialPath);
 
   const activeRoute = writable<RouteProperties>({
-    path: initialPath,
-    query: {},
+    path: viewPath,
+    query,
     params: {},
   });
   const router = new Router(state, new HistoryManager(activeRoute));
   router.createRouter(routes);
-  router.set(initialPath, true);
+  // Hydrate in-memory route without rewriting the browser URL (page store owns it).
+  void router.set(initialPath, true, { syncBrowser: false });
 
+  let pageUnsub: Unsubscriber | undefined;
   if (typeof window !== "undefined") {
-    window.addEventListener("hashchange", () => {
-      const next = pathFromHash();
-      if (get(state) !== next) {
-        router.push(next);
-      }
+    pageUnsub = page.subscribe(($page) => {
+      router.applyPageUrl($page.url.pathname, $page.url.searchParams);
     });
   }
 
@@ -286,6 +412,14 @@ export function createRouter(
       const target = closest(evt.target as HTMLElement | null);
       if (target?.tagName.toLowerCase() === "a") {
         const url = target.getAttribute("href") || "";
+        // External or already path-based ledger links: let the browser / SvelteKit handle
+        if (
+          url.startsWith("http") ||
+          url.startsWith("/api") ||
+          (url.startsWith("/") && url.includes("/ledger/"))
+        ) {
+          return;
+        }
         router.updateState(normalizePath(url));
         evt.preventDefault();
       }
@@ -307,6 +441,10 @@ export function createRouter(
       router.push(routePath);
     },
     routerLink,
+    destroy: () => {
+      pageUnsub?.();
+      router.destroy();
+    },
   };
 }
 

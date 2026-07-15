@@ -1,6 +1,5 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
-import { homedir } from "node:os";
 import { basename, dirname, extname, join, relative, resolve, sep } from "node:path";
 import { DocumentDirective, IncludeDirective, parseDocument } from "@beancount-js/parser";
 import type {
@@ -15,13 +14,33 @@ import type {
   WriteFileOptions,
   WorkspaceAdapter,
 } from "@beancount-js/workspace";
+import {
+  createProjectId,
+  isUuidProjectId,
+  type ProjectIdIndex,
+} from "@beancount-js/workspace";
+import {
+  PROJECT_STUDIO_DIR,
+  projectAiSessionsRoot,
+  studioConfigRoot,
+} from "./paths";
 
 const REGISTRY_FILENAME = "projects.json";
+const REGISTRY_VERSION = 2;
 const LEDGER_EXTENSIONS = new Set([".bean", ".beancount", ".ledger"]);
-const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", ".beancount-js"]);
+const SKIPPED_DIRECTORIES = new Set([
+  ".git",
+  "node_modules",
+  PROJECT_STUDIO_DIR,
+  ".beancount-js",
+]);
 
 type RegistryProject = ProjectConfig & { root: string };
-type Registry = { version: 1; projects: RegistryProject[] };
+type Registry = {
+  version: number;
+  projects: RegistryProject[];
+  rootPathToId: Record<string, string>;
+};
 
 type Discovery = {
   ledgerPaths: string[];
@@ -137,25 +156,99 @@ export class FilesystemWorkspaceAdapter implements WorkspaceAdapter {
   private readonly now: () => Date;
 
   constructor(options: FilesystemWorkspaceOptions = {}) {
-    this.configDirectory =
-      options.configDirectory ??
-      process.env.XDG_CONFIG_HOME ??
-      join(homedir(), ".config", "beancount-js");
+    this.configDirectory = studioConfigRoot(options.configDirectory);
     this.registryPath = join(this.configDirectory, REGISTRY_FILENAME);
     this.now = options.now ?? (() => new Date());
+  }
+
+  /** Absolute filesystem root for a registered project. */
+  async projectRoot(projectId: string) {
+    return (await this.registryProject(projectId)).root;
   }
 
   private timestamp() {
     return this.now().toISOString();
   }
 
+  private indexFromRegistry(registry: Registry): ProjectIdIndex {
+    const idToRoot: Record<string, string> = {};
+    for (const [root, id] of Object.entries(registry.rootPathToId)) {
+      idToRoot[id] = root;
+    }
+    for (const project of registry.projects) {
+      if (!idToRoot[project.id]) idToRoot[project.id] = project.root;
+    }
+    return { rootPathToId: { ...registry.rootPathToId }, idToRoot };
+  }
+
+  private migrateRegistry(raw: Partial<Registry> | null): {
+    registry: Registry;
+    changed: boolean;
+  } {
+    const projects = [...(raw?.projects ?? [])];
+    let changed =
+      !raw ||
+      raw.version !== REGISTRY_VERSION ||
+      !raw.rootPathToId ||
+      projects.some(
+        (project) =>
+          isUuidProjectId(project.id) ||
+          raw.rootPathToId?.[project.root] !== project.id,
+      );
+
+    if (!changed && raw) {
+      return {
+        registry: {
+          version: REGISTRY_VERSION,
+          projects,
+          rootPathToId: { ...raw.rootPathToId },
+        },
+        changed: false,
+      };
+    }
+
+    const index: ProjectIdIndex = { rootPathToId: {}, idToRoot: {} };
+    const migrated: RegistryProject[] = [];
+    for (const project of projects) {
+      const keepId =
+        !isUuidProjectId(project.id) &&
+        (!index.idToRoot[project.id] ||
+          index.idToRoot[project.id] === project.root)
+          ? project.id
+          : createProjectId(index, project.root);
+      index.rootPathToId[project.root] = keepId;
+      index.idToRoot[keepId] = project.root;
+      migrated.push({ ...project, id: keepId });
+    }
+
+    return {
+      registry: {
+        version: REGISTRY_VERSION,
+        projects: migrated,
+        rootPathToId: index.rootPathToId,
+      },
+      changed: true,
+    };
+  }
+
   private async readRegistry(): Promise<Registry> {
-    return (await readJson<Registry>(this.registryPath)) ?? { version: 1, projects: [] };
+    const raw = await readJson<Partial<Registry>>(this.registryPath);
+    const { registry, changed } = this.migrateRegistry(raw);
+    if (changed) await this.writeRegistry(registry);
+    return registry;
   }
 
   private async writeRegistry(registry: Registry) {
     await fs.mkdir(dirname(this.registryPath), { recursive: true });
-    await fs.writeFile(this.registryPath, JSON.stringify(registry, null, 2) + "\n");
+    const normalized: Registry = {
+      version: REGISTRY_VERSION,
+      projects: registry.projects,
+      rootPathToId: registry.rootPathToId,
+    };
+    await fs.writeFile(
+      this.registryPath,
+      JSON.stringify(normalized, null, 2) + "\n",
+    );
   }
 
   private async registryProject(id: string) {
@@ -301,18 +394,35 @@ export class FilesystemWorkspaceAdapter implements WorkspaceAdapter {
     if (!status.isDirectory()) throw new Error(`Project root is not a directory: ${root}`);
 
     const registry = await this.readRegistry();
-    const existing = registry.projects.find((project) => project.root === absoluteRoot);
+    const existingId = registry.rootPathToId[absoluteRoot];
+    const existing =
+      (existingId
+        ? registry.projects.find((project) => project.id === existingId)
+        : undefined) ??
+      registry.projects.find((project) => project.root === absoluteRoot);
+    const index = this.indexFromRegistry(registry);
+    const id = existing?.id ?? createProjectId(index, absoluteRoot);
     const now = this.timestamp();
     const project: RegistryProject = {
       version: 1,
-      id: existing?.id ?? randomUUID(),
+      id,
       name: existing?.name ?? basename(absoluteRoot),
-      entryFile: projectPath(entryFile ?? existing?.entryFile ?? (await findLedgerEntry(absoluteRoot))),
+      entryFile: projectPath(
+        entryFile ??
+          existing?.entryFile ??
+          (await findLedgerEntry(absoluteRoot)),
+      ),
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
       root: absoluteRoot,
     };
-    registry.projects = [project, ...registry.projects.filter((item) => item.id !== project.id)];
+    registry.rootPathToId[absoluteRoot] = id;
+    registry.projects = [
+      project,
+      ...registry.projects.filter(
+        (item) => item.id !== project.id && item.root !== absoluteRoot,
+      ),
+    ];
     await this.writeRegistry(registry);
     return project;
   }
@@ -326,9 +436,18 @@ export class FilesystemWorkspaceAdapter implements WorkspaceAdapter {
 
   async saveProject(project: ProjectConfig): Promise<void> {
     if (!project.root) throw new Error("A filesystem project needs a root directory.");
-    const config: RegistryProject = { ...project, root: await this.rootPath(project.root) };
+    const config: RegistryProject = {
+      ...project,
+      root: await this.rootPath(project.root),
+    };
     const registry = await this.readRegistry();
-    registry.projects = [config, ...registry.projects.filter((item) => item.id !== config.id)];
+    registry.rootPathToId[config.root] = config.id;
+    registry.projects = [
+      config,
+      ...registry.projects.filter(
+        (item) => item.id !== config.id && item.root !== config.root,
+      ),
+    ];
     await this.writeRegistry(registry);
   }
 
@@ -425,22 +544,21 @@ export class FilesystemWorkspaceAdapter implements WorkspaceAdapter {
     return fs.readFile(await this.absolutePath(project.root, safePath));
   }
 
-  private sessionPath(projectId: string, sessionId: string) {
+  private async sessionPath(projectId: string, sessionId: string) {
     if (!/^[a-zA-Z0-9_-]+$/.test(sessionId)) throw new Error("Invalid AI session identifier.");
-    return join(this.configDirectory, "projects", projectId, "ai-sessions", `${sessionId}.json`);
+    const root = await this.projectRoot(projectId);
+    return join(projectAiSessionsRoot(root), `${sessionId}.json`);
   }
 
   async readAiSession(projectId: string, sessionId: string): Promise<AiSessionRecord | null> {
-    await this.registryProject(projectId);
-    return readJson<AiSessionRecord>(this.sessionPath(projectId, sessionId));
+    return readJson<AiSessionRecord>(await this.sessionPath(projectId, sessionId));
   }
 
   async writeAiSession(projectId: string, session: AiSessionRecord): Promise<void> {
-    await this.registryProject(projectId);
     if (session.projectId !== projectId) {
       throw new Error("Cannot write an AI session for a different project.");
     }
-    const path = this.sessionPath(projectId, session.sessionId);
+    const path = await this.sessionPath(projectId, session.sessionId);
     await fs.mkdir(dirname(path), { recursive: true });
     await fs.writeFile(path, JSON.stringify(session, null, 2) + "\n");
   }

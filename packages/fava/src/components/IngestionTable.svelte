@@ -1,50 +1,295 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { DateTime } from "luxon";
+  import type { IngestionSyncJob } from "@beancount-js/server";
+  import type { ProjectSnapshot } from "@beancount-js/workspace";
+  import ChevronDown from "lucide-svelte/icons/chevron-down";
+  import ChevronUp from "lucide-svelte/icons/chevron-up";
   import { useStudioWorkspace } from "../studio/workspace";
+  import { useNavigation } from "../router/router";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
+  import {
+    latestIngestionSyncJob,
+    subscribeIngestionSyncEvents,
+  } from "../ingestion/sync";
   import type {
     IngestionConfigResponse,
     IngestionRun,
     ImportProposal,
   } from "../ingestion/types";
-  import type { ProjectSnapshot } from "@beancount-js/workspace";
   import { Button } from "$lib/components/ui/button";
+  import * as Alert from "$lib/components/ui/alert";
+  import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
+
+  type ProposalRow = {
+    key: string;
+    runId: string;
+    proposal: ImportProposal;
+  };
+
+  type DateGroup = {
+    key: string;
+    date: string;
+    label: string;
+    rows: ProposalRow[];
+  };
 
   const { snapshot } = useStudioWorkspace();
+  const { activeRoute, router } = useNavigation();
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
-  let config: IngestionConfigResponse | undefined;
-  let run: IngestionRun | undefined;
-  let sourceId = "";
-  let status = "";
-  let loading = false;
-  let loadedProjectId = "";
-  let correctingProposalId = "";
-  let correctionName = "";
-  let correctionDomain = "";
-  let correctionDescription = "";
-  let failedLogoIds = new Set<string>();
 
-  $: project = $snapshot;
-  $: selectedSource = config?.sources.find((source) => source.id === sourceId);
-  $: accepted =
-    run?.proposals.filter(
-      (proposal) => proposal.status === "ready" && proposal.selectedAccount,
-    ) ?? [];
+  let config = $state<IngestionConfigResponse | undefined>(undefined);
+  let runs = $state<IngestionRun[]>([]);
+  let activeRuns = $state<IngestionRun[]>([]);
+  let sourceId = $state("");
+  let status = $state("");
+  let loading = $state(false);
+  let loadedProjectId = $state("");
+  let syncJob = $state<IngestionSyncJob | null>(null);
+  let syncAbort = $state<AbortController | null>(null);
+  let expandedGroups = $state(new Set<string>());
+  let expandedSignature = $state("");
+  let selectedRow = $state<ProposalRow | undefined>(undefined);
+  let sheetOpen = $state(false);
+  let failedLogoIds = $state(new Set<string>());
+
+  const project = $derived($snapshot);
+  const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
+  const queryRunId = $derived($activeRoute?.query?.runId ?? "");
+  const selectedSource = $derived(
+    config?.sources.find((source) => source.id === sourceId),
+  );
+  const syncing = $derived(
+    syncJob?.status === "queued" || syncJob?.status === "running",
+  );
+  const allowedAccounts = $derived(
+    selectedSource?.allowedAccounts?.length
+      ? selectedSource.allowedAccounts
+      : (config?.accounts ?? []),
+  );
+
+  const proposalRows = $derived.by((): ProposalRow[] =>
+    activeRuns.flatMap((run) =>
+      run.proposals.map((proposal) => ({
+        key: `${run.id}:${proposal.id}`,
+        runId: run.id,
+        proposal,
+      })),
+    ),
+  );
+
+  const accepted = $derived(
+    proposalRows.filter(
+      (row) =>
+        row.proposal.status === "ready" && row.proposal.selectedAccount,
+    ),
+  );
+
+  const dateGroups = $derived.by((): DateGroup[] => {
+    const buckets = new Map<string, ProposalRow[]>();
+    for (const row of proposalRows) {
+      const date = row.proposal.transaction?.bookedAt ?? "unknown";
+      const list = buckets.get(date) ?? [];
+      list.push(row);
+      buckets.set(date, list);
+    }
+    return [...buckets.entries()]
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([date, rows]) => ({
+        key: date,
+        date,
+        label: formatGroupDate(date),
+        rows: rows.sort((left, right) =>
+          (right.proposal.transaction?.amount ?? "").localeCompare(
+            left.proposal.transaction?.amount ?? "",
+          ),
+        ),
+      }));
+  });
+
+  const summaryLine = $derived.by(() => {
+    if (!activeRuns.length) return "";
+    const totals = activeRuns.reduce(
+      (acc, run) => ({
+        ready: acc.ready + run.summary.ready,
+        needsReview: acc.needsReview + run.summary.needsReview,
+        duplicates: acc.duplicates + run.summary.duplicates,
+      }),
+      { ready: 0, needsReview: 0, duplicates: 0 },
+    );
+    return `${totals.ready} ready · ${totals.needsReview} need review · ${totals.duplicates} duplicates`;
+  });
+
+  $effect(() => {
+    const signature = dateGroups.map((group) => group.key).join("|");
+    if (!signature || signature === expandedSignature) return;
+    expandedSignature = signature;
+    expandedGroups = new Set(dateGroups[0] ? [dateGroups[0].key] : []);
+  });
+
+  $effect(() => {
+    const next = project;
+    if (next && !isWeb && next.project.id !== loadedProjectId) {
+      void refresh();
+    }
+  });
+
+  function runBelongsToSource(item: IngestionRun, id: string) {
+    return item.sourceId === id || item.sourceId.startsWith(`${id}:`);
+  }
+
+  function reviewableCount(run: IngestionRun) {
+    return run.proposals.filter(
+      (proposal) =>
+        proposal.status === "ready" || proposal.status === "needs-review",
+    ).length;
+  }
+
+  function sortRunsNewest(items: IngestionRun[]) {
+    return [...items].sort((a, b) =>
+      (b.completedAt || b.startedAt).localeCompare(
+        a.completedAt || a.startedAt,
+      ),
+    );
+  }
+
+  function pickRunsForSource(
+    items: IngestionRun[],
+    id: string,
+    preferredRunId?: string,
+    syncRunIds?: readonly string[],
+  ) {
+    const belonging = items.filter((item) => runBelongsToSource(item, id));
+    if (!belonging.length) return [];
+
+    if (preferredRunId) {
+      const preferred = belonging.find((item) => item.id === preferredRunId);
+      if (preferred) return [preferred];
+    }
+
+    if (syncRunIds?.length) {
+      const fromSync = syncRunIds
+        .map((runId) => belonging.find((item) => item.id === runId))
+        .filter((item): item is IngestionRun => Boolean(item));
+      if (fromSync.length) return fromSync;
+    }
+
+    const sorted = sortRunsNewest(belonging);
+    const reviewable = sorted.find((run) => reviewableCount(run) > 0);
+    return reviewable ? [reviewable] : sorted[0] ? [sorted[0]] : [];
+  }
+
+  function applyActiveRuns(next: IngestionRun[]) {
+    activeRuns = next;
+    if (!next.length) {
+      status = config?.sources.length
+        ? "Sync from Accounts, then review proposals here."
+        : "Add a JSON API source under Sources first.";
+      return;
+    }
+    status = "";
+  }
+
+  function replaceRun(updated: IngestionRun) {
+    runs = [updated, ...runs.filter((item) => item.id !== updated.id)];
+    activeRuns = activeRuns.map((item) =>
+      item.id === updated.id ? updated : item,
+    );
+    if (selectedRow?.runId === updated.id) {
+      const proposal = updated.proposals.find(
+        (item) => item.id === selectedRow?.proposal.id,
+      );
+      if (proposal) {
+        selectedRow = {
+          key: `${updated.id}:${proposal.id}`,
+          runId: updated.id,
+          proposal,
+        };
+      }
+    }
+  }
+
+  async function watchSync(projectId: string, id: string) {
+    syncAbort?.abort();
+    syncAbort = new AbortController();
+    try {
+      const latest = await latestIngestionSyncJob(projectId, id);
+      syncJob = latest;
+      if (
+        latest &&
+        (latest.status === "queued" || latest.status === "running")
+      ) {
+        await subscribeIngestionSyncEvents(
+          projectId,
+          latest.id,
+          (event) => {
+            syncJob = event.job;
+            if (
+              event.type === "done" ||
+              event.job.status === "completed" ||
+              event.job.status === "failed"
+            ) {
+              void refresh();
+            }
+          },
+          syncAbort.signal,
+        );
+      } else if (latest?.runIds.length && !activeRuns.length) {
+        applyActiveRuns(
+          pickRunsForSource(runs, id, undefined, latest.runIds),
+        );
+      }
+    } catch {
+      // Review page can still work without live sync status.
+    }
+  }
 
   async function refresh() {
     if (!project || isWeb) return;
     loading = true;
     try {
-      config = await ingestionJson<IngestionConfigResponse>(
-        ingestionPath(project.project.id),
-      );
-      sourceId = config.sources.some((source) => source.id === sourceId)
-        ? sourceId
+      const [configResponse, runList] = await Promise.all([
+        ingestionJson<IngestionConfigResponse>(
+          ingestionPath(project.project.id),
+        ),
+        ingestionJson<IngestionRun[]>(
+          ingestionPath(project.project.id, "/runs"),
+        ),
+      ]);
+      config = configResponse;
+      runs = runList;
+      const preferredSource =
+        querySourceId &&
+        config.sources.some((source) => source.id === querySourceId)
+          ? querySourceId
+          : sourceId;
+      sourceId = config.sources.some((source) => source.id === preferredSource)
+        ? preferredSource
         : (config.sources[0]?.id ?? "");
+      let syncRunIds: string[] | undefined;
+      if (sourceId) {
+        try {
+          const latest = await latestIngestionSyncJob(
+            project.project.id,
+            sourceId,
+          );
+          syncJob = latest;
+          syncRunIds = latest?.runIds;
+        } catch {
+          syncRunIds = undefined;
+        }
+      }
+      applyActiveRuns(
+        sourceId
+          ? pickRunsForSource(
+              runs,
+              sourceId,
+              queryRunId || undefined,
+              syncRunIds,
+            )
+          : [],
+      );
       loadedProjectId = project.project.id;
-      status = config.sources.length
-        ? "Choose a source and fetch transactions."
-        : "Add a JSON API source in Import Editor first.";
+      if (sourceId) void watchSync(project.project.id, sourceId);
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {
@@ -52,11 +297,35 @@
     }
   }
 
+  async function loadRunForSource(nextSourceId: string) {
+    sourceId = nextSourceId;
+    let syncRunIds: string[] | undefined;
+    if (project) {
+      try {
+        const latest = await latestIngestionSyncJob(
+          project.project.id,
+          nextSourceId,
+        );
+        syncJob = latest;
+        syncRunIds = latest?.runIds;
+      } catch {
+        syncRunIds = undefined;
+      }
+    }
+    applyActiveRuns(
+      pickRunsForSource(runs, nextSourceId, undefined, syncRunIds),
+    );
+    if (!activeRuns.length) {
+      status = "No import run yet. Sync this connection from Accounts.";
+    }
+    if (project) void watchSync(project.project.id, nextSourceId);
+  }
+
   async function fetchTransactions() {
     if (!project || !sourceId) return;
     loading = true;
     try {
-      run = await ingestionJson<IngestionRun>(
+      const run = await ingestionJson<IngestionRun>(
         ingestionPath(project.project.id, "/runs"),
         {
           method: "POST",
@@ -64,7 +333,8 @@
           body: JSON.stringify({ sourceId }),
         },
       );
-      status = `${run.summary.ready} ready · ${run.summary.needsReview} need review · ${run.summary.duplicates} duplicates`;
+      runs = [run, ...runs.filter((item) => item.id !== run.id)];
+      applyActiveRuns([run]);
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {
@@ -72,114 +342,93 @@
     }
   }
 
-  async function chooseAccount(proposal: ImportProposal, account: string) {
-    if (!project || !run || !account) return;
-    try {
-      run = await ingestionJson<IngestionRun>(
-        ingestionPath(
-          project.project.id,
-          `/runs/${encodeURIComponent(run.id)}`,
-        ),
-        {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ proposalId: proposal.id, account }),
-        },
-      );
-    } catch (error) {
-      status = error instanceof Error ? error.message : String(error);
+  function openAccounts() {
+    router.push("/import/accounts");
+  }
+
+  function formatGroupDate(date: string) {
+    if (date === "unknown") return "UNKNOWN DATE";
+    const parsed = DateTime.fromISO(date, { zone: "utc" });
+    return parsed.isValid
+      ? parsed.toFormat("LLLL dd, yyyy").toUpperCase()
+      : date.toUpperCase();
+  }
+
+  function rowTitle(proposal: ImportProposal) {
+    if (proposal.merchantResolution?.status === "confirmed") {
+      return proposal.merchantResolution.merchant.canonicalName;
     }
-  }
-
-  function merchantCandidate(proposal: ImportProposal) {
-    return proposal.merchantResolution?.status === "suggested"
-      ? proposal.merchantResolution.candidates[0]
-      : undefined;
-  }
-
-  function merchantDetails(proposal: ImportProposal) {
-    if (proposal.merchantResolution?.status === "confirmed")
-      return proposal.merchantResolution.merchant;
-    return merchantCandidate(proposal);
-  }
-
-  function selectedSuggestion(proposal: ImportProposal) {
-    return proposal.suggestions.find(
-      (suggestion) => suggestion.account === proposal.selectedAccount,
+    if (proposal.merchantResolution?.status === "suggested") {
+      return (
+        proposal.merchantResolution.candidates[0]?.canonicalName ??
+        proposal.transaction?.merchant ??
+        proposal.transaction?.payee ??
+        proposal.transaction?.narration ??
+        "—"
+      );
+    }
+    return (
+      proposal.transaction?.merchant ??
+      proposal.transaction?.payee ??
+      proposal.transaction?.narration ??
+      "—"
     );
   }
 
-  function scoreLabel(score: number | undefined) {
-    return score === undefined ? undefined : score.toFixed(2);
+  function rowDetail(proposal: ImportProposal) {
+    const category =
+      proposal.selectedAccount ??
+      proposal.suggestions[0]?.account ??
+      proposal.issues[0] ??
+      "Uncategorized";
+    return `${proposal.status} · ${category}`;
   }
 
-  function merchantProvenance(proposal: ImportProposal) {
-    const details = merchantDetails(proposal);
-    const labels = (details?.provenance ?? []).map((item) =>
-      item.provider ? `${item.source}:${item.provider}` : item.source,
-    );
-    return [...new Set(labels)].join(" · ");
+  function rowAmount(proposal: ImportProposal) {
+    const tx = proposal.transaction;
+    return tx ? `${tx.amount} ${tx.currency}` : "—";
   }
 
-  function merchantInitials(proposal: ImportProposal) {
-    const name =
-      merchantDetails(proposal)?.canonicalName ??
-      proposal.transaction?.merchant ??
-      proposal.transaction?.narration ??
-      "?";
-    return name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join("");
+  function rowInitial(proposal: ImportProposal) {
+    const title = rowTitle(proposal);
+    return title.slice(0, 1).toUpperCase() || "?";
   }
 
-  function startCorrection(proposal: ImportProposal) {
-    const details = merchantDetails(proposal);
-    correctingProposalId = proposal.id;
-    correctionName =
-      details?.canonicalName ??
-      proposal.transaction?.merchant ??
-      proposal.transaction?.narration ??
-      "";
-    correctionDomain = details?.domain ?? "";
-    correctionDescription = details?.description ?? "";
+  function merchantLogo(proposal: ImportProposal) {
+    if (proposal.merchantResolution?.status === "confirmed") {
+      return proposal.merchantResolution.merchant.logoUrl;
+    }
+    if (proposal.merchantResolution?.status === "suggested") {
+      return proposal.merchantResolution.candidates[0]?.logoUrl;
+    }
+    return undefined;
+  }
+
+  function toggleSummary(groupKey: string) {
+    const next = new Set(expandedGroups);
+    if (next.has(groupKey)) next.delete(groupKey);
+    else next.add(groupKey);
+    expandedGroups = next;
+  }
+
+  function openRow(row: ProposalRow) {
+    selectedRow = row;
+    sheetOpen = true;
+  }
+
+  function handleRowKeydown(event: KeyboardEvent, row: ProposalRow) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openRow(row);
+    }
   }
 
   function markLogoFailed(proposalId: string) {
     failedLogoIds = new Set([...failedLogoIds, proposalId]);
   }
 
-  async function updateMerchant(
-    proposal: ImportProposal,
-    action: "confirm" | "correct" | "reject" | "clear-suppression",
-    extra: Record<string, string | undefined> = {},
-  ) {
-    if (!project || !run) return;
-    loading = true;
-    try {
-      run = await ingestionJson<IngestionRun>(
-        ingestionPath(
-          project.project.id,
-          `/runs/${encodeURIComponent(run.id)}/proposals/${encodeURIComponent(proposal.id)}/merchant`,
-        ),
-        {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action, ...extra }),
-        },
-      );
-      correctingProposalId = "";
-    } catch (error) {
-      status = error instanceof Error ? error.message : String(error);
-    } finally {
-      loading = false;
-    }
-  }
-
   async function accept() {
-    if (!project || !run || !accepted.length || !selectedSource) return;
+    if (!project || !accepted.length || !selectedSource) return;
     const destination =
       selectedSource.destinationPath ?? project.project.entryFile;
     const expectedRevision = project.revisions.find(
@@ -191,46 +440,54 @@
     }
     loading = true;
     try {
-      const result = await ingestionJson<{
-        snapshot: ProjectSnapshot;
-        run: IngestionRun;
-      }>(
-        ingestionPath(
-          project.project.id,
-          `/runs/${encodeURIComponent(run.id)}/accept`,
-        ),
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            proposalIds: accepted.map((proposal) => proposal.id),
-            expectedRevision,
-          }),
-        },
-      );
-      snapshot.set(result.snapshot);
-      run = result.run;
-      status = `Accepted ${accepted.length} transaction${accepted.length === 1 ? "" : "s"}.`;
+      const byRun = new Map<string, string[]>();
+      for (const row of accepted) {
+        const list = byRun.get(row.runId) ?? [];
+        list.push(row.proposal.id);
+        byRun.set(row.runId, list);
+      }
+      let acceptedCount = 0;
+      let lastSnapshot: ProjectSnapshot | undefined;
+      for (const [runId, proposalIds] of byRun) {
+        const result = await ingestionJson<{
+          snapshot: ProjectSnapshot;
+          run: IngestionRun;
+        }>(
+          ingestionPath(
+            project.project.id,
+            `/runs/${encodeURIComponent(runId)}/accept`,
+          ),
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ proposalIds, expectedRevision }),
+          },
+        );
+        lastSnapshot = result.snapshot;
+        replaceRun(result.run);
+        acceptedCount += proposalIds.length;
+      }
+      if (lastSnapshot) snapshot.set(lastSnapshot);
+      status = `Accepted ${acceptedCount} transaction${acceptedCount === 1 ? "" : "s"}.`;
+      sheetOpen = false;
+      selectedRow = undefined;
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {
       loading = false;
     }
   }
-
-  $: if (project && !isWeb && project.project.id !== loadedProjectId) {
-    void refresh();
-  }
-
-  onMount(() => void refresh());
 </script>
 
-<div class="h-full overflow-auto p-5">
-  <div class="mx-auto max-w-6xl space-y-5">
+<div
+  class="h-full overflow-auto p-3 sm:p-5"
+  data-ingestion-review
+>
+  <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
     <div>
-      <h1 class="text-xl font-semibold">Ingestion</h1>
+      <h1 class="text-xl font-semibold">Review imports</h1>
       <p class="text-sm text-muted-foreground">
-        Fetch, review, then explicitly add transactions to the ledger.
+        Sync from Accounts, review proposals, then accept into the ledger.
       </p>
     </div>
 
@@ -251,9 +508,13 @@
           <span>Source</span>
           <select
             class="min-w-64 rounded border bg-background px-2 py-1"
-            bind:value={sourceId}
+            value={sourceId}
+            onchange={(event) =>
+              void loadRunForSource(
+                (event.currentTarget as HTMLSelectElement).value,
+              )}
           >
-            {#each config?.sources ?? [] as source}
+            {#each config?.sources ?? [] as source (source.id)}
               <option value={source.id}
                 >{source.name}{source.credentialAvailable
                   ? ""
@@ -262,284 +523,176 @@
             {/each}
           </select>
         </label>
+        <Button type="button" variant="outline" onclick={openAccounts}>
+          Open Accounts
+        </Button>
         <button
-          class="rounded bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50"
+          class="rounded border px-3 py-2 text-sm text-muted-foreground disabled:opacity-50"
           disabled={!sourceId ||
             loading ||
+            syncing ||
             !selectedSource?.credentialAvailable}
-          onclick={fetchTransactions}>Fetch transactions</button
+          title="Prefer Sync on the Accounts screen"
+          onclick={fetchTransactions}>Force re-fetch</button
         >
-        <a class="rounded border px-3 py-2 text-sm" href="#/import/editor"
+        <a class="rounded border px-3 py-2 text-sm" href="/import/editor"
           >Edit sources</a
         >
       </div>
     {/if}
 
+    {#if syncing}
+      <Alert.Root>
+        <Alert.Title>Sync in progress</Alert.Title>
+        <Alert.Description>
+          {syncJob?.progress.message || "Fetching transactions from Accounts…"}
+          Accept is disabled until the sync finishes.
+        </Alert.Description>
+      </Alert.Root>
+    {/if}
+
     {#if status}<p class="text-sm text-muted-foreground">{status}</p>{/if}
 
-    {#if run}
-      <div class="flex items-center justify-between gap-4">
-        <h2 class="text-lg font-semibold">Review run</h2>
+    {#if activeRuns.length}
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Review</h2>
+          {#if summaryLine}
+            <p class="text-sm text-muted-foreground">{summaryLine}</p>
+          {/if}
+        </div>
         <button
           class="rounded bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50"
-          disabled={!accepted.length || loading}
+          disabled={!accepted.length || loading || syncing}
           onclick={accept}
           >Accept {accepted.length} reviewed transaction{accepted.length === 1
             ? ""
             : "s"}</button
         >
       </div>
-      <div class="overflow-x-auto rounded-md border">
-        <table class="w-full min-w-[1100px] text-left text-sm">
-          <thead
-            class="border-b bg-muted/50 text-xs uppercase text-muted-foreground"
+
+      <div
+        class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+      >
+        <span>Date</span>
+        <span class="text-right">Amount</span>
+      </div>
+
+      {#if !dateGroups.length}
+        <div
+          class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+        >
+          No proposals in this import run.
+        </div>
+      {/if}
+
+      {#each dateGroups as group (group.key)}
+        {@const expanded = expandedGroups.has(group.key)}
+        {@const groupId = `ingestion-group-${group.key}`}
+        {@const summaryId = `ingestion-summary-${group.key}`}
+        <section
+          class="overflow-hidden rounded-2xl bg-muted/80"
+          aria-labelledby={groupId}
+        >
+          <div
+            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-4"
           >
-            <tr
-              ><th class="p-3">Date</th><th class="p-3">Merchant</th><th
-                class="p-3">Amount</th
-              ><th class="p-3">Category</th><th class="p-3">Why</th><th
-                class="p-3">Status</th
-              ></tr
+            <button
+              type="button"
+              class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+              aria-expanded={expanded}
+              aria-controls={summaryId}
+              aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
+              onclick={() => toggleSummary(group.key)}
             >
-          </thead>
-          <tbody>
-            {#each run.proposals as proposal}
-              <tr class="border-b align-top">
-                <td class="p-3 font-mono"
-                  >{proposal.transaction?.bookedAt ?? "—"}</td
+              <span
+                id={groupId}
+                role="heading"
+                aria-level="2"
+                class="truncate text-sm font-semibold tracking-wide text-foreground"
+              >
+                {group.label}
+                <span class="ml-2 text-muted-foreground"
+                  >· {group.rows.length}</span
                 >
-                <td class="min-w-72 p-3">
-                  {#if proposal}
-                    {@const details = merchantDetails(proposal)}
-                    {@const candidate = merchantCandidate(proposal)}
-                    {@const merchantStatus =
-                      proposal.merchantResolution?.status ?? "unresolved"}
-                    <div class="flex gap-3">
-                      {#if details?.logoUrl && !failedLogoIds.has(proposal.id)}
-                        <img
-                          class="size-9 rounded-md border object-contain"
-                          src={details.logoUrl}
-                          alt={`${details.canonicalName} logo`}
-                          onerror={() => markLogoFailed(proposal.id)}
-                        />
-                      {:else}
-                        <div
-                          class="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted text-xs font-medium text-muted-foreground"
-                          aria-label="Merchant initials"
-                        >
-                          {merchantInitials(proposal)}
-                        </div>
-                      {/if}
-                      <div class="min-w-0 flex-1">
-                        <p class="truncate font-medium">
-                          {details?.canonicalName ??
-                            proposal.transaction?.merchant ??
-                            proposal.transaction?.narration ??
-                            "—"}
-                        </p>
-                        <p class="truncate text-xs text-muted-foreground">
-                          Source: {proposal.transaction?.merchant ??
-                            proposal.transaction?.narration ??
-                            "—"}
-                        </p>
-                        {#if details?.domain || details?.industry}
-                          <p class="truncate text-xs text-muted-foreground">
-                            {[details?.domain, details?.industry]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </p>
-                        {/if}
-                        {#if details?.description}
-                          <p
-                            class="mt-1 line-clamp-2 text-xs text-muted-foreground"
-                          >
-                            {details.description}
-                          </p>
-                        {/if}
-                        {#if merchantProvenance(proposal)}
-                          <p class="mt-1 text-xs text-muted-foreground">
-                            Provenance: {merchantProvenance(proposal)}
-                          </p>
-                        {/if}
-                        <p class="mt-1 text-xs text-muted-foreground">
-                          {merchantStatus}
-                          {#if proposal.merchantResolution?.explanation}
-                            · {proposal.merchantResolution.explanation}
-                          {/if}
-                        </p>
-                        {#if merchantStatus === "suggested" && candidate}
-                          <div class="mt-2 flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              disabled={loading}
-                              onclick={() =>
-                                updateMerchant(proposal, "confirm", {
-                                  candidateId: candidate.id,
-                                })}>Confirm</Button
-                            >
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={loading}
-                              onclick={() => startCorrection(proposal)}
-                              >Correct</Button
-                            >
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              disabled={loading}
-                              onclick={() => updateMerchant(proposal, "reject")}
-                              >Dismiss</Button
-                            >
-                          </div>
-                        {:else if merchantStatus === "suppressed"}
-                          <div class="mt-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={loading}
-                              onclick={() =>
-                                updateMerchant(proposal, "clear-suppression")}
-                              >Try again</Button
-                            >
-                          </div>
-                        {:else}
-                          <div class="mt-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={loading}
-                              onclick={() => startCorrection(proposal)}
-                              >{merchantStatus === "confirmed"
-                                ? "Edit"
-                                : "Set merchant"}</Button
-                            >
-                          </div>
-                        {/if}
-                        {#if correctingProposalId === proposal.id}
-                          <div
-                            class="mt-3 flex flex-col gap-2 rounded-md border bg-muted/30 p-2"
-                          >
-                            <input
-                              class="h-8 rounded-md border bg-background px-2 text-xs"
-                              aria-label="Merchant name"
-                              bind:value={correctionName}
-                              placeholder="Merchant name"
-                            />
-                            <input
-                              class="h-8 rounded-md border bg-background px-2 text-xs"
-                              aria-label="Merchant domain"
-                              bind:value={correctionDomain}
-                              placeholder="example.com (optional)"
-                            />
-                            <input
-                              class="h-8 rounded-md border bg-background px-2 text-xs"
-                              aria-label="Merchant description"
-                              bind:value={correctionDescription}
-                              placeholder="Description (optional)"
-                            />
-                            <div class="flex gap-2">
-                              <Button
-                                size="sm"
-                                disabled={loading || !correctionName.trim()}
-                                onclick={() =>
-                                  updateMerchant(proposal, "correct", {
-                                    canonicalName: correctionName,
-                                    domain: correctionDomain || undefined,
-                                    description:
-                                      correctionDescription || undefined,
-                                    targetMerchantId:
-                                      proposal.merchantResolution?.status ===
-                                      "confirmed"
-                                        ? proposal.merchantResolution.merchant
-                                            .merchantId
-                                        : undefined,
-                                  })}>Save merchant</Button
-                              >
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                disabled={loading}
-                                onclick={() => (correctingProposalId = "")}
-                                >Cancel</Button
-                              >
-                            </div>
-                          </div>
-                        {/if}
-                      </div>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              aria-expanded={expanded}
+              aria-controls={summaryId}
+              aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
+              onclick={() => toggleSummary(group.key)}
+            >
+              {#if expanded}
+                <ChevronUp class="size-4" />
+              {:else}
+                <ChevronDown class="size-4" />
+              {/if}
+            </button>
+          </div>
+
+          {#if expanded}
+            <div
+              id={summaryId}
+              class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+            >
+              {#each group.rows as row, index (row.key)}
+                {@const logo = merchantLogo(row.proposal)}
+                <div
+                  role="button"
+                  tabindex="0"
+                  class:rounded-b-xl={index === group.rows.length - 1}
+                  class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={`Review ${rowTitle(row.proposal)}`}
+                  onclick={() => openRow(row)}
+                  onkeydown={(event) => handleRowKeydown(event, row)}
+                >
+                  {#if logo && !failedLogoIds.has(row.proposal.id)}
+                    <img
+                      class="size-10 rounded-full border object-contain"
+                      src={logo}
+                      alt=""
+                      onerror={() => markLogoFailed(row.proposal.id)}
+                    />
+                  {:else}
+                    <div
+                      class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                      aria-hidden="true"
+                    >
+                      {rowInitial(row.proposal)}
                     </div>
                   {/if}
-                </td>
-                <td class="p-3 font-mono"
-                  >{proposal.transaction
-                    ? `${proposal.transaction.amount} ${proposal.transaction.currency}`
-                    : "—"}</td
-                >
-                <td class="p-3">
-                  {#if proposal.status === "ready" || proposal.status === "needs-review"}
-                    <select
-                      class="min-w-56 rounded border bg-background px-2 py-1"
-                      value={proposal.selectedAccount ?? ""}
-                      onchange={(event) =>
-                        chooseAccount(
-                          proposal,
-                          (event.currentTarget as HTMLSelectElement).value,
-                        )}
-                    >
-                      <option value="">Choose an account</option>
-                      {#each selectedSource?.allowedAccounts ?? [] as account}
-                        <option value={account}>{account}</option>
-                      {/each}
-                    </select>
-                  {:else}
-                    <span class="text-muted-foreground">—</span>
-                  {/if}
-                </td>
-                <td class="max-w-md p-3 text-muted-foreground">
-                  {#if proposal}
-                    {@const suggestion = selectedSuggestion(proposal)}
-                    {#if suggestion}
-                      <p>{suggestion.explanation}</p>
-                      {#if suggestion.calibratedProbability !== undefined}
-                        <p class="mt-1 text-xs">
-                          Confidence: {Math.round(
-                            suggestion.calibratedProbability * 100,
-                          )}%
-                        </p>
-                      {:else if suggestion.scoreKind || suggestion.rawScore !== undefined}
-                        <p class="mt-1 text-xs">
-                          Score: {scoreLabel(suggestion.rawScore) ?? "—"}
-                          {#if suggestion.scoreKind}
-                            ({suggestion.scoreKind})
-                          {/if}
-                          {#if suggestion.support !== undefined}
-                            · support {suggestion.support}
-                          {/if}
-                        </p>
-                      {/if}
-                      {#if suggestion.evidence.length}
-                        <ul class="mt-1 list-inside list-disc text-xs">
-                          {#each suggestion.evidence as evidence}
-                            <li>{evidence.summary}</li>
-                          {/each}
-                        </ul>
-                      {/if}
-                    {:else}
-                      {proposal.issues.join(" ")}
-                    {/if}
-                  {/if}
-                </td>
-                <td class="p-3"
-                  ><span class="rounded bg-muted px-2 py-1 text-xs"
-                    >{proposal.status}</span
-                  ></td
-                >
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+                  <div class="min-w-0">
+                    <div class="truncate text-sm font-semibold">
+                      {rowTitle(row.proposal)}
+                    </div>
+                    <div class="mt-1 truncate text-xs text-muted-foreground">
+                      {rowDetail(row.proposal)}
+                    </div>
+                  </div>
+                  <span class="text-sm font-semibold tabular-nums">
+                    {rowAmount(row.proposal)}
+                  </span>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </section>
+      {/each}
     {/if}
   </div>
 </div>
+
+{#if selectedRow && project}
+  <IngestionProposalSheet
+    bind:open={sheetOpen}
+    proposal={selectedRow.proposal}
+    runId={selectedRow.runId}
+    projectId={project.project.id}
+    {allowedAccounts}
+    onUpdated={replaceRun}
+    onStatus={(message) => (status = message)}
+  />
+{/if}

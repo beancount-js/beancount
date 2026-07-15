@@ -24,6 +24,8 @@
   } from "@beancount-js/forms";
   import StudioShellHeader from "./StudioShellHeader.svelte";
   import IngestionHeaderActions from "./IngestionHeaderActions.svelte";
+  import { activeSyncTracks } from "../studio/sync-status";
+  import RefreshCw from "lucide-svelte/icons/refresh-cw";
 
   export let projects: ProjectSummary[] = [];
   export let snapshot: ProjectSnapshot | undefined;
@@ -42,7 +44,9 @@
 
   let tab: SidebarTab = "workspace";
   let enteringPath = false;
+  let addingProject = false;
   let path = "";
+  let projectActionError: string | null = null;
   let sidebarWidth = readStoredSidebarWidth();
   let resizing = false;
   let hoveringResizer = false;
@@ -69,11 +73,42 @@
   });
 
   async function addProject() {
-    if (isWeb) {
-      await onAddProject();
-      return;
+    if (addingProject) return;
+    addingProject = true;
+    projectActionError = null;
+    try {
+      if (isWeb) {
+        await onAddProject();
+        return;
+      }
+      const response = await fetch("/api/projects/pick-directory", {
+        method: "POST",
+      });
+      const picked = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        path?: string;
+        error?: string;
+      };
+      if (picked.ok && picked.path) {
+        await onAddProject(picked.path);
+        enteringPath = false;
+        path = "";
+        return;
+      }
+      if (!picked.ok && picked.error === "No directory was selected.") {
+        return;
+      }
+      enteringPath = true;
+      projectActionError =
+        picked.error ??
+        (response.ok ? null : response.statusText || "Could not open folder picker.");
+    } catch (error) {
+      enteringPath = true;
+      projectActionError =
+        error instanceof Error ? error.message : String(error);
+    } finally {
+      addingProject = false;
     }
-    enteringPath = true;
   }
 
   async function openProject() {
@@ -82,10 +117,25 @@
   }
 
   async function submitPath() {
-    if (!path.trim()) return;
-    await onAddProject(path.trim());
-    path = "";
+    if (!path.trim() || addingProject) return;
+    addingProject = true;
+    projectActionError = null;
+    try {
+      await onAddProject(path.trim());
+      path = "";
+      enteringPath = false;
+    } catch (error) {
+      projectActionError =
+        error instanceof Error ? error.message : String(error);
+    } finally {
+      addingProject = false;
+    }
+  }
+
+  function cancelPathEntry() {
     enteringPath = false;
+    path = "";
+    projectActionError = null;
   }
 
   function readStoredSidebarWidth() {
@@ -212,10 +262,11 @@
               <Sidebar.GroupContent class="flex flex-col gap-1">
                 {#if snapshot}
                   <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="sm"
-                    class="h-auto w-full justify-start py-2"
+                    class="h-auto w-full justify-start border border-sidebar-border bg-background py-2 text-sidebar-accent-foreground shadow-sm hover:bg-background hover:text-sidebar-accent-foreground"
                     title={snapshot.project.name}
+                    aria-current="page"
                     onclick={() => void onSelectProject(snapshot!.project.id)}
                   >
                     <FolderOpen data-icon="inline-start" />
@@ -254,6 +305,15 @@
             </Sidebar.Group>
             <Separator class="my-2" />
             <div class="px-2">
+              {#if projectActionError}
+                <p
+                  class="mb-2 px-1 text-xs text-destructive"
+                  role="alert"
+                  data-project-action-error
+                >
+                  {projectActionError}
+                </p>
+              {/if}
               {#if enteringPath}
                 <form
                   class="flex flex-col gap-2"
@@ -269,12 +329,18 @@
                     onChange={(value) => (path = value.path)}
                   />
                   <div class="flex gap-2">
-                    <Button type="submit" size="sm" class="flex-1">Add</Button
+                    <Button
+                      type="submit"
+                      size="sm"
+                      class="flex-1"
+                      disabled={addingProject || !path.trim()}
+                      >Add</Button
                     ><Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onclick={() => (enteringPath = false)}>Cancel</Button
+                      disabled={addingProject}
+                      onclick={cancelPathEntry}>Cancel</Button
                     >
                   </div>
                 </form>
@@ -283,10 +349,13 @@
                   variant="outline"
                   size="sm"
                   class="w-full justify-start"
+                  disabled={addingProject}
                   onclick={() => void openProject()}
                 >
                   <Plus data-icon="inline-start" /><span
-                    >Open another project</span
+                    >{addingProject
+                      ? "Opening folder…"
+                      : "Open another project"}</span
                   >
                 </Button>
               {/if}
@@ -405,6 +474,24 @@
           </Button>
         </div>
       </div>
+      {#if $activeSyncTracks.some((track) => track.job.status === "queued" || track.job.status === "running")}
+        {@const track = $activeSyncTracks.find(
+          (item) =>
+            item.job.status === "queued" || item.job.status === "running",
+        )}
+        {#if track}
+          <div
+            class="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+            role="status"
+            data-ingestion-sync-banner
+          >
+            <RefreshCw class="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
+            <span class="min-w-0 truncate">
+              Syncing {track.sourceName}: {track.job.progress.message}
+            </span>
+          </div>
+        {/if}
+      {/if}
       <div class="min-h-0 min-w-0 flex-1 overflow-hidden">
         {#if snapshot}
           <slot></slot>

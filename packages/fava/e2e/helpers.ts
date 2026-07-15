@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Page, type APIRequestContext } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,34 +15,192 @@ export const minimalLedger = readFileSync(
   "utf8",
 );
 
-const LEDGER_INIT_KEY = "e2e-ledger-initialized";
+let cachedProjectId: string | undefined;
+let cachedLedgerStem: string | undefined;
+let cachedEntryFile: string | undefined;
 
-export async function seedLedger(page: Page, ledger: string) {
-  await page.addInitScript(
-    ({ contents, initKey }) => {
-      if (!localStorage.getItem(initKey)) {
-        localStorage.setItem("ledger", contents);
-        localStorage.setItem(initKey, "1");
-      }
-    },
-    { contents: ledger, initKey: LEDGER_INIT_KEY },
-  );
+function apiOf(request: APIRequestContext | Page): APIRequestContext {
+  return "request" in request && typeof request.request === "object"
+    ? (request as Page).request
+    : (request as APIRequestContext);
 }
 
-export async function clearLedger(page: Page) {
-  await page.addInitScript(
-    ({ initKey }) => {
-      if (!localStorage.getItem(initKey)) {
-        localStorage.removeItem("ledger");
-        localStorage.setItem(initKey, "1");
-      }
-    },
-    { initKey: LEDGER_INIT_KEY },
+/** Active/default project slug from the Studio registry. */
+export async function resolveProjectId(
+  request: APIRequestContext | Page,
+): Promise<string> {
+  if (cachedProjectId) return cachedProjectId;
+  const api = apiOf(request);
+  const response = await api.get("/api/projects");
+  expect(response.ok()).toBeTruthy();
+  const body = await response.json();
+  expect(
+    Array.isArray(body),
+    "expected /api/projects to return a project array",
+  ).toBeTruthy();
+  const projects = body as Array<{ id: string; entryFile?: string }>;
+  const id = projects[0]?.id;
+  expect(id, "expected at least one registered project").toBeTruthy();
+  cachedProjectId = id!;
+  const entry = projects[0]?.entryFile ?? "sample.beancount";
+  cachedEntryFile = entry;
+  cachedLedgerStem = entry.replace(/\.(beancount|bean|ledger)$/i, "");
+  return cachedProjectId;
+}
+
+export async function resolveLedgerStem(
+  request: APIRequestContext | Page,
+): Promise<string> {
+  if (cachedLedgerStem) return cachedLedgerStem;
+  await resolveProjectId(request);
+  return cachedLedgerStem!;
+}
+
+export async function resolveEntryFile(
+  request: APIRequestContext | Page,
+): Promise<string> {
+  if (cachedEntryFile) return cachedEntryFile;
+  await resolveProjectId(request);
+  return cachedEntryFile!;
+}
+
+function fileApiPath(projectId: string, entryFile: string) {
+  return `/api/projects/${encodeURIComponent(projectId)}/files/${entryFile
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/")}`;
+}
+
+/** Read the active project's entry ledger via the files API. */
+export async function readProjectLedger(
+  request: APIRequestContext | Page,
+): Promise<string> {
+  const api = apiOf(request);
+  const projectId = await resolveProjectId(request);
+  const entryFile = await resolveEntryFile(request);
+  const response = await api.get(fileApiPath(projectId, entryFile));
+  expect(response.ok()).toBeTruthy();
+  const body = (await response.json()) as { contents?: string };
+  return body.contents ?? "";
+}
+
+/** Write the active project's entry ledger via the files API. */
+export async function writeProjectLedger(
+  request: APIRequestContext | Page,
+  contents: string,
+) {
+  const api = apiOf(request);
+  const projectId = await resolveProjectId(request);
+  const entryFile = await resolveEntryFile(request);
+  const response = await api.put(fileApiPath(projectId, entryFile), {
+    data: { contents },
+  });
+  expect(response.ok()).toBeTruthy();
+}
+
+/**
+ * Map legacy hash view paths to URL view segments.
+ * Accepts `/journal`, `/income_statement`, `/account/Assets:Checking`, etc.
+ */
+function viewSegmentFromPath(viewPath: string): string {
+  const raw = viewPath.replace(/^#/, "");
+  const [pathname = "/journal", search = ""] = raw.includes("?")
+    ? (() => {
+        const index = raw.indexOf("?");
+        return [raw.slice(0, index), raw.slice(index)] as const;
+      })()
+    : ([raw, ""] as const);
+  const clean = pathname.replace(/\/+$/, "") || "/journal";
+  const map: Record<string, string> = {
+    "/dashboard": "dashboard",
+    "/editor": "editor",
+    "/income_statement": "income-statement",
+    "/balance_sheet": "balance-sheet",
+    "/trial_balance": "trial-balance",
+    "/journal": "journal",
+    "/holdings": "holdings",
+    "/statistics": "statistics",
+    "/query": "query",
+    "/errors": "errors",
+    "/accounts": "accounts",
+    "/records": "records",
+    "/resource": "resource",
+    "/import/editor": "settings",
+    "/import/accounts": "settings/accounts",
+  };
+  let segment = map[clean];
+  if (!segment && clean.startsWith("/account/")) {
+    segment = `account/${encodeURIComponent(clean.slice("/account/".length))}`;
+  }
+  if (!segment) {
+    segment = clean.replace(/^\//, "").replaceAll("_", "-");
+  }
+  return `${segment}${search}`;
+}
+
+/** Build `/{projectId}/ledger/{stem}/{view}/` URLs. */
+export function studioUrl(
+  projectId: string,
+  viewPath: string,
+  ledgerStem = "sample",
+) {
+  const view = viewSegmentFromPath(
+    viewPath.startsWith("/") || viewPath.startsWith("#")
+      ? viewPath
+      : `/${viewPath}`,
   );
+  const [viewPathname, search = ""] = view.includes("?")
+    ? (() => {
+        const index = view.indexOf("?");
+        return [view.slice(0, index), view.slice(index)] as const;
+      })()
+    : ([view, ""] as const);
+  return `/${encodeURIComponent(projectId)}/ledger/${ledgerStem
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/")}/${viewPathname}/${search}`;
+}
+
+export async function gotoStudio(page: Page, viewPath: string) {
+  const projectId = await resolveProjectId(page);
+  let ledgerStem = await resolveLedgerStem(page);
+  let path = viewPath;
+  const ledgerMatch = viewPath.match(/[?&]ledger=([^&]+)/);
+  if (ledgerMatch) {
+    const ledger = decodeURIComponent(ledgerMatch[1]!);
+    ledgerStem = ledger.replace(/\.(beancount|bean|ledger)$/i, "");
+    path = viewPath
+      .replace(/([?&])ledger=[^&]+/, "$1")
+      .replace(/\?&/, "?")
+      .replace(/[?&]$/, "")
+      .replace(/\?$/, "");
+  }
+  const url = studioUrl(projectId, path, ledgerStem);
+  await page.goto(url);
+  // SPA hydrates after document load; cold Vite can take several seconds before Main mounts.
+  await expect(page.locator("[data-slot=studio-workspace-header]")).toBeVisible({
+    timeout: 30_000,
+  });
+  return projectId;
+}
+
+/** Seed the project's on-disk entry ledger (replaces legacy localStorage seeding). */
+export async function seedLedger(page: Page, ledger: string) {
+  await writeProjectLedger(page, ledger);
+}
+
+/** Reset the project entry ledger to the canonical sample fixture. */
+export async function restoreSampleLedger(page: Page) {
+  await writeProjectLedger(page, sampleLedger);
+}
+
+/** Clear the project entry ledger to an empty string. */
+export async function clearLedger(page: Page) {
+  await writeProjectLedger(page, "");
 }
 
 export async function openEditor(page: Page) {
-  await page.goto("/#/editor");
+  await gotoStudio(page, "/editor");
   await page.waitForSelector("[data-ledger-file-row]");
 }
 
@@ -82,14 +240,14 @@ export async function replaceEditorContent(page: Page, content: string) {
 
 export async function saveLedgerWithButton(page: Page, marker?: string) {
   await page.getByRole("button", { name: "Save Ledger" }).click();
-  await page.waitForFunction(
-    (expected) => {
-      const stored = localStorage.getItem("ledger");
-      return expected ? stored?.includes(expected) : stored != null;
-    },
-    marker ?? null,
-    { timeout: 5_000 },
-  );
+  if (marker) {
+    await expect
+      .poll(async () => readProjectLedger(page), { timeout: 10_000 })
+      .toContain(marker);
+  } else {
+    // Wait a beat for the PUT to land when the caller asserts contents separately.
+    await page.waitForTimeout(500);
+  }
 }
 
 /** @deprecated Use saveLedgerWithButton */
@@ -98,14 +256,14 @@ export async function saveLedger(page: Page) {
 }
 
 const navPaths: Record<string, string> = {
-  Editor: "#/editor",
-  "Income Statement": "#/income_statement",
-  "Balance Sheet": "#/balance_sheet",
-  "Trial Balance": "#/trial_balance",
-  Journal: "#/journal",
-  Holdings: "#/holdings",
-  Statistics: "#/statistics",
-  Query: "#/query",
+  Editor: "editor",
+  "Income Statement": "income-statement",
+  "Balance Sheet": "balance-sheet",
+  "Trial Balance": "trial-balance",
+  Journal: "journal",
+  Holdings: "holdings",
+  Statistics: "statistics",
+  Query: "query",
 };
 
 export async function navigateTo(page: Page, label: string) {
@@ -129,10 +287,14 @@ export async function getSidebarWidth(page: Page) {
   });
 }
 
+/** Match `/{projectId}/ledger/{stem}/<view>/` */
+const projectView = (view: string) =>
+  new RegExp(`/.+/ledger/.+/${view}/?(?:\\?.*)?$`);
+
 export const mainTabs = [
   {
     name: "Editor",
-    path: /#\/editor\?ledger=.+$/,
+    path: projectView("editor"),
     assert: async (page: Page) => {
       await expect(page.locator(".beancount-editor .cm-editor")).toBeVisible();
       await expect(page.locator(".beancount-editor .cm-content")).toContainText(
@@ -145,7 +307,7 @@ export const mainTabs = [
   },
   {
     name: "Income Statement",
-    path: /#\/income_statement\?ledger=.+$/,
+    path: projectView("income-statement"),
     assert: async (page: Page) => {
       await expect(
         page.locator("[data-statement-summary-tree-table]").first(),
@@ -157,7 +319,7 @@ export const mainTabs = [
   },
   {
     name: "Balance Sheet",
-    path: /#\/balance_sheet\?ledger=.+$/,
+    path: projectView("balance-sheet"),
     assert: async (page: Page) => {
       await expect(
         page.locator("[data-statement-summary-tree-table]").first(),
@@ -169,7 +331,7 @@ export const mainTabs = [
   },
   {
     name: "Trial Balance",
-    path: /#\/trial_balance\?ledger=.+$/,
+    path: projectView("trial-balance"),
     assert: async (page: Page) => {
       await expect(
         page.locator("[data-statement-summary-tree-table]").first(),
@@ -178,15 +340,17 @@ export const mainTabs = [
   },
   {
     name: "Journal",
-    path: /#\/journal\?ledger=.+$/,
+    path: projectView("journal"),
     assert: async (page: Page) => {
       await expect(page.locator("[data-journal-table]")).toBeVisible();
-      await expect(page.getByText("Coffee Shop")).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Edit Coffee Shop" }).first(),
+      ).toBeVisible();
     },
   },
   {
     name: "Holdings",
-    path: /#\/holdings\?ledger=.+$/,
+    path: projectView("holdings"),
     assert: async (page: Page) => {
       await expect(
         page.getByRole("tab", { name: "Holdings", exact: true }),
@@ -196,14 +360,14 @@ export const mainTabs = [
   },
   {
     name: "Statistics",
-    path: /#\/statistics\?ledger=.+$/,
+    path: projectView("statistics"),
     assert: async (page: Page) => {
       await expect(page.getByText("Postings per Account")).toBeVisible();
     },
   },
   {
     name: "Query",
-    path: /#\/query\?ledger=.+$/,
+    path: projectView("query"),
     assert: async (page: Page) => {
       await expect(page.locator(".beancount-editor .cm-editor")).toBeVisible();
       await expect(page.getByRole("button", { name: "Search" })).toBeVisible();

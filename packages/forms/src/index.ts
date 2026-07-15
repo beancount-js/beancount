@@ -11,6 +11,13 @@ export { default as YamlBackedForm } from "./components/YamlBackedForm.svelte";
 export { default as CodeEditor } from "./components/CodeEditor.svelte";
 export { default as JsonBackedForm } from "./components/JsonBackedForm.svelte";
 export { autosizeTextarea } from "./autosize-textarea";
+export { unifiedDiff } from "./review-diff";
+export type {
+  UnifiedDiffLine,
+  UnifiedDiffPart,
+  UnifiedDiffSegment,
+  UnifiedDiffSegmentType,
+} from "./review-diff";
 export type {
   FormConfig,
   FormCustomRenderer,

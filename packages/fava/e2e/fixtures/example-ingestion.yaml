@@ -1,0 +1,40 @@
+version: 1
+sources:
+  - id: bank
+    name: My bank
+    kind: json-api
+    sourceAccount: Assets:Bank:Checking
+    defaultCurrency: GBP
+    aiEnabled: false
+    setup: |-
+      1. Go to [api.example.com](https://api.example.com) and create an API key.
+      2. Paste the API key below (or switch to Environment and enter a variable name) and connect.
+      3. Then head to Review imports to fetch and categorise.
+    merchantEnrichment:
+      enabled: true
+      aiEnabled: false
+      countryCode: GB
+      brandfetch:
+        enabled: false
+        apiKeySecretRef: env:BRANDFETCH_API_KEY
+        assetMode: hotlink
+    api:
+      endpoint: https://api.example.com/transactions
+      allowedHosts:
+        - api.example.com
+      secretRef: env:BANK_API_TOKEN
+      recordsPath: transactions
+      pagination:
+        cursorQueryParam: cursor
+        nextCursorPath: next_cursor
+    mapping:
+      id: id
+      date: booked_at
+      amount: amount.value
+      currency: amount.currency
+      merchant: merchant.name
+      narration: description
+      status: status
+    rules:
+      - merchant: Tesco
+        account: Expenses:Food:Groceries

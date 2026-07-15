@@ -92,6 +92,92 @@ describe("runIngestion", () => {
     ).not.toContain("category_confidence:");
   });
 
+  test("proposalTransaction emits tags links and user metadata", () => {
+    const rendered = proposalTransaction(
+      {
+        id: "proposal:tags",
+        importId: "bank:txn-tags",
+        status: "ready",
+        suggestions: [],
+        selectedAccount: "Expenses:Food:Dining",
+        issues: [],
+        transaction: {
+          sourceId: "bank",
+          sourceAccount: "Assets:Bank:Checking",
+          bookedAt: "2026-07-01",
+          amount: "-4.00",
+          currency: "GBP",
+          payee: "Cafe",
+          narration: "Latte",
+          status: "posted",
+          fetchedAt: "2026-07-02T00:00:00.000Z",
+          tags: ["coffee"],
+          links: ["receipt-9"],
+          metadata: { tip: "yes" },
+        },
+      },
+      "Expenses:Food:Dining",
+    ).toString();
+    expect(rendered).toContain("#coffee");
+    expect(rendered).toContain("^receipt-9");
+    expect(rendered).toContain('tip: "yes"');
+  });
+
+  test("emits onProgress during fetch and process stages", async () => {
+    const progress: Array<{ stage: string; pagesFetched?: number }> = [];
+    await runIngestion({
+      source: new ArraySource<{
+        id: string;
+        date: string;
+        amount: string;
+        merchant: string;
+      }>(),
+      sourceConfig: [
+        {
+          id: "txn-progress-1",
+          date: "2026-07-01",
+          amount: "-10.00",
+          merchant: "Cafe",
+        },
+      ],
+      sourceId: "bank",
+      sourceAccount,
+      fetchedAt: "2026-07-02T00:00:00.000Z",
+      availableAccounts: ["Expenses:Food:Dining"],
+      normalizer: {
+        kind: "test",
+        normalize(record, context) {
+          return {
+            ok: true,
+            transaction: {
+              sourceId: context.sourceId,
+              sourceAccount: context.sourceAccount,
+              externalId: record.id,
+              bookedAt: record.date,
+              amount: record.amount,
+              currency: "GBP",
+              merchant: record.merchant,
+              narration: record.merchant,
+              status: "posted",
+              fetchedAt: context.fetchedAt,
+              metadata: {},
+            },
+          };
+        },
+      },
+      onProgress: (event) => {
+        progress.push({
+          stage: event.stage,
+          pagesFetched: event.pagesFetched,
+        });
+      },
+    });
+
+    expect(progress.some((event) => event.stage === "fetch")).toBe(true);
+    expect(progress.some((event) => event.stage === "process")).toBe(true);
+    expect(progress.at(-1)?.stage).toBe("complete");
+  });
+
   test("skips AI after an exact merchant rule", async () => {
     let aiCalls = 0;
     await runIngestion({

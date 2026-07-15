@@ -79,7 +79,7 @@
     if ($ledgerData.errors.length) {
       values[0].push({
         name: "Errors",
-        path: "#/errors",
+        path: "/errors",
         variant: "ghost",
         icon: ShieldX,
         label: `${$ledgerData.errors.length}`,
@@ -120,11 +120,11 @@
     if (!account) {
       return;
     } else if (account === "-") {
-      router.push("#/accounts");
+      router.push("/accounts");
       return;
     }
 
-    router.push("#/account/" + account);
+    router.push("/account/" + account);
   }
 
   function navigateToQuery(query: string) {
@@ -132,7 +132,7 @@
       return;
     }
     bqlQuery.set(query);
-    router.push("#/query?qs=" + encodeURIComponent(query));
+    router.push("/query?qs=" + encodeURIComponent(query));
   }
 </script>
 

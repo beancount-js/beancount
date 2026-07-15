@@ -102,6 +102,102 @@ function assertSafeUrl(
   return url;
 }
 
+/** Flatten Error.cause chains so network failures are actionable in the UI. */
+export function describeError(error: unknown, depth = 0): string {
+  if (depth > 4 || error == null) return "";
+  if (!(error instanceof Error)) {
+    if (typeof error === "object") {
+      const record = error as { message?: unknown; code?: unknown };
+      const parts = [
+        typeof record.message === "string" ? record.message : "",
+        typeof record.code === "string" ? record.code : "",
+      ].filter(Boolean);
+      if (parts.length) return parts.join(": ");
+    }
+    return String(error);
+  }
+  const parts: string[] = [];
+  if (error.message) parts.push(error.message);
+  const code = (error as Error & { code?: unknown }).code;
+  if (typeof code === "string" && code && !parts.includes(code)) {
+    parts.push(code);
+  }
+  const cause = (error as Error & { cause?: unknown }).cause;
+  if (cause !== undefined) {
+    const nested = describeError(cause, depth + 1);
+    if (nested && !parts.includes(nested)) parts.push(nested);
+  }
+  return parts.join(": ");
+}
+
+function networkFetchError(url: URL, error: unknown) {
+  const detail = describeError(error) || "fetch failed";
+  return new Error(`Could not reach ${url.toString()} (${detail}).`);
+}
+
+/** Allow apex↔www redirects without opening arbitrary hosts. */
+function hostsAllowingWwwAlias(allowedHosts: readonly string[] | undefined) {
+  if (!allowedHosts?.length) return undefined;
+  const expanded = new Set<string>();
+  for (const host of allowedHosts) {
+    const normalized = host.trim().toLowerCase();
+    if (!normalized) continue;
+    expanded.add(normalized);
+    if (normalized.startsWith("www.")) expanded.add(normalized.slice(4));
+    else expanded.add(`www.${normalized}`);
+  }
+  return [...expanded];
+}
+
+/**
+ * GET with allowlisted redirects. Lunch Flow (and others) 308 from apex→www;
+ * curl follows those by default, while `redirect: "error"` surfaces as "fetch failed".
+ */
+async function fetchJsonApiGet(options: {
+  url: URL;
+  headers: Record<string, string>;
+  allowedHosts?: readonly string[];
+  fetch: typeof globalThis.fetch;
+  signal?: AbortSignal;
+  label?: string;
+}) {
+  const request = options.fetch;
+  const redirectHosts = hostsAllowingWwwAlias(options.allowedHosts);
+  let current = options.url;
+  for (let hop = 0; hop < 5; hop += 1) {
+    assertSafeUrl(
+      current.toString(),
+      redirectHosts,
+      options.label ?? "JSON API URL",
+    );
+    let response: Response;
+    try {
+      response = await request(current, {
+        method: "GET",
+        headers: options.headers,
+        redirect: "manual",
+        signal: options.signal,
+      });
+    } catch (error) {
+      throw networkFetchError(current, error);
+    }
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get("location");
+      if (!location) {
+        throw new Error(
+          `JSON API redirected from ${current.toString()} without a Location header.`,
+        );
+      }
+      current = new URL(location, current);
+      continue;
+    }
+    return response;
+  }
+  throw new Error(
+    `JSON API redirected too many times (last URL ${current.toString()}).`,
+  );
+}
+
 export type DiscoveredJsonApiAccount = {
   id: string;
   name: string;
@@ -150,20 +246,36 @@ export async function discoverJsonApiAccounts(options: {
     options.authScheme === "x-api-key"
       ? { "x-api-key": token }
       : { authorization: `Bearer ${token}` };
-  const response = await request(url, {
-    method: "GET",
+  const response = await fetchJsonApiGet({
+    url,
     headers: {
       ...authHeaders,
       accept: "application/json",
     },
-    redirect: "error",
+    allowedHosts: options.allowedHosts,
+    fetch: request,
     signal: options.signal,
+    label: "JSON API accounts URL",
   });
   if (!response.ok) {
-    if (response.status === 401 || response.status === 403) {
-      throw new Error("Invalid API key or insufficient permissions.");
+    let bodyText = "";
+    try {
+      bodyText = (await response.text()).trim().slice(0, 280);
+    } catch {
+      /* ignore body read failures */
     }
-    throw new Error(`Account discovery failed with status ${response.status}.`);
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        bodyText
+          ? `Invalid API key or insufficient permissions (${bodyText}).`
+          : "Invalid API key or insufficient permissions.",
+      );
+    }
+    throw new Error(
+      bodyText
+        ? `Account discovery failed with status ${response.status}: ${bodyText}`
+        : `Account discovery failed with status ${response.status}.`,
+    );
   }
 
   let body: unknown;
@@ -313,14 +425,16 @@ export class JsonApiSource
             config.authScheme === "x-api-key"
               ? { "x-api-key": token }
               : { authorization: `Bearer ${token}` };
-          response = await request(url, {
-            method: "GET",
+          response = await fetchJsonApiGet({
+            url,
             headers: {
               ...authHeaders,
               accept: "application/json",
             },
-            redirect: "error",
+            allowedHosts: config.allowedHosts,
+            fetch: request,
             signal: context.signal,
+            label: "JSON API endpoint",
           });
           if (response.ok || (response.status !== 429 && response.status < 500))
             break;

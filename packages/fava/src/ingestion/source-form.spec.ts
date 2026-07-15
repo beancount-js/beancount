@@ -108,7 +108,7 @@ describe("ingestion source form draft", () => {
     expect(lunchflow).toBeDefined();
     const connected = sourceFromSample(lunchflow!.template, []);
     expect(connected.id).toBe("lunchflow");
-    expect(connected.api.baseUrl).toBe("https://lunchflow.app/api/v1");
+    expect(connected.api.baseUrl).toBe("https://www.lunchflow.app/api/v1");
     expect(connected.accounts).toEqual([]);
 
     const conflict = sourceFromSample(lunchflow!.template, [connected]);
@@ -141,11 +141,7 @@ describe("ingestion source form draft", () => {
     expect(validateEditableIngestionConfig(draft)).toEqual([]);
 
     draft.sources[0].accounts = [];
-    expect(
-      validateEditableIngestionConfig(draft).some(
-        (issue) => issue.fieldId === "accounts",
-      ),
-    ).toBe(true);
+    expect(validateEditableIngestionConfig(draft)).toEqual([]);
   });
 
   test("reports client-side constraints before the server save boundary", () => {

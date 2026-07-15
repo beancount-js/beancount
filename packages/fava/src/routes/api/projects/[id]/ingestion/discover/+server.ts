@@ -1,10 +1,7 @@
 import { json } from "@sveltejs/kit";
+import { describeError } from "@beancount-js/beangulp";
 import { discoverIngestionAccounts } from "@beancount-js/server";
 import { serverWorkspace } from "$lib/server/workspace";
-
-function message(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
 
 export async function POST({
   params,
@@ -53,6 +50,9 @@ export async function POST({
     });
     return json({ accounts });
   } catch (error) {
-    return json({ error: message(error) }, { status: 400 });
+    return json(
+      { error: describeError(error) || "Discovery failed." },
+      { status: 400 },
+    );
   }
 }

@@ -6,6 +6,12 @@ export async function GET({ params }: { params: { id: string; path: string } }) 
 }
 
 export async function PUT({ params, request }: { params: { id: string; path: string }; request: Request }) {
-  const { contents } = await request.json();
-  return json(await (await serverWorkspace()).writeFile(params.id, { path: params.path, contents }));
+  const { contents, expectedRevision } = await request.json();
+  return json(
+    await (await serverWorkspace()).writeFile(
+      params.id,
+      { path: params.path, contents },
+      typeof expectedRevision === "string" ? { expectedRevision } : undefined,
+    ),
+  );
 }

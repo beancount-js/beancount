@@ -11,6 +11,10 @@ import type {
   WorkspaceAdapter,
   WriteFileOptions,
 } from "@beancount-js/workspace";
+import {
+  createProjectId,
+  projectIdIndexFromProjects,
+} from "@beancount-js/workspace";
 
 type BrowserProject = {
   config: ProjectConfig;
@@ -30,10 +34,6 @@ const REGISTRY_KEY = "beancount-studio:browser-projects";
 
 function now() {
   return new Date().toISOString();
-}
-
-function identifier() {
-  return crypto.randomUUID();
 }
 
 function safePath(path: string) {
@@ -95,7 +95,14 @@ async function ledgerFilesFromDirectory(handle: FileSystemDirectoryHandle, prefi
   const result: ProjectFile[] = [];
   const entries = (handle as unknown as { values(): AsyncIterable<FileSystemHandle> }).values();
   for await (const entry of entries) {
-    if (entry.name === ".beancount-js" || entry.name === ".git" || entry.name === "node_modules") continue;
+    if (
+      entry.name === ".beancount" ||
+      entry.name === ".beancount-js" ||
+      entry.name === ".git" ||
+      entry.name === "node_modules"
+    ) {
+      continue;
+    }
     const path = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.kind === "directory") {
       result.push(...(await ledgerFilesFromDirectory(entry as FileSystemDirectoryHandle, path)));
@@ -137,10 +144,19 @@ export class BrowserWorkspaceAdapter implements WorkspaceAdapter {
       files[0]?.path;
     if (!entry) throw new Error("No Beancount entry file was found in this directory.");
     const timestamp = now();
-    const existing = [...this.projects.values()].find((project) => project.handle?.name === handle.name);
+    const rootKey = handle.name;
+    const existing = [...this.projects.values()].find(
+      (project) => project.handle?.name === rootKey,
+    );
+    const index = projectIdIndexFromProjects(
+      [...this.projects.values()].map((project) => ({
+        id: project.config.id,
+        rootKey: project.handle?.name ?? project.config.id,
+      })),
+    );
     const config: ProjectConfig = {
       version: 1,
-      id: existing?.config.id ?? identifier(),
+      id: existing?.config.id ?? createProjectId(index, rootKey),
       name: handle.name,
       entryFile: entry,
       createdAt: existing?.config.createdAt ?? timestamp,

@@ -25,7 +25,7 @@
     onChange,
     onSave,
     onConnectSample,
-    onConnectProvider,
+    onManageAccounts,
     saving = false,
   }: {
     sources: EditableIngestionSource[];
@@ -33,7 +33,7 @@
     onChange: (index: number, next: EditableIngestionSource) => void;
     onSave: () => void | Promise<void>;
     onConnectSample?: (sample: IngestionSample) => void;
-    onConnectProvider?: (sample: IngestionSample) => void;
+    onManageAccounts?: (source: EditableIngestionSource) => void;
     saving?: boolean;
   } = $props();
 
@@ -75,6 +75,17 @@
     });
   }
 
+  function updateBaseUrl(
+    index: number,
+    source: EditableIngestionSource,
+    baseUrl: string,
+  ) {
+    onChange(index, {
+      ...source,
+      api: { ...source.api, baseUrl },
+    });
+  }
+
   function setupHtml(source: EditableIngestionSource) {
     const markdown = source.setup?.trim();
     return markdown ? renderSetupMarkdown(markdown) : "";
@@ -82,14 +93,6 @@
 
   function apiUrl(source: EditableIngestionSource) {
     return source.api.baseUrl ?? source.api.endpoint ?? "";
-  }
-
-  function connectSample(sample: IngestionSample) {
-    if (sample.provider && onConnectProvider) {
-      onConnectProvider(sample);
-      return;
-    }
-    onConnectSample?.(sample);
   }
 </script>
 
@@ -212,7 +215,61 @@
                 </div>
               </label>
 
-              {#if !grouped}
+              {#if grouped}
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-xs font-medium text-muted-foreground"
+                    >Base URL</span
+                  >
+                  <Input
+                    type="url"
+                    autocomplete="off"
+                    spellcheck={false}
+                    aria-label={`Base URL for ${source.name || "source"}`}
+                    placeholder="https://api.example.com/v1"
+                    value={source.api.baseUrl ?? ""}
+                    oninput={(event) =>
+                      updateBaseUrl(
+                        index,
+                        source,
+                        (event.currentTarget as HTMLInputElement).value,
+                      )}
+                  />
+                </label>
+
+                {#if source.accounts?.length}
+                  <div class="flex flex-col gap-1.5">
+                    <span class="text-xs font-medium text-muted-foreground"
+                      >Linked accounts</span
+                    >
+                    <ul class="flex flex-col gap-2" role="list">
+                      {#each source.accounts as account (account.id)}
+                        <li
+                          class="rounded-lg border border-border px-3 py-2 text-sm"
+                        >
+                          <p class="font-medium">{account.name}</p>
+                          <p class="text-xs text-muted-foreground">
+                            {[account.sourceAccount, account.defaultCurrency]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        </li>
+                      {/each}
+                    </ul>
+                  </div>
+                {/if}
+
+                {#if onManageAccounts}
+                  <Button
+                    type="button"
+                    variant="link"
+                    class="h-auto justify-start gap-1 px-0 text-sm"
+                    onclick={() => onManageAccounts(source)}
+                  >
+                    Manage accounts
+                    <ArrowRight class="size-3.5" aria-hidden="true" />
+                  </Button>
+                {/if}
+              {:else}
                 <label class="flex flex-col gap-1.5">
                   <span class="text-xs font-medium text-muted-foreground"
                     >Endpoint</span
@@ -232,26 +289,6 @@
                       )}
                   />
                 </label>
-              {:else if source.accounts?.length}
-                <div class="flex flex-col gap-1.5">
-                  <span class="text-xs font-medium text-muted-foreground"
-                    >Linked accounts</span
-                  >
-                  <ul class="flex flex-col gap-2" role="list">
-                    {#each source.accounts as account (account.id)}
-                      <li
-                        class="rounded-lg border border-border px-3 py-2 text-sm"
-                      >
-                        <p class="font-medium">{account.name}</p>
-                        <p class="text-xs text-muted-foreground">
-                          {[account.sourceAccount, account.defaultCurrency]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </p>
-                      </li>
-                    {/each}
-                  </ul>
-                </div>
               {/if}
             </div>
 
@@ -273,7 +310,7 @@
     {/each}
   </div>
 
-  {#if sources.length === 0 && samples.length && (onConnectSample || onConnectProvider)}
+  {#if sources.length === 0 && samples.length && onConnectSample}
     <div class="flex min-w-0 flex-col gap-4" data-ingestion-samples>
       <p
         class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
@@ -283,7 +320,7 @@
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {#each samples as sample (sample.id)}
           <article
-            class="flex min-h-44 flex-col gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm"
+            class="flex min-h-44 flex-col gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:border-foreground/20 hover:bg-muted/40 hover:shadow-md"
             data-ingestion-sample-card
           >
             <div class="flex items-start gap-3">
@@ -317,7 +354,7 @@
                 variant="link"
                 class="h-auto gap-1 px-0 text-sm"
                 aria-label={`Connect ${sample.name}`}
-                onclick={() => connectSample(sample)}
+                onclick={() => onConnectSample(sample)}
               >
                 Connect
                 <ArrowRight class="size-3.5" aria-hidden="true" />

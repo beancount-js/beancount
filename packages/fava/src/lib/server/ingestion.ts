@@ -2,11 +2,20 @@ import {
   categoryAccountsForSource,
   FilesystemIngestionStore,
 } from "@beancount-js/server";
+import { serverWorkspace } from "./workspace";
 
 export { categoryAccountsForSource };
 
-const store = new FilesystemIngestionStore();
+let store: FilesystemIngestionStore | undefined;
 
 export function serverIngestion() {
+  if (!store) {
+    store = new FilesystemIngestionStore({
+      resolveProjectRoot: async (projectId) => {
+        const workspace = await serverWorkspace();
+        return workspace.projectRoot(projectId);
+      },
+    });
+  }
   return store;
 }

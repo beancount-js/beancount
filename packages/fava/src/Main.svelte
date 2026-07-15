@@ -21,6 +21,7 @@
   import AccountDetails from "./components/AccountDetails.svelte";
   import IngestionTable from "./components/IngestionTable.svelte";
   import IngestionConfigEditor from "./components/IngestionConfigEditor.svelte";
+  import IngestionAccountsSetup from "./components/IngestionAccountsSetup.svelte";
   import FavaNavigation from "./components/FavaNavigation.svelte";
   import Search from "./components/Search.svelte";
   import StudioShell from "./components/StudioShell.svelte";
@@ -33,6 +34,13 @@
     setStudioWorkspace,
     type InlineAiRequest,
   } from "./studio/workspace";
+  import {
+    hashUrlToLedgerHref,
+    ledgerStemForPath,
+  } from "./lib/ledger-route";
+  import { setStudioRouteEnv } from "./lib/studio-route-env";
+  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
   import "@fontsource/source-code-pro/400.css";
   import "@fontsource/source-code-pro/600.css";
   import "./codemirror/themes/base.scss";
@@ -47,14 +55,12 @@
     path: string,
     contents: string,
   ) => Promise<ProjectSnapshot>;
-  export let onAskAi: (
-    question: string,
-    context?: InlineAiRequest,
-    model?: string,
-  ) => Promise<string>;
+  export let onRefreshProject: () => Promise<void>;
   export let onResourceUrl: (
     path: string,
   ) => Promise<{ url: string; mimeType: string; revoke?: () => void }>;
+  /** Canonical ledger path from the URL (with extension). */
+  export let routeLedgerPath: string | undefined = undefined;
 
   const context = createContext();
   const navigation = createRouter(
@@ -74,6 +80,7 @@
       { path: "/statistics", element: Statistics },
       { path: "/records", element: IngestionTable },
       { path: "/import/editor", element: IngestionConfigEditor },
+      { path: "/import/accounts", element: IngestionAccountsSetup },
       { path: "/directives", element: Editor },
       { path: "/resource", element: ResourceViewer },
     ],
@@ -93,6 +100,7 @@
     "/errors": "Errors",
     "/records": "Review imports",
     "/import/editor": "Sources",
+    "/import/accounts": "Accounts",
     "/directives": "Editor",
     "/resource": "Resource",
     "/404": "Page not found",
@@ -107,18 +115,45 @@
   setContext(RouterKey, navigation);
   setStudioWorkspace(workspace);
 
+  function syncRouteEnv(next: ProjectSnapshot, ledgerPath: string) {
+    const available = next.ledgerFiles.map((file) => file.path);
+    setStudioRouteEnv({
+      projectId: next.project.id,
+      ledgerPath,
+      ledgerStem: ledgerStemForPath(ledgerPath, available),
+      availableLedgers: available,
+    });
+  }
+
   function applySnapshot(next: ProjectSnapshot) {
     workspace.snapshot.set(next);
-    const selectedRouteLedger = $activeRoute.query["ledger"];
-    const available = next.ledgerFiles.some(
-      (file) => file.path === selectedRouteLedger,
-    )
-      ? selectedRouteLedger
-      : next.ledgerFiles.some((file) => file.path === $activeFile)
-        ? $activeFile
-        : next.project.entryFile;
-    workspace.activeFile.set(available);
+    const available = next.ledgerFiles.map((file) => file.path);
+    const selected =
+      (routeLedgerPath && available.includes(routeLedgerPath)
+        ? routeLedgerPath
+        : undefined) ??
+      (available.includes($activeFile) ? $activeFile : undefined) ??
+      next.project.entryFile;
+    workspace.activeFile.set(selected);
+    syncRouteEnv(next, selected);
   }
+
+  onMount(() => {
+    // Legacy hash bookmarks → path URLs
+    if (typeof window === "undefined" || !snapshot) return;
+    const hash = window.location.hash;
+    if (!hash || hash === "#") return;
+    const available = snapshot.ledgerFiles.map((file) => file.path);
+    const href = hashUrlToLedgerHref(
+      snapshot.project.id,
+      hash,
+      available,
+      snapshot.project.entryFile,
+    );
+    if (href) {
+      void goto(href, { replaceState: true });
+    }
+  });
 
   function loadLedger(next: ProjectSnapshot, entryFile: string) {
     const signature = `${next.project.id}:${entryFile}:${next.revisions
@@ -147,7 +182,7 @@
     path: string,
     params: Record<string, string | undefined>,
   ) {
-    const mainTab = MainNav.find((item) => item.path.slice(1) === path);
+    const mainTab = MainNav.find((item) => item.path === path);
     if (mainTab) return mainTab.name;
 
     if (path === "/") return "Balance Sheet";
@@ -178,6 +213,13 @@
 
   $: if (snapshot && activeLedgerPath) {
     loadLedger(snapshot, activeLedgerPath);
+    syncRouteEnv(snapshot, activeLedgerPath);
+  }
+
+  $: if (snapshot && routeLedgerPath && routeLedgerPath !== $activeFile) {
+    if (snapshot.ledgerFiles.some((file) => file.path === routeLedgerPath)) {
+      workspace.activeFile.set(routeLedgerPath);
+    }
   }
 </script>
 
@@ -198,11 +240,12 @@
     </div>
     <svelte:fragment slot="ai">
       <AiDock
+        projectId={snapshot?.project.id}
         projectName={snapshot?.project.name ?? "Ledger"}
         hasProject={Boolean(snapshot)}
         {isWeb}
         inlineRequest={inlineAiRequest}
-        onAsk={onAskAi}
+        onProjectChanged={onRefreshProject}
       />
     </svelte:fragment>
   </StudioShell>

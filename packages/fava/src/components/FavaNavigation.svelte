@@ -8,6 +8,7 @@
   import FolderTree from "lucide-svelte/icons/folder-tree";
   import Hash from "lucide-svelte/icons/hash";
   import ImportIcon from "lucide-svelte/icons/import";
+  import Landmark from "lucide-svelte/icons/landmark";
   import List from "lucide-svelte/icons/list";
   import ListFilter from "lucide-svelte/icons/list-filter";
   import ShieldX from "lucide-svelte/icons/shield-x";
@@ -23,6 +24,8 @@
   import { accountIcon, type MenuItem } from "../menu";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
+  import { ledgerStemForPath } from "../lib/ledger-route";
+  import { setStudioRouteEnv } from "../lib/studio-route-env";
   import ComboBox from "./ComboBox.svelte";
   import { useLedger } from "./helpers";
   import {
@@ -174,7 +177,7 @@
     if ($ledgerData.errors.length) {
       items.push({
         name: "Errors",
-        path: "#/errors",
+        path: "/errors",
         icon: ShieldX,
       });
     }
@@ -198,16 +201,26 @@
     };
   }
 
-  function selectLedgerFile(path: string) {
+  function activateLedger(path: string) {
     activeFile.set(path);
+    const available = files.map((file) => file.path);
+    setStudioRouteEnv({
+      ledgerPath: path,
+      ledgerStem: ledgerStemForPath(path, available),
+      availableLedgers: available,
+    });
+  }
+
+  function selectLedgerFile(path: string) {
+    activateLedger(path);
     expandedFilePaths = { ...expandedFilePaths, [path]: true };
-    router.push(ledgerPanelPath(path, "#/journal"));
+    router.push("/journal");
   }
 
   function openLedgerPanel(path: string, panel: MenuItem) {
-    activeFile.set(path);
+    activateLedger(path);
     expandedFilePaths = { ...expandedFilePaths, [path]: true };
-    router.push(ledgerPanelPath(path, panel.path));
+    router.push(panelViewPath(panel.path));
   }
 
   function closeLedgerSettings() {
@@ -217,23 +230,22 @@
   function openLedgerSetting(panelPath: string) {
     const ledgerPath = selectedLedger?.path ?? files[0]?.path;
     if (!ledgerPath) return;
-    activeFile.set(ledgerPath);
-    router.push(ledgerPanelPath(ledgerPath, panelPath));
+    activateLedger(ledgerPath);
+    router.push(panelViewPath(panelPath));
   }
 
   function isLedgerSettingActive(panelPath: string) {
-    return panelPath.slice(1).split("?", 1)[0] === $activeRoute.path;
+    return panelViewPath(panelPath) === $activeRoute.path;
   }
 
-  function ledgerPanelPath(ledgerPath: string, panelPath: string) {
-    const [path, query = ""] = panelPath.slice(1).split("?", 2);
-    const parameters = new URLSearchParams(query);
-    parameters.set("ledger", ledgerPath);
-    return `${path}?${parameters.toString()}`;
+  function panelViewPath(panelPath: string) {
+    const raw = panelPath.replace(/^#/, "");
+    const path = raw.startsWith("/") ? raw : `/${raw}`;
+    return path.split("?")[0] || "/journal";
   }
 
   function isPanelActive(panel: MenuItem, routePath: string) {
-    return panel.path.replace(/^#/, "").split("?")[0] === routePath;
+    return panelViewPath(panel.path) === routePath;
   }
 
   function expandAllFiles() {
@@ -314,17 +326,17 @@
 
   function navigateToAccount(account: string) {
     if (!account) return;
-    router.push(account === "-" ? "#/accounts" : `#/account/${account}`);
+    router.push(account === "-" ? "/accounts" : `/account/${account}`);
   }
 
   function navigateToQuery(query: string) {
     if (!query) return;
     bqlQuery.set(query);
-    router.push(`#/query?qs=${encodeURIComponent(query)}`);
+    router.push(`/query?qs=${encodeURIComponent(query)}`);
   }
 
   function openResource(path: string) {
-    router.push(`#/resource?path=${encodeURIComponent(path)}`);
+    router.push(`/resource?path=${encodeURIComponent(path)}`);
   }
 
   function fileRowStyle(depth: number) {
@@ -384,23 +396,47 @@
           size="sm"
           class={cn(
             "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("#/import/editor") ||
-              isLedgerSettingActive("#/records")
+            isLedgerSettingActive("/import/editor") ||
+              isLedgerSettingActive("/records")
               ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
               : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
           )}
-          aria-current={isLedgerSettingActive("#/import/editor") ||
-          isLedgerSettingActive("#/records")
+          aria-current={isLedgerSettingActive("/import/editor") ||
+          isLedgerSettingActive("/records")
             ? "page"
             : undefined}
           disabled={files.length === 0}
-          onclick={() => openLedgerSetting("#/import/editor")}
+          onclick={() => openLedgerSetting("/import/editor")}
         >
           <ImportIcon data-icon="inline-start" />
           <span class="min-w-0 flex-1">
             <span class="block text-xs font-medium">Import</span>
             <span class="block truncate text-[11px] text-muted-foreground"
               >Configure sources and review imports</span
+            >
+          </span>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          class={cn(
+            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+            isLedgerSettingActive("/import/accounts")
+              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+          )}
+          aria-current={isLedgerSettingActive("/import/accounts")
+            ? "page"
+            : undefined}
+          disabled={files.length === 0}
+          onclick={() => openLedgerSetting("/import/accounts")}
+        >
+          <Landmark data-icon="inline-start" />
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-medium">Accounts</span>
+            <span class="block truncate text-[11px] text-muted-foreground"
+              >Link bank accounts from connected providers</span
             >
           </span>
         </Button>

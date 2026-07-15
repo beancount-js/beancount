@@ -1,11 +1,27 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
-  exampleIngestionConfig,
-  serializeEditableIngestionYaml,
-} from "../src/ingestion/source-form";
-import { seedLedger, sampleLedger } from "./helpers";
+  gotoStudio,
+  resolveProjectId,
+  sampleLedger,
+  seedLedger,
+} from "./helpers";
 
-const exampleYaml = serializeEditableIngestionYaml(exampleIngestionConfig);
+const exampleYaml = readFileSync(
+  path.join(fileURLToPath(new URL(".", import.meta.url)), "fixtures/example-ingestion.yaml"),
+  "utf8",
+);
+
+async function resetIngestionConfig(page: Page) {
+  const projectId = await resolveProjectId(page);
+  const response = await page.request.put(
+    `/api/projects/${encodeURIComponent(projectId)}/ingestion`,
+    { data: { version: 1, sources: [] } },
+  );
+  expect(response.ok()).toBeTruthy();
+}
 
 async function seedExampleSources(page: Page) {
   const header = page.locator("[data-slot=studio-workspace-header]");
@@ -35,12 +51,13 @@ async function switchToEdit(page: Page) {
 test.describe("ingestion sources editor", () => {
   test.beforeEach(async ({ page }) => {
     await seedLedger(page, sampleLedger);
+    await resetIngestionConfig(page);
   });
 
   test("defaults to connection preview and edits in form mode", async ({
     page,
   }) => {
-    await page.goto("/#/import/editor");
+    await gotoStudio(page, "/import/editor");
 
     const editor = page.locator("[data-ingestion-sources-editor]");
     const header = page.locator("[data-slot=studio-workspace-header]");
@@ -72,13 +89,21 @@ test.describe("ingestion sources editor", () => {
     await editor.getByRole("button", { name: "Connect Lunch Flow" }).click();
     await expect(
       page.getByRole("dialog", { name: /Connect Lunch Flow/i }),
+    ).toHaveCount(0);
+    await expect(
+      editor.locator("[data-ingestion-connection-card]"),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Load accounts" }),
+      editor.getByRole("button", { name: "Lunch Flow", exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Cancel" }).click();
     await expect(
-      page.getByRole("dialog", { name: /Connect Lunch Flow/i }),
+      editor.getByLabel("Base URL for Lunch Flow"),
+    ).toBeVisible();
+    await expect(
+      editor.getByRole("button", { name: "Manage accounts" }),
+    ).toBeVisible();
+    await expect(
+      editor.getByRole("button", { name: "Connect Lunch Flow" }),
     ).toHaveCount(0);
 
     await seedExampleSources(page);
@@ -147,16 +172,21 @@ test.describe("ingestion sources editor", () => {
     ).toBeVisible();
     await expect(editor.getByTestId("entry-header")).toBeVisible();
 
+    const nameFieldsBeforeAdd = await editor
+      .getByRole("textbox", { name: "Name" })
+      .count();
     await editor.getByRole("button", { name: "Add source" }).click();
     await expect(
       editor.getByRole("textbox", { name: "Name" }).last(),
     ).toHaveValue("New source");
     page.once("dialog", (dialog) => void dialog.accept());
     await editor.getByRole("button", { name: "Remove New source" }).click();
-    await expect(editor.getByRole("textbox", { name: "Name" })).toHaveCount(1);
-    await expect(editor.getByRole("textbox", { name: "Name" })).toHaveValue(
-      "My bank",
+    await expect(editor.getByRole("textbox", { name: "Name" })).toHaveCount(
+      nameFieldsBeforeAdd,
     );
+    await expect(
+      editor.getByRole("textbox", { name: "Name" }).first(),
+    ).toHaveValue(/./);
 
     await header.getByRole("switch", { name: "YAML mode" }).click();
     const sourceEditor = editor.locator("[data-code-editor=yaml]");

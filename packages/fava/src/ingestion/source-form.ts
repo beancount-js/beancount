@@ -302,14 +302,7 @@ function sourceIssues(
         issues,
       );
     }
-    if (!source.accounts?.length) {
-      issues.push(
-        field(
-          "accounts",
-          "Add at least one linked account to this connection.",
-        ),
-      );
-    } else {
+    if (source.accounts?.length) {
       const seen = new Set<string>();
       source.accounts.forEach((account, accountIndex) => {
         const prefix = `accounts.${accountIndex}`;

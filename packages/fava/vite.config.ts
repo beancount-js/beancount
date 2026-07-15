@@ -49,8 +49,11 @@ export default defineConfig({
   },
   ssr: {
     noExternal: [
+      "@beancount-js/beancount",
       "@beancount-js/forms",
       "@beancount-js/beangulp",
+      "@beancount-js/filters",
+      "@beancount-js/parser",
       "@beancount-js/server",
       "@beancount-js/web",
       "@beancount-js/workspace",
