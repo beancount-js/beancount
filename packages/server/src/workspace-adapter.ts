@@ -12,6 +12,7 @@ import type {
   ProjectResource,
   ProjectSnapshot,
   ProjectSummary,
+  WriteFileOptions,
   WorkspaceAdapter,
 } from "@beancount-js/workspace";
 
@@ -389,13 +390,24 @@ export class FilesystemWorkspaceAdapter implements WorkspaceAdapter {
     return this.fileFor(project.root, safePath);
   }
 
-  async writeFile(projectId: string, file: ProjectFile): Promise<FileRevision> {
+  async writeFile(
+    projectId: string,
+    file: ProjectFile,
+    options: WriteFileOptions = {},
+  ): Promise<FileRevision> {
     const project = await this.registryProject(projectId);
     const path = projectPath(file.path);
     const discovery = await this.allowedDiscovery(project);
     if (!discovery.ledgerPaths.includes(path)) throw new Error(`Ledger file not found: ${path}`);
+    const destination = await this.absolutePath(project.root, path);
+    if (options.expectedRevision) {
+      const current = revision(await fs.readFile(destination));
+      if (current !== options.expectedRevision) {
+        throw new Error(`File changed since it was read: ${path}`);
+      }
+    }
     const contents = new TextEncoder().encode(file.contents);
-    await fs.writeFile(await this.absolutePath(project.root, path), contents);
+    await fs.writeFile(destination, contents);
     const updatedAt = this.timestamp();
     await this.saveProject({ ...project, updatedAt });
     return { path, revision: revision(contents), updatedAt };

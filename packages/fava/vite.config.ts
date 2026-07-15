@@ -29,6 +29,10 @@ export default defineConfig({
         replacement: fileURLToPath(new URL("../beancount/src/index.ts", import.meta.url)),
       },
       {
+        find: "@beancount-js/beangulp",
+        replacement: fileURLToPath(new URL("../beangulp/src/index.ts", import.meta.url)),
+      },
+      {
         find: "@beancount-js/beanquery",
         replacement: fileURLToPath(new URL("../beanquery/src/index.ts", import.meta.url)),
       },
@@ -46,9 +50,11 @@ export default defineConfig({
   ssr: {
     noExternal: [
       "@beancount-js/forms",
+      "@beancount-js/beangulp",
       "@beancount-js/server",
       "@beancount-js/web",
       "@beancount-js/workspace",
+      "rrule",
     ],
   },
   server: { fs: { allow: [repoRoot] } },

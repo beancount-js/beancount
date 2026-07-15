@@ -79,66 +79,93 @@ test.describe("ported styles", () => {
       "/#/trial_balance",
     ]) {
       await page.goto(path);
-      const statementTables = page.locator("[data-statement-tree-table]");
+      const statementTables = page.locator(
+        "[data-statement-summary-tree-table]",
+      );
       const statementTable = statementTables.first();
       await expect(statementTable).toBeVisible({ timeout: 15_000 });
       expect(await statementTables.count()).toBeGreaterThan(0);
 
-      const tableFont = await statementTable.evaluate(
-        (el) => getComputedStyle(el).fontFamily,
-      );
-      expect(tableFont.toLowerCase()).toContain("source code pro");
-      const tableFontSize = await statementTable.evaluate(
-        (el) => getComputedStyle(el).fontSize,
-      );
-      expect(parseFloat(tableFontSize)).toBe(14);
+      const tableStyles = await statementTable.evaluate((el) => ({
+        borderRadius: getComputedStyle(el).borderRadius,
+        borderTop: getComputedStyle(el).borderTopWidth,
+      }));
+      expect(parseFloat(tableStyles.borderRadius)).toBeGreaterThan(0);
+      expect(parseFloat(tableStyles.borderTop)).toBeGreaterThan(0);
 
-      const headerCell = statementTable.locator(".head p > span").first();
-      const headerStyles = await headerCell.evaluate((el) => ({
+      const header = statementTable.locator("li").first();
+      const headerStyles = await header.evaluate((el) => ({
         background: getComputedStyle(el).backgroundColor,
-        top: getComputedStyle(el).borderTopWidth,
-        bottom: getComputedStyle(el).borderBottomWidth,
+        fontSize: getComputedStyle(el).fontSize,
+        textTransform: getComputedStyle(el).textTransform,
       }));
       expect(headerStyles.background).not.toBe("rgba(0, 0, 0, 0)");
-      expect(parseFloat(headerStyles.top)).toBeGreaterThan(0);
-      expect(parseFloat(headerStyles.bottom)).toBeGreaterThan(0);
+      expect(parseFloat(headerStyles.fontSize)).toBeLessThanOrEqual(14);
+      expect(headerStyles.textTransform).toBe("uppercase");
 
-      const dataCell = statementTable.locator("li:not(.head) p > span").first();
-      const dataCellStyles = await dataCell.evaluate((el) => ({
-        top: getComputedStyle(el).borderTopWidth,
-        bottom: getComputedStyle(el).borderBottomWidth,
-        position: getComputedStyle(el).position,
-      }));
-      expect(parseFloat(dataCellStyles.top)).toBe(0);
-      expect(parseFloat(dataCellStyles.bottom)).toBeGreaterThan(0);
-      expect(dataCellStyles.position).toBe("sticky");
+      await statementTable
+        .getByRole("button", { name: "Collapse all accounts", exact: true })
+        .click();
+      await expect(
+        statementTable.getByRole("button", {
+          name: "Expand all accounts",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await statementTable
+        .getByRole("button", { name: "Expand all accounts", exact: true })
+        .click();
 
-      const expanderIcon = statementTable
-        .locator(".clickable-icon svg")
+      const firstRow = statementTable
+        .locator("[data-statement-summary-tree-row]")
         .first();
+      const dataRowStyles = await firstRow.evaluate((el) => ({
+        top: getComputedStyle(el).borderTopWidth,
+        minHeight: getComputedStyle(el).minHeight,
+      }));
+      expect(parseFloat(dataRowStyles.top)).toBeGreaterThan(0);
+      expect(parseFloat(dataRowStyles.minHeight)).toBeGreaterThanOrEqual(48);
+      await expect(firstRow).toHaveClass(/hover:bg-muted/);
+
+      const numericCell = firstRow.locator(".font-mono").last();
+      const numericFont = await numericCell.evaluate(
+        (el) => getComputedStyle(el).fontFamily,
+      );
+      expect(numericFont.toLowerCase()).toContain("source code pro");
+
+      await expect(
+        statementTable.locator("[data-statement-weight-meter]").first(),
+      ).toBeVisible();
+      const [meterBox, weightBox] = await Promise.all([
+        statementTable
+          .locator("[data-statement-weight-meter]")
+          .first()
+          .boundingBox(),
+        statementTable.locator("[data-statement-weight]").first().boundingBox(),
+      ]);
+      expect(meterBox).not.toBeNull();
+      expect(weightBox).not.toBeNull();
+      expect(meterBox!.x + meterBox!.width).toBeLessThanOrEqual(weightBox!.x);
+      const weights = await statementTable
+        .locator("[data-statement-weight]")
+        .allTextContents();
+      expect(weights.length).toBeGreaterThan(0);
+      for (const weight of weights) {
+        const percentage = Number.parseFloat(weight);
+        if (!Number.isNaN(percentage))
+          expect(percentage).toBeLessThanOrEqual(100);
+      }
+      await expect(
+        page.locator("[data-statement-contribution-bar]").first(),
+      ).toBeVisible();
+
+      const expanderIcon = firstRow.locator("button svg").first();
       const iconSize = await expanderIcon.evaluate((el) => ({
         width: getComputedStyle(el).width,
         height: getComputedStyle(el).height,
       }));
       expect(parseFloat(iconSize.width)).toBe(12);
       expect(parseFloat(iconSize.height)).toBe(12);
-
-      if (path === "/#/trial_balance") {
-        const alignment = await statementTable.evaluate((el) => {
-          const wrapper = el.parentElement;
-          if (!wrapper) throw new Error("Missing Trial Balance table wrapper");
-
-          const table = el.getBoundingClientRect();
-          const container = wrapper.getBoundingClientRect();
-          return {
-            tableLeft: table.left,
-            centeredLeft: container.left + (container.width - table.width) / 2,
-          };
-        });
-        expect(
-          Math.abs(alignment.tableLeft - alignment.centeredLeft),
-        ).toBeLessThan(1);
-      }
     }
 
     await navigateTo(page, "Journal");

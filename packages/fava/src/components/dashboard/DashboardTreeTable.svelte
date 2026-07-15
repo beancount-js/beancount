@@ -1,6 +1,9 @@
 <script lang="ts">
+  import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import type { AccountTreeNode } from "../../lib/models";
+  import { getAllNodes } from "../tree-table/helpers";
   import DashboardTreeRow from "./DashboardTreeRow.svelte";
+  import { dashboardCategoryColor } from "./model";
 
   export let tree: AccountTreeNode;
   export let title: string;
@@ -9,18 +12,16 @@
   export let formatter: (value: number, currency: string) => string;
   export let multiplier = 1;
 
-  const contributionColors = [
-    "#7667d9",
-    "#3c8ce7",
-    "#36a981",
-    "#dd8b45",
-    "#d96478",
-    "#8491b6",
-  ];
-
   let collapsed = new Set<string>();
 
   $: roots = tree.account === "" ? tree.children : [tree];
+  $: collapsibleAccounts = roots.reduce((accounts, root) => {
+    getAllNodes(root).forEach((account) => accounts.add(account));
+    return accounts;
+  }, new Set<string>());
+  $: allCollapsed =
+    collapsibleAccounts.size > 0 &&
+    [...collapsibleAccounts].every((account) => collapsed.has(account));
   $: total = roots.reduce(
     (sum, root) => sum + (root.balanceChildren[currency] ?? 0) * multiplier,
     0,
@@ -34,12 +35,12 @@
     0,
   );
   $: contributions = contributionNodes
-    .map((node, index) => {
+    .map((node) => {
       const amount = (node.balanceChildren[currency] ?? 0) * multiplier;
       return {
         account: node.account,
         amount,
-        color: contributionColors[index % contributionColors.length],
+        color: dashboardCategoryColor(node.account),
         percentage: contributionTotal
           ? (Math.abs(amount) / contributionTotal) * 100
           : 0,
@@ -52,6 +53,10 @@
     if (next.has(account)) next.delete(account);
     else next.add(account);
     collapsed = next;
+  }
+
+  function toggleAll() {
+    collapsed = allCollapsed ? new Set() : new Set(collapsibleAccounts);
   }
 </script>
 
@@ -68,7 +73,7 @@
     >
   </div>
   <div
-    class="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-muted"
+    class="mt-3 flex h-1.5 w-full overflow-hidden rounded-full bg-muted"
     role="img"
     aria-label={`${title} category contributions`}
   >
@@ -97,19 +102,33 @@
       </span>
     {/each}
   </div>
-  <div
-    class="mt-4 overflow-x-auto rounded-2xl border border-border/80 bg-card p-1"
-  >
+  <div class="mt-4 overflow-x-auto rounded-xl">
     <ol
-      class="min-w-[38rem] overflow-hidden rounded-xl"
+      class="min-w-[42rem] overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
       data-dashboard-tree-rows
     >
       <li
-        class="grid grid-cols-[minmax(0,1fr)_6rem_9rem] items-center bg-muted/65 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+        class="grid min-h-10 grid-cols-[minmax(0,1fr)_8rem_10rem] items-center bg-muted/65 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
       >
-        <span class="px-3 py-2">Account</span>
-        <span class="px-3 py-2 text-right">Weight</span>
-        <span class="px-3 py-2 text-right">Value</span>
+        <span class="flex items-center gap-2 px-4 py-2">
+          <button
+            type="button"
+            class="grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-background hover:text-foreground"
+            aria-label={allCollapsed
+              ? "Expand all accounts"
+              : "Collapse all accounts"}
+            aria-pressed={allCollapsed}
+            title={allCollapsed
+              ? "Expand all accounts"
+              : "Collapse all accounts"}
+            on:click={toggleAll}
+          >
+            <ChevronsUpDown class="size-3" />
+          </button>
+          Account
+        </span>
+        <span class="px-4 py-2 text-right">Weight</span>
+        <span class="px-4 py-2 text-right">Value</span>
       </li>
       {#each roots as root (root.account)}
         <DashboardTreeRow
@@ -120,6 +139,7 @@
           {total}
           {collapsed}
           {toggle}
+          branchColor="var(--primary)"
         />
       {/each}
     </ol>

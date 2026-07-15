@@ -1,14 +1,18 @@
 <script lang="ts">
   import Button from "$lib/components/ui/button/button.svelte";
+  import * as Tabs from "$lib/components/ui/tabs";
   import { urlFor } from "../helpers";
   import QueryTable from "./QueryTable.svelte";
   import ContentScrollArea from "./ContentScrollArea.svelte";
+
   let innerHeight = 500;
   const queries: Array<{
+    id: string;
     name: string;
     query: string;
   }> = [
     {
+      id: "postings-per-account",
       name: "Postings per Account",
       query: `
             SELECT account, count(account)
@@ -17,6 +21,7 @@
             `,
     },
     {
+      id: "update-activity",
       name: "Update Activity",
       query: `
             SELECT
@@ -29,33 +34,46 @@
             `,
     },
     {
+      id: "entries-per-type",
       name: "Entries Per Type",
       query: `
             SELECT type, count(type)
             FROM entries
             GROUP BY type
-            `,
+      `,
     },
   ];
+  let value: string = queries[0].id;
+
+  function handleChange(id: string | undefined) {
+    value = id || queries[0].id;
+  }
 </script>
 
 <svelte:window bind:innerHeight />
-<ContentScrollArea contentClass="scroll-container">
-  <div class="flex">
-    <div class="flex w-full flex-row flex-wrap justify-center">
+<ContentScrollArea contentClass="scroll-container min-h-full p-4">
+  <Tabs.Root class="w-full" {value} onValueChange={handleChange}>
+    <Tabs.List>
       {#each queries as query}
-        <div class={` p-2`}>
-          <div class="flex items-center justify-between">
-            <h3 class="mr-1">{query.name}</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              href={urlFor("/query", { qs: query.query })}>Query</Button
-            >
-          </div>
-          <QueryTable query={query.query} height={(innerHeight - 250) / 2} />
-        </div>
+        <Tabs.Trigger value={query.id}>{query.name}</Tabs.Trigger>
       {/each}
-    </div>
-  </div>
+    </Tabs.List>
+    {#each queries as query}
+      <Tabs.Content value={query.id}>
+        <div class="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            href={urlFor("/query", { qs: query.query.trim() })}>Query</Button
+          >
+        </div>
+        {#if value === query.id}
+          <QueryTable
+            query={query.query}
+            height={Math.max(innerHeight - 190, 280)}
+          />
+        {/if}
+      </Tabs.Content>
+    {/each}
+  </Tabs.Root>
 </ContentScrollArea>

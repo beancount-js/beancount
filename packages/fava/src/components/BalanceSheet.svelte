@@ -1,12 +1,13 @@
 <script lang="ts">
   import { stratify } from "../lib/tree";
   import type { AccountTreeNode } from "../lib/models";
-  import TreeTableComponent from "./tree-table/TreeTable.svelte";
+  import StatementSummaryTreeTable from "./tree-table/StatementSummaryTreeTable.svelte";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import ChartSwitcher from "../charts/ChartSwitcher.svelte";
   import { balances } from "../charts/line";
   import { useContext } from "../context";
   import ContentScrollArea from "./ContentScrollArea.svelte";
+  import { urlForAccount } from "../helpers";
 
   const { ledgerData, conversion, interval, ledgerOptions } = useContext();
 
@@ -79,20 +80,25 @@
   ];
 </script>
 
-<ContentScrollArea contentClass="scroll-container">
-  <div class="p-2">
+<ContentScrollArea contentClass="scroll-container min-h-full">
+  <div class="p-4">
     <ChartSwitcher {charts} />
   </div>
-  <div class="flex">
-    <div class="flex flex-wrap justify-center">
-      <div class="p-2">
-        <TreeTableComponent tree={nodes.assets} end={null}></TreeTableComponent>
-      </div>
-      <div class="p-2">
-        <TreeTableComponent tree={nodes.liabilities} end={null}
-        ></TreeTableComponent>
-        <TreeTableComponent tree={nodes.equity} end={null}></TreeTableComponent>
-      </div>
-    </div>
+  <div class="grid w-full gap-8 p-4">
+    <StatementSummaryTreeTable
+      tree={nodes.assets}
+      title={$ledgerOptions.beancount.name_assets}
+      href={urlForAccount($ledgerOptions.beancount.name_assets)}
+    />
+    <StatementSummaryTreeTable
+      tree={nodes.liabilities}
+      title={$ledgerOptions.beancount.name_liabilities}
+      href={urlForAccount($ledgerOptions.beancount.name_liabilities)}
+    />
+    <StatementSummaryTreeTable
+      tree={nodes.equity}
+      title={$ledgerOptions.beancount.name_equity}
+      href={urlForAccount($ledgerOptions.beancount.name_equity)}
+    />
   </div>
 </ContentScrollArea>

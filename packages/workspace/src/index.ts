@@ -5,6 +5,7 @@ export type BeancountStudioRuntime = "server" | "web";
 export interface RuntimeCapabilities {
   runtime: BeancountStudioRuntime;
   ai: boolean;
+  ingestion: boolean;
   localDirectoryAccess: boolean;
   opfsStorage: boolean;
 }
@@ -12,6 +13,7 @@ export interface RuntimeCapabilities {
 export const serverRuntimeCapabilities: RuntimeCapabilities = {
   runtime: "server",
   ai: true,
+  ingestion: true,
   localDirectoryAccess: false,
   opfsStorage: false,
 };
@@ -19,6 +21,7 @@ export const serverRuntimeCapabilities: RuntimeCapabilities = {
 export const webRuntimeCapabilities: RuntimeCapabilities = {
   runtime: "web",
   ai: false,
+  ingestion: false,
   localDirectoryAccess: true,
   opfsStorage: true,
 };
@@ -72,6 +75,11 @@ export interface FileRevision {
   updatedAt: string;
 }
 
+export interface WriteFileOptions {
+  /** Reject the write if the file has changed since this revision was read. */
+  expectedRevision?: string;
+}
+
 export interface ProjectSnapshot {
   project: ProjectConfig;
   /** Editable Beancount sources only. */
@@ -94,7 +102,11 @@ export interface WorkspaceAdapter<TSession = unknown> {
   readProject(projectId: string): Promise<ProjectSnapshot>;
   saveProject(project: ProjectConfig): Promise<void>;
   readFile(projectId: string, path: string): Promise<ProjectFile>;
-  writeFile(projectId: string, file: ProjectFile): Promise<FileRevision>;
+  writeFile(
+    projectId: string,
+    file: ProjectFile,
+    options?: WriteFileOptions,
+  ): Promise<FileRevision>;
   listResources(projectId: string): Promise<ProjectResource[]>;
   readResource(projectId: string, path: string): Promise<Uint8Array>;
   readAiSession(

@@ -9,13 +9,9 @@
   "dependencies": {
     "@beancount-js/filters": "workspace:*",
     "@beancount-js/parser": "workspace:*",
-    "@tensorflow/tfjs": "^4.22.0",
     "dedent": "^1.7.2",
     "luxon": "^3.7.2",
     "rrule": "^2.8.1",
-    "stemmer": "^2.0.1",
-    "stopword": "^3.1.4",
-    "svelte": "^5.2.7",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },

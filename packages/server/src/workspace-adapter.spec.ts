@@ -31,9 +31,15 @@ describe("FilesystemWorkspaceAdapter", () => {
       "accounts/cash.beancount",
       "main.beancount",
     ]);
-    expect(snapshot.resources.map((file) => file.path)).toEqual(["receipt.pdf"]);
+    expect(snapshot.resources.map((file) => file.path)).toEqual([
+      "receipt.pdf",
+    ]);
     expect(await adapter.listResources(project.id)).toEqual([
-      expect.objectContaining({ path: "receipt.pdf", mimeType: "application/pdf", size: 3 }),
+      expect.objectContaining({
+        path: "receipt.pdf",
+        mimeType: "application/pdf",
+        size: 3,
+      }),
     ]);
 
     await adapter.writeFile(project.id, {
@@ -43,13 +49,15 @@ describe("FilesystemWorkspaceAdapter", () => {
     expect(
       await readFile(join(root, "accounts", "cash.beancount"), "utf8"),
     ).toContain("Assets:Cash");
-    await expect(readFile(join(root, ".beancount-js", "project.json"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      readFile(join(root, ".beancount-js", "project.json"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
     await expect(adapter.readFile(project.id, "receipt.pdf")).rejects.toThrow(
       "Ledger file not found",
     );
-    await expect(adapter.readResource(project.id, "accounts/cash.beancount")).rejects.toThrow(
-      "Resource not found",
-    );
+    await expect(
+      adapter.readResource(project.id, "accounts/cash.beancount"),
+    ).rejects.toThrow("Resource not found");
   });
 
   test("does not allow a caller to read outside a project", async () => {
@@ -62,5 +70,30 @@ describe("FilesystemWorkspaceAdapter", () => {
     await expect(adapter.readFile(project.id, "../secret.txt")).rejects.toThrow(
       "Project file path escapes its root",
     );
+  });
+
+  test("rejects a write when the ledger revision has changed", async () => {
+    const root = await mkdtemp(join(tmpdir(), "beancount-studio-project-"));
+    const config = await mkdtemp(join(tmpdir(), "beancount-studio-config-"));
+    const file = join(root, "main.bean");
+    await writeFile(file, "2024-01-01 open Assets:Cash\n");
+    const adapter = new FilesystemWorkspaceAdapter({ configDirectory: config });
+    const project = await adapter.openProject(root);
+    const snapshot = await adapter.readProject(project.id);
+    const expectedRevision = snapshot.revisions.find(
+      (item) => item.path === "main.bean",
+    )!.revision;
+    await writeFile(
+      file,
+      "2024-01-01 open Assets:Cash\n2024-01-02 open Expenses:Food\n",
+    );
+
+    await expect(
+      adapter.writeFile(
+        project.id,
+        { path: "main.bean", contents: "2024-01-01 open Assets:Cash\n" },
+        { expectedRevision },
+      ),
+    ).rejects.toThrow("File changed since it was read");
   });
 });

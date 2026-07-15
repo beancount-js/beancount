@@ -12,7 +12,9 @@
   import DashboardTreeTable from "./dashboard/DashboardTreeTable.svelte";
   import {
     createDashboardData,
+    dashboardDefaultCurrency,
     dashboardCurrencies,
+    dashboardPeriodComparisonLabels,
     dashboardPeriodLabels,
     type DashboardPeriod,
   } from "./dashboard/model";
@@ -20,7 +22,8 @@
   import * as Select from "$lib/components/ui/select/index.js";
   import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
 
-  const { ledgerData, ledgerOptions, conversion } = useContext();
+  const { ledgerData, ledgerOptions, conversion, operatingCurrency } =
+    useContext();
   const ctx = useCtx();
 
   const periods: DashboardPeriod[] = ["ytd", "1y", "3y", "all"];
@@ -28,8 +31,9 @@
   let selectedCurrency = "";
 
   $: currencies = dashboardCurrencies($ledgerData);
-  $: if (!currencies.includes(selectedCurrency)) {
-    selectedCurrency = currencies[0] ?? "";
+  $: defaultCurrency = dashboardDefaultCurrency(currencies, $operatingCurrency);
+  $: if (!selectedCurrency || !currencies.includes(selectedCurrency)) {
+    selectedCurrency = defaultCurrency;
   }
   $: dashboard = createDashboardData(
     $ledgerData,
@@ -45,8 +49,8 @@
     }
   }
 
-  function updateCurrency(event: Event) {
-    selectedCurrency = (event.currentTarget as HTMLSelectElement).value;
+  function updateCurrency(value: string | string[] | undefined) {
+    if (typeof value === "string") selectedCurrency = value;
   }
 
   function updatePeriod(value: string) {
@@ -83,24 +87,41 @@
             {dashboardPeriodLabels[period]}
           </Select.Trigger>
           <Select.Content>
-            {#each periods as option}
-              <Select.Item value={option}>
-                {dashboardPeriodLabels[option]}
-              </Select.Item>
-            {/each}
+            <Select.Group>
+              {#each periods as option}
+                <Select.Item
+                  value={option}
+                  label={dashboardPeriodLabels[option]}
+                >
+                  {dashboardPeriodLabels[option]}
+                </Select.Item>
+              {/each}
+            </Select.Group>
           </Select.Content>
         </Select.Root>
         {#if currencies.length > 1}
-          <select
-            class="h-8 w-24 rounded-md border border-input bg-background px-2 text-xs font-medium shadow-sm outline-none focus:ring-1 focus:ring-ring"
-            aria-label="Display currency"
-            value={dashboard.currency}
-            on:change={updateCurrency}
+          <Select.Root
+            type="single"
+            value={selectedCurrency}
+            controlledValue
+            onValueChange={updateCurrency}
           >
-            {#each currencies as currency}
-              <option value={currency}>{currency}</option>
-            {/each}
-          </select>
+            <Select.Trigger
+              class="h-8 w-24 text-xs font-medium"
+              aria-label="Display currency"
+            >
+              {dashboard.currency}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Group>
+                {#each currencies as currency}
+                  <Select.Item value={currency} label={currency}>
+                    {currency}
+                  </Select.Item>
+                {/each}
+              </Select.Group>
+            </Select.Content>
+          </Select.Root>
         {:else if dashboard.currency}
           <span
             class="rounded-md border border-border bg-muted/55 px-3 py-2 font-mono text-xs text-foreground"
@@ -321,22 +342,27 @@
               {$ctx.amount(dashboard.netWorth, dashboard.currency)}
             </p>
             <p class="mt-1 text-sm text-muted-foreground">
-              Assets and liabilities, valued {conversionLabel(
-                $conversion,
-              ).toLowerCase()}.
+              Valued {conversionLabel($conversion).toLowerCase()}.
             </p>
           </div>
           <p
             class:positive={dashboard.netWorthChange >= 0}
             class:negative={dashboard.netWorthChange < 0}
-            class="mt-2 font-mono text-sm tabular-nums sm:mt-0"
+            class="mt-2 font-mono text-sm tabular-nums sm:mt-0 sm:text-right"
           >
-            {$ctx.amount(dashboard.netWorthChange, dashboard.currency)} change
+            {$ctx.amount(dashboard.netWorthChange, dashboard.currency)}
+            {#if dashboard.netWorthChangePercent !== null}
+              ({dashboard.netWorthChangePercent.toFixed(1)}%)
+            {/if}
+            <span class="block font-sans text-xs text-muted-foreground">
+              {dashboardPeriodComparisonLabels[period]}
+            </span>
           </p>
         </div>
         <DashboardLine
           points={dashboard.netWorthPoints}
           currency={dashboard.currency}
+          change={dashboard.netWorthChange}
           formatter={$ctx.amount}
         />
       </DashboardSection>
@@ -346,10 +372,10 @@
 
 <style>
   .positive {
-    color: hsl(var(--chart-2));
+    color: var(--chart-2);
   }
 
   .negative {
-    color: hsl(var(--destructive));
+    color: var(--destructive);
   }
 </style>

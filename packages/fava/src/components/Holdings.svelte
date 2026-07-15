@@ -78,7 +78,7 @@
 </script>
 
 <svelte:window bind:innerHeight />
-<ContentScrollArea contentClass="scroll-container p-4">
+<ContentScrollArea contentClass="scroll-container min-h-full p-4">
   <Tabs.Root class="w-full" {value} onValueChange={handleChange}>
     <ScrollArea.Root orientation="horizontal" class="w-full">
       <div class="w-max pr-3">
@@ -99,8 +99,7 @@
         {#if value === query.id}
           <QueryTable
             query={query.query}
-            height={innerHeight - 250}
-            padding={(innerHeight - 250) / 2}
+            height={Math.max(innerHeight - 190, 280)}
           />
         {/if}
       </Tabs.Content>

@@ -100,7 +100,7 @@ function stringifyMeta(metadata: Metadata, indent: number = 2) {
   let str = "";
   for (const [key, value] of Object.entries(metadata)) {
     if (
-      key.match(/^[a-z][A-Z0-9_-]*$/) &&
+      key.match(/^[a-z][a-zA-Z0-9_-]*$/) &&
       isScalar(value) &&
       !key.match(/(^(lineno|filename|file)$)|(^_)/)
     ) {

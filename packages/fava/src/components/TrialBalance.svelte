@@ -1,7 +1,7 @@
 <script lang="ts">
   import { stratify } from "../lib/tree";
   import type { AccountTreeNode } from "../lib/models";
-  import TreeTableComponent from "./tree-table/TreeTable.svelte";
+  import StatementSummaryTreeTable from "./tree-table/StatementSummaryTreeTable.svelte";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import Chart from "../charts/Chart.svelte";
   import * as Tabs from "$lib/components/ui/tabs";
@@ -49,9 +49,9 @@
   );
 </script>
 
-<ContentScrollArea contentClass="scroll-container">
+<ContentScrollArea contentClass="scroll-container min-h-full">
   <div class="w-full">
-    <div class="p-2">
+    <div class="p-4">
       <Tabs.Root value={charts[0].account} class="">
         {#each charts as chart}
           <Tabs.Content value={chart.account}>
@@ -67,10 +67,8 @@
         </div>
       </Tabs.Root>
     </div>
-    <div class="flex justify-center">
-      <div class="p-2">
-        <TreeTableComponent tree={node} end={null}></TreeTableComponent>
-      </div>
+    <div class="w-full p-4">
+      <StatementSummaryTreeTable tree={node} title="Trial Balance" />
     </div>
   </div>
 </ContentScrollArea>

@@ -147,7 +147,9 @@ export const mainTabs = [
     name: "Income Statement",
     path: /#\/income_statement\?ledger=.+$/,
     assert: async (page: Page) => {
-      await expect(page.locator(".tree-table-new").first()).toBeVisible();
+      await expect(
+        page.locator("[data-statement-summary-tree-table]").first(),
+      ).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Expenses", exact: true }),
       ).toBeVisible();
@@ -157,7 +159,9 @@ export const mainTabs = [
     name: "Balance Sheet",
     path: /#\/balance_sheet\?ledger=.+$/,
     assert: async (page: Page) => {
-      await expect(page.locator(".tree-table-new").first()).toBeVisible();
+      await expect(
+        page.locator("[data-statement-summary-tree-table]").first(),
+      ).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Assets", exact: true }),
       ).toBeVisible();
@@ -167,7 +171,9 @@ export const mainTabs = [
     name: "Trial Balance",
     path: /#\/trial_balance\?ledger=.+$/,
     assert: async (page: Page) => {
-      await expect(page.locator(".tree-table-new").first()).toBeVisible();
+      await expect(
+        page.locator("[data-statement-summary-tree-table]").first(),
+      ).toBeVisible();
     },
   },
   {

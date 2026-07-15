@@ -127,10 +127,15 @@
   $: table = useDataset(data, { height: rowHeight, padding });
   $: ({ getSize, columns, maxHeight } = $table);
 
+  // Query tables use their page scroll area as the vertical scroller. Let the
+  // virtual list grow to its content height there while retaining a viewport-
+  // filling minimum height for short result sets.
+  $: viewportHeight = Math.max(height, maxHeight);
+
   $: chart = chartData($data, columns);
 </script>
 
-<div>
+<div class="query-table" data-query-table>
   {#if $queryResult.error}
     <Alert.Root variant="destructive" class="mt-4 font-mono text-xs">
       <TriangleAlert class="h-4 w-4" />
@@ -149,7 +154,7 @@
       {/if}
       <ol class="bean-table flex-table font-mono text-xs">
         <VirtualList
-          height={Math.min(height, maxHeight)}
+          height={viewportHeight}
           width="max-content"
           itemCount={$data.length}
           itemSize={getSize}
@@ -255,3 +260,9 @@
     </div>
   </ScrollArea.Root>
 </div>
+
+<style>
+  .query-table :global(.virtual-list-wrapper) {
+    overflow: visible;
+  }
+</style>

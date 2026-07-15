@@ -19,8 +19,8 @@
   import Statistics from "./components/Statistics.svelte";
   import Query from "./components/Query.svelte";
   import AccountDetails from "./components/AccountDetails.svelte";
-  import ImportTable from "./components/ImportTable.svelte";
-  import ImportEditor from "./components/ImportEditor.svelte";
+  import IngestionTable from "./components/IngestionTable.svelte";
+  import IngestionConfigEditor from "./components/IngestionConfigEditor.svelte";
   import FavaNavigation from "./components/FavaNavigation.svelte";
   import Search from "./components/Search.svelte";
   import StudioShell from "./components/StudioShell.svelte";
@@ -72,8 +72,8 @@
       { path: "/query", element: Query },
       { path: "/editor", element: Editor },
       { path: "/statistics", element: Statistics },
-      { path: "/records", element: ImportTable },
-      { path: "/import/editor", element: ImportEditor },
+      { path: "/records", element: IngestionTable },
+      { path: "/import/editor", element: IngestionConfigEditor },
       { path: "/directives", element: Editor },
       { path: "/resource", element: ResourceViewer },
     ],
@@ -98,6 +98,8 @@
     "/404": "Page not found",
   };
   let loadedSignature = "";
+  let loadedLedgerSignature = "";
+  let activeLedgerPath = "";
   let pageTitle = "Beancount Studio";
 
   context.menu.set([MainNav]);
@@ -116,9 +118,18 @@
         ? $activeFile
         : next.project.entryFile;
     workspace.activeFile.set(available);
+  }
+
+  function loadLedger(next: ProjectSnapshot, entryFile: string) {
+    const signature = `${next.project.id}:${entryFile}:${next.revisions
+      .map((item) => item.revision)
+      .join(":")}`;
+    if (signature === loadedLedgerSignature) return;
+
+    loadedLedgerSignature = signature;
     context.ledgerSource.set(
       LedgerSource.fromProject(
-        next.project.entryFile,
+        entryFile,
         next.ledgerFiles.map((file) => ({
           path: file.path,
           contents: file.contents,
@@ -158,6 +169,15 @@
     }
   } else {
     workspace.snapshot.set(undefined);
+  }
+
+  $: activeLedgerPath =
+    snapshot && snapshot.ledgerFiles.some((file) => file.path === $activeFile)
+      ? $activeFile
+      : (snapshot?.project.entryFile ?? "");
+
+  $: if (snapshot && activeLedgerPath) {
+    loadLedger(snapshot, activeLedgerPath);
   }
 </script>
 

@@ -8,9 +8,3 @@ export * from "./plugins/autoaccount";
 export * from "./plugins/budget";
 export * from "./plugins/creditcard";
 export * from "./plugins/forecast";
-
-// Studio retains its import-categorisation API while its filesystem workspace
-// is the source of truth for project documents.
-export * from "./ingest/categorizer";
-export * from "./ingest/classifiers";
-export * from "./ingest/store";

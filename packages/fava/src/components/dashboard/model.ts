@@ -29,7 +29,9 @@ export interface DashboardData {
   cashFlow: number;
   netWorth: number;
   netWorthChange: number;
+  netWorthChangePercent: number | null;
   netWorthPoints: DashboardPoint[];
+  netWorthStart: number;
   inflows: DashboardCategory[];
   outflows: DashboardCategory[];
   expenseCategories: DashboardCategory[];
@@ -57,6 +59,14 @@ export const dashboardPeriodLabels: Record<DashboardPeriod, string> = {
   "3y": "Last 3 years",
   all: "All time",
 };
+
+export const dashboardPeriodComparisonLabels: Record<DashboardPeriod, string> =
+  {
+    ytd: "vs. start of year",
+    "1y": "vs. 12 months ago",
+    "3y": "vs. 3 years ago",
+    all: "vs. first ledger entry",
+  };
 
 export function dashboardRange(
   period: DashboardPeriod,
@@ -88,12 +98,48 @@ function shortAccountName(account: string) {
   return account.split(":").at(-1) ?? account;
 }
 
-function categoryColor(account: string) {
+export function dashboardCategoryColor(account: string) {
   let hash = 0;
   for (const character of account) {
     hash = (hash * 31 + character.charCodeAt(0)) | 0;
   }
   return CATEGORY_COLORS[Math.abs(hash) % CATEGORY_COLORS.length];
+}
+
+export function dashboardPercentageChange(
+  start: number,
+  end: number,
+): number | null {
+  return start ? ((end - start) / Math.abs(start)) * 100 : null;
+}
+
+export type DashboardTrendTone = "positive" | "negative" | "neutral";
+
+export function dashboardTrendTone(change: number): DashboardTrendTone {
+  if (change > 0) return "positive";
+  if (change < 0) return "negative";
+  return "neutral";
+}
+
+export function dashboardSeriesWithBounds(
+  points: DashboardPoint[],
+  start: Date,
+  end: Date,
+  startValue: number,
+  endValue: number,
+): DashboardPoint[] {
+  const startTime = start.getTime();
+  const endTime = end.getTime();
+  if (endTime <= startTime) return [{ date: end, value: endValue }];
+
+  return [
+    { date: start, value: startValue },
+    ...points.filter((point) => {
+      const time = point.date.getTime();
+      return time > startTime && time < endTime;
+    }),
+    { date: end, value: endValue },
+  ];
 }
 
 function accountTree(
@@ -133,7 +179,7 @@ function leafCategories(
         account: entry.account,
         label: shortAccountName(entry.account),
         value: amount,
-        color: categoryColor(entry.account),
+        color: dashboardCategoryColor(entry.account),
       });
     }
     entry.children.forEach(visit);
@@ -196,6 +242,17 @@ function chooseCurrency(ledger: LedgerData, selected: string | undefined) {
 
 export function dashboardCurrencies(ledger: LedgerData) {
   return [...new Set(ledger.currencies)].filter(Boolean).sort();
+}
+
+export function dashboardDefaultCurrency(
+  currencies: readonly string[],
+  operatingCurrencies: readonly string[],
+) {
+  return (
+    operatingCurrencies.find((currency) => currencies.includes(currency)) ??
+    currencies[0] ??
+    ""
+  );
 }
 
 /**
@@ -262,14 +319,26 @@ export function createDashboardData(
     return assets + liabilities;
   };
   const netWorth = netWorthFor(asOfLedger);
-  const netWorthChange = netWorth - netWorthFor(priorLedger);
-  const netWorthPoints = ledger
+  const netWorthStart = netWorthFor(priorLedger);
+  const netWorthChange = netWorth - netWorthStart;
+  const netWorthChangePercent = dashboardPercentageChange(
+    netWorthStart,
+    netWorth,
+  );
+  const periodNetWorthPoints = ledger
     .netWorth([assetsRoot, liabilitiesRoot], conversion, "month")
     .filter((point) => range.contains(point.date))
     .map((point) => ({
       date: point.date,
       value: scalar(point.balance, currency),
     }));
+  const netWorthPoints = dashboardSeriesWithBounds(
+    periodNetWorthPoints,
+    range.from.toJSDate(),
+    range.to.toJSDate(),
+    netWorthStart,
+    netWorth,
+  );
 
   return {
     range,
@@ -279,7 +348,9 @@ export function createDashboardData(
     cashFlow: income - expenses,
     netWorth,
     netWorthChange,
+    netWorthChangePercent,
     netWorthPoints,
+    netWorthStart,
     inflows,
     outflows,
     expenseCategories: chartCategories(

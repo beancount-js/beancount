@@ -1,7 +1,7 @@
 <script lang="ts">
   import { stratify } from "../lib/tree";
   import type { AccountTreeNode } from "../lib/models";
-  import TreeTableComponent from "./tree-table/TreeTable.svelte";
+  import StatementSummaryTreeTable from "./tree-table/StatementSummaryTreeTable.svelte";
   import ChartSwitcher from "../charts/ChartSwitcher.svelte";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import { bar } from "../charts/bar";
@@ -9,6 +9,7 @@
   import { useContext } from "../context";
   import { useChartContext } from "../charts/context";
   import ContentScrollArea from "./ContentScrollArea.svelte";
+  import { urlForAccount } from "../helpers";
 
   const { ledgerData, conversion, interval, ledgerOptions } = useContext();
   const chartContext = useChartContext();
@@ -102,21 +103,21 @@
   ];
 </script>
 
-<ContentScrollArea contentClass="scroll-container">
-  <div class="p-2">
+<ContentScrollArea contentClass="scroll-container min-h-full">
+  <div class="p-4">
     <ChartSwitcher {charts} />
   </div>
-  <div class="flex">
-    <div class="flex flex-wrap justify-center">
-      <div class="basis-1/2 p-2">
-        <TreeTableComponent tree={nodes.income} end={null}></TreeTableComponent>
-        <TreeTableComponent tree={nodes.netProfit} end={null}
-        ></TreeTableComponent>
-      </div>
-      <div class="basis-1/2 p-2">
-        <TreeTableComponent tree={nodes.expenses} end={null}
-        ></TreeTableComponent>
-      </div>
-    </div>
+  <div class="grid w-full gap-8 p-4">
+    <StatementSummaryTreeTable
+      tree={nodes.income}
+      title={$ledgerOptions.beancount.name_income}
+      href={urlForAccount($ledgerOptions.beancount.name_income)}
+    />
+    <StatementSummaryTreeTable tree={nodes.netProfit} title="Net Profit" />
+    <StatementSummaryTreeTable
+      tree={nodes.expenses}
+      title={$ledgerOptions.beancount.name_expenses}
+      href={urlForAccount($ledgerOptions.beancount.name_expenses)}
+    />
   </div>
 </ContentScrollArea>

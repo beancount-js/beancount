@@ -24,11 +24,15 @@ test.describe("sample ledger navigation", () => {
         .filter({ hasText: "Income Statement" })
         .first(),
     ).toHaveAttribute("aria-current", "page");
-    await expect(page.locator(".tree-table-new").first()).toBeVisible();
+    await expect(
+      page.locator("[data-statement-summary-tree-table]").first(),
+    ).toBeVisible();
 
     await navigateTo(page, "Balance Sheet");
     await expect(page).toHaveURL(/#\/balance_sheet\?ledger=.+$/);
-    await expect(page.locator(".tree-table-new").first()).toBeVisible();
+    await expect(
+      page.locator("[data-statement-summary-tree-table]").first(),
+    ).toBeVisible();
 
     await navigateTo(page, "Journal");
     await expect(page).toHaveURL(/#\/journal\?ledger=.+$/);
@@ -54,6 +58,20 @@ test.describe("sample ledger navigation", () => {
     ).toHaveAttribute("aria-current", "page");
   });
 
+  test("loads report data for the ledger selected in the URL", async ({
+    page,
+  }) => {
+    await page.goto("/#/journal?ledger=sample-budgets.beancount");
+    await page.waitForSelector("[data-journal-table]");
+
+    await expect(
+      page.getByText("China Garden", { exact: true }).first(),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(
+      page.locator('[data-ledger-file-row="sample-budgets.beancount"]'),
+    ).toBeVisible();
+  });
+
   test("income statement renders without runtime errors", async ({ page }) => {
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -62,9 +80,9 @@ test.describe("sample ledger navigation", () => {
     await waitForEditorContent(page, "Account Ledger");
     await navigateTo(page, "Income Statement");
     await expect(page).toHaveURL(/#\/income_statement\?ledger=.+$/);
-    await expect(page.locator(".tree-table-new").first()).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(
+      page.locator("[data-statement-summary-tree-table]").first(),
+    ).toBeVisible({ timeout: 15_000 });
 
     expect(
       pageErrors.filter((message) => message.includes("reading 'copy'")),

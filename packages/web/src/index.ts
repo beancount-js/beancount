@@ -9,6 +9,7 @@ import type {
   ProjectSnapshot,
   ProjectSummary,
   WorkspaceAdapter,
+  WriteFileOptions,
 } from "@beancount-js/workspace";
 
 type BrowserProject = {
@@ -284,10 +285,19 @@ export class BrowserWorkspaceAdapter implements WorkspaceAdapter {
     return this.sourceFor(project, safe);
   }
 
-  async writeFile(projectId: string, file: ProjectFile): Promise<FileRevision> {
+  async writeFile(
+    projectId: string,
+    file: ProjectFile,
+    options: WriteFileOptions = {},
+  ): Promise<FileRevision> {
     const project = this.project(projectId);
     const path = safePath(file.path);
     if (!(await this.discover(project)).ledgerPaths.includes(path)) throw new Error(`Ledger file not found: ${path}`);
+    const previous = await this.sourceFor(project, path);
+    const currentRevision = `${previous.size}:${previous.updatedAt}`;
+    if (options.expectedRevision && options.expectedRevision !== currentRevision) {
+      throw new Error(`File changed since it was read: ${path}`);
+    }
     const updatedAt = now();
     const next = { ...file, path, updatedAt, size: new TextEncoder().encode(file.contents).length };
     project.files.set(path, next);

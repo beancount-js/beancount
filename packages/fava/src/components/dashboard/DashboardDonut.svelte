@@ -64,14 +64,14 @@
 
 <style>
   .donut-label {
-    fill: hsl(var(--muted-foreground));
+    fill: var(--muted-foreground);
     font-family: "DM Sans Variable", sans-serif;
     font-size: 13px;
     font-weight: 600;
   }
 
   .donut-value {
-    fill: hsl(var(--foreground));
+    fill: var(--foreground);
     font-family: "Source Code Pro", monospace;
     font-size: 13px;
     font-weight: 600;
