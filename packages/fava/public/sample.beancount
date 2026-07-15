@@ -78,7 +78,7 @@ plugin "beancount.plugins.forecast"
 
 2024-10-19 open     Liabilities:Loan:Novuna                    GBP
 
-2024-10-19 open     Liabilities:Loan:Plata:Principal           GBP 
+2024-10-19 open     Liabilities:Loan:Plata:Principal           GBP  
 2024-10-19 open     Liabilities:Loan:Plata:Interest            GBP
 
 2024-10-19 pad      Liabilities:Loan:Plata:Principal  Equity:Opening-Balances

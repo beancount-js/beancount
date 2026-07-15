@@ -98,7 +98,7 @@ export const forecastOptions = z.object({
   end: z.string().optional(),
 });
 
-const forcastSchema = z.preprocess(yamlProcessor, forecastOptions);
+const forecastSchema = z.preprocess(yamlProcessor, forecastOptions);
 
 const PERIOD_PATTERN =
   /(^.*)\[(MONTHLY|YEARLY|WEEKLY|DAILY)(\s+SKIP\s+([1-9][0-9]*)\s+TIME.?)?(\s+REPEAT\s+([1-9][0-9]*)\s+TIME.?)?(\s+UNTIL\s+([0-9-]+))?\]/;
@@ -109,11 +109,11 @@ export function forecast(
 ): [Directives, Array<ValidationError>] {
   let now: DateTime = DateTime.now();
   const errors: Array<ValidationError> = [];
-  const props = arg ? (forcastSchema.safeParse(arg).data ?? {}) : {};
+  const props = arg ? (forecastSchema.safeParse(arg).data ?? {}) : {};
 
   if (props.now) {
     now = resolveDate(props.now, now, {
-      message: "Invalid forcast value for 'now'",
+      message: "Invalid forecast value for 'now'",
       meta: props,
       now,
       errors,
@@ -121,25 +121,25 @@ export function forecast(
   }
 
   // Filter out forecast entries from the list of valid entries.
-  const forcastEntries: Transaction[] = [];
+  const forecastEntries: Transaction[] = [];
   const filteredEntries: Directives = [];
   const newEntries: Directives = [];
 
   entries.forEach((directive) => {
     if (directive instanceof Transaction && directive.flag === "#") {
-      forcastEntries.push(directive);
+      forecastEntries.push(directive);
     } else {
       filteredEntries.push(directive);
     }
   });
-  forcastEntries.forEach((entry) => {
+  forecastEntries.forEach((entry) => {
     try {
       let match = PERIOD_PATTERN.exec(entry.narration);
       let end = now.endOf("year");
       const declaredEnd = entry.meta["end"] || props["end"];
       if (declaredEnd) {
         end = resolveDate(declaredEnd?.toString(), end, {
-          message: `Invalid forcast value for 'end': '${declaredEnd}'`,
+          message: `Invalid forecast value for 'end': '${declaredEnd}'`,
           meta: props,
           now,
           errors,
@@ -237,7 +237,7 @@ export function forecast(
     } catch (e) {
       errors.push(
         new ValidationError(
-          `Unable to process forcast for:\n  '${entry.narration}'\n  ${e}`,
+          `Unable to process forecast for:\n  '${entry.narration}'\n  ${e}`,
           { source: entry.meta, entry },
         ),
       );

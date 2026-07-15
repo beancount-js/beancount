@@ -1,6 +1,6 @@
 ## Options
 
-option "title" "Account Ledger"
+option "title" "Account Ledger Sample"
 option "operating_currency" "GBP"
 option "inferred_tolerance_multiplier" "0.5" 
 
