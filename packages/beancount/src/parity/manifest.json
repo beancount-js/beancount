@@ -80,6 +80,14 @@
       "status": "adapted",
       "tests": ["plugins/leafonly"],
       "reason": "Uses the existing account and open-close getter adapters."
+    },
+    {
+      "upstreamModule": "beancount.plugins.onecommodity",
+      "upstreamBehavior": "validate_one_commodity",
+      "localBehavior": "validateOneCommodity",
+      "status": "adapted",
+      "tests": ["plugins/onecommodity"],
+      "reason": "Uses local resolved costs and JavaScript regular-expression configuration."
     }
   ]
 }

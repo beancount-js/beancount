@@ -7,6 +7,7 @@ import { closeTree } from "../plugins/close_tree";
 import { forecast } from "../plugins/forecast";
 import { addImplicitPrices } from "../plugins/implicit_prices";
 import { validateLeafOnly } from "../plugins/leafonly";
+import { validateOneCommodity } from "../plugins/onecommodity";
 import { checkBalance } from "./balance";
 import { pad } from "./pad";
 import type { ValidationError } from "./validation";
@@ -75,6 +76,12 @@ export const Plugins: Record<string, PluginType> = {
     order: 0,
     id: "beancount.plugins.leafonly",
     supportsConfig: false,
+  },
+  "beancount.plugins.onecommodity": {
+    plugin: validateOneCommodity,
+    order: 0,
+    id: "beancount.plugins.onecommodity",
+    supportsConfig: true,
   },
   "beancount.plugins.forecast": {
     plugin: forecast,
