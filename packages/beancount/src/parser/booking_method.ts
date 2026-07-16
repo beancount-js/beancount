@@ -134,6 +134,24 @@ function bookingMethodNone(
   return [[posting], [], [], false];
 }
 
+function bookingMethodAverage(
+  entry: Transaction,
+  _posting: Posting,
+  _matches: Array<Position>,
+): [Array<Posting>, Array<Position>, Array<ValidationError>, boolean] {
+  return [
+    [],
+    [],
+    [
+      new ValidationError("AVERAGE method is not supported", {
+        directive: entry,
+        errorType: "AmbiguousMatchError",
+      }),
+    ],
+    false,
+  ];
+}
+
 function bookingMethodStrict(
   entry: Transaction,
   posting: Posting,
@@ -206,6 +224,8 @@ function resolveBookings(
     return bookingMethodHIFO(entry, posting, matches);
   } else if (booking === Booking.STRICT_WITH_SIZE) {
     return bookingMethodStrictWithSize(entry, posting, matches);
+  } else if (booking === Booking.AVERAGE) {
+    return bookingMethodAverage(entry, posting, matches);
   }
   return bookingMethodStrict(entry, posting, matches);
 }

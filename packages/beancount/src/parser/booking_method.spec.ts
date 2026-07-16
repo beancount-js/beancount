@@ -17,11 +17,7 @@ function lot(units: string, cost: string, date: string) {
 }
 
 function reduction(units: string) {
-  return new Posting(
-    "Assets:Investments",
-    new Amount(units, "HOOL"),
-    null,
-  );
+  return new Posting("Assets:Investments", new Amount(units, "HOOL"), null);
 }
 
 describe("booking methods", () => {
@@ -88,5 +84,20 @@ describe("booking methods", () => {
     expect(postings).toHaveLength(1);
     expect(postings[0].units?.toString()).toBe("-3 HOOL");
     expect(postings[0].cost).toBe(older.cost);
+  });
+
+  test("reports the unsupported AVERAGE mode instead of falling back to strict", () => {
+    const [postings, matches, errors] = handleAmbiguousMatches(
+      transaction(),
+      reduction("-1"),
+      [lot("1", "10", "2020-01-01"), lot("1", "20", "2021-01-01")],
+      Booking.AVERAGE,
+    );
+
+    expect(postings).toEqual([]);
+    expect(matches).toEqual([]);
+    expect(errors.map((error) => error.message)).toEqual([
+      "AVERAGE method is not supported",
+    ]);
   });
 });
