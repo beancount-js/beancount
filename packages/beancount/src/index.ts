@@ -11,6 +11,7 @@ export * from "./plugins/implicit_prices";
 export * from "./plugins/close_tree";
 export * from "./plugins/check_closing";
 export * from "./plugins/check_drained";
+export * from "./plugins/unique_prices";
 export * from "./plugins/leafonly";
 export * from "./plugins/onecommodity";
 export * from "./plugins/noduplicates";

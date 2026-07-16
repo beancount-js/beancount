@@ -120,6 +120,14 @@
       "status": "adapted",
       "tests": ["plugins/check-drained"],
       "reason": "Uses local account types and Luxon day arithmetic."
+    },
+    {
+      "upstreamModule": "beancount.plugins.unique_prices",
+      "upstreamBehavior": "validate_unique_prices",
+      "localBehavior": "validateUniquePrices",
+      "status": "adapted",
+      "tests": ["plugins/unique-prices"],
+      "reason": "Uses local Decimal equality and ValidationError contexts."
     }
   ]
 }

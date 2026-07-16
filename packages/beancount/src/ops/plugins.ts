@@ -12,6 +12,7 @@ import { validateLeafOnly } from "../plugins/leafonly";
 import { validateOneCommodity } from "../plugins/onecommodity";
 import { validateNoDuplicates } from "../plugins/noduplicates";
 import { validateUnusedAccounts } from "../plugins/nounused";
+import { validateUniquePrices } from "../plugins/unique_prices";
 import { checkBalance } from "./balance";
 import { pad } from "./pad";
 import type { ValidationError } from "./validation";
@@ -85,6 +86,12 @@ export const Plugins: Record<string, PluginType> = {
     plugin: checkDrained,
     order: 0,
     id: "beancount.plugins.check_drained",
+    supportsConfig: false,
+  },
+  "beancount.plugins.unique_prices": {
+    plugin: validateUniquePrices,
+    order: 0,
+    id: "beancount.plugins.unique_prices",
     supportsConfig: false,
   },
   "beancount.plugins.leafonly": {
