@@ -13,6 +13,17 @@
   export let multiplier = 1;
 
   let collapsed = new Set<string>();
+  let roots: AccountTreeNode[] = [];
+  let collapsibleAccounts = new Set<string>();
+  let total = 0;
+  let contributionNodes: AccountTreeNode[] = [];
+  let contributionTotal = 0;
+  let contributions: Array<{
+    account: string;
+    amount: number;
+    color: string;
+    percentage: number;
+  }> = [];
 
   $: roots = tree.account === "" ? tree.children : [tree];
   $: collapsibleAccounts = roots.reduce((accounts, root) => {

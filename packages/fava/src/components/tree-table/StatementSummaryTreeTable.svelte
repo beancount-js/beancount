@@ -23,6 +23,18 @@
   const collapsed = writable(getCollapsed(tree, $collapseAccount));
   const hiddenAccounts = writable(new Set<string>());
   const weightColumn = "10rem";
+  let roots: AccountTreeNode[] = [];
+  let collapsibleAccounts = new Set<string>();
+  let total = 0;
+  let weightTotal = 0;
+  let contributionNodes: AccountTreeNode[] = [];
+  let contributionTotal = 0;
+  let contributions: Array<{
+    account: string;
+    amount: number;
+    color: string;
+    percentage: number;
+  }> = [];
 
   $: $hiddenAccounts = $getNotShown(tree, end);
   $: roots = (tree.account === "" ? tree.children : [tree]).filter(

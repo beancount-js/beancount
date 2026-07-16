@@ -1,32 +1,44 @@
 <script lang="ts">
   import { derived } from "svelte/store";
-  import { ValidationError } from "@beancount-js/beancount";
+  import { BeancountFilter, ValidationError } from "@beancount-js/beancount";
   import type { ParseError } from "@beancount-js/parser";
+  import { DateTime } from "luxon";
   import { useContext } from "../../context";
   import { Cell, Grid } from "../../grid";
   import type { Column } from "../../grid/grid";
   import { Custom, isDirective } from "@beancount-js/beancount";
   const { ledgerData, predicate } = useContext();
+  const filterVisitor = new BeancountFilter();
+
+  function matchesPredicate(
+    predicate: NonNullable<(typeof $predicate)["predicate"]>,
+    entity: Parameters<BeancountFilter["accept"]>[1],
+  ) {
+    return predicate.accept(filterVisitor, entity, { op: ":" });
+  }
 
   function getLine(error: any) {
     return error.line || error.source["lineno"];
   }
 
   const data = derived([ledgerData, predicate], ([$ledgerData, $predicate]) => {
-    const epoch = new Date(1970, 0, 1, 0, 0, 0, 0);
+    const epoch = DateTime.fromMillis(0, { zone: "utc" });
     if ($predicate.predicate) {
       return $ledgerData.errors.filter((error) => {
         if (error instanceof ValidationError) {
-          if (isDirective(error.entry)) {
-            return $predicate.predicate!.matches(error.entry);
+          const directive = error.context.directive;
+          if (isDirective(directive)) {
+            return matchesPredicate($predicate.predicate, directive);
           }
         }
         if (typeof error === "string") {
-          return $predicate.predicate?.matches(
+          return matchesPredicate(
+            $predicate.predicate,
             new Custom(epoch, "error", [error]),
           );
         }
-        return $predicate.predicate?.matches(
+        return matchesPredicate(
+          $predicate.predicate,
           new Custom(epoch, "error", [error.message], { ...error }),
         );
       });
@@ -66,9 +78,9 @@
         if (typeof row === "string") {
           return "-";
         } else if (row instanceof ValidationError) {
-          return row.entry?.toString() ?? "";
+          return row.context.directive?.toString() ?? "";
         } else {
-          return row.node;
+          return row.position.toString();
         }
       },
     },
