@@ -127,10 +127,11 @@
   $: table = useDataset(data, { height: rowHeight, padding });
   $: ({ getSize, columns, maxHeight } = $table);
 
-  // Query tables use their page scroll area as the vertical scroller. Let the
-  // virtual list grow to its content height there while retaining a viewport-
-  // filling minimum height for short result sets.
-  $: viewportHeight = Math.max(height, maxHeight);
+  // Query tables use their page scroll area as the vertical scroller. The
+  // virtual-list package renders its header outside the measured item area,
+  // so account for the 35px table heading when the rows fill the viewport.
+  const headerHeight = 35;
+  $: viewportHeight = Math.max(height, maxHeight + headerHeight);
 
   $: chart = chartData($data, columns);
 </script>
