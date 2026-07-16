@@ -1,7 +1,8 @@
 import { DateTime } from "luxon";
 import { describe, expect, test } from "vitest";
 import { Amount } from "./amount";
-import { Inventory, MatchResult } from "./inventory";
+import { Conversion } from "./conversion";
+import { CounterInventory, Inventory, MatchResult } from "./inventory";
 import { Cost, Position } from "./position";
 
 const date = DateTime.fromISO("2024-01-01");
@@ -63,5 +64,36 @@ describe("Inventory", () => {
         new Cost(DateTime.fromISO("2024-01-01"), new Amount("6.2", "USD")),
       ),
     ]);
+  });
+
+  test("removes exact lots at zero and keeps copies independent", () => {
+    const cost = new Cost(date, new Amount("5", "USD"));
+    const inventory = new Inventory();
+    inventory.addAmount(new Amount("1", "HOOL"), cost);
+    inventory.addAmount(new Amount("-1", "HOOL"), cost);
+    expect(inventory.isEmpty()).toBe(true);
+
+    inventory.addAmount(new Amount("2", "HOOL"), cost);
+    const copy = inventory.copy();
+    copy.addAmount(new Amount("1", "HOOL"), cost);
+    expect(inventory.currencyUnits("HOOL")).toEqual(new Amount("2", "HOOL"));
+    expect(copy.currencyUnits("HOOL")).toEqual(new Amount("3", "HOOL"));
+  });
+
+  test("aggregates counter inventories by resolved lot and supports arithmetic", () => {
+    const cost = new Cost(date, new Amount("5", "USD"));
+    const counter = new CounterInventory();
+    counter.add(new Amount("2", "HOOL"), cost);
+    counter.add(new Amount("-1", "HOOL"), cost);
+    counter.add(new Amount("3", "USD"));
+
+    expect(counter.positions()).toEqual([
+      new Position(new Amount("1", "HOOL"), cost),
+      new Position(new Amount("3", "USD")),
+    ]);
+    expect(counter.toRecord()).toEqual({ USD: 8 });
+    expect(counter.toRecord(Conversion.UNITS)).toEqual({ HOOL: 1, USD: 3 });
+    expect(counter.neg().toRecord()).toEqual({ USD: -8 });
+    expect(counter.plus(counter).toRecord()).toEqual({ USD: 16 });
   });
 });

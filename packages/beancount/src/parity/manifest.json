@@ -2,6 +2,14 @@
   "upstreamCommit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
   "records": [
     {
+      "upstreamModule": "beancount.core.inventory",
+      "upstreamBehavior": "exact_lot_mutation_copying_and_counter_reductions",
+      "localBehavior": "Inventory, CounterInventory",
+      "status": "adapted",
+      "tests": ["core/inventory", "core/conversion"],
+      "reason": "Uses Map-backed immutable Position values and local CounterInventory report reductions."
+    },
+    {
       "upstreamModule": "beancount.parser.booking",
       "upstreamBehavior": "initial_balances_and_missing_element_validation",
       "localBehavior": "book, validateMissingEliminated",
