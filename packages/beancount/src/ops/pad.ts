@@ -61,12 +61,12 @@ export function pad(
         postings.push(...itemPostings);
       }
     }
-    sorted(postings);
+    const orderedPostings = sorted(postings);
     // A set of currencies already padded so far in this account.
     let paddedLots = new Set();
     const padBalance = new Inventory();
 
-    postings.forEach((entry) => {
+    orderedPostings.forEach((entry) => {
       if (entry instanceof TxnPosting) {
         // This is a transaction; update the running balance for this account
         padBalance.addAmount(entry.posting.units, entry.posting.resolvedCost);

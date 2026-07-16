@@ -1273,16 +1273,78 @@ export function directiveSortKey(
   directive: Directive,
 ): [number, number, number] {
   return [
-    directive.date?.toMillis() || -1,
+    directive.date?.toMillis() ?? -1,
     SORT_ORDER[directive.directiveType.toLowerCase()] || 0,
     directive.lineno,
   ];
 }
 
 export function sorted(directives: Array<Directive>) {
-  return directives.sort((a, b) =>
+  return [...directives].sort((a, b) =>
     compare(directiveSortKey(a), directiveSortKey(b)),
   );
+}
+
+/** Return the directive closest to a date, preferring the earlier one on ties. */
+export function findClosest(
+  directives: readonly Directive[],
+  date: DateTime,
+): Directive | null {
+  let closest: Directive | null = null;
+  let distance = Number.POSITIVE_INFINITY;
+  for (const directive of directives) {
+    if (!directive.date) continue;
+    const candidate = Math.abs(directive.date.toMillis() - date.toMillis());
+    if (
+      candidate < distance ||
+      (candidate === distance &&
+        closest?.date &&
+        directive.date.toMillis() < closest.date.toMillis())
+    ) {
+      closest = directive;
+      distance = candidate;
+    }
+  }
+  return closest;
+}
+
+/** Return all account names that contain a particular hierarchy component. */
+export function findAccountsWithComponent(
+  directives: readonly Directive[],
+  component: string,
+): Set<Account> {
+  const accounts = new Set<Account>();
+  for (const directive of directives) {
+    for (const account of directive.accounts) {
+      if (account.split(":").includes(component)) accounts.add(account);
+    }
+  }
+  return accounts;
+}
+
+/** Return a transaction copy without one specific posting instance. */
+export function removePosting(
+  transaction: Transaction,
+  posting: Posting,
+): Transaction {
+  return transaction.copy({
+    postings: transaction.postings.filter((candidate) => candidate !== posting),
+  });
+}
+
+/** Iterate directives in a half-open date range: [begin, end). */
+export function* iterateEntryRange(
+  directives: readonly Directive[],
+  begin?: DateTime | null,
+  end?: DateTime | null,
+): Generator<Directive> {
+  for (const directive of directives) {
+    const date = directive.date;
+    if (!date) continue;
+    if (begin && date < begin) continue;
+    if (end && date >= end) continue;
+    yield directive;
+  }
 }
 
 function compare(a: Array<number>, b: Array<number>) {

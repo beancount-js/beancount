@@ -131,7 +131,11 @@ export class LedgerParser extends AbstractVisitor<void> {
   ) {
     super();
     document.visit(this);
-    sorted(this.directives);
+    this.directives.splice(
+      0,
+      this.directives.length,
+      ...sorted(this.directives),
+    );
   }
 
   get errors() {
