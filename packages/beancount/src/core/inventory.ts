@@ -69,6 +69,14 @@ export class Inventory extends Map<string, Position> {
     return [...this.values()];
   }
 
+  getOnlyPosition(): Position | null {
+    if (this.size === 0) return null;
+    if (this.size > 1) {
+      throw new Error("Inventory has more than one position");
+    }
+    return this.positions[0];
+  }
+
   isEmpty() {
     return this.size == 0;
   }
@@ -79,7 +87,21 @@ export class Inventory extends Map<string, Position> {
     }
     return (
       "(" +
-      this.positions.map((it) => it.toString(showDetails)).join(", ") +
+      this.positions
+        .sort((left, right) => {
+          const [leftCurrency, leftCost, leftCostCurrency, leftUnits] =
+            left.sortKey();
+          const [rightCurrency, rightCost, rightCostCurrency, rightUnits] =
+            right.sortKey();
+          return (
+            leftCurrency - rightCurrency ||
+            leftCost - rightCost ||
+            leftCostCurrency.localeCompare(rightCostCurrency) ||
+            leftUnits - rightUnits
+          );
+        })
+        .map((it) => it.toString(showDetails))
+        .join(", ") +
       ")"
     );
   }
@@ -120,6 +142,25 @@ export class Inventory extends Map<string, Position> {
       perCurrencyRecord[it.units?.currency?.toString() || ""].addPosition(it),
     );
     return perCurrencyRecord;
+  }
+
+  segregateUnits(
+    currencies: readonly Currency[],
+  ): Map<Currency | null, Inventory> {
+    const inventories = new Map<Currency | null, Inventory>([
+      ...currencies.map((currency) => [currency, new Inventory()] as const),
+      [null, new Inventory()],
+    ]);
+    for (const position of this.positions) {
+      const currency = position.units.currency;
+      const bucket = currencies.includes(currency ?? "") ? currency : null;
+      inventories.get(bucket)?.addPosition(position);
+    }
+    return inventories;
+  }
+
+  currencyPairs(): Set<readonly [string | null, string | null]> {
+    return new Set(this.positions.map((position) => position.currencyPair));
   }
 
   mul(scalar: number | string | Amount) {
@@ -169,6 +210,66 @@ export class Inventory extends Map<string, Position> {
       }
       return true;
     }
+  }
+
+  isMixed(): boolean {
+    const signs = new Map<string | null, boolean>();
+    for (const position of this.positions) {
+      const currency = position.units.currency;
+      const sign = position.units.gte(0);
+      const previous = signs.get(currency);
+      if (previous !== undefined && previous !== sign) return true;
+      signs.set(currency, sign);
+    }
+    return false;
+  }
+
+  average(): Inventory {
+    const groups = new Map<string, Position[]>();
+    for (const position of this.positions) {
+      const key = `${position.units.currency ?? ""}\u0000${position.cost?.amount?.currency ?? ""}`;
+      const group = groups.get(key) ?? [];
+      group.push(position);
+      groups.set(key, group);
+    }
+
+    const averaged = new Inventory();
+    for (const positions of groups.values()) {
+      const units = positions.reduce(
+        (total, position) => total.plus(position.units.number),
+        new Decimal(0),
+      );
+      if (units.zero) continue;
+
+      const unitCurrency = positions[0].units.currency;
+      const costCurrency = positions[0].cost?.amount?.currency;
+      const amount = new Amount(units, unitCurrency);
+      if (!costCurrency) {
+        averaged.addAmount(amount);
+        continue;
+      }
+
+      const totalCost = positions.reduce(
+        (total, position) =>
+          total.plus(
+            position.cost?.amount
+              ? position.cost.amount.value.mul(position.units.value)
+              : 0,
+          ),
+        new Decimal(0),
+      );
+      const dates = positions
+        .map((position) => position.cost?.date)
+        .filter((date): date is NonNullable<typeof date> => date !== null);
+      const earliestDate =
+        dates.sort((left, right) => left.toMillis() - right.toMillis())[0] ??
+        null;
+      averaged.addAmount(
+        amount,
+        new Cost(earliestDate, new Amount(totalCost.div(units), costCurrency)),
+      );
+    }
+    return averaged;
   }
 
   /**

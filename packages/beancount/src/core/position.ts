@@ -49,8 +49,8 @@ export class Cost {
     }> = {},
   ) {
     return new Cost(
-      data.date || this.date,
-      data.amount || this.amount,
+      data.date === undefined ? this.date : data.date,
+      data.amount === undefined ? this.amount : data.amount,
       data.label === undefined ? this.label : data.label,
     );
   }
@@ -182,12 +182,12 @@ export class Position {
     );
   }
 
-  public sortKey() {
+  public sortKey(): [number, number, string, number] {
     const currency = this.units.currency?.toString() || "";
     const orderUnits = currencySortKey(currency);
     const amount = this.cost?.amount;
     const costNumber = amount ? amount.number : 0;
-    const costCurrency = amount ? amount.currency : "";
+    const costCurrency = amount?.currency ?? "";
     return [orderUnits, costNumber, costCurrency, this.units.number];
   }
 
@@ -214,11 +214,6 @@ export class Position {
   }
 
   get currencyPair() {
-    const pairs = [this.units.currency];
-    const amount = this.cost?.amount;
-    if (amount) {
-      pairs.push(amount.currency);
-    }
-    return pairs;
+    return [this.units.currency, this.cost?.amount?.currency ?? null] as const;
   }
 }
