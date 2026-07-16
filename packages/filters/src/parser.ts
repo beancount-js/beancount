@@ -112,7 +112,7 @@ export function findInterval(s: string | null): Interval | null {
     .trim()
     .toLocaleLowerCase()
     .replaceAll(/[^a-z]+/g, "");
-  return INTERVALS.find((v) => s && s.startsWith(v));
+  return INTERVALS.find((v) => s && s.startsWith(v)) ?? null;
 }
 
 export function getInterval(s: string | null): Interval {
@@ -388,6 +388,9 @@ export class DateExpression {
   public toString(): string {
     if (this.#operands.length == 1) {
       const operand = this.#operands[0];
+      if (!operand) {
+        throw new Error("Date expression is missing an operand");
+      }
       if (operand instanceof DateExpression) {
         return "(" + this.#operands[0] + ")";
       }
@@ -467,21 +470,22 @@ export function dateExpression(
       ),
     );
   }
-  const x = new DateExpression(
-    operands.map((node) => {
-      if (node.name === "DateExpr") {
-        return dateExpression(node, props)!;
-      } else if (node.name === "Interval") {
-        const value = props.content(node);
-        const interval = findInterval(value);
-        if (interval) {
-          return interval;
-        }
-        return dateExpression(node, props);
+  const expressionOperands = operands.flatMap((node): DateExpressionInput[] => {
+    if (node.name === "DateExpr") {
+      const expression = dateExpression(node, props);
+      return expression ? [expression] : [];
+    } else if (node.name === "Interval") {
+      const value = props.content(node);
+      const interval = findInterval(value);
+      if (interval) {
+        return [interval];
       }
-    }),
-    op ? props.content(op) : "",
-  );
+      const expression = dateExpression(node, props);
+      return expression ? [expression] : [];
+    }
+    return [];
+  });
+  const x = new DateExpression(expressionOperands, op ? props.content(op) : "");
   return x;
 }
 
@@ -501,7 +505,7 @@ export class Parser {
       try {
         return this.enter(node);
       } catch (e: unknown) {
-        this.errors.push(node.toString() + ":" + e.toString());
+        this.errors.push(node.toString() + ":" + String(e));
       }
     }, this.leave.bind(this));
 
@@ -614,7 +618,10 @@ export class Parser {
       if (!expr.numeric) {
         this.add(DateFilter.of(expr.range));
       } else {
-        this.add(NumberFilter.of(expr.resolve().toString()));
+        const value = expr.resolve();
+        if (typeof value === "number") {
+          this.add(NumberFilter.of(value));
+        }
       }
       return false;
     } else if (node.name === "Expr") {
@@ -637,7 +644,8 @@ export class Parser {
 
   private resolve(node: SyntaxNodeRef): Filter {
     if (node.name == "Value") {
-      return this.resolve(node.node.firstChild);
+      const child = node.node.firstChild;
+      return child ? this.resolve(child) : new TextFilter("");
     } else if (node.name === "Tag") {
       return new TagFilter(this.content(node));
     } else if (node.name === "Link") {
