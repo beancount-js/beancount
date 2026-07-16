@@ -365,6 +365,29 @@ describe("book", () => {
     ).toBe(true);
   });
 
+  test("does not match a costed reduction against an uncosted inventory position", () => {
+    // Ported from Beancount's booking_full_test.py::test_reduce__reduction_with_same_currency_not_at_cost.
+    const balances = {
+      [account]: new Inventory(new Position(new Amount("1", "HOOL"))),
+    };
+    const [, errors] = book(
+      [
+        transaction("2022-01-02", "Sell costed lot", [
+          new Posting(
+            account,
+            new Amount("-1", "HOOL"),
+            new Cost(null, new Amount("10", "USD")),
+          ),
+        ]),
+      ],
+      defaultBeancountOptions(),
+      balances,
+    );
+
+    expect(errors[0].message).toContain("No position matches");
+    expect(balances[account].positions).toHaveLength(1);
+  });
+
   test("reports a CostSpec with both unresolved cost components", () => {
     const [, errors] = book(
       [
