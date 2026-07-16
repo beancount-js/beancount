@@ -271,6 +271,7 @@ function interpolateGroup(
         }
         unitsNumber = weight;
       }
+      unitsNumber = unitsNumber.copy({ currency: units?.currency ?? null });
       // Quantize the interpolated units if necessary.
       unitsNumber = quantizeWithTolerance(tolerances, unitsNumber);
 

@@ -201,6 +201,28 @@ describe("book", () => {
     expect(zeroResidual.postings[0].account).toBe("Expenses:Food");
   });
 
+  test("interpolates missing commodity units from an explicit price", () => {
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Buy from price", [
+          new Posting(
+            account,
+            new Amount(null, "HOOL"),
+            null,
+            new Amount("10", "USD"),
+          ),
+          new Posting("Assets:Cash", new Amount("-20", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    const units = (entries[0] as Transaction).postings[0].units;
+    expect(units?.eq(new Amount("2", "HOOL"))).toBe(true);
+    expect(units?.currency).toBe("HOOL");
+  });
+
   test("reports an error instead of dividing by zero for total-cost-only unit interpolation", () => {
     const incomplete = transaction("2022-01-01", "Total cost without units", [
       new Posting(
