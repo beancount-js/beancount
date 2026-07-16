@@ -5,7 +5,9 @@
 import { getWeight } from "../core/convert";
 import {
   type Metadata,
+  Booking,
   DirectiveBase,
+  Open,
   Posting,
   Transaction,
   writeScalar,
@@ -110,6 +112,12 @@ export function formatTransaction(
   return [header, ...postings].join("\n");
 }
 
+function formatOpen(entry: Open): string {
+  const booking =
+    entry.booking === Booking.STRICT ? "" : ` \"${entry.booking}\"`;
+  return `${entry.date.toISODate()} open ${entry.account.padEnd(47)} ${entry.currencies.join(",")}${booking}`.trimEnd();
+}
+
 /** Render one local directive using its parser-accepted source representation. */
 export function formatEntry(
   entry: DirectiveBase,
@@ -121,7 +129,9 @@ export function formatEntry(
   const text =
     entry instanceof Transaction
       ? formatTransaction(entry, renderWeights)
-      : entry.toString();
+      : entry instanceof Open
+        ? formatOpen(entry)
+        : entry.toString();
   return `${source}${prefix}${text}`;
 }
 

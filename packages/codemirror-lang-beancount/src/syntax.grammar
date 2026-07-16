@@ -156,7 +156,10 @@ Bool { @specialize<Identifier, "true"> | bool | @specialize<Identifier, "false">
    Comment {  ";" ![\n]* }
    String { '"' (!["\\] | "\\" _)* '"' }
   
-   BookingMethod { "STRICT" | "NONE" | "AVERAGE" | "FIFO" | "LIFO" | "HIFO" }
+   BookingMethod {
+     '"' ("STRICT" | "STRICT_WITH_SIZE" | "NONE" | "AVERAGE" | "FIFO" | "LIFO" | "HIFO") '"' |
+     "STRICT" | "STRICT_WITH_SIZE" | "NONE" | "AVERAGE" | "FIFO" | "LIFO" | "HIFO"
+   }
 
    Currency { $[A-Z]$[A-Z0-9'._-]*$[A-Z0-9] }
 
@@ -176,6 +179,7 @@ Bool { @specialize<Identifier, "true"> | bool | @specialize<Identifier, "false">
    @precedence { AT, Identifier }
    @precedence { ATAT, Identifier }
    @precedence { BookingMethod, Currency }
+   @precedence { BookingMethod, String }
    @precedence { Date, Number }
    @precedence { tx, space }
 

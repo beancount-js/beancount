@@ -27,6 +27,7 @@ import { Decimal } from "./number";
 export type BookingMethod =
   | "DEFAULT"
   | "STRICT"
+  | "STRICT_WITH_SIZE"
   | "NONE"
   | "AVERAGE"
   | "FIFO"
@@ -127,7 +128,7 @@ export class OpenDirective extends DatedDirective {
     ).trim();
 
     if (this.bookingMethod !== "DEFAULT") {
-      str += " " + this.bookingMethod;
+      str += " " + writeString(this.bookingMethod);
     }
     return this.comments.toString(str) + this.metadata.toString(2);
   }

@@ -10,6 +10,7 @@ import pricesFixture from "./fixtures/prices-last-price-entries.json";
 import bookingFixture from "./fixtures/booking-per-unit-cost.json";
 import printerFixture from "./fixtures/printer-transaction-weights.json";
 import costedPrinterFixture from "./fixtures/printer-costed-transaction.json";
+import openPrinterFixture from "./fixtures/printer-open-directive.json";
 import { UPSTREAM_COMMIT } from "./manifest";
 
 describe("upstream oracle fixtures", () => {
@@ -89,6 +90,15 @@ describe("upstream oracle fixtures", () => {
     expect(entry).toBeInstanceOf(Transaction);
     expect(formatEntry(entry as Transaction, "", false, true)).toBe(
       costedPrinterFixture.oracle.text.trimEnd(),
+    );
+  });
+
+  test("parity/printer/open-directive", () => {
+    expect(openPrinterFixture.upstream.commit).toBe(UPSTREAM_COMMIT);
+    const [entries, errors] = loadString(openPrinterFixture.scenario.ledger);
+    expect(errors).toEqual(openPrinterFixture.oracle.errors);
+    expect(formatEntry(entries[openPrinterFixture.scenario.entryIndex])).toBe(
+      openPrinterFixture.oracle.text.trimEnd(),
     );
   });
 });

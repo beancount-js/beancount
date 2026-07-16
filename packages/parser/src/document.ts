@@ -644,7 +644,7 @@ export class BeanCountDocument {
           this.content(account),
           currencies.map((it) => this.content(it)),
           bookingMethod
-            ? (this.content(bookingMethod).trim() as BookingMethod)
+            ? (readString(this.content(bookingMethod)).trim() as BookingMethod)
             : this.options.bookingMethod,
           this.attributes(node.node),
         ),

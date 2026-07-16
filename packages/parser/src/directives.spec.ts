@@ -15,17 +15,24 @@ const testCases: Record<string, Array<{ input: string; expected?: string }>> = {
     {
       input: "2014-05-01 open Liabilities:CreditCard:CapitalOne USD,GBP",
     },
-    ...["STRICT", "NONE", "AVERAGE", "FIFO", "LIFO", "HIFO"]
+    ...["STRICT", "STRICT_WITH_SIZE", "NONE", "AVERAGE", "FIFO", "LIFO", "HIFO"]
       .map((it) => {
         return [
           {
             input: `2014-05-01 open Liabilities:CreditCard:CapitalOne ${it}`,
+            expected: `2014-05-01 open Liabilities:CreditCard:CapitalOne "${it}"`,
           },
           {
             input: `2014-05-01 open Liabilities:CreditCard:CapitalOne USD ${it}`,
+            expected: `2014-05-01 open Liabilities:CreditCard:CapitalOne USD "${it}"`,
           },
           {
             input: `2014-05-01 open Liabilities:CreditCard:CapitalOne USD,GBP ${it}`,
+            expected: `2014-05-01 open Liabilities:CreditCard:CapitalOne USD,GBP "${it}"`,
+          },
+          {
+            input: `2014-05-01 open Liabilities:CreditCard:CapitalOne USD,GBP "${it}"`,
+            expected: `2014-05-01 open Liabilities:CreditCard:CapitalOne USD,GBP "${it}"`,
           },
         ];
       })

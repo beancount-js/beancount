@@ -22,7 +22,7 @@ const testCases: Record<string, Array<{ input: string; expected: string }>> = {
       expected:
         "Journal(Open(Date,OPEN,AccountName,Currencies(Currency,Currency)))",
     },
-    ...["STRICT", "NONE", "AVERAGE", "FIFO", "LIFO", "HIFO"]
+    ...["STRICT", "STRICT_WITH_SIZE", "NONE", "AVERAGE", "FIFO", "LIFO", "HIFO"]
       .map((it) => {
         return [
           {
@@ -36,6 +36,11 @@ const testCases: Record<string, Array<{ input: string; expected: string }>> = {
           },
           {
             input: `2014-05-01 open Liabilities:CreditCard:CapitalOne USD, GBP ${it}`,
+            expected:
+              "Journal(Open(Date,OPEN,AccountName,Currencies(Currency,Currency),BookingMethod))",
+          },
+          {
+            input: `2014-05-01 open Liabilities:CreditCard:CapitalOne USD, GBP "${it}"`,
             expected:
               "Journal(Open(Date,OPEN,AccountName,Currencies(Currency,Currency),BookingMethod))",
           },
