@@ -8,9 +8,15 @@ export {
   projectAiSessionsRoot,
   projectBrandfetchCacheRoot,
   projectIngestionRoot,
+  projectRuleRunsPath,
+  projectRulesPath,
   projectStudioRoot,
   studioConfigRoot,
 } from "./paths";
+export {
+  FilesystemRulesStore,
+  type FilesystemRulesStoreOptions,
+} from "./rules";
 export { pickProjectDirectoryFromSystemDialog } from "./pick-directory";
 export { CodexAgentSession, CodexProvider, codexAppServerArgs } from "./codex";
 export type {
@@ -32,16 +38,21 @@ export {
   enrichProposal,
   expandIngestionSource,
   ingestSource,
+  isConnectorIngestionSource,
+  isGroupedIngestionSource,
   merchantAdvisorLabel,
   merchantLogoUrlFor,
   recategorizeProposal,
   resolveBrandfetchRuntime,
+  sourceSecretRef,
+  validateBrandfetchConfig,
   type AiEnrichmentDebug,
   type AiEnrichmentDebugCall,
   type AiEnrichmentCallRecord,
   type AiEnrichmentSnapshot,
   type BrandfetchEnrichmentConfig,
   type ExpandedIngestionTarget,
+  type IngestSourceResult,
   type IngestionConfig,
   type IngestMerchantContext,
   type IngestProgressOptions,
@@ -53,6 +64,7 @@ export {
   type MerchantEnrichmentConfig,
   type IngestionSourceDefinition,
 } from "./ingestion";
+export { ensureConnectorsRegistered } from "./connectors";
 export { AsyncEventQueue } from "./event-queue";
 export {
   BrandfetchProvider,

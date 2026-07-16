@@ -33,3 +33,13 @@ export function projectBrandfetchCacheRoot(projectRoot: string) {
 export function projectAiSessionsRoot(projectRoot: string) {
   return join(projectStudioRoot(projectRoot), "ai-sessions");
 }
+
+/** Global detection rules: `<projectRoot>/.beancount/rules.json`. */
+export function projectRulesPath(projectRoot: string) {
+  return join(projectStudioRoot(projectRoot), "rules.json");
+}
+
+/** Detection rule run history: `<projectRoot>/.beancount/rule-runs.json`. */
+export function projectRuleRunsPath(projectRoot: string) {
+  return join(projectStudioRoot(projectRoot), "rule-runs.json");
+}
