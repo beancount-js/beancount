@@ -26,6 +26,14 @@
       "reason": "Uses local Decimal formatting and string-based browser-safe alignment."
     },
     {
+      "upstreamModule": "beancount.core.position",
+      "upstreamBehavior": "position_constructors_and_total_cost_detection",
+      "localBehavior": "Position.fromString, Position.fromAmounts, isTotalCostSpec",
+      "status": "adapted",
+      "tests": ["core/position"],
+      "reason": "Uses local Cost and CostSpec models with Luxon lot dates."
+    },
+    {
       "upstreamModule": "beancount.core.prices",
       "upstreamBehavior": "get_last_price_entries",
       "localBehavior": "getLastPriceEntries",

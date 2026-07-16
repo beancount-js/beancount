@@ -131,6 +131,15 @@ export class CostSpec {
     return "{" + str.join(",") + "}";
   }
 }
+
+/** True when a CostSpec represents total-cost-only syntax. */
+export function isTotalCostSpec(cost: CostSpec | Cost | null): boolean {
+  return (
+    cost instanceof CostSpec &&
+    cost.numberPer?.zero === true &&
+    cost.numberTotal !== null
+  );
+}
 const CURRENCY_ORDER: Record<string, number> = {
   USD: 0,
   EUR: 1,
@@ -216,4 +225,52 @@ export class Position {
   get currencyPair() {
     return [this.units.currency, this.cost?.amount?.currency ?? null] as const;
   }
+
+  static fromAmounts(units: Amount, costAmount: Amount | null = null) {
+    return new Position(units, costAmount ? new Cost(null, costAmount) : null);
+  }
+
+  static fromString(value: string) {
+    const match = value.match(
+      /^\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s+([A-Z][A-Z0-9'._-]*)(?:\s+\{([^}]*)\})?\s*$/,
+    );
+    if (!match) throw new Error(`Invalid string for position: '${value}'`);
+    const [, unitsNumber, unitsCurrency, expression] = match;
+    const units = new Amount(unitsNumber, unitsCurrency);
+    if (!expression) return new Position(units);
+    let amount: Amount | null = null;
+    let date: DateTime | null = null;
+    let label = "";
+    for (const component of expression
+      .split(/[,/]/)
+      .map((item) => item.trim())
+      .filter(Boolean)) {
+      const cost = component.match(
+        /^(-?(?:\d+(?:\.\d*)?|\.\d+))(?:\s*#\s*(-?(?:\d+(?:\.\d*)?|\.\d+)))?\s+([A-Z][A-Z0-9'._-]*)$/,
+      );
+      if (cost) {
+        const per = new Decimal(cost[1]);
+        const total = cost[2] ? new Decimal(cost[2]) : null;
+        amount = new Amount(
+          total ? per.mul(units.value).plus(total).div(units.value) : per,
+          cost[3],
+        );
+        continue;
+      }
+      if (/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(component)) {
+        date = DateTime.fromISO(component.replaceAll("/", "-"));
+        continue;
+      }
+      const quoted = component.match(/^"(.*)"$/);
+      if (quoted) {
+        label = quoted[1];
+        continue;
+      }
+      throw new Error(`Invalid cost component: '${component}'`);
+    }
+    return new Position(units, new Cost(date, amount, label));
+  }
 }
+
+export const positionFromString = Position.fromString;
+export const positionFromAmounts = Position.fromAmounts;
