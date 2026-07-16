@@ -6,6 +6,7 @@ import { creditCard } from "../plugins/creditcard";
 import { closeTree } from "../plugins/close_tree";
 import { validateCommodityAttributes } from "../plugins/commodity_attr";
 import { validateCoherentCost } from "../plugins/coherent_cost";
+import { insertCurrencyTradingPostings } from "../plugins/currency_accounts";
 import { checkClosing } from "../plugins/check_closing";
 import { validateAverageCost } from "../plugins/check_average_cost";
 import { validateCommodityDirectives } from "../plugins/check_commodity";
@@ -92,6 +93,12 @@ export const Plugins: Record<string, PluginType> = {
     order: 0,
     id: "beancount.plugins.coherent_cost",
     supportsConfig: false,
+  },
+  "beancount.plugins.currency_accounts": {
+    plugin: insertCurrencyTradingPostings,
+    order: 0,
+    id: "beancount.plugins.currency_accounts",
+    supportsConfig: true,
   },
   "beancount.plugins.check_commodity": {
     plugin: validateCommodityDirectives,

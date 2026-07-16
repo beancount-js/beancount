@@ -168,6 +168,14 @@
       "status": "adapted",
       "tests": ["plugins/sellgains"],
       "reason": "Uses local weight and tolerance helpers with immutable directive models."
+    },
+    {
+      "upstreamModule": "beancount.plugins.currency_accounts",
+      "upstreamBehavior": "insert_currency_trading_postings",
+      "localBehavior": "insertCurrencyTradingPostings",
+      "status": "adapted",
+      "tests": ["plugins/currency-accounts"],
+      "reason": "Uses immutable posting and transaction copies with local account helpers."
     }
   ]
 }
