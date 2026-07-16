@@ -49,6 +49,18 @@ describe("ledger-route", () => {
       viewSegment: "settings/merchants",
       params: {},
     });
+    expect(parseLedgerAndView(["sample", "settings", "brands"])).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/brands",
+      viewSegment: "settings/brands",
+      params: {},
+    });
+    expect(parseLedgerAndView(["sample", "settings", "rules"])).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/rules",
+      viewSegment: "settings/rules",
+      params: {},
+    });
   });
 
   it("defaults to dashboard when view is omitted", () => {
@@ -74,9 +86,23 @@ describe("ledger-route", () => {
     expect(viewPathToSegments("/income_statement")).toEqual([
       "income-statement",
     ]);
+    expect(viewPathToSegments("/import/brands")).toEqual([
+      "settings",
+      "brands",
+    ]);
+    expect(viewPathToSegments("/import/rules")).toEqual([
+      "settings",
+      "rules",
+    ]);
     expect(buildLedgerHref("bean-budget", "a/b/sample", "/dashboard")).toBe(
       "/bean-budget/ledger/a/b/sample/dashboard/",
     );
+    expect(
+      buildLedgerHref("bean-budget", "sample", "/import/brands"),
+    ).toBe("/bean-budget/ledger/sample/settings/brands/");
+    expect(
+      buildLedgerHref("bean-budget", "sample", "/import/rules"),
+    ).toBe("/bean-budget/ledger/sample/settings/rules/");
     expect(
       buildLedgerHref("bean-budget", "sample", "/account/Assets:Checking", {
         page: "2",
