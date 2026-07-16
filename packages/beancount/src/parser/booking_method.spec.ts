@@ -214,4 +214,81 @@ describe("booking methods", () => {
       "Explicit cost reductions are not supported",
     );
   });
+
+  test("STRICT_WITH_SIZE retains the strict error when no lot has the requested size", () => {
+    const [, matches, errors] = handleAmbiguousMatches(
+      transaction(),
+      reduction("-4"),
+      [lot("2", "10", "2020-01-01"), lot("3", "20", "2021-01-01")],
+      Booking.STRICT_WITH_SIZE,
+    );
+
+    expect(matches).toEqual([]);
+    expect(errors[0].message).toContain("Ambiguous matches");
+  });
+
+  test("FIFO skips mixed-sign lots and stops after satisfying the reduction", () => {
+    const skipped = lot("-1", "5", "2019-01-01");
+    const selected = lot("2", "10", "2020-01-01");
+    const unused = lot("2", "20", "2021-01-01");
+    const [postings, matches, errors] = handleAmbiguousMatches(
+      transaction(),
+      reduction("-1"),
+      [skipped, selected, unused],
+      Booking.FIFO,
+    );
+
+    expect(errors).toEqual([]);
+    expect(matches).toEqual([selected]);
+    expect(postings).toHaveLength(1);
+    expect(postings[0].resolvedCost).toBe(selected.cost);
+  });
+
+  test("AVERAGE delegates one lot to strict and reports impossible reductions", () => {
+    const single = lot("2", "10", "2020-01-01");
+    const [singlePostings, singleMatches, singleErrors] =
+      handleAmbiguousMatches(
+        transaction(),
+        reduction("-1"),
+        [single],
+        Booking.AVERAGE,
+      );
+    const [emptyPostings, emptyMatches, emptyErrors] = handleAmbiguousMatches(
+      transaction(),
+      reduction("-1"),
+      [],
+      Booking.AVERAGE,
+    );
+    const [missingUnitPostings, missingUnitMatches, missingUnitErrors] =
+      handleAmbiguousMatches(
+        transaction(),
+        new Posting("Assets:Investments"),
+        [single],
+        Booking.AVERAGE,
+      );
+
+    expect(singleErrors).toEqual([]);
+    expect(singleMatches).toEqual([single]);
+    expect(singlePostings[0].resolvedCost).toBe(single.cost);
+    expect(emptyPostings).toEqual([]);
+    expect(emptyMatches).toEqual([]);
+    expect(emptyErrors[0].message).toContain("Not enough lots to reduce");
+    expect(missingUnitPostings).toEqual([]);
+    expect(missingUnitMatches).toEqual([]);
+    expect(missingUnitErrors[0].message).toContain("Not enough lots to reduce");
+  });
+
+  test("falls back to STRICT for an unrecognized booking enum value", () => {
+    const match = lot("1", "10", "2020-01-01");
+    const [postings, matches, errors] = handleAmbiguousMatches(
+      transaction(),
+      reduction("-1"),
+      [match],
+      "UNRECOGNIZED" as Booking,
+    );
+
+    expect(errors).toEqual([]);
+    expect(matches).toEqual([match]);
+    expect(postings[0].resolvedCost).toBe(match.cost);
+  });
 });
