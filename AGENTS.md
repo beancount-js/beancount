@@ -14,11 +14,15 @@
 - Before adding or changing an editable form, read the canonical form contract at `packages/forms/FORMS.md` (origin: `~/code/cv/spec/src/30-domain-contracts/forms-and-shared-ui.md`).
 - Treat that contract as the implementation standard for this repository. If this repository needs a new form pattern, extend `@beancount-js/forms` first; do not create a Fava-local row, section-header, disclosure, or separator layout.
 - Use the shared form primitives for editable fields and sections. Forms use one `max-content minmax(0, 1fr)` label/value grid per scope, visible single separators, title-only collapsible section headers, and a left-rail disclosure control. Content inside a collapsible section is indented; the header itself is not.
+- Keep every labelled field inside one `beancount-structured-form` scope per section. Do not place a `FormField` outside that grid next to sibling stacks — label columns will drift.
+- For `FilterCommandPicker`, date pickers, switches, and other pill/button controls: always `FormField as="div" align="center"`. Default `align="start"` is for borderless text inputs/`output` only; pills otherwise sit flush on the row separator and labels look vertically off.
+- When a form mixes text inputs with pill controls, use `align="center"` on the text rows too so vertical rhythm matches.
 - Do not add explanatory text to form section headers. Keep labels and values on the same row at desktop widths. Use existing shadcn-Svelte `Switch` controls for boolean configuration and YAML mode.
 - A form toolbar owns collapse/expand-all. Verify title-click collapse, collapsible content indentation, nested collapse state where applicable, no duplicate borders, and no initial desktop horizontal overflow in browser coverage.
 
 ## Searchable pickers
 
 - Default to `FilterCommandPicker` from `@beancount-js/forms` for any searchable select (accounts, queries, facets, env var names, enum-like choices). Use `fullWidth` in forms and sidebars.
+- In forms, wrap every `FilterCommandPicker` with `FormField as="div" align="center"` (see Shared forms). Never nest the picker in a label-only `FormField`.
 - For values the user may type that are not in the option list (e.g. Environment credential names from project `.env`), set `allowCustom={true}` on `FilterCommandPicker`. Do not use `SearchableChoicePicker` for new work — it is the legacy picker.
 - Multi-select: `multiple` + `values` + `onValuesChange`. Single-select: `value` + `onChange`.

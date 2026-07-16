@@ -1016,50 +1016,60 @@
                   {/if}
                 </div>
               </div>
-              {#if merchantStatus !== "suppressed"}
-                <LocalMerchantMatchPicker
-                  {projectId}
-                  domain={correctionDomain}
-                  searchText={`${correctionName} ${correctionDomain}`.trim()}
-                  bind:attachedMerchantId
-                  onAttach={(merchant) => {
-                    correctionName = merchant.canonicalName;
-                    if (merchant.domain) correctionDomain = merchant.domain;
-                    if (merchant.description)
-                      correctionDescription = merchant.description;
-                  }}
-                />
+              {#if merchantStatus !== "suppressed" || correcting}
+                <div class="beancount-structured-form">
+                  {#if merchantStatus !== "suppressed"}
+                    <LocalMerchantMatchPicker
+                      {projectId}
+                      domain={correctionDomain}
+                      searchText={`${correctionName} ${correctionDomain}`.trim()}
+                      bind:attachedMerchantId
+                      onAttach={(merchant) => {
+                        correctionName = merchant.canonicalName;
+                        if (merchant.domain) correctionDomain = merchant.domain;
+                        if (merchant.description)
+                          correctionDescription = merchant.description;
+                      }}
+                    />
+                  {/if}
+                  {#if correcting}
+                    <FormField
+                      label="Name"
+                      align="center"
+                      controlId="proposal-merchant-name"
+                    >
+                      <Input
+                        id="proposal-merchant-name"
+                        bind:value={correctionName}
+                        placeholder="Merchant name"
+                      />
+                    </FormField>
+                    <FormField
+                      label="Domain"
+                      align="center"
+                      controlId="proposal-merchant-domain"
+                    >
+                      <Input
+                        id="proposal-merchant-domain"
+                        bind:value={correctionDomain}
+                        placeholder="example.com"
+                      />
+                    </FormField>
+                    <FormField
+                      label="Description"
+                      align="center"
+                      controlId="proposal-merchant-description"
+                    >
+                      <Input
+                        id="proposal-merchant-description"
+                        bind:value={correctionDescription}
+                        placeholder="Description"
+                      />
+                    </FormField>
+                  {/if}
+                </div>
               {/if}
               {#if correcting}
-                <div class="beancount-structured-form">
-                  <FormField label="Name" controlId="proposal-merchant-name">
-                    <Input
-                      id="proposal-merchant-name"
-                      bind:value={correctionName}
-                      placeholder="Merchant name"
-                    />
-                  </FormField>
-                  <FormField
-                    label="Domain"
-                    controlId="proposal-merchant-domain"
-                  >
-                    <Input
-                      id="proposal-merchant-domain"
-                      bind:value={correctionDomain}
-                      placeholder="example.com"
-                    />
-                  </FormField>
-                  <FormField
-                    label="Description"
-                    controlId="proposal-merchant-description"
-                  >
-                    <Input
-                      id="proposal-merchant-description"
-                      bind:value={correctionDescription}
-                      placeholder="Description"
-                    />
-                  </FormField>
-                </div>
                 <div class="flex flex-wrap justify-end gap-2">
                   <Button
                     size="sm"

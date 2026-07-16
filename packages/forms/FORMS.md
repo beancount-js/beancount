@@ -52,8 +52,10 @@ Before shipping an editable Studio form:
 - Default to single-line autosizing fields unless the field intentionally needs a larger empty writing area.
 - Use `SegmentedControl` for three or fewer mutually exclusive values.
 - Use `ChoiceMenu` for larger option sets when a compact inline selector is better than a native select.
-- Use `FormField align="center"` for pill controls and date pickers.
-- Popover controls should render inside `FormField as="div"` instead of a label wrapper.
+- Use `FormField align="center"` for pill controls, date pickers, switches, and any control that is not a borderless text input/`output`. Pill triggers sit flush on the row separator when left at the default `align="start"`.
+- Popover controls (`FilterCommandPicker`, menus, date popovers) must render inside `FormField as="div" align="center"` — never a bare `<label>` wrapper (nested interactive controls break a11y and skip the centered row padding).
+- When a structured form mixes text inputs with pill controls, prefer `align="center"` on the text rows too so label/control baselines stay consistent.
+- Keep labelled fields inside one `beancount-structured-form` / `cv-structured-form` scope so subgrid aligns label columns; do not drop a `FormField` between sibling flex stacks outside that grid.
 - Use `FilterCommandPicker` for all searchable choice pickers (facet filters, accounts, queries, enum-like choices, env var names). Prefer it over `SearchableChoicePicker` and app-local ComboBox wrappers. Use `fullWidth` for sidebar/form fields; pill triggers are the default. For multi-select, set `multiple` with `values` + `onValuesChange`; single-select uses `value` + `onChange`. For free-text / typed custom values (e.g. project `.env` key names), set `allowCustom={true}` — do not fall back to `SearchableChoicePicker`.
 - Use `TagEditor` for tag entry (chips + autocomplete). Prefer `tag-list` fields / `tagListField()` over plain comma-separated text inputs. Use `ChipAutocomplete` / `chip-list` / `string-list` for non-tag string lists. Inside `FormField`, set `showLabel={false}` and `embedded`.
 - `SearchableChoicePicker` is legacy; do not use it in new UI.

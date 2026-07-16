@@ -146,7 +146,12 @@
   }
 </script>
 
-<FormField label="Existing merchant" controlId={controlId}>
+<FormField
+  label="Existing merchant"
+  as="div"
+  align="center"
+  controlId={controlId}
+>
   <FilterCommandPicker
     fullWidth
     label="Existing merchant"

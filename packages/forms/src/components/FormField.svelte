@@ -168,6 +168,21 @@
     padding: 0.35rem 0;
   }
 
+  /*
+   * Pill / button controls (FilterCommandPicker, ChoiceMenu triggers) do not
+   * inherit the text-input padding above. Without align="center" they sit
+   * flush on the row separator — keep a small safety pad for start alignment.
+   */
+  .beancount-form-field:not([data-align="center"])
+    .beancount-form-field-control
+    :global(.bj-filter-command-picker),
+  .cv-form-field:not([data-align="center"])
+    .beancount-form-field-control
+    :global(.bj-filter-command-picker) {
+    display: block;
+    padding-block: 0.35rem;
+  }
+
   .beancount-form-field-control :global(textarea) {
     min-height: 1.8rem;
     overflow: hidden;

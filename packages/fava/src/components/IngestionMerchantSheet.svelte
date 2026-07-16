@@ -377,7 +377,11 @@
                     >{cluster.statuses.join(", ") || "unresolved"}</output
                   >
                 </FormField>
-                <FormField label="Domain" controlId="merchant-cluster-domain">
+                <FormField
+                  label="Domain"
+                  align="center"
+                  controlId="merchant-cluster-domain"
+                >
                   {#if cluster.domain && !correcting}
                     <output id="merchant-cluster-domain" class="truncate"
                       >{cluster.domain}</output
@@ -416,22 +420,21 @@
                     >
                   </FormField>
                 {/if}
+                {#if primaryStatus !== "suppressed"}
+                  <LocalMerchantMatchPicker
+                    {projectId}
+                    domain={correctionDomain}
+                    searchText={`${correctionName} ${correctionDomain}`.trim()}
+                    bind:attachedMerchantId
+                    onAttach={(merchant) => {
+                      correctionName = merchant.canonicalName;
+                      if (merchant.domain) correctionDomain = merchant.domain;
+                      if (merchant.description)
+                        correctionDescription = merchant.description;
+                    }}
+                  />
+                {/if}
               </div>
-
-              {#if primaryStatus !== "suppressed"}
-                <LocalMerchantMatchPicker
-                  {projectId}
-                  domain={correctionDomain}
-                  searchText={`${correctionName} ${correctionDomain}`.trim()}
-                  bind:attachedMerchantId
-                  onAttach={(merchant) => {
-                    correctionName = merchant.canonicalName;
-                    if (merchant.domain) correctionDomain = merchant.domain;
-                    if (merchant.description)
-                      correctionDescription = merchant.description;
-                  }}
-                />
-              {/if}
 
               <div class="mt-3 flex flex-wrap gap-2">
                 {#if primaryStatus === "suggested" && candidate}
@@ -478,7 +481,11 @@
 
               {#if correcting}
                 <div class="beancount-structured-form">
-                  <FormField label="Name" controlId="merchant-review-name">
+                  <FormField
+                    label="Name"
+                    align="center"
+                    controlId="merchant-review-name"
+                  >
                     <Input
                       id="merchant-review-name"
                       bind:value={correctionName}
@@ -487,6 +494,7 @@
                   </FormField>
                   <FormField
                     label="Description"
+                    align="center"
                     controlId="merchant-review-description"
                   >
                     <Input
