@@ -2,6 +2,7 @@ export * from "./balance";
 export * from "./basic";
 export * from "./compress";
 export * from "./documents";
+export * from "./find_prices";
 export * from "./pad";
 export * from "./plugins";
 export * from "./summarize";

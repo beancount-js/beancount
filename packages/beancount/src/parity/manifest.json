@@ -56,6 +56,14 @@
       "status": "adapted",
       "tests": ["ops/documents"],
       "reason": "Uses the bounded DocumentStore capability rather than Python filesystem traversal."
+    },
+    {
+      "upstreamModule": "beancount.ops.find_prices",
+      "upstreamBehavior": "cost_conversion_price_and_unpriced_currency_discovery",
+      "localBehavior": "findCurrenciesAtCost, findCurrenciesConverted, findCurrenciesPriced, findBalanceCurrencies, findUnpricedCurrencies",
+      "status": "adapted",
+      "tests": ["ops/find-prices"],
+      "reason": "Uses JavaScript Set values for structural currency-pair results."
     }
   ]
 }
