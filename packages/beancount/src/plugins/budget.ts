@@ -118,7 +118,7 @@ export function parseBudgets(
  * @returns
  */
 export function matchingBudgets(
-  budgets: Array<Budget>,
+  budgets: readonly Budget[],
   date: DateTime,
 ): Record<string, Budget> {
   const lastSeenBudgets: Record<string, Budget> = {};
@@ -161,7 +161,14 @@ export function calculateBudget(
     return currentDict;
   }
 
-  const budgetList = budgets.get(account)!;
+  return calculateBudgetList(budgets.get(account)!, dateRange);
+}
+
+function calculateBudgetList(
+  budgetList: readonly Budget[],
+  dateRange: DateRange,
+): Record<string, number> {
+  const currentDict: Record<string, number> = {};
   for (const day of dateRange.intervals("day")) {
     const matches = matchingBudgets(budgetList, day as DateTime);
     for (const [currency, budget] of Object.entries(matches)) {
@@ -188,13 +195,9 @@ export function calculateBudgetChildren(
   dateRange: DateRange,
 ): Record<string, number> {
   const currentDict: Record<string, number> = {};
-  if (!budgets.has(account)) {
-    return currentDict;
-  }
-
-  for (const [acc, budgetList] of Object.entries(budgets)) {
+  for (const [acc, budgetList] of budgets.entries()) {
     if (isDescendantOf(account, acc)) {
-      const values = calculateBudget(budgetList, acc, dateRange);
+      const values = calculateBudgetList(budgetList, dateRange);
       for (const [key, value] of Object.entries(values)) {
         currentDict[key] ||= 0;
         currentDict[key] += value;
