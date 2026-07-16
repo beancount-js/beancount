@@ -1,5 +1,14 @@
 # Beancount JS Studio Agent Guide
 
+## Workflow
+
+- If the global `jj-jujutsu` skill is available, load and follow it for version control. Prefer `jj` for status, diffs, commits, history, and remote interop; do not use Git write commands in this repo.
+- Always commit after each validated state. Do not leave finished slices only in the working-copy commit `@` unless the user explicitly asked to keep changes uncommitted.
+- Work in verified slices. After a slice is implemented and checked, commit that slice before starting the next one. Do not wait for the user to ask for a commit when slice work is complete.
+- For larger work, make one commit per logical change instead of waiting for one large end-of-task commit.
+- Keep commits scoped. Do not include unrelated working-copy changes in a slice commit.
+- Write PR-quality commit messages: imperative summary, clear scope, and enough context for review.
+
 ## Shared forms
 
 - Before adding or changing an editable form, read the canonical form contract at `packages/forms/FORMS.md` (origin: `~/code/cv/spec/src/30-domain-contracts/forms-and-shared-ui.md`).
