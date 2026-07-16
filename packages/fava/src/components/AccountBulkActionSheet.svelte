@@ -217,13 +217,19 @@
     <Sheet.Header
       class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left"
     >
-      <Sheet.Title
-        bind:ref={sheetTitleEl}
-        tabindex={-1}
-        class="account-bulk-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
-      >
-        Bulk actions
-      </Sheet.Title>
+      <div class="flex min-w-0 flex-1 items-center gap-1.5">
+        <Sheet.Title
+          bind:ref={sheetTitleEl}
+          tabindex={-1}
+          class="account-bulk-sheet-title min-w-0 truncate leading-none outline-none"
+        >
+          Bulk actions
+        </Sheet.Title>
+        <span
+          class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          >{records.length}</span
+        >
+      </div>
       <Sheet.Description class="sr-only">
         Bulk actions on {records.length} selected record{records.length === 1
           ? ""
@@ -277,13 +283,9 @@
       </div>
     </Sheet.Header>
 
-    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-      <p class="mb-5 text-sm text-muted-foreground">
-        {records.length} selected record{records.length === 1 ? "" : "s"}.
-      </p>
-
+    <div class="min-h-0 flex-1 overflow-y-auto px-3 py-3">
       {#if errors.length}
-        <Alert.Root variant="destructive" class="mb-5">
+        <Alert.Root variant="destructive" class="mb-3">
           <CircleAlert />
           <Alert.Title>Could not replace accounts</Alert.Title>
           <Alert.Description class="whitespace-pre-wrap"
