@@ -95,6 +95,17 @@ export {
   type UpdateMerchantInput,
 } from "./merchant";
 export {
+  candidateForAutoPersist,
+  ensureProposalMerchantPersisted,
+  ensureProposalsMerchantsPersisted,
+  proposalMerchantLabel,
+} from "./merchant-persist";
+export {
+  backfillMerchantsFromLedger,
+  type LedgerFileSnapshot,
+  type MerchantBackfillResult,
+} from "./merchant-backfill";
+export {
   applyMerchantResolutionToPendingProposals,
   buildMerchantReviewClusters,
   clusterMerchantReviewProposals,

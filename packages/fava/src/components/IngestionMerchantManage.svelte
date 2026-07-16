@@ -30,6 +30,7 @@
   let loadedProjectId = $state("");
   let sheetOpen = $state(false);
   let failedLogoIds = $state(new Set<string>());
+  let backfillBusy = $state(false);
 
   const project = $derived($snapshot);
   const queryMerchantId = $derived($activeRoute?.query?.merchantId ?? "");
@@ -149,6 +150,34 @@
     }
   }
 
+  async function backfillFromLedger() {
+    if (!project || isWeb || backfillBusy) return;
+    const confirmed = window.confirm(
+      "Create merchant profiles for imported ledger transactions that are missing merchant_id, and stamp those transactions?",
+    );
+    if (!confirmed) return;
+
+    backfillBusy = true;
+    status = "Backfilling merchants…";
+    try {
+      const result = await ingestionJson<{
+        createdProfiles: number;
+        patchedTransactions: number;
+        skipped: number;
+        snapshot: NonNullable<typeof project>;
+      }>(ingestionPath(project.project.id, "/merchants/backfill"), {
+        method: "POST",
+      });
+      snapshot.set(result.snapshot);
+      await loadMerchants();
+      status = `Backfill complete: ${result.createdProfiles} profile${result.createdProfiles === 1 ? "" : "s"} created, ${result.patchedTransactions} transaction${result.patchedTransactions === 1 ? "" : "s"} updated${result.skipped ? `, ${result.skipped} skipped` : ""}.`;
+    } catch (error) {
+      status = error instanceof Error ? error.message : String(error);
+    } finally {
+      backfillBusy = false;
+    }
+  }
+
   $effect(() => {
     const projectId = project?.project.id;
     if (!projectId || isWeb) return;
@@ -177,6 +206,10 @@
     ingestionHeaderActions.set({
       kind: "manage-merchants",
       merchantCount: merchants.length,
+      backfillBusy,
+      onBackfill: () => {
+        void backfillFromLedger();
+      },
     });
   });
 

@@ -66,6 +66,8 @@ export type IngestionRulesHeaderActions = {
 export type IngestionManageMerchantsHeaderActions = {
   kind: "manage-merchants";
   merchantCount: number;
+  backfillBusy: boolean;
+  onBackfill: () => void;
 };
 
 /** Beancount ledger editor File/Edit menubar and Save in the workspace header. */

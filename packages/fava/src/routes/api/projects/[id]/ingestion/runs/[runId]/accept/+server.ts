@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
 import { proposalTransaction } from "@beancount-js/beangulp";
+import { ensureProposalsMerchantsPersisted } from "@beancount-js/server";
 import { serverIngestion } from "$lib/server/ingestion";
 import { serverWorkspace } from "$lib/server/workspace";
 
@@ -66,14 +67,22 @@ export async function POST({
         { error: "Select at least one proposal to accept." },
         { status: 400 },
       );
-    const directives = selected.map((proposal) => {
+    for (const proposal of selected) {
       if (proposal.status !== "ready" || !proposal.selectedAccount) {
         throw new Error("Only reviewed, ready proposals can be accepted.");
       }
-      return proposalTransaction(proposal, proposal.selectedAccount)
+    }
+    const persisted = await ensureProposalsMerchantsPersisted(
+      store.merchants,
+      params.id,
+      source.id,
+      selected,
+    );
+    const directives = persisted.map((proposal) =>
+      proposalTransaction(proposal, proposal.selectedAccount!)
         .toString()
-        .trim();
-    });
+        .trim(),
+    );
     const nextContents = `${destination.contents.trimEnd()}\n\n${directives.join("\n\n")}\n`;
     const sourceFiles = snapshot.ledgerFiles.map((file) =>
       file.path === destinationPath

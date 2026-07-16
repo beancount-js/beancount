@@ -9,6 +9,7 @@ import {
   merchantAdvisorLabel,
   type IngestionConfig,
 } from "./ingestion";
+import { ensureProposalMerchantPersisted } from "./merchant-persist";
 
 const directories: string[] = [];
 
@@ -393,6 +394,52 @@ describe("FilesystemIngestionStore", () => {
         "utf8",
       ),
     ).resolves.toContain('"type":"cleared-suppression"');
+  });
+
+  test("auto-persists a merchant profile for unresolved accept proposals", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-test-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+
+    const next = await ensureProposalMerchantPersisted(
+      store.merchants,
+      "project",
+      "bank",
+      {
+        id: "p1",
+        importId: "bank:1",
+        status: "ready",
+        selectedAccount: "Expenses:Food",
+        suggestions: [],
+        issues: [],
+        merchantResolution: {
+          status: "unresolved",
+          rawLabel: "Pure Gym",
+          explanation: "No confirmed merchant profile matched this transaction.",
+        },
+        transaction: {
+          sourceId: "bank",
+          sourceAccount: "Assets:Bank:Checking",
+          bookedAt: "2026-07-01",
+          amount: "-20.00",
+          currency: "GBP",
+          payee: "Pure Gym",
+          narration: "Membership",
+          status: "posted",
+          fetchedAt: "2026-07-02T00:00:00.000Z",
+        },
+      },
+    );
+
+    expect(next.merchantResolution).toMatchObject({
+      status: "confirmed",
+      merchant: { canonicalName: "Pure Gym" },
+    });
+    await expect(store.merchants.list("project")).resolves.toEqual([
+      expect.objectContaining({ canonicalName: "Pure Gym" }),
+    ]);
   });
 
   test("updates persisted merchant profile details directly", async () => {

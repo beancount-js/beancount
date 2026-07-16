@@ -1,6 +1,7 @@
 <script lang="ts">
   import ArrowLeftRight from "lucide-svelte/icons/arrow-left-right";
   import BookOpen from "lucide-svelte/icons/book-open";
+  import DatabaseZap from "lucide-svelte/icons/database-zap";
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import ClipboardList from "lucide-svelte/icons/clipboard-list";
@@ -432,6 +433,35 @@
           {/snippet}
         </Tooltip.Trigger>
         <Tooltip.Content>Edit sources</Tooltip.Content>
+      </Tooltip.Root>
+    {:else if header.kind === "manage-merchants"}
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              type="button"
+              size="sm"
+              variant="ghost"
+              class="h-8 gap-1.5 px-2.5"
+              aria-label="Backfill merchants from ledger"
+              disabled={header.backfillBusy}
+              onclick={(event) => {
+                props.onclick?.(event);
+                header.onBackfill();
+              }}
+            >
+              <DatabaseZap class="size-4" aria-hidden="true" />
+              <span class="text-sm"
+                >{header.backfillBusy ? "Backfilling…" : "Backfill"}</span
+              >
+            </Button>
+          {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content
+          >Create merchant profiles for imported transactions missing
+          merchant_id</Tooltip.Content
+        >
       </Tooltip.Root>
     {:else if header.kind === "rules"}
       {#if header.saveHint}
