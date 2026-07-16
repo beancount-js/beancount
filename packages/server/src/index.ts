@@ -17,6 +17,13 @@ export {
   FilesystemRulesStore,
   type FilesystemRulesStoreOptions,
 } from "./rules";
+export {
+  applyDetectionRules,
+  previewRuleApply,
+  countRuleMatches,
+  type RuleApplyMatchCounts,
+  type RuleApplyResult,
+} from "./rules-apply";
 export { pickProjectDirectoryFromSystemDialog } from "./pick-directory";
 export { CodexAgentSession, CodexProvider, codexAppServerArgs } from "./codex";
 export type {

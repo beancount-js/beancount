@@ -147,6 +147,7 @@ describe("applyMerchantResolutionToPendingProposals", () => {
           duplicates: 0,
           invalid: 0,
           held: 0,
+          excluded: 0,
         },
         proposals: [
           proposal({

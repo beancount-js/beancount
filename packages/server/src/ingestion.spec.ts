@@ -34,7 +34,7 @@ function config(
   endpoint = "https://api.example.test/transactions",
 ): IngestionConfig {
   return {
-    version: 1,
+    version: 2,
     sources: [
       {
         id: "bank",
@@ -143,21 +143,29 @@ describe("FilesystemIngestionStore", () => {
     await store.writeConfig("project", full);
 
     await expect(store.readConfig("project")).resolves.toEqual({
-      version: 1,
+      version: 2,
+      brandfetch: expect.objectContaining({
+        enabled: true,
+        apiKeySecretRef: "env:BRANDFETCH_API_KEY",
+        clientId: "test-client",
+      }),
       sources: [
         expect.objectContaining({
-          ...full.sources[0],
+          id: "bank",
           allowedAccountRoots: ["Expenses", "Assets"],
           api: expect.objectContaining({
             allowedHosts: ["api.example.test"],
           }),
           merchantEnrichment: expect.objectContaining({
+            enabled: true,
+            aiEnabled: true,
             countryCode: "GB",
-            brandfetch: expect.objectContaining({ clientId: "test-client" }),
           }),
         }),
       ],
     });
+    const persisted = await store.readConfig("project");
+    expect(persisted.sources[0].merchantEnrichment?.brandfetch).toBeUndefined();
   });
 
   test("rejects non-local HTTP endpoints before a run can use a credential", async () => {
@@ -190,7 +198,7 @@ describe("FilesystemIngestionStore", () => {
     ).toEqual(["Expenses:Food:Groceries"]);
   });
 
-  test("persists grouped connections and expands per linked account", async () => {
+  test("migrates Lunch Flow json-api templates to the lunchflow connector", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-test-"),
     );
@@ -239,10 +247,12 @@ describe("FilesystemIngestionStore", () => {
 
     await store.writeConfig("project", grouped);
     const persisted = await store.readConfig("project");
-    expect(persisted.sources[0].api.baseUrl).toBe(
-      "https://lunchflow.app/api/v1",
-    );
-    expect(persisted.sources[0].api.endpoint).toBeUndefined();
+    expect(persisted.sources[0].kind).toBe("lunchflow");
+    expect(persisted.sources[0].config).toMatchObject({
+      baseUrl: "https://lunchflow.app/api/v1",
+      secretRef: "env:LUNCHFLOW_API_KEY",
+    });
+    expect(persisted.sources[0].api).toBeUndefined();
     expect(persisted.sources[0].accounts).toHaveLength(2);
 
     const targets = expandIngestionSource(persisted.sources[0]);
@@ -250,9 +260,8 @@ describe("FilesystemIngestionStore", () => {
       "lunchflow:42",
       "lunchflow:99",
     ]);
-    expect(targets[0].api.endpoint).toBe(
-      "https://lunchflow.app/api/v1/accounts/42/transactions",
-    );
+    expect(targets[0].accountId).toBe("42");
+    expect(targets[0].api).toBeUndefined();
     expect(
       categoryAccountsForSource(persisted.sources[0], [
         "Assets:Bank:Current",
@@ -288,7 +297,7 @@ describe("FilesystemIngestionStore", () => {
       ],
     });
     await expect(store.readConfig("project")).resolves.toMatchObject({
-      sources: [{ id: "lunchflow", accounts: [] }],
+      sources: [{ id: "lunchflow", kind: "lunchflow", accounts: [] }],
     });
   });
 
@@ -427,18 +436,17 @@ describe("FilesystemIngestionStore", () => {
     directories.push(directory);
     const store = storeFor(directory);
     const grouped: IngestionConfig = {
-      version: 1,
+      version: 2,
       sources: [
         {
           id: "lunchflow",
           name: "Lunch Flow",
-          kind: "json-api",
-          api: {
+          kind: "lunchflow",
+          config: {
             baseUrl: "https://www.lunchflow.app/api/v1",
             allowedHosts: ["www.lunchflow.app", "lunchflow.app"],
             secretRef: "env:LUNCHFLOW_API_KEY",
           },
-          mapping: { date: "date", amount: "amount" },
           rules: [],
           accounts: [
             {
@@ -501,6 +509,7 @@ describe("FilesystemIngestionStore", () => {
         duplicates: 0,
         invalid: 0,
         held: 0,
+        excluded: 0,
       },
     });
 
