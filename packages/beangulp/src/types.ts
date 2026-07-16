@@ -10,6 +10,11 @@ export interface SourceContext {
   resolveSecret?: SecretResolver;
   maxPages?: number;
   maxRecords?: number;
+  /**
+   * Connector-provided fetch parameters for this run
+   * (e.g. startDate, includePending, accountId).
+   */
+  fetchContext?: Record<string, unknown>;
 }
 
 export interface SourcePage<Record> {
@@ -233,7 +238,8 @@ export type ProposalStatus =
   | "needs-review"
   | "duplicate"
   | "invalid"
-  | "held";
+  | "held"
+  | "excluded";
 
 /** One Codex/AI call captured during enrichment for later review. */
 export interface AiEnrichmentCallRecord {
