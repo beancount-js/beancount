@@ -64,6 +64,14 @@
       "status": "adapted",
       "tests": ["ops/find-prices"],
       "reason": "Uses JavaScript Set values for structural currency-pair results."
+    },
+    {
+      "upstreamModule": "beancount.plugins.close_tree",
+      "upstreamBehavior": "close_opened_descendant_accounts",
+      "localBehavior": "closeTree",
+      "status": "adapted",
+      "tests": ["plugins/close-tree"],
+      "reason": "Uses JavaScript metadata objects and deterministic descendant ordering."
     }
   ]
 }

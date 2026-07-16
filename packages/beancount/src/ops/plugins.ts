@@ -3,6 +3,7 @@ import type { Directives } from "../core/data";
 import { autoInsertOpen } from "../plugins/autoaccount";
 import { auto } from "../plugins/auto";
 import { creditCard } from "../plugins/creditcard";
+import { closeTree } from "../plugins/close_tree";
 import { forecast } from "../plugins/forecast";
 import { addImplicitPrices } from "../plugins/implicit_prices";
 import { checkBalance } from "./balance";
@@ -60,6 +61,12 @@ export const Plugins: Record<string, PluginType> = {
     plugin: addImplicitPrices,
     order: 0,
     id: "beancount.plugins.implicit_prices",
+    supportsConfig: false,
+  },
+  "beancount.plugins.close_tree": {
+    plugin: closeTree,
+    order: 0,
+    id: "beancount.plugins.close_tree",
     supportsConfig: false,
   },
   "beancount.plugins.forecast": {
