@@ -388,6 +388,45 @@ describe("book", () => {
     );
   });
 
+  test("reports each explicit null currency in a partially known posting", () => {
+    const [, errors] = book(
+      [
+        transaction("2022-01-01", "Missing units currency", [
+          new Posting(
+            "Assets:Units",
+            new Amount("1", null),
+            null,
+            new Amount("1", "USD"),
+          ),
+        ]),
+        transaction("2022-01-02", "Missing cost currency", [
+          new Posting(
+            "Assets:Cost",
+            new Amount("1", "HOOL"),
+            new CostSpec(new Decimal("1"), null, null),
+          ),
+        ]),
+        transaction("2022-01-03", "Missing price currency", [
+          new Posting(
+            "Assets:Price",
+            new Amount("1", "HOOL"),
+            null,
+            new Amount("1", null),
+          ),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors.map((error) => error.message)).toEqual(
+      expect.arrayContaining([
+        "Could not resolve units currency",
+        "Could not resolve cost currency",
+        "Could not resolve price currency",
+      ]),
+    );
+  });
+
   test("filters candidate lots by every specified reduction attribute", () => {
     const wantedDate = DateTime.fromISO("2022-01-01");
     const balances = {
