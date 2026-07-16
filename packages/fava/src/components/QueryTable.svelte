@@ -109,7 +109,7 @@
 
   $: queryResult = derived([ledgerData], ([$ledgerData]) => {
     if (!query) {
-      return { data: [] };
+      return { data: [], error: undefined };
     }
     return runBql($ledgerData.directives, query, {
       options: $ledgerData.options.beancount,
@@ -185,25 +185,25 @@
             {@const row = $data[index]}
             {@const cellHeight = `height: ${rowHeight - 1}px; line-height: ${rowHeight - 1}px; `}
             <li class="border-b border-l border-solid">
-              <p>
+              <div>
                 {#each columns.values as col}
+                  {@const value = row[col.id]}
                   <span
                     style={col.style}
                     class={"border-r border-solid " + col.class.join(" ")}
                   >
-                    {#if col.id === "account" || matchesAccount(row[col.id])}
+                    {#if col.id === "account" || matchesAccount(value)}
                       <span class="block" style={cellHeight}
-                        ><a href={urlForAccount(row[col.id])}>{row[col.id]}</a
-                        ></span
+                        ><a href={urlForAccount(value)}>{value}</a></span
                       >
-                    {:else if row[col.id] instanceof Inventory}
-                      {#each [...row[col.id].values()] as position}
+                    {:else if value instanceof Inventory}
+                      {#each [...value.values()] as position}
                         <span class="block text-right" style={cellHeight}
                           >{$ctx.money(position.units)}</span
                         >
                       {/each}
-                    {:else if Array.isArray(row[col.id])}
-                      {#each row[col.id] as item, i}
+                    {:else if Array.isArray(value)}
+                      {#each value as item, i}
                         {@const rowval = stringify(item)}
                         {@const lines = countLines(rowval)}
                         {@const cellHeight = `height: ${rowHeight * lines - 1}px; line-height: ${rowHeight - 1}px; `}
@@ -228,20 +228,18 @@
                           {/if}
                         </div>
                       {/each}
-                    {:else if row[col.id] instanceof Date || row[col.id] instanceof DateTime}
+                    {:else if value instanceof Date || value instanceof DateTime}
                       <span class="block" style={cellHeight}
                         >{formatDate(
-                          row[col.id] instanceof DateTime
-                            ? row[col.id].toJSDate()
-                            : row[col.id],
+                          value instanceof DateTime ? value.toJSDate() : value,
                         )}</span
                       >
-                    {:else if row[col.id] instanceof Amount || row[col.id] instanceof Decimal}
+                    {:else if value instanceof Amount || value instanceof Decimal}
                       <span class="block" style={cellHeight}
-                        >{row[col.id] == 0 ? "" : $ctx.money(row[col.id])}</span
+                        >{value == 0 ? "" : $ctx.money(value)}</span
                       >
                     {:else}
-                      {@const rowval = stringify(row[col.id])}
+                      {@const rowval = stringify(value)}
                       {@const lines = countLines(rowval)}
                       {@const cellHeight = `height: ${rowHeight * lines - 1}px; line-height: ${rowHeight - 1}px; `}
                       <span
@@ -252,7 +250,7 @@
                     {/if}
                   </span>
                 {/each}
-              </p>
+              </div>
             </li>
           </div>
         </VirtualList>
