@@ -237,6 +237,59 @@ describe("book", () => {
     );
   });
 
+  test("reports an unmatched reduction against an existing costed lot", () => {
+    const date = DateTime.fromISO("2022-01-01");
+    const [, errors] = book(
+      [
+        transaction("2022-01-01", "Buy", [
+          new Posting(
+            account,
+            new Amount("1", "HOOL"),
+            new Cost(date, new Amount("10", "USD")),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-10", "USD")),
+        ]),
+        transaction("2022-01-02", "Mismatched sale", [
+          new Posting(
+            account,
+            new Amount("-1", "HOOL"),
+            new Cost(date, new Amount("20", "USD")),
+          ),
+          new Posting("Assets:Cash", new Amount("20", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(
+      errors.some((error) => error.message.includes("No position matches")),
+    ).toBe(true);
+  });
+
+  test("reports a CostSpec with both unresolved cost components", () => {
+    const [, errors] = book(
+      [
+        transaction("2022-01-01", "Ambiguous cost", [
+          new Posting(
+            account,
+            new Amount("1", "HOOL"),
+            new CostSpec(null, null, "USD"),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-10", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(
+      errors.some((error) =>
+        error.message.includes(
+          "Too many missing numbers for currency group 'USD'",
+        ),
+      ),
+    ).toBe(true);
+  });
+
   test("rejects zero-unit and negative-cost lots after interpolation", () => {
     const date = DateTime.fromISO("2022-01-01");
     const [, errors] = book(
