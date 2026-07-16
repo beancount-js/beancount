@@ -10,6 +10,14 @@
       "reason": "Uses the browser-safe parser MD5 helper and immutable directive models."
     },
     {
+      "upstreamModule": "beancount.core.distribution",
+      "upstreamBehavior": "histogram_bounds_and_mode",
+      "localBehavior": "Distribution",
+      "status": "matched",
+      "tests": ["core/distribution"],
+      "reason": "Uses a JavaScript Map histogram with identical deterministic mode tie-breaking."
+    },
+    {
       "upstreamModule": "beancount.core.prices",
       "upstreamBehavior": "get_last_price_entries",
       "localBehavior": "getLastPriceEntries",

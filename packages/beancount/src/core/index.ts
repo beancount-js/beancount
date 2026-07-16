@@ -1,6 +1,7 @@
 export * from "./account";
 export * from "./amount";
 export * from "./convert";
+export * from "./distribution";
 export * from "./data";
 export * from "./interpolate";
 export * from "./inventory";
