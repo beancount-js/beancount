@@ -481,6 +481,35 @@ describe("book", () => {
     expect(balances[account].positions).toHaveLength(6);
   });
 
+  test("infers a reduction currency from an account with one held commodity", () => {
+    const heldCost = new Cost(
+      DateTime.fromISO("2022-01-01"),
+      new Amount("10", "USD"),
+    );
+    const balances = {
+      [account]: new Inventory(new Position(new Amount("1", "HOOL"), heldCost)),
+    };
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-02", "Sell inferred commodity", [
+          new Posting(
+            account,
+            new Amount("-1", null),
+            new Cost(null, new Amount("10", "USD")),
+          ),
+          new Posting("Assets:Cash", new Amount("10", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+      balances,
+    );
+
+    expect(errors).toEqual([]);
+    expect((entries[0] as Transaction).postings[0].units?.currency).toBe(
+      "HOOL",
+    );
+  });
+
   test("combines per-unit and total cost specifications during augmentation", () => {
     const [entries, errors] = book(
       [

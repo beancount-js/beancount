@@ -375,18 +375,18 @@ function replaceCurrencies(
           let replace = false;
           let cost = posting.cost;
           let price = posting.price;
-          if (units.currency) {
+          if (refer.unitsCurrency && units.currency !== refer.unitsCurrency) {
             units = units.copy({ currency: refer.unitsCurrency });
             replace = true;
           }
 
-          if (cost && !cost.currency) {
+          if (cost && !cost.currency && refer.costCurrency) {
             cost = cost.copy({ currency: refer.costCurrency });
             replace = true;
           }
 
-          if (price && !price.currency) {
-            price = price.copy({ currency: refer.costCurrency });
+          if (price && !price.currency && refer.priceCurrency) {
+            price = price.copy({ currency: refer.priceCurrency });
             replace = true;
           }
 
