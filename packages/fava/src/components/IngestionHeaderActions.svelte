@@ -133,7 +133,6 @@
                     : "Accept reviewed transactions"}
                 disabled={!header.canAccept || header.acceptBusy}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onAccept();
                 }}
               >
@@ -173,7 +172,6 @@
                   ? "Expand all date groups"
                   : "Collapse all date groups"}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onToggleCollapseGroups();
                 }}
               >
@@ -202,7 +200,6 @@
                 class="size-8"
                 aria-label="Review merchants"
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onReviewMerchants();
                 }}
               >
@@ -223,7 +220,6 @@
                 class="size-8"
                 aria-label="Open Accounts"
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onOpenAccounts();
                 }}
               >
@@ -246,7 +242,6 @@
                 title="Prefer Sync on the Accounts screen"
                 disabled={!header.canForceRefetch}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onForceRefetch();
                 }}
               >
@@ -270,7 +265,6 @@
                   title="Re-run AI merchant enrichment and categorisation on current proposals"
                   disabled={!header.canRerunAi || header.aiRerunBusy}
                   onclick={(event) => {
-                    props.onclick?.(event);
                     header.onRerunAi();
                   }}
                 >
@@ -296,7 +290,6 @@
                 class="size-8"
                 aria-label="Edit sources"
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onEditSources();
                 }}
               >
@@ -327,7 +320,6 @@
                   ? "Expand all merchant groups"
                   : "Collapse all merchant groups"}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onToggleCollapseGroups();
                 }}
               >
@@ -357,7 +349,6 @@
                 aria-label="Detect merchants"
                 disabled={!header.canDetect || header.detectBusy}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onDetectMerchants();
                 }}
               >
@@ -382,7 +373,6 @@
                 class="size-8"
                 aria-label="Review imports"
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onReviewImports();
                 }}
               >
@@ -403,7 +393,6 @@
                 class="size-8"
                 aria-label="Open Accounts"
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onOpenAccounts();
                 }}
               >
@@ -424,7 +413,6 @@
                 class="size-8"
                 aria-label="Edit sources"
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onEditSources();
                 }}
               >
@@ -447,7 +435,6 @@
                 aria-label="Backfill merchants from ledger"
                 disabled={header.backfillBusy}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onBackfill();
                 }}
               >
@@ -481,7 +468,6 @@
                 aria-label="Apply all"
                 disabled={!header.canApplyAll || header.applyBusy}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onApplyAll();
                 }}
               >
@@ -502,7 +488,6 @@
                 class="size-8"
                 aria-label="Add rule"
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onAddRule();
                 }}
               >
@@ -525,7 +510,6 @@
                   class="h-8 gap-1.5 px-2.5"
                   aria-label={`Edit ${header.selectedCount} selected records`}
                   onclick={(event) => {
-                    props.onclick?.(event);
                     header.onReplace();
                   }}
                 >
@@ -549,7 +533,6 @@
                 class="size-8"
                 aria-label="Save ledger"
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onSave();
                 }}
               >
@@ -603,7 +586,6 @@
                       ? "Switch to edit mode"
                       : "Switch to preview mode"}
                     onclick={(event) => {
-                      props.onclick?.(event);
                       header.onTogglePreview();
                     }}
                   >
@@ -632,7 +614,6 @@
                 class="size-8"
                 aria-label="Review imports"
                 onclick={(event) => {
-                  props.onclick?.(event);
                   header.onReviewImports();
                 }}
               >
