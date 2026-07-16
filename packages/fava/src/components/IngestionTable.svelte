@@ -7,6 +7,8 @@
   import ChevronUp from "lucide-svelte/icons/chevron-up";
   import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
   import ChevronsRight from "lucide-svelte/icons/chevrons-right";
+  import Landmark from "lucide-svelte/icons/landmark";
+  import Link2 from "lucide-svelte/icons/link-2";
   import Undo2 from "lucide-svelte/icons/undo-2";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
@@ -24,6 +26,7 @@
   } from "../ingestion/types";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
+  import * as Empty from "$lib/components/ui/empty";
   import { Progress } from "$lib/components/ui/progress";
   import * as ToggleGroup from "$lib/components/ui/toggle-group";
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
@@ -374,13 +377,9 @@
 
   function applyActiveRuns(next: IngestionRun[]) {
     activeRuns = next;
-    if (!next.length) {
-      status = config?.sources.length
-        ? "Sync from Accounts, then review proposals here."
-        : "Add a JSON API source under Sources first.";
-      return;
+    if (next.length) {
+      status = "";
     }
-    status = "";
   }
 
   function replaceRun(updated: IngestionRun) {
@@ -513,9 +512,6 @@
     applyActiveRuns(
       pickRunsForSource(runs, nextSourceId, undefined, syncRunIds),
     );
-    if (!activeRuns.length) {
-      status = "No import run yet. Sync this connection from Accounts.";
-    }
     if (project) void watchSync(project.project.id, nextSourceId);
   }
 
@@ -558,6 +554,10 @@
 
   function openAccounts() {
     router.push("/import/accounts");
+  }
+
+  function openSources() {
+    router.push("/import/editor");
   }
 
   function formatGroupDate(date: string) {
@@ -1026,6 +1026,36 @@
           </div>
         </nav>
       {/if}
+    {:else if !isWeb && project}
+      <Empty.Root class="min-h-64 border">
+        <Empty.Header>
+          <Empty.Media variant="icon"><Landmark /></Empty.Media>
+          {#if config?.sources.length}
+            <Empty.Title>No imports to review</Empty.Title>
+            <Empty.Description
+              >Sync from Accounts, then review proposals here.</Empty.Description
+            >
+          {:else}
+            <Empty.Title>No ingestion sources</Empty.Title>
+            <Empty.Description
+              >Add a JSON API source under Sources first.</Empty.Description
+            >
+          {/if}
+        </Empty.Header>
+        <Empty.Content>
+          {#if config?.sources.length}
+            <Button type="button" onclick={openAccounts}>
+              Open Accounts
+              <Link2 class="size-4" aria-hidden="true" />
+            </Button>
+          {:else}
+            <Button type="button" onclick={openSources}>
+              Open Sources
+              <Link2 class="size-4" aria-hidden="true" />
+            </Button>
+          {/if}
+        </Empty.Content>
+      </Empty.Root>
     {/if}
   </div>
 </div>
