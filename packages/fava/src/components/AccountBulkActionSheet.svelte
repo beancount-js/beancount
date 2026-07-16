@@ -4,10 +4,14 @@
     FormField,
     FormSectionHeader,
   } from "@beancount-js/forms";
+  import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
+  import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
+  import CircleAlert from "lucide-svelte/icons/circle-alert";
   import X from "lucide-svelte/icons/x";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import * as Sheet from "$lib/components/ui/sheet";
+  import * as Tooltip from "$lib/components/ui/tooltip";
   import { useContext } from "../context";
   import { LedgerSource } from "../core/ledger";
   import {
@@ -43,9 +47,10 @@
 
   let fromAccount = $state("");
   let toAccount = $state("");
-  let sectionOpen = $state({ if: true, then: true });
+  let openSections = $state<Record<string, boolean>>({ replace: true });
   let applying = $state(false);
   let errors = $state<string[]>([]);
+  let sheetTitleEl = $state<HTMLElement | null>(null);
 
   const fromOptions = $derived(
     accountsInRecords(records).map((account) => ({
@@ -80,12 +85,23 @@
       !applying,
   );
 
-  function isSectionOpen(key: "if" | "then") {
-    return sectionOpen[key];
+  const sectionsCollapsedAll = $derived(
+    Object.values(openSections).every((sectionOpen) => sectionOpen === false),
+  );
+
+  function isSectionOpen(id: string) {
+    return openSections[id] !== false;
   }
 
-  function toggleSection(key: "if" | "then") {
-    sectionOpen = { ...sectionOpen, [key]: !sectionOpen[key] };
+  function toggleSection(id: string) {
+    openSections = { ...openSections, [id]: !isSectionOpen(id) };
+  }
+
+  function toggleCollapseAll() {
+    const next = !sectionsCollapsedAll;
+    openSections = Object.fromEntries(
+      Object.keys(openSections).map((key) => [key, !next]),
+    );
   }
 
   function seedForm() {
@@ -97,7 +113,7 @@
     toAccount = "";
     errors = [];
     applying = false;
-    sectionOpen = { if: true, then: true };
+    openSections = { replace: true };
   }
 
   function resetForm() {
@@ -105,7 +121,7 @@
     toAccount = "";
     errors = [];
     applying = false;
-    sectionOpen = { if: true, then: true };
+    openSections = { replace: true };
   }
 
   let wasOpen = false;
@@ -191,35 +207,84 @@
 <Sheet.Root {open} onOpenChange={handleOpenChange}>
   <Sheet.Content
     side="right"
-    class="flex w-full flex-col gap-0 sm:max-w-lg"
+    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
     data-account-bulk-action-sheet
+    onOpenAutoFocus={(event) => {
+      event.preventDefault();
+      sheetTitleEl?.focus();
+    }}
   >
     <Sheet.Header
-      class="flex shrink-0 flex-row items-start gap-3 border-b border-border px-6 py-4"
+      class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left"
     >
-      <div class="min-w-0 flex-1">
-        <Sheet.Title class="account-bulk-sheet-title text-left"
-          >Replace account</Sheet.Title
-        >
-        <Sheet.Description class="mt-1 text-left text-sm text-muted-foreground">
-          Rewrite account names on the {records.length} selected record{records.length ===
-          1
-            ? ""
-            : "s"}.
-        </Sheet.Description>
-      </div>
-      <Sheet.Close
-        class="ml-auto inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        aria-label="Close"
+      <Sheet.Title
+        bind:ref={sheetTitleEl}
+        tabindex={-1}
+        class="account-bulk-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
       >
-        <X class="size-4" />
-        <span class="sr-only">Close</span>
-      </Sheet.Close>
+        Bulk actions
+      </Sheet.Title>
+      <Sheet.Description class="sr-only">
+        Bulk actions on {records.length} selected record{records.length === 1
+          ? ""
+          : "s"}.
+      </Sheet.Description>
+      <div class="ml-auto flex shrink-0 items-center gap-1">
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            {#snippet child({ props })}
+              <Button
+                {...props}
+                type="button"
+                variant="ghost"
+                size="icon"
+                class="size-8"
+                aria-label={sectionsCollapsedAll
+                  ? "Expand all"
+                  : "Collapse all"}
+                onclick={(event) => {
+                  props.onclick?.(event);
+                  toggleCollapseAll();
+                }}
+              >
+                {#if sectionsCollapsedAll}
+                  <ChevronsUpDown class="size-4" aria-hidden="true" />
+                {:else}
+                  <ChevronsDownUp class="size-4" aria-hidden="true" />
+                {/if}
+              </Button>
+            {/snippet}
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            {sectionsCollapsedAll ? "Expand all" : "Collapse all"}
+          </Tooltip.Content>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            {#snippet child({ props })}
+              <Sheet.Close
+                {...props}
+                class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Close"
+              >
+                <X class="size-4" />
+                <span class="sr-only">Close</span>
+              </Sheet.Close>
+            {/snippet}
+          </Tooltip.Trigger>
+          <Tooltip.Content>Close</Tooltip.Content>
+        </Tooltip.Root>
+      </div>
     </Sheet.Header>
 
     <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+      <p class="mb-5 text-sm text-muted-foreground">
+        {records.length} selected record{records.length === 1 ? "" : "s"}.
+      </p>
+
       {#if errors.length}
         <Alert.Root variant="destructive" class="mb-5">
+          <CircleAlert />
           <Alert.Title>Could not replace accounts</Alert.Title>
           <Alert.Description class="whitespace-pre-wrap"
             >{errors.join("\n")}</Alert.Description
@@ -227,108 +292,95 @@
         </Alert.Root>
       {/if}
 
-      <div class="account-bulk-form flex min-w-0 flex-col gap-6">
-        <section class="flex flex-col gap-3 pl-6">
+      <div class="account-bulk-form flex min-w-0 flex-col gap-6 pl-6">
+        <section class="flex flex-col gap-2">
           <FormSectionHeader
-            title="If"
+            title="Replace"
             titleClass={sectionTitleClass}
             editable={false}
             movable={false}
             removable={false}
             titleToggleable={true}
-            open={isSectionOpen("if")}
-            onToggle={() => toggleSection("if")}
+            open={isSectionOpen("replace")}
+            onToggle={() => toggleSection("replace")}
           />
-          {#if isSectionOpen("if")}
-            <div class="beancount-structured-form min-w-0">
-              <FormField
-                label="Account is"
-                as="div"
-                align="center"
-                controlId="account-bulk-from"
+          {#if isSectionOpen("replace")}
+            <div class="account-bulk-section-body">
+              <div class="beancount-structured-form">
+                <FormField
+                  label="Account is"
+                  as="div"
+                  align="center"
+                  controlId="account-bulk-from"
+                >
+                  <FilterCommandPicker
+                    fullWidth
+                    label="Account"
+                    ariaLabel="Account to replace"
+                    placeholder="Filter accounts…"
+                    value={fromAccount}
+                    options={fromOptions}
+                    onChange={(next) => {
+                      fromAccount = next;
+                    }}
+                  />
+                </FormField>
+                <FormField
+                  label="Replace with"
+                  as="div"
+                  align="center"
+                  controlId="account-bulk-to"
+                >
+                  <FilterCommandPicker
+                    fullWidth
+                    allowCustom={true}
+                    label="Replacement account"
+                    ariaLabel="Replacement account"
+                    placeholder="Filter or type an account…"
+                    value={toAccount}
+                    options={toOptions}
+                    onChange={(next) => {
+                      toAccount = next;
+                    }}
+                  />
+                </FormField>
+              </div>
+              {#if fromAccount && toAccount && fromAccount !== toAccount}
+                <p class="text-xs text-muted-foreground">
+                  {preview.changedCount} record{preview.changedCount === 1
+                    ? ""
+                    : "s"} will be updated{#if preview.skipped.length}
+                    ; {preview.skipped.length} skipped{/if}.
+                </p>
+              {/if}
+              <Button
+                type="button"
+                disabled={!canApply}
+                onclick={() => void applyReplace()}
               >
-                <FilterCommandPicker
-                  fullWidth
-                  label="Account"
-                  ariaLabel="Account to replace"
-                  placeholder="Filter accounts…"
-                  value={fromAccount}
-                  options={fromOptions}
-                  onChange={(next) => {
-                    fromAccount = next;
-                  }}
-                />
-              </FormField>
+                {applying ? "Applying…" : "Apply"}
+              </Button>
             </div>
-          {/if}
-        </section>
-
-        <section class="flex flex-col gap-3 pl-6">
-          <FormSectionHeader
-            title="Then"
-            titleClass={sectionTitleClass}
-            editable={false}
-            movable={false}
-            removable={false}
-            titleToggleable={true}
-            open={isSectionOpen("then")}
-            onToggle={() => toggleSection("then")}
-          />
-          {#if isSectionOpen("then")}
-            <div class="beancount-structured-form min-w-0">
-              <FormField
-                label="Replace with"
-                as="div"
-                align="center"
-                controlId="account-bulk-to"
-              >
-                <FilterCommandPicker
-                  fullWidth
-                  allowCustom={true}
-                  label="Replacement account"
-                  ariaLabel="Replacement account"
-                  placeholder="Filter or type an account…"
-                  value={toAccount}
-                  options={toOptions}
-                  onChange={(next) => {
-                    toAccount = next;
-                  }}
-                />
-              </FormField>
-            </div>
-            {#if fromAccount && toAccount && fromAccount !== toAccount}
-              <p class="text-xs text-muted-foreground">
-                {preview.changedCount} record{preview.changedCount === 1
-                  ? ""
-                  : "s"} will be updated{#if preview.skipped.length}
-                  ; {preview.skipped.length} skipped{/if}.
-              </p>
-            {/if}
           {/if}
         </section>
       </div>
     </div>
-
-    <Sheet.Footer
-      class="flex shrink-0 flex-row items-center justify-end gap-2 border-t border-border px-6 py-3"
-    >
-      <Sheet.Close
-        class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-      >
-        Cancel
-      </Sheet.Close>
-      <Button
-        type="button"
-        disabled={!canApply}
-        onclick={() => void applyReplace()}
-      >
-        {applying ? "Applying…" : "Apply"}
-      </Button>
-    </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>
 
 <style>
+  .account-bulk-form :global(.beancount-structured-form) {
+    min-width: 0;
+  }
+
+  .account-bulk-section-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-left: 0.5rem;
+    min-width: 0;
+  }
+
   :global(.account-bulk-sheet-title),
   .account-bulk-form :global(.beancount-form-section-title-toggle),
   .account-bulk-form :global(.beancount-form-section-title-row h3) {
