@@ -11,3 +11,4 @@ export * from "./options";
 export * from "./prices";
 export * from "./conversion";
 export * from "./filter";
+export * from "./getters";
