@@ -88,6 +88,14 @@
       "status": "adapted",
       "tests": ["plugins/onecommodity"],
       "reason": "Uses local resolved costs and JavaScript regular-expression configuration."
+    },
+    {
+      "upstreamModule": "beancount.plugins.noduplicates",
+      "upstreamBehavior": "validate_no_duplicates",
+      "localBehavior": "validateNoDuplicates",
+      "status": "adapted",
+      "tests": ["plugins/noduplicates"],
+      "reason": "Uses stable local directive identities and preserves duplicate balance/price allowances."
     }
   ]
 }

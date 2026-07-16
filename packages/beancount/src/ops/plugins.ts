@@ -8,6 +8,7 @@ import { forecast } from "../plugins/forecast";
 import { addImplicitPrices } from "../plugins/implicit_prices";
 import { validateLeafOnly } from "../plugins/leafonly";
 import { validateOneCommodity } from "../plugins/onecommodity";
+import { validateNoDuplicates } from "../plugins/noduplicates";
 import { checkBalance } from "./balance";
 import { pad } from "./pad";
 import type { ValidationError } from "./validation";
@@ -82,6 +83,12 @@ export const Plugins: Record<string, PluginType> = {
     order: 0,
     id: "beancount.plugins.onecommodity",
     supportsConfig: true,
+  },
+  "beancount.plugins.noduplicates": {
+    plugin: validateNoDuplicates,
+    order: 0,
+    id: "beancount.plugins.noduplicates",
+    supportsConfig: false,
   },
   "beancount.plugins.forecast": {
     plugin: forecast,

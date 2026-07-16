@@ -11,6 +11,7 @@ export * from "./plugins/implicit_prices";
 export * from "./plugins/close_tree";
 export * from "./plugins/leafonly";
 export * from "./plugins/onecommodity";
+export * from "./plugins/noduplicates";
 export * from "./plugins/budget";
 export * from "./plugins/creditcard";
 export * from "./plugins/forecast";
