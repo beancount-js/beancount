@@ -346,7 +346,7 @@ export function parseRecursive(
           }),
       );
 
-      doc.sources.forEach((it) => {
+      [...doc.sources].reverse().forEach((it) => {
         try {
           sourceStack.push([
             includeResolver

@@ -95,6 +95,25 @@ describe("Loader", () => {
     ]);
   });
 
+  test("loads sibling includes in declaration order", () => {
+    const [entries, errors] = loadProjectSources("main.beancount", {
+      "main.beancount": `
+        include "a.beancount"
+        include "b.beancount"
+        2024-01-02 open Assets:Main
+      `,
+      "a.beancount": "2024-01-01 open Assets:A",
+      "b.beancount": "2024-01-01 open Assets:B",
+    });
+
+    expect(errors).toEqual([]);
+    expect(
+      entries
+        .filter((entry) => entry.directiveType === "open")
+        .map((entry) => entry.accounts[0]),
+    ).toEqual(["Assets:A", "Assets:B", "Assets:Main"]);
+  });
+
   test("rejects includes that escape the project root", () => {
     expect(() =>
       resolveProjectInclude("main.beancount", "../outside.beancount"),
