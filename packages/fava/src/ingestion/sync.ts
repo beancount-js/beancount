@@ -47,7 +47,8 @@ export async function readSyncEventStream(
   onEvent: (event: SyncJobEvent) => void,
   signal?: AbortSignal,
 ) {
-  if (!response.body) throw new Error("Sync response did not include a stream.");
+  if (!response.body)
+    throw new Error("Sync response did not include a stream.");
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";

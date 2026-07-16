@@ -178,13 +178,18 @@ export const sourceDetailsForm = createFormConfig<
   ],
 });
 
-/** Connection-level details for multi-account providers (no top-level sourceAccount). */
+/**
+ * Connection-level details for multi-account providers (no top-level
+ * sourceAccount).
+ */
 export const sourceDetailsGroupedForm = createFormConfig<
   EditableIngestionSource,
   SourceFormContext
 >({
   id: "ingestion-source-details-grouped",
-  fields: sourceDetailsForm.fields.filter((field) => field.id !== "sourceAccount"),
+  fields: sourceDetailsForm.fields.filter(
+    (field) => field.id !== "sourceAccount",
+  ),
 });
 
 export const sourceApiForm = createFormConfig<

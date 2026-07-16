@@ -99,8 +99,8 @@ export async function writeProjectLedger(
 }
 
 /**
- * Map legacy hash view paths to URL view segments.
- * Accepts `/journal`, `/income_statement`, `/account/Assets:Checking`, etc.
+ * Map legacy hash view paths to URL view segments. Accepts `/journal`,
+ * `/income_statement`, `/account/Assets:Checking`, etc.
  */
 function viewSegmentFromPath(viewPath: string): string {
   const raw = viewPath.replace(/^#/, "");
@@ -127,6 +127,7 @@ function viewSegmentFromPath(viewPath: string): string {
     "/resource": "resource",
     "/import/editor": "settings",
     "/import/accounts": "settings/accounts",
+    "/import/merchants": "settings/merchants",
   };
   let segment = map[clean];
   if (!segment && clean.startsWith("/account/")) {
@@ -178,13 +179,18 @@ export async function gotoStudio(page: Page, viewPath: string) {
   const url = studioUrl(projectId, path, ledgerStem);
   await page.goto(url);
   // SPA hydrates after document load; cold Vite can take several seconds before Main mounts.
-  await expect(page.locator("[data-slot=studio-workspace-header]")).toBeVisible({
-    timeout: 30_000,
-  });
+  await expect(page.locator("[data-slot=studio-workspace-header]")).toBeVisible(
+    {
+      timeout: 30_000,
+    },
+  );
   return projectId;
 }
 
-/** Seed the project's on-disk entry ledger (replaces legacy localStorage seeding). */
+/**
+ * Seed the project's on-disk entry ledger (replaces legacy localStorage
+ * seeding).
+ */
 export async function seedLedger(page: Page, ledger: string) {
   await writeProjectLedger(page, ledger);
 }
@@ -373,7 +379,9 @@ export const mainTabs = [
     assert: async (page: Page) => {
       await expect(page.locator(".beancount-editor .cm-editor")).toBeVisible();
       await expect(
-        page.locator(".beancount-editor").getByRole("button", { name: "Search" }),
+        page
+          .locator(".beancount-editor")
+          .getByRole("button", { name: "Search" }),
       ).toBeVisible();
     },
   },

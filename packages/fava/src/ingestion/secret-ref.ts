@@ -24,7 +24,8 @@ export function secretStoredValue(mode: SecretMode, display: string): string {
 
 export function isSecretConfigured(value: string | undefined): boolean {
   if (!value?.trim()) return false;
-  if (value.startsWith("env:")) return value.slice("env:".length).trim().length > 0;
+  if (value.startsWith("env:"))
+    return value.slice("env:".length).trim().length > 0;
   return true;
 }
 

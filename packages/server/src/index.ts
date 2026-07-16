@@ -71,6 +71,21 @@ export {
 } from "./brandfetch-cache";
 export { FilesystemMerchantStore, type ConfirmMerchantInput } from "./merchant";
 export {
+  applyMerchantResolutionToPendingProposals,
+  buildMerchantReviewClusters,
+  clusterMerchantReviewProposals,
+  isUiAcceptedProposal,
+  needsMerchantReview,
+  pickActiveRunsForConnection,
+  rawMerchantLabel,
+  runBelongsToConnection,
+  type MerchantReviewCluster,
+  type MerchantReviewMember,
+  type MerchantReviewProposalRef,
+  type MerchantReviewProposalRow,
+  type MerchantReviewTransaction,
+} from "./merchant-review";
+export {
   envSecretAvailable,
   readProjectEnvEntries,
   resolveEnvSecret,

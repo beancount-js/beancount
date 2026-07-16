@@ -17,7 +17,7 @@ export async function GET({
     const merchant = await store.merchants.get(params.id, params.merchantId);
     const sourceId = url.searchParams.get("sourceId");
     const source = sourceId
-      ? await store.source(params.id, sourceId)
+      ? await store.sourceForRunSourceId(params.id, sourceId)
       : undefined;
     const enrichment = source?.merchantEnrichment;
     const runtime = enrichment?.brandfetch

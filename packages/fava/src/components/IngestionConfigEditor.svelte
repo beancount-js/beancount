@@ -13,10 +13,7 @@
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
-  import {
-    ingestionSamples,
-    type IngestionSample,
-  } from "../ingestion/samples";
+  import { ingestionSamples, type IngestionSample } from "../ingestion/samples";
   import { isGroupedJsonApiSource } from "@beancount-js/beangulp";
   import {
     duplicateIngestionSource,
@@ -126,14 +123,8 @@
     openBySourceIndex = next;
   }
 
-  function openSectionsFor(
-    index: number,
-    ruleCount: number,
-    grouped = false,
-  ) {
-    return (
-      openBySourceIndex[index] ?? sourceFormSectionIds(ruleCount, grouped)
-    );
+  function openSectionsFor(index: number, ruleCount: number, grouped = false) {
+    return openBySourceIndex[index] ?? sourceFormSectionIds(ruleCount, grouped);
   }
 
   function setOpenSectionsFor(index: number, sections: string[]) {

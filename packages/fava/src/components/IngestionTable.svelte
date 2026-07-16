@@ -67,6 +67,7 @@
   const project = $derived($snapshot);
   const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
   const queryRunId = $derived($activeRoute?.query?.runId ?? "");
+  const queryProposalId = $derived($activeRoute?.query?.proposalId ?? "");
   const reviewFilter = $derived<ReviewFilter>(
     $activeRoute?.query?.review === "accepted" ? "accepted" : "pending",
   );
@@ -146,10 +147,7 @@
 
   const canForceRefetch = $derived(
     Boolean(
-      sourceId &&
-        !loading &&
-        !syncing &&
-        selectedSource?.credentialAvailable,
+      sourceId && !loading && !syncing && selectedSource?.credentialAvailable,
     ),
   );
 
@@ -184,9 +182,7 @@
     ),
   );
 
-  const aiRerunBusy = $derived(
-    syncing && syncJob?.kind === "ai-rerun",
-  );
+  const aiRerunBusy = $derived(syncing && syncJob?.kind === "ai-rerun");
 
   const aiRerunProgressValue = $derived.by(() => {
     if (!syncJob || syncJob.kind !== "ai-rerun") return 0;
@@ -317,10 +313,12 @@
       onSourceChange: (nextSourceId) => void loadRunForSource(nextSourceId),
       onToggleCollapseGroups: toggleAllGroups,
       onOpenAccounts: openAccounts,
+      onOpenMerchants: () => router.push("/import/merchants"),
       onForceRefetch: () => void fetchTransactions(),
       onRerunAi: () => void rerunAiEnrichment(),
       onEditSources: () => router.push("/import/editor"),
       onAccept: () => void accept(),
+      onReviewMerchants: () => router.push("/import/merchants"),
     });
   });
 
@@ -429,9 +427,7 @@
           syncAbort.signal,
         );
       } else if (latest?.runIds.length && !activeRuns.length) {
-        applyActiveRuns(
-          pickRunsForSource(runs, id, undefined, latest.runIds),
-        );
+        applyActiveRuns(pickRunsForSource(runs, id, undefined, latest.runIds));
       }
     } catch {
       // Review page can still work without live sync status.
@@ -494,6 +490,12 @@
 
   async function loadRunForSource(nextSourceId: string) {
     sourceId = nextSourceId;
+    updateRoute({
+      sourceId: nextSourceId,
+      proposalId: undefined,
+      runId: undefined,
+      page: "1",
+    });
     let syncRunIds: string[] | undefined;
     if (project) {
       try {
@@ -625,9 +627,48 @@
   }
 
   function openRow(row: ProposalRow) {
+    if (
+      queryProposalId === row.proposal.id &&
+      queryRunId === row.runId &&
+      sheetOpen
+    ) {
+      return;
+    }
+    updateRoute({
+      proposalId: row.proposal.id,
+      runId: row.runId,
+      sourceId: sourceId || undefined,
+    });
+  }
+
+  function closeProposalSheet() {
+    if (queryProposalId) {
+      updateRoute({ proposalId: undefined });
+    }
+  }
+
+  $effect(() => {
+    if (!queryRunId || !sourceId || !runs.length) return;
+    if (activeRuns.some((run) => run.id === queryRunId)) return;
+    applyActiveRuns(
+      pickRunsForSource(runs, sourceId, queryRunId, syncJob?.runIds),
+    );
+  });
+
+  $effect(() => {
+    if (!queryProposalId) {
+      if (sheetOpen) sheetOpen = false;
+      return;
+    }
+    const row = proposalRows.find(
+      (item) =>
+        item.proposal.id === queryProposalId &&
+        (!queryRunId || item.runId === queryRunId),
+    );
+    if (!row) return;
     selectedRow = row;
     sheetOpen = true;
-  }
+  });
 
   function handleRowKeydown(event: KeyboardEvent, row: ProposalRow) {
     if (event.key === "Enter" || event.key === " ") {
@@ -711,6 +752,7 @@
       }
       if (lastSnapshot) snapshot.set(lastSnapshot);
       status = `Accepted ${acceptedCount} transaction${acceptedCount === 1 ? "" : "s"}.`;
+      closeProposalSheet();
       sheetOpen = false;
       selectedRow = undefined;
     } catch (error) {
@@ -721,10 +763,7 @@
   }
 </script>
 
-<div
-  class="h-full overflow-auto p-3 sm:p-5"
-  data-ingestion-review
->
+<div class="h-full overflow-auto p-3 sm:p-5" data-ingestion-review>
   <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
     {#if isWeb}
       <div
@@ -743,7 +782,7 @@
       {#if syncJob?.kind === "ai-rerun"}
         <div class="flex flex-col gap-2">
           <Progress value={aiRerunProgressValue} />
-          <p class="text-center text-sm text-muted-foreground tabular-nums">
+          <p class="text-center text-sm tabular-nums text-muted-foreground">
             {aiRerunProgressCaption}
           </p>
         </div>
@@ -959,7 +998,7 @@
                   page: "1",
                 })}
             >
-              {#each PAGE_SIZES as size}
+              {#each PAGE_SIZES as size (size)}
                 <option value={size}>{size}</option>
               {/each}
             </select>
@@ -989,14 +1028,17 @@
 </div>
 
 {#if selectedRow && project}
-  <IngestionProposalSheet
-    bind:open={sheetOpen}
-    proposal={selectedRow.proposal}
-    runId={selectedRow.runId}
-    projectId={project.project.id}
-    {allowedAccounts}
-    aiEnabled={sourceAiEnabled}
-    onUpdated={replaceRun}
-    onStatus={(message) => (status = message)}
-  />
+  {#key selectedRow.key}
+    <IngestionProposalSheet
+      bind:open={sheetOpen}
+      proposal={selectedRow.proposal}
+      runId={selectedRow.runId}
+      projectId={project.project.id}
+      {allowedAccounts}
+      aiEnabled={sourceAiEnabled}
+      onClosed={closeProposalSheet}
+      onUpdated={replaceRun}
+      onStatus={(message) => (status = message)}
+    />
+  {/key}
 {/if}

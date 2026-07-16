@@ -9,7 +9,10 @@
 
   type ComboProps = {
     class?: string;
-    /** @deprecated Custom triggers are ignored; FilterCommandPicker owns the trigger. */
+    /**
+     * @deprecated Custom triggers are ignored; FilterCommandPicker owns the
+     *   trigger.
+     */
     trigger?: Snippet<
       [
         {
@@ -75,7 +78,9 @@
     return values;
   });
 
-  const pickerValue = $derived(selected && selected !== "all" ? selected : "all");
+  const pickerValue = $derived(
+    selected && selected !== "all" ? selected : "all",
+  );
 </script>
 
 <div class={["bj-combo-box", klass].filter(Boolean).join(" ")}>

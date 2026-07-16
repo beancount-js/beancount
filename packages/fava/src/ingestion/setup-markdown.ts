@@ -26,8 +26,8 @@ function formatInline(value: string) {
 }
 
 /**
- * Small trusted markdown subset for connection setup copy.
- * Supports paragraphs, ordered/unordered lists, links, bold, and inline code.
+ * Small trusted markdown subset for connection setup copy. Supports paragraphs,
+ * ordered/unordered lists, links, bold, and inline code.
  */
 export function renderSetupMarkdown(markdown: string): string {
   const lines = markdown.replace(/\r\n/g, "\n").trim().split("\n");

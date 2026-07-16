@@ -24,24 +24,14 @@
     type LedgerSearchSort,
     type LedgerSearchState,
   } from "../lib/ledger-search-state";
-  import {
-    journalRecords,
-    type JournalRecord,
-  } from "./journal-table/model";
+  import { journalRecords, type JournalRecord } from "./journal-table/model";
   import { formatDate } from "@beancount-js/parser";
 
   const RESULT_LIMIT = 50;
 
   const { activeRoute, router } = useNavigation();
-  const {
-    query,
-    accounts,
-    payees,
-    tags,
-    years,
-    ledgerData,
-    ledgerOptions,
-  } = useContext();
+  const { query, accounts, payees, tags, years, ledgerData, ledgerOptions } =
+    useContext();
 
   let filtersExpanded = $state(false);
   let searchState = $state<LedgerSearchState>(cloneLedgerSearchState());
@@ -60,6 +50,7 @@
     { value: "balance", label: "Balance" },
     { value: "open", label: "Open" },
     { value: "close", label: "Close" },
+    { value: "commodity", label: "Commodity" },
     { value: "pad", label: "Pad" },
     { value: "note", label: "Note" },
     { value: "document", label: "Document" },
@@ -173,8 +164,11 @@
   }
 
   function groupByDate(records: JournalRecord[]) {
-    const groups: Array<{ key: string; label: string; records: JournalRecord[] }> =
-      [];
+    const groups: Array<{
+      key: string;
+      label: string;
+      records: JournalRecord[];
+    }> = [];
     const index = new Map<string, number>();
     for (const record of records) {
       const key = record.dateKey;
@@ -268,8 +262,16 @@
   );
   const yearOptions = $derived(withAllOption("year", yearList));
   const activeSearch = $derived(hasActiveLedgerSearchState(searchState));
+  const uniqueRecords = $derived.by(() => {
+    const seen = new Set<string>();
+    return directives.filter((record) => {
+      if (seen.has(record.key)) return false;
+      seen.add(record.key);
+      return true;
+    });
+  });
   const sortedRecords = $derived(
-    sortRecords(directives, searchState.sort).slice(0, RESULT_LIMIT),
+    sortRecords(uniqueRecords, searchState.sort).slice(0, RESULT_LIMIT),
   );
   const totalMatches = $derived(directives.length);
   const resultGroups = $derived(groupByDate(sortedRecords));
@@ -278,9 +280,7 @@
     resultGroups.some((group) => !isGroupOpen(group.key)),
   );
   const hasAmbientFilter = $derived(Boolean(filterQueryLive.trim()));
-  const filterEditorExtensions = [
-    syntaxHighlighting(classHighlighter),
-  ];
+  const filterEditorExtensions = [syntaxHighlighting(classHighlighter)];
 </script>
 
 <div class="ledger-search flex min-h-0 flex-1 flex-col">
@@ -424,7 +424,9 @@
 
   <div class="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
     {#if (activeSearch || hasAmbientFilter) && totalMatches === 0}
-      <p class="px-2 py-3 text-sm text-muted-foreground">No matching directives.</p>
+      <p class="px-2 py-3 text-sm text-muted-foreground">
+        No matching directives.
+      </p>
     {:else if activeSearch || hasAmbientFilter}
       <div
         class="sticky top-0 z-10 bg-sidebar px-2 py-2 text-xs font-medium text-muted-foreground"
@@ -473,7 +475,9 @@
                       class="w-full rounded-md border border-sidebar-border bg-background/55 p-2 text-left transition-colors hover:border-sidebar-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       onclick={() => openRecord(record.key)}
                     >
-                      <div class="flex min-w-0 items-start justify-between gap-2">
+                      <div
+                        class="flex min-w-0 items-start justify-between gap-2"
+                      >
                         <div class="min-w-0 flex-1">
                           <div class="truncate text-xs font-semibold">
                             {record.title}

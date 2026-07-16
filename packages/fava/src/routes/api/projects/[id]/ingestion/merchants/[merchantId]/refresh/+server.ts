@@ -24,7 +24,7 @@ export async function POST({
     if (typeof body.sourceId !== "string")
       return json({ error: "sourceId is required." }, { status: 400 });
     const store = serverIngestion();
-    const source = await store.source(params.id, body.sourceId);
+    const source = await store.sourceForRunSourceId(params.id, body.sourceId);
     const brandfetch = source.merchantEnrichment?.brandfetch;
     if (
       !source.merchantEnrichment?.enabled ||

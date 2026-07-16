@@ -85,6 +85,9 @@ test.describe("sample ledger navigation", () => {
       settingsSidebar.getByRole("button", { name: /Review imports/ }),
     ).toBeVisible();
     await expect(
+      settingsSidebar.getByRole("button", { name: /Review merchants/ }),
+    ).toBeVisible();
+    await expect(
       settingsSidebar.getByRole("button", { name: /Accounts/ }),
     ).toBeVisible();
     await expect(page.locator("[data-ledger-file-panels]")).toHaveCount(0);
@@ -115,9 +118,7 @@ test.describe("sample ledger navigation", () => {
 
     await settingsSidebar.getByRole("button", { name: /Accounts/ }).click();
     await expect(page).toHaveURL(/\/ledger\/.+\/settings\/accounts\/?/);
-    await expect(
-      page.locator("[data-ingestion-accounts-setup]"),
-    ).toBeVisible();
+    await expect(page.locator("[data-ingestion-accounts-setup]")).toBeVisible();
     await expect(
       settingsSidebar.getByRole("button", { name: /Accounts/ }),
     ).toHaveAttribute("aria-current", "page");
@@ -174,6 +175,26 @@ test.describe("sample ledger navigation", () => {
     await expect(
       page.getByRole("button", { name: "Fetch transactions" }),
     ).toHaveCount(0);
+  });
+
+  test("review merchants opens from settings sidebar", async ({ page }) => {
+    await gotoStudio(page, "/import/merchants?ledger=sample.beancount");
+    await expect(page).toHaveURL(/\/ledger\/.+\/settings\/merchants\/?/);
+    await expect(page.locator("[data-ingestion-merchant-review]")).toBeVisible({
+      timeout: 15_000,
+    });
+    const header = page.locator("[data-slot='studio-workspace-header']");
+    await expect(header.getByText("Review merchants")).toBeVisible();
+    await expect(
+      header.getByRole("button", { name: "Select source" }),
+    ).toBeVisible();
+    await expect(
+      header.getByRole("button", { name: "Detect merchants" }),
+    ).toBeVisible();
+    const settingsSidebar = page.locator("[data-ledger-settings-sidebar]");
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Review merchants/ }),
+    ).toHaveAttribute("aria-current", "page");
   });
 
   test("loads report data for the ledger selected in the URL", async ({
@@ -270,17 +291,18 @@ test.describe("sample ledger navigation", () => {
     await expect(accountLink).toHaveText(/^(Assets|Liabilities):/);
     await records.first().click();
     await expect(
-      page.getByRole("heading", { name: "Edit transaction" }),
+      page.getByRole("heading", { name: "Edit Transaction" }),
     ).toBeVisible();
+    await expect(page.getByRole("switch", { name: "YAML mode" })).toBeVisible();
     await expect(page).toHaveURL(/\/ledger\/.+\/journal\/\?.*record=/);
-    await page.getByRole("button", { name: "Cancel" }).click();
+    await page.getByRole("button", { name: "Close" }).click();
     await expect(
-      page.getByRole("heading", { name: "Edit transaction" }),
+      page.getByRole("heading", { name: "Edit Transaction" }),
     ).not.toBeVisible();
     await accountLink.click();
     await expect(page).toHaveURL(/\/ledger\/.+\/account\//);
     await expect(
-      page.getByRole("heading", { name: "Edit transaction" }),
+      page.getByRole("heading", { name: "Edit Transaction" }),
     ).not.toBeVisible();
   });
 });
@@ -292,7 +314,9 @@ test.describe("account details", () => {
 
     await gotoStudio(page, "/account/Assets:Checking");
     await page.waitForSelector("[data-ledger-file-row]");
-    await expect(page).toHaveURL(/\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/?/);
+    await expect(page).toHaveURL(
+      /\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/?/,
+    );
     await expect(page.getByRole("tab", { name: "Account Table" })).toBeVisible({
       timeout: 15_000,
     });
@@ -366,14 +390,19 @@ test.describe("account details", () => {
 
     await activityRecords.first().click();
     await expect(
-      page.getByRole("heading", { name: "Edit transaction" }),
+      page.getByRole("heading", { name: "Edit Transaction" }),
     ).toBeVisible();
-    await expect(page).toHaveURL(/\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/\?.*record=/);
-    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByRole("switch", { name: "YAML mode" })).toBeVisible();
+    await expect(page).toHaveURL(
+      /\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/\?.*record=/,
+    );
+    await page.getByRole("button", { name: "Close" }).click();
     await expect(
-      page.getByRole("heading", { name: "Edit transaction" }),
+      page.getByRole("heading", { name: "Edit Transaction" }),
     ).not.toBeVisible();
-    await expect(page).toHaveURL(/\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/?/);
+    await expect(page).toHaveURL(
+      /\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/?/,
+    );
 
     const otherAccountLink = page
       .locator("[data-account-posting] a")
@@ -386,7 +415,7 @@ test.describe("account details", () => {
       /\/ledger\/.+\/account\/Assets(?::|%3A)Checking\/?$/,
     );
     await expect(
-      page.getByRole("heading", { name: "Edit transaction" }),
+      page.getByRole("heading", { name: "Edit Transaction" }),
     ).not.toBeVisible();
 
     expect(pageErrors).toHaveLength(0);

@@ -241,8 +241,7 @@ export class Router {
       ? this.history.replaceState(nextProps)
       : this.history.pushState(nextProps);
 
-    const shouldSync =
-      options.syncBrowser !== false && !this.syncingFromPage;
+    const shouldSync = options.syncBrowser !== false && !this.syncingFromPage;
     if (shouldSync) {
       await this.syncBrowserUrl(nextProps, replace);
     }
@@ -313,9 +312,7 @@ export class Router {
       props.params = { ...props.params, ...parsed.params };
       props.query = { ...props.query, ...query };
       this.history.replaceState(props);
-      this.state.set(
-        search ? `${parsed.viewPath}?${search}` : parsed.viewPath,
-      );
+      this.state.set(search ? `${parsed.viewPath}?${search}` : parsed.viewPath);
     } finally {
       this.suppressStateWatch = false;
       this.syncingFromPage = false;
@@ -354,9 +351,7 @@ export function createRouter(
     const fromPage = pathnameToViewPath(window.location.pathname);
     if (fromPage) {
       const search = window.location.search.replace(/^\?/, "");
-      bootstrap = search
-        ? `${fromPage.viewPath}?${search}`
-        : fromPage.viewPath;
+      bootstrap = search ? `${fromPage.viewPath}?${search}` : fromPage.viewPath;
     }
   }
   const { viewPath, query } = splitViewAndQuery(bootstrap);

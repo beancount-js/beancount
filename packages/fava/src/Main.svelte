@@ -22,6 +22,7 @@
   import IngestionTable from "./components/IngestionTable.svelte";
   import IngestionConfigEditor from "./components/IngestionConfigEditor.svelte";
   import IngestionAccountsSetup from "./components/IngestionAccountsSetup.svelte";
+  import IngestionMerchantReview from "./components/IngestionMerchantReview.svelte";
   import FavaNavigation from "./components/FavaNavigation.svelte";
   import Search from "./components/Search.svelte";
   import JournalRecordRouteSheet from "./components/JournalRecordRouteSheet.svelte";
@@ -35,10 +36,7 @@
     setStudioWorkspace,
     type InlineAiRequest,
   } from "./studio/workspace";
-  import {
-    hashUrlToLedgerHref,
-    ledgerStemForPath,
-  } from "./lib/ledger-route";
+  import { hashUrlToLedgerHref, ledgerStemForPath } from "./lib/ledger-route";
   import { setStudioRouteEnv } from "./lib/studio-route-env";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
@@ -82,6 +80,7 @@
       { path: "/records", element: IngestionTable },
       { path: "/import/editor", element: IngestionConfigEditor },
       { path: "/import/accounts", element: IngestionAccountsSetup },
+      { path: "/import/merchants", element: IngestionMerchantReview },
       { path: "/directives", element: Editor },
       { path: "/resource", element: ResourceViewer },
     ],
@@ -102,6 +101,7 @@
     "/records": "Review imports",
     "/import/editor": "Sources",
     "/import/accounts": "Accounts",
+    "/import/merchants": "Review merchants",
     "/directives": "Editor",
     "/resource": "Resource",
     "/404": "Page not found",

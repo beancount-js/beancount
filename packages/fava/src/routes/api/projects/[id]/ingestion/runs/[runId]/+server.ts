@@ -28,7 +28,9 @@ function asMetadata(value: unknown) {
   return metadata;
 }
 
-function parseTransactionPatch(value: unknown): NormalizedTransactionPatch | undefined {
+function parseTransactionPatch(
+  value: unknown,
+): NormalizedTransactionPatch | undefined {
   if (value === undefined) return undefined;
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("transaction must be an object.");
@@ -36,27 +38,33 @@ function parseTransactionPatch(value: unknown): NormalizedTransactionPatch | und
   const body = value as Record<string, unknown>;
   const patch: NormalizedTransactionPatch = {};
   if (body.bookedAt !== undefined) {
-    if (typeof body.bookedAt !== "string") throw new Error("bookedAt must be a string.");
+    if (typeof body.bookedAt !== "string")
+      throw new Error("bookedAt must be a string.");
     patch.bookedAt = body.bookedAt;
   }
   if (body.amount !== undefined) {
-    if (typeof body.amount !== "string") throw new Error("amount must be a string.");
+    if (typeof body.amount !== "string")
+      throw new Error("amount must be a string.");
     patch.amount = body.amount;
   }
   if (body.currency !== undefined) {
-    if (typeof body.currency !== "string") throw new Error("currency must be a string.");
+    if (typeof body.currency !== "string")
+      throw new Error("currency must be a string.");
     patch.currency = body.currency;
   }
   if (body.merchant !== undefined) {
-    if (typeof body.merchant !== "string") throw new Error("merchant must be a string.");
+    if (typeof body.merchant !== "string")
+      throw new Error("merchant must be a string.");
     patch.merchant = body.merchant;
   }
   if (body.payee !== undefined) {
-    if (typeof body.payee !== "string") throw new Error("payee must be a string.");
+    if (typeof body.payee !== "string")
+      throw new Error("payee must be a string.");
     patch.payee = body.payee;
   }
   if (body.narration !== undefined) {
-    if (typeof body.narration !== "string") throw new Error("narration must be a string.");
+    if (typeof body.narration !== "string")
+      throw new Error("narration must be a string.");
     patch.narration = body.narration;
   }
   if (body.tags !== undefined) {
@@ -102,8 +110,7 @@ export async function PATCH({
     if (typeof proposalId !== "string") {
       return json({ error: "proposalId is required." }, { status: 400 });
     }
-    const account =
-      typeof body.account === "string" ? body.account : undefined;
+    const account = typeof body.account === "string" ? body.account : undefined;
     const status =
       body.status === "ready" || body.status === "needs-review"
         ? body.status
@@ -141,8 +148,7 @@ export async function PATCH({
       ) {
         return json(
           {
-            error:
-              "Choose an account allowed by this source's category scope.",
+            error: "Choose an account allowed by this source's category scope.",
           },
           { status: 400 },
         );

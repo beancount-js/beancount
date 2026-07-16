@@ -43,6 +43,12 @@ describe("ledger-route", () => {
       viewSegment: "settings/accounts",
       params: {},
     });
+    expect(parseLedgerAndView(["sample", "settings", "merchants"])).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/merchants",
+      viewSegment: "settings/merchants",
+      params: {},
+    });
   });
 
   it("defaults to dashboard when view is omitted", () => {
@@ -75,9 +81,7 @@ describe("ledger-route", () => {
       buildLedgerHref("bean-budget", "sample", "/account/Assets:Checking", {
         page: "2",
       }),
-    ).toBe(
-      "/bean-budget/ledger/sample/account/Assets%3AChecking/?page=2",
-    );
+    ).toBe("/bean-budget/ledger/sample/account/Assets%3AChecking/?page=2");
   });
 
   it("maps legacy hash URLs to path hrefs", () => {

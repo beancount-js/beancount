@@ -26,8 +26,8 @@ export interface IngestionSource {
   name: string;
   kind: "json-api";
   /**
-   * Beancount asset account for standalone sources.
-   * Grouped connections use nested `accounts[]` instead.
+   * Beancount asset account for standalone sources. Grouped connections use
+   * nested `accounts[]` instead.
    */
   sourceAccount?: string;
   destinationPath?: string;

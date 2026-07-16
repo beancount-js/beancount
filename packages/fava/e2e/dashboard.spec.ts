@@ -64,7 +64,9 @@ test.describe("financial dashboard", () => {
       '[data-dashboard-flow] a[href*="/account/Expenses"][href*="Interest"]',
     );
     await accountLink.click();
-    await expect(page).toHaveURL(/\/ledger\/.+\/account\/Expenses(?::|%3A)Interest\/?/);
+    await expect(page).toHaveURL(
+      /\/ledger\/.+\/account\/Expenses(?::|%3A)Interest\/?/,
+    );
   });
 
   test("renders aligned, collapsible balance trees", async ({ page }) => {

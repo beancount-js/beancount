@@ -1,6 +1,10 @@
 /** Path-based ledger + view URL helpers (replaces hash `?ledger=` routing). */
 
-export const LEDGER_FILE_EXTENSIONS = [".beancount", ".bean", ".ledger"] as const;
+export const LEDGER_FILE_EXTENSIONS = [
+  ".beancount",
+  ".bean",
+  ".ledger",
+] as const;
 
 /** Default view opened when selecting a ledger or omitting the view segment. */
 export const DEFAULT_LEDGER_VIEW = "/dashboard";
@@ -43,6 +47,7 @@ export const HASH_VIEW_TO_SEGMENT: Record<string, string> = {
   "/resource": "resource",
   "/import/editor": "settings",
   "/import/accounts": "settings/accounts",
+  "/import/merchants": "settings/merchants",
 };
 
 /** URL segment → internal hash-style view path used by components */
@@ -63,6 +68,7 @@ export const SEGMENT_TO_HASH_VIEW: Record<string, string> = {
   directives: "/editor",
   settings: "/import/editor",
   "settings/accounts": "/import/accounts",
+  "settings/merchants": "/import/merchants",
 };
 
 export type ParsedLedgerRoute = {
@@ -89,8 +95,8 @@ export function hasLedgerExtension(path: string) {
 }
 
 /**
- * Resolve a URL ledger stem against known ledger files.
- * Prefers exact match, then unique extensionless match.
+ * Resolve a URL ledger stem against known ledger files. Prefers exact match,
+ * then unique extensionless match.
  */
 export function resolveLedgerPath(
   stem: string,
@@ -120,23 +126,31 @@ export function ledgerStemForPath(
 }
 
 /**
- * Peel view (+ account) from the right of catch-all segments.
- * Remaining left segments form the ledger stem.
+ * Peel view (+ account) from the right of catch-all segments. Remaining left
+ * segments form the ledger stem.
  */
 export function parseLedgerAndView(
   segments: readonly string[],
 ): ParsedLedgerRoute | null {
-  const parts = segments.map((part) => decodeURIComponent(part)).filter(Boolean);
+  const parts = segments
+    .map((part) => decodeURIComponent(part))
+    .filter(Boolean);
   if (!parts.length) return null;
 
-  // settings/accounts (two-segment view)
-  if (parts.length >= 2 && parts.at(-2) === "settings" && parts.at(-1) === "accounts") {
+  // settings/accounts | settings/merchants (two-segment views)
+  if (
+    parts.length >= 2 &&
+    parts.at(-2) === "settings" &&
+    (parts.at(-1) === "accounts" || parts.at(-1) === "merchants")
+  ) {
+    const settingsView = parts.at(-1)!;
     const ledgerParts = parts.slice(0, -2);
     if (!ledgerParts.length) return null;
     return {
       ledgerStem: ledgerParts.join("/"),
-      viewPath: "/import/accounts",
-      viewSegment: "settings/accounts",
+      viewPath:
+        settingsView === "merchants" ? "/import/merchants" : "/import/accounts",
+      viewSegment: `settings/${settingsView}`,
       params: {},
     };
   }
@@ -176,7 +190,10 @@ export function parseLedgerAndView(
   };
 }
 
-/** Map an internal view path (`/income_statement`, `/account/X`) to URL segments. */
+/**
+ * Map an internal view path (`/income_statement`, `/account/X`) to URL
+ * segments.
+ */
 export function viewPathToSegments(viewPath: string): string[] {
   const normalized = viewPath.split("?")[0] ?? viewPath;
   const clean = normalized.replace(/\/+$/, "") || "/";
@@ -191,10 +208,8 @@ export function viewPathToSegments(viewPath: string): string[] {
 
   // Fallback: strip leading slash, underscore → kebab
   return [
-    clean
-      .replace(/^\//, "")
-      .replaceAll("_", "-")
-      .replaceAll("/", "-") || "journal",
+    clean.replace(/^\//, "").replaceAll("_", "-").replaceAll("/", "-") ||
+      "journal",
   ];
 }
 
@@ -204,7 +219,10 @@ export function buildLedgerPathname(
   viewPath: string,
 ): string {
   const viewSegments = viewPathToSegments(viewPath);
-  const ledgerSegments = ledgerStem.split("/").filter(Boolean).map(encodeURIComponent);
+  const ledgerSegments = ledgerStem
+    .split("/")
+    .filter(Boolean)
+    .map(encodeURIComponent);
   const encodedView = viewSegments.map((segment, index) => {
     // Keep account colons readable but safely encoded
     if (viewSegments[0] === "account" && index === 1) {
@@ -259,15 +277,17 @@ export function splitViewAndQuery(path: string): {
       query[key] = value;
     }
   }
-  const viewPath = pathname.endsWith("/") && pathname.length > 1
-    ? pathname.replace(/\/+$/, "")
-    : pathname;
-  return { viewPath: viewPath.startsWith("/") ? viewPath : `/${viewPath}`, query };
+  const viewPath =
+    pathname.endsWith("/") && pathname.length > 1
+      ? pathname.replace(/\/+$/, "")
+      : pathname;
+  return {
+    viewPath: viewPath.startsWith("/") ? viewPath : `/${viewPath}`,
+    query,
+  };
 }
 
-/**
- * Convert a legacy hash URL (`#/journal?ledger=a/b.beancount`) into a path URL.
- */
+/** Convert a legacy hash URL (`#/journal?ledger=a/b.beancount`) into a path URL. */
 export function hashUrlToLedgerHref(
   projectId: string,
   hash: string,

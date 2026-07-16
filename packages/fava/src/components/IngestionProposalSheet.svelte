@@ -38,8 +38,7 @@
     error?: string;
   };
 
-  const sectionTitleClass =
-    "text-xs font-semibold uppercase tracking-wide";
+  const sectionTitleClass = "text-xs font-semibold uppercase tracking-wide";
 
   type MetadataRow = { key: string; value: string };
   type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
@@ -63,6 +62,7 @@
     projectId: string;
     allowedAccounts?: readonly string[];
     aiEnabled?: boolean;
+    onClosed?: () => void;
     onUpdated?: (run: IngestionRun) => void;
     onStatus?: (message: string) => void;
   };
@@ -74,9 +74,16 @@
     projectId,
     allowedAccounts = [],
     aiEnabled = false,
+    onClosed,
     onUpdated,
     onStatus,
   }: Props = $props();
+
+  let wasOpen = $state(false);
+  $effect(() => {
+    if (wasOpen && !open) onClosed?.();
+    wasOpen = open;
+  });
 
   const { tags: ledgerTags } = useContext();
 
@@ -308,9 +315,7 @@
   function normalizeTags(values: string[]) {
     return [
       ...new Set(
-        values
-          .map((item) => item.trim().replace(/^#/, ""))
-          .filter(Boolean),
+        values.map((item) => item.trim().replace(/^#/, "")).filter(Boolean),
       ),
     ];
   }
@@ -455,7 +460,7 @@
     busy = true;
     errors = [];
     try {
-      const run = await ingestionJson<IngestionRun>(
+      const result = await ingestionJson<{ run: IngestionRun }>(
         ingestionPath(
           projectId,
           `/runs/${encodeURIComponent(runId)}/proposals/${encodeURIComponent(proposal.id)}/merchant`,
@@ -467,7 +472,7 @@
         },
       );
       correcting = false;
-      onUpdated?.(run);
+      onUpdated?.(result.run);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       errors = [message];
@@ -702,9 +707,7 @@
               {/snippet}
             </Tooltip.Trigger>
             <Tooltip.Content>
-              {enriching
-                ? "AI enrichment running…"
-                : "Re-run AI enrichment"}
+              {enriching ? "AI enrichment running…" : "Re-run AI enrichment"}
             </Tooltip.Content>
           </Tooltip.Root>
         {/if}
@@ -766,7 +769,7 @@
         </Alert.Root>
       {/if}
 
-      <div class="proposal-form pl-6 min-w-0 flex flex-col gap-6">
+      <div class="proposal-form flex min-w-0 flex-col gap-6 pl-6">
         <section class="flex flex-col gap-2" aria-label="Workflow">
           <FormSectionHeader
             title="Workflow"
@@ -828,9 +831,7 @@
                           </FormSectionHeader>
                           {#if isDebugOpen(`error:${step.key}`, true)}
                             <pre
-                              class="max-h-64 overflow-auto rounded-md border bg-muted/40 p-3 text-xs whitespace-pre-wrap break-words"
-                              >{step.error}</pre
-                            >
+                              class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{step.error}</pre>
                           {/if}
                         </section>
                       {/if}
@@ -848,9 +849,7 @@
                           />
                           {#if isDebugOpen(`prompt:${step.key}`, false)}
                             <pre
-                              class="max-h-64 overflow-auto rounded-md border bg-muted/40 p-3 text-xs whitespace-pre-wrap break-words"
-                              >{step.prompt}</pre
-                            >
+                              class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{step.prompt}</pre>
                           {/if}
                         </section>
                       {/if}
@@ -868,9 +867,7 @@
                           />
                           {#if isDebugOpen(`response:${step.key}`, false)}
                             <pre
-                              class="max-h-64 overflow-auto rounded-md border bg-muted/40 p-3 text-xs whitespace-pre-wrap break-words"
-                              >{step.response}</pre
-                            >
+                              class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{step.response}</pre>
                           {/if}
                         </section>
                       {/if}
@@ -897,9 +894,7 @@
                     <div class="flex flex-col gap-2 pl-2">
                       {#each aiIssues as issue (issue)}
                         <pre
-                          class="max-h-64 overflow-auto rounded-md border bg-muted/40 p-3 text-xs whitespace-pre-wrap break-words"
-                          >{issue}</pre
-                        >
+                          class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{issue}</pre>
                       {/each}
                     </div>
                   {/if}
@@ -938,7 +933,7 @@
                     {merchantInitials()}
                   </div>
                 {/if}
-                <div class="min-w-0 flex-1 flex flex-col gap-2">
+                <div class="flex min-w-0 flex-1 flex-col gap-2">
                   <p class="truncate font-medium">{title}</p>
                   <p class="truncate text-xs text-muted-foreground">
                     Source: {proposal.transaction?.merchant ??
@@ -977,8 +972,7 @@
                         onclick={() =>
                           updateMerchant("confirm", {
                             candidateId: candidate.id,
-                          })}
-                        >Confirm</Button
+                          })}>Confirm</Button
                       >
                       <Button
                         size="sm"
@@ -1027,7 +1021,10 @@
                       placeholder="Merchant name"
                     />
                   </FormField>
-                  <FormField label="Domain" controlId="proposal-merchant-domain">
+                  <FormField
+                    label="Domain"
+                    controlId="proposal-merchant-domain"
+                  >
                     <Input
                       id="proposal-merchant-domain"
                       bind:value={correctionDomain}
@@ -1045,7 +1042,7 @@
                     />
                   </FormField>
                 </div>
-                <div class="flex flex-wrap gap-2 justify-end">
+                <div class="flex flex-wrap justify-end gap-2">
                   <Button
                     size="sm"
                     disabled={busy || !correctionName.trim()}

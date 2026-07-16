@@ -746,23 +746,64 @@ export class FilesystemIngestionStore {
     runId: string,
     proposal: ImportProposal,
   ) {
+    const [run] = await this.replaceProposals(project, [
+      { runId, proposal },
+    ]);
+    return run!;
+  }
+
+  /** Replace many proposals across runs in a single state write. */
+  async replaceProposals(
+    project: string,
+    updates: readonly { runId: string; proposal: ImportProposal }[],
+  ) {
+    if (!updates.length) return [] as IngestionRun[];
     const state = await this.readState(project);
-    const run = state.runs.find((item) => item.id === runId);
-    if (!run) throw new Error(`Unknown ingestion run: ${runId}`);
-    if (!run.proposals.some((item) => item.id === proposal.id))
-      throw new Error(`Unknown ingestion proposal: ${proposal.id}`);
-    const updated = {
-      ...run,
-      proposals: run.proposals.map((item) =>
-        item.id === proposal.id ? proposal : item,
-      ),
-    } satisfies IngestionRun;
-    const complete = { ...updated, summary: summarize(updated.proposals) };
-    state.runs = state.runs.map((item) =>
-      item.id === runId ? complete : item,
-    );
+    const byRun = new Map<string, Map<string, ImportProposal>>();
+    for (const update of updates) {
+      const map = byRun.get(update.runId) ?? new Map();
+      map.set(update.proposal.id, update.proposal);
+      byRun.set(update.runId, map);
+    }
+    const touched: IngestionRun[] = [];
+    state.runs = state.runs.map((run) => {
+      const map = byRun.get(run.id);
+      if (!map) return run;
+      for (const proposalId of map.keys()) {
+        if (!run.proposals.some((item) => item.id === proposalId)) {
+          throw new Error(`Unknown ingestion proposal: ${proposalId}`);
+        }
+      }
+      const proposals = run.proposals.map(
+        (item) => map.get(item.id) ?? item,
+      );
+      const complete = {
+        ...run,
+        proposals,
+        summary: summarize(proposals),
+      } satisfies IngestionRun;
+      touched.push(complete);
+      return complete;
+    });
+    for (const runId of byRun.keys()) {
+      if (!state.runs.some((run) => run.id === runId)) {
+        throw new Error(`Unknown ingestion run: ${runId}`);
+      }
+    }
     await this.writeState(project, state);
-    return complete;
+    return touched;
+  }
+
+  async writeRuns(project: string, runs: readonly IngestionRun[]) {
+    const state = await this.readState(project);
+    const byId = new Map(runs.map((run) => [run.id, run]));
+    state.runs = state.runs.map((run) => {
+      const next = byId.get(run.id);
+      if (!next) return run;
+      return { ...next, summary: summarize(next.proposals) };
+    });
+    await this.writeState(project, state);
+    return state.runs.filter((run) => byId.has(run.id));
   }
 
   async markAccepted(
@@ -1746,6 +1787,7 @@ async function enrichProposalWithPrepared(
     source?: AiEnrichmentSnapshot["source"];
     jobId?: string;
     calls?: AiEnrichmentCallRecord[];
+    merchantOnly?: boolean;
   },
 ): Promise<ImportProposal> {
   if (!proposal.transaction) {
@@ -1764,7 +1806,7 @@ async function enrichProposalWithPrepared(
     (issue) =>
       !issue.startsWith("Merchant resolver ") &&
       !issue.startsWith("AI merchant advisor ") &&
-      !issue.startsWith("AI categoriser "),
+      !(options?.merchantOnly ? false : issue.startsWith("AI categoriser ")),
   );
   if (
     prepared.aiMerchant &&
@@ -1777,6 +1819,26 @@ async function enrichProposalWithPrepared(
     );
     merchantResolution = resolved.resolution;
     nextIssues = [...nextIssues, ...resolved.issues];
+  }
+
+  const calls = options?.calls ?? [];
+  const lastAiEnrichment: AiEnrichmentSnapshot | undefined = calls.length
+    ? {
+        at: nowIso(),
+        source: options?.source ?? "enrich",
+        jobId: options?.jobId,
+        ok: calls.every((call) => call.ok),
+        calls,
+      }
+    : proposal.lastAiEnrichment;
+
+  if (options?.merchantOnly) {
+    return {
+      ...proposal,
+      merchantResolution,
+      issues: nextIssues,
+      lastAiEnrichment,
+    };
   }
 
   const manualSelection = proposal.suggestions.find(
@@ -1832,16 +1894,6 @@ async function enrichProposalWithPrepared(
         prepared.availableAccounts.includes(suggestion.account),
     ),
   );
-  const calls = options?.calls ?? [];
-  const lastAiEnrichment: AiEnrichmentSnapshot | undefined = calls.length
-    ? {
-        at: nowIso(),
-        source: options?.source ?? "enrich",
-        jobId: options?.jobId,
-        ok: calls.every((call) => call.ok),
-        calls,
-      }
-    : proposal.lastAiEnrichment;
   return {
     ...proposal,
     merchantResolution,
@@ -1868,7 +1920,11 @@ export async function enrichProposal(
   entries: readonly Directive[],
   model: string | undefined,
   merchantContext: IngestMerchantContext,
-  options?: { collectDebug?: boolean; jobId?: string },
+  options?: {
+    collectDebug?: boolean;
+    jobId?: string;
+    merchantOnly?: boolean;
+  },
 ): Promise<{ proposal: ImportProposal; debug: AiEnrichmentDebug }> {
   const calls: AiEnrichmentCallRecord[] = [];
   const prepared = await prepareAiEnrichment(
@@ -1886,6 +1942,7 @@ export async function enrichProposal(
     source: "enrich",
     jobId: options?.jobId,
     calls,
+    merchantOnly: options?.merchantOnly,
   });
   return {
     proposal: next,

@@ -195,7 +195,8 @@ export function sheetTitleForKind(kind: DirectiveKind) {
 export function hasEditableAst(value: DirectiveBase) {
   const source = value.source?.directive;
   if (!source) return false;
-  if (value instanceof Transaction) return source instanceof TransactionDirective;
+  if (value instanceof Transaction)
+    return source instanceof TransactionDirective;
   if (value instanceof Open) return source instanceof OpenDirective;
   if (value instanceof Close) return source instanceof CloseDirective;
   if (value instanceof Commodity) return source instanceof CommodityDirective;
@@ -212,7 +213,10 @@ export function hasEditableAst(value: DirectiveBase) {
 
 function publicMetadata(meta: Record<string, unknown>): MetadataRow[] {
   return Object.entries(meta)
-    .filter(([key]) => !key.startsWith("__") && key !== "filename" && key !== "lineno")
+    .filter(
+      ([key]) =>
+        !key.startsWith("__") && key !== "filename" && key !== "lineno",
+    )
     .map(([key, value]) => ({
       key,
       value: value == null ? "" : String(value),
@@ -307,12 +311,12 @@ export function loadDirectiveDraft(value: DirectiveBase): DirectiveDraft {
   } else if (value instanceof Balance) {
     draft.account = value.account;
     draft.amount = value.amount.units.toString();
-    draft.currency = value.amount.currency;
+    draft.currency = value.amount.currency ?? "";
     draft.tolerance = value.tolerance ?? "";
   } else if (value instanceof Price) {
     draft.currency = value.currency;
     draft.amount = value.amount.units.toString();
-    draft.currency2 = value.amount.currency;
+    draft.currency2 = value.amount.currency ?? "";
   } else if (value instanceof Note) {
     draft.account = value.account;
     draft.comment = value.comment;
@@ -328,7 +332,7 @@ export function loadDirectiveDraft(value: DirectiveBase): DirectiveDraft {
     draft.description = value.description;
   } else if (value instanceof Query) {
     draft.name = value.name;
-    draft.query = value.queryString;
+    draft.query = String(value.queryString ?? "");
   } else if (value instanceof Custom) {
     draft.customType = value.type;
     draft.customValues = value.values.map((item) => String(item));
@@ -372,8 +376,9 @@ export function tryParseDirectiveDraft(
 ): { draft: DirectiveDraft; directive: DirectiveBase } | null {
   if (expectedKind === "unknown") return null;
   try {
+    // Snippets often fail booking/account validation outside the full ledger;
+    // only require a matching dated directive with parser AST.
     const ledger = new LedgerSource(source);
-    if (ledger.errors.length) return null;
     const match = ledger.directives.find(
       (entry) => directiveKind(entry) === expectedKind,
     );
@@ -481,11 +486,16 @@ export function buildDirectiveSource(
     if (toleranceText && !tolerance) {
       throw new Error("Tolerance has an invalid amount.");
     }
-    return withCommon(source, draft, {
-      account: requireAccount(draft.account),
+    // BalanceDirective.copy cannot clear tolerance via `??`, so reconstruct.
+    return new BalanceDirective(
+      source.position,
+      parseDate(draft.date),
+      requireAccount(draft.account),
       amount,
-      tolerance: tolerance ?? undefined,
-    });
+      tolerance ?? undefined,
+      metadataFromDraft(draft, source.metadata),
+      source.comments,
+    ).toString();
   }
 
   if (directive instanceof Price && source instanceof PriceDirective) {

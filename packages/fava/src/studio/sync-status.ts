@@ -26,14 +26,10 @@ function upsertTrack(track: ActiveSyncTrack) {
     const next = items.filter(
       (item) =>
         !(
-          item.projectId === track.projectId &&
-          item.sourceId === track.sourceId
+          item.projectId === track.projectId && item.sourceId === track.sourceId
         ),
     );
-    if (
-      track.job.status === "queued" ||
-      track.job.status === "running"
-    ) {
+    if (track.job.status === "queued" || track.job.status === "running") {
       next.push(track);
     }
     return next;
@@ -43,8 +39,7 @@ function upsertTrack(track: ActiveSyncTrack) {
 function removeTrack(projectId: string, sourceId: string) {
   tracks.update((items) =>
     items.filter(
-      (item) =>
-        !(item.projectId === projectId && item.sourceId === sourceId),
+      (item) => !(item.projectId === projectId && item.sourceId === sourceId),
     ),
   );
   const key = trackKey(projectId, sourceId);
@@ -78,8 +73,7 @@ export const activeSyncTracks: Readable<ActiveSyncTrack[]> = {
 
 export const hasActiveSync = derived(tracks, ($tracks) =>
   $tracks.some(
-    (track) =>
-      track.job.status === "queued" || track.job.status === "running",
+    (track) => track.job.status === "queued" || track.job.status === "running",
   ),
 );
 
@@ -126,10 +120,7 @@ export async function beginIngestionSync(options: {
   sourceName: string;
   onUpdate?: (job: IngestionSyncJob) => void;
 }) {
-  const started = await startIngestionSync(
-    options.projectId,
-    options.sourceId,
-  );
+  const started = await startIngestionSync(options.projectId, options.sourceId);
   let latest = started.job;
   await watchIngestionSync({
     projectId: options.projectId,
@@ -150,10 +141,7 @@ export async function restoreIngestionSyncWatch(options: {
   sourceName: string;
   onUpdate?: (job: IngestionSyncJob) => void;
 }) {
-  const job = await latestIngestionSyncJob(
-    options.projectId,
-    options.sourceId,
-  );
+  const job = await latestIngestionSyncJob(options.projectId, options.sourceId);
   if (!job) return null;
   if (job.status === "queued" || job.status === "running") {
     await watchIngestionSync({

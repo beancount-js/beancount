@@ -1,9 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
-import {
-  envSecretAvailable,
-  resolveProjectEnv,
-} from "@beancount-js/server";
+import { envSecretAvailable, resolveProjectEnv } from "@beancount-js/server";
 import {
   categoryAccountsForSource,
   serverIngestion,

@@ -454,6 +454,12 @@ describe("FilesystemIngestionStore", () => {
     await expect(
       store.sourceForRunSourceId("project", "lunchflow:starling"),
     ).resolves.toMatchObject({ id: "lunchflow" });
+    await expect(
+      store.sourceForRunSourceId("project", "lunchflow:7072"),
+    ).resolves.toMatchObject({ id: "lunchflow" });
+    await expect(store.source("project", "lunchflow:7072")).rejects.toThrow(
+      "Unknown ingestion source: lunchflow:7072",
+    );
   });
 
   test("patchProposal updates transaction fields tags and metadata", async () => {

@@ -10,7 +10,10 @@ import {
 } from "./helpers";
 
 const exampleYaml = readFileSync(
-  path.join(fileURLToPath(new URL(".", import.meta.url)), "fixtures/example-ingestion.yaml"),
+  path.join(
+    fileURLToPath(new URL(".", import.meta.url)),
+    "fixtures/example-ingestion.yaml",
+  ),
   "utf8",
 );
 
@@ -36,7 +39,9 @@ async function seedExampleSources(page: Page) {
   await page.keyboard.insertText(exampleYaml);
   await editor.getByRole("button", { name: "Apply YAML" }).click();
   await header.getByRole("switch", { name: "YAML mode" }).click();
-  await expect(editor.locator("[data-ingestion-sources-preview]")).toBeVisible();
+  await expect(
+    editor.locator("[data-ingestion-sources-preview]"),
+  ).toBeVisible();
   await expect(editor.getByText("My bank")).toBeVisible();
 }
 
@@ -44,7 +49,9 @@ async function switchToEdit(page: Page) {
   const header = page.locator("[data-slot=studio-workspace-header]");
   await header.getByRole("button", { name: "Switch to edit mode" }).click();
   await expect(
-    page.locator("[data-ingestion-sources-editor] [data-ingestion-source-form]"),
+    page.locator(
+      "[data-ingestion-sources-editor] [data-ingestion-source-form]",
+    ),
   ).toBeVisible();
 }
 
@@ -62,11 +69,11 @@ test.describe("ingestion sources editor", () => {
     const editor = page.locator("[data-ingestion-sources-editor]");
     const header = page.locator("[data-slot=studio-workspace-header]");
     await expect(editor).toBeVisible();
-    await expect(editor.locator("[data-ingestion-sources-preview]")).toBeVisible(
-      {
-        timeout: 15_000,
-      },
-    );
+    await expect(
+      editor.locator("[data-ingestion-sources-preview]"),
+    ).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(
       header.getByRole("button", { name: "Switch to edit mode" }),
     ).toBeVisible();
@@ -96,9 +103,7 @@ test.describe("ingestion sources editor", () => {
     await expect(
       editor.getByRole("button", { name: "Lunch Flow", exact: true }),
     ).toBeVisible();
-    await expect(
-      editor.getByLabel("Base URL for Lunch Flow"),
-    ).toBeVisible();
+    await expect(editor.getByLabel("Base URL for Lunch Flow")).toBeVisible();
     await expect(
       editor.getByRole("button", { name: "Manage accounts" }),
     ).toBeVisible();
@@ -134,7 +139,9 @@ test.describe("ingestion sources editor", () => {
       editor.getByRole("switch", { name: "Configure merchant enrichment" }),
     ).toBeVisible();
 
-    const sourceAccount = editor.locator('[data-account-field="sourceAccount"]');
+    const sourceAccount = editor.locator(
+      '[data-account-field="sourceAccount"]',
+    );
     await editor.getByRole("button", { name: "Collapse My bank" }).click();
     await expect(sourceAccount).toBeHidden();
     await editor.getByRole("button", { name: "Expand My bank" }).click();

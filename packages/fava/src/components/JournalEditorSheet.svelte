@@ -249,9 +249,8 @@
         ? (editor?.state.doc.toString() ?? rawSource)
         : buildDirectiveSource(formDirective, draft);
       await persist(source);
-      if (saveState === "saving") {
-        saveState = "saved";
-      }
+      // scheduleSave may mark dirty again while persist was in flight.
+      saveState = (saveState as SaveState) === "dirty" ? "dirty" : "saved";
     } catch (error) {
       errors = [
         error instanceof Error ? error.message : "Unable to save this record.",
@@ -306,7 +305,9 @@
 
   function removePosting(index: number) {
     if (draft.postings.length <= 2) return;
-    draft.postings = draft.postings.filter((_, itemIndex) => itemIndex !== index);
+    draft.postings = draft.postings.filter(
+      (_, itemIndex) => itemIndex !== index,
+    );
     scheduleSave();
   }
 
@@ -417,7 +418,10 @@
                     ? "Expand all"
                     : "Collapse all"}
                   onclick={(event) => {
-                    props.onclick?.(event);
+                    const onClick = props.onclick as
+                      | ((event: MouseEvent) => void)
+                      | undefined;
+                    onClick?.(event);
                     toggleCollapseAll();
                   }}
                 >
@@ -467,7 +471,7 @@
         <div class="grid gap-2 text-sm font-medium">
           <span id="record-source-label">Beancount source</span>
           <div
-            class="beancount-editor overflow-hidden rounded-md border border-input min-h-[28rem]"
+            class="beancount-editor min-h-[28rem] overflow-hidden rounded-md border border-input"
             role="textbox"
             aria-labelledby="record-source-label"
             aria-multiline="true"
@@ -476,7 +480,7 @@
           </div>
         </div>
       {:else}
-        <div class="journal-form pl-6 min-w-0 flex flex-col gap-6">
+        <div class="journal-form flex min-w-0 flex-col gap-6 pl-6">
           <section class="flex flex-col gap-2" aria-label="Details">
             <FormSectionHeader
               title="Details"
@@ -933,7 +937,7 @@
                     <FormField label="Query" controlId="journal-query">
                       <textarea
                         id="journal-query"
-                        class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[4rem] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                        class="flex min-h-[4rem] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         bind:value={draft.query}
                         use:autosizeTextarea={draft.query}
                         oninput={() => scheduleSave()}

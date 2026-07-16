@@ -1,4 +1,7 @@
-/** Mutable route context for link builders that cannot take project/ledger props. */
+/**
+ * Mutable route context for link builders that cannot take project/ledger
+ * props.
+ */
 
 type StudioRouteEnv = {
   projectId: string;

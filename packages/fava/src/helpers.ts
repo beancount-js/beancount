@@ -9,7 +9,9 @@ export function urlFor(
 ): string {
   const env = getStudioRouteEnv();
   const raw = path.startsWith("#") ? path.slice(1) : path;
-  const { viewPath, query } = splitViewAndQuery(raw.startsWith("/") ? raw : `/${raw}`);
+  const { viewPath, query } = splitViewAndQuery(
+    raw.startsWith("/") ? raw : `/${raw}`,
+  );
   const merged: Record<string, string | undefined> = { ...query };
   if (params) {
     for (const [key, value] of Object.entries(params)) {

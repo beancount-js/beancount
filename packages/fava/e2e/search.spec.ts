@@ -37,27 +37,33 @@ test.describe("Faceted ledger search", () => {
       searchTab.getByRole("button", { name: "Sort search results" }),
     ).toBeVisible();
 
-    const searchBox = searchTab.getByRole("searchbox", { name: "Search ledger" });
+    const searchBox = searchTab.getByRole("searchbox", {
+      name: "Search ledger",
+    });
     await searchBox.click();
     await searchBox.fill("Assets");
-    await expect
-      .poll(() => page.url())
-      .toMatch(/searchQ=Assets/);
+    await expect.poll(() => page.url()).toMatch(/searchQ=Assets/);
     await expect(
       searchTab.getByRole("button", { name: "Clear search for Assets" }),
     ).toBeVisible();
 
-    const results = searchTab.getByLabel("Search results");
-    await expect(results).toBeVisible({ timeout: 10_000 });
+    // Collapse filters so the results pane has room in the sidebar.
+    await searchTab
+      .getByRole("button", { name: "Collapse filter options" })
+      .click();
+    await expect(searchTab.getByText(/\d+\s+matches?/)).toBeVisible({
+      timeout: 10_000,
+    });
+
+    const results = searchTab.locator('[aria-label="Search results"]');
+    await expect(results).toBeVisible();
     const firstHit = results.locator("ul button").first();
     await expect(firstHit).toBeVisible();
     await firstHit.click();
 
-    await expect
-      .poll(() => page.url())
-      .toMatch(/record=/);
-    await expect(
-      page.getByRole("heading", { name: /Edit (transaction|record)/ }),
-    ).toBeVisible();
+    await expect.poll(() => page.url()).toMatch(/record=/);
+    await expect(page.getByRole("heading", { name: /^Edit / })).toBeVisible();
+    await expect(page.getByRole("switch", { name: "YAML mode" })).toBeVisible();
+    await expect(page.locator("[data-journal-editor-sheet]")).toBeVisible();
   });
 });

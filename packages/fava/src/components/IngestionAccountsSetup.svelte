@@ -189,9 +189,7 @@
   const syncing = $derived(
     syncJob?.status === "queued" || syncJob?.status === "running",
   );
-  const canSync = $derived(
-    linkedCount > 0 && !syncing && !saving && !isWeb,
-  );
+  const canSync = $derived(linkedCount > 0 && !syncing && !saving && !isWeb);
   const lastSyncLabel = $derived.by(() => {
     if (syncing) {
       return syncJob?.progress.message?.trim() || "Syncing…";
@@ -240,7 +238,8 @@
   function accountAvatarClass(seed: string) {
     let hash = 0;
     for (let i = 0; i < seed.length; i += 1) {
-      hash = (hash + seed.charCodeAt(i) * (i + 1)) % ACCOUNT_AVATAR_COLORS.length;
+      hash =
+        (hash + seed.charCodeAt(i) * (i + 1)) % ACCOUNT_AVATAR_COLORS.length;
     }
     return ACCOUNT_AVATAR_COLORS[hash] ?? ACCOUNT_AVATAR_COLORS[0];
   }
@@ -265,10 +264,7 @@
   }
 
   function institutionForLinked(account: JsonApiLinkedAccount) {
-    return (
-      discoveryById.get(account.id)?.institutionName?.trim() ||
-      undefined
-    );
+    return discoveryById.get(account.id)?.institutionName?.trim() || undefined;
   }
 
   async function load() {
@@ -623,9 +619,7 @@
         <article
           class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
         >
-          <div
-            class="flex items-center gap-3 px-4 py-3"
-          >
+          <div class="flex items-center gap-3 px-4 py-3">
             <button
               type="button"
               class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
@@ -646,9 +640,7 @@
               class="flex size-9 shrink-0 items-center justify-center rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
               aria-hidden="true"
             >
-              {initialLetter(
-                selectedConnection.name || selectedConnection.id,
-              )}
+              {initialLetter(selectedConnection.name || selectedConnection.id)}
             </div>
             <div class="min-w-0 flex-1">
               <h2 class="truncate text-sm font-semibold">
@@ -741,10 +733,7 @@
                               disabled={saving}
                               onclick={() => void unlinkAccount(account.id)}
                             >
-                              <MoreVertical
-                                class="size-4"
-                                aria-hidden="true"
-                              />
+                              <MoreVertical class="size-4" aria-hidden="true" />
                             </Button>
                           </li>
                         {/each}
@@ -770,7 +759,9 @@
                   onclick={() => (syncSummaryOpen = !syncSummaryOpen)}
                 >
                   <span class="text-sm font-medium">Sync summary</span>
-                  <span class="min-w-0 flex-1 truncate text-right text-xs text-muted-foreground">
+                  <span
+                    class="min-w-0 flex-1 truncate text-right text-xs text-muted-foreground"
+                  >
                     {lastSyncLabel}
                   </span>
                   <ChevronDown
@@ -790,9 +781,7 @@
                       >
                         Accounts
                       </p>
-                      <dl
-                        class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm"
-                      >
+                      <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
                         <div>
                           <dt class="text-muted-foreground">Total</dt>
                           <dd class="font-medium">{totalAccountCount}</dd>
@@ -819,9 +808,7 @@
                       >
                         Transactions
                       </p>
-                      <dl
-                        class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm"
-                      >
+                      <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
                         <div>
                           <dt class="text-muted-foreground">Seen</dt>
                           <dd class="font-medium">{syncSeen}</dd>
@@ -885,9 +872,8 @@
                       New accounts ready to set up
                     </p>
                     <p class="mt-1 max-w-md text-sm text-muted-foreground">
-                      {linkedCount} of {totalAccountCount} accounts linked.
-                      Choose Beancount source accounts for newly imported
-                      accounts.
+                      {linkedCount} of {totalAccountCount} accounts linked. Choose
+                      Beancount source accounts for newly imported accounts.
                     </p>
                   </div>
                   <Button
@@ -929,8 +915,7 @@
     <Sheet.Header class="border-b px-6 py-5 pr-14">
       <Sheet.Title>Set Up New Accounts</Sheet.Title>
       <Sheet.Description>
-        Select imported accounts and map each one to a Beancount source
-        account.
+        Select imported accounts and map each one to a Beancount source account.
       </Sheet.Description>
     </Sheet.Header>
 
@@ -965,11 +950,7 @@
                 <span class="min-w-0 flex-1">
                   <span class="block text-sm font-medium">{account.name}</span>
                   <span class="mt-0.5 block text-xs text-muted-foreground">
-                    {[
-                      account.institutionName,
-                      account.currency,
-                      account.status,
-                    ]
+                    {[account.institutionName, account.currency, account.status]
                       .filter(Boolean)
                       .join(" · ")}
                   </span>

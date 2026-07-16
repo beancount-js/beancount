@@ -18,13 +18,8 @@ export async function GET({
       async start(controller) {
         try {
           for await (const event of events) {
-            controller.enqueue(
-              encoder.encode(`${JSON.stringify(event)}\n`),
-            );
-            if (
-              event.type === "done" ||
-              event.type === "error"
-            ) {
+            controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+            if (event.type === "done" || event.type === "error") {
               break;
             }
           }

@@ -1,9 +1,8 @@
 import { json } from "@sveltejs/kit";
-import { loadProjectSources } from "@beancount-js/beancount";
 import {
   BrandfetchProvider,
+  applyMerchantResolutionToPendingProposals,
   merchantLogoUrlFor,
-  recategorizeProposal,
   resolveBrandfetchRuntime,
   type IngestionSourceDefinition,
 } from "@beancount-js/server";
@@ -11,9 +10,9 @@ import {
   normalizeMerchant,
   type MerchantCandidate,
   type MerchantIdentity,
+  type MerchantResolution,
 } from "@beancount-js/beangulp";
 import { serverIngestion } from "$lib/server/ingestion";
-import { serverWorkspace } from "$lib/server/workspace";
 
 function message(error: unknown) {
   return error instanceof Error ? error.message : String(error);
@@ -25,24 +24,31 @@ function text(value: unknown) {
 
 function rawLabel(proposal: {
   transaction?: { merchant?: string; payee?: string; narration: string };
+  merchantResolution?: { rawLabel?: string };
 }) {
   return (
-    proposal.transaction?.merchant ??
-    proposal.transaction?.payee ??
+    proposal.merchantResolution?.rawLabel?.trim() ||
+    proposal.transaction?.merchant ||
+    proposal.transaction?.payee ||
     proposal.transaction?.narration
   );
+}
+
+function parseDomain(value: unknown) {
+  const domain = text(value)?.toLowerCase();
+  if (
+    domain &&
+    !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(domain)
+  )
+    throw new Error("Merchant domain must be a valid domain name.");
+  return domain;
 }
 
 function manualCandidate(
   canonicalName: string,
   details: Record<string, unknown>,
 ): MerchantCandidate {
-  const domain = text(details.domain)?.toLowerCase();
-  if (
-    domain &&
-    !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(domain)
-  )
-    throw new Error("Merchant domain must be a valid domain name.");
+  const domain = parseDomain(details.domain);
   return {
     id: `manual:${normalizeMerchant(canonicalName)}:${domain ?? ""}`,
     canonicalName,
@@ -53,6 +59,16 @@ function manualCandidate(
     explanation: "Merchant details were provided manually.",
     provenance: [{ source: "manual", observedAt: new Date().toISOString() }],
   };
+}
+
+/** Allow Confirm to fill a missing domain without a full Correct flow. */
+function withOptionalDomain(
+  candidate: MerchantCandidate,
+  details: Record<string, unknown>,
+): MerchantCandidate {
+  const domain = parseDomain(details.domain);
+  if (!domain || candidate.domain) return candidate;
+  return { ...candidate, domain };
 }
 
 async function cacheLogoIfConfigured(
@@ -93,6 +109,19 @@ async function cacheLogoIfConfigured(
   }
 }
 
+function labelsForFanOut(body: Record<string, unknown>, primaryLabel: string) {
+  const labels = new Set<string>([normalizeMerchant(primaryLabel)]);
+  const extra = body.normalizedLabels;
+  if (Array.isArray(extra)) {
+    for (const item of extra) {
+      if (typeof item === "string" && item.trim()) {
+        labels.add(normalizeMerchant(item));
+      }
+    }
+  }
+  return labels;
+}
+
 export async function PATCH({
   params,
   request,
@@ -114,7 +143,7 @@ export async function PATCH({
 
     const store = serverIngestion();
     const run = await store.run(params.id, params.runId);
-    const source = await store.source(params.id, run.sourceId);
+    const source = await store.sourceForRunSourceId(params.id, run.sourceId);
     const proposal = await store.proposal(
       params.id,
       params.runId,
@@ -136,15 +165,19 @@ export async function PATCH({
         { status: 400 },
       );
 
-    let merchantResolution = proposal.merchantResolution;
+    let merchantResolution: MerchantResolution;
     if (action === "confirm" || action === "correct") {
       const candidate =
         action === "confirm"
-          ? proposal.merchantResolution?.status === "suggested"
-            ? proposal.merchantResolution.candidates.find(
-                (item) => item.id === text(body.candidateId),
-              )
-            : undefined
+          ? (() => {
+              const selected =
+                proposal.merchantResolution?.status === "suggested"
+                  ? proposal.merchantResolution.candidates.find(
+                      (item) => item.id === text(body.candidateId),
+                    )
+                  : undefined;
+              return selected ? withOptionalDomain(selected, body) : undefined;
+            })()
           : text(body.canonicalName)
             ? manualCandidate(text(body.canonicalName)!, body)
             : undefined;
@@ -203,21 +236,47 @@ export async function PATCH({
       };
     }
 
-    const workspace = await serverWorkspace();
-    const snapshot = await workspace.readProject(params.id);
-    const [entries] = loadProjectSources(
-      snapshot.project.entryFile,
-      snapshot.ledgerFiles.map((file) => ({
-        path: file.path,
-        contents: file.contents,
-      })),
+    const state = await store.readState(params.id);
+    const fanOut = applyMerchantResolutionToPendingProposals(
+      state.runs,
+      source.id,
+      labelsForFanOut(body, label),
+      merchantResolution,
+      {
+        includeSuppressed:
+          action === "clear-suppression" ||
+          action === "confirm" ||
+          action === "correct",
+      },
     );
-    const updated = await recategorizeProposal(
-      source,
-      { ...proposal, merchantResolution },
-      entries,
-    );
-    return json(await store.replaceProposal(params.id, params.runId, updated));
+    // Ensure the primary proposal is included even if it was UI-accepted.
+    const runs = fanOut.runs.map((item) => {
+      if (item.id !== params.runId) return item;
+      return {
+        ...item,
+        proposals: item.proposals.map((entry) =>
+          entry.id === params.proposalId
+            ? {
+                ...entry,
+                merchantResolution,
+                issues: (entry.issues ?? []).filter(
+                  (issue) =>
+                    !issue.startsWith("Merchant resolver ") &&
+                    !issue.startsWith("AI merchant advisor "),
+                ),
+              }
+            : entry,
+        ),
+      };
+    });
+    const written = await store.writeRuns(params.id, runs);
+    const updatedRun =
+      written.find((item) => item.id === params.runId) ??
+      (await store.run(params.id, params.runId));
+    return json({
+      run: updatedRun,
+      updatedCount: fanOut.updatedCount,
+    });
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });
   }

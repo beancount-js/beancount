@@ -103,7 +103,9 @@
       enteringPath = true;
       projectActionError =
         picked.error ??
-        (response.ok ? null : response.statusText || "Could not open folder picker.");
+        (response.ok
+          ? null
+          : response.statusText || "Could not open folder picker.");
     } catch (error) {
       enteringPath = true;
       projectActionError =
@@ -143,7 +145,11 @@
   function readStoredSidebarTab(): SidebarTab {
     if (typeof localStorage === "undefined") return "workspace";
     const stored = localStorage.getItem(SIDEBAR_TAB_STORAGE_KEY);
-    if (stored === "projects" || stored === "workspace" || stored === "search") {
+    if (
+      stored === "projects" ||
+      stored === "workspace" ||
+      stored === "search"
+    ) {
       return stored;
     }
     return "workspace";
@@ -344,8 +350,7 @@
                       type="submit"
                       size="sm"
                       class="flex-1"
-                      disabled={addingProject || !path.trim()}
-                      >Add</Button
+                      disabled={addingProject || !path.trim()}>Add</Button
                     ><Button
                       type="button"
                       variant="ghost"
@@ -496,7 +501,10 @@
             role="status"
             data-ingestion-sync-banner
           >
-            <RefreshCw class="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
+            <RefreshCw
+              class="size-3.5 shrink-0 animate-spin"
+              aria-hidden="true"
+            />
             <span class="min-w-0 truncate">
               Syncing {track.sourceName}: {track.job.progress.message}
             </span>

@@ -22,11 +22,12 @@
       label: account,
       value: account,
     }));
-    const values = [
-      { value: "all", label: placeholder },
-      ...accounts,
-    ];
-    if (value && value !== "all" && !accounts.some((item) => item.value === value)) {
+    const values = [{ value: "all", label: placeholder }, ...accounts];
+    if (
+      value &&
+      value !== "all" &&
+      !accounts.some((item) => item.value === value)
+    ) {
       values.push({ label: value, value });
     }
     return values;

@@ -104,7 +104,9 @@ describe("ingestion source form draft", () => {
   });
 
   test("keeps sample template ids when connecting unless already taken", () => {
-    const lunchflow = ingestionSamples.find((sample) => sample.id === "lunchflow");
+    const lunchflow = ingestionSamples.find(
+      (sample) => sample.id === "lunchflow",
+    );
     expect(lunchflow).toBeDefined();
     const connected = sourceFromSample(lunchflow!.template, []);
     expect(connected.id).toBe("lunchflow");

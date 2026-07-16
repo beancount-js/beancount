@@ -2,10 +2,7 @@
   import ArrowRight from "lucide-svelte/icons/arrow-right";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import { isGroupedJsonApiSource } from "@beancount-js/beangulp";
-  import {
-    FilterCommandPicker,
-    SegmentedControl,
-  } from "@beancount-js/forms";
+  import { FilterCommandPicker, SegmentedControl } from "@beancount-js/forms";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import type { IngestionSample } from "../ingestion/samples";
@@ -143,7 +140,9 @@
         </button>
 
         {#if open}
-          <div class="flex flex-col gap-4 border-t border-border px-4 pb-4 pt-3">
+          <div
+            class="flex flex-col gap-4 border-t border-border px-4 pb-4 pt-3"
+          >
             <div
               class="rounded-lg bg-muted/60 px-3 py-3 text-sm text-muted-foreground"
             >
@@ -163,7 +162,7 @@
                     {#if href}
                       <a
                         class="font-medium text-foreground underline underline-offset-2"
-                        href={href}
+                        {href}
                         target="_blank"
                         rel="noreferrer">{host}</a
                       >

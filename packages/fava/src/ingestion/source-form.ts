@@ -399,10 +399,7 @@ function sourceIssues(
       );
     }
   }
-  if (
-    brandfetch?.clientId &&
-    !isEnvSecretNameValid(brandfetch.clientId)
-  ) {
+  if (brandfetch?.clientId && !isEnvSecretNameValid(brandfetch.clientId)) {
     issues.push(
       field(
         "merchantEnrichment.brandfetch.clientId",

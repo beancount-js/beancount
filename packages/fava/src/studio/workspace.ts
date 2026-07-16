@@ -16,7 +16,9 @@ export interface StudioWorkspaceContext {
   activeFile: Writable<string>;
   ledgerSidebarMode: Writable<LedgerSidebarMode>;
   saveFile: (path: string, contents: string) => Promise<void>;
-  resourceUrl: (path: string) => Promise<{ url: string; mimeType: string; revoke?: () => void }>;
+  resourceUrl: (
+    path: string,
+  ) => Promise<{ url: string; mimeType: string; revoke?: () => void }>;
   requestInlineAi: (request: InlineAiRequest) => void;
 }
 

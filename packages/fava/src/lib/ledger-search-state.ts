@@ -145,9 +145,9 @@ function orGroup(tokens: string[]): string {
 
 /**
  * Compile facet state into a Beancount filter query string for `parseQuery`.
- * Free-text `query` is passed through (advanced syntax still works there).
- * Sort is client-side only and is not part of the filter query.
- * Within a facet, values are OR'd; facets are AND'd together.
+ * Free-text `query` is passed through (advanced syntax still works there). Sort
+ * is client-side only and is not part of the filter query. Within a facet,
+ * values are OR'd; facets are AND'd together.
  */
 export function facetsToFilterQuery(state: LedgerSearchState): string {
   const parts: string[] = [];
@@ -162,13 +162,17 @@ export function facetsToFilterQuery(state: LedgerSearchState): string {
   const accounts = uniqueValues(state.accounts);
   if (accounts.length) {
     parts.push(
-      orGroup(accounts.map((account) => `account:${quoteFilterToken(account)}`)),
+      orGroup(
+        accounts.map((account) => `account:${quoteFilterToken(account)}`),
+      ),
     );
   }
 
   const payees = uniqueValues(state.payees);
   if (payees.length) {
-    parts.push(orGroup(payees.map((payee) => `payee:${quoteFilterToken(payee)}`)));
+    parts.push(
+      orGroup(payees.map((payee) => `payee:${quoteFilterToken(payee)}`)),
+    );
   }
 
   const tags = uniqueTags(state.tags);

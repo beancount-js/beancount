@@ -82,9 +82,11 @@
   }
 
   .cycle-select-picker :global(.bj-filter-command-picker__trigger),
-  .cycle-select-picker :global(.bj-filter-command-picker__trigger[data-active="true"]),
+  .cycle-select-picker
+    :global(.bj-filter-command-picker__trigger[data-active="true"]),
   .cycle-select-picker :global(.bj-filter-command-picker__trigger:hover),
-  .cycle-select-picker :global(.bj-filter-command-picker__trigger:focus-visible) {
+  .cycle-select-picker
+    :global(.bj-filter-command-picker__trigger:focus-visible) {
     border-radius: 0.375rem;
     overflow: hidden;
   }
@@ -102,13 +104,15 @@
     font-weight: 500;
   }
 
-  .cycle-select-picker :global(.bj-filter-command-picker__trigger[data-active="true"]) {
+  .cycle-select-picker
+    :global(.bj-filter-command-picker__trigger[data-active="true"]) {
     background: transparent;
     color: inherit;
   }
 
   .cycle-select-picker :global(.bj-filter-command-picker__trigger:hover),
-  .cycle-select-picker :global(.bj-filter-command-picker__trigger:focus-visible) {
+  .cycle-select-picker
+    :global(.bj-filter-command-picker__trigger:focus-visible) {
     background: var(--accent);
     color: var(--accent-foreground);
   }

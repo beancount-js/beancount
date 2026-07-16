@@ -46,7 +46,9 @@
 {#if readonly}
   <output>
     {mode === "env"
-      ? (typeof value === "string" ? value : " ")
+      ? typeof value === "string"
+        ? value
+        : " "
       : typeof value === "string" && value
         ? "••••••••"
         : " "}

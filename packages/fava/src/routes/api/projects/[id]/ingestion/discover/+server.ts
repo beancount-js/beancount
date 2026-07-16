@@ -14,19 +14,14 @@ export async function POST({
     const workspace = await serverWorkspace();
     await workspace.readProject(params.id);
     const body = await request.json();
-    const {
-      baseUrl,
-      secretRef,
-      authScheme,
-      allowedHosts,
-      accountsPath,
-    } = body as {
-      baseUrl?: unknown;
-      secretRef?: unknown;
-      authScheme?: unknown;
-      allowedHosts?: unknown;
-      accountsPath?: unknown;
-    };
+    const { baseUrl, secretRef, authScheme, allowedHosts, accountsPath } =
+      body as {
+        baseUrl?: unknown;
+        secretRef?: unknown;
+        authScheme?: unknown;
+        allowedHosts?: unknown;
+        accountsPath?: unknown;
+      };
     if (typeof baseUrl !== "string" || !baseUrl.trim()) {
       return json({ error: "A baseUrl is required." }, { status: 400 });
     }
@@ -44,10 +39,11 @@ export async function POST({
           ? authScheme
           : undefined,
       allowedHosts: Array.isArray(allowedHosts)
-        ? allowedHosts.filter((host): host is string => typeof host === "string")
+        ? allowedHosts.filter(
+            (host): host is string => typeof host === "string",
+          )
         : undefined,
-      accountsPath:
-        typeof accountsPath === "string" ? accountsPath : undefined,
+      accountsPath: typeof accountsPath === "string" ? accountsPath : undefined,
       projectRoot: await workspace.projectRoot(params.id),
     });
     return json({ accounts });

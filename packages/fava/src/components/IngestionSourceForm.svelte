@@ -226,9 +226,7 @@
   function removeLinkedAccount(index: number) {
     onChange({
       ...source,
-      accounts: linkedAccounts().filter(
-        (_, itemIndex) => itemIndex !== index,
-      ),
+      accounts: linkedAccounts().filter((_, itemIndex) => itemIndex !== index),
     });
   }
 
@@ -250,9 +248,7 @@
     onChange({ ...source, rules: next });
   }
 
-  function remapOpenRuleSections(
-    mapper: (ruleIndex: number) => number | null,
-  ) {
+  function remapOpenRuleSections(mapper: (ruleIndex: number) => number | null) {
     const next = openSections
       .map((id) => {
         const match = /^rule-(\d+)$/.exec(id);
@@ -327,7 +323,7 @@
       removable={true}
       removeLabel={`Remove ${source.name || "source"}`}
       onTitleChange={updateSourceName}
-      onRemove={onRemove}
+      {onRemove}
       onToggle={() => toggleSection("source-details")}
     >
       {#snippet actions()}
@@ -348,7 +344,7 @@
           config={detailsForm}
           context={formContext}
           issues={detailsIssues}
-          onChange={onChange}
+          {onChange}
         />
 
         <section class="ingestion-source-section">
@@ -370,7 +366,7 @@
                   context={formContext}
                   issues={detailsIssues}
                   embedded
-                  onChange={onChange}
+                  {onChange}
                 />
                 {#if source.api.pagination}
                   <StructuredForm
@@ -379,7 +375,7 @@
                     context={formContext}
                     issues={detailsIssues}
                     embedded
-                    onChange={onChange}
+                    {onChange}
                   />
                 {/if}
               </div>
@@ -408,7 +404,11 @@
                           aria-label={`Query parameter ${index + 1} name`}
                           placeholder="Add name"
                           oninput={(event) =>
-                            patchQueryDraft(index, 0, event.currentTarget.value)}
+                            patchQueryDraft(
+                              index,
+                              0,
+                              event.currentTarget.value,
+                            )}
                         />
                       </FormField>
                       <FormField
@@ -421,7 +421,11 @@
                           aria-label={`Query parameter ${index + 1} value`}
                           placeholder="Add value"
                           oninput={(event) =>
-                            patchQueryDraft(index, 1, event.currentTarget.value)}
+                            patchQueryDraft(
+                              index,
+                              1,
+                              event.currentTarget.value,
+                            )}
                         />
                       </FormField>
                     </div>
@@ -519,7 +523,7 @@
                 config={sourceMappingForm}
                 context={formContext}
                 issues={detailsIssues}
-                onChange={onChange}
+                {onChange}
               />
             </div>
           {/if}
@@ -600,7 +604,7 @@
                   context={formContext}
                   issues={detailsIssues}
                   embedded
-                  onChange={onChange}
+                  {onChange}
                 />
                 {#if source.merchantEnrichment}
                   <StructuredForm
@@ -609,7 +613,7 @@
                     context={formContext}
                     issues={detailsIssues}
                     embedded
-                    onChange={onChange}
+                    {onChange}
                   />
                   {#if source.merchantEnrichment.brandfetch}
                     <StructuredForm
@@ -618,7 +622,7 @@
                       context={formContext}
                       issues={detailsIssues}
                       embedded
-                      onChange={onChange}
+                      {onChange}
                     />
                   {/if}
                 {/if}

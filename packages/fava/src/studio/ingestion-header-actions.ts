@@ -6,7 +6,7 @@ export type IngestionEditorHeaderActions = {
   configReady: boolean;
   sectionsCollapsedAll: boolean;
   yamlMode: boolean;
-  /** true = connection preview, false = full editor */
+  /** True = connection preview, false = full editor */
   previewMode: boolean;
   onToggleCollapse: () => void;
   onYamlMode: (pressed: boolean) => void;
@@ -28,16 +28,35 @@ export type IngestionReviewHeaderActions = {
   onSourceChange: (sourceId: string) => void;
   onToggleCollapseGroups: () => void;
   onOpenAccounts: () => void;
+  onOpenMerchants: () => void;
   onForceRefetch: () => void;
   onRerunAi: () => void;
   onEditSources: () => void;
   onAccept: () => void;
+  onReviewMerchants: () => void;
+};
+
+export type IngestionMerchantsHeaderActions = {
+  kind: "merchants";
+  sourceId: string;
+  sourceOptions: { value: string; label: string }[];
+  groupsCollapsedAll: boolean;
+  canDetect: boolean;
+  detectBusy: boolean;
+  onSourceChange: (sourceId: string) => void;
+  onToggleCollapseGroups: () => void;
+  onDetectMerchants: () => void;
+  onReviewImports: () => void;
+  onOpenAccounts: () => void;
+  onEditSources: () => void;
 };
 
 export type IngestionHeaderActions =
   | IngestionEditorHeaderActions
-  | IngestionReviewHeaderActions;
+  | IngestionReviewHeaderActions
+  | IngestionMerchantsHeaderActions;
 
 /** Ingestion controls rendered in `studio-workspace-header`. */
-export const ingestionHeaderActions =
-  writable<IngestionHeaderActions | null>(null);
+export const ingestionHeaderActions = writable<IngestionHeaderActions | null>(
+  null,
+);

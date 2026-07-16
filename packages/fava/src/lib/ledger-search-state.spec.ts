@@ -90,9 +90,9 @@ describe("ledger-search-state", () => {
       searchType: "open",
       record: "r",
     });
-    expect(
-      hasActiveLedgerSearchState(parseLedgerSearchState(params)),
-    ).toBe(true);
+    expect(hasActiveLedgerSearchState(parseLedgerSearchState(params))).toBe(
+      true,
+    );
     clearLedgerSearchParams(params);
     expect(params.get("searchQ")).toBeNull();
     expect(params.get("searchType")).toBeNull();
