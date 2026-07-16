@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import { Decimal } from "@beancount-js/parser";
 import { Amount } from "./amount";
 import { Conversion } from "./conversion";
+import { Posting } from "./data";
 import {
   CounterInventory,
   Inventory,
@@ -10,7 +11,7 @@ import {
   MatchResult,
   SimpleCounterInventory,
 } from "./inventory";
-import { Cost, Position } from "./position";
+import { Cost, CostSpec, Position } from "./position";
 
 const date = DateTime.fromISO("2024-01-01");
 
@@ -145,5 +146,79 @@ describe("Inventory", () => {
     expect(CounterInventory.defaultMap().get("Assets:Cash")).toBeInstanceOf(
       CounterInventory,
     );
+  });
+
+  test("handles empty, single, uncosted, and zero-average inventory paths", () => {
+    const empty = new Inventory();
+    expect(empty.empty).toBe(true);
+    expect(empty.length).toBe(0);
+    expect(empty.toString()).toBe("");
+    expect(empty.currencyUnits("USD")).toEqual(new Amount(0, "USD"));
+    expect(empty.isReducedBy(new Amount("-1", "USD"))).toBe(false);
+    expect(empty.addAmount(null)[1]).toBe(MatchResult.IGNORED);
+    expect(empty.addAmount(new Amount(0, "USD"))[1]).toBe(MatchResult.IGNORED);
+
+    const inventory = new Inventory();
+    inventory.addPosting(
+      new Posting(
+        "Assets:Cash",
+        new Amount("2", "USD"),
+        new CostSpec(new Decimal("5"), null, "EUR"),
+      ),
+    );
+    expect(inventory.getOnlyPosition()?.toString(true)).toBe("2 USD");
+    expect(inventory.currencies).toEqual(["USD"]);
+    expect(inventory.costCurrencies).toEqual([]);
+    expect(inventory.isReducedBy(new Amount("1", "USD"))).toBe(false);
+    expect(inventory.isSmall(new Decimal("1"))).toBe(false);
+    expect(inventory.isSmall({ USD: new Decimal("2") })).toBe(true);
+    expect(inventory.reduce((position) => position.units.neg()).isEmpty()).toBe(
+      false,
+    );
+    expect(new Inventory().addInventory(inventory)).toEqual(inventory);
+
+    const opposingLots = new Inventory(
+      new Position(
+        new Amount("1", "HOOL"),
+        new Cost(DateTime.fromISO("2024-01-01"), new Amount("5", "USD")),
+      ),
+      new Position(
+        new Amount("-1", "HOOL"),
+        new Cost(DateTime.fromISO("2024-01-02"), new Amount("6", "USD")),
+      ),
+    );
+    expect(opposingLots.average().isEmpty()).toBe(true);
+  });
+
+  test("supports counter-inventory reductions, positions, and transfer forms", () => {
+    const simple = new SimpleCounterInventory();
+    simple.add(new Amount("2", "USD"));
+    simple.add(new Amount("-2", "USD"));
+    expect(simple.toRecord()).toEqual({});
+    simple.add(new Amount("3", "EUR"));
+    expect(simple.neg().toAmounts()).toEqual([new Amount("-3", "EUR")]);
+    expect(simple.positions()).toEqual([new Position(new Amount("3", "EUR"))]);
+    expect(
+      simple
+        .reduce((currency, amount) => new Amount(amount.units, currency))
+        .toRecord(),
+    ).toEqual({ EUR: 3 });
+
+    const counter = new CounterInventory();
+    counter.add(new Amount("2", "USD"), new Cost(date, new Amount("1", "EUR")));
+    counter.add(
+      new Amount("-2", "USD"),
+      new Cost(date, new Amount("1", "EUR")),
+    );
+    expect(counter.size).toBe(0);
+    counter.addInventory(simple);
+    expect(counter.toAmounts(Conversion.UNITS)).toEqual([
+      new Amount("3", "EUR"),
+    ]);
+    expect(
+      counter
+        .reduce((key, units) => new Amount(units, key.currency))
+        .toRecord(),
+    ).toEqual({ EUR: 3 });
   });
 });
