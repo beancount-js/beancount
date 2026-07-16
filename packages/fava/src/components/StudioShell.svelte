@@ -25,6 +25,7 @@
   import StudioShellHeader from "./StudioShellHeader.svelte";
   import IngestionHeaderActions from "./IngestionHeaderActions.svelte";
   import { activeSyncTracks } from "../studio/sync-status";
+  import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
 
   export let projects: ProjectSummary[] = [];
@@ -464,6 +465,12 @@
         >
           {pageTitle}
         </span>
+        {#if $ingestionHeaderActions?.kind === "rules"}
+          <span
+            class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+            >{$ingestionHeaderActions.ruleCount}</span
+          >
+        {/if}
         <div class="ml-auto flex shrink-0 items-center gap-2">
           <div
             data-slot="studio-workspace-header-actions"

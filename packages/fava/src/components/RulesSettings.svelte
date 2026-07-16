@@ -6,7 +6,6 @@
   import MoreHorizontal from "lucide-svelte/icons/more-horizontal";
   import Pencil from "lucide-svelte/icons/pencil";
   import Play from "lucide-svelte/icons/play";
-  import Plus from "lucide-svelte/icons/plus";
   import Trash2 from "lucide-svelte/icons/trash-2";
   import {
     summarizeRule,
@@ -295,8 +294,19 @@
       return;
     }
     ingestionHeaderActions.set({
-      kind: "status",
+      kind: "rules",
       saveHint: status,
+      ruleCount: rules.length,
+      sortKey,
+      canApplyAll: rules.some((rule) => rule.active),
+      applyBusy,
+      onSortChange: (next) => {
+        sortKey = next;
+      },
+      onApplyAll: () => {
+        void applyAll();
+      },
+      onAddRule: openCreate,
     });
   });
 
@@ -325,54 +335,6 @@
         </Empty.Header>
       </Empty.Root>
     {:else}
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <h1 class="text-base font-semibold">Rules</h1>
-          <span
-            class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-            >{rules.length}</span
-          >
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <div
-            class="grid grid-cols-2 gap-1 rounded-md border border-border bg-muted/40 p-1"
-            aria-label="Sort rules"
-          >
-            {#each [{ id: "name", label: "Name" }, { id: "active", label: "Active" }] as option (option.id)}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                class={cn(
-                  "h-7 text-xs",
-                  sortKey === option.id
-                    ? "border border-border bg-background shadow-sm hover:bg-background"
-                    : "hover:bg-background",
-                )}
-                aria-pressed={sortKey === option.id}
-                onclick={() => (sortKey = option.id as SortKey)}
-              >
-                {option.label}
-              </Button>
-            {/each}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={applyBusy || !rules.some((rule) => rule.active)}
-            onclick={() => void applyAll()}
-          >
-            <Play class="size-4" aria-hidden="true" />
-            Apply all
-          </Button>
-          <Button type="button" size="sm" onclick={openCreate}>
-            <Plus class="size-4" aria-hidden="true" />
-            Add rule
-          </Button>
-        </div>
-      </div>
-
       {#if loading && !rules.length}
         <div
           class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"

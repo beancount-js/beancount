@@ -51,17 +51,24 @@ export type IngestionMerchantsHeaderActions = {
   onEditSources: () => void;
 };
 
-/** Lightweight status/save hint for pages like Rules settings. */
-export type IngestionStatusHeaderActions = {
-  kind: "status";
+/** Rules settings controls in the workspace header. */
+export type IngestionRulesHeaderActions = {
+  kind: "rules";
   saveHint: string;
+  ruleCount: number;
+  sortKey: "name" | "active";
+  canApplyAll: boolean;
+  applyBusy: boolean;
+  onSortChange: (sortKey: "name" | "active") => void;
+  onApplyAll: () => void;
+  onAddRule: () => void;
 };
 
 export type IngestionHeaderActions =
   | IngestionEditorHeaderActions
   | IngestionReviewHeaderActions
   | IngestionMerchantsHeaderActions
-  | IngestionStatusHeaderActions;
+  | IngestionRulesHeaderActions;
 
 /** Ingestion controls rendered in `studio-workspace-header`. */
 export const ingestionHeaderActions = writable<IngestionHeaderActions | null>(
