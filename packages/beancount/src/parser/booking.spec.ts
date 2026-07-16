@@ -236,4 +236,36 @@ describe("book", () => {
       "You may not have more than one auto-posting per currency",
     );
   });
+
+  test("rejects zero-unit and negative-cost lots after interpolation", () => {
+    const date = DateTime.fromISO("2022-01-01");
+    const [, errors] = book(
+      [
+        transaction("2022-01-01", "Zero costed units", [
+          new Posting(
+            account,
+            new Amount("0", "HOOL"),
+            new Cost(date, new Amount("10", "USD")),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("0", "USD")),
+        ]),
+        transaction("2022-01-02", "Negative lot cost", [
+          new Posting(
+            "Assets:Other",
+            new Amount("1", "HOOL"),
+            new Cost(date, new Amount("-10", "USD")),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("10", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors.map((error) => error.message)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Amount is zero: "0 HOOL'),
+        expect.stringContaining("Cost is negative:"),
+      ]),
+    );
+  });
 });
