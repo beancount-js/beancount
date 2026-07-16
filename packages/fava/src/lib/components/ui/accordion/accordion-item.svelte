@@ -6,7 +6,7 @@
 
   let className: $$Props["class"] = undefined;
   export { className as class };
-  export let value: $$Props["value"];
+  export let value: NonNullable<$$Props["value"]>;
 </script>
 
 <AccordionPrimitive.Item
