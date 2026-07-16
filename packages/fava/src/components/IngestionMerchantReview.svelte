@@ -5,8 +5,11 @@
   import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
   import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
   import ChevronsRight from "lucide-svelte/icons/chevrons-right";
+  import Landmark from "lucide-svelte/icons/landmark";
+  import Link2 from "lucide-svelte/icons/link-2";
   import type { MerchantReviewCluster } from "@beancount-js/server";
   import { Button } from "$lib/components/ui/button";
+  import * as Empty from "$lib/components/ui/empty";
   import type { SortOrder } from "../grid/sort";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
@@ -224,6 +227,14 @@
     failedLogoIds = new Set([...failedLogoIds, clusterId]);
   }
 
+  function openAccounts() {
+    router.push("/import/accounts");
+  }
+
+  function openSources() {
+    router.push("/import/editor");
+  }
+
   async function refreshClusters() {
     if (!project || !sourceId) {
       clusters = [];
@@ -264,11 +275,7 @@
         : (config.sources[0]?.id ?? "");
       loadedProjectId = project.project.id;
       await refreshClusters();
-      status = clusters.length
-        ? ""
-        : sourceId
-          ? "No pending merchants in the active review."
-          : "Add a JSON API source under Sources first.";
+      status = "";
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {
@@ -282,9 +289,7 @@
     updateRoute({ page: "1", sourceId: nextSourceId, cluster: undefined });
     try {
       await refreshClusters();
-      status = clusters.length
-        ? ""
-        : "No pending merchants in the active review.";
+      status = "";
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {
@@ -345,67 +350,60 @@
     {/if}
 
     {#if !isWeb && project}
-      {#if summaryLine}
-        <p class="text-sm text-muted-foreground">{summaryLine}</p>
-      {/if}
-
-      <div
-        role="row"
-        class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-      >
-        <div
-          role="columnheader"
-          aria-sort={ariaSortFor("merchant")}
-          class="justify-self-start"
-        >
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Sort by merchant"
-            onclick={() => cycleSort("merchant")}
-          >
-            Merchant
-            {#if sortOrders.merchant === "asc"}
-              <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
-            {:else if sortOrders.merchant === "desc"}
-              <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
-            {:else}
-              <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
-            {/if}
-          </button>
-        </div>
-        <div
-          role="columnheader"
-          aria-sort={ariaSortFor("pending")}
-          class="justify-self-end"
-        >
-          <button
-            type="button"
-            class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Sort by pending count"
-            onclick={() => cycleSort("pending")}
-          >
-            Pending
-            {#if sortOrders.pending === "asc"}
-              <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
-            {:else if sortOrders.pending === "desc"}
-              <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
-            {:else}
-              <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
-            {/if}
-          </button>
-        </div>
-      </div>
-
       {#if loading && !clusters.length}
         <MerchantsPageSkeleton />
-      {:else if !clusters.length}
+      {:else if clusters.length}
+        {#if summaryLine}
+          <p class="text-sm text-muted-foreground">{summaryLine}</p>
+        {/if}
+
         <div
-          class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+          role="row"
+          class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
-          No merchants need review in the active import run.
+          <div
+            role="columnheader"
+            aria-sort={ariaSortFor("merchant")}
+            class="justify-self-start"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by merchant"
+              onclick={() => cycleSort("merchant")}
+            >
+              Merchant
+              {#if sortOrders.merchant === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.merchant === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
+          <div
+            role="columnheader"
+            aria-sort={ariaSortFor("pending")}
+            class="justify-self-end"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by pending count"
+              onclick={() => cycleSort("pending")}
+            >
+              Pending
+              {#if sortOrders.pending === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.pending === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
         </div>
-      {:else}
         <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
           {#each visibleClusters as cluster, index (cluster.id)}
             <div
@@ -498,6 +496,36 @@
             </div>
           </nav>
         {/if}
+      {:else}
+        <Empty.Root class="min-h-64 border">
+          <Empty.Header>
+            <Empty.Media variant="icon"><Landmark /></Empty.Media>
+            {#if config?.sources.length}
+              <Empty.Title>No merchants to review</Empty.Title>
+              <Empty.Description
+                >Sync from Accounts, then review merchants here.</Empty.Description
+              >
+            {:else}
+              <Empty.Title>No ingestion sources</Empty.Title>
+              <Empty.Description
+                >Add a JSON API source under Sources first.</Empty.Description
+              >
+            {/if}
+          </Empty.Header>
+          <Empty.Content>
+            {#if config?.sources.length}
+              <Button type="button" onclick={openAccounts}>
+                Open Accounts
+                <Link2 class="size-4" aria-hidden="true" />
+              </Button>
+            {:else}
+              <Button type="button" onclick={openSources}>
+                Open Sources
+                <Link2 class="size-4" aria-hidden="true" />
+              </Button>
+            {/if}
+          </Empty.Content>
+        </Empty.Root>
       {/if}
     {/if}
   </div>
