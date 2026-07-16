@@ -67,7 +67,6 @@
         value={display}
         options={envOptions}
         allowCustom={true}
-        fullWidth={true}
         label={envPlaceholder?.trim() || field.label || "Environment variable"}
         placeholder="Search project .env keys..."
         emptyLabel="No matching .env keys. Type a custom name."
@@ -102,5 +101,10 @@
 
   .secret-field :global(input) {
     width: 100%;
+  }
+
+  .secret-field :global(.bj-filter-command-picker__trigger) {
+    width: auto;
+    max-width: 100%;
   }
 </style>
