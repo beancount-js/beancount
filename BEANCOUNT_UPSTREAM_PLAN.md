@@ -1,7 +1,9 @@
 # Beancount Upstream Runtime-Parity Plan
 
-Status: planned; implementation has not started  
+Status: in progress  
 Audit date: 2026-07-15  
+Implementation started: 2026-07-16  
+Licensing decision: GPL-2.0-only port authorized 2026-07-16  
 Local package: `@beancount-js/beancount`  
 Upstream repository: <https://github.com/beancount/beancount>  
 Pinned upstream baseline: [`a3cb3fd9f946d6213dd350fb87709a8ef198301d`](https://github.com/beancount/beancount/tree/a3cb3fd9f946d6213dd350fb87709a8ef198301d/beancount)
@@ -70,16 +72,15 @@ while `packages/beancount/package.json` currently declares MIT. A direct
 translation of upstream implementation code or tests must not proceed under the
 current package metadata without resolving this mismatch.
 
-The default strategy for this plan is to treat `@beancount-js/beancount` as a
-true GPL-2.0-only port:
+This implementation treats `@beancount-js/beancount` as a true GPL-2.0-only
+port. Owner authorization was received on 2026-07-16. The package must:
 
-1. Obtain owner/legal confirmation before the first upstream-derived code or
-   test translation is committed.
-2. Add the GPL-2.0-only license text and upstream attribution.
-3. Mark upstream-derived packages and distributed combinations accurately.
-4. Preserve copyright and permissive-license notices for independently created
+1. Add the GPL-2.0-only license text and upstream attribution before
+   upstream-derived code or test translations are committed.
+2. Mark upstream-derived packages and distributed combinations accurately.
+3. Preserve copyright and permissive-license notices for independently created
    or third-party code.
-5. Review the license of the final browser/server distribution before release.
+4. Review the license of the final browser/server distribution before release.
 
 If GPL treatment is rejected, stop and replace this plan with a clean-room
 compatibility plan. Do not mix a clean-room approach with direct upstream test
