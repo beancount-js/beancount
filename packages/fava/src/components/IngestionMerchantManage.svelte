@@ -138,7 +138,11 @@
       loadedProjectId = project.project.id;
       const nextPages = paginateMerchants(merchants, pageSize);
       const currentPage = Math.max(1, Number($activeRoute?.query?.page) || 1);
-      if (currentPage > 1 && nextPages.length && currentPage > nextPages.length) {
+      if (
+        currentPage > 1 &&
+        nextPages.length &&
+        currentPage > nextPages.length
+      ) {
         updateRoute({ page: String(nextPages.length) });
       }
       status = "";
@@ -228,12 +232,13 @@
         <FileCode2 />
         <Alert.Title>Local server required</Alert.Title>
         <Alert.Description
-          >Saved merchant profiles are available only through the local
-          server.</Alert.Description
+          >Saved merchant profiles are available only through the local server.</Alert.Description
         >
       </Alert.Root>
     {:else if !project}
-      <p class="text-sm text-muted-foreground">Open a project to manage merchants.</p>
+      <p class="text-sm text-muted-foreground">
+        Open a project to manage merchants.
+      </p>
     {:else}
       {#if status}
         <p class="text-sm text-muted-foreground" role="status">{status}</p>
@@ -395,7 +400,8 @@
     padding: 0;
   }
 
-  .ingestion-merchant-manage-search :global(.cv-search-filter-bar__search-pill) {
+  .ingestion-merchant-manage-search
+    :global(.cv-search-filter-bar__search-pill) {
     flex: 1 1 100%;
     width: 100%;
     max-width: none;

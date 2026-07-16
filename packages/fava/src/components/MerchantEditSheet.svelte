@@ -203,8 +203,7 @@
 
     const validationIssues = validateEditableMerchant(merchant);
     if (validationIssues.length) {
-      status =
-        "Resolve the highlighted validation errors before saving.";
+      status = "Resolve the highlighted validation errors before saving.";
       saveState = "error";
       return;
     }
@@ -416,7 +415,7 @@
                     >
                       <span class="min-w-0 truncate">{alias.value}</span>
                       <span
-                        class="truncate text-xs text-muted-foreground tabular-nums"
+                        class="truncate text-xs tabular-nums text-muted-foreground"
                         >{alias.sourceId}</span
                       >
                     </div>
@@ -450,7 +449,7 @@
                         >{entry.source}</span
                       >
                       <span
-                        class="truncate text-xs text-muted-foreground tabular-nums"
+                        class="truncate text-xs tabular-nums text-muted-foreground"
                         >{provenanceSecondary(entry)}</span
                       >
                     </div>
