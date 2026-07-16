@@ -17,10 +17,7 @@ function bookingMethodStrictWithSize(
     const number = posting.units?.neg();
     if (number) {
       const matchingUnits = matches
-        .filter((it) => {
-          const units = it.cost?.amount;
-          return units && units.eq(number);
-        })
+        .filter((it) => it.units.eq(number))
         .sort((a, b) => {
           let vala = a.cost?.date?.toMillis() ?? 0;
           let valb = b.cost?.date?.toMillis() ?? 0;
@@ -34,6 +31,8 @@ function bookingMethodStrictWithSize(
             cost: match.cost,
           }),
         );
+        bookedMatches.push(match);
+        errors = [];
         insufficient = false;
       }
     }
@@ -49,7 +48,7 @@ function bookingMethodFIFO(
   return bookingMethodxIFO(
     entry,
     posting,
-    matches.sort((a, b) => {
+    [...matches].sort((a, b) => {
       let vala = a.cost?.date?.toMillis() ?? 0;
       let valb = b.cost?.date?.toMillis() ?? 0;
       return vala - valb;
@@ -65,7 +64,7 @@ function bookingMethodLIFO(
   return bookingMethodxIFO(
     entry,
     posting,
-    matches.sort((a, b) => {
+    [...matches].sort((a, b) => {
       let vala = a.cost?.date?.toMillis() ?? 0;
       let valb = b.cost?.date?.toMillis() ?? 0;
       return valb - vala;
@@ -81,8 +80,8 @@ function bookingMethodHIFO(
   return bookingMethodxIFO(
     entry,
     posting,
-    matches.sort(
-      (a, b) => (a.cost?.amount?.number || 0) - (b.cost?.amount?.number || 0),
+    [...matches].sort(
+      (a, b) => (b.cost?.amount?.number || 0) - (a.cost?.amount?.number || 0),
     ),
   );
 }
@@ -100,23 +99,26 @@ function bookingMethodxIFO(
   const units = posting.units!;
   const sign = units.lt(0) ? -1 : 1;
   let remaining = units.abs();
-  for (const [_, match] of matches.entries()) {
+  for (const match of matches) {
     if (remaining.lte(0)) {
       break;
     }
 
     // If the inventory somehow ended up with mixed lots, skip this one.
-    if (units.mul(sign).gt(0)) {
+    if (match.units.mul(sign).gt(0)) {
       continue;
     }
 
-    let size = remaining.lt(match.units) ? remaining : match.units;
+    const available = match.units.abs();
+    const size = remaining.lt(available) ? remaining : available;
     bookedReductions.push(
       posting.copy({
         units: size.mul(sign).copy({ currency: match.units.currency }),
+        cost: match.cost,
       }),
     );
     bookedMatches.push(match);
+    remaining = remaining.minus(size);
   }
 
   // If we couldn't eat up all the requested reduction, return an error.
@@ -215,7 +217,7 @@ export function handleAmbiguousMatches(
   booking: Booking = Booking.STRICT,
 ): [Array<Posting>, Array<Position>, Array<ValidationError>] {
   const [bookedReductions, bookedMatches, errors, insufficient] =
-    resolveBookings(entry, posting, matches);
+    resolveBookings(entry, posting, matches, booking);
   if (insufficient) {
     errors.push(
       new ValidationError(
