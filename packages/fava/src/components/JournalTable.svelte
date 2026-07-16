@@ -9,25 +9,26 @@
 
   const { conversion, ledgerData, ledgerSource } = useContext();
 
-  let selectedKeys = new Set<string>();
-  let selectedRecords: JournalRecord[] = [];
-  let bulkSheetOpen = false;
+  let selectedKeys = $state(new Set<string>());
+  let selectedRecords = $state<JournalRecord[]>([]);
+  let bulkSheetOpen = $state(false);
 
-  $: balanceRoots = [
+  const balanceRoots = $derived([
     $ledgerSource.options.beancount.name_assets,
     $ledgerSource.options.beancount.name_liabilities,
-  ];
-  $: balancesByDate = $ledgerSource.data.accountBalanceByDate(
-    $conversion,
-    ...balanceRoots,
+  ]);
+  const balancesByDate = $derived(
+    $ledgerSource.data.accountBalanceByDate($conversion, ...balanceRoots),
   );
 
-  $: ingestionHeaderActions.set({
-    kind: "account-activity",
-    selectedCount: selectedKeys.size,
-    onReplace: () => {
-      bulkSheetOpen = true;
-    },
+  $effect(() => {
+    ingestionHeaderActions.set({
+      kind: "account-activity",
+      selectedCount: selectedKeys.size,
+      onReplace: () => {
+        bulkSheetOpen = true;
+      },
+    });
   });
 
   function handleSelectionChange(
