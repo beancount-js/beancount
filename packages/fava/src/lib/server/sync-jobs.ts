@@ -10,6 +10,7 @@ import {
   type IngestionSyncJobSummary,
 } from "@beancount-js/server";
 import { serverIngestion } from "./ingestion";
+import { serverRules } from "./rules";
 import { serverWorkspace } from "./workspace";
 
 export type SyncJobEvent =
@@ -43,6 +44,7 @@ function emptySummary(): IngestionSyncJobSummary {
     duplicates: 0,
     invalid: 0,
     held: 0,
+    excluded: 0,
   };
 }
 
@@ -125,6 +127,7 @@ async function runAiRerunJob(active: ActiveSyncJob, job: IngestionSyncJob) {
       throw new Error("No import runs are available to enrich.");
     }
 
+    const detectionRules = await serverRules().listActive(active.projectId);
     const enriched = await enrichExistingSourceRuns(
       source,
       sourceRuns,
@@ -133,6 +136,7 @@ async function runAiRerunJob(active: ActiveSyncJob, job: IngestionSyncJob) {
       { projectId: active.projectId, store },
       {
         jobId: active.jobId,
+        detectionRules,
         onProgress: async (progress) => {
           current = {
             ...current,
@@ -262,13 +266,15 @@ async function runSyncJob(active: ActiveSyncJob, job: IngestionSyncJob) {
     );
     const source = await store.source(active.projectId, active.sourceId);
     let state = await store.readState(active.projectId);
-    const runs = await ingestSource(
+    const detectionRules = await serverRules().listActive(active.projectId);
+    const { runs, syncStatePatches } = await ingestSource(
       source,
       state,
       entries,
       undefined,
       { projectId: active.projectId, store },
       {
+        detectionRules,
         onProgress: async (progress) => {
           current = {
             ...current,
@@ -300,7 +306,9 @@ async function runSyncJob(active: ActiveSyncJob, job: IngestionSyncJob) {
 
     const runIds: string[] = [];
     for (const run of runs) {
-      await store.saveRun(active.projectId, run);
+      await store.saveRun(active.projectId, run, {
+        syncState: syncStatePatches[run.sourceId],
+      });
       runIds.push(run.id);
       state = await store.readState(active.projectId);
     }

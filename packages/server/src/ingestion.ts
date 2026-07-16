@@ -6,10 +6,12 @@ import { dirname, join } from "node:path";
 import {
   JsonApiSource,
   JsonMappingNormalizer,
-  MerchantRuleCategorizer,
+  RuleActionsHook,
+  RuleCategorizer,
   HistoricalCategorizer,
   RecurringCategorizer,
   historySamplesFromEntries,
+  migrateMerchantRules,
   runIngestion,
   normalizeMerchant,
   sortSuggestions,
@@ -18,12 +20,18 @@ import {
   isGroupedJsonApiSource,
   jsonApiAccountSourceId,
   jsonApiAccountTransactionsEndpoint,
+  getConnector,
+  hasConnector,
+  requireConnector,
   type AiEnrichmentCallRecord,
   type AiEnrichmentSnapshot,
   type CategorizationContext,
   type CategorizerPlugin,
   type CategoryEvidence,
   type CategorySuggestion,
+  type ConnectorSourceDefinition,
+  type ConnectorSyncState,
+  type DetectionRule,
   type DiscoveredJsonApiAccount,
   type ImportProposal,
   type IngestionProgress,
@@ -36,7 +44,13 @@ import {
   type MerchantCandidate,
   type MerchantResolution,
   type MerchantResolverPlugin,
+  type ProposalHook,
 } from "@beancount-js/beangulp";
+import { ensureConnectorsRegistered } from "./connectors";
+import {
+  migrateIngestionConfig,
+  migrateIngestionState,
+} from "./ingestion-migrate";
 import type { Directive } from "@beancount-js/beancount";
 import {
   BrandfetchProvider,
@@ -54,7 +68,8 @@ import {
   resolveProjectEnv,
 } from "./project-env";
 
-const VERSION = 1;
+const VERSION = 2;
+const STATE_VERSION = 1;
 const RUN_LIMIT = 20;
 const SEEN_LIMIT = 10_000;
 
@@ -73,13 +88,14 @@ export interface MerchantEnrichmentConfig {
   enabled: boolean;
   aiEnabled?: boolean;
   countryCode?: string;
+  /** @deprecated Prefer IngestionConfig.brandfetch. */
   brandfetch?: BrandfetchEnrichmentConfig;
 }
 
 export interface IngestionSourceDefinition {
   id: string;
   name: string;
-  kind: "json-api";
+  kind: string;
   /**
    * Beancount asset account for standalone sources.
    * Grouped connections set this per nested `accounts[]` entry instead.
@@ -92,15 +108,21 @@ export interface IngestionSourceDefinition {
   /** Markdown shown in the connection preview setup callout. */
   setup?: string;
   merchantEnrichment?: MerchantEnrichmentConfig;
-  api: JsonApiSourceConfig;
-  mapping: JsonMappingConfig;
+  /** Legacy json-api transport config. */
+  api?: JsonApiSourceConfig;
+  /** Legacy json-api field mapping. */
+  mapping?: JsonMappingConfig;
+  /** Connector-owned config for registered kinds (e.g. lunchflow). */
+  config?: unknown;
   rules: MerchantRule[];
   /** Nested bank accounts for multi-account providers (e.g. Lunch Flow). */
   accounts?: JsonApiLinkedAccount[];
 }
 
 export interface IngestionConfig {
-  version: 1;
+  version: 1 | 2;
+  /** Global Brandfetch / brand-match settings. */
+  brandfetch?: BrandfetchEnrichmentConfig;
   sources: IngestionSourceDefinition[];
 }
 
@@ -129,6 +151,7 @@ export interface IngestionSyncJobSummary {
   duplicates: number;
   invalid: number;
   held: number;
+  excluded?: number;
 }
 
 export type IngestionSyncJobKind = "sync" | "ai-rerun";
@@ -151,11 +174,55 @@ export interface IngestionSyncJob {
 export interface IngestProgressOptions {
   accountId?: string;
   onProgress?: (progress: IngestionProgress) => void | Promise<void>;
+  /** Global detection rules; falls back to migrating legacy source.rules. */
+  detectionRules?: readonly DetectionRule[];
+}
+
+function resolveDetectionRules(
+  source: IngestionSourceDefinition,
+  options?: { detectionRules?: readonly DetectionRule[] },
+): DetectionRule[] {
+  if (options?.detectionRules) return [...options.detectionRules];
+  return migrateMerchantRules(source.rules ?? []);
+}
+
+function buildCategorizers(
+  detectionRules: readonly DetectionRule[],
+  options?: {
+    aiEnabled?: boolean;
+    model?: string;
+    onAiDebug?: (call: AiEnrichmentDebugCall) => void;
+  },
+): CategorizerPlugin[] {
+  const categorizers: CategorizerPlugin[] = [
+    new RuleCategorizer(detectionRules),
+    new HistoricalCategorizer(),
+    new RecurringCategorizer(),
+  ];
+  if (options?.aiEnabled) {
+    categorizers.push(
+      new CodexCategorizer({
+        model: options.model,
+        onDebug: options.onAiDebug,
+      }),
+    );
+  }
+  return categorizers;
+}
+
+function buildRuleHooks(
+  detectionRules: readonly DetectionRule[],
+): ProposalHook[] {
+  return detectionRules.length > 0
+    ? [new RuleActionsHook(detectionRules)]
+    : [];
 }
 
 interface IngestionState {
   version: 1;
   cursors: Record<string, string | undefined>;
+  /** Connector-owned sync bookmarks keyed by target sourceId. */
+  syncState: Record<string, ConnectorSyncState>;
   seenImportIds: string[];
   seenFingerprints: string[];
   runs: IngestionRun[];
@@ -190,12 +257,53 @@ function configDefaults(): IngestionConfig {
 
 function stateDefaults(): IngestionState {
   return {
-    version: VERSION,
+    version: STATE_VERSION,
     cursors: {},
+    syncState: {},
     seenImportIds: [],
     seenFingerprints: [],
     runs: [],
   };
+}
+
+export function validateBrandfetchConfig(
+  value: BrandfetchEnrichmentConfig | undefined,
+  countryCode?: string,
+) {
+  if (!value) return undefined;
+  if (typeof value.enabled !== "boolean")
+    throw new Error("brandfetch.enabled must be a boolean.");
+  if (
+    value.enabled &&
+    (!value.apiKeySecretRef || !value.apiKeySecretRef.trim())
+  ) {
+    throw new Error("Brandfetch needs an API key or env: variable reference.");
+  }
+  if (
+    value.apiKeySecretRef?.startsWith("env:") &&
+    !value.apiKeySecretRef.slice("env:".length).trim()
+  ) {
+    throw new Error("Brandfetch env: references need a variable name.");
+  }
+  if (value.assetMode === "cache" && !value.cacheContentAllowed) {
+    throw new Error(
+      "Local Brandfetch caching requires cacheContentAllowed: true.",
+    );
+  }
+  if (
+    value.ttlDays !== undefined &&
+    (!Number.isInteger(value.ttlDays) ||
+      value.ttlDays < 1 ||
+      value.ttlDays > 29)
+  ) {
+    throw new Error("Brandfetch ttlDays must be an integer from 1 to 29.");
+  }
+  // Transaction lookups use each source's merchantEnrichment.countryCode at runtime.
+  void countryCode;
+  return {
+    ...value,
+    clientId: value.clientId?.trim() || undefined,
+  } satisfies BrandfetchEnrichmentConfig;
 }
 
 function validateMerchantEnrichment(
@@ -209,48 +317,44 @@ function validateMerchantEnrichment(
     throw new Error(
       "merchantEnrichment.countryCode must be an ISO alpha-2 code.",
     );
-  const brandfetch = value.brandfetch;
-  if (!brandfetch) return { ...value, countryCode };
-  if (typeof brandfetch.enabled !== "boolean")
-    throw new Error("merchantEnrichment.brandfetch.enabled must be a boolean.");
-  if (
-    brandfetch.enabled &&
-    (!brandfetch.apiKeySecretRef || !brandfetch.apiKeySecretRef.trim())
-  ) {
-    throw new Error("Brandfetch needs an API key or env: variable reference.");
-  }
-  if (
-    brandfetch.apiKeySecretRef?.startsWith("env:") &&
-    !brandfetch.apiKeySecretRef.slice("env:".length).trim()
-  ) {
-    throw new Error("Brandfetch env: references need a variable name.");
-  }
-  if (brandfetch.assetMode === "cache" && !brandfetch.cacheContentAllowed) {
-    throw new Error(
-      "Local Brandfetch caching requires cacheContentAllowed: true.",
-    );
-  }
-  if (
-    brandfetch.ttlDays !== undefined &&
-    (!Number.isInteger(brandfetch.ttlDays) ||
-      brandfetch.ttlDays < 1 ||
-      brandfetch.ttlDays > 29)
-  ) {
-    throw new Error("Brandfetch ttlDays must be an integer from 1 to 29.");
-  }
-  if (brandfetch.allowTransactionLookup && !countryCode) {
-    throw new Error(
-      "Brandfetch transaction lookups need merchantEnrichment.countryCode.",
-    );
-  }
+  // Brandfetch is global; ignore any nested copy on write.
   return {
-    ...value,
+    enabled: value.enabled,
+    aiEnabled: value.aiEnabled,
     countryCode,
-    brandfetch: {
-      ...brandfetch,
-      clientId: brandfetch.clientId?.trim() || undefined,
-    },
   } satisfies MerchantEnrichmentConfig;
+}
+
+/** True when the source is a registered connector (not legacy json-api). */
+export function isConnectorIngestionSource(
+  source: Pick<IngestionSourceDefinition, "kind">,
+) {
+  ensureConnectorsRegistered();
+  return source.kind !== "json-api" && hasConnector(source.kind);
+}
+
+/** Grouped multi-account connections (connector capability or legacy accounts[]). */
+export function isGroupedIngestionSource(
+  source: IngestionSourceDefinition,
+): boolean {
+  ensureConnectorsRegistered();
+  if (isConnectorIngestionSource(source)) {
+    return (
+      getConnector(source.kind)?.capabilities.groupedAccounts === true ||
+      Array.isArray(source.accounts)
+    );
+  }
+  return isGroupedJsonApiSource(source);
+}
+
+export function sourceSecretRef(
+  source: IngestionSourceDefinition,
+): string | undefined {
+  if (isConnectorIngestionSource(source)) {
+    const config = source.config as { secretRef?: unknown } | undefined;
+    return typeof config?.secretRef === "string" ? config.secretRef : undefined;
+  }
+  return source.api?.secretRef;
 }
 
 function validateHttpsUrl(
@@ -306,19 +410,50 @@ function validateLinkedAccount(account: JsonApiLinkedAccount, index: number) {
   } satisfies JsonApiLinkedAccount;
 }
 
-function validateSource(
+function validateConnectorSource(
   source: IngestionSourceDefinition,
 ): IngestionSourceDefinition {
-  sourceId(source.id);
-  if (!source.name.trim()) throw new Error("An ingestion source needs a name.");
-  if (source.kind !== "json-api")
-    throw new Error(
-      "Only JSON API sources are supported in the first release.",
-    );
+  ensureConnectorsRegistered();
+  const connector = requireConnector(source.kind);
+  const config = connector.validateConfig(source.config ?? {});
+  let accounts: JsonApiLinkedAccount[] | undefined;
+  let sourceAccount: string | undefined;
+  if (connector.capabilities.groupedAccounts) {
+    accounts = (source.accounts ?? []).map(validateLinkedAccount);
+    const accountIds = new Set(accounts.map((account) => account.id));
+    if (accountIds.size !== accounts.length) {
+      throw new Error("Linked account identifiers must be unique.");
+    }
+    sourceAccount = undefined;
+  } else {
+    if (!source.sourceAccount?.trim()) {
+      throw new Error("A source account is required.");
+    }
+    sourceAccount = source.sourceAccount.trim();
+    accounts = undefined;
+  }
+  return {
+    id: source.id,
+    name: source.name.trim(),
+    kind: source.kind,
+    sourceAccount,
+    accounts,
+    destinationPath: source.destinationPath?.trim() || undefined,
+    defaultCurrency: source.defaultCurrency?.trim() || undefined,
+    allowedAccountRoots: source.allowedAccountRoots?.filter(Boolean),
+    aiEnabled: source.aiEnabled,
+    setup: source.setup?.trim() || connector.setupMarkdown || undefined,
+    merchantEnrichment: validateMerchantEnrichment(source.merchantEnrichment),
+    config,
+    rules: source.rules ?? [],
+  };
+}
+
+function validateJsonApiSource(
+  source: IngestionSourceDefinition,
+): IngestionSourceDefinition {
   if (!source.api?.secretRef?.trim()) {
-    throw new Error(
-      "JSON API sources need an API key (or env: reference).",
-    );
+    throw new Error("JSON API sources need an API key (or env: reference).");
   }
   if (
     source.api.secretRef.startsWith("env:") &&
@@ -328,9 +463,6 @@ function validateSource(
   }
   if (!source.mapping?.date || !source.mapping.amount) {
     throw new Error("JSON API mappings need date and amount paths.");
-  }
-  if (source.setup !== undefined && typeof source.setup !== "string") {
-    throw new Error("Source setup must be markdown text.");
   }
 
   const grouped = isGroupedJsonApiSource(source);
@@ -385,14 +517,35 @@ function validateSource(
 
   return {
     ...source,
+    kind: "json-api",
     sourceAccount,
     accounts,
     setup: source.setup?.trim() || undefined,
     api,
+    mapping: source.mapping,
+    config: undefined,
     rules: source.rules ?? [],
     allowedAccountRoots: source.allowedAccountRoots?.filter(Boolean),
     merchantEnrichment: validateMerchantEnrichment(source.merchantEnrichment),
   };
+}
+
+function validateSource(
+  source: IngestionSourceDefinition,
+): IngestionSourceDefinition {
+  sourceId(source.id);
+  if (!source.name.trim()) throw new Error("An ingestion source needs a name.");
+  if (source.setup !== undefined && typeof source.setup !== "string") {
+    throw new Error("Source setup must be markdown text.");
+  }
+  ensureConnectorsRegistered();
+  if (source.kind !== "json-api" && hasConnector(source.kind)) {
+    return validateConnectorSource(source);
+  }
+  if (source.kind !== "json-api") {
+    throw new Error(`Unsupported ingestion source kind: ${source.kind}`);
+  }
+  return validateJsonApiSource(source);
 }
 
 export type FilesystemIngestionStoreOptions = {
@@ -429,22 +582,40 @@ export class FilesystemIngestionStore {
   }
 
   async readConfig(project: string) {
-    return readJson(await this.path(project, "sources.json"), configDefaults());
+    const raw = await readJson(
+      await this.path(project, "sources.json"),
+      configDefaults(),
+    );
+    return migrateIngestionConfig(raw);
   }
 
   async writeConfig(project: string, config: IngestionConfig) {
-    const sources = config.sources.map(validateSource);
+    ensureConnectorsRegistered();
+    const migrated = migrateIngestionConfig(config);
+    const sources = migrated.sources.map(validateSource);
     if (new Set(sources.map((source) => source.id)).size !== sources.length) {
       throw new Error("Ingestion source identifiers must be unique.");
     }
+    const countryHint = sources
+      .map((source) => source.merchantEnrichment?.countryCode)
+      .find((code) => !!code);
+    const brandfetch = validateBrandfetchConfig(
+      migrated.brandfetch ?? config.brandfetch,
+      countryHint,
+    );
     await this.write(await this.path(project, "sources.json"), {
       version: VERSION,
+      brandfetch,
       sources,
     });
   }
 
   async readState(project: string) {
-    return readJson(await this.path(project, "state.json"), stateDefaults());
+    const raw = await readJson(
+      await this.path(project, "state.json"),
+      stateDefaults(),
+    );
+    return migrateIngestionState(raw) as IngestionState;
   }
 
   private async writeState(project: string, state: IngestionState) {
@@ -472,11 +643,18 @@ export class FilesystemIngestionStore {
     throw new Error(`Unknown ingestion source: ${runSourceId}`);
   }
 
-  async saveRun(project: string, run: IngestionRun) {
+  async saveRun(
+    project: string,
+    run: IngestionRun,
+    options?: { syncState?: ConnectorSyncState },
+  ) {
     const state = await this.readState(project);
     const next = {
       ...state,
       cursors: { ...state.cursors, [run.sourceId]: run.cursor },
+      syncState: options?.syncState
+        ? { ...state.syncState, [run.sourceId]: options.syncState }
+        : state.syncState,
       seenImportIds: [
         ...new Set([
           ...state.seenImportIds,
@@ -844,6 +1022,8 @@ function summarize(proposals: readonly ImportProposal[]) {
     invalid: proposals.filter((proposal) => proposal.status === "invalid")
       .length,
     held: proposals.filter((proposal) => proposal.status === "held").length,
+    excluded: proposals.filter((proposal) => proposal.status === "excluded")
+      .length,
   };
 }
 
@@ -852,7 +1032,7 @@ export function categoryAccountsForSource(
   source: IngestionSourceDefinition,
   accounts: readonly string[],
 ) {
-  const linkedSourceAccounts = isGroupedJsonApiSource(source)
+  const linkedSourceAccounts = isGroupedIngestionSource(source)
     ? (source.accounts ?? []).map((account) => account.sourceAccount)
     : source.sourceAccount
       ? [source.sourceAccount]
@@ -874,7 +1054,9 @@ export type ExpandedIngestionTarget = {
   sourceId: string;
   sourceAccount: string;
   defaultCurrency?: string;
-  api: JsonApiSourceConfig;
+  accountId?: string;
+  /** Present for legacy json-api targets. */
+  api?: JsonApiSourceConfig;
 };
 
 /** Expand a standalone or grouped source into concrete fetch targets. */
@@ -882,6 +1064,23 @@ export function expandIngestionSource(
   source: IngestionSourceDefinition,
   options?: { accountId?: string },
 ): ExpandedIngestionTarget[] {
+  ensureConnectorsRegistered();
+  if (isConnectorIngestionSource(source)) {
+    const connector = requireConnector(source.kind);
+    return connector.expandTargets(
+      {
+        ...(source as ConnectorSourceDefinition),
+        config: source.config,
+        rules: source.rules ?? [],
+      } as ConnectorSourceDefinition,
+      options,
+    );
+  }
+
+  if (!source.api) {
+    throw new Error(`Source ${source.id} is missing JSON API configuration.`);
+  }
+
   if (isGroupedJsonApiSource(source)) {
     const baseUrl = source.api.baseUrl?.trim();
     if (!baseUrl) {
@@ -903,8 +1102,9 @@ export function expandIngestionSource(
       sourceId: jsonApiAccountSourceId(source.id, account.id),
       sourceAccount: account.sourceAccount,
       defaultCurrency: account.defaultCurrency ?? source.defaultCurrency,
+      accountId: account.id,
       api: {
-        ...source.api,
+        ...source.api!,
         endpoint: jsonApiAccountTransactionsEndpoint(baseUrl, account.id),
       },
     }));
@@ -1499,17 +1699,23 @@ async function merchantResolversFor(
   source: IngestionSourceDefinition,
   model: string | undefined,
   context: IngestMerchantContext | undefined,
-  options?: { onAiDebug?: (call: AiEnrichmentDebugCall) => void },
+  options?: {
+    onAiDebug?: (call: AiEnrichmentDebugCall) => void;
+    brandfetch?: BrandfetchEnrichmentConfig;
+  },
 ) {
   const enrichment = source.merchantEnrichment;
   if (!enrichment?.enabled || !context) return [] as MerchantResolverPlugin[];
   const projectRoot = await context.store.projectRoot(context.projectId);
+  const brandfetch =
+    options?.brandfetch ??
+    (await context.store.readConfig(context.projectId)).brandfetch;
   const brandfetchRuntime = await resolveBrandfetchRuntime(
-    enrichment.brandfetch,
+    brandfetch,
     projectRoot,
   );
   const resolvedEnrichment = enrichmentWithResolvedClientId(
-    enrichment,
+    { ...enrichment, brandfetch },
     brandfetchRuntime?.clientId,
   );
   const resolvers: MerchantResolverPlugin[] = [
@@ -1542,7 +1748,7 @@ async function merchantResolversFor(
         resolvedEnrichment,
       ),
     );
-  const providerConfig = enrichment.brandfetch;
+  const providerConfig = brandfetch;
   const apiKey = brandfetchRuntime?.apiKey;
   if (providerConfig?.enabled && apiKey) {
     resolvers.push(
@@ -1560,23 +1766,42 @@ async function merchantResolversFor(
   return resolvers;
 }
 
+export type IngestSourceResult = {
+  runs: IngestionRun[];
+  /** Sync bookmarks to persist for successfully completed targets. */
+  syncStatePatches: Record<string, ConnectorSyncState>;
+};
+
 export async function ingestSource(
   source: IngestionSourceDefinition,
-  state: Pick<IngestionState, "cursors" | "seenImportIds" | "seenFingerprints">,
+  state: Pick<
+    IngestionState,
+    "cursors" | "syncState" | "seenImportIds" | "seenFingerprints"
+  >,
   entries: readonly Directive[],
   model?: string,
   merchantContext?: IngestMerchantContext,
   options?: IngestProgressOptions,
-) {
+): Promise<IngestSourceResult> {
+  ensureConnectorsRegistered();
   const targets = expandIngestionSource(source, options);
   const runs: IngestionRun[] = [];
+  const syncStatePatches: Record<string, ConnectorSyncState> = {};
   let seenImportIds = [...state.seenImportIds];
   let seenFingerprints = [...state.seenFingerprints];
   const accountTotal = targets.length;
+  const connector = isConnectorIngestionSource(source)
+    ? requireConnector(source.kind)
+    : undefined;
+  const brandfetch = merchantContext
+    ? (await merchantContext.store.readConfig(merchantContext.projectId))
+        .brandfetch
+    : undefined;
 
   for (const [index, target] of targets.entries()) {
     const linked = source.accounts?.find(
       (account) =>
+        account.id === target.accountId ||
         jsonApiAccountSourceId(source.id, account.id) === target.sourceId,
     );
     const accountName = linked?.name ?? target.sourceAccount;
@@ -1601,47 +1826,116 @@ export async function ingestSource(
       },
       allAccounts,
     );
-    const categorizers: CategorizerPlugin[] = [
-      new MerchantRuleCategorizer(source.rules),
-      new HistoricalCategorizer(),
-      new RecurringCategorizer(),
-    ];
-    if (source.aiEnabled) categorizers.push(new CodexCategorizer({ model }));
+    const detectionRules = resolveDetectionRules(source, options);
+    const categorizers = buildCategorizers(detectionRules, {
+      aiEnabled: source.aiEnabled === true,
+      model,
+    });
+    const hooks = buildRuleHooks(detectionRules);
     const projectRoot = merchantContext
       ? await merchantContext.store.projectRoot(merchantContext.projectId)
       : undefined;
     const env = await resolveProjectEnv(projectRoot);
-    const run = await runIngestion({
-      source: new JsonApiSource(),
-      sourceConfig: target.api,
-      sourceId: target.sourceId,
-      sourceAccount: target.sourceAccount,
-      normalizer: new JsonMappingNormalizer(source.mapping),
-      categorizers,
-      merchantResolvers: await merchantResolversFor(
-        source,
-        model,
-        merchantContext,
-      ),
-      history: historySamplesFromEntries(entries),
-      availableAccounts,
-      existingImportIds: new Set(seenImportIds),
-      existingFingerprints: new Set(seenFingerprints),
-      cursor: state.cursors[target.sourceId],
-      defaultCurrency: target.defaultCurrency,
-      sourceContext: {
-        resolveSecret: async (reference) => resolveEnvSecret(reference, env),
-      },
-      onProgress: async (progress) => {
-        await options?.onProgress?.({
-          ...progress,
-          accountIndex,
-          accountTotal,
-          accountName,
+    const resolveSecret = async (reference: string) =>
+      resolveEnvSecret(reference, env);
+
+    const priorSync = state.syncState?.[target.sourceId];
+    const prepare = connector
+      ? connector.prepareFetch({
+          config: source.config,
+          sourceId: target.sourceId,
+          accountId: target.accountId,
+          syncState: priorSync,
+        })
+      : {
+          fetchContext: {},
+          cursor:
+            typeof priorSync?.cursor === "string"
+              ? priorSync.cursor
+              : state.cursors[target.sourceId],
+        };
+
+    const run = connector
+      ? await runIngestion({
+          source: connector.createSource(source.config),
+          sourceConfig: source.config,
+          sourceId: target.sourceId,
+          sourceAccount: target.sourceAccount,
+          normalizer: connector.createNormalizer(source.config),
+          categorizers,
+          hooks,
+          merchantResolvers: await merchantResolversFor(
+            source,
+            model,
+            merchantContext,
+            { brandfetch },
+          ),
+          history: historySamplesFromEntries(entries),
+          availableAccounts,
+          existingImportIds: new Set(seenImportIds),
+          existingFingerprints: new Set(seenFingerprints),
+          cursor: prepare.cursor,
+          defaultCurrency: target.defaultCurrency,
+          sourceContext: {
+            resolveSecret,
+            fetchContext: prepare.fetchContext,
+          },
+          onProgress: async (progress) => {
+            await options?.onProgress?.({
+              ...progress,
+              accountIndex,
+              accountTotal,
+              accountName,
+            });
+          },
+        })
+      : await runIngestion({
+          source: new JsonApiSource(),
+          sourceConfig: target.api!,
+          sourceId: target.sourceId,
+          sourceAccount: target.sourceAccount,
+          normalizer: new JsonMappingNormalizer(source.mapping!),
+          categorizers,
+          hooks,
+          merchantResolvers: await merchantResolversFor(
+            source,
+            model,
+            merchantContext,
+            { brandfetch },
+          ),
+          history: historySamplesFromEntries(entries),
+          availableAccounts,
+          existingImportIds: new Set(seenImportIds),
+          existingFingerprints: new Set(seenFingerprints),
+          cursor: prepare.cursor,
+          defaultCurrency: target.defaultCurrency,
+          sourceContext: {
+            resolveSecret,
+            fetchContext: prepare.fetchContext,
+          },
+          onProgress: async (progress) => {
+            await options?.onProgress?.({
+              ...progress,
+              accountIndex,
+              accountTotal,
+              accountName,
+            });
+          },
         });
-      },
-    });
+
     runs.push(run);
+    if (connector) {
+      syncStatePatches[target.sourceId] = connector.commitSyncState({
+        config: source.config,
+        sourceId: target.sourceId,
+        previous: priorSync,
+        prepare,
+        run,
+      });
+    } else if (run.cursor !== undefined) {
+      syncStatePatches[target.sourceId] = { cursor: run.cursor };
+    }
+
     seenImportIds = [
       ...seenImportIds,
       ...run.proposals
@@ -1658,7 +1952,7 @@ export async function ingestSource(
     ];
   }
 
-  return runs;
+  return { runs, syncStatePatches };
 }
 
 function sourceHasAiEnabled(source: IngestionSourceDefinition) {
@@ -1742,7 +2036,10 @@ async function prepareAiEnrichment(
   entries: readonly Directive[],
   model: string | undefined,
   merchantContext: IngestMerchantContext,
-  options?: { onAiDebug?: (call: AiEnrichmentDebugCall) => void },
+  options?: {
+    onAiDebug?: (call: AiEnrichmentDebugCall) => void;
+    detectionRules?: readonly DetectionRule[];
+  },
 ): Promise<EnrichPrepared> {
   if (!sourceHasAiEnabled(source)) {
     throw new Error("Enable AI categorisation or AI merchant enrichment first.");
@@ -1756,16 +2053,12 @@ async function prepareAiEnrichment(
     .sort();
   const availableAccounts = categoryAccountsForSource(source, allAccounts);
   const history = historySamplesFromEntries(entries);
-  const categorizers: CategorizerPlugin[] = [
-    new MerchantRuleCategorizer(source.rules),
-    new HistoricalCategorizer(),
-    new RecurringCategorizer(),
-  ];
-  if (aiCategorize) {
-    categorizers.push(
-      new CodexCategorizer({ model, onDebug: options?.onAiDebug }),
-    );
-  }
+  const detectionRules = resolveDetectionRules(source, options);
+  const categorizers = buildCategorizers(detectionRules, {
+    aiEnabled: aiCategorize,
+    model,
+    onAiDebug: options?.onAiDebug,
+  });
   const merchantResolvers = aiMerchant
     ? await merchantResolversFor(source, model, merchantContext, {
         onAiDebug: options?.onAiDebug,
@@ -1924,6 +2217,7 @@ export async function enrichProposal(
     collectDebug?: boolean;
     jobId?: string;
     merchantOnly?: boolean;
+    detectionRules?: readonly DetectionRule[];
   },
 ): Promise<{ proposal: ImportProposal; debug: AiEnrichmentDebug }> {
   const calls: AiEnrichmentCallRecord[] = [];
@@ -1936,6 +2230,7 @@ export async function enrichProposal(
       onAiDebug: (call) => {
         calls.push(call);
       },
+      detectionRules: options?.detectionRules,
     },
   );
   const next = await enrichProposalWithPrepared(proposal, prepared, {
@@ -1962,6 +2257,7 @@ export async function enrichExistingSourceRuns(
   merchantContext: IngestMerchantContext,
   options?: {
     jobId?: string;
+    detectionRules?: readonly DetectionRule[];
     onProgress?: (progress: {
       index: number;
       total: number;
@@ -1979,6 +2275,7 @@ export async function enrichExistingSourceRuns(
       onAiDebug: (call) => {
         currentCalls?.push(call);
       },
+      detectionRules: options?.detectionRules,
     },
   );
 
@@ -2040,6 +2337,7 @@ export async function recategorizeProposal(
   source: IngestionSourceDefinition,
   proposal: ImportProposal,
   entries: readonly Directive[],
+  options?: { detectionRules?: readonly DetectionRule[] },
 ) {
   if (!proposal.transaction) return proposal;
   const manualSelection = proposal.suggestions.find(
@@ -2052,11 +2350,8 @@ export async function recategorizeProposal(
     source,
     entries.flatMap((entry) => entry.accounts),
   );
-  const categorizers: CategorizerPlugin[] = [
-    new MerchantRuleCategorizer(source.rules),
-    new HistoricalCategorizer(),
-    new RecurringCategorizer(),
-  ];
+  const detectionRules = resolveDetectionRules(source, options);
+  const categorizers = buildCategorizers(detectionRules);
   const suggestions: CategorySuggestion[] = [];
   const context: CategorizationContext = {
     transaction: proposal.transaction,

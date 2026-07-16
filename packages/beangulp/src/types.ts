@@ -344,5 +344,6 @@ export interface IngestionRun {
     duplicates: number;
     invalid: number;
     held: number;
+    excluded: number;
   };
 }

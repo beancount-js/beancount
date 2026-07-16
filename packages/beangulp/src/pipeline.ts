@@ -54,6 +54,8 @@ function statusSummary(proposals: readonly ImportProposal[]) {
     invalid: proposals.filter((proposal) => proposal.status === "invalid")
       .length,
     held: proposals.filter((proposal) => proposal.status === "held").length,
+    excluded: proposals.filter((proposal) => proposal.status === "excluded")
+      .length,
   };
 }
 

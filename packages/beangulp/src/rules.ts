@@ -2,8 +2,11 @@ import type {
   CategorizationContext,
   CategorizerPlugin,
   CategorySuggestion,
+  ImportProposal,
   MerchantIdentity,
   NormalizedTransaction,
+  PipelineContext,
+  ProposalHook,
 } from "./types";
 import {
   normalizeMerchant,
@@ -739,6 +742,53 @@ export class RuleCategorizer implements CategorizerPlugin {
         ],
       },
     ];
+  }
+}
+
+/** Apply non-category rule actions (tags, name, merchant, exclude) to proposals. */
+export class RuleActionsHook implements ProposalHook {
+  constructor(readonly rules: readonly DetectionRule[]) {}
+
+  async process(
+    proposal: ImportProposal,
+    _context: PipelineContext,
+  ): Promise<ImportProposal> {
+    if (!proposal.transaction) return proposal;
+    if (
+      proposal.status === "duplicate" ||
+      proposal.status === "invalid" ||
+      proposal.status === "excluded"
+    ) {
+      return proposal;
+    }
+    const evalContext: RuleEvaluationContext = {
+      transaction: proposal.transaction,
+      merchant:
+        proposal.merchantResolution?.status === "confirmed"
+          ? proposal.merchantResolution.merchant
+          : undefined,
+      bookedAt: proposal.transaction.bookedAt,
+    };
+    let next = proposal;
+    for (const rule of this.rules) {
+      const patch = applyRuleActions(rule, {
+        ...evalContext,
+        transaction: next.transaction!,
+      });
+      if (!patch) continue;
+      const transaction = { ...next.transaction! };
+      if (patch.narration !== undefined) transaction.narration = patch.narration;
+      if (patch.merchant !== undefined) transaction.merchant = patch.merchant;
+      if (patch.tags) transaction.tags = patch.tags;
+      next = {
+        ...next,
+        transaction,
+        selectedAccount: patch.selectedAccount ?? next.selectedAccount,
+        status: patch.exclude ? "excluded" : next.status,
+      };
+      evalContext.transaction = transaction;
+    }
+    return next;
   }
 }
 
