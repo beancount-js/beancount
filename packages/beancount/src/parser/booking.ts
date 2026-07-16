@@ -447,7 +447,7 @@ function groupByCurrency(
       costCurrency,
     };
     const currency = getBucketCurrency(refer);
-    if (!units && priceCurrency === null) {
+    if (!units && (priceCurrency === null || priceCurrency === undefined)) {
       // Bucket auto-postings separately from unknown.
       autoPostings.push(refer);
     } else if (currency) {

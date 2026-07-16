@@ -219,4 +219,21 @@ describe("book", () => {
     );
     expect((errors[0].context.directive as Posting).account).toBe(account);
   });
+
+  test("reports multiple automatic postings before attempting interpolation", () => {
+    const [, errors] = book(
+      [
+        transaction("2022-01-01", "Ambiguous automatic postings", [
+          new Posting("Expenses:Food", new Amount("10", "USD")),
+          new Posting("Assets:Cash"),
+          new Posting("Liabilities:Card"),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors.map((error) => error.message)).toContain(
+      "You may not have more than one auto-posting per currency",
+    );
+  });
 });
