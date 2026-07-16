@@ -2,7 +2,9 @@ import { describe, expect, test } from "vitest";
 import { Decimal } from "@beancount-js/parser";
 import { loadString } from "../parser/loader";
 import {
+  AccountTypes,
   beanCountOptionsSchema,
+  bool,
   canonicalOptionKey,
   defaultBeancountOptions,
 } from "./options";
@@ -50,5 +52,42 @@ describe("Beancount options", () => {
     expect(errors).toEqual([]);
     expect(options.insert_pythonpath).toBe(true);
     expect(options.render_commas).toBe(false);
+  });
+
+  test("preserves repeated list options and reports canonical alias locations", () => {
+    const [, repeatedErrors, repeatedOptions] = loadString(
+      [
+        'option "operating_currency" "USD"',
+        'option "operating_currency" "EUR"',
+      ].join("\n"),
+      { transform: false },
+    );
+    const [, aliasErrors] = loadString(
+      'option "inferred_tolerance_multiplier" "-1"',
+      { transform: false },
+    );
+
+    expect(repeatedErrors).toEqual([]);
+    expect(repeatedOptions.operating_currency).toEqual(["USD", "EUR"]);
+    expect(aliasErrors[0].message).toContain("tolerance_multiplier");
+    expect(aliasErrors[0].context.lineno).toBe(1);
+  });
+
+  test("validates booleans and classifies accounts with configured roots", () => {
+    expect(bool.safeParse(2).success).toBe(false);
+    const types = new AccountTypes(
+      defaultBeancountOptions({ name_assets: "Resources" }),
+    );
+
+    expect(types.isBalanceSheetAccount("Resources:Cash")).toBe(true);
+    expect(types.isIncomeStatementAccount("Expenses:Food")).toBe(true);
+    expect(types.getAccountSign("Income:Salary")).toBe(-1);
+    expect(types.getAccountSign("Resources:Cash")).toBe(1);
+    expect(types.sortKey("Unknown:Account")).toEqual([5, "Unknown:Account"]);
+    expect(types.previousAccounts()).toEqual([
+      "Equity:Earnings:Previous",
+      "Equity:Opening-Balances",
+      "Equity:Conversions:Previous",
+    ]);
   });
 });

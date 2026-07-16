@@ -478,7 +478,7 @@ export function loadBeancountOptions(
   const documents: Array<string> = [];
   entries.forEach((entry) => {
     if (entry instanceof LedgerOption) {
-      optionDirectives[entry.key] = entry;
+      optionDirectives[canonicalOptionKey(entry.key)] = entry;
     } else if (entry instanceof Plugin) {
       const plugin = props.plugins[entry.name] ?? Plugins[entry.name];
       if (!plugin) {
