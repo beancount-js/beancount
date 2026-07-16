@@ -141,11 +141,7 @@
       group.records.map((record) => record.key),
     );
     const select = checked ?? !keys.every((key) => selectedKeys.has(key));
-    if (
-      !select &&
-      records.length > 0 &&
-      selectedKeys.size === records.length
-    ) {
+    if (!select && records.length > 0 && selectedKeys.size === records.length) {
       clearSelection();
       return;
     }
@@ -332,7 +328,8 @@
         class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
       >
         {#if allMatchingSelected}
-          All {records.length} {recordLabel} records selected.
+          All {records.length}
+          {recordLabel} records selected.
           <button
             type="button"
             class="font-medium text-primary underline-offset-2 hover:underline"
@@ -347,7 +344,8 @@
             class="font-medium text-primary underline-offset-2 hover:underline"
             onclick={selectAllRecords}
           >
-            Select all {records.length} {recordLabel} records
+            Select all {records.length}
+            {recordLabel} records
           </button>
         {/if}
       </div>
