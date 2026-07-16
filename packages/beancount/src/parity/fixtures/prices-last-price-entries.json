@@ -7,40 +7,48 @@
     "license": "GPL-2.0-only"
   },
   "ledger": "2013-01-01 price USD 1.01 CAD\n2013-02-01 price USD 1.02 CAD\n2013-03-01 price USD 1.03 CAD\n2013-04-01 price USD 1.04 CAD\n2013-05-01 price USD 1.05 CAD\n2013-06-01 price USD 1.06 CAD\n2013-07-01 price USD 1.07 CAD",
-  "assertions": [
-    {
-      "asOf": "2013-05-01",
-      "prices": [
-        {
-          "date": "2013-04-01",
-          "currency": "USD",
-          "units": "1.04",
-          "quote": "CAD"
-        }
-      ]
-    },
-    {
-      "asOf": "2013-05-02",
-      "prices": [
-        {
-          "date": "2013-05-01",
-          "currency": "USD",
-          "units": "1.05",
-          "quote": "CAD"
-        }
-      ]
-    },
-    {
-      "asOf": "2014-01-01",
-      "prices": [
-        {
-          "date": "2013-07-01",
-          "currency": "USD",
-          "units": "1.07",
-          "quote": "CAD"
-        }
-      ]
-    },
-    { "asOf": "2012-01-01", "prices": [] }
-  ]
+  "scenario": {
+    "operation": "last_price_entries",
+    "ledger": "2013-01-01 price USD 1.01 CAD\n2013-02-01 price USD 1.02 CAD\n2013-03-01 price USD 1.03 CAD\n2013-04-01 price USD 1.04 CAD\n2013-05-01 price USD 1.05 CAD\n2013-06-01 price USD 1.06 CAD\n2013-07-01 price USD 1.07 CAD",
+    "asOf": ["2013-05-01", "2013-05-02", "2014-01-01", "2012-01-01"]
+  },
+  "oracle": {
+    "errors": [],
+    "assertions": [
+      {
+        "asOf": "2013-05-01",
+        "prices": [
+          {
+            "currency": "USD",
+            "date": "2013-04-01",
+            "quote": "CAD",
+            "units": "1.04"
+          }
+        ]
+      },
+      {
+        "asOf": "2013-05-02",
+        "prices": [
+          {
+            "currency": "USD",
+            "date": "2013-05-01",
+            "quote": "CAD",
+            "units": "1.05"
+          }
+        ]
+      },
+      {
+        "asOf": "2014-01-01",
+        "prices": [
+          {
+            "currency": "USD",
+            "date": "2013-07-01",
+            "quote": "CAD",
+            "units": "1.07"
+          }
+        ]
+      },
+      { "asOf": "2012-01-01", "prices": [] }
+    ]
+  }
 }

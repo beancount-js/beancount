@@ -28,29 +28,22 @@ describe("upstream oracle fixtures", () => {
 
   test("parity/prices/last-price-entries", () => {
     expect(pricesFixture.upstream.commit).toBe(UPSTREAM_COMMIT);
-    const [entries, errors] = loadString(pricesFixture.ledger, {
+    const [entries, errors] = loadString(pricesFixture.scenario.ledger, {
       transform: false,
     });
-    expect(errors).toEqual([]);
+    expect(errors).toEqual(pricesFixture.oracle.errors);
 
-    for (const assertion of pricesFixture.assertions) {
+    for (const assertion of pricesFixture.oracle.assertions) {
       const actual = getLastPriceEntries(
         entries,
         DateTime.fromISO(assertion.asOf),
       ).map((entry) => ({
-        date: entry.date,
+        date: entry.date.toISODate(),
         currency: entry.currency,
-        units: entry.amount.units,
+        units: entry.amount.units.toString(),
         quote: entry.amount.currency,
       }));
-      expect(canonicalize(actual)).toEqual(
-        assertion.prices.map((price) => ({
-          date: { $date: price.date },
-          currency: price.currency,
-          units: { $decimal: price.units },
-          quote: price.quote,
-        })),
-      );
+      expect(actual).toEqual(assertion.prices);
     }
   });
 

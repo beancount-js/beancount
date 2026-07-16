@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from beancount import loader
+from beancount.core import prices
 
 
 def canonicalize(value: Any, fixture_root: Path | None = None) -> Any:
@@ -88,6 +89,30 @@ def load_sources(scenario: Mapping[str, Any]) -> tuple[Mapping[str, Any], Path]:
     return result, fixture_root
 
 
+def last_price_entries(scenario: Mapping[str, Any]) -> Mapping[str, Any]:
+    entries, errors, _ = loader.load_string(scenario["ledger"])
+    assertions = []
+    for as_of in scenario["asOf"]:
+        price_entries = prices.get_last_price_entries(
+            entries, datetime.date.fromisoformat(as_of)
+        )
+        assertions.append(
+            {
+                "asOf": as_of,
+                "prices": [
+                    {
+                        "date": entry.date.isoformat(),
+                        "currency": entry.currency,
+                        "units": str(entry.amount.number),
+                        "quote": entry.amount.currency,
+                    }
+                    for entry in price_entries
+                ],
+            }
+        )
+    return {"errors": errors, "assertions": assertions}
+
+
 def run_scenario(scenario: Mapping[str, Any]) -> Any:
     operation = scenario.get("operation")
     if operation == "load_string":
@@ -95,6 +120,8 @@ def run_scenario(scenario: Mapping[str, Any]) -> Any:
     elif operation == "load_sources":
         result, fixture_root = load_sources(scenario)
         result = canonicalize(result, fixture_root)
+    elif operation == "last_price_entries":
+        result = canonicalize(last_price_entries(scenario))
     else:
         raise ValueError(f"Unsupported upstream oracle operation: {operation!r}")
 
