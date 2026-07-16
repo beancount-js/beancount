@@ -88,7 +88,7 @@ class ComboWidgetView implements PluginValue {
           if (this.props.match(node, update)) {
             const value = update.state.sliceDoc(node.from, node.to);
             const account = this.props.read ? this.props.read(value) : value;
-            const widget = Decstructions.widget({
+            const widget = Decoration.widget({
               widget: new ComboWidget({
                 from: node.from,
                 to: node.to,
