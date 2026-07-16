@@ -5,6 +5,14 @@
   import { useCtx } from "../stores/format";
   import { urlForAccount } from "../helpers";
   import { useNavigation } from "../router/router";
+  import { useStudioWorkspace } from "../studio/workspace";
+  import { ingestionJson, ingestionPath } from "../ingestion/api";
+  import {
+    buildJournalMerchantLogoMaps,
+    resolveJournalMerchantLogo,
+    type JournalMerchantLogo,
+    type JournalMerchantLogoMaps,
+  } from "../lib/journal-merchant-logos";
   import { Button } from "$lib/components/ui/button";
   import * as ToggleGroup from "$lib/components/ui/toggle-group";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
@@ -26,9 +34,11 @@
   } from "./journal-table/model";
 
   const PAGE_SIZES = [25, 50, 100];
+  const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
   const { operatingCurrency } = useContext();
   const { activeRoute, router } = useNavigation();
   const ctx = useCtx();
+  const { snapshot } = useStudioWorkspace();
 
   export let directives: readonly DirectiveBase[] = [];
   export let balancesByDate: Record<string, Record<string, number>> = {};
@@ -49,6 +59,12 @@
   let masterCheckbox: HTMLInputElement | undefined;
   let timeframe: JournalTimeframe = "transactions";
   let toggleValue: JournalTimeframe = "transactions";
+  let merchantLogoMaps: JournalMerchantLogoMaps = {
+    byId: new Map(),
+    byNormalizedName: new Map(),
+  };
+  let failedLogoKeys = new Set<string>();
+  let loadedMerchantProjectId = "";
 
   function setIndeterminate(node: HTMLInputElement, value: boolean) {
     node.indeterminate = value;
@@ -155,6 +171,32 @@
 
   function postingAmountText(amount: Amount | undefined) {
     return amount ? $ctx.money(amount, amount.currency ?? undefined) : "—";
+  }
+
+  function recordLogo(record: JournalRecord) {
+    return resolveJournalMerchantLogo(record.directive, merchantLogoMaps);
+  }
+
+  function markLogoFailed(key: string) {
+    if (failedLogoKeys.has(key)) return;
+    failedLogoKeys = new Set(failedLogoKeys).add(key);
+  }
+
+  $: projectId = $snapshot?.project.id ?? "";
+  $: if (!isWeb && projectId && projectId !== loadedMerchantProjectId) {
+    loadedMerchantProjectId = projectId;
+    void (async () => {
+      try {
+        const merchants = await ingestionJson<JournalMerchantLogo[]>(
+          ingestionPath(projectId, "/merchants"),
+        );
+        merchantLogoMaps = buildJournalMerchantLogoMaps(
+          Array.isArray(merchants) ? merchants : [],
+        );
+      } catch {
+        merchantLogoMaps = { byId: new Map(), byNormalizedName: new Map() };
+      }
+    })();
   }
 
   $: timeframe =
@@ -387,16 +429,26 @@
                     (event.currentTarget as HTMLInputElement).checked,
                   )}
               />
-              <div
-                class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
-                aria-hidden="true"
-              >
-                {#if record.directive.constructor.name === "Transaction"}
-                  {record.title.slice(0, 1).toUpperCase()}
-                {:else}
-                  <FileText class="size-4" />
-                {/if}
-              </div>
+              {@const logo = recordLogo(record)}
+              {#if logo && !failedLogoKeys.has(record.key)}
+                <img
+                  class="size-10 rounded-full border object-contain"
+                  src={logo}
+                  alt=""
+                  onerror={() => markLogoFailed(record.key)}
+                />
+              {:else}
+                <div
+                  class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                  aria-hidden="true"
+                >
+                  {#if record.directive.constructor.name === "Transaction"}
+                    {record.title.slice(0, 1).toUpperCase()}
+                  {:else}
+                    <FileText class="size-4" />
+                  {/if}
+                </div>
+              {/if}
               <div class="min-w-0">
                 <div class="truncate text-sm font-semibold">{record.title}</div>
                 <div class="mt-1 truncate text-xs text-muted-foreground">
