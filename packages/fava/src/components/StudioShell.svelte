@@ -345,7 +345,9 @@
                     config={projectPathForm}
                     value={{ path }}
                     context={undefined}
-                    onChange={(value) => (path = value.path)}
+                    onChange={(value) => {
+                      path = value.path;
+                    }}
                   />
                   <div class="flex gap-2">
                     <Button

@@ -52,7 +52,7 @@
                 {#each header.sources as file (file.path)}
                   <Menubar.CheckboxItem
                     checked={file.path === header.activePath}
-                    on:click={() => header.onOpenSource(file.path)}
+                    onclick={() => header.onOpenSource(file.path)}
                     >{file.path}</Menubar.CheckboxItem
                   >
                 {/each}
@@ -60,11 +60,11 @@
             </Menubar.Sub>
             <Menubar.CheckboxItem
               checked={header.formatOnSave}
-              on:click={() => header.onToggleFormatOnSave()}
+              onclick={() => header.onToggleFormatOnSave()}
             >
               Format on Save
             </Menubar.CheckboxItem>
-            <Menubar.Item inset on:click={() => header.onGotoLine()}
+            <Menubar.Item inset onclick={() => header.onGotoLine()}
               >Go To Line</Menubar.Item
             >
           </Menubar.Content>
@@ -75,37 +75,37 @@
             >Edit</Menubar.Trigger
           >
           <Menubar.Content>
-            <Menubar.Item inset on:click={() => header.onFormat()}>
+            <Menubar.Item inset onclick={() => header.onFormat()}>
               Format <Menubar.Shortcut class="pl-2">⌘ + D</Menubar.Shortcut>
             </Menubar.Item>
-            <Menubar.Item inset on:click={() => header.onToggleComment()}>
+            <Menubar.Item inset onclick={() => header.onToggleComment()}>
               Toggle Comment <Menubar.Shortcut class="pl-2"
                 >⌘ + /</Menubar.Shortcut
               >
             </Menubar.Item>
-            <Menubar.Item on:click={() => header.onUnfoldAll()}>
+            <Menubar.Item onclick={() => header.onUnfoldAll()}>
               <UnfoldVertical class="mr-2 size-4" /> Open all folds
             </Menubar.Item>
-            <Menubar.Item on:click={() => header.onFoldAll()}>
+            <Menubar.Item onclick={() => header.onFoldAll()}>
               <FoldVertical class="mr-2 size-4" /> Close all folds
             </Menubar.Item>
             <Menubar.Separator />
             <Menubar.Sub>
               <Menubar.SubTrigger class="pl-8">Find</Menubar.SubTrigger>
               <Menubar.SubContent>
-                <Menubar.Item on:click={() => header.onFind()}
+                <Menubar.Item onclick={() => header.onFind()}
                   >Find...</Menubar.Item
                 >
-                <Menubar.Item on:click={() => header.onFindNext()}
+                <Menubar.Item onclick={() => header.onFindNext()}
                   >Find Next</Menubar.Item
                 >
-                <Menubar.Item on:click={() => header.onFindPrevious()}
+                <Menubar.Item onclick={() => header.onFindPrevious()}
                   >Find Previous</Menubar.Item
                 >
               </Menubar.SubContent>
             </Menubar.Sub>
             <Menubar.Separator />
-            <Menubar.Item on:click={() => header.onAskAi()}>
+            <Menubar.Item onclick={() => header.onAskAi()}>
               <Sparkles class="mr-2 size-4" /> Ask AI about selection
             </Menubar.Item>
           </Menubar.Content>
