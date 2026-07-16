@@ -19,10 +19,7 @@ import type { JournalRecord } from "../components/journal-table/model";
 
 const date = DateTime.fromISO("2024-01-15");
 
-function transactionRecord(
-  key: string,
-  postings: Posting[],
-): JournalRecord {
+function transactionRecord(key: string, postings: Posting[]): JournalRecord {
   const directive = new Transaction(
     date,
     "*",
@@ -91,25 +88,31 @@ describe("replaceAccountInDirective", () => {
 
   test("renames Open / Close / Balance accounts", () => {
     expect(
-      (replaceAccountInDirective(
-        new Open(date, "Expenses:Uncategorized"),
-        "Expenses:Uncategorized",
-        "Expenses:Food",
-      ) as Open).account,
+      (
+        replaceAccountInDirective(
+          new Open(date, "Expenses:Uncategorized"),
+          "Expenses:Uncategorized",
+          "Expenses:Food",
+        ) as Open
+      ).account,
     ).toBe("Expenses:Food");
     expect(
-      (replaceAccountInDirective(
-        new Close(date, "Expenses:Uncategorized"),
-        "Expenses:Uncategorized",
-        "Expenses:Food",
-      ) as Close).account,
+      (
+        replaceAccountInDirective(
+          new Close(date, "Expenses:Uncategorized"),
+          "Expenses:Uncategorized",
+          "Expenses:Food",
+        ) as Close
+      ).account,
     ).toBe("Expenses:Food");
     expect(
-      (replaceAccountInDirective(
-        new Balance(date, "Expenses:Uncategorized", new Amount("0", "USD")),
-        "Expenses:Uncategorized",
-        "Expenses:Food",
-      ) as Balance).account,
+      (
+        replaceAccountInDirective(
+          new Balance(date, "Expenses:Uncategorized", new Amount("0", "USD")),
+          "Expenses:Uncategorized",
+          "Expenses:Food",
+        ) as Balance
+      ).account,
     ).toBe("Expenses:Food");
   });
 

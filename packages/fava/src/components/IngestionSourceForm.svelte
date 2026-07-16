@@ -37,7 +37,11 @@
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { useNavigation } from "../router/router";
-  import { clientConnector, isConnectorSource, isGroupedSource } from "../ingestion/connectors";
+  import {
+    clientConnector,
+    isConnectorSource,
+    isGroupedSource,
+  } from "../ingestion/connectors";
   import { connectorFieldsForm } from "../ingestion/connector-fields";
   import type { EditableIngestionSource } from "../ingestion/source-form";
   import {
@@ -95,12 +99,18 @@
   const apiForm = $derived(grouped ? sourceApiGroupedForm : sourceApiForm);
   const connectionFieldsForm = $derived(
     connector
-      ? connectorFieldsForm(connector.connectionFields, `${connector.kind}-connection`)
+      ? connectorFieldsForm(
+          connector.connectionFields,
+          `${connector.kind}-connection`,
+        )
       : undefined,
   );
   const advancedFieldsForm = $derived(
     connector?.advancedFields.length
-      ? connectorFieldsForm(connector.advancedFields, `${connector.kind}-advanced`)
+      ? connectorFieldsForm(
+          connector.advancedFields,
+          `${connector.kind}-advanced`,
+        )
       : undefined,
   );
   const formContext = $derived({

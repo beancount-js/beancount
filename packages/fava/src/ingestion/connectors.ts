@@ -46,10 +46,21 @@ export function isGroupedSource(source: {
   return Array.isArray(source.accounts);
 }
 
-export function sourceConfigRecord(
-  source: { kind: string; config?: unknown; api?: { secretRef?: string; baseUrl?: string; authScheme?: string; allowedHosts?: string[] } },
-): Record<string, unknown> {
-  if (isConnectorSource(source) && source.config && typeof source.config === "object") {
+export function sourceConfigRecord(source: {
+  kind: string;
+  config?: unknown;
+  api?: {
+    secretRef?: string;
+    baseUrl?: string;
+    authScheme?: string;
+    allowedHosts?: string[];
+  };
+}): Record<string, unknown> {
+  if (
+    isConnectorSource(source) &&
+    source.config &&
+    typeof source.config === "object"
+  ) {
     return source.config as Record<string, unknown>;
   }
   return {

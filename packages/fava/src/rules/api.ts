@@ -1,4 +1,7 @@
-export async function rulesJson<T>(url: string, init?: RequestInit): Promise<T> {
+export async function rulesJson<T>(
+  url: string,
+  init?: RequestInit,
+): Promise<T> {
   let response: Response;
   try {
     response = await fetch(url, init);

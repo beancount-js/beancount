@@ -36,7 +36,9 @@
         </div>
       </div>
       {#each Array.from({ length: 5 }, (_, index) => index) as row (row)}
-        <div class="grid grid-cols-8 gap-3 border-b px-4 py-2.5 last:border-b-0">
+        <div
+          class="grid grid-cols-8 gap-3 border-b px-4 py-2.5 last:border-b-0"
+        >
           {#each Array.from({ length: 8 }, (_, index) => index) as col (col)}
             <Skeleton class="h-3.5 w-full" />
           {/each}

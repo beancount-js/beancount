@@ -150,7 +150,9 @@
   );
 
   const facetOptions = $derived(
-    collectIngestionReviewFacetOptions(reviewTabRows.map((row) => row.proposal)),
+    collectIngestionReviewFacetOptions(
+      reviewTabRows.map((row) => row.proposal),
+    ),
   );
 
   const accountOptions = $derived<FilterCommandOption[]>(
@@ -324,7 +326,10 @@
     ].join("\0");
   }
 
-  function applySearchState(next: IngestionReviewSearchState, resetPage = true) {
+  function applySearchState(
+    next: IngestionReviewSearchState,
+    resetPage = true,
+  ) {
     searchState = cloneIngestionReviewSearchState(next);
     const params = new URLSearchParams($activeRoute.query);
     appendIngestionReviewSearchParams(params, next);

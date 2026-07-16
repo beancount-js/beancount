@@ -31,10 +31,7 @@
     });
   });
 
-  function handleSelectionChange(
-    keys: Set<string>,
-    records: JournalRecord[],
-  ) {
+  function handleSelectionChange(keys: Set<string>, records: JournalRecord[]) {
     selectedKeys = keys;
     selectedRecords = records;
   }

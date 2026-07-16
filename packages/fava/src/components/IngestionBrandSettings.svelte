@@ -2,7 +2,10 @@
   import ArrowRight from "lucide-svelte/icons/arrow-right";
   import FileCode2 from "lucide-svelte/icons/file-code-2";
   import { onDestroy } from "svelte";
-  import { StructuredForm, type FormValidationIssue } from "@beancount-js/forms";
+  import {
+    StructuredForm,
+    type FormValidationIssue,
+  } from "@beancount-js/forms";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import { useNavigation } from "../router/router";
@@ -156,15 +159,17 @@
   });
 </script>
 
-<section class="h-full overflow-y-auto p-4 sm:p-6" data-ingestion-brand-settings>
+<section
+  class="h-full overflow-y-auto p-4 sm:p-6"
+  data-ingestion-brand-settings
+>
   <div class="mx-auto flex w-full max-w-3xl flex-col gap-5">
     {#if isWeb}
       <Alert.Root>
         <FileCode2 />
         <Alert.Title>Local server required</Alert.Title>
         <Alert.Description
-          >Brand matching settings are available only through the local
-          server.</Alert.Description
+          >Brand matching settings are available only through the local server.</Alert.Description
         >
       </Alert.Root>
     {:else if !config}

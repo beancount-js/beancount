@@ -144,11 +144,7 @@ class HeaderView implements PluginValue {
       // Must pass the unfiltered base set — never the active-line view.
       this.base = headerDecorator.updateDeco(update, this.base);
     }
-    if (
-      update.docChanged ||
-      update.viewportChanged ||
-      update.selectionSet
-    ) {
+    if (update.docChanged || update.viewportChanged || update.selectionSet) {
       this.decorations = buildHeaderDecorations(update.view, this.base);
     }
   }

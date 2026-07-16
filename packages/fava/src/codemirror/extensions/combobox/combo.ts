@@ -72,7 +72,10 @@ class ComboWidget extends WidgetType {
 
 class ComboWidgetView implements PluginValue {
   comboDecorations: Array<Range<Decoration>> = [];
-  /** Map decoration position → account span so the icon shows while the caret is in the account. */
+  /**
+   * Map decoration position → account span so the icon shows while the caret is
+   * in the account.
+   */
   ranges: Record<string, { from: number; to: number }> = {};
 
   constructor(

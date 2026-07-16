@@ -10,10 +10,7 @@
   import Pencil from "lucide-svelte/icons/pencil";
   import Play from "lucide-svelte/icons/play";
   import Trash2 from "lucide-svelte/icons/trash-2";
-  import {
-    summarizeRule,
-    type DetectionRule,
-  } from "@beancount-js/beangulp";
+  import { summarizeRule, type DetectionRule } from "@beancount-js/beangulp";
   import { onDestroy } from "svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
@@ -85,7 +82,9 @@
     return next;
   });
   const runsPage = $derived(Math.floor(runsOffset / RUNS_LIMIT) + 1);
-  const runsPageCount = $derived(Math.max(1, Math.ceil(runsTotal / RUNS_LIMIT)));
+  const runsPageCount = $derived(
+    Math.max(1, Math.ceil(runsTotal / RUNS_LIMIT)),
+  );
 
   function compareNames(left: DetectionRule, right: DetectionRule) {
     return (left.name ?? "Untitled rule").localeCompare(
@@ -225,9 +224,7 @@
 
   async function deleteRule(rule: DetectionRule) {
     if (
-      !window.confirm(
-        `Delete rule "${ruleName(rule)}"? This cannot be undone.`,
-      )
+      !window.confirm(`Delete rule "${ruleName(rule)}"? This cannot be undone.`)
     ) {
       return;
     }
@@ -257,7 +254,9 @@
           body: JSON.stringify({ ruleIds: [rule.id], dryRun: true }),
         },
       );
-      if (!window.confirm(previewMessage(`"${ruleName(rule)}"`, preview.preview))) {
+      if (
+        !window.confirm(previewMessage(`"${ruleName(rule)}"`, preview.preview))
+      ) {
         status = "";
         return;
       }
@@ -297,7 +296,9 @@
           body: JSON.stringify({ dryRun: true }),
         },
       );
-      if (!window.confirm(previewMessage("all active rules", preview.preview))) {
+      if (
+        !window.confirm(previewMessage("all active rules", preview.preview))
+      ) {
         status = "";
         return;
       }
@@ -354,8 +355,7 @@
         <FileCode2 />
         <Alert.Title>Local server required</Alert.Title>
         <Alert.Description
-          >Detection rules are available only through the local
-          server.</Alert.Description
+          >Detection rules are available only through the local server.</Alert.Description
         >
       </Alert.Root>
     {:else if !project}
@@ -377,8 +377,8 @@
             <Empty.Media variant="icon"><ListFilter /></Empty.Media>
             <Empty.Title>No detection rules yet</Empty.Title>
             <Empty.Description
-              >Add a rule to automatically categorize, tag, or exclude
-              matching transactions.</Empty.Description
+              >Add a rule to automatically categorize, tag, or exclude matching
+              transactions.</Empty.Description
             >
           </Empty.Header>
         </Empty.Root>
@@ -454,7 +454,8 @@
                   <span
                     class="max-w-full truncate rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
                     title={summary.if}
-                    ><span class="font-semibold text-foreground/80">IF</span> {summary.if}</span
+                    ><span class="font-semibold text-foreground/80">IF</span>
+                    {summary.if}</span
                   >
                   <span
                     class="max-w-full truncate rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
@@ -465,7 +466,8 @@
                   <span
                     class="max-w-full truncate rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
                     title={summary.for}
-                    ><span class="font-semibold text-foreground/80">FOR</span> {summary.for}</span
+                    ><span class="font-semibold text-foreground/80">FOR</span>
+                    {summary.for}</span
                   >
                 </div>
               </div>
@@ -543,8 +545,7 @@
                   <th class="px-4 py-2.5 font-semibold">Status</th>
                   <th class="px-4 py-2.5 font-semibold">Rule</th>
                   <th class="px-4 py-2.5 text-right font-semibold">Queued</th>
-                  <th class="px-4 py-2.5 text-right font-semibold"
-                    >Processed</th
+                  <th class="px-4 py-2.5 text-right font-semibold">Processed</th
                   >
                   <th class="px-4 py-2.5 text-right font-semibold">Modified</th>
                   <th class="px-4 py-2.5 text-right font-semibold">Blocked</th>
@@ -553,7 +554,8 @@
               <tbody>
                 {#each runs as run (run.id)}
                   <tr class="border-b last:border-b-0">
-                    <td class="whitespace-nowrap px-4 py-2.5 text-muted-foreground"
+                    <td
+                      class="whitespace-nowrap px-4 py-2.5 text-muted-foreground"
                       >{formatDateTime(run.executedAt)}</td
                     >
                     <td class="px-4 py-2.5 capitalize text-muted-foreground"
@@ -565,11 +567,11 @@
                           "rounded-full px-2 py-0.5 text-xs font-medium capitalize",
                           statusPillClass(run.status),
                         )}
-                        title={run.errorMessage ?? undefined}
-                        >{run.status}</span
+                        title={run.errorMessage ?? undefined}>{run.status}</span
                       >
                     </td>
-                    <td class="min-w-0 max-w-52 truncate px-4 py-2.5 font-medium"
+                    <td
+                      class="min-w-0 max-w-52 truncate px-4 py-2.5 font-medium"
                       >{run.ruleName}</td
                     >
                     <td class="px-4 py-2.5 text-right tabular-nums"

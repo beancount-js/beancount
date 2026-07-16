@@ -119,14 +119,16 @@ describe("duplicateFingerprint", () => {
     const differentPayee = transaction({ payee: "Diner" });
     expect(duplicateFingerprint(a)).toBe(duplicateFingerprint(b));
     expect(duplicateFingerprint(a)?.startsWith("sem:")).toBe(true);
-    expect(duplicateFingerprint(a)).not.toBe(duplicateFingerprint(differentPayee));
+    expect(duplicateFingerprint(a)).not.toBe(
+      duplicateFingerprint(differentPayee),
+    );
   });
 });
 
 describe("findDuplicateGroups / buildDuplicateDeletePatches", () => {
   test("keeps earliest lineno and deletes the rest", () => {
-    const contentA = "2024-01-15 * \"Cafe\" \"Lunch\"\n";
-    const contentB = "2024-01-15 * \"Cafe\" \"Lunch\"\n";
+    const contentA = '2024-01-15 * "Cafe" "Lunch"\n';
+    const contentB = '2024-01-15 * "Cafe" "Lunch"\n';
     const first = record(
       "a",
       transaction({

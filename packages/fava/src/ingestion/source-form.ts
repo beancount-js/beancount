@@ -148,11 +148,15 @@ export function parseEditableIngestionConfig(
       } else {
         const api = asRecord(item.api, `Source ${index + 1} api`);
         if (typeof api.secretRef !== "string") {
-          throw new Error(`Source ${index + 1} api.secretRef must be a string.`);
+          throw new Error(
+            `Source ${index + 1} api.secretRef must be a string.`,
+          );
         }
         if (grouped) {
           if (typeof api.baseUrl !== "string") {
-            throw new Error(`Source ${index + 1} api.baseUrl must be a string.`);
+            throw new Error(
+              `Source ${index + 1} api.baseUrl must be a string.`,
+            );
           }
         } else if (typeof api.endpoint !== "string") {
           throw new Error(`Source ${index + 1} api.endpoint must be a string.`);

@@ -187,7 +187,7 @@
   label="Existing merchant"
   as="div"
   align="center"
-  controlId={controlId}
+  {controlId}
   messages={loadError ? [loadError] : []}
 >
   <FilterCommandPicker

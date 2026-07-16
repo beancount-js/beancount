@@ -143,7 +143,9 @@
   }
 
   function changeActionType(action: RuleAction, nextType: RuleActionType) {
-    const meta = registry.executors.find((executor) => executor.key === nextType);
+    const meta = registry.executors.find(
+      (executor) => executor.key === nextType,
+    );
     updateActionById(action.id, {
       actionType: nextType,
       value: meta?.type === "function" ? null : "",
@@ -164,7 +166,9 @@
     return registry.executors.find((executor) => executor.key === actionType);
   }
 
-  function actionValueOptions(actionType: RuleActionType): FilterCommandOption[] {
+  function actionValueOptions(
+    actionType: RuleActionType,
+  ): FilterCommandOption[] {
     const meta = actionMeta(actionType);
     if (meta?.options?.length) return [...meta.options];
     return accountOptions;
@@ -177,7 +181,9 @@
       try {
         const parsed = JSON.parse(trimmed) as unknown;
         if (Array.isArray(parsed)) {
-          return parsed.filter((item): item is string => typeof item === "string");
+          return parsed.filter(
+            (item): item is string => typeof item === "string",
+          );
         }
       } catch {
         // fall through to comma-separated parsing
@@ -237,8 +243,8 @@
         {dialogTitle}
       </Sheet.Title>
       <Sheet.Description class="sr-only">
-        Configure the conditions, actions, and effective date for this
-        detection rule.
+        Configure the conditions, actions, and effective date for this detection
+        rule.
       </Sheet.Description>
       <Sheet.Close
         class="ml-auto inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -337,7 +343,10 @@
                           changeActionType(action, next as RuleActionType);
                       }}
                     >
-                      <Select.Trigger class="h-9 text-sm" aria-label="Action type">
+                      <Select.Trigger
+                        class="h-9 text-sm"
+                        aria-label="Action type"
+                      >
                         {meta?.label ?? action.actionType}
                       </Select.Trigger>
                       <Select.Content>

@@ -254,7 +254,10 @@
             if (next) onChange({ ...condition, operator: next });
           }}
         >
-          <Select.Trigger class="h-8 max-w-64 text-xs" aria-label="Group operator">
+          <Select.Trigger
+            class="h-8 max-w-64 text-xs"
+            aria-label="Group operator"
+          >
             {groupOperatorOptions.find(
               (option) => option.value === condition.operator,
             )?.label ?? condition.operator}

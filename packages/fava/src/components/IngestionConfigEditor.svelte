@@ -185,7 +185,10 @@
     const nextIndex = config.sources.length;
     config = { ...config, sources: [...config.sources, source] };
     mode = "form";
-    setOpenSectionsFor(nextIndex, sourceFormSectionIds(isGroupedSource(source)));
+    setOpenSectionsFor(
+      nextIndex,
+      sourceFormSectionIds(isGroupedSource(source)),
+    );
     scheduleSave();
   }
 
@@ -417,10 +420,7 @@
                   credentialAvailable={serverSource?.credentialAvailable}
                   merchantCredentialAvailable={serverSource?.merchantCredentialAvailable}
                   envKeys={$snapshot?.envKeys ?? []}
-                  openSections={openSectionsFor(
-                    index,
-                    isGroupedSource(source),
-                  )}
+                  openSections={openSectionsFor(index, isGroupedSource(source))}
                   onOpenSectionsChange={(sections) =>
                     setOpenSectionsFor(index, sections)}
                   onChange={(next) => updateSource(index, next)}

@@ -198,7 +198,10 @@ export const sourceApiForm = createFormConfig<
       get: (source) => source.api?.endpoint ?? "",
       set: (source, endpoint) => ({
         ...source,
-        api: { ...(source.api ?? { secretRef: "" }), endpoint: optionalString(endpoint) },
+        api: {
+          ...(source.api ?? { secretRef: "" }),
+          endpoint: optionalString(endpoint),
+        },
       }),
     }),
     secretField({
@@ -243,7 +246,10 @@ export const sourceApiForm = createFormConfig<
       get: (source) => source.api?.recordsPath ?? "",
       set: (source, recordsPath) => ({
         ...source,
-        api: { ...(source.api ?? { secretRef: "" }), recordsPath: optionalString(recordsPath) },
+        api: {
+          ...(source.api ?? { secretRef: "" }),
+          recordsPath: optionalString(recordsPath),
+        },
       }),
     }),
     textField({
@@ -254,7 +260,10 @@ export const sourceApiForm = createFormConfig<
       get: (source) => joinList(source.api?.allowedHosts),
       set: (source, value) => ({
         ...source,
-        api: { ...(source.api ?? { secretRef: "" }), allowedHosts: parseList(value) },
+        api: {
+          ...(source.api ?? { secretRef: "" }),
+          allowedHosts: parseList(value),
+        },
       }),
     }),
     switchField({
@@ -290,7 +299,10 @@ export const sourceApiGroupedForm = createFormConfig<
       get: (source) => source.api?.baseUrl ?? "",
       set: (source, baseUrl) => ({
         ...source,
-        api: { ...(source.api ?? { secretRef: "" }), baseUrl: optionalString(baseUrl) },
+        api: {
+          ...(source.api ?? { secretRef: "" }),
+          baseUrl: optionalString(baseUrl),
+        },
       }),
     }),
     ...sourceApiForm.fields.filter((field) => field.id !== "api.endpoint"),

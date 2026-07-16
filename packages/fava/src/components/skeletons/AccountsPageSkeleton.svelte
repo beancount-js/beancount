@@ -19,9 +19,7 @@
     </div>
     <div class="flex flex-col gap-0 p-2">
       {#each Array.from({ length: 5 }, (_, index) => index) as row (row)}
-        <div
-          class="flex items-center gap-3 rounded-lg px-3 py-2.5"
-        >
+        <div class="flex items-center gap-3 rounded-lg px-3 py-2.5">
           <Skeleton class="size-4 rounded-sm" />
           <div class="flex min-w-0 flex-1 flex-col gap-1.5">
             <Skeleton class="h-3.5 w-48" />

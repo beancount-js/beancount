@@ -276,8 +276,10 @@
     return discoveryById.get(account.id)?.institutionName?.trim() || undefined;
   }
 
-  /** Discovery scheme for connector sources; the generic /discover endpoint
-   * needs an auth header hint and connectors don't expose one directly. */
+  /**
+   * Discovery scheme for connector sources; the generic /discover endpoint
+   * needs an auth header hint and connectors don't expose one directly.
+   */
   function sourceAuthScheme(
     source: EditableIngestionSource,
   ): "bearer" | "x-api-key" | undefined {
@@ -310,9 +312,7 @@
       loadedConfig = response;
       config = draft;
       loadedProjectId = $snapshot.project.id;
-      const grouped = draft.sources.filter((source) =>
-        isGroupedSource(source),
-      );
+      const grouped = draft.sources.filter((source) => isGroupedSource(source));
       if (
         !selectedSourceId ||
         !grouped.some((source) => source.id === selectedSourceId)
@@ -918,7 +918,9 @@
               role="alert"
             >
               <p class="text-xs font-medium">Could not load accounts</p>
-              <p class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90">
+              <p
+                class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90"
+              >
                 {error}
               </p>
             </div>
@@ -934,9 +936,14 @@
         </article>
       </div>
     {:else if error}
-      <div class="rounded-lg bg-destructive/10 px-3 py-2 text-destructive" role="alert">
+      <div
+        class="rounded-lg bg-destructive/10 px-3 py-2 text-destructive"
+        role="alert"
+      >
         <p class="text-xs font-medium">Could not load accounts</p>
-        <p class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90">
+        <p
+          class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90"
+        >
           {error}
         </p>
       </div>

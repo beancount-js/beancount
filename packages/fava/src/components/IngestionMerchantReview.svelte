@@ -99,7 +99,9 @@
     MERCHANT_DOMAIN_OPTIONS.map((option) => ({ ...option })),
   );
   const matchedClusters = $derived(
-    clusters.filter((item) => matchesIngestionMerchantSearch(item, searchState)),
+    clusters.filter((item) =>
+      matchesIngestionMerchantSearch(item, searchState),
+    ),
   );
   const sortedClusters = $derived.by(() => {
     const keys = sortPriority.filter((key) => sortOrders[key] !== "none");
@@ -522,145 +524,146 @@
             No merchants match this search.
           </div>
         {:else if matchedClusters.length}
-        <div
-          role="row"
-          class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-        >
           <div
-            role="columnheader"
-            aria-sort={ariaSortFor("merchant")}
-            class="justify-self-start"
+            role="row"
+            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by merchant"
-              onclick={() => cycleSort("merchant")}
-            >
-              Merchant
-              {#if sortOrders.merchant === "asc"}
-                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
-              {:else if sortOrders.merchant === "desc"}
-                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
-              {:else}
-                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
-              {/if}
-            </button>
-          </div>
-          <div
-            role="columnheader"
-            aria-sort={ariaSortFor("pending")}
-            class="justify-self-end"
-          >
-            <button
-              type="button"
-              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by pending count"
-              onclick={() => cycleSort("pending")}
-            >
-              Pending
-              {#if sortOrders.pending === "asc"}
-                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
-              {:else if sortOrders.pending === "desc"}
-                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
-              {:else}
-                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
-              {/if}
-            </button>
-          </div>
-        </div>
-        <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
-          {#each visibleClusters as cluster, index (cluster.id)}
             <div
-              role="button"
-              tabindex="0"
-              class:rounded-b-xl={index === visibleClusters.length - 1}
-              class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={`Review merchant ${cluster.displayName}`}
-              onclick={() => openCluster(cluster)}
-              onkeydown={(event) => handleRowKeydown(event, cluster)}
+              role="columnheader"
+              aria-sort={ariaSortFor("merchant")}
+              class="justify-self-start"
             >
-              {#if cluster.logoUrl && !failedLogoIds.has(cluster.id)}
-                <img
-                  class="size-10 rounded-full border object-contain"
-                  src={cluster.logoUrl}
-                  alt=""
-                  onerror={() => markLogoFailed(cluster.id)}
-                />
-              {:else}
-                <div
-                  class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
-                  aria-hidden="true"
-                >
-                  {clusterInitial(cluster)}
-                </div>
-              {/if}
-              <div class="min-w-0">
-                <div class="truncate text-sm font-semibold">
-                  {cluster.displayName}
-                </div>
-                <div class="mt-1 truncate text-xs text-muted-foreground">
-                  <span class="capitalize"
-                    >{cluster.statuses[0] ?? "unresolved"}</span
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Sort by merchant"
+                onclick={() => cycleSort("merchant")}
+              >
+                Merchant
+                {#if sortOrders.merchant === "asc"}
+                  <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                {:else if sortOrders.merchant === "desc"}
+                  <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                {:else}
+                  <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+                {/if}
+              </button>
+            </div>
+            <div
+              role="columnheader"
+              aria-sort={ariaSortFor("pending")}
+              class="justify-self-end"
+            >
+              <button
+                type="button"
+                class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Sort by pending count"
+                onclick={() => cycleSort("pending")}
+              >
+                Pending
+                {#if sortOrders.pending === "asc"}
+                  <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                {:else if sortOrders.pending === "desc"}
+                  <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                {:else}
+                  <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+                {/if}
+              </button>
+            </div>
+          </div>
+          <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
+            {#each visibleClusters as cluster, index (cluster.id)}
+              <div
+                role="button"
+                tabindex="0"
+                class:rounded-b-xl={index === visibleClusters.length - 1}
+                class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Review merchant ${cluster.displayName}`}
+                onclick={() => openCluster(cluster)}
+                onkeydown={(event) => handleRowKeydown(event, cluster)}
+              >
+                {#if cluster.logoUrl && !failedLogoIds.has(cluster.id)}
+                  <img
+                    class="size-10 rounded-full border object-contain"
+                    src={cluster.logoUrl}
+                    alt=""
+                    onerror={() => markLogoFailed(cluster.id)}
+                  />
+                {:else}
+                  <div
+                    class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                    aria-hidden="true"
                   >
-                  · {clusterDetail(cluster)}
+                    {clusterInitial(cluster)}
+                  </div>
+                {/if}
+                <div class="min-w-0">
+                  <div class="truncate text-sm font-semibold">
+                    {cluster.displayName}
+                  </div>
+                  <div class="mt-1 truncate text-xs text-muted-foreground">
+                    <span class="capitalize"
+                      >{cluster.statuses[0] ?? "unresolved"}</span
+                    >
+                    · {clusterDetail(cluster)}
+                  </div>
                 </div>
+                <span class="text-sm font-semibold tabular-nums">
+                  {cluster.pendingCount}
+                </span>
               </div>
-              <span class="text-sm font-semibold tabular-nums">
-                {cluster.pendingCount}
-              </span>
-            </div>
-          {/each}
-        </div>
+            {/each}
+          </div>
 
-        {#if pages.length > 1}
-          <nav
-            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
-            aria-label="Review merchant pages"
-          >
-            <span class="text-sm text-muted-foreground"
-              >Page {page} of {pages.length}</span
+          {#if pages.length > 1}
+            <nav
+              class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+              aria-label="Review merchant pages"
             >
-            <div class="flex items-center gap-2">
-              <label
-                class="text-sm text-muted-foreground"
-                for="ingestion-merchant-page-size">Records per page</label
+              <span class="text-sm text-muted-foreground"
+                >Page {page} of {pages.length}</span
               >
-              <select
-                id="ingestion-merchant-page-size"
-                class="h-8 rounded-md border bg-background px-2 text-sm"
-                value={pageSize}
-                onchange={(event) =>
-                  updateRoute({
-                    pageSize: (event.currentTarget as HTMLSelectElement).value,
-                    page: "1",
-                  })}
-              >
-                {#each PAGE_SIZES as size (size)}
-                  <option value={size}>{size}</option>
-                {/each}
-              </select>
-              <Button
-                size="icon"
-                variant="outline"
-                aria-label="Previous merchant page"
-                disabled={page <= 1}
-                onclick={() => updateRoute({ page: String(page - 1) })}
-              >
-                <ChevronsLeft />
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                aria-label="Next merchant page"
-                disabled={page >= pages.length}
-                onclick={() => updateRoute({ page: String(page + 1) })}
-              >
-                <ChevronsRight />
-              </Button>
-            </div>
-          </nav>
-        {/if}
+              <div class="flex items-center gap-2">
+                <label
+                  class="text-sm text-muted-foreground"
+                  for="ingestion-merchant-page-size">Records per page</label
+                >
+                <select
+                  id="ingestion-merchant-page-size"
+                  class="h-8 rounded-md border bg-background px-2 text-sm"
+                  value={pageSize}
+                  onchange={(event) =>
+                    updateRoute({
+                      pageSize: (event.currentTarget as HTMLSelectElement)
+                        .value,
+                      page: "1",
+                    })}
+                >
+                  {#each PAGE_SIZES as size (size)}
+                    <option value={size}>{size}</option>
+                  {/each}
+                </select>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  aria-label="Previous merchant page"
+                  disabled={page <= 1}
+                  onclick={() => updateRoute({ page: String(page - 1) })}
+                >
+                  <ChevronsLeft />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  aria-label="Next merchant page"
+                  disabled={page >= pages.length}
+                  onclick={() => updateRoute({ page: String(page + 1) })}
+                >
+                  <ChevronsRight />
+                </Button>
+              </div>
+            </nav>
+          {/if}
         {/if}
       {:else}
         <Empty.Root class="min-h-64 border">

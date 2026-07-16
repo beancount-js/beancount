@@ -98,19 +98,16 @@ describe("ledger-route", () => {
       "settings",
       "brands",
     ]);
-    expect(viewPathToSegments("/import/rules")).toEqual([
-      "settings",
-      "rules",
-    ]);
+    expect(viewPathToSegments("/import/rules")).toEqual(["settings", "rules"]);
     expect(buildLedgerHref("bean-budget", "a/b/sample", "/dashboard")).toBe(
       "/bean-budget/ledger/a/b/sample/dashboard/",
     );
-    expect(
-      buildLedgerHref("bean-budget", "sample", "/import/brands"),
-    ).toBe("/bean-budget/ledger/sample/settings/brands/");
-    expect(
-      buildLedgerHref("bean-budget", "sample", "/import/rules"),
-    ).toBe("/bean-budget/ledger/sample/settings/rules/");
+    expect(buildLedgerHref("bean-budget", "sample", "/import/brands")).toBe(
+      "/bean-budget/ledger/sample/settings/brands/",
+    );
+    expect(buildLedgerHref("bean-budget", "sample", "/import/rules")).toBe(
+      "/bean-budget/ledger/sample/settings/rules/",
+    );
     expect(
       buildLedgerHref("bean-budget", "sample", "/account/Assets:Checking", {
         page: "2",

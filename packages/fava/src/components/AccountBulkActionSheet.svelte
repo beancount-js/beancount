@@ -69,10 +69,7 @@
       value: account,
       label: account,
     }));
-    if (
-      toAccount &&
-      !options.some((option) => option.value === toAccount)
-    ) {
+    if (toAccount && !options.some((option) => option.value === toAccount)) {
       options.push({ value: toAccount, label: toAccount });
     }
     return options;
@@ -201,9 +198,7 @@
       handleOpenChange(false);
       onApplied?.();
     } catch (error) {
-      errors = [
-        error instanceof Error ? error.message : failureMessage,
-      ];
+      errors = [error instanceof Error ? error.message : failureMessage];
     } finally {
       applying = false;
     }
@@ -418,8 +413,8 @@
                   {duplicatePlan.groups.length} duplicate group{duplicatePlan
                     .groups.length === 1
                     ? ""
-                    : "s"} · {duplicatePlan.deleteCount} record{duplicatePlan
-                    .deleteCount === 1
+                    : "s"} · {duplicatePlan.deleteCount} record{duplicatePlan.deleteCount ===
+                  1
                     ? ""
                     : "s"} will be deleted · {duplicatePlan.keepCount} kept{#if duplicatePlan.skipped.length}
                     ; {duplicatePlan.skipped.length} skipped (no source){/if}.

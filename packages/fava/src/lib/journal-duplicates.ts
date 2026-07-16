@@ -4,9 +4,9 @@ import type { JournalRecord } from "../components/journal-table/model";
 import type { AccountReplacePatch } from "./account-bulk-replace";
 
 /**
- * Fingerprint for duplicate detection.
- * Prefer meta `raw_fingerprint` when present; otherwise hash date, flag, payee,
- * narration, and sorted posting amount strings.
+ * Fingerprint for duplicate detection. Prefer meta `raw_fingerprint` when
+ * present; otherwise hash date, flag, payee, narration, and sorted posting
+ * amount strings.
  */
 export function duplicateFingerprint(
   directive: DirectiveBase,
@@ -84,8 +84,8 @@ export function findDuplicateGroups(
 }
 
 /**
- * Build delete patches for every duplicate beyond the kept record in each group.
- * Keeps the earliest record (date, then lineno, then key).
+ * Build delete patches for every duplicate beyond the kept record in each
+ * group. Keeps the earliest record (date, then lineno, then key).
  */
 export function buildDuplicateDeletePatches(
   records: readonly JournalRecord[],
