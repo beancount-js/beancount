@@ -184,6 +184,14 @@
       "status": "adapted",
       "tests": ["plugins/pedantic"],
       "reason": "Composes the local validator ports in upstream declaration order."
+    },
+    {
+      "upstreamModule": "beancount.ops.lifetimes",
+      "upstreamBehavior": "commodity_lifetimes_and_required_price_dates",
+      "localBehavior": "getCommodityLifetimes, compressIntervalsDays, trimIntervals, requiredWeeklyPrices, requiredDailyPrices",
+      "status": "adapted",
+      "tests": ["ops/lifetimes"],
+      "reason": "Uses encoded currency-pair Map keys and Luxon DateTime intervals."
     }
   ]
 }
