@@ -8,6 +8,7 @@ import {
   type Metadata,
   Booking,
   DirectiveBase,
+  Document,
   Open,
   Note,
   Pad,
@@ -145,6 +146,17 @@ function formatNote(entry: Note): string {
   ].join(" ");
 }
 
+function formatDocument(entry: Document): string {
+  const labels = [
+    ...[...entry.tags].sort().map((tag) => `#${tag}`),
+    ...[...entry.links].sort().map((link) => `^${link}`),
+  ];
+  return [
+    `${entry.date.toISODate()} document ${entry.account} ${writeScalar(entry.filename)}`,
+    ...labels,
+  ].join(" ");
+}
+
 /** Render one local directive using its parser-accepted source representation. */
 export function formatEntry(
   entry: DirectiveBase,
@@ -162,11 +174,13 @@ export function formatEntry(
           ? formatPad(entry)
           : entry instanceof Note
             ? formatNote(entry)
-            : entry instanceof Open
-              ? formatOpen(entry)
-              : entry instanceof Price
-                ? formatPrice(entry)
-                : entry.toString();
+            : entry instanceof Document
+              ? formatDocument(entry)
+              : entry instanceof Open
+                ? formatOpen(entry)
+                : entry instanceof Price
+                  ? formatPrice(entry)
+                  : entry.toString();
   return `${source}${prefix}${text}`;
 }
 
