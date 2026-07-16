@@ -18,6 +18,14 @@
       "reason": "Uses a JavaScript Map histogram with identical deterministic mode tie-breaking."
     },
     {
+      "upstreamModule": "beancount.core.display_context",
+      "upstreamBehavior": "precision_quantization_and_alignment",
+      "localBehavior": "DisplayContext, DisplayFormatter",
+      "status": "adapted",
+      "tests": ["core/display-context"],
+      "reason": "Uses local Decimal formatting and string-based browser-safe alignment."
+    },
+    {
       "upstreamModule": "beancount.core.prices",
       "upstreamBehavior": "get_last_price_entries",
       "localBehavior": "getLastPriceEntries",
