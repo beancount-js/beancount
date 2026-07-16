@@ -272,8 +272,6 @@
       --cv-form-foreground,
       var(--beancount-form-foreground, var(--foreground))
     );
-    font-size: 1rem;
-    font-weight: 600;
     line-height: 1.5;
     padding: 0;
   }
@@ -291,11 +289,16 @@
     );
     cursor: pointer;
     font: inherit;
-    font-size: 1rem;
-    font-weight: 600;
     line-height: 1.5;
     padding: 0;
     text-align: left;
+  }
+
+  /* Low specificity so titleClass utilities (e.g. text-xs) can override. */
+  :where(.beancount-form-section-title-row h3),
+  :where(.beancount-form-section-title-toggle) {
+    font-size: 1rem;
+    font-weight: 600;
   }
 
   .beancount-form-section-title-toggle:hover,

@@ -259,7 +259,7 @@
         </Alert.Root>
       {/if}
 
-      <div class="flex min-w-0 flex-col gap-6">
+      <div class="rule-form flex min-w-0 flex-col gap-6">
         <div class="flex flex-col gap-1.5">
           <label
             for="rule-editor-name"
@@ -474,7 +474,9 @@
 </Sheet.Root>
 
 <style>
-  :global(.rule-sheet-title) {
+  :global(.rule-sheet-title),
+  .rule-form :global(.beancount-form-section-title-toggle),
+  .rule-form :global(.beancount-form-section-title-row h3) {
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.05em;
