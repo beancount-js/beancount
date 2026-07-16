@@ -2,6 +2,7 @@
 export * from "./core";
 export * from "./utils";
 export * from "./ops";
+export * from "./parity";
 export * from "./parser/parser";
 export * from "./parser/loader";
 export * from "./plugins/autoaccount";

@@ -1,0 +1,46 @@
+{
+  "upstream": {
+    "commit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
+    "module": "beancount.core.prices",
+    "source": "beancount/core/prices_test.py::TestPriceEntries.test_get_last_price_entries",
+    "copyright": "Copyright (C) 2014-2020, 2024-2025 Martin Blais",
+    "license": "GPL-2.0-only"
+  },
+  "ledger": "2013-01-01 price USD 1.01 CAD\n2013-02-01 price USD 1.02 CAD\n2013-03-01 price USD 1.03 CAD\n2013-04-01 price USD 1.04 CAD\n2013-05-01 price USD 1.05 CAD\n2013-06-01 price USD 1.06 CAD\n2013-07-01 price USD 1.07 CAD",
+  "assertions": [
+    {
+      "asOf": "2013-05-01",
+      "prices": [
+        {
+          "date": "2013-04-01",
+          "currency": "USD",
+          "units": "1.04",
+          "quote": "CAD"
+        }
+      ]
+    },
+    {
+      "asOf": "2013-05-02",
+      "prices": [
+        {
+          "date": "2013-05-01",
+          "currency": "USD",
+          "units": "1.05",
+          "quote": "CAD"
+        }
+      ]
+    },
+    {
+      "asOf": "2014-01-01",
+      "prices": [
+        {
+          "date": "2013-07-01",
+          "currency": "USD",
+          "units": "1.07",
+          "quote": "CAD"
+        }
+      ]
+    },
+    { "asOf": "2012-01-01", "prices": [] }
+  ]
+}

@@ -24,6 +24,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
+    "parity:check": "tsx ./scripts/parity-check.ts",
+    "parity:refresh": "tsx ./scripts/parity-refresh.ts",
     "fmt": "prettier ./src --write",
     "fmt:check": "prettier ./src --check"
   },

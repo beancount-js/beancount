@@ -1,0 +1,31 @@
+{
+  "upstream": {
+    "commit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
+    "module": "beancount.loader",
+    "source": "beancount/loader_test.py::TestLoadIncludes.test_load_file_with_multiple_includes",
+    "copyright": "Copyright (C) 2013-2025 Martin Blais",
+    "license": "GPL-2.0-only"
+  },
+  "entryFile": "ledger/apples.beancount",
+  "sources": {
+    "ledger/apples.beancount": "include \"fruits/oranges.beancount\"\ninclude \"legumes/patates.beancount\"\n2014-01-01 open Assets:Apples",
+    "ledger/fruits/oranges.beancount": "include \"../legumes/tomates.beancount\"\n2014-01-02 open Assets:Oranges",
+    "ledger/legumes/tomates.beancount": "2014-01-03 open Assets:Tomates",
+    "ledger/legumes/patates.beancount": "2014-01-04 open Assets:Patates"
+  },
+  "expected": {
+    "accounts": [
+      "Assets:Apples",
+      "Assets:Oranges",
+      "Assets:Tomates",
+      "Assets:Patates"
+    ],
+    "includes": [
+      "ledger/apples.beancount",
+      "ledger/fruits/oranges.beancount",
+      "ledger/legumes/patates.beancount",
+      "ledger/legumes/tomates.beancount"
+    ],
+    "errors": []
+  }
+}

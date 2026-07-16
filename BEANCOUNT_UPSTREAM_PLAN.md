@@ -443,6 +443,11 @@ snapshots automatically.
 - Add the Vitest coverage provider and initial measured baseline without
   weakening the final thresholds.
 
+Progress note (2026-07-16): GPL licensing and attribution are committed. The
+first manifest records and upstream-derived core and loader oracle fixtures are
+committed incrementally; the manifest will expand with each implemented module
+and test family.
+
 Exit criteria:
 
 - Licensing is confirmed and represented accurately in the repository.

@@ -1,0 +1,21 @@
+{
+  "upstreamCommit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
+  "records": [
+    {
+      "upstreamModule": "beancount.core.prices",
+      "upstreamBehavior": "get_last_price_entries",
+      "localBehavior": "getLastPriceEntries",
+      "status": "adapted",
+      "tests": ["parity/prices/last-price-entries"],
+      "reason": "Uses Luxon DateTime and canonical decimal strings."
+    },
+    {
+      "upstreamModule": "beancount.loader",
+      "upstreamBehavior": "recursive_relative_includes",
+      "localBehavior": "loadProjectSources",
+      "status": "adapted",
+      "tests": ["parity/loader/recursive-relative-includes"],
+      "reason": "Uses a bounded source-map capability instead of Python filesystem access."
+    }
+  ]
+}
