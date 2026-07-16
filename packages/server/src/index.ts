@@ -98,12 +98,15 @@ export {
   candidateForAutoPersist,
   ensureProposalMerchantPersisted,
   ensureProposalsMerchantsPersisted,
+  hasMerchantCatalogData,
   proposalMerchantLabel,
 } from "./merchant-persist";
 export {
   backfillMerchantsFromLedger,
+  pruneThinMerchantsFromCatalog,
   type LedgerFileSnapshot,
   type MerchantBackfillResult,
+  type MerchantPruneResult,
 } from "./merchant-backfill";
 export {
   applyMerchantResolutionToPendingProposals,

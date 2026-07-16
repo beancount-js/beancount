@@ -1,5 +1,8 @@
 import { json } from "@sveltejs/kit";
-import { backfillMerchantsFromLedger } from "@beancount-js/server";
+import {
+  backfillMerchantsFromLedger,
+  pruneThinMerchantsFromCatalog,
+} from "@beancount-js/server";
 import { serverIngestion } from "$lib/server/ingestion";
 import { serverWorkspace } from "$lib/server/workspace";
 
@@ -8,14 +11,22 @@ export async function POST({ params }: { params: { id: string } }) {
     const workspace = await serverWorkspace();
     const snapshot = await workspace.readProject(params.id);
     const store = serverIngestion();
+    const ledgerFiles = snapshot.ledgerFiles.map((file) => ({
+      path: file.path,
+      contents: file.contents,
+    }));
+
+    const pruned = await pruneThinMerchantsFromCatalog({
+      projectId: params.id,
+      entryFile: snapshot.project.entryFile,
+      files: ledgerFiles,
+      merchants: store.merchants,
+    });
 
     const result = await backfillMerchantsFromLedger({
       projectId: params.id,
       entryFile: snapshot.project.entryFile,
-      files: snapshot.ledgerFiles.map((file) => ({
-        path: file.path,
-        contents: file.contents,
-      })),
+      files: pruned.files,
       merchants: store.merchants,
     });
 
@@ -44,6 +55,8 @@ export async function POST({ params }: { params: { id: string } }) {
       createdProfiles: result.createdProfiles,
       patchedTransactions: result.patchedTransactions,
       skipped: result.skipped,
+      removedProfiles: pruned.removedProfiles,
+      clearedTransactions: pruned.clearedTransactions,
       filesChanged: changed.map((file) => file.path),
       snapshot: await workspace.readProject(params.id),
     });

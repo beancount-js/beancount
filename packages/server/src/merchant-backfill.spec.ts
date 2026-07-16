@@ -3,7 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import { FilesystemMerchantStore } from "./merchant";
-import { backfillMerchantsFromLedger } from "./merchant-backfill";
+import {
+  backfillMerchantsFromLedger,
+  pruneThinMerchantsFromCatalog,
+} from "./merchant-backfill";
 
 const directories: string[] = [];
 
@@ -16,12 +19,25 @@ afterEach(async () => {
 });
 
 describe("backfillMerchantsFromLedger", () => {
-  test("creates profiles and stamps merchant_id on imported transactions", async () => {
+  test("links existing enriched profiles without creating name-only ones", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-merchant-backfill-"),
     );
     directories.push(directory);
     const merchants = new FilesystemMerchantStore(async () => directory);
+
+    const enriched = await merchants.confirm("project", {
+      sourceId: "bank",
+      rawLabel: "Pure Gym",
+      candidate: {
+        id: "ai:pure-gym",
+        canonicalName: "Pure Gym",
+        domain: "puregym.com",
+        description: "UK gym chain.",
+        explanation: "enriched",
+        provenance: [{ source: "ai", observedAt: "2026-07-01T00:00:00.000Z" }],
+      },
+    });
 
     const contents = `option "operating_currency" "GBP"
 
@@ -35,11 +51,11 @@ describe("backfillMerchantsFromLedger", () => {
   Assets:Bank:Checking  -20.00 GBP
   Expenses:Food
 
-2024-06-02 * "Pure Gym" "Membership"
+2024-06-02 * "Unknown Cafe" "Coffee"
   import_id: "bank:2"
   import_source: "bank"
   raw_fingerprint: "def"
-  Assets:Bank:Checking  -20.00 GBP
+  Assets:Bank:Checking  -5.00 GBP
   Expenses:Food
 
 2024-06-03 * "Already Linked" "Coffee"
@@ -57,14 +73,118 @@ describe("backfillMerchantsFromLedger", () => {
       merchants,
     });
 
-    expect(result.createdProfiles).toBe(1);
-    expect(result.patchedTransactions).toBe(2);
-    expect(result.files[0]?.contents).toContain("merchant_id:");
-    expect(result.files[0]?.contents).toMatch(/Pure Gym[\s\S]*merchant_id:/);
+    expect(result.createdProfiles).toBe(0);
+    expect(result.patchedTransactions).toBe(1);
+    expect(result.skipped).toBe(1);
+    expect(result.files[0]?.contents).toContain(
+      `merchant_id: "${enriched.merchantId}"`,
+    );
+    expect(result.files[0]?.contents).toMatch(
+      /\* "Unknown Cafe" "Coffee"\n  import_id: "bank:2"\n  import_source: "bank"\n  raw_fingerprint: "def"\n  Assets:/,
+    );
+
+    await expect(merchants.list("project")).resolves.toHaveLength(1);
+  });
+
+  test("does not create profiles for unmatched labels", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-merchant-backfill-"),
+    );
+    directories.push(directory);
+    const merchants = new FilesystemMerchantStore(async () => directory);
+
+    const contents = `option "operating_currency" "GBP"
+
+2024-01-01 open Assets:Bank:Checking GBP
+2024-01-01 open Expenses:Food GBP
+
+2024-06-01 * "Pure Gym" "Membership"
+  import_id: "bank:1"
+  import_source: "bank"
+  Assets:Bank:Checking  -20.00 GBP
+  Expenses:Food
+`;
+
+    const result = await backfillMerchantsFromLedger({
+      projectId: "project",
+      entryFile: "main.beancount",
+      files: [{ path: "main.beancount", contents }],
+      merchants,
+    });
+
+    expect(result.createdProfiles).toBe(0);
+    expect(result.patchedTransactions).toBe(0);
+    expect(result.skipped).toBe(1);
+    await expect(merchants.list("project")).resolves.toEqual([]);
+  });
+});
+
+describe("pruneThinMerchantsFromCatalog", () => {
+  test("removes thin profiles and clears ledger merchant metadata", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-merchant-prune-"),
+    );
+    directories.push(directory);
+    const merchants = new FilesystemMerchantStore(async () => directory);
+
+    const thin = await merchants.confirm("project", {
+      sourceId: "bank",
+      rawLabel: "Cash Machine",
+      candidate: {
+        id: "thin",
+        canonicalName: "Cash Machine",
+        explanation: "name only",
+        provenance: [{ source: "manual", observedAt: "2026-07-01T00:00:00.000Z" }],
+      },
+    });
+    const rich = await merchants.confirm("project", {
+      sourceId: "bank",
+      rawLabel: "Tesco",
+      candidate: {
+        id: "rich",
+        canonicalName: "Tesco",
+        domain: "tesco.com",
+        explanation: "enriched",
+        provenance: [{ source: "ai", observedAt: "2026-07-01T00:00:00.000Z" }],
+      },
+    });
+
+    const contents = `option "operating_currency" "GBP"
+
+2024-01-01 open Assets:Bank:Checking GBP
+2024-01-01 open Expenses:Food GBP
+
+2024-06-01 * "Cash Machine" "ATM"
+  import_id: "bank:1"
+  import_source: "bank"
+  merchant_id: "${thin.merchantId}"
+  merchant_resolution_method: "manual"
+  Assets:Bank:Checking  -20.00 GBP
+  Expenses:Food
+
+2024-06-02 * "Tesco" "Groceries"
+  import_id: "bank:2"
+  import_source: "bank"
+  merchant_id: "${rich.merchantId}"
+  merchant_domain: "tesco.com"
+  Assets:Bank:Checking  -5.00 GBP
+  Expenses:Food
+`;
+
+    const result = await pruneThinMerchantsFromCatalog({
+      projectId: "project",
+      entryFile: "main.beancount",
+      files: [{ path: "main.beancount", contents }],
+      merchants,
+    });
+
+    expect(result.removedProfiles).toBe(1);
+    expect(result.clearedTransactions).toBe(1);
+    expect(result.files[0]?.contents).not.toContain(thin.merchantId);
+    expect(result.files[0]?.contents).toContain(rich.merchantId);
 
     const listed = await merchants.list("project");
     expect(listed).toHaveLength(1);
-    expect(listed[0]?.canonicalName).toBe("Pure Gym");
-    expect(listed[0]?.aliases).toHaveLength(1);
+    expect(listed[0]?.merchantId).toBe(rich.merchantId);
   });
 });

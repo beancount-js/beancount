@@ -427,6 +427,18 @@ export class FilesystemMerchantStore {
     );
   }
 
+  /** Remove a merchant profile directory and rebuild the catalog index. */
+  async delete(project: string, merchantId: string) {
+    await this.withLock(project, async () => {
+      const directory = join(
+        await this.root(project),
+        safeMerchantId(merchantId),
+      );
+      await fs.rm(directory, { recursive: true, force: true });
+      await this.rebuildIndex(project);
+    });
+  }
+
   async resolve(project: string, sourceId: string, rawLabel: string) {
     const normalizedLabel = normalizeMerchant(rawLabel);
     if (!normalizedLabel) return undefined;

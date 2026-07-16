@@ -396,7 +396,75 @@ describe("FilesystemIngestionStore", () => {
     ).resolves.toContain('"type":"cleared-suppression"');
   });
 
-  test("auto-persists a merchant profile for unresolved accept proposals", async () => {
+  test("auto-persists an enriched suggested merchant on accept", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-test-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+
+    const next = await ensureProposalMerchantPersisted(
+      store.merchants,
+      "project",
+      "bank",
+      {
+        id: "p1",
+        importId: "bank:1",
+        status: "ready",
+        selectedAccount: "Expenses:Food",
+        suggestions: [],
+        issues: [],
+        merchantResolution: {
+          status: "suggested",
+          rawLabel: "Pure Gym",
+          candidates: [
+            {
+              id: "ai:pure-gym",
+              canonicalName: "Pure Gym",
+              domain: "puregym.com",
+              description: "UK gym chain.",
+              rawScore: 0.9,
+              explanation: "AI merchant suggestion.",
+              provenance: [
+                {
+                  source: "ai",
+                  observedAt: "2026-07-02T00:00:00.000Z",
+                },
+              ],
+            },
+          ],
+          explanation: "Suggested merchant candidates.",
+        },
+        transaction: {
+          sourceId: "bank",
+          sourceAccount: "Assets:Bank:Checking",
+          bookedAt: "2026-07-01",
+          amount: "-20.00",
+          currency: "GBP",
+          payee: "Pure Gym",
+          narration: "Membership",
+          status: "posted",
+          fetchedAt: "2026-07-02T00:00:00.000Z",
+        },
+      },
+    );
+
+    expect(next.merchantResolution).toMatchObject({
+      status: "confirmed",
+      merchant: {
+        canonicalName: "Pure Gym",
+        domain: "puregym.com",
+      },
+    });
+    await expect(store.merchants.list("project")).resolves.toEqual([
+      expect.objectContaining({
+        canonicalName: "Pure Gym",
+        domain: "puregym.com",
+      }),
+    ]);
+  });
+
+  test("skips auto-persist for name-only unresolved accept proposals", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-test-"),
     );
@@ -434,12 +502,10 @@ describe("FilesystemIngestionStore", () => {
     );
 
     expect(next.merchantResolution).toMatchObject({
-      status: "confirmed",
-      merchant: { canonicalName: "Pure Gym" },
+      status: "unresolved",
+      rawLabel: "Pure Gym",
     });
-    await expect(store.merchants.list("project")).resolves.toEqual([
-      expect.objectContaining({ canonicalName: "Pure Gym" }),
-    ]);
+    await expect(store.merchants.list("project")).resolves.toEqual([]);
   });
 
   test("updates persisted merchant profile details directly", async () => {

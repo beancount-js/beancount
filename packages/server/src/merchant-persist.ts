@@ -7,6 +7,20 @@ import {
 } from "@beancount-js/beangulp";
 import type { FilesystemMerchantStore } from "./merchant";
 
+/** True when a merchant has domain, description, or brand enrichment worth storing. */
+export function hasMerchantCatalogData(
+  merchant: Pick<
+    MerchantIdentity | MerchantCandidate,
+    "domain" | "description" | "brand"
+  >,
+): boolean {
+  return Boolean(
+    merchant.domain?.trim() ||
+      merchant.description?.trim() ||
+      merchant.brand,
+  );
+}
+
 /** Payee / merchant label used for persistence and alias matching. */
 export function proposalMerchantLabel(
   proposal: Pick<ImportProposal, "transaction" | "merchantResolution">,
@@ -25,7 +39,7 @@ export function proposalMerchantLabel(
 
 /**
  * Build a candidate for auto-persist on accept.
- * Prefers the best suggested candidate; otherwise a manual candidate from the label.
+ * Only suggested candidates with domain, description, or brand data qualify.
  */
 export function candidateForAutoPersist(
   proposal: ImportProposal,
@@ -38,19 +52,11 @@ export function candidateForAutoPersist(
     const ranked = [...resolution.candidates].sort(
       (left, right) => (right.rawScore ?? 0) - (left.rawScore ?? 0),
     );
-    return ranked[0];
+    const top = ranked[0];
+    return top && hasMerchantCatalogData(top) ? top : undefined;
   }
 
-  const label = proposalMerchantLabel(proposal);
-  if (!label) return undefined;
-  return {
-    id: `auto:${normalizeMerchant(label)}`,
-    canonicalName: label,
-    explanation: "Merchant profile created automatically on import accept.",
-    provenance: [
-      { source: "manual", observedAt: new Date().toISOString() },
-    ],
-  };
+  return undefined;
 }
 
 function confirmedResolution(
@@ -87,7 +93,10 @@ export async function ensureProposalMerchantPersisted(
   if (!label) return proposal;
 
   const existing = await merchants.resolve(projectId, sourceId, label);
-  if (existing?.status === "confirmed") {
+  if (
+    existing?.status === "confirmed" &&
+    hasMerchantCatalogData(existing.merchant)
+  ) {
     return {
       ...proposal,
       merchantResolution: existing,

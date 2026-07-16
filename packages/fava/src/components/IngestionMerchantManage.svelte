@@ -153,7 +153,7 @@
   async function backfillFromLedger() {
     if (!project || isWeb || backfillBusy) return;
     const confirmed = window.confirm(
-      "Create merchant profiles for imported ledger transactions that are missing merchant_id, and stamp those transactions?",
+      "Prune thin merchant profiles (no domain, description, or brand), clear their merchant meta from transactions, and stamp merchant_id only where an enriched profile matches?",
     );
     if (!confirmed) return;
 
@@ -161,6 +161,8 @@
     status = "Backfilling merchants…";
     try {
       const result = await ingestionJson<{
+        removedProfiles: number;
+        clearedTransactions: number;
         createdProfiles: number;
         patchedTransactions: number;
         skipped: number;
@@ -170,7 +172,7 @@
       });
       snapshot.set(result.snapshot);
       await loadMerchants();
-      status = `Backfill complete: ${result.createdProfiles} profile${result.createdProfiles === 1 ? "" : "s"} created, ${result.patchedTransactions} transaction${result.patchedTransactions === 1 ? "" : "s"} updated${result.skipped ? `, ${result.skipped} skipped` : ""}.`;
+      status = `Backfill complete: ${result.removedProfiles} profile${result.removedProfiles === 1 ? "" : "s"} removed, ${result.clearedTransactions} transaction${result.clearedTransactions === 1 ? "" : "s"} cleared, ${result.patchedTransactions} transaction${result.patchedTransactions === 1 ? "" : "s"} linked, ${result.createdProfiles} profile${result.createdProfiles === 1 ? "" : "s"} created${result.skipped ? `, ${result.skipped} skipped` : ""}.`;
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {
