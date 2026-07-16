@@ -476,6 +476,31 @@ describe("book", () => {
     expect((entries[0] as Transaction).postings[0].units?.currency).toBe("USD");
   });
 
+  test("inserts one automatic residual posting for each currency group", () => {
+    // Ported from Beancount's booking_full_test.py::test_categorize__multiple_auto_postings.
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Balance two currencies", [
+          new Posting("Assets:Account", new Amount("100", "USD")),
+          new Posting("Assets:Account", new Amount("200", "CAD")),
+          new Posting("Equity:Opening-Balances"),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    const postings = (entries[0] as Transaction).postings;
+    expect(postings.map((posting) => posting.account)).toEqual([
+      "Assets:Account",
+      "Equity:Opening-Balances",
+      "Assets:Account",
+      "Equity:Opening-Balances",
+    ]);
+    expect(postings[1].units?.eq(new Amount("-100", "USD"))).toBe(true);
+    expect(postings[3].units?.eq(new Amount("-200", "CAD"))).toBe(true);
+  });
+
   test("filters candidate lots by every specified reduction attribute", () => {
     const wantedDate = DateTime.fromISO("2022-01-01");
     const balances = {
