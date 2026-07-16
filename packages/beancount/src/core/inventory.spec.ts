@@ -221,4 +221,38 @@ describe("Inventory", () => {
         .toRecord(),
     ).toEqual({ EUR: 3 });
   });
+
+  test("averages uncosted and date-less lots while preserving constructor inputs", () => {
+    const uncosted = new Inventory([
+      new Position(new Amount("2", "USD")),
+      new Position(new Amount("1", "EUR")),
+    ]);
+    expect(uncosted.average().positions).toEqual([
+      new Position(new Amount("2", "USD")),
+      new Position(new Amount("1", "EUR")),
+    ]);
+
+    const dateLessCost = new Cost(null, new Amount("5", "USD"));
+    const dateLess = new Inventory(
+      new Position(new Amount("2", "HOOL"), dateLessCost),
+    );
+    expect(dateLess.average().positions).toEqual([
+      new Position(
+        new Amount("2", "HOOL"),
+        new Cost(null, new Amount("5", "USD")),
+      ),
+    ]);
+
+    const postingInventory = new Inventory();
+    postingInventory.addPosting(
+      new Posting(
+        "Assets:Brokerage",
+        new Amount("1", "HOOL"),
+        new Cost(date, new Amount("5", "USD")),
+      ),
+    );
+    expect(postingInventory.costCurrencies).toEqual(["USD"]);
+    expect(new InventoryKey("USD").copy().hash).toBe("USD");
+    expect(new CounterInventory().add(null)).toBeUndefined();
+  });
 });
