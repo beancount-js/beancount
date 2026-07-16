@@ -6,8 +6,10 @@
   import Landmark from "lucide-svelte/icons/landmark";
   import Pencil from "lucide-svelte/icons/pencil";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
+  import ScanSearch from "lucide-svelte/icons/scan-search";
   import Settings2 from "lucide-svelte/icons/settings-2";
   import Sparkles from "lucide-svelte/icons/sparkles";
+  import Store from "lucide-svelte/icons/store";
   import { FormToolbar } from "@beancount-js/forms";
   import CycleSelect from "./CycleSelect.svelte";
   import { Button } from "$lib/components/ui/button";
@@ -89,6 +91,27 @@
             ? "Expand all date groups"
             : "Collapse all date groups"}
         </Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              type="button"
+              size="icon"
+              variant="ghost"
+              class="size-8"
+              aria-label="Review merchants"
+              onclick={(event) => {
+                props.onclick?.(event);
+                header.onReviewMerchants();
+              }}
+            >
+              <Store />
+            </Button>
+          {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>Review merchants</Tooltip.Content>
       </Tooltip.Root>
       <Tooltip.Root>
         <Tooltip.Trigger>
@@ -184,9 +207,139 @@
         </Tooltip.Trigger>
         <Tooltip.Content>Edit sources</Tooltip.Content>
       </Tooltip.Root>
+    {:else if header.kind === "merchants"}
+      <CycleSelect
+        value={header.sourceId}
+        options={header.sourceOptions}
+        label="Source"
+        ariaLabel="Select source"
+        onChange={header.onSourceChange}
+      />
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              type="button"
+              size="icon"
+              variant="ghost"
+              class="size-8"
+              aria-label={header.groupsCollapsedAll
+                ? "Expand all merchant groups"
+                : "Collapse all merchant groups"}
+              onclick={(event) => {
+                props.onclick?.(event);
+                header.onToggleCollapseGroups();
+              }}
+            >
+              {#if header.groupsCollapsedAll}
+                <ChevronsUpDown />
+              {:else}
+                <ChevronsDownUp />
+              {/if}
+            </Button>
+          {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>
+          {header.groupsCollapsedAll
+            ? "Expand all merchant groups"
+            : "Collapse all merchant groups"}
+        </Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              type="button"
+              size="icon"
+              variant="ghost"
+              class="size-8"
+              aria-label="Detect merchants"
+              disabled={!header.canDetect || header.detectBusy}
+              onclick={(event) => {
+                props.onclick?.(event);
+                header.onDetectMerchants();
+              }}
+            >
+              <ScanSearch class={header.detectBusy ? "animate-pulse" : ""} />
+            </Button>
+          {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>
+          {header.detectBusy
+            ? "Detecting merchants…"
+            : "Run merchant detection on pending clusters"}
+        </Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              type="button"
+              size="icon"
+              variant="ghost"
+              class="size-8"
+              aria-label="Review imports"
+              onclick={(event) => {
+                props.onclick?.(event);
+                header.onReviewImports();
+              }}
+            >
+              <ClipboardList />
+            </Button>
+          {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>Review imports</Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              type="button"
+              size="icon"
+              variant="ghost"
+              class="size-8"
+              aria-label="Open Accounts"
+              onclick={(event) => {
+                props.onclick?.(event);
+                header.onOpenAccounts();
+              }}
+            >
+              <Landmark />
+            </Button>
+          {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>Open Accounts</Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              type="button"
+              size="icon"
+              variant="ghost"
+              class="size-8"
+              aria-label="Edit sources"
+              onclick={(event) => {
+                props.onclick?.(event);
+                header.onEditSources();
+              }}
+            >
+              <Settings2 />
+            </Button>
+          {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>Edit sources</Tooltip.Content>
+      </Tooltip.Root>
     {:else}
       {#if header.saveHint}
-        <p class="text-xs text-muted-foreground" role="status">{header.saveHint}</p>
+        <p class="text-xs text-muted-foreground" role="status">
+          {header.saveHint}
+        </p>
       {/if}
       {#if header.configReady && !header.yamlMode && !header.previewMode}
         <FormToolbar
