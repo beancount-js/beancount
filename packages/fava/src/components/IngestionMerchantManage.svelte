@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { SearchFilterBar } from "@beancount-js/forms";
   import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
   import ChevronsRight from "lucide-svelte/icons/chevrons-right";
@@ -9,6 +10,7 @@
   import * as Alert from "$lib/components/ui/alert";
   import * as Empty from "$lib/components/ui/empty";
   import { useNavigation } from "../router/router";
+  import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { debounceWithDelay } from "../hooks/debounce";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
@@ -16,7 +18,7 @@
   import MerchantsPageSkeleton from "./skeletons/MerchantsPageSkeleton.svelte";
 
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
-  const PAGE_SIZES = [25, 50, 100];
+  const PAGE_SIZES = [10, 25, 50, 100];
   const { snapshot } = useStudioWorkspace();
   const { router, activeRoute } = useNavigation();
 
@@ -35,7 +37,7 @@
   const pageSize = $derived(
     PAGE_SIZES.includes(Number($activeRoute?.query?.pageSize))
       ? Number($activeRoute.query.pageSize)
-      : 50,
+      : 25,
   );
   const pages = $derived(paginateMerchants(merchants, pageSize));
   const requestedPage = $derived(
@@ -166,6 +168,19 @@
     }
     sheetOpen = true;
   });
+
+  $effect(() => {
+    if (isWeb || !project) {
+      ingestionHeaderActions.set(null);
+      return;
+    }
+    ingestionHeaderActions.set({
+      kind: "manage-merchants",
+      merchantCount: merchants.length,
+    });
+  });
+
+  onDestroy(() => ingestionHeaderActions.set(null));
 </script>
 
 <section
@@ -255,55 +270,62 @@
             {/each}
           </div>
 
-          {#if pages.length > 1}
-            <nav
-              class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
-              aria-label="Merchant pages"
-            >
-              <span class="text-sm text-muted-foreground"
-                >Page {page} of {pages.length}</span
+          <nav
+            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+            aria-label="Merchant pages"
+          >
+            <span class="text-sm text-muted-foreground">
+              {#if pages.length > 1}
+                Page {page} of {pages.length}
+                <span class="text-muted-foreground/80">
+                  · {merchants.length} merchant{merchants.length === 1
+                    ? ""
+                    : "s"}</span
+                >
+              {:else}
+                {merchants.length} merchant{merchants.length === 1 ? "" : "s"}
+              {/if}
+            </span>
+            <div class="flex items-center gap-2">
+              <label
+                class="text-sm text-muted-foreground"
+                for="ingestion-merchant-manage-page-size"
+                >Records per page</label
               >
-              <div class="flex items-center gap-2">
-                <label
-                  class="text-sm text-muted-foreground"
-                  for="ingestion-merchant-manage-page-size"
-                  >Records per page</label
-                >
-                <select
-                  id="ingestion-merchant-manage-page-size"
-                  class="h-8 rounded-md border bg-background px-2 text-sm"
-                  value={pageSize}
-                  onchange={(event) =>
-                    updateRoute({
-                      pageSize: (event.currentTarget as HTMLSelectElement).value,
-                      page: "1",
-                    })}
-                >
-                  {#each PAGE_SIZES as size (size)}
-                    <option value={size}>{size}</option>
-                  {/each}
-                </select>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  aria-label="Previous merchant page"
-                  disabled={page <= 1}
-                  onclick={() => updateRoute({ page: String(page - 1) })}
-                >
-                  <ChevronsLeft />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  aria-label="Next merchant page"
-                  disabled={page >= pages.length}
-                  onclick={() => updateRoute({ page: String(page + 1) })}
-                >
-                  <ChevronsRight />
-                </Button>
-              </div>
-            </nav>
-          {/if}
+              <select
+                id="ingestion-merchant-manage-page-size"
+                class="h-8 rounded-md border bg-background px-2 text-sm"
+                value={pageSize}
+                onchange={(event) =>
+                  updateRoute({
+                    pageSize: (event.currentTarget as HTMLSelectElement).value,
+                    page: "1",
+                  })}
+              >
+                {#each PAGE_SIZES as size (size)}
+                  <option value={size}>{size}</option>
+                {/each}
+              </select>
+              <Button
+                size="icon"
+                variant="outline"
+                aria-label="Previous merchant page"
+                disabled={page <= 1}
+                onclick={() => updateRoute({ page: String(page - 1) })}
+              >
+                <ChevronsLeft />
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                aria-label="Next merchant page"
+                disabled={page >= pages.length}
+                onclick={() => updateRoute({ page: String(page + 1) })}
+              >
+                <ChevronsRight />
+              </Button>
+            </div>
+          </nav>
         {:else}
           <Empty.Root class="min-h-64 border">
             <Empty.Header>

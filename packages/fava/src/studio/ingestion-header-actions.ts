@@ -62,6 +62,12 @@ export type IngestionRulesHeaderActions = {
   onAddRule: () => void;
 };
 
+/** Manage merchants catalog count in the workspace header. */
+export type IngestionManageMerchantsHeaderActions = {
+  kind: "manage-merchants";
+  merchantCount: number;
+};
+
 /** Beancount ledger editor File/Edit menubar and Save in the workspace header. */
 export type LedgerEditorHeaderActions = {
   kind: "ledger";
@@ -94,6 +100,7 @@ export type IngestionHeaderActions =
   | IngestionEditorHeaderActions
   | IngestionReviewHeaderActions
   | IngestionMerchantsHeaderActions
+  | IngestionManageMerchantsHeaderActions
   | IngestionRulesHeaderActions
   | LedgerEditorHeaderActions
   | AccountActivityHeaderActions;
