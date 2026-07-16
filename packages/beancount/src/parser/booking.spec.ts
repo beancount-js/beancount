@@ -802,6 +802,37 @@ describe("book", () => {
     expect(posting.resolvedCost?.amount?.currency).toBe("USD");
   });
 
+  test("uses the held inventory to categorize an otherwise unknown reduction", () => {
+    // Ported from Beancount's booking_full_test.py::test_categorize__two_unknown_postings.
+    const balances = {
+      [account]: new Inventory(
+        new Position(
+          new Amount("1", "HOOL"),
+          new Cost(DateTime.fromISO("2022-01-01"), new Amount("10", "USD")),
+        ),
+      ),
+    };
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-02", "Infer from held lot", [
+          new Posting(
+            account,
+            new Amount("-1", null),
+            new CostSpec(new Decimal("10"), null, null),
+          ),
+        ]),
+      ],
+      defaultBeancountOptions(),
+      balances,
+    );
+
+    expect(errors).toEqual([]);
+    const posting = (entries[0] as Transaction).postings[0];
+    expect(posting.units?.currency).toBe("HOOL");
+    expect(posting.resolvedCost?.amount?.currency).toBe("USD");
+    expect(balances[account].isEmpty()).toBe(true);
+  });
+
   test("combines per-unit and total cost specifications during augmentation", () => {
     const [entries, errors] = book(
       [
