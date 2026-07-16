@@ -1,5 +1,5 @@
 import { syntaxTree } from "@codemirror/language";
-import type { Range, RangeSet } from "@codemirror/state";
+import type { Range } from "@codemirror/state";
 import {
   Decoration,
   EditorView,
@@ -7,6 +7,7 @@ import {
   ViewPlugin,
   ViewUpdate,
   WidgetType,
+  type DecorationSet,
   type PluginSpec,
   type PluginValue,
 } from "@codemirror/view";
@@ -33,10 +34,9 @@ class HeaderWidget extends WidgetType {
   toDOM(view: EditorView) {
     const span = document.createElement("span");
     span.className = `cm-header cm-header-${this.state.level}`;
-    span.innerText = this.state.header.substring(this.state.level).trim();
-    // Place the cursor on the heading line without posAtCoords — calling that
-    // while replace widgets swap to editable marks can crash CodeMirror's
-    // coordinate scan (`child.isText` on undefined).
+    span.textContent = this.state.header.substring(this.state.level).trim();
+    // Select the heading line without posAtCoords (unstable while replace
+    // widgets swap to editable source marks).
     span.onclick = () => {
       view.dispatch({ selection: { anchor: this.state.at } });
     };
@@ -49,9 +49,21 @@ class HeaderWidget extends WidgetType {
 }
 
 function isActiveLine(view: EditorView, at: number) {
-  const activeLine = view.state.doc.lineAt(view.state.selection.main.head),
-    decorationLine = view.state.doc.lineAt(at);
+  const activeLine = view.state.doc.lineAt(view.state.selection.main.head);
+  const decorationLine = view.state.doc.lineAt(at);
   return activeLine.number === decorationLine.number;
+}
+
+/** Markdown-style headings live on DocumentMarkup lines, not transaction flags. */
+function isDocumentMarkupLine(view: EditorView, from: number) {
+  let node = syntaxTree(view.state).resolveInner(from, 1);
+  while (node) {
+    if (node.name === "DocumentMarkup") {
+      return true;
+    }
+    node = node.parent;
+  }
+  return false;
 }
 
 export function headerLevel(line: string, maxDepth = 0) {
@@ -60,17 +72,14 @@ export function headerLevel(line: string, maxDepth = 0) {
 }
 
 const headerDecorator = new MatchDecorator({
-  regexp: /^(#+|\*+)\s+(.*)/gi,
+  regexp: /^(#+|\*+)\s+(.*)/g,
   decorate: (add, from, to, match, view) => {
-    const header = match[0];
-    const start = from,
-      level = headerLevel(match[1]),
-      end = to;
-    const line = view.state.doc.lineAt(from);
-    const node = syntaxTree(view.state).cursorAt(line.from);
-    if (node.name !== "Journal") {
+    if (!isDocumentMarkupLine(view, from)) {
       return;
     }
+    const header = match[0];
+    const level = headerLevel(match[1]);
+    const line = view.state.doc.lineAt(from);
     add(
       line.from,
       line.from,
@@ -78,64 +87,75 @@ const headerDecorator = new MatchDecorator({
         class: `cm-line HyperMD-header-${level} HyperMD-header`,
       }),
     );
-
+    // Replace the raw `## title` with a widget that omits the marker.
     add(
-      start,
-      end,
+      from,
+      to,
       Decoration.replace({
-        widget: new HeaderWidget({ at: start, header, level: level }),
+        widget: new HeaderWidget({ at: from, header, level }),
       }),
     );
   },
 });
 
+function buildHeaderDecorations(
+  view: EditorView,
+  base: DecorationSet,
+): DecorationSet {
+  const marks: Range<Decoration>[] = [];
+  const filtered = base.update({
+    filter: (from, to) => {
+      // Line decorations are zero-length; always keep them.
+      if (to <= from) {
+        return true;
+      }
+      // Active line: drop the replace widget so `##` source is editable.
+      if (isActiveLine(view, from)) {
+        const level = headerLevel(view.state.sliceDoc(from, to));
+        const line = view.state.doc.lineAt(from);
+        if (line.to > line.from) {
+          marks.push(
+            Decoration.mark({ class: `cm-header cm-header-${level}` }).range(
+              line.from,
+              line.to,
+            ),
+          );
+        }
+        return false;
+      }
+      return true;
+    },
+  });
+  return marks.length ? filtered.update({ add: marks }) : filtered;
+}
+
 class HeaderView implements PluginValue {
-  decorator: MatchDecorator;
-  headerDecorations: RangeSet<Decoration>;
+  /** Unfiltered MatchDecorator set (always includes replace widgets). */
+  base: DecorationSet;
+  decorations: DecorationSet;
 
   constructor(readonly view: EditorView) {
-    this.decorator = headerDecorator;
-    this.headerDecorations = this.decorator.createDeco(view);
+    this.base = headerDecorator.createDeco(view);
+    this.decorations = buildHeaderDecorations(view, this.base);
   }
 
   update(update: ViewUpdate) {
     if (update.docChanged || update.viewportChanged) {
-      this.headerDecorations = this.decorator.updateDeco(
-        update,
-        this.decorations,
-      );
+      // Must pass the unfiltered base set — never the active-line view.
+      this.base = headerDecorator.updateDeco(update, this.base);
     }
-  }
-
-  get decorations(): RangeSet<Decoration> {
-    const current: Range<Decoration>[] = [];
-    const deco = this.headerDecorations.update({
-      filter: (from, to) => {
-        const size = this.view.state.doc.length;
-        if (to > from && to <= size && isActiveLine(this.view, from)) {
-          const level = headerLevel(this.view.state.sliceDoc(from, to));
-          const line = this.view.state.doc.lineAt(from);
-          if (line.to > line.from) {
-            current.push(
-              Decoration.mark({ class: `cm-header cm-header-${level}` }).range(
-                line.from,
-                line.to,
-              ),
-            );
-          }
-          return false;
-        }
-        return true;
-      },
-    });
-    return deco.update({ add: current });
+    if (
+      update.docChanged ||
+      update.viewportChanged ||
+      update.selectionSet
+    ) {
+      this.decorations = buildHeaderDecorations(update.view, this.base);
+    }
   }
 }
 
 const pluginSpec: PluginSpec<HeaderView> = {
-  decorations: (value: HeaderView) => {
-    return value.decorations;
-  },
+  decorations: (value: HeaderView) => value.decorations,
 };
 
 export function decorateHeaders() {
