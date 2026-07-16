@@ -321,4 +321,48 @@ describe("book", () => {
       ]),
     );
   });
+
+  test("allows independent costed lots when the account uses NONE booking", () => {
+    const [entries, errors, balances] = book(
+      [
+        new Open(DateTime.fromISO("2022-01-01"), account, [], Booking.NONE),
+        transaction("2022-01-01", "Buy", [
+          new Posting(
+            account,
+            new Amount("1", "HOOL"),
+            new Cost(null, new Amount("10", "USD")),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-10", "USD")),
+        ]),
+        transaction("2022-01-02", "Independent reduction", [
+          new Posting(
+            account,
+            new Amount("-1", "HOOL"),
+            new Cost(null, new Amount("20", "USD")),
+          ),
+          new Posting("Assets:Cash", new Amount("20", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    expect(
+      (entries[2] as Transaction).postings[0].resolvedCost?.date?.toISODate(),
+    ).toBe("2022-01-02");
+    expect(balances[account].isEmpty()).toBe(false);
+  });
+
+  test("reports unresolved postings that cannot be assigned to a currency group", () => {
+    const incomplete = transaction("2022-01-01", "Unknown currency", [
+      new Posting("Assets:Cash", new Amount(null, null)),
+    ]);
+
+    const [entries, errors] = book([incomplete], defaultBeancountOptions());
+
+    expect(entries).toEqual([]);
+    expect(errors.map((error) => error.message)).toContain(
+      "Failed to categorize posting 0",
+    );
+  });
 });
