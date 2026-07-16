@@ -493,18 +493,18 @@
                 size="sm"
                 variant="ghost"
                 class="h-8 gap-1.5 px-2.5"
-                aria-label={`Replace account in ${header.selectedCount} selected records`}
+                aria-label={`Edit ${header.selectedCount} selected records`}
                 onclick={(event) => {
                   props.onclick?.(event);
                   header.onReplace();
                 }}
               >
                 <ArrowLeftRight class="size-4" />
-                <span class="text-sm">Replace ({header.selectedCount})</span>
+                <span class="text-sm">Edit ({header.selectedCount})</span>
               </Button>
             {/snippet}
           </Tooltip.Trigger>
-          <Tooltip.Content>Replace account in selection</Tooltip.Content>
+          <Tooltip.Content>Edit selection</Tooltip.Content>
         </Tooltip.Root>
       {/if}
     {:else if header.kind === "ledger"}
