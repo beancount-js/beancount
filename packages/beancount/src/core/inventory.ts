@@ -438,7 +438,7 @@ export class CounterInventory extends DefaultKeyedMap<InventoryKey, Decimal> {
   }
 
   add(amount: Amount | null, cost?: Cost | CostSpec | null) {
-    if (!amount?.currency || amount.units === null) {
+    if (!amount?.currency || !amount.isDefined()) {
       return;
     }
     const costed = cost instanceof Cost ? cost : null;
