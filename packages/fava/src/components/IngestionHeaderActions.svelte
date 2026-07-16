@@ -3,18 +3,22 @@
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import ClipboardList from "lucide-svelte/icons/clipboard-list";
+  import FoldVertical from "lucide-svelte/icons/fold-vertical";
   import Landmark from "lucide-svelte/icons/landmark";
   import Pencil from "lucide-svelte/icons/pencil";
   import Play from "lucide-svelte/icons/play";
   import Plus from "lucide-svelte/icons/plus";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
+  import Save from "lucide-svelte/icons/save";
   import ScanSearch from "lucide-svelte/icons/scan-search";
   import Settings2 from "lucide-svelte/icons/settings-2";
   import Sparkles from "lucide-svelte/icons/sparkles";
   import Store from "lucide-svelte/icons/store";
+  import UnfoldVertical from "lucide-svelte/icons/unfold-vertical";
   import { FormToolbar } from "@beancount-js/forms";
   import CycleSelect from "./CycleSelect.svelte";
   import { Button } from "$lib/components/ui/button";
+  import * as Menubar from "$lib/components/ui/menubar";
   import { Switch } from "$lib/components/ui/switch";
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
@@ -386,7 +390,79 @@
         </Tooltip.Trigger>
         <Tooltip.Content>Add rule</Tooltip.Content>
       </Tooltip.Root>
-    {:else}
+    {:else if header.kind === "ledger"}
+      <Menubar.Root>
+        <Menubar.Menu>
+          <Menubar.Trigger>File</Menubar.Trigger>
+          <Menubar.Content>
+            <Menubar.Sub>
+              <Menubar.SubTrigger class="pl-8">Open source</Menubar.SubTrigger>
+              <Menubar.SubContent>
+                {#each header.sources as file (file.path)}
+                  <Menubar.CheckboxItem
+                    checked={file.path === header.activePath}
+                    on:click={() => header.onOpenSource(file.path)}
+                    >{file.path}</Menubar.CheckboxItem
+                  >
+                {/each}
+              </Menubar.SubContent>
+            </Menubar.Sub>
+            <Menubar.CheckboxItem
+              checked={header.formatOnSave}
+              on:click={() => header.onToggleFormatOnSave()}
+            >
+              Format on Save
+            </Menubar.CheckboxItem>
+            <Menubar.Item inset on:click={() => header.onGotoLine()}
+              >Go To Line</Menubar.Item
+            >
+          </Menubar.Content>
+        </Menubar.Menu>
+        <Menubar.Menu>
+          <Menubar.Trigger>Edit</Menubar.Trigger>
+          <Menubar.Content>
+            <Menubar.Item inset on:click={() => header.onFormat()}>
+              Format <Menubar.Shortcut class="pl-2">⌘ + D</Menubar.Shortcut>
+            </Menubar.Item>
+            <Menubar.Item inset on:click={() => header.onToggleComment()}>
+              Toggle Comment <Menubar.Shortcut class="pl-2">⌘ + /</Menubar.Shortcut>
+            </Menubar.Item>
+            <Menubar.Item on:click={() => header.onUnfoldAll()}>
+              <UnfoldVertical class="mr-2 size-4" /> Open all folds
+            </Menubar.Item>
+            <Menubar.Item on:click={() => header.onFoldAll()}>
+              <FoldVertical class="mr-2 size-4" /> Close all folds
+            </Menubar.Item>
+            <Menubar.Separator />
+            <Menubar.Sub>
+              <Menubar.SubTrigger class="pl-8">Find</Menubar.SubTrigger>
+              <Menubar.SubContent>
+                <Menubar.Item on:click={() => header.onFind()}>Find...</Menubar.Item>
+                <Menubar.Item on:click={() => header.onFindNext()}
+                  >Find Next</Menubar.Item
+                >
+                <Menubar.Item on:click={() => header.onFindPrevious()}
+                  >Find Previous</Menubar.Item
+                >
+              </Menubar.SubContent>
+            </Menubar.Sub>
+            <Menubar.Separator />
+            <Menubar.Item on:click={() => header.onAskAi()}>
+              <Sparkles class="mr-2 size-4" /> Ask AI about selection
+            </Menubar.Item>
+          </Menubar.Content>
+        </Menubar.Menu>
+      </Menubar.Root>
+      <Button
+        type="button"
+        size="sm"
+        aria-label="Save Ledger"
+        variant="default"
+        onclick={() => header.onSave()}
+      >
+        <Save class="mr-1 size-4" /> Save
+      </Button>
+    {:else if header.kind === "editor"}
       {#if header.saveHint}
         <p class="text-xs text-muted-foreground" role="status">
           {header.saveHint}

@@ -62,11 +62,33 @@ export type IngestionRulesHeaderActions = {
   onAddRule: () => void;
 };
 
+/** Beancount ledger editor File/Edit menubar and Save in the workspace header. */
+export type LedgerEditorHeaderActions = {
+  kind: "ledger";
+  formatOnSave: boolean;
+  sources: { path: string }[];
+  activePath: string;
+  dirty: boolean;
+  onOpenSource: (path: string) => void;
+  onToggleFormatOnSave: () => void;
+  onGotoLine: () => void;
+  onFormat: () => void;
+  onToggleComment: () => void;
+  onUnfoldAll: () => void;
+  onFoldAll: () => void;
+  onFind: () => void;
+  onFindNext: () => void;
+  onFindPrevious: () => void;
+  onAskAi: () => void;
+  onSave: () => void;
+};
+
 export type IngestionHeaderActions =
   | IngestionEditorHeaderActions
   | IngestionReviewHeaderActions
   | IngestionMerchantsHeaderActions
-  | IngestionRulesHeaderActions;
+  | IngestionRulesHeaderActions
+  | LedgerEditorHeaderActions;
 
 /** Ingestion controls rendered in `studio-workspace-header`. */
 export const ingestionHeaderActions = writable<IngestionHeaderActions | null>(
