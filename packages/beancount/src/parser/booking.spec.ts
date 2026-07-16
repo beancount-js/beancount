@@ -365,4 +365,111 @@ describe("book", () => {
       "Failed to categorize posting 0",
     );
   });
+
+  test("filters candidate lots by every specified reduction attribute", () => {
+    const wantedDate = DateTime.fromISO("2022-01-01");
+    const balances = {
+      [account]: new Inventory(
+        new Position(new Amount("1", "AAPL"), null),
+        new Position(new Amount("1", "HOOL"), null),
+        new Position(
+          new Amount("1", "HOOL"),
+          new Cost(wantedDate, new Amount("5", "USD"), "wanted"),
+        ),
+        new Position(
+          new Amount("1", "HOOL"),
+          new Cost(wantedDate, new Amount("10", "EUR"), "wanted"),
+        ),
+        new Position(
+          new Amount("1", "HOOL"),
+          new Cost(
+            DateTime.fromISO("2021-01-01"),
+            new Amount("10", "USD"),
+            "wanted",
+          ),
+        ),
+        new Position(
+          new Amount("1", "HOOL"),
+          new Cost(wantedDate, new Amount("10", "USD"), "other"),
+        ),
+        new Position(
+          new Amount("1", "HOOL"),
+          new Cost(wantedDate, new Amount("10", "USD"), "wanted"),
+        ),
+      ),
+    };
+    const [entries, errors] = book(
+      [
+        transaction("2023-01-01", "Sell exact lot", [
+          new Posting(
+            account,
+            new Amount("-1", "HOOL"),
+            new Cost(wantedDate, new Amount("10", "USD"), "wanted"),
+          ),
+          new Posting("Assets:Cash", new Amount("10", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+      balances,
+    );
+
+    expect(errors).toEqual([]);
+    expect((entries[0] as Transaction).postings[0].resolvedCost?.label).toBe(
+      "wanted",
+    );
+    expect(balances[account].positions).toHaveLength(6);
+  });
+
+  test("combines per-unit and total cost specifications during augmentation", () => {
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Combined cost", [
+          new Posting(
+            account,
+            new Amount("2", "HOOL"),
+            new CostSpec(new Decimal("10"), new Decimal("10"), "USD"),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-30", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    expect(
+      (entries[0] as Transaction).postings[0].resolvedCost?.amount?.toString(),
+    ).toBe("15 USD");
+  });
+
+  test("flags missing units, currencies, and resolved cost details", () => {
+    const invalid = transaction("2022-01-01", "Incomplete fields", [
+      new Posting("Assets:Missing-Units"),
+      new Posting("Assets:Missing-Currency", new Amount("1", null)),
+      new Posting(
+        "Assets:Cost-Spec",
+        new Amount("1", "HOOL"),
+        new CostSpec(new Decimal("10"), null, "USD"),
+      ),
+      new Posting(
+        "Assets:Cost-Amount",
+        new Amount("1", "HOOL"),
+        new Cost(DateTime.fromISO("2022-01-01"), new Amount(null, "USD")),
+      ),
+      new Posting(
+        "Assets:Cost-Currency",
+        new Amount("1", "HOOL"),
+        new Cost(DateTime.fromISO("2022-01-01"), new Amount("10", null)),
+      ),
+      new Posting(
+        "Assets:Cost-Date",
+        new Amount("1", "HOOL"),
+        new Cost(null, new Amount("10", "USD")),
+      ),
+    ]);
+
+    const errors = validateMissingEliminated([invalid]);
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0].context.directive).toBe(invalid);
+  });
 });
