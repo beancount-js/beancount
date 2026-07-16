@@ -463,6 +463,9 @@
         <span
           data-workspace-page-title
           class="ml-1 min-w-0 truncate text-sm font-semibold"
+          title={$ingestionHeaderActions?.kind === "ledger"
+            ? $ingestionHeaderActions.activePath
+            : undefined}
         >
           {pageTitle}
         </span>
@@ -472,12 +475,20 @@
             >{$ingestionHeaderActions.ruleCount}</span
           >
         {/if}
+        {#if $ingestionHeaderActions?.kind === "ledger"}
+          <div
+            data-slot="studio-workspace-header-leading"
+            class="ml-1.5 flex min-w-0 shrink-0 items-center"
+          >
+            <IngestionHeaderActions region="leading" />
+          </div>
+        {/if}
         <div class="ml-auto flex shrink-0 items-center gap-2">
           <div
             data-slot="studio-workspace-header-actions"
             class="flex min-w-0 items-center gap-2"
           >
-            <IngestionHeaderActions />
+            <IngestionHeaderActions region="actions" />
           </div>
           <Button
             variant="ghost"

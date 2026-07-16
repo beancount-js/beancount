@@ -189,6 +189,15 @@
     path: string,
     params: Record<string, string | undefined>,
   ) {
+    if (path === "/editor" || path === "/directives") {
+      const filePath = $activeFile?.trim();
+      if (filePath) {
+        const slash = filePath.lastIndexOf("/");
+        return slash >= 0 ? filePath.slice(slash + 1) : filePath;
+      }
+      return "Editor";
+    }
+
     const mainTab = MainNav.find((item) => item.path === path);
     if (mainTab) return mainTab.name;
 
