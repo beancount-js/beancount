@@ -596,10 +596,10 @@
     {
       "upstreamModule": "beancount.parser.version",
       "upstreamBehavior": "native_parser_build_version_rendering",
-      "localBehavior": "not implemented",
-      "status": "pending",
-      "tests": [],
-      "reason": "No browser-neutral equivalent for native parser build metadata has been defined."
+      "localBehavior": "computeVersionString",
+      "status": "adapted",
+      "tests": ["parser/version"],
+      "reason": "Caller-supplied metadata replaces the upstream compiled parser extension."
     }
   ]
 }
