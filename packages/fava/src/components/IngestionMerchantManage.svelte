@@ -1,8 +1,11 @@
 <script lang="ts">
   import { SearchFilterBar } from "@beancount-js/forms";
+  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
+  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import FileCode2 from "lucide-svelte/icons/file-code-2";
   import Landmark from "lucide-svelte/icons/landmark";
   import type { MerchantIdentity } from "@beancount-js/beangulp";
+  import { Button } from "$lib/components/ui/button";
   import * as Alert from "$lib/components/ui/alert";
   import * as Empty from "$lib/components/ui/empty";
   import { useNavigation } from "../router/router";
@@ -13,6 +16,7 @@
   import MerchantsPageSkeleton from "./skeletons/MerchantsPageSkeleton.svelte";
 
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
+  const PAGE_SIZES = [25, 50, 100];
   const { snapshot } = useStudioWorkspace();
   const { router, activeRoute } = useNavigation();
 
@@ -28,13 +32,43 @@
   const project = $derived($snapshot);
   const queryMerchantId = $derived($activeRoute?.query?.merchantId ?? "");
   const activeSearch = $derived(Boolean(debouncedQuery.trim()));
+  const pageSize = $derived(
+    PAGE_SIZES.includes(Number($activeRoute?.query?.pageSize))
+      ? Number($activeRoute.query.pageSize)
+      : 50,
+  );
+  const pages = $derived(paginateMerchants(merchants, pageSize));
+  const requestedPage = $derived(
+    Math.max(1, Number($activeRoute?.query?.page) || 1),
+  );
+  const page = $derived(Math.min(requestedPage, Math.max(1, pages.length)));
+  const visibleMerchants = $derived(pages[page - 1] ?? []);
 
   const [scheduleSearchReload, delaySearchReload] = debounceWithDelay(
     (query: string) => {
       debouncedQuery = query;
+      resetPageToFirst();
     },
     300,
   );
+
+  function paginateMerchants(
+    items: readonly MerchantIdentity[],
+    size: number,
+  ): MerchantIdentity[][] {
+    if (!items.length) return [];
+    const result: MerchantIdentity[][] = [];
+    for (let index = 0; index < items.length; index += size) {
+      result.push(items.slice(index, index + size));
+    }
+    return result;
+  }
+
+  function resetPageToFirst() {
+    const currentPage = Number($activeRoute?.query?.page) || 1;
+    if (currentPage === 1) updateRoute({ page: undefined });
+    else updateRoute({ page: "1" });
+  }
 
   function updateRoute(values: Record<string, string | undefined>) {
     const query = new URLSearchParams($activeRoute.query);
@@ -85,6 +119,7 @@
   function clearSearchQuery() {
     searchQuery = "";
     debouncedQuery = "";
+    resetPageToFirst();
   }
 
   async function loadMerchants() {
@@ -98,6 +133,11 @@
         ingestionPath(project.project.id, `/merchants${queryParam}`),
       );
       loadedProjectId = project.project.id;
+      const nextPages = paginateMerchants(merchants, pageSize);
+      const currentPage = Math.max(1, Number($activeRoute?.query?.page) || 1);
+      if (currentPage > 1 && nextPages.length && currentPage > nextPages.length) {
+        updateRoute({ page: String(nextPages.length) });
+      }
       status = "";
     } catch (error) {
       merchants = [];
@@ -113,6 +153,7 @@
     if (loadedProjectId !== projectId) {
       searchQuery = "";
       debouncedQuery = "";
+      resetPageToFirst();
     }
     void debouncedQuery;
     void loadMerchants();
@@ -144,10 +185,6 @@
     {:else if !project}
       <p class="text-sm text-muted-foreground">Open a project to manage merchants.</p>
     {:else}
-      <p class="text-sm text-muted-foreground">
-        Edit saved merchant profiles used for import matching and logos.
-      </p>
-
       {#if status}
         <p class="text-sm text-muted-foreground" role="status">{status}</p>
       {/if}
@@ -182,7 +219,7 @@
           </div>
         {:else if merchants.length}
           <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
-            {#each merchants as merchant (merchant.merchantId)}
+            {#each visibleMerchants as merchant (merchant.merchantId)}
               <div
                 role="button"
                 tabindex="0"
@@ -217,6 +254,56 @@
               </div>
             {/each}
           </div>
+
+          {#if pages.length > 1}
+            <nav
+              class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+              aria-label="Merchant pages"
+            >
+              <span class="text-sm text-muted-foreground"
+                >Page {page} of {pages.length}</span
+              >
+              <div class="flex items-center gap-2">
+                <label
+                  class="text-sm text-muted-foreground"
+                  for="ingestion-merchant-manage-page-size"
+                  >Records per page</label
+                >
+                <select
+                  id="ingestion-merchant-manage-page-size"
+                  class="h-8 rounded-md border bg-background px-2 text-sm"
+                  value={pageSize}
+                  onchange={(event) =>
+                    updateRoute({
+                      pageSize: (event.currentTarget as HTMLSelectElement).value,
+                      page: "1",
+                    })}
+                >
+                  {#each PAGE_SIZES as size (size)}
+                    <option value={size}>{size}</option>
+                  {/each}
+                </select>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  aria-label="Previous merchant page"
+                  disabled={page <= 1}
+                  onclick={() => updateRoute({ page: String(page - 1) })}
+                >
+                  <ChevronsLeft />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  aria-label="Next merchant page"
+                  disabled={page >= pages.length}
+                  onclick={() => updateRoute({ page: String(page + 1) })}
+                >
+                  <ChevronsRight />
+                </Button>
+              </div>
+            </nav>
+          {/if}
         {:else}
           <Empty.Root class="min-h-64 border">
             <Empty.Header>
