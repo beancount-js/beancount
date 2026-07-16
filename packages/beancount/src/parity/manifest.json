@@ -48,6 +48,14 @@
       "status": "adapted",
       "tests": ["ops/compress"],
       "reason": "Uses the JavaScript Transaction model and drops tags, links, and posting metadata as upstream does."
+    },
+    {
+      "upstreamModule": "beancount.ops.documents",
+      "upstreamBehavior": "find_process_and_verify_documents",
+      "localBehavior": "findDocuments, processDocuments, verifyDocumentFilesExist",
+      "status": "adapted",
+      "tests": ["ops/documents"],
+      "reason": "Uses the bounded DocumentStore capability rather than Python filesystem traversal."
     }
   ]
 }
