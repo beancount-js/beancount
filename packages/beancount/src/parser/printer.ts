@@ -2,7 +2,14 @@
 // Derived from beancount/parser/printer.py at a3cb3fd9f946d6213dd350fb87709a8ef198301d.
 // Copyright (C) 2014-2026 Martin Blais
 
-import { type Metadata, DirectiveBase } from "../core/data";
+import { getWeight } from "../core/convert";
+import {
+  type Metadata,
+  DirectiveBase,
+  Posting,
+  Transaction,
+  writeScalar,
+} from "../core/data";
 
 export interface PrintableError {
   message: string;
@@ -46,6 +53,57 @@ export function alignPositionStrings(
 
 export function renderSource(meta: Metadata): string {
   return `${meta.filename ?? "<unknown>"}:${meta.lineno ?? 0}:`;
+}
+
+export function renderFlag(flag: string | null | undefined): string {
+  return flag ?? "";
+}
+
+/** Render the account, position, and accounting weight of one posting. */
+export function renderPostingStrings(
+  posting: Posting,
+): [string, string, string] {
+  const flagAccount = posting.flag
+    ? `${renderFlag(posting.flag)} ${posting.account}`
+    : posting.account;
+  if (!posting.units?.isDefined()) return [flagAccount, "", ""];
+  const cost = posting.cost?.toString(true) ?? "";
+  const price = posting.price ? ` @ ${writeScalar(posting.price)}` : "";
+  const position = `${posting.units}${cost ? ` ${cost}` : ""}${price}`;
+  return [flagAccount, position, getWeight(posting).toString()];
+}
+
+/** Render a transaction with upstream-compatible aligned postings and weights. */
+export function formatTransaction(
+  transaction: Transaction,
+  renderWeights = false,
+): string {
+  const description = [
+    transaction.payee && writeScalar(transaction.payee),
+    transaction.narration && writeScalar(transaction.narration),
+    ...[...transaction.tags].sort().map((tag) => `#${tag}`),
+    ...[...transaction.links].sort().map((link) => `^${link}`),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const rows = transaction.postings.map(renderPostingStrings);
+  const accountWidth = Math.max(1, ...rows.map(([account]) => account.length));
+  const [positions, positionWidth] = alignPositionStrings(
+    rows.map(([, position]) => position),
+  );
+  const [weights, weightWidth] = alignPositionStrings(
+    rows.map(([, , weight]) => weight),
+  );
+  const header =
+    `${transaction.date.toISODate()} ${renderFlag(transaction.flag)} ${description}`.trimEnd();
+  const postings = rows.map(([account], index) => {
+    const line =
+      `  ${account.padEnd(accountWidth)}  ${positions[index].padEnd(Math.max(1, positionWidth))}`.trimEnd();
+    return renderWeights
+      ? `${line}  ; ${weights[index].padEnd(Math.max(1, weightWidth))}`.trimEnd()
+      : line;
+  });
+  return [header, ...postings].join("\n");
 }
 
 /** Render one local directive using its parser-accepted source representation. */

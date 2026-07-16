@@ -588,7 +588,7 @@
     {
       "upstreamModule": "beancount.parser.printer",
       "upstreamBehavior": "directive_error_and_position_text_rendering",
-      "localBehavior": "alignPositionStrings, formatEntry, formatEntries, formatError, renderSource",
+      "localBehavior": "alignPositionStrings, formatEntry, formatEntries, formatError, renderPostingStrings, formatTransaction, renderSource",
       "status": "pending",
       "tests": ["parser/printer"],
       "reason": "Shared formatting helpers are ported, but directive-specific display-context and weight rendering remain unverified."

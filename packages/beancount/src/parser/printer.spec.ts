@@ -1,11 +1,13 @@
 import { describe, expect, test } from "vitest";
 import { DateTime } from "luxon";
 import { Amount } from "../core/amount";
-import { Balance, newMetadata } from "../core/data";
+import { Balance, newMetadata, Posting, Transaction } from "../core/data";
 import {
   alignPositionStrings,
   formatError,
   formatEntry,
+  formatTransaction,
+  renderPostingStrings,
   renderSource,
 } from "./printer";
 
@@ -47,5 +49,32 @@ describe("printer helpers", () => {
     expect(
       formatError({ message: "Example error", source: meta, entry }),
     ).toContain("ledger.bean:12: Example error");
+  });
+
+  test("renders posting components and aligned transaction weights", () => {
+    const transaction = new Transaction(
+      DateTime.fromISO("2024-01-01"),
+      "*",
+      "",
+      "Lunch",
+      [],
+      [],
+      [
+        new Posting("Assets:Cash", new Amount("-12.34", "USD")),
+        new Posting("Expenses:Food", new Amount("12.34", "USD")),
+      ],
+    );
+    expect(renderPostingStrings(transaction.postings[0])).toEqual([
+      "Assets:Cash",
+      "-12.34 USD",
+      "-12.34 USD",
+    ]);
+    expect(formatTransaction(transaction, true)).toBe(
+      [
+        '2024-01-01 * "Lunch"',
+        "  Assets:Cash    -12.34 USD  ; -12.34 USD",
+        "  Expenses:Food   12.34 USD  ;  12.34 USD",
+      ].join("\n"),
+    );
   });
 });
