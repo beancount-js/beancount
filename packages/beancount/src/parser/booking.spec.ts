@@ -682,6 +682,47 @@ describe("book", () => {
     expect(balances[account].toString()).toBe("(25 HOOL { 116 USD })");
   });
 
+  test("resolves a strict reduction when matching lots exactly satisfy it", () => {
+    // Ported from Beancount's booking_full_test.py::test_reduce__multiple_reductions__no_error_because_total.
+    const balances = {
+      [account]: new Inventory(
+        new Position(
+          new Amount("7", "HOOL"),
+          new Cost(DateTime.fromISO("2022-01-15"), new Amount("115", "USD")),
+        ),
+        new Position(
+          new Amount("4", "HOOL"),
+          new Cost(DateTime.fromISO("2022-01-16"), new Amount("115", "USD")),
+        ),
+        new Position(
+          new Amount("3", "HOOL"),
+          new Cost(DateTime.fromISO("2022-01-15"), new Amount("117", "USD")),
+        ),
+      ),
+    };
+    const [entries, errors] = book(
+      [
+        transaction("2022-05-02", "Sell exact matched total", [
+          new Posting(
+            account,
+            new Amount("-11", "HOOL"),
+            new Cost(null, new Amount("115", "USD")),
+          ),
+        ]),
+      ],
+      defaultBeancountOptions({ booking_method: Booking.STRICT }),
+      balances,
+    );
+
+    expect(errors).toEqual([]);
+    const postings = (entries[0] as Transaction).postings;
+    expect(postings.map((posting) => posting.units?.toString())).toEqual([
+      "-7 HOOL",
+      "-4 HOOL",
+    ]);
+    expect(balances[account].toString()).toBe("(3 HOOL { 117 USD })");
+  });
+
   test("infers a reduction currency from an account with one held commodity", () => {
     const heldCost = new Cost(
       DateTime.fromISO("2022-01-01"),
