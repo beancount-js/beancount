@@ -39,7 +39,8 @@
         class="h-8 space-x-0 rounded-none border-0 bg-transparent p-0 shadow-none"
       >
         <Menubar.Menu>
-          <Menubar.Trigger class="h-8 px-2.5 text-sm font-medium"
+          <Menubar.Trigger
+            class="h-8 cursor-pointer px-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
             >File</Menubar.Trigger
           >
           <Menubar.Content>
@@ -67,7 +68,8 @@
           </Menubar.Content>
         </Menubar.Menu>
         <Menubar.Menu>
-          <Menubar.Trigger class="h-8 px-2.5 text-sm font-medium"
+          <Menubar.Trigger
+            class="h-8 cursor-pointer px-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
             >Edit</Menubar.Trigger
           >
           <Menubar.Content>
@@ -487,7 +489,7 @@
               {...props}
               type="button"
               size="icon"
-              variant="default"
+              variant="ghost"
               class="size-8"
               aria-label="Save ledger"
               onclick={(event) => {
