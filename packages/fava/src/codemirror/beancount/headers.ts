@@ -34,16 +34,11 @@ class HeaderWidget extends WidgetType {
     const span = document.createElement("span");
     span.className = `cm-header cm-header-${this.state.level}`;
     span.innerText = this.state.header.substring(this.state.level).trim();
-    span.onclick = (evt) => {
-      const pos =
-        view.posAtCoords({ x: evt.clientX, y: evt.clientY }) || this.state.at;
-      view.dispatch({ selection: { anchor: pos } });
-      setTimeout(() => {
-        const pos = view.posAtCoords({ x: evt.clientX, y: evt.clientY });
-        if (pos) {
-          view.dispatch({ selection: { anchor: pos } });
-        }
-      }, 1);
+    // Place the cursor on the heading line without posAtCoords — calling that
+    // while replace widgets swap to editable marks can crash CodeMirror's
+    // coordinate scan (`child.isText` on undefined).
+    span.onclick = () => {
+      view.dispatch({ selection: { anchor: this.state.at } });
     };
     return span;
   }
@@ -87,7 +82,7 @@ const headerDecorator = new MatchDecorator({
     add(
       start,
       end,
-      Decoration.widget({
+      Decoration.replace({
         widget: new HeaderWidget({ at: start, header, level: level }),
       }),
     );

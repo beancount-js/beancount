@@ -92,24 +92,23 @@
 {/if}
 
 <style>
-  /* Zero horizontal width so CodeMirror does not wrap the line for the icon. */
+  /*
+    Keep a real inline box so CodeMirror's coordinate scan can measure the
+    widget. Negative end margin pulls following text back so the icon does
+    not force an extra wrap.
+  */
   :global(.cm-account-combo-host) {
-    display: inline-block;
-    position: relative;
-    width: 0;
-    height: 1em;
-    overflow: visible;
+    display: inline-flex;
+    align-items: center;
+    width: 1rem;
+    margin-left: 0.1rem;
+    margin-right: -1.1rem;
     vertical-align: text-bottom;
   }
 
   :global(.cm-account-combo) {
-    position: absolute;
-    left: 0.15rem;
-    top: 50%;
-    z-index: 1;
-    display: block;
-    width: max-content;
-    transform: translateY(-50%);
+    display: inline-flex;
+    width: auto;
   }
 
   :global(.cm-account-combo__trigger) {
