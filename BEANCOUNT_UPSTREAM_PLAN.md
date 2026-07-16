@@ -446,7 +446,9 @@ snapshots automatically.
 Progress note (2026-07-16): GPL licensing and attribution are committed. The
 first manifest records and upstream-derived core and loader oracle fixtures are
 committed incrementally; the manifest will expand with each implemented module
-and test family.
+and test family. The package now measures a V8 coverage baseline without
+thresholds; thresholds will be added only after the full module inventory and
+fixture suite are represented.
 
 Exit criteria:
 

@@ -16,5 +16,11 @@ export default defineConfig({
   },
   test: {
     setupFiles: ["./vitest.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary"],
+      include: ["src/**/*.ts"],
+      exclude: ["src/**/*.spec.ts", "src/parity/**"],
+    },
   },
 });
