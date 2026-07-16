@@ -52,7 +52,12 @@ export class DefaultKeyedMap<K extends MapKey, V> extends DefaultMap<K, V> {
     handler: (key: K, map: DefaultMap<K, V>) => V,
     entries?: readonly (readonly [K, V])[] | null,
   ) {
-    super(handler, entries);
+    super(handler);
+    if (entries) {
+      for (const [key, value] of entries) {
+        this.set(key, value);
+      }
+    }
   }
 
   clear() {

@@ -2,6 +2,14 @@
   "upstreamCommit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
   "records": [
     {
+      "upstreamModule": "beancount.utils.defdict",
+      "upstreamBehavior": "default_and_keyed_mapping_semantics",
+      "localBehavior": "DefaultMap, DefaultKeyedMap, CaseInsensitiveMap",
+      "status": "adapted",
+      "tests": ["core/map"],
+      "reason": "Uses JavaScript Map instances with canonical hash keys instead of Python dictionary subclasses."
+    },
+    {
       "upstreamModule": "beancount.parser.booking",
       "upstreamBehavior": "per_unit_and_total_cost_spec_resolution",
       "localBehavior": "book, computeCost",
