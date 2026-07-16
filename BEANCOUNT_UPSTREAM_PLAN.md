@@ -509,6 +509,16 @@ Exit criteria:
 - Register standard upstream names and pedantic composition.
 - Retain and test the JS extension plugins.
 
+Progress note (2026-07-16): The named upstream plugin modules are now ported,
+exported, and registered under their standard names: auto accounts, implicit
+prices, auto, close-tree, closing, drained-account, commodity declaration and
+attribute checks, coherent-cost, leaf-only, duplicate, unused-account,
+one-commodity, average-cost, sell-gains, unique-price, currency-account, and
+the pedantic bundle. Each implementation has upstream-derived regression
+coverage and a parity-manifest record. The Phase 4 exit criteria remain open
+until the loader integration suite covers default/raw ordering, duplicate
+declarations, configuration propagation, and thrown plugin errors.
+
 Exit criteria:
 
 - Every official plugin test family is represented in the manifest.
