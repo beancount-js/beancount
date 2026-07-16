@@ -176,6 +176,14 @@
       "status": "adapted",
       "tests": ["plugins/currency-accounts"],
       "reason": "Uses immutable posting and transaction copies with local account helpers."
+    },
+    {
+      "upstreamModule": "beancount.plugins.pedantic",
+      "upstreamBehavior": "combined_pedantic_plugins",
+      "localBehavior": "pedantic",
+      "status": "adapted",
+      "tests": ["plugins/pedantic"],
+      "reason": "Composes the local validator ports in upstream declaration order."
     }
   ]
 }
