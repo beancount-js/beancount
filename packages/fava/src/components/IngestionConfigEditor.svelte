@@ -99,7 +99,7 @@
       yamlError = "";
       saveState = "idle";
       status =
-        "API keys can be stored inline in the local config, or referenced from the environment as env:NAME.";
+        "API keys can be stored inline, or as env:NAME from the process environment or project .env (pick a key in Environment mode).";
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
       saveState = "error";
@@ -376,6 +376,7 @@
   $effect(() => {
     if (isWeb) return;
     ingestionHeaderActions.set({
+      kind: "editor",
       saveHint,
       configReady: Boolean(config),
       sectionsCollapsedAll,
@@ -442,6 +443,7 @@
               <IngestionSourcesPreview
                 sources={config.sources}
                 samples={ingestionSamples}
+                envKeys={$snapshot?.envKeys ?? []}
                 {saving}
                 onChange={(index, next) => updateSource(index, next)}
                 onConnectSample={connectSampleDirect}
@@ -457,6 +459,7 @@
                   issues={issuesForSource(index)}
                   credentialAvailable={serverSource?.credentialAvailable}
                   merchantCredentialAvailable={serverSource?.merchantCredentialAvailable}
+                  envKeys={$snapshot?.envKeys ?? []}
                   openSections={openSectionsFor(
                     index,
                     source.rules?.length ?? 0,

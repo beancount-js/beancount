@@ -18,6 +18,8 @@ import {
   isGroupedJsonApiSource,
   jsonApiAccountSourceId,
   jsonApiAccountTransactionsEndpoint,
+  type AiEnrichmentCallRecord,
+  type AiEnrichmentSnapshot,
   type CategorizationContext,
   type CategorizerPlugin,
   type CategoryEvidence,
@@ -41,11 +43,16 @@ import {
   brandfetchLogoUrl,
   isValidDomain,
 } from "./brandfetch";
+import { createBrandfetchResponseCache } from "./brandfetch-cache";
 import {
   FilesystemMerchantStore,
   type ProjectRootResolver,
 } from "./merchant";
 import { projectIngestionRoot } from "./paths";
+import {
+  resolveEnvSecret,
+  resolveProjectEnv,
+} from "./project-env";
 
 const VERSION = 1;
 const RUN_LIMIT = 20;
@@ -124,10 +131,14 @@ export interface IngestionSyncJobSummary {
   held: number;
 }
 
+export type IngestionSyncJobKind = "sync" | "ai-rerun";
+
 export interface IngestionSyncJob {
   id: string;
   projectId: string;
   sourceId: string;
+  /** Defaults to `"sync"` for older persisted jobs. */
+  kind?: IngestionSyncJobKind;
   status: IngestionSyncJobStatus;
   startedAt: string;
   completedAt?: string;
@@ -398,8 +409,12 @@ export class FilesystemIngestionStore {
     this.merchants = new FilesystemMerchantStore(options.resolveProjectRoot);
   }
 
+  async projectRoot(project: string) {
+    return this.resolveProjectRoot(projectId(project));
+  }
+
   private async path(project: string, name: string) {
-    const root = await this.resolveProjectRoot(projectId(project));
+    const root = await this.projectRoot(project);
     return join(projectIngestionRoot(root), name);
   }
 
@@ -602,6 +617,8 @@ export class FilesystemIngestionStore {
     proposalId: string,
     patch: {
       account?: string;
+      /** Move between ready and needs-review without changing the selected account. */
+      status?: "ready" | "needs-review";
       transaction?: NormalizedTransactionPatch;
     },
   ) {
@@ -694,11 +711,19 @@ export class FilesystemIngestionStore {
           suggestions,
           status: "ready",
         };
-      } else if (
-        next.selectedAccount &&
-        next.status === "needs-review"
-      ) {
-        // Keep status if only metadata/date fields changed.
+      }
+
+      if (patch.status !== undefined) {
+        if (patch.status === "ready" && !next.selectedAccount) {
+          throw new Error("Select an account before marking a proposal ready.");
+        }
+        if (
+          patch.status !== "ready" &&
+          patch.status !== "needs-review"
+        ) {
+          throw new Error("Unsupported proposal status update.");
+        }
+        next = { ...next, status: patch.status };
       }
 
       return next;
@@ -859,15 +884,6 @@ export function expandIngestionSource(
   ];
 }
 
-function resolveIngestionSecret(reference: string) {
-  if (!reference?.trim()) return undefined;
-  if (reference.startsWith("env:")) {
-    const name = reference.slice("env:".length);
-    return name ? process.env[name] : undefined;
-  }
-  return reference;
-}
-
 /** Discover remote accounts for a grouped provider connection. */
 export async function discoverIngestionAccounts(options: {
   baseUrl: string;
@@ -875,12 +891,43 @@ export async function discoverIngestionAccounts(options: {
   authScheme?: "bearer" | "x-api-key";
   allowedHosts?: readonly string[];
   accountsPath?: string;
+  /** Project root used to overlay `{root}/.env` onto process.env for `env:` refs. */
+  projectRoot?: string;
 }): Promise<DiscoveredJsonApiAccount[]> {
   validateHttpsUrl(options.baseUrl, options.allowedHosts, "JSON API base URL");
+  const env = await resolveProjectEnv(options.projectRoot);
   return discoverJsonApiAccounts({
     ...options,
-    resolveSecret: async (reference) => resolveIngestionSecret(reference),
+    resolveSecret: async (reference) => resolveEnvSecret(reference, env),
   });
+}
+
+/** Resolve Brandfetch secrets for runtime use (values stay out of persisted YAML). */
+export async function resolveBrandfetchRuntime(
+  brandfetch: BrandfetchEnrichmentConfig | undefined,
+  projectRoot?: string,
+) {
+  if (!brandfetch) return undefined;
+  const env = await resolveProjectEnv(projectRoot);
+  return {
+    apiKey: resolveEnvSecret(brandfetch.apiKeySecretRef, env),
+    clientId: resolveEnvSecret(brandfetch.clientId, env),
+    env,
+  };
+}
+
+function enrichmentWithResolvedClientId(
+  enrichment: MerchantEnrichmentConfig,
+  clientId: string | undefined,
+): MerchantEnrichmentConfig {
+  if (!enrichment.brandfetch) return enrichment;
+  return {
+    ...enrichment,
+    brandfetch: {
+      ...enrichment.brandfetch,
+      clientId,
+    },
+  };
 }
 
 function safeCodexEnvironment() {
@@ -915,10 +962,68 @@ async function runCodex(args: readonly string[], timeoutMs: number) {
   });
 }
 
+/** Shared `codex exec` argv for structured ingestion AI calls (CLI ≥ 0.137). */
+function codexExecArgs(options: {
+  directory: string;
+  schemaPath: string;
+  model?: string;
+  prompt: string;
+}) {
+  return [
+    "exec",
+    "--ephemeral",
+    "--skip-git-repo-check",
+    "--sandbox",
+    "read-only",
+    "--ignore-user-config",
+    "--ignore-rules",
+    "--cd",
+    options.directory,
+    "--output-schema",
+    options.schemaPath,
+    "-c",
+    'web_search="disabled"',
+    "-c",
+    "features.shell_tool=false",
+    "-c",
+    "features.apps=false",
+    "-c",
+    "features.multi_agent=false",
+    ...(options.model ? ["--model", options.model] : []),
+    options.prompt,
+  ];
+}
+
 type CodexResult = {
   account: string;
   rawScore: number;
   evidenceIds: string[];
+};
+
+/** Prompt/response capture from a single AI enrichment call (debug UI). */
+export type AiEnrichmentDebugCall = AiEnrichmentCallRecord;
+
+export type { AiEnrichmentCallRecord, AiEnrichmentSnapshot };
+
+export type AiEnrichmentDebug = {
+  calls: AiEnrichmentCallRecord[];
+};
+
+function prettyJson(value: unknown) {
+  try {
+    if (typeof value === "string") {
+      return JSON.stringify(JSON.parse(value), null, 2);
+    }
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return typeof value === "string" ? value : String(value);
+  }
+}
+
+type CodexPluginOptions = {
+  model?: string;
+  timeoutMs?: number;
+  onDebug?: (call: AiEnrichmentDebugCall) => void;
 };
 
 /** Optional, structured Codex categorizer. It receives a bounded transaction and evidence summary only. */
@@ -926,7 +1031,7 @@ export class CodexCategorizer implements CategorizerPlugin {
   readonly id = "codex-ai";
   readonly isAi = true;
 
-  constructor(readonly options: { model?: string; timeoutMs?: number } = {}) {}
+  constructor(readonly options: CodexPluginOptions = {}) {}
 
   async suggest(
     context: CategorizationContext,
@@ -945,13 +1050,16 @@ export class CodexCategorizer implements CategorizerPlugin {
       required: ["account", "rawScore", "evidenceIds"],
       additionalProperties: false,
     };
+    let promptPayload: unknown;
+    let response: string | undefined;
+    let failure: string | undefined;
     try {
       await fs.writeFile(schemaPath, JSON.stringify(schema), { mode: 0o600 });
       const evidence =
         context.priorSuggestions?.flatMap(
           (suggestion) => suggestion.evidence,
         ) ?? [];
-      const prompt = JSON.stringify({
+      promptPayload = {
         task: "Categorise one imported Beancount transaction. Choose only from availableAccounts. Use only supplied evidence IDs. Return the JSON schema response and no prose.",
         transaction: context.transaction,
         availableAccounts: context.availableAccounts,
@@ -960,34 +1068,18 @@ export class CodexCategorizer implements CategorizerPlugin {
           summary: item.summary,
           occurrences: item.occurrences,
         })),
-      });
-      const args = [
-        "exec",
-        "--ephemeral",
-        "--skip-git-repo-check",
-        "--sandbox",
-        "read-only",
-        "--ask-for-approval",
-        "never",
-        "--ignore-user-config",
-        "--ignore-rules",
-        "--cd",
-        directory,
-        "--output-schema",
-        schemaPath,
-        "-c",
-        'web_search="disabled"',
-        "-c",
-        "features.shell_tool=false",
-        "-c",
-        "features.apps=false",
-        "-c",
-        "features.multi_agent=false",
-        ...(this.options.model ? ["--model", this.options.model] : []),
-        prompt,
-      ];
-      const raw = await runCodex(args, this.options.timeoutMs ?? 60_000);
-      const result = JSON.parse(raw) as CodexResult;
+      };
+      const prompt = JSON.stringify(promptPayload);
+      response = await runCodex(
+        codexExecArgs({
+          directory,
+          schemaPath,
+          model: this.options.model,
+          prompt,
+        }),
+        this.options.timeoutMs ?? 60_000,
+      );
+      const result = JSON.parse(response) as CodexResult;
       if (
         !result ||
         typeof result.account !== "string" ||
@@ -1020,7 +1112,21 @@ export class CodexCategorizer implements CategorizerPlugin {
           evidence: matchedEvidence,
         },
       ];
+    } catch (error) {
+      failure = error instanceof Error ? error.message : String(error);
+      throw error;
     } finally {
+      if (promptPayload !== undefined) {
+        this.options.onDebug?.({
+          id: this.id,
+          label: "AI categoriser",
+          prompt: prettyJson(promptPayload),
+          response: response ? prettyJson(response) : undefined,
+          error: failure,
+          ok: !failure,
+          at: nowIso(),
+        });
+      }
       await fs.rm(directory, { recursive: true, force: true });
     }
   }
@@ -1051,9 +1157,11 @@ export function merchantLogoUrlFor(
     return `/api/projects/${encodeURIComponent(project)}/ingestion/merchants/${encodeURIComponent(merchant.merchantId)}/logo?v=${asset.sha256}`;
   }
   const clientId = enrichment.brandfetch?.clientId;
-  return merchant.domain && clientId
-    ? brandfetchLogoUrl(merchant.domain, clientId)
-    : undefined;
+  // Unresolved `env:` refs must not be embedded in CDN URLs.
+  if (!merchant.domain || !clientId || clientId.startsWith("env:")) {
+    return undefined;
+  }
+  return brandfetchLogoUrl(merchant.domain, clientId);
 }
 
 class ProfileMerchantResolver implements MerchantResolverPlugin {
@@ -1139,23 +1247,26 @@ class ExistingDomainMerchantResolver implements MerchantResolverPlugin {
 
 type CodexMerchantResult = {
   kind: "candidate" | "unknown" | "not-a-merchant";
-  canonicalName?: string;
-  domain?: string;
-  description?: string;
-  industry?: string;
-  countryCode?: string;
-  rawScore?: number;
+  canonicalName?: string | null;
+  domain?: string | null;
+  description?: string | null;
+  industry?: string | null;
+  countryCode?: string | null;
+  rawScore?: number | null;
   explanation: string;
 };
+
+function optionalSchemaString(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
 
 /** Optional merchant advisor with a deliberately narrow, privacy-filtered input. */
 export class CodexMerchantAdvisor implements MerchantResolverPlugin {
   readonly id = "codex-merchant-advisor";
 
   constructor(
-    readonly options: {
-      model?: string;
-      timeoutMs?: number;
+    readonly options: CodexPluginOptions & {
       countryCode?: string;
     } = {},
   ) {}
@@ -1167,24 +1278,41 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
       join(tmpdir(), "beancount-js-merchant-"),
     );
     const schemaPath = join(directory, "schema.json");
+    // OpenAI structured outputs require every property key in `required`.
+    // Optional fields are therefore nullable rather than omitted.
     const schema = {
       type: "object",
       properties: {
-        kind: { enum: ["candidate", "unknown", "not-a-merchant"] },
-        canonicalName: { type: "string" },
-        domain: { type: "string" },
-        description: { type: "string" },
-        industry: { type: "string" },
-        countryCode: { type: "string" },
-        rawScore: { type: "number", minimum: 0, maximum: 1 },
+        kind: {
+          type: "string",
+          enum: ["candidate", "unknown", "not-a-merchant"],
+        },
+        canonicalName: { type: ["string", "null"] },
+        domain: { type: ["string", "null"] },
+        description: { type: ["string", "null"] },
+        industry: { type: ["string", "null"] },
+        countryCode: { type: ["string", "null"] },
+        rawScore: { type: ["number", "null"], minimum: 0, maximum: 1 },
         explanation: { type: "string" },
       },
-      required: ["kind", "explanation"],
+      required: [
+        "kind",
+        "canonicalName",
+        "domain",
+        "description",
+        "industry",
+        "countryCode",
+        "rawScore",
+        "explanation",
+      ],
       additionalProperties: false,
     };
+    let promptPayload: unknown;
+    let response: string | undefined;
+    let failure: string | undefined;
     try {
       await fs.writeFile(schemaPath, JSON.stringify(schema), { mode: 0o600 });
-      const prompt = JSON.stringify({
+      promptPayload = {
         task: "Identify a merchant from a normalized transaction label. Return a candidate only when the supplied label supports it. Do not infer purchases, categories, or account details. Return JSON matching the schema and no prose.",
         merchant: {
           normalizedLabel: merchantAdvisorLabel(rawLabel),
@@ -1192,36 +1320,18 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
           currency: context.transaction.currency,
           countryCode: this.options.countryCode,
         },
-      });
-      const raw = await runCodex(
-        [
-          "exec",
-          "--ephemeral",
-          "--skip-git-repo-check",
-          "--sandbox",
-          "read-only",
-          "--ask-for-approval",
-          "never",
-          "--ignore-user-config",
-          "--ignore-rules",
-          "--cd",
+      };
+      const prompt = JSON.stringify(promptPayload);
+      response = await runCodex(
+        codexExecArgs({
           directory,
-          "--output-schema",
           schemaPath,
-          "-c",
-          'web_search="disabled"',
-          "-c",
-          "features.shell_tool=false",
-          "-c",
-          "features.apps=false",
-          "-c",
-          "features.multi_agent=false",
-          ...(this.options.model ? ["--model", this.options.model] : []),
+          model: this.options.model,
           prompt,
-        ],
+        }),
         this.options.timeoutMs ?? 60_000,
       );
-      const result = JSON.parse(raw) as CodexMerchantResult;
+      const result = JSON.parse(response) as CodexMerchantResult;
       if (
         !result ||
         !["candidate", "unknown", "not-a-merchant"].includes(result.kind) ||
@@ -1240,23 +1350,27 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
               : result.explanation,
         } satisfies MerchantResolution;
       }
+      const canonicalName = optionalSchemaString(result.canonicalName);
+      const domain = optionalSchemaString(result.domain)?.toLowerCase();
+      const description = optionalSchemaString(result.description);
+      const industry = optionalSchemaString(result.industry);
+      const countryCode = optionalSchemaString(result.countryCode)?.toUpperCase();
       if (
-        !result.canonicalName?.trim() ||
+        !canonicalName ||
         typeof result.rawScore !== "number" ||
         !Number.isFinite(result.rawScore) ||
-        (result.domain !== undefined && !isValidDomain(result.domain)) ||
-        (result.countryCode !== undefined &&
-          !/^[A-Za-z]{2}$/.test(result.countryCode))
+        (domain !== undefined && !isValidDomain(domain)) ||
+        (countryCode !== undefined && !/^[A-Z]{2}$/.test(countryCode))
       ) {
         throw new Error("Codex returned an invalid merchant candidate.");
       }
       const candidate: MerchantCandidate = {
-        id: `ai:${normalizeMerchant(result.canonicalName)}:${result.domain?.toLowerCase() ?? ""}`,
-        canonicalName: result.canonicalName.trim(),
-        domain: result.domain?.toLowerCase(),
-        description: result.description?.trim() || undefined,
-        industry: result.industry?.trim() || undefined,
-        countryCode: result.countryCode?.toUpperCase(),
+        id: `ai:${normalizeMerchant(canonicalName)}:${domain ?? ""}`,
+        canonicalName,
+        domain,
+        description,
+        industry,
+        countryCode,
         rawScore: Math.min(Math.max(result.rawScore, 0), 1),
         explanation: result.explanation,
         provenance: [
@@ -1275,7 +1389,21 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
         candidates: [candidate],
         explanation: candidate.explanation,
       } satisfies MerchantResolution;
+    } catch (error) {
+      failure = error instanceof Error ? error.message : String(error);
+      throw error;
     } finally {
+      if (promptPayload !== undefined) {
+        this.options.onDebug?.({
+          id: this.id,
+          label: "AI merchant advisor",
+          prompt: prettyJson(promptPayload),
+          response: response ? prettyJson(response) : undefined,
+          error: failure,
+          ok: !failure,
+          at: nowIso(),
+        });
+      }
       await fs.rm(directory, { recursive: true, force: true });
     }
   }
@@ -1326,23 +1454,33 @@ export interface IngestMerchantContext {
   store: FilesystemIngestionStore;
 }
 
-function merchantResolversFor(
+async function merchantResolversFor(
   source: IngestionSourceDefinition,
   model: string | undefined,
   context: IngestMerchantContext | undefined,
+  options?: { onAiDebug?: (call: AiEnrichmentDebugCall) => void },
 ) {
   const enrichment = source.merchantEnrichment;
   if (!enrichment?.enabled || !context) return [] as MerchantResolverPlugin[];
+  const projectRoot = await context.store.projectRoot(context.projectId);
+  const brandfetchRuntime = await resolveBrandfetchRuntime(
+    enrichment.brandfetch,
+    projectRoot,
+  );
+  const resolvedEnrichment = enrichmentWithResolvedClientId(
+    enrichment,
+    brandfetchRuntime?.clientId,
+  );
   const resolvers: MerchantResolverPlugin[] = [
     new ProfileMerchantResolver(
       context.store.merchants,
       context.projectId,
-      enrichment,
+      resolvedEnrichment,
     ),
     new ExistingDomainMerchantResolver(
       context.store.merchants,
       context.projectId,
-      enrichment,
+      resolvedEnrichment,
     ),
   ];
   if (enrichment.aiEnabled)
@@ -1350,6 +1488,7 @@ function merchantResolversFor(
       new CodexMerchantAdvisor({
         model,
         countryCode: enrichment.countryCode,
+        onDebug: options?.onAiDebug,
       }),
     );
   // An AI candidate can name a domain that belongs to an existing profile.
@@ -1359,19 +1498,20 @@ function merchantResolversFor(
       new ExistingDomainMerchantResolver(
         context.store.merchants,
         context.projectId,
-        enrichment,
+        resolvedEnrichment,
       ),
     );
   const providerConfig = enrichment.brandfetch;
-  const apiKey = providerConfig?.apiKeySecretRef
-    ? providerConfig.apiKeySecretRef.startsWith("env:")
-      ? process.env[providerConfig.apiKeySecretRef.slice("env:".length)]
-      : providerConfig.apiKeySecretRef
-    : undefined;
+  const apiKey = brandfetchRuntime?.apiKey;
   if (providerConfig?.enabled && apiKey) {
     resolvers.push(
       new BrandfetchMerchantResolver(
-        new BrandfetchProvider({ ...providerConfig, apiKey }),
+        new BrandfetchProvider({
+          ...providerConfig,
+          apiKey,
+          clientId: brandfetchRuntime?.clientId,
+          responseCache: createBrandfetchResponseCache(projectRoot),
+        }),
         enrichment.countryCode,
       ),
     );
@@ -1426,6 +1566,10 @@ export async function ingestSource(
       new RecurringCategorizer(),
     ];
     if (source.aiEnabled) categorizers.push(new CodexCategorizer({ model }));
+    const projectRoot = merchantContext
+      ? await merchantContext.store.projectRoot(merchantContext.projectId)
+      : undefined;
+    const env = await resolveProjectEnv(projectRoot);
     const run = await runIngestion({
       source: new JsonApiSource(),
       sourceConfig: target.api,
@@ -1433,7 +1577,11 @@ export async function ingestSource(
       sourceAccount: target.sourceAccount,
       normalizer: new JsonMappingNormalizer(source.mapping),
       categorizers,
-      merchantResolvers: merchantResolversFor(source, model, merchantContext),
+      merchantResolvers: await merchantResolversFor(
+        source,
+        model,
+        merchantContext,
+      ),
       history: historySamplesFromEntries(entries),
       availableAccounts,
       existingImportIds: new Set(seenImportIds),
@@ -1441,7 +1589,7 @@ export async function ingestSource(
       cursor: state.cursors[target.sourceId],
       defaultCurrency: target.defaultCurrency,
       sourceContext: {
-        resolveSecret: async (reference) => resolveIngestionSecret(reference),
+        resolveSecret: async (reference) => resolveEnvSecret(reference, env),
       },
       onProgress: async (progress) => {
         await options?.onProgress?.({
@@ -1470,6 +1618,364 @@ export async function ingestSource(
   }
 
   return runs;
+}
+
+function sourceHasAiEnabled(source: IngestionSourceDefinition) {
+  return (
+    source.aiEnabled === true ||
+    (source.merchantEnrichment?.enabled === true &&
+      source.merchantEnrichment.aiEnabled === true)
+  );
+}
+
+async function resolveMerchantWithResolvers(
+  transaction: NonNullable<ImportProposal["transaction"]>,
+  resolvers: readonly MerchantResolverPlugin[],
+) {
+  const rawLabel =
+    transaction.merchant ?? transaction.payee ?? transaction.narration;
+  let resolution: MerchantResolution = rawLabel
+    ? {
+        status: "unresolved",
+        rawLabel,
+        explanation:
+          "No confirmed merchant profile matched this transaction.",
+      }
+    : {
+        status: "unresolved",
+        explanation: "No merchant label was supplied.",
+      };
+  const issues: string[] = [];
+  for (const resolver of resolvers) {
+    if (
+      resolution.status === "confirmed" ||
+      resolution.status === "suppressed"
+    ) {
+      break;
+    }
+    try {
+      const next = await resolver.resolve({ transaction, resolution });
+      if (!next) continue;
+      if (
+        resolution.status === "suggested" &&
+        next.status === "suggested"
+      ) {
+        resolution = {
+          ...next,
+          candidates: [
+            ...next.candidates,
+            ...resolution.candidates.filter(
+              (candidate) =>
+                !next.candidates.some(
+                  (item) => item.id === candidate.id,
+                ),
+            ),
+          ],
+        };
+      } else {
+        resolution = next;
+      }
+    } catch (error) {
+      const detail =
+        error instanceof Error ? error.message : String(error);
+      issues.push(
+        resolver.id === "codex-merchant-advisor"
+          ? `AI merchant advisor was unavailable: ${detail}`
+          : `Merchant resolver ${resolver.id} was unavailable: ${detail}`,
+      );
+    }
+  }
+  return { resolution, issues };
+}
+
+type EnrichPrepared = {
+  aiMerchant: boolean;
+  availableAccounts: string[];
+  history: ReturnType<typeof historySamplesFromEntries>;
+  categorizers: CategorizerPlugin[];
+  merchantResolvers: MerchantResolverPlugin[];
+};
+
+async function prepareAiEnrichment(
+  source: IngestionSourceDefinition,
+  entries: readonly Directive[],
+  model: string | undefined,
+  merchantContext: IngestMerchantContext,
+  options?: { onAiDebug?: (call: AiEnrichmentDebugCall) => void },
+): Promise<EnrichPrepared> {
+  if (!sourceHasAiEnabled(source)) {
+    throw new Error("Enable AI categorisation or AI merchant enrichment first.");
+  }
+  const aiCategorize = source.aiEnabled === true;
+  const aiMerchant =
+    source.merchantEnrichment?.enabled === true &&
+    source.merchantEnrichment.aiEnabled === true;
+  const allAccounts = [...new Set(entries.flatMap((entry) => entry.accounts))]
+    .filter(Boolean)
+    .sort();
+  const availableAccounts = categoryAccountsForSource(source, allAccounts);
+  const history = historySamplesFromEntries(entries);
+  const categorizers: CategorizerPlugin[] = [
+    new MerchantRuleCategorizer(source.rules),
+    new HistoricalCategorizer(),
+    new RecurringCategorizer(),
+  ];
+  if (aiCategorize) {
+    categorizers.push(
+      new CodexCategorizer({ model, onDebug: options?.onAiDebug }),
+    );
+  }
+  const merchantResolvers = aiMerchant
+    ? await merchantResolversFor(source, model, merchantContext, {
+        onAiDebug: options?.onAiDebug,
+      })
+    : [];
+  return {
+    aiMerchant,
+    availableAccounts,
+    history,
+    categorizers,
+    merchantResolvers,
+  };
+}
+
+async function enrichProposalWithPrepared(
+  proposal: ImportProposal,
+  prepared: EnrichPrepared,
+  options?: {
+    source?: AiEnrichmentSnapshot["source"];
+    jobId?: string;
+    calls?: AiEnrichmentCallRecord[];
+  },
+): Promise<ImportProposal> {
+  if (!proposal.transaction) {
+    throw new Error("This proposal has no transaction to enrich.");
+  }
+  if (
+    proposal.status !== "ready" &&
+    proposal.status !== "needs-review" &&
+    proposal.status !== "held"
+  ) {
+    throw new Error("This proposal cannot be enriched.");
+  }
+  const transaction = proposal.transaction;
+  let merchantResolution = proposal.merchantResolution;
+  let nextIssues = (proposal.issues ?? []).filter(
+    (issue) =>
+      !issue.startsWith("Merchant resolver ") &&
+      !issue.startsWith("AI merchant advisor ") &&
+      !issue.startsWith("AI categoriser "),
+  );
+  if (
+    prepared.aiMerchant &&
+    merchantResolution?.status !== "confirmed" &&
+    merchantResolution?.status !== "suppressed"
+  ) {
+    const resolved = await resolveMerchantWithResolvers(
+      transaction,
+      prepared.merchantResolvers,
+    );
+    merchantResolution = resolved.resolution;
+    nextIssues = [...nextIssues, ...resolved.issues];
+  }
+
+  const manualSelection = proposal.suggestions.find(
+    (suggestion) =>
+      suggestion.method === "manual" &&
+      suggestion.account === proposal.selectedAccount,
+  );
+  const suggestions: CategorySuggestion[] = [];
+  const context: CategorizationContext = {
+    transaction,
+    merchant:
+      merchantResolution?.status === "confirmed"
+        ? merchantResolution.merchant
+        : undefined,
+    history: prepared.history,
+    availableAccounts: prepared.availableAccounts,
+  };
+  for (const categorizer of prepared.categorizers) {
+    try {
+      suggestions.push(
+        ...(await categorizer.suggest({
+          ...context,
+          priorSuggestions: sortSuggestions(suggestions),
+        })),
+      );
+    } catch (error) {
+      if (categorizer.isAi) {
+        const message =
+          error instanceof Error ? error.message : String(error);
+        nextIssues = [
+          ...nextIssues,
+          `AI categoriser was unavailable: ${message}`,
+        ];
+        suggestions.push({
+          account: "",
+          rawScore: 0,
+          scoreKind: "ai-advisory",
+          method: "ai",
+          explanation:
+            "An optional categorizer was unavailable; review this transaction manually.",
+          evidence: [],
+        });
+      }
+    }
+  }
+  const nextSuggestions = sortSuggestions(
+    [
+      ...suggestions,
+      ...(manualSelection ? [manualSelection] : []),
+    ].filter(
+      (suggestion) =>
+        Boolean(suggestion.account) &&
+        prepared.availableAccounts.includes(suggestion.account),
+    ),
+  );
+  const calls = options?.calls ?? [];
+  const lastAiEnrichment: AiEnrichmentSnapshot | undefined = calls.length
+    ? {
+        at: nowIso(),
+        source: options?.source ?? "enrich",
+        jobId: options?.jobId,
+        ok: calls.every((call) => call.ok),
+        calls,
+      }
+    : proposal.lastAiEnrichment;
+  return {
+    ...proposal,
+    merchantResolution,
+    suggestions: nextSuggestions,
+    selectedAccount: manualSelection?.account ?? nextSuggestions[0]?.account,
+    status:
+      transaction.status === "pending"
+        ? "held"
+        : nextSuggestions.length
+          ? "ready"
+          : "needs-review",
+    issues: nextIssues,
+    lastAiEnrichment,
+  };
+}
+
+/**
+ * Re-run AI merchant enrichment and/or AI categorisation on a single import
+ * proposal. Always captures prompts/responses onto `proposal.lastAiEnrichment`.
+ */
+export async function enrichProposal(
+  source: IngestionSourceDefinition,
+  proposal: ImportProposal,
+  entries: readonly Directive[],
+  model: string | undefined,
+  merchantContext: IngestMerchantContext,
+  options?: { collectDebug?: boolean; jobId?: string },
+): Promise<{ proposal: ImportProposal; debug: AiEnrichmentDebug }> {
+  const calls: AiEnrichmentCallRecord[] = [];
+  const prepared = await prepareAiEnrichment(
+    source,
+    entries,
+    model,
+    merchantContext,
+    {
+      onAiDebug: (call) => {
+        calls.push(call);
+      },
+    },
+  );
+  const next = await enrichProposalWithPrepared(proposal, prepared, {
+    source: "enrich",
+    jobId: options?.jobId,
+    calls,
+  });
+  return {
+    proposal: next,
+    debug: { calls },
+  };
+}
+
+/**
+ * Re-run AI merchant enrichment and/or AI categorisation on existing import
+ * proposals without fetching new transactions from the provider.
+ */
+export async function enrichExistingSourceRuns(
+  source: IngestionSourceDefinition,
+  runs: readonly IngestionRun[],
+  entries: readonly Directive[],
+  model: string | undefined,
+  merchantContext: IngestMerchantContext,
+  options?: {
+    jobId?: string;
+    onProgress?: (progress: {
+      index: number;
+      total: number;
+      message: string;
+    }) => void | Promise<void>;
+  },
+) {
+  let currentCalls: AiEnrichmentCallRecord[] | undefined;
+  const prepared = await prepareAiEnrichment(
+    source,
+    entries,
+    model,
+    merchantContext,
+    {
+      onAiDebug: (call) => {
+        currentCalls?.push(call);
+      },
+    },
+  );
+
+  const work = runs.flatMap((run) =>
+    run.proposals
+      .filter(
+        (proposal) =>
+          Boolean(proposal.transaction) &&
+          (proposal.status === "ready" ||
+            proposal.status === "needs-review" ||
+            proposal.status === "held"),
+      )
+      .map((proposal) => ({ runId: run.id, proposal })),
+  );
+  const total = work.length;
+  if (!total) {
+    throw new Error("No reviewable proposals are available to enrich.");
+  }
+
+  const updatedByRun = new Map<string, ImportProposal[]>();
+  for (const run of runs) {
+    updatedByRun.set(
+      run.id,
+      run.proposals.map((proposal) => ({ ...proposal })),
+    );
+  }
+
+  let index = 0;
+  for (const { runId, proposal } of work) {
+    index += 1;
+    await options?.onProgress?.({
+      index,
+      total,
+      message: `AI enriching ${index} of ${total}…`,
+    });
+    currentCalls = [];
+    const next = await enrichProposalWithPrepared(proposal, prepared, {
+      source: "ai-rerun",
+      jobId: options?.jobId,
+      calls: currentCalls,
+    });
+    const list = updatedByRun.get(runId)!;
+    const proposalIndex = list.findIndex((item) => item.id === proposal.id);
+    if (proposalIndex >= 0) list[proposalIndex] = next;
+  }
+
+  return runs.map((run) => {
+    const proposals = updatedByRun.get(run.id) ?? run.proposals;
+    return {
+      ...run,
+      proposals,
+      summary: summarize(proposals),
+    } satisfies IngestionRun;
+  });
 }
 
 /** Re-run deterministic category evidence after a merchant is explicitly confirmed. */

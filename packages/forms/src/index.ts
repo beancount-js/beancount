@@ -10,6 +10,12 @@ export { default as SegmentedControl } from "./components/SegmentedControl.svelt
 export { default as YamlBackedForm } from "./components/YamlBackedForm.svelte";
 export { default as CodeEditor } from "./components/CodeEditor.svelte";
 export { default as JsonBackedForm } from "./components/JsonBackedForm.svelte";
+export { default as SearchFilterBar } from "./components/SearchFilterBar.svelte";
+export { default as SearchableChoicePicker } from "./components/SearchableChoicePicker.svelte";
+export { default as FilterCommandPicker } from "./components/FilterCommandPicker.svelte";
+export { default as AutocompleteInput } from "./components/AutocompleteInput.svelte";
+export { default as ChipAutocomplete } from "./components/ChipAutocomplete.svelte";
+export { default as TagEditor } from "./components/TagEditor.svelte";
 export { autosizeTextarea } from "./autosize-textarea";
 export { unifiedDiff } from "./review-diff";
 export type {
@@ -26,4 +32,8 @@ export type {
   FormValidationIssue,
   JsonBackedFormConfig,
 } from "./types";
+export type {
+  FilterCommandOption,
+  SearchableChoiceOption,
+} from "./picker-options";
 export * from "./core";

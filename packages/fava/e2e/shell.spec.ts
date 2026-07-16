@@ -102,25 +102,26 @@ test.describe("Docs-shell visual foundation", () => {
 
     await page.getByRole("button", { name: "Search" }).click();
     const searchTab = page.locator("[data-slot=search-tab]");
-    await expect(searchTab.locator(".cm-line-editor")).toBeVisible();
+    await expect(
+      searchTab.getByRole("searchbox", { name: "Search ledger" }),
+    ).toBeVisible();
+    await expect(
+      searchTab.getByRole("button", { name: "Expand filter options" }),
+    ).toBeVisible();
     await expect(
       searchTab.getByRole("button", { name: "Clear search" }),
     ).toHaveCount(0);
-    await expect(searchTab.locator(".cm-scroller")).toHaveCSS(
-      "scrollbar-gutter",
-      "auto",
-    );
-    await expect(searchTab.locator(".cm-scroller")).toHaveCSS(
-      "scrollbar-width",
-      "none",
-    );
-    await searchTab.getByRole("textbox").fill("income");
+    await searchTab
+      .getByRole("searchbox", { name: "Search ledger" })
+      .fill("income");
     await expect(
-      searchTab.getByRole("button", { name: "Clear search" }),
+      searchTab.getByRole("button", { name: "Clear search for income" }),
     ).toBeVisible();
-    await searchTab.getByRole("button", { name: "Clear search" }).click();
+    await searchTab
+      .getByRole("button", { name: "Clear search for income" })
+      .click();
     await expect(
-      searchTab.getByRole("button", { name: "Clear search" }),
+      searchTab.getByRole("button", { name: "Clear search for income" }),
     ).toHaveCount(0);
     await page.getByRole("button", { name: "Projects" }).click();
     await expect(
@@ -141,6 +142,23 @@ test.describe("Docs-shell visual foundation", () => {
     ).toBeVisible();
     await page.getByRole("button", { name: "Folders", exact: true }).click();
     await expect(page.getByPlaceholder("Search folders")).toBeVisible();
+    await page.getByRole("button", { name: "Search" }).click();
+    await expect(
+      page
+        .locator("[data-slot=search-tab]")
+        .getByRole("searchbox", { name: "Search ledger" }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page
+        .locator("[data-slot=search-tab]")
+        .getByRole("searchbox", { name: "Search ledger" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Workspace" }).click();
+    await expect(page.getByPlaceholder("Search folders")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Folders", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
     const packagesFolder = page.locator('[data-ledger-folder-row="packages"]');
     await expect(packagesFolder).toHaveAttribute("aria-expanded", "false");
     await packagesFolder.click();
@@ -228,6 +246,10 @@ test.describe("Docs-shell visual foundation", () => {
     await leafTag.click();
     await expect(
       page.getByRole("button", { name: "Remove #credit-card filter" }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/searchTags=credit-card/);
+    await expect(
+      page.getByRole("button", { name: "Clear tag filters" }),
     ).toBeVisible();
 
     const resizer = page.getByRole("slider", { name: "Resize sidebar" });

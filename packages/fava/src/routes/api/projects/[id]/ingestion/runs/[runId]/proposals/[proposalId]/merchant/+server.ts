@@ -4,6 +4,7 @@ import {
   BrandfetchProvider,
   merchantLogoUrlFor,
   recategorizeProposal,
+  resolveBrandfetchRuntime,
   type IngestionSourceDefinition,
 } from "@beancount-js/server";
 import {
@@ -66,19 +67,23 @@ async function cacheLogoIfConfigured(
     brandfetch.assetMode !== "cache" ||
     !brandfetch.cacheContentAllowed ||
     !candidate.logoUrl ||
-    !brandfetch.apiKeySecretRef.startsWith("env:")
+    !brandfetch.apiKeySecretRef.trim()
   ) {
     return merchant;
   }
-  const apiKey = process.env[brandfetch.apiKeySecretRef.slice(4)];
-  if (!apiKey) return merchant;
+  const store = serverIngestion();
+  const runtime = await resolveBrandfetchRuntime(
+    brandfetch,
+    await store.projectRoot(projectId),
+  );
+  if (!runtime?.apiKey) return merchant;
   try {
     const asset = await new BrandfetchProvider({
-      apiKey,
-      clientId: brandfetch.clientId,
+      apiKey: runtime.apiKey,
+      clientId: runtime.clientId,
       ttlDays: brandfetch.ttlDays,
     }).downloadLogo(candidate.logoUrl);
-    return await serverIngestion().merchants.cacheLogo(
+    return await store.merchants.cacheLogo(
       projectId,
       merchant.merchantId,
       asset,
@@ -161,16 +166,24 @@ export async function PATCH({
         candidate,
         source,
       );
+      const enrichment = source.merchantEnrichment ?? { enabled: false };
+      const runtime = enrichment.brandfetch
+        ? await resolveBrandfetchRuntime(
+            enrichment.brandfetch,
+            await store.projectRoot(params.id),
+          )
+        : undefined;
       merchantResolution = {
         status: "confirmed",
         rawLabel: label,
         merchant: {
           ...merchant,
-          logoUrl: merchantLogoUrlFor(
-            params.id,
-            merchant,
-            source.merchantEnrichment ?? { enabled: false },
-          ),
+          logoUrl: merchantLogoUrlFor(params.id, merchant, {
+            ...enrichment,
+            brandfetch: enrichment.brandfetch
+              ? { ...enrichment.brandfetch, clientId: runtime?.clientId }
+              : undefined,
+          }),
         },
         explanation: `Confirmed merchant ${merchant.canonicalName}.`,
       };

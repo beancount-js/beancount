@@ -11,6 +11,8 @@ export {
   type ProjectIdIndex,
 } from "./project-id";
 
+export { parseDotenvEntries, parseDotenvKeys } from "./dotenv";
+
 export type BeancountStudioRuntime = "server" | "web";
 
 export interface RuntimeCapabilities {
@@ -99,6 +101,11 @@ export interface ProjectSnapshot {
   resources: ProjectResource[];
   revisions: FileRevision[];
   issues: ProjectDiscoveryIssue[];
+  /**
+   * Key names from the project-root `.env` file (if present).
+   * Values are never included — secrets stay server-side.
+   */
+  envKeys: string[];
 }
 
 export interface AiSessionRecord<TSession = unknown> {

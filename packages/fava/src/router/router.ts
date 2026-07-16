@@ -179,6 +179,9 @@ export class Router {
     const value = get(this.state);
     if (value !== path) {
       this.state.set(path);
+    } else {
+      // Same view path — still sync the browser URL (ledger stem may have changed).
+      void this.set(path, true);
     }
   }
 
@@ -344,7 +347,7 @@ export class Router {
 
 export function createRouter(
   routes: Array<Route>,
-  path: string = "/journal",
+  path: string = "/dashboard",
 ): RouterContext {
   let bootstrap = path;
   if (typeof window !== "undefined") {

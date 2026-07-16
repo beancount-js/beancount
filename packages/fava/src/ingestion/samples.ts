@@ -43,13 +43,14 @@ const lunchFlowSource: EditableIngestionSource = {
     brandfetch: {
       enabled: false,
       apiKeySecretRef: "env:BRANDFETCH_API_KEY",
+      clientId: "env:BRANDFETCH_CLIENT_ID",
       assetMode: "hotlink",
     },
   },
   api: {
     baseUrl: "https://www.lunchflow.app/api/v1",
     allowedHosts: ["lunchflow.app", "www.lunchflow.app"],
-    secretRef: "",
+    secretRef: "env:LUNCHFLOW_API_KEY",
     authScheme: "x-api-key",
     recordsPath: "transactions",
   },

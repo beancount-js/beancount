@@ -109,6 +109,10 @@ describe("ingestion source form draft", () => {
     const connected = sourceFromSample(lunchflow!.template, []);
     expect(connected.id).toBe("lunchflow");
     expect(connected.api.baseUrl).toBe("https://www.lunchflow.app/api/v1");
+    expect(connected.api.secretRef).toBe("env:LUNCHFLOW_API_KEY");
+    expect(connected.merchantEnrichment?.brandfetch?.clientId).toBe(
+      "env:BRANDFETCH_CLIENT_ID",
+    );
     expect(connected.accounts).toEqual([]);
 
     const conflict = sourceFromSample(lunchflow!.template, [connected]);
@@ -124,10 +128,6 @@ describe("ingestion source form draft", () => {
       sources: [
         {
           ...structuredClone(lunchflow.template),
-          api: {
-            ...lunchflow.template.api,
-            secretRef: "env:LUNCHFLOW_API_KEY",
-          },
           accounts: [
             {
               id: "42",

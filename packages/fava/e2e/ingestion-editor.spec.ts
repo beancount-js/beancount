@@ -190,7 +190,7 @@ test.describe("ingestion sources editor", () => {
 
     await header.getByRole("switch", { name: "YAML mode" }).click();
     const sourceEditor = editor.locator("[data-code-editor=yaml]");
-    await expect(sourceEditor.locator(".cm-content")).toContainText("sources:");
+    await expect(sourceEditor.locator(".cm-content")).toContainText("version:");
 
     await sourceEditor.locator(".cm-content").click();
     await page.keyboard.press(
@@ -201,7 +201,7 @@ test.describe("ingestion sources editor", () => {
     await expect(editor.getByRole("alert")).toContainText("Invalid YAML");
 
     await editor.getByRole("button", { name: "Reset" }).click();
-    await expect(sourceEditor.locator(".cm-content")).toContainText("sources:");
+    await expect(sourceEditor.locator(".cm-content")).toContainText("version:");
 
     await header.getByRole("switch", { name: "YAML mode" }).click();
     await expect(editor.locator("[data-ingestion-source-form]")).toBeVisible();

@@ -1,0 +1,262 @@
+<script lang="ts">
+  import "./FilterCommandPicker.css";
+  import { Command as CommandPrimitive, Popover } from "bits-ui";
+  import CheckIcon from "lucide-svelte/icons/check";
+  import ChevronDownIcon from "lucide-svelte/icons/chevron-down";
+  import SearchIcon from "lucide-svelte/icons/search";
+  import type { FilterCommandOption } from "../picker-options";
+
+  let {
+    value = "",
+    values,
+    multiple = false,
+    options,
+    label,
+    ariaLabel = label,
+    placeholder = `Filter ${label.toLowerCase()}...`,
+    emptyLabel = "No options found.",
+    closeOnSelect,
+    fullWidth = false,
+    allowCustom = false,
+    normalize = (next: string) => next.trim(),
+    onChange = () => {},
+    onValuesChange = () => {},
+  }: {
+    value?: string;
+    values?: string[];
+    multiple?: boolean;
+    options: FilterCommandOption[];
+    label: string;
+    ariaLabel?: string;
+    placeholder?: string;
+    emptyLabel?: string;
+    closeOnSelect?: boolean;
+    fullWidth?: boolean;
+    allowCustom?: boolean;
+    normalize?: (value: string) => string;
+    onChange?: (value: string) => void | Promise<void>;
+    onValuesChange?: (values: string[]) => void | Promise<void>;
+  } = $props();
+
+  const shouldCloseOnSelect = $derived(closeOnSelect ?? !multiple);
+
+  let open = $state(false);
+  let search = $state("");
+
+  const selectedValues = $derived(multiple ? (values ?? []) : []);
+  const effectiveSelectedValues = $derived(
+    selectedValues.filter((v) => v !== "all" && v !== ""),
+  );
+
+  const currentOption = $derived(
+    multiple
+      ? effectiveSelectedValues.length === 1
+        ? (options.find(
+            (option) => option.value === effectiveSelectedValues[0],
+          ) ?? null)
+        : null
+      : (options.find((option) => option.value === value) ?? null),
+  );
+
+  const active = $derived(
+    multiple
+      ? effectiveSelectedValues.length > 0
+      : Boolean(value.trim()) && currentOption?.value !== "all",
+  );
+
+  const triggerLabel = $derived.by(() => {
+    if (multiple) {
+      const count = effectiveSelectedValues.length;
+      if (count === 0) return label;
+      if (count === 1) {
+        const option = options.find(
+          (o) => o.value === effectiveSelectedValues[0],
+        );
+        return option?.label ?? effectiveSelectedValues[0];
+      }
+      return `${label} (${count})`;
+    }
+    return currentOption?.label ?? (value.trim() || label);
+  });
+
+  const trimmedSearch = $derived(search.trim());
+  const exactMatch = $derived(
+    trimmedSearch.length > 0 &&
+      options.some(
+        (option) =>
+          option.value.toLowerCase() === trimmedSearch.toLowerCase() ||
+          option.label.toLowerCase() === trimmedSearch.toLowerCase(),
+      ),
+  );
+  const canCreateCustom = $derived(
+    allowCustom && !multiple && trimmedSearch.length > 0 && !exactMatch,
+  );
+
+  const filteredOptions = $derived.by(() => {
+    const needle = search.trim().toLowerCase();
+    return options.filter((option) => {
+      if (!needle) return true;
+      const haystack = [option.value, option.label, ...(option.keywords ?? [])]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(needle);
+    });
+  });
+
+  $effect(() => {
+    if (!open) search = "";
+  });
+
+  function isOptionChecked(optionValue: string): boolean {
+    return multiple
+      ? selectedValues.includes(optionValue)
+      : optionValue === value;
+  }
+
+  function selectOption(nextValue: string) {
+    if (multiple) {
+      if (nextValue === "all" || nextValue === "") {
+        void onValuesChange([]);
+      } else {
+        const next = selectedValues.includes(nextValue)
+          ? selectedValues.filter((v) => v !== nextValue)
+          : [...selectedValues, nextValue];
+        void onValuesChange(next);
+      }
+    } else {
+      void onChange(normalize(nextValue));
+    }
+
+    if (shouldCloseOnSelect) open = false;
+  }
+
+  function selectCustomValue() {
+    if (!trimmedSearch) return;
+    selectOption(trimmedSearch);
+  }
+</script>
+
+<Popover.Root bind:open>
+  <Popover.Trigger>
+    {#snippet child({ props })}
+      <button
+        {...props}
+        type="button"
+        class="bj-filter-command-picker__trigger"
+        aria-label={ariaLabel}
+        title={ariaLabel}
+        data-active={active}
+        data-full-width={fullWidth}
+      >
+        {#if currentOption?.accent}
+          <span
+            class="bj-filter-command-picker__swatch"
+            style={`--filter-accent: ${currentOption.accent}`}
+            aria-hidden="true"
+          ></span>
+        {/if}
+        <span class="bj-filter-command-picker__label">{triggerLabel}</span>
+        <ChevronDownIcon size={12} strokeWidth={1.75} aria-hidden="true" />
+      </button>
+    {/snippet}
+  </Popover.Trigger>
+  <Popover.Portal>
+    <Popover.Content
+      class="bj-filter-command-picker__popover"
+      align="start"
+      sideOffset={6}
+      aria-label={`Choose ${label.toLowerCase()}`}
+    >
+      <CommandPrimitive.Root
+        class="bj-filter-command-picker__command"
+        label={ariaLabel}
+        shouldFilter={false}
+        loop
+      >
+        <div class="bj-filter-command-picker__input-wrap">
+          <div class="bj-filter-command-picker__input-pill">
+            <SearchIcon size={12} strokeWidth={1.75} aria-hidden="true" />
+            <CommandPrimitive.Input
+              bind:value={search}
+              class="bj-filter-command-picker__input"
+              {placeholder}
+            />
+          </div>
+        </div>
+        <CommandPrimitive.List class="bj-filter-command-picker__list">
+          {#if filteredOptions.length > 0}
+            <CommandPrimitive.Group
+              class="bj-filter-command-picker__group"
+              value={label}
+              forceMount
+            >
+              <CommandPrimitive.GroupHeading
+                class="bj-filter-command-picker__heading"
+              >
+                {label}
+              </CommandPrimitive.GroupHeading>
+              <CommandPrimitive.GroupItems>
+                {#each filteredOptions as option (option.value)}
+                  <CommandPrimitive.Item
+                    class="bj-filter-command-picker__item"
+                    value={option.label}
+                    keywords={[
+                      option.value,
+                      option.label,
+                      ...(option.keywords ?? []),
+                    ]}
+                    data-checked={isOptionChecked(option.value)}
+                    onSelect={() => selectOption(option.value)}
+                  >
+                    {#if option.accent}
+                      <span
+                        class="bj-filter-command-picker__swatch"
+                        style={`--filter-accent: ${option.accent}`}
+                        aria-hidden="true"
+                      ></span>
+                    {/if}
+                    <span class="bj-filter-command-picker__item-label"
+                      >{option.label}</span
+                    >
+                    <CheckIcon
+                      size={12}
+                      strokeWidth={1.75}
+                      class="bj-filter-command-picker__check"
+                      aria-hidden="true"
+                    />
+                  </CommandPrimitive.Item>
+                {/each}
+              </CommandPrimitive.GroupItems>
+            </CommandPrimitive.Group>
+          {/if}
+          {#if canCreateCustom}
+            <CommandPrimitive.Group
+              class="bj-filter-command-picker__group"
+              value="create"
+              forceMount
+            >
+              <CommandPrimitive.GroupItems>
+                <CommandPrimitive.Item
+                  class="bj-filter-command-picker__item bj-filter-command-picker__item--create"
+                  value={`__create__:${trimmedSearch}`}
+                  onSelect={selectCustomValue}
+                >
+                  <span class="bj-filter-command-picker__item-label">
+                    Use "{trimmedSearch}"
+                  </span>
+                </CommandPrimitive.Item>
+              </CommandPrimitive.GroupItems>
+            </CommandPrimitive.Group>
+          {:else if filteredOptions.length === 0}
+            <CommandPrimitive.Empty
+              class="bj-filter-command-picker__empty"
+              forceMount
+            >
+              {emptyLabel}
+            </CommandPrimitive.Empty>
+          {/if}
+        </CommandPrimitive.List>
+      </CommandPrimitive.Root>
+    </Popover.Content>
+  </Popover.Portal>
+</Popover.Root>

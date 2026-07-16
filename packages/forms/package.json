@@ -7,6 +7,7 @@
     "svelte": "^5.0.0"
   },
   "dependencies": {
+    "@beancount-js/filters": "workspace:*",
     "@codemirror/autocomplete": "^6.18.3",
     "@codemirror/commands": "^6.7.1",
     "@codemirror/lang-json": "^6.0.1",
@@ -17,6 +18,7 @@
     "@codemirror/state": "^6.4.1",
     "@codemirror/view": "^6.35.0",
     "@lezer/highlight": "^1.2.1",
+    "bits-ui": "^1.8.0",
     "lucide-svelte": "^0.460.1"
   },
   "exports": {
@@ -33,6 +35,12 @@
     "./components/SegmentedControl.svelte": "./src/components/SegmentedControl.svelte",
     "./components/YamlBackedForm.svelte": "./src/components/YamlBackedForm.svelte",
     "./components/CodeEditor.svelte": "./src/components/CodeEditor.svelte",
-    "./components/JsonBackedForm.svelte": "./src/components/JsonBackedForm.svelte"
+    "./components/JsonBackedForm.svelte": "./src/components/JsonBackedForm.svelte",
+    "./components/SearchFilterBar.svelte": "./src/components/SearchFilterBar.svelte",
+    "./components/SearchableChoicePicker.svelte": "./src/components/SearchableChoicePicker.svelte",
+    "./components/FilterCommandPicker.svelte": "./src/components/FilterCommandPicker.svelte",
+    "./components/AutocompleteInput.svelte": "./src/components/AutocompleteInput.svelte",
+    "./components/ChipAutocomplete.svelte": "./src/components/ChipAutocomplete.svelte",
+    "./components/TagEditor.svelte": "./src/components/TagEditor.svelte"
   }
 }

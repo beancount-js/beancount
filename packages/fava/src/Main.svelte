@@ -24,6 +24,7 @@
   import IngestionAccountsSetup from "./components/IngestionAccountsSetup.svelte";
   import FavaNavigation from "./components/FavaNavigation.svelte";
   import Search from "./components/Search.svelte";
+  import JournalRecordRouteSheet from "./components/JournalRecordRouteSheet.svelte";
   import StudioShell from "./components/StudioShell.svelte";
   import AiDock from "./components/AiDock.svelte";
   import ResourceViewer from "./components/ResourceViewer.svelte";
@@ -84,7 +85,7 @@
       { path: "/directives", element: Editor },
       { path: "/resource", element: ResourceViewer },
     ],
-    "/journal",
+    "/dashboard",
   );
   let inlineAiRequest: InlineAiRequest | undefined;
   const workspace = createStudioWorkspace(
@@ -223,7 +224,7 @@
   }
 </script>
 
-<Tooltip.Provider delayDuration={0}>
+<Tooltip.Provider delayDuration={0} ignoreNonKeyboardFocus>
   <StudioShell
     {projects}
     {snapshot}
@@ -238,6 +239,7 @@
     <div class="h-full min-w-0 overflow-hidden" use:routerLink>
       <View />
     </div>
+    <JournalRecordRouteSheet />
     <svelte:fragment slot="ai">
       <AiDock
         projectId={snapshot?.project.id}

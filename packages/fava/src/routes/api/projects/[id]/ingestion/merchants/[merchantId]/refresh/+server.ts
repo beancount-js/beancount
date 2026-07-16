@@ -1,5 +1,10 @@
 import { json } from "@sveltejs/kit";
-import { BrandfetchProvider, merchantLogoUrlFor } from "@beancount-js/server";
+import {
+  BrandfetchProvider,
+  createBrandfetchResponseCache,
+  merchantLogoUrlFor,
+  resolveBrandfetchRuntime,
+} from "@beancount-js/server";
 import type { MerchantCandidate } from "@beancount-js/beangulp";
 import { serverIngestion } from "$lib/server/ingestion";
 
@@ -24,15 +29,16 @@ export async function POST({
     if (
       !source.merchantEnrichment?.enabled ||
       !brandfetch?.enabled ||
-      !brandfetch.apiKeySecretRef.startsWith("env:")
+      !brandfetch.apiKeySecretRef.trim()
     ) {
       return json(
         { error: "Brandfetch enrichment is not enabled." },
         { status: 400 },
       );
     }
-    const apiKey = process.env[brandfetch.apiKeySecretRef.slice(4)];
-    if (!apiKey)
+    const projectRoot = await store.projectRoot(params.id);
+    const runtime = await resolveBrandfetchRuntime(brandfetch, projectRoot);
+    if (!runtime?.apiKey)
       return json(
         { error: "Brandfetch credential is unavailable." },
         { status: 400 },
@@ -53,11 +59,15 @@ export async function POST({
       explanation: "Refreshing confirmed merchant details.",
       provenance: [{ source: "manual", observedAt: new Date().toISOString() }],
     };
-    const refreshed = await new BrandfetchProvider({
-      apiKey,
-      clientId: brandfetch.clientId,
+    const provider = new BrandfetchProvider({
+      apiKey: runtime.apiKey,
+      clientId: runtime.clientId,
       ttlDays: brandfetch.ttlDays,
-    }).enrich(candidate);
+      responseCache: createBrandfetchResponseCache(projectRoot),
+      // Manual refresh should hit Brandfetch, then refresh the local cache.
+      bypassCache: true,
+    });
+    const refreshed = await provider.enrich(candidate);
     if (!refreshed)
       return json(
         { error: "Brandfetch did not return a merchant." },
@@ -74,11 +84,7 @@ export async function POST({
       refreshed.logoUrl
     ) {
       try {
-        const asset = await new BrandfetchProvider({
-          apiKey,
-          clientId: brandfetch.clientId,
-          ttlDays: brandfetch.ttlDays,
-        }).downloadLogo(refreshed.logoUrl);
+        const asset = await provider.downloadLogo(refreshed.logoUrl);
         updated = await store.merchants.cacheLogo(
           params.id,
           updated.merchantId,
@@ -88,13 +94,15 @@ export async function POST({
         // A failed optional logo refresh must not discard valid merchant metadata.
       }
     }
+    const enrichment = source.merchantEnrichment ?? { enabled: false };
     return json({
       ...updated,
-      logoUrl: merchantLogoUrlFor(
-        params.id,
-        updated,
-        source.merchantEnrichment ?? { enabled: false },
-      ),
+      logoUrl: merchantLogoUrlFor(params.id, updated, {
+        ...enrichment,
+        brandfetch: enrichment.brandfetch
+          ? { ...enrichment.brandfetch, clientId: runtime.clientId }
+          : undefined,
+      }),
     });
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });

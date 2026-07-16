@@ -640,6 +640,9 @@ importers:
 
   packages/forms:
     dependencies:
+      '@beancount-js/filters':
+        specifier: workspace:*
+        version: link:../filters
       '@codemirror/autocomplete':
         specifier: ^6.18.3
         version: 6.20.3
@@ -670,6 +673,9 @@ importers:
       '@lezer/highlight':
         specifier: ^1.2.1
         version: 1.2.3
+      bits-ui:
+        specifier: ^1.8.0
+        version: 1.8.0(svelte@5.56.3(@typescript-eslint/types@8.61.0))
       lucide-svelte:
         specifier: ^0.460.1
         version: 0.460.1(svelte@5.56.3(@typescript-eslint/types@8.61.0))

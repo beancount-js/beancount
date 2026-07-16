@@ -7,7 +7,11 @@ export type SyncJobEvent =
   | { type: "done"; job: IngestionSyncJob }
   | { type: "error"; job: IngestionSyncJob };
 
-export async function startIngestionSync(projectId: string, sourceId: string) {
+export async function startIngestionSync(
+  projectId: string,
+  sourceId: string,
+  mode: "sync" | "ai-rerun" = "sync",
+) {
   return ingestionJson<{
     jobId: string;
     status: IngestionSyncJob["status"];
@@ -16,7 +20,7 @@ export async function startIngestionSync(projectId: string, sourceId: string) {
   }>(ingestionPath(projectId, "/sync"), {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ sourceId }),
+    body: JSON.stringify({ sourceId, mode }),
   });
 }
 

@@ -7,3 +7,9 @@
 - Use the shared form primitives for editable fields and sections. Forms use one `max-content minmax(0, 1fr)` label/value grid per scope, visible single separators, title-only collapsible section headers, and a left-rail disclosure control. Content inside a collapsible section is indented; the header itself is not.
 - Do not add explanatory text to form section headers. Keep labels and values on the same row at desktop widths. Use existing shadcn-Svelte `Switch` controls for boolean configuration and YAML mode.
 - A form toolbar owns collapse/expand-all. Verify title-click collapse, collapsible content indentation, nested collapse state where applicable, no duplicate borders, and no initial desktop horizontal overflow in browser coverage.
+
+## Searchable pickers
+
+- Default to `FilterCommandPicker` from `@beancount-js/forms` for any searchable select (accounts, queries, facets, env var names, enum-like choices). Use `fullWidth` in forms and sidebars.
+- For values the user may type that are not in the option list (e.g. Environment credential names from project `.env`), set `allowCustom={true}` on `FilterCommandPicker`. Do not use `SearchableChoicePicker` for new work — it is the legacy picker.
+- Multi-select: `multiple` + `values` + `onValuesChange`. Single-select: `value` + `onChange`.

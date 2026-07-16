@@ -11,7 +11,8 @@ export async function POST({
   request: Request;
 }) {
   try {
-    await (await serverWorkspace()).readProject(params.id);
+    const workspace = await serverWorkspace();
+    await workspace.readProject(params.id);
     const body = await request.json();
     const {
       baseUrl,
@@ -47,6 +48,7 @@ export async function POST({
         : undefined,
       accountsPath:
         typeof accountsPath === "string" ? accountsPath : undefined,
+      projectRoot: await workspace.projectRoot(params.id),
     });
     return json({ accounts });
   } catch (error) {

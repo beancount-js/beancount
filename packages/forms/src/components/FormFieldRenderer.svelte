@@ -1,6 +1,8 @@
 <script lang="ts">
+  import ChipAutocomplete from "./ChipAutocomplete.svelte";
   import FormField from "./FormField.svelte";
   import SegmentedControl from "./SegmentedControl.svelte";
+  import TagEditor from "./TagEditor.svelte";
   import { autosizeTextarea } from "../autosize-textarea";
   import {
     defaultFieldAlign,
@@ -38,6 +40,12 @@
       ? field.options({ root, value, field, context })
       : field.options
     : [];
+  $: suggestions = field.suggestions
+    ? typeof field.suggestions === "function"
+      ? field.suggestions({ root, value, field, context })
+      : field.suggestions
+    : [];
+  $: arrayValue = Array.isArray(value) ? value.map(String) : [];
   $: text =
     value == null
       ? ""
@@ -156,7 +164,31 @@
           <option value={option.value}>{option.label}</option>
         {/each}
       </select>
-    {:else if ["string-list", "tag-list", "chip-list", "reference-list"].includes(field.kind)}
+    {:else if field.kind === "tag-list"}
+      <TagEditor
+        value={arrayValue}
+        {suggestions}
+        label={field.label}
+        showLabel={false}
+        embedded
+        uppercase={false}
+        id={field.id}
+        placeholder={field.placeholder ?? "Add tag..."}
+        onChange={update}
+      />
+    {:else if field.kind === "chip-list" || field.kind === "string-list"}
+      <ChipAutocomplete
+        value={arrayValue}
+        {suggestions}
+        label={field.label}
+        showLabel={false}
+        embedded
+        uppercase={false}
+        id={field.id}
+        placeholder={field.placeholder ?? "Add item..."}
+        onChange={update}
+      />
+    {:else if field.kind === "reference-list"}
       <input
         id={field.id}
         value={text}

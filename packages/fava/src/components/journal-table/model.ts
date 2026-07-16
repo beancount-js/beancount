@@ -13,6 +13,7 @@ import {
 } from "@beancount-js/beancount";
 import { formatDate } from "@beancount-js/parser";
 import { DateTime } from "luxon";
+import { journalRecordKey as sourcePositionKey } from "../../lib/journal-record-key";
 
 export type JournalRecord = {
   key: string;
@@ -66,15 +67,6 @@ function balanceDifference(
     if (value !== 0) change[currency] = value;
   }
   return change;
-}
-
-function sourcePositionKey(directive: DirectiveBase) {
-  const source = directive.source;
-  const filename = String(directive.meta["filename"] ?? "");
-  if (source && filename) {
-    return `${filename}:${source.position.from}:${source.position.to}`;
-  }
-  return directive.id;
 }
 
 function isBalanceSheetPosting(posting: Posting, roots: readonly string[]) {

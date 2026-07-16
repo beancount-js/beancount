@@ -7,6 +7,7 @@
   import { projectHref } from "$lib/project-path";
   import {
     buildLedgerHref,
+    DEFAULT_LEDGER_VIEW,
     ledgerStemForPath,
   } from "$lib/ledger-route";
   import type {
@@ -57,7 +58,9 @@
     const available = snapshot.ledgerFiles.map((file) => file.path);
     const entry = snapshot.project.entryFile;
     const stem = ledgerStemForPath(entry, available);
-    await goto(buildLedgerHref(id, stem, "/journal"), { replaceState: true });
+    await goto(buildLedgerHref(id, stem, DEFAULT_LEDGER_VIEW), {
+      replaceState: true,
+    });
   }
 
   $: if (browser && projectId && projectId !== loadedProjectId) {

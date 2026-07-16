@@ -1,6 +1,7 @@
 <script lang="ts">
   import ArrowLeft from "lucide-svelte/icons/arrow-left";
   import ChevronRight from "lucide-svelte/icons/chevron-right";
+  import ClipboardList from "lucide-svelte/icons/clipboard-list";
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import FileText from "lucide-svelte/icons/file-text";
@@ -15,19 +16,27 @@
   import Sparkles from "lucide-svelte/icons/sparkles";
   import X from "lucide-svelte/icons/x";
   import { Query } from "@beancount-js/beancount";
+  import {
+    FilterCommandPicker,
+    type FilterCommandOption,
+  } from "@beancount-js/forms";
   import type { ProjectFile } from "@beancount-js/workspace";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import * as ScrollArea from "$lib/components/ui/scroll-area";
   import { cn } from "$lib/utils";
   import { useContext } from "../context";
-  import { accountIcon, type MenuItem } from "../menu";
+  import { type MenuItem } from "../menu";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
-  import { ledgerStemForPath } from "../lib/ledger-route";
+  import { DEFAULT_LEDGER_VIEW, ledgerStemForPath } from "../lib/ledger-route";
   import { setStudioRouteEnv } from "../lib/studio-route-env";
-  import ComboBox from "./ComboBox.svelte";
   import { useLedger } from "./helpers";
+  import {
+    appendLedgerSearchParams,
+    facetsToFilterQuery,
+    parseLedgerSearchState,
+  } from "../lib/ledger-search-state";
   import {
     collectExpandableLedgerFolderIds,
     createLedgerFolderTree,
@@ -54,7 +63,7 @@
 
   const SIDEBAR_STATE_STORAGE_KEY = "beancount-studio:ledger-sidebar";
   const initialState = readSidebarState();
-  const { menu, ledgerSource, bqlQuery } = useContext();
+  const { menu, ledgerSource, bqlQuery, query } = useContext();
   const ledgerData = useLedger();
   const { router } = useNavigation();
   const { activeRoute } = router;
@@ -69,8 +78,16 @@
   let folderQuery = "";
   let tagQuery = "";
   let selectedTags: string[] = [];
+  /** Non-settings view to restore when leaving the settings sidebar. */
+  let settingsReturnPath: string | undefined;
+  /** Prevents auto-open from fighting an intentional leave while the URL catches up. */
+  let closingSettings = false;
 
   $: files = $snapshot?.ledgerFiles ?? [];
+  $: routeSearchTags = parseLedgerSearchState($activeRoute.query).tags;
+  $: if (!tagsEqual(routeSearchTags, selectedTags)) {
+    selectedTags = [...routeSearchTags];
+  }
   $: selectedRouteLedger = $activeRoute.query["ledger"];
   $: if (
     selectedRouteLedger &&
@@ -125,19 +142,23 @@
     label: account,
     value: account,
   }));
-  $: accountGroups = {
-    group: "Accounts",
-    items: [
-      { label: "All", value: "-" },
-      ...[...new Set(ledgerAccounts.map((account) => account.split(":", 2)[0]))]
-        .filter(Boolean)
-        .map((account) => ({
-          label: account,
-          value: account,
-          icon: accountIcon(account),
-        })),
-    ],
-  };
+  $: queryPickerOptions = [
+    { value: "all", label: "Select query" },
+    ...queries.map((q) => ({
+      value: q.value,
+      label: q.label,
+      keywords: [q.value],
+    })),
+  ] satisfies FilterCommandOption[];
+  $: accountPickerOptions = [
+    { value: "all", label: "Select account" },
+    { value: "-", label: "All accounts", keywords: ["accounts"] },
+    ...accounts.filter(
+      (account, index, items) =>
+        account.value !== "-" &&
+        items.findIndex((item) => item.value === account.value) === index,
+    ),
+  ] satisfies FilterCommandOption[];
   $: if (typeof localStorage !== "undefined") {
     localStorage.setItem(
       SIDEBAR_STATE_STORAGE_KEY,
@@ -212,9 +233,13 @@
   }
 
   function selectLedgerFile(path: string) {
+    if (path === $activeFile) {
+      toggleLedgerFile(path);
+      return;
+    }
     activateLedger(path);
     expandedFilePaths = { ...expandedFilePaths, [path]: true };
-    router.push("/journal");
+    router.push(DEFAULT_LEDGER_VIEW);
   }
 
   function openLedgerPanel(path: string, panel: MenuItem) {
@@ -223,29 +248,71 @@
     router.push(panelViewPath(panel.path));
   }
 
+  function isSettingsViewPath(routePath: string) {
+    return (
+      routePath === "/import/editor" ||
+      routePath === "/import/accounts" ||
+      routePath === "/records"
+    );
+  }
+
+  function rememberSettingsReturnPath(fromPath: string) {
+    if (!isSettingsViewPath(fromPath)) {
+      settingsReturnPath = fromPath;
+    }
+  }
+
   function closeLedgerSettings() {
+    const target = settingsReturnPath ?? DEFAULT_LEDGER_VIEW;
+    settingsReturnPath = undefined;
+    closingSettings = true;
     ledgerSidebarMode.set("workspace");
+    // Leaving a settings page must navigate away so the auto-open effect
+    // does not immediately put the sidebar back into settings mode.
+    if (isSettingsViewPath(activeViewPath)) {
+      router.push(target);
+    } else {
+      closingSettings = false;
+    }
   }
 
   function openLedgerSetting(panelPath: string) {
     const ledgerPath = selectedLedger?.path ?? files[0]?.path;
     if (!ledgerPath) return;
+    rememberSettingsReturnPath(activeViewPath);
+    closingSettings = false;
     activateLedger(ledgerPath);
+    ledgerSidebarMode.set("settings");
     router.push(panelViewPath(panelPath));
   }
 
-  function isLedgerSettingActive(panelPath: string) {
-    return panelViewPath(panelPath) === $activeRoute.path;
+  function isLedgerSettingActive(panelPath: string, routePath: string) {
+    return panelViewPath(panelPath) === routePath;
   }
 
   function panelViewPath(panelPath: string) {
     const raw = panelPath.replace(/^#/, "");
     const path = raw.startsWith("/") ? raw : `/${raw}`;
-    return path.split("?")[0] || "/journal";
+    return path.split("?")[0] || DEFAULT_LEDGER_VIEW;
   }
 
   function isPanelActive(panel: MenuItem, routePath: string) {
     return panelViewPath(panel.path) === routePath;
+  }
+
+  $: activeViewPath = $activeRoute.path;
+  $: if (!isSettingsViewPath(activeViewPath)) {
+    closingSettings = false;
+  }
+  $: if ($ledgerSidebarMode === "settings") {
+    rememberSettingsReturnPath(activeViewPath);
+  }
+  $: if (
+    isSettingsViewPath(activeViewPath) &&
+    $ledgerSidebarMode !== "settings" &&
+    !closingSettings
+  ) {
+    ledgerSidebarMode.set("settings");
   }
 
   function expandAllFiles() {
@@ -304,6 +371,25 @@
     };
   }
 
+  function tagsEqual(left: string[], right: string[]) {
+    if (left.length !== right.length) return false;
+    const a = left.map((tag) => tag.toLowerCase()).sort();
+    const b = right.map((tag) => tag.toLowerCase()).sort();
+    return a.every((tag, index) => tag === b[index]);
+  }
+
+  function syncSearchTags(tags: string[]) {
+    const route = $activeRoute;
+    const params = new URLSearchParams(route.query);
+    const state = parseLedgerSearchState(params);
+    state.tags = tags.map((tag) => normalizeLedgerTag(tag)).filter(Boolean);
+    appendLedgerSearchParams(params, state);
+    query.set(facetsToFilterQuery(state));
+    const search = params.toString();
+    const path = route.path.replace(/\/$/, "") || "/";
+    void router.updateState(search ? `${path}?${search}` : path);
+  }
+
   function selectTag(tag: string) {
     const normalized = normalizeLedgerTag(tag);
     if (!normalized) return;
@@ -314,7 +400,7 @@
     ) {
       selectedTags = [...selectedTags, normalized];
     }
-    workspaceView = "ledgers";
+    syncSearchTags(selectedTags);
   }
 
   function removeTag(tag: string) {
@@ -322,6 +408,12 @@
     selectedTags = selectedTags.filter(
       (selected) => normalizeLedgerTag(selected).toLowerCase() !== normalized,
     );
+    syncSearchTags(selectedTags);
+  }
+
+  function clearSelectedTags() {
+    selectedTags = [];
+    syncSearchTags([]);
   }
 
   function navigateToAccount(account: string) {
@@ -396,13 +488,11 @@
           size="sm"
           class={cn(
             "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/import/editor") ||
-              isLedgerSettingActive("/records")
+            isLedgerSettingActive("/import/editor", activeViewPath)
               ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
               : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
           )}
-          aria-current={isLedgerSettingActive("/import/editor") ||
-          isLedgerSettingActive("/records")
+          aria-current={isLedgerSettingActive("/import/editor", activeViewPath)
             ? "page"
             : undefined}
           disabled={files.length === 0}
@@ -412,7 +502,7 @@
           <span class="min-w-0 flex-1">
             <span class="block text-xs font-medium">Import</span>
             <span class="block truncate text-[11px] text-muted-foreground"
-              >Configure sources and review imports</span
+              >Configure ingestion sources</span
             >
           </span>
         </Button>
@@ -422,11 +512,38 @@
           size="sm"
           class={cn(
             "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/import/accounts")
+            isLedgerSettingActive("/records", activeViewPath)
               ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
               : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
           )}
-          aria-current={isLedgerSettingActive("/import/accounts")
+          aria-current={isLedgerSettingActive("/records", activeViewPath)
+            ? "page"
+            : undefined}
+          disabled={files.length === 0}
+          onclick={() => openLedgerSetting("/records")}
+        >
+          <ClipboardList data-icon="inline-start" />
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-medium">Review imports</span>
+            <span class="block truncate text-[11px] text-muted-foreground"
+              >Sync, review, and accept proposals</span
+            >
+          </span>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          class={cn(
+            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+            isLedgerSettingActive("/import/accounts", activeViewPath)
+              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+          )}
+          aria-current={isLedgerSettingActive(
+            "/import/accounts",
+            activeViewPath,
+          )
             ? "page"
             : undefined}
           disabled={files.length === 0}
@@ -445,7 +562,8 @@
   {:else}
     <div class="flex items-center justify-between gap-2 px-2">
       <p class="text-xs font-medium uppercase text-muted-foreground">Ledgers</p>
-      <span class="text-xs tabular-nums text-muted-foreground"
+      <span
+        class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-accent px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
         >{files.length}</span
       >
     </div>
@@ -472,6 +590,37 @@
         </Button>
       {/each}
     </div>
+
+    {#if selectedTags.length}
+      <div
+        class="relative flex flex-wrap items-center gap-1.5 rounded-md border border-sidebar-border bg-background/55 py-1.5 pl-2 pr-9 text-xs text-muted-foreground"
+        aria-label="Selected tag filters"
+      >
+        {#each selectedTags as tag (tag)}
+          <button
+            type="button"
+            class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[11px] font-semibold leading-none text-primary hover:bg-primary/15"
+            aria-label={`Remove #${tag} filter`}
+            onclick={() => removeTag(tag)}
+          >
+            <Hash class="h-3 w-3 shrink-0" aria-hidden="true" />
+            <span class="min-w-0 truncate">{tag}</span>
+            <X class="h-3 w-3 shrink-0 opacity-75" aria-hidden="true" />
+          </button>
+        {/each}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          class="absolute right-1.5 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
+          aria-label="Clear tag filters"
+          title="Clear tag filters"
+          onclick={clearSelectedTags}
+        >
+          <X data-icon />
+        </Button>
+      </div>
+    {/if}
 
     {#if workspaceView === "ledgers"}
       <div class="flex items-center gap-1">
@@ -507,37 +656,6 @@
         </Button>
       </div>
 
-      {#if selectedTags.length}
-        <div
-          class="flex flex-wrap items-center gap-1 rounded-md border border-sidebar-border bg-background/55 p-1.5 text-xs text-muted-foreground"
-          aria-label="Selected tag filters"
-        >
-          {#each selectedTags as tag (tag)}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="h-6 max-w-full gap-1 rounded-full px-2 text-[11px] text-primary hover:bg-primary/10"
-              aria-label={`Remove #${tag} filter`}
-              onclick={() => removeTag(tag)}
-            >
-              <Hash data-icon="inline-start" />
-              <span class="truncate">{tag}</span>
-              <X data-icon="inline-end" />
-            </Button>
-          {/each}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            class="ml-auto h-6 px-2 text-[11px]"
-            onclick={() => (selectedTags = [])}
-          >
-            Clear
-          </Button>
-        </div>
-      {/if}
-
       <ScrollArea.Root
         class="-mr-2 min-h-0 min-w-0 flex-1"
         data-ledger-scroll-area
@@ -565,54 +683,40 @@
               >
                 Ledger tools
               </p>
-              {#if queries.length}
-                <ComboBox
-                  items={queries}
-                  placeholder="Select query"
-                  value={$activeRoute.query["qs"] ?? ""}
-                  onValueChange={navigateToQuery}
-                >
-                  {#snippet trigger({ props, value: label, hasSelection })}
-                    <Button
-                      {...props}
-                      size="sm"
-                      variant="ghost"
-                      role="combobox"
-                      class="w-full justify-start"
-                    >
-                      <span
-                        class="truncate"
-                        class:text-muted-foreground={!hasSelection}
-                        >{label}</span
-                      >
-                    </Button>
-                  {/snippet}
-                </ComboBox>
-              {/if}
-              {#if accounts.length}
-                <ComboBox
-                  items={accounts}
-                  groups={[accountGroups]}
-                  value={$activeRoute.params["account"] ?? ""}
-                  placeholder="Select account"
-                  onValueChange={navigateToAccount}
-                >
-                  {#snippet trigger({ props, value: label, hasSelection })}
-                    <Button
-                      {...props}
-                      size="sm"
-                      variant="ghost"
-                      role="combobox"
-                      class="w-full justify-start"
-                    >
-                      <span
-                        class="truncate"
-                        class:text-muted-foreground={!hasSelection}
-                        >{label}</span
-                      >
-                    </Button>
-                  {/snippet}
-                </ComboBox>
+              {#if queries.length || accounts.length}
+                <div class="flex flex-wrap gap-2">
+                  {#if queries.length}
+                    <div class="min-w-0 flex-[1_1_8rem]">
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Query"
+                        ariaLabel="Select query"
+                        placeholder="Filter queries..."
+                        value={$activeRoute.query["qs"] ?? "all"}
+                        options={queryPickerOptions}
+                        onChange={(value) => {
+                          if (value && value !== "all") navigateToQuery(value);
+                        }}
+                      />
+                    </div>
+                  {/if}
+                  {#if accounts.length}
+                    <div class="min-w-0 flex-[1_1_8rem]">
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Account"
+                        ariaLabel="Select account"
+                        placeholder="Filter accounts..."
+                        value={$activeRoute.params["account"] ?? "all"}
+                        options={accountPickerOptions}
+                        onChange={(value) => {
+                          if (!value || value === "all") navigateToAccount("-");
+                          else navigateToAccount(value);
+                        }}
+                      />
+                    </div>
+                  {/if}
+                </div>
               {/if}
               {#each $snapshot?.resources ?? [] as resource (resource.path)}
                 <Button
@@ -765,7 +869,9 @@
     <div
       class={cn(
         "relative flex h-8 min-w-0 items-center rounded-md text-xs font-semibold transition-colors",
-        "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+        active
+          ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+          : "border border-transparent text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
       )}
       style={fileRowStyle(depth)}
     >

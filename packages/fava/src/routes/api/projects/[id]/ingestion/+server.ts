@@ -1,6 +1,10 @@
 import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
 import {
+  envSecretAvailable,
+  resolveProjectEnv,
+} from "@beancount-js/server";
+import {
   categoryAccountsForSource,
   serverIngestion,
 } from "$lib/server/ingestion";
@@ -10,15 +14,10 @@ function message(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-function credentialAvailable(reference: string | undefined) {
-  if (!reference?.trim()) return false;
-  if (!reference.startsWith("env:")) return true;
-  const name = reference.slice("env:".length);
-  return Boolean(name && process.env[name]);
-}
-
 export async function GET({ params }: { params: { id: string } }) {
-  const snapshot = await (await serverWorkspace()).readProject(params.id);
+  const workspace = await serverWorkspace();
+  const snapshot = await workspace.readProject(params.id);
+  const env = await resolveProjectEnv(await workspace.projectRoot(params.id));
   const [entries] = loadProjectSources(
     snapshot.project.entryFile,
     snapshot.ledgerFiles.map((file) => ({
@@ -31,12 +30,16 @@ export async function GET({ params }: { params: { id: string } }) {
     ...config,
     sources: config.sources.map((source) => ({
       ...source,
-      credentialAvailable: credentialAvailable(source.api.secretRef),
+      credentialAvailable: envSecretAvailable(source.api.secretRef, env),
+      // Only report unavailability when Brandfetch is enabled; a disabled
+      // provider must not surface "credential is not available".
       merchantCredentialAvailable:
-        source.merchantEnrichment?.brandfetch?.enabled === true &&
-        credentialAvailable(
-          source.merchantEnrichment.brandfetch.apiKeySecretRef,
-        ),
+        source.merchantEnrichment?.brandfetch?.enabled === true
+          ? envSecretAvailable(
+              source.merchantEnrichment.brandfetch.apiKeySecretRef,
+              env,
+            )
+          : undefined,
       allowedAccounts: categoryAccountsForSource(
         source,
         entries.flatMap((entry) => entry.accounts),

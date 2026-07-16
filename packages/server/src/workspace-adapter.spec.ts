@@ -35,6 +35,7 @@ describe("FilesystemWorkspaceAdapter", () => {
     expect(snapshot.resources.map((file) => file.path)).toEqual([
       "receipt.pdf",
     ]);
+    expect(snapshot.envKeys).toEqual([]);
     expect(await adapter.listResources(project.id)).toEqual([
       expect.objectContaining({
         path: "receipt.pdf",
@@ -59,6 +60,25 @@ describe("FilesystemWorkspaceAdapter", () => {
     await expect(
       adapter.readResource(project.id, "accounts/cash.beancount"),
     ).rejects.toThrow("Resource not found");
+  });
+
+  test("exposes .env key names without values in the project snapshot", async () => {
+    const root = await mkdtemp(join(tmpdir(), "beancount-studio-project-"));
+    const config = await mkdtemp(join(tmpdir(), "beancount-studio-config-"));
+    await writeFile(join(root, "main.bean"), "2024-01-01 open Assets:Cash\n");
+    await writeFile(
+      join(root, ".env"),
+      'LUNCHFLOW_API_KEY="super-secret"\nBRANDFETCH_CLIENT_ID=abc\n',
+    );
+    const adapter = new FilesystemWorkspaceAdapter({ configDirectory: config });
+    const project = await adapter.openProject(root);
+    const snapshot = await adapter.readProject(project.id);
+
+    expect(snapshot.envKeys).toEqual([
+      "BRANDFETCH_CLIENT_ID",
+      "LUNCHFLOW_API_KEY",
+    ]);
+    expect(JSON.stringify(snapshot)).not.toContain("super-secret");
   });
 
   test("does not allow a caller to read outside a project", async () => {

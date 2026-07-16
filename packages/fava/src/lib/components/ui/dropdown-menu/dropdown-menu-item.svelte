@@ -1,31 +1,28 @@
 <script lang="ts">
   import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
   import { cn } from "$lib/utils.js";
+  import type { Snippet } from "svelte";
 
-  type $$Props = DropdownMenuPrimitive.ItemProps & {
+  let {
+    ref = $bindable(null),
+    class: className,
+    inset = false,
+    children,
+    ...restProps
+  }: DropdownMenuPrimitive.ItemProps & {
     inset?: boolean;
-  };
-  type $$Events = DropdownMenuPrimitive.ItemEvents;
-
-  let className: $$Props["class"] = undefined;
-  export let inset: $$Props["inset"] = undefined;
-  export { className as class };
+    children?: Snippet;
+  } = $props();
 </script>
 
 <DropdownMenuPrimitive.Item
+  bind:ref
   class={cn(
-    "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:opacity-50",
+    "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
     inset && "pl-8",
     className,
   )}
-  on:click
-  on:keydown
-  on:focusin
-  on:focusout
-  on:pointerdown
-  on:pointerleave
-  on:pointermove
-  {...$$restProps}
+  {...restProps}
 >
-  <slot />
+  {@render children?.()}
 </DropdownMenuPrimitive.Item>

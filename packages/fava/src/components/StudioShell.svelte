@@ -38,11 +38,12 @@
   type SidebarTab = "projects" | "workspace" | "search";
 
   const SIDEBAR_WIDTH_STORAGE_KEY = "beancount-studio:sidebar-width";
+  const SIDEBAR_TAB_STORAGE_KEY = "beancount-studio:sidebar-tab";
   const DEFAULT_SIDEBAR_WIDTH = 256;
   const MIN_SIDEBAR_WIDTH = 220;
   const MAX_SIDEBAR_WIDTH = 520;
 
-  let tab: SidebarTab = "workspace";
+  let tab: SidebarTab = readStoredSidebarTab();
   let enteringPath = false;
   let addingProject = false;
   let path = "";
@@ -58,6 +59,7 @@
   $: sidebarWidthStyle = `--sidebar-width: ${sidebarWidth}px;`;
   $: if (typeof localStorage !== "undefined") {
     localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(sidebarWidth));
+    localStorage.setItem(SIDEBAR_TAB_STORAGE_KEY, tab);
   }
   const projectPathForm = createFormConfig<{ path: string }>({
     id: "add-project-path",
@@ -136,6 +138,15 @@
     enteringPath = false;
     path = "";
     projectActionError = null;
+  }
+
+  function readStoredSidebarTab(): SidebarTab {
+    if (typeof localStorage === "undefined") return "workspace";
+    const stored = localStorage.getItem(SIDEBAR_TAB_STORAGE_KEY);
+    if (stored === "projects" || stored === "workspace" || stored === "search") {
+      return stored;
+    }
+    return "workspace";
   }
 
   function readStoredSidebarWidth() {

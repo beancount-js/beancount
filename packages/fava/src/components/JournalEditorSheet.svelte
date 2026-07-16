@@ -1,179 +1,193 @@
 <script lang="ts">
-  import { Transaction, type DirectiveBase } from "@beancount-js/beancount";
+  import type { DirectiveBase } from "@beancount-js/beancount";
   import {
-    Amount as ParserAmount,
-    Link,
-    Position,
-    Posting as ParserPosting,
-    Tag,
-    TransactionDirective,
-    formatDate,
-    parseNumber,
-  } from "@beancount-js/parser";
-  import { DateTime } from "luxon";
+    autosizeTextarea,
+    ChipAutocomplete,
+    CollapsibleItemList,
+    EntryActions,
+    FilterCommandPicker,
+    FormField,
+    FormSectionHeader,
+    TagEditor,
+  } from "@beancount-js/forms";
+  import { onDestroy } from "svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import * as Sheet from "$lib/components/ui/sheet";
+  import { Switch } from "$lib/components/ui/switch";
+  import * as Tooltip from "$lib/components/ui/tooltip";
+  import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
+  import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import CircleAlert from "lucide-svelte/icons/circle-alert";
-  import Minus from "lucide-svelte/icons/minus";
-  import Plus from "lucide-svelte/icons/plus";
-  import PencilLine from "lucide-svelte/icons/pencil-line";
-  import Code2 from "lucide-svelte/icons/code-2";
+  import X from "lucide-svelte/icons/x";
+  import { EditorView } from "@codemirror/view";
+  import { EditorState } from "@codemirror/state";
   import { useContext } from "../context";
+  import { basicSetup, ledgerSetup } from "../codemirror/beancount/setup";
+  import { replaceContents } from "../codemirror/extensions/transactions";
   import { LedgerSource } from "../core/ledger";
   import { useStudioWorkspace } from "../studio/workspace";
-  import ComboBox from "./ComboBox.svelte";
+  import {
+    bookingOptions,
+    buildDirectiveSource,
+    directiveKind,
+    emptyDraft,
+    hasEditableAst,
+    loadDirectiveDraft,
+    normalizeLinks,
+    normalizeTags,
+    sheetTitleForKind,
+    tryParseDirectiveDraft,
+    type DirectiveDraft,
+  } from "./journal-editor/directive-draft";
 
-  type PostingDraft = {
-    account: string;
-    amount: string;
-    currency: string;
+  type SectionKey = "details" | "postings" | "metadata";
+  type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
+
+  type Props = {
+    directive: DirectiveBase;
+    open?: boolean;
   };
 
-  type TransactionDraft = {
-    date: string;
-    flag: string;
-    payee: string;
-    narration: string;
-    tags: string;
-    links: string;
-    postings: PostingDraft[];
-  };
+  let { directive, open = $bindable(false) }: Props = $props();
 
-  export let directive: DirectiveBase;
-  export let open = false;
-
-  const { accounts, currencies, ledgerSource } = useContext();
+  const { accounts, currencies, ledgerSource, tags: ledgerTags } = useContext();
   const { snapshot, saveFile } = useStudioWorkspace();
 
-  let loadedDirective: DirectiveBase | undefined;
-  let mode: "form" | "raw" = "raw";
-  let rawSource = "";
-  let draft: TransactionDraft = emptyDraft();
-  let errors: string[] = [];
-  let saving = false;
+  const sectionTitleClass = "text-xs font-semibold uppercase tracking-wide";
 
-  function emptyDraft(): TransactionDraft {
-    return {
-      date: "",
-      flag: "*",
-      payee: "",
-      narration: "",
-      tags: "",
-      links: "",
-      postings: [
-        { account: "", amount: "", currency: "" },
-        { account: "", amount: "", currency: "" },
-      ],
-    };
-  }
+  let formDirective = $state<DirectiveBase | undefined>(undefined);
+  let draft = $state<DirectiveDraft>(emptyDraft());
+  let loadedDirective = $state<DirectiveBase | undefined>(undefined);
+  let yamlMode = $state(false);
+  let rawSource = $state("");
+  let errors = $state<string[]>([]);
+  let saving = $state(false);
+  let saveState = $state<SaveState>("idle");
+  let saveTimer: number | null = null;
+  let loadingDraft = $state(false);
+  let editor: EditorView | undefined;
+  let replacing = false;
+  let sheetTitleEl = $state<HTMLElement | null>(null);
+  let sectionOpen = $state<Record<SectionKey, boolean>>({
+    details: true,
+    postings: true,
+    metadata: true,
+  });
+  const kind = $derived(directiveKind(directive));
+  const title = $derived(sheetTitleForKind(kind));
+  const isYamlOnly = $derived(kind === "unknown");
+  const parsedFromYaml = $derived(tryParseDirectiveDraft(rawSource, kind));
+  const yamlSwitchDisabled = $derived(
+    !isYamlOnly && !hasEditableAst(directive) && parsedFromYaml === null,
+  );
 
-  function loadDraft(value: DirectiveBase) {
-    rawSource = value.content;
-    const sourceDirective = value.source?.directive;
-    if (
-      value instanceof Transaction &&
-      sourceDirective instanceof TransactionDirective
-    ) {
-      draft = {
-        date: formatDate(value.date),
-        flag: value.flag || "*",
-        payee: value.payee || "",
-        narration: value.narration || "",
-        tags: value.tags.join(", "),
-        links: value.links.join(", "),
-        postings: value.postings.map((posting) => ({
-          account: posting.account,
-          amount: posting.units?.units.toString() ?? "",
-          currency: posting.units?.currency ?? "",
-        })),
-      };
-      mode = "form";
-    } else {
-      draft = emptyDraft();
-      mode = "raw";
-    }
-    errors = [];
-  }
+  const accountItems = $derived(
+    $accounts.map((account) => ({ label: account, value: account })),
+  );
 
-  $: if (directive !== loadedDirective) {
-    loadedDirective = directive;
-    loadDraft(directive);
-  }
+  const currencySuggestions = $derived([...$currencies]);
 
-  function tokens(value: string, prefix: "#" | "^") {
-    return [
-      ...new Set(
-        value
-          .split(/[\s,]+/)
-          .map((item) => item.trim().replace(prefix, ""))
-          .filter(Boolean),
-      ),
-    ];
-  }
+  const sectionsCollapsedAll = $derived.by(() => {
+    if (!isSectionOpen("details") || !isSectionOpen("metadata")) return true;
+    if (kind === "transaction" && !isSectionOpen("postings")) return true;
+    return false;
+  });
 
-  function buildTransactionSource() {
-    const sourceDirective = directive.source?.directive;
-    if (!(sourceDirective instanceof TransactionDirective)) {
-      throw new Error("This transaction has no editable parser source.");
-    }
-    const date = DateTime.fromISO(draft.date, { zone: "utc" });
-    if (!date.isValid) throw new Error("Enter a valid ISO date.");
-    const flag = draft.flag.trim();
-    if (flag.length > 1)
-      throw new Error("The transaction flag must be one character.");
-    if (!draft.narration.trim()) throw new Error("Narration is required.");
-    if (draft.postings.length < 2)
-      throw new Error("Transactions need at least two postings.");
+  const saveHint = $derived(
+    saveState === "dirty"
+      ? "Unsaved changes…"
+      : saveState === "saving"
+        ? "Saving…"
+        : saveState === "saved"
+          ? "Saved"
+          : saveState === "error"
+            ? "Save failed"
+            : "",
+  );
 
-    let inferred = 0;
-    const postings = draft.postings.map((posting, index) => {
-      const account = posting.account.trim();
-      const amount = posting.amount.trim();
-      const currency = posting.currency.trim();
-      if (!account) throw new Error(`Posting ${index + 1} needs an account.`);
-      if (Boolean(amount) !== Boolean(currency)) {
-        throw new Error(
-          `Posting ${index + 1} needs both an amount and a currency.`,
-        );
-      }
-
-      let parsedAmount: ParserAmount | null = null;
-      if (amount) {
-        const value = parseNumber(amount);
-        if (!value)
-          throw new Error(`Posting ${index + 1} has an invalid amount.`);
-        parsedAmount = new ParserAmount(value, currency);
-      } else {
-        inferred += 1;
-      }
-      if (inferred > 1)
-        throw new Error("Only one posting may have an inferred amount.");
-
-      const existing = sourceDirective.postings[index];
-      return existing
-        ? existing.copy({ account, amount: parsedAmount })
-        : new ParserPosting(new Position(0, 0, 0), "", account, parsedAmount);
+  const codeMirror = (node: HTMLDivElement, source: string) => {
+    editor = new EditorView({
+      state: EditorState.create({
+        doc: source,
+        extensions: [
+          basicSetup,
+          ledgerSetup(() => $ledgerSource),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged && !replacing) {
+              rawSource = update.state.doc.toString();
+              scheduleSave();
+            }
+          }),
+        ],
+      }),
+      parent: node,
     });
 
-    const tags = tokens(draft.tags, "#").map(
-      (value) => new Tag(new Position(0, 0, 0), value),
-    );
-    const links = tokens(draft.links, "^").map(
-      (value) => new Link(new Position(0, 0, 0), value),
-    );
-    return sourceDirective
-      .copy({
-        date: date.startOf("day"),
-        status: flag,
-        payee: draft.payee.trim(),
-        narrative: draft.narration.trim(),
-        tags,
-        links,
-        postings,
-      })
-      .toString();
+    return {
+      update(next: string) {
+        if (editor && editor.state.doc.toString() !== next) {
+          replacing = true;
+          editor.dispatch({ ...replaceContents(editor.state, next) });
+          replacing = false;
+        }
+      },
+      destroy() {
+        editor?.destroy();
+        editor = undefined;
+      },
+    };
+  };
+
+  function isSectionOpen(key: SectionKey) {
+    return sectionOpen[key] !== false;
+  }
+
+  function toggleSection(key: SectionKey) {
+    sectionOpen = { ...sectionOpen, [key]: !isSectionOpen(key) };
+  }
+
+  function toggleCollapseAll() {
+    if (sectionsCollapsedAll) {
+      sectionOpen = { details: true, postings: true, metadata: true };
+      return;
+    }
+    sectionOpen = { details: false, postings: false, metadata: false };
+  }
+
+  function loadFromDirective(value: DirectiveBase) {
+    loadingDraft = true;
+    formDirective = value;
+    const nextKind = directiveKind(value);
+    const ast = hasEditableAst(value);
+    rawSource = value.content;
+    draft = ast ? loadDirectiveDraft(value) : emptyDraft(nextKind);
+    yamlMode = !ast || nextKind === "unknown";
+    errors = [];
+    if (saveTimer) {
+      window.clearTimeout(saveTimer);
+      saveTimer = null;
+    }
+    saveState = "idle";
+    sectionOpen = { details: true, postings: true, metadata: true };
+    loadingDraft = false;
+  }
+
+  $effect(() => {
+    if (directive !== loadedDirective) {
+      loadedDirective = directive;
+      loadFromDirective(directive);
+    }
+  });
+
+  function scheduleSave() {
+    if (loadingDraft) return;
+    saveState = "dirty";
+    if (saveTimer) window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => {
+      void saveNow();
+    }, 1200);
   }
 
   function errorSignature(error: { message: string }) {
@@ -219,19 +233,67 @@
     await saveFile(path, contents);
   }
 
-  async function save() {
-    errors = [];
+  async function saveNow() {
+    if (saveTimer) {
+      window.clearTimeout(saveTimer);
+      saveTimer = null;
+    }
     saving = true;
+    saveState = "saving";
+    errors = [];
     try {
-      await persist(mode === "form" ? buildTransactionSource() : rawSource);
-      open = false;
+      if (!formDirective) {
+        throw new Error("This record is not ready to save.");
+      }
+      const source = yamlMode
+        ? (editor?.state.doc.toString() ?? rawSource)
+        : buildDirectiveSource(formDirective, draft);
+      await persist(source);
+      if (saveState === "saving") {
+        saveState = "saved";
+      }
     } catch (error) {
       errors = [
         error instanceof Error ? error.message : "Unable to save this record.",
       ];
+      saveState = "error";
     } finally {
       saving = false;
     }
+  }
+
+  function onYamlModeChange(checked: boolean) {
+    if (checked) {
+      try {
+        if (!formDirective) throw new Error("missing form directive");
+        const nextSource = buildDirectiveSource(formDirective, draft);
+        rawSource = nextSource;
+        if (editor) {
+          replacing = true;
+          editor.dispatch({ ...replaceContents(editor.state, nextSource) });
+          replacing = false;
+        }
+      } catch {
+        // keep existing rawSource if the form is incomplete
+      }
+      yamlMode = true;
+      scheduleSave();
+      return;
+    }
+
+    const source = editor?.state.doc.toString() ?? rawSource;
+    const parsed = tryParseDirectiveDraft(source, kind);
+    if (!parsed) {
+      errors = ["Could not parse Beancount source for this record type."];
+      yamlMode = true;
+      saveState = "error";
+      return;
+    }
+    draft = parsed.draft;
+    formDirective = parsed.directive;
+    errors = [];
+    yamlMode = false;
+    scheduleSave();
   }
 
   function addPosting() {
@@ -239,30 +301,155 @@
       ...draft.postings,
       { account: "", amount: "", currency: "" },
     ];
+    scheduleSave();
   }
 
   function removePosting(index: number) {
     if (draft.postings.length <= 2) return;
-    draft.postings = draft.postings.filter(
-      (_, itemIndex) => itemIndex !== index,
-    );
+    draft.postings = draft.postings.filter((_, itemIndex) => itemIndex !== index);
+    scheduleSave();
   }
+
+  function movePosting(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= draft.postings.length) return;
+    const next = [...draft.postings];
+    const [item] = next.splice(index, 1);
+    next.splice(target, 0, item!);
+    draft.postings = next;
+    scheduleSave();
+  }
+
+  function addMetadataRow() {
+    draft.metadata = [...draft.metadata, { key: "", value: "" }];
+    scheduleSave();
+  }
+
+  function removeMetadataRow(index: number) {
+    draft.metadata = draft.metadata.filter((_, i) => i !== index);
+    scheduleSave();
+  }
+
+  function moveMetadata(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= draft.metadata.length) return;
+    const next = [...draft.metadata];
+    const [item] = next.splice(index, 1);
+    next.splice(target, 0, item!);
+    draft.metadata = next;
+    scheduleSave();
+  }
+
+  $effect(() => {
+    if (!open && saveState === "dirty") {
+      void saveNow();
+    }
+  });
+
+  onDestroy(() => {
+    if (saveTimer) window.clearTimeout(saveTimer);
+    if (saveState === "dirty") void saveNow();
+  });
 </script>
 
 <Sheet.Root bind:open>
   <Sheet.Content
     side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl"
+    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
+    data-journal-editor-sheet
+    onOpenAutoFocus={(event) => {
+      event.preventDefault();
+      sheetTitleEl?.focus();
+    }}
   >
-    <Sheet.Header class="border-b px-6 py-5 pr-14">
+    <Sheet.Header
+      class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left"
+    >
       <Sheet.Title
-        >{mode === "form" ? "Edit transaction" : "Edit record"}</Sheet.Title
+        bind:ref={sheetTitleEl}
+        tabindex={-1}
+        class="journal-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
       >
-      <Sheet.Description>
-        {mode === "form"
-          ? "Edit the transaction details and postings. Existing costs, prices, comments, and metadata are preserved."
-          : "Edit this Beancount source directly."}
+        {title}
+      </Sheet.Title>
+      <Sheet.Description class="sr-only">
+        Edit this ledger record.
       </Sheet.Description>
+      <div class="ml-auto flex shrink-0 items-center gap-1">
+        {#if saveHint}
+          <p class="text-xs text-muted-foreground" role="status">{saveHint}</p>
+        {/if}
+        {#if !isYamlOnly}
+          <Tooltip.Root>
+            <Tooltip.Trigger>
+              {#snippet child({ props })}
+                <div {...props} class="flex items-center gap-2">
+                  <Switch
+                    id="journal-yaml-mode"
+                    size="sm"
+                    checked={yamlMode}
+                    disabled={yamlSwitchDisabled}
+                    aria-label="YAML mode"
+                    onCheckedChange={onYamlModeChange}
+                  />
+                  <label for="journal-yaml-mode" class="text-sm font-semibold"
+                    >YAML</label
+                  >
+                </div>
+              {/snippet}
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              {yamlMode ? "Use form" : "Edit Beancount source"}
+            </Tooltip.Content>
+          </Tooltip.Root>
+        {/if}
+        {#if !yamlMode && !isYamlOnly}
+          <Tooltip.Root>
+            <Tooltip.Trigger>
+              {#snippet child({ props })}
+                <Button
+                  {...props}
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  class="size-8"
+                  aria-label={sectionsCollapsedAll
+                    ? "Expand all"
+                    : "Collapse all"}
+                  onclick={(event) => {
+                    props.onclick?.(event);
+                    toggleCollapseAll();
+                  }}
+                >
+                  {#if sectionsCollapsedAll}
+                    <ChevronsUpDown class="size-4" aria-hidden="true" />
+                  {:else}
+                    <ChevronsDownUp class="size-4" aria-hidden="true" />
+                  {/if}
+                </Button>
+              {/snippet}
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              {sectionsCollapsedAll ? "Expand all" : "Collapse all"}
+            </Tooltip.Content>
+          </Tooltip.Root>
+        {/if}
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            {#snippet child({ props })}
+              <Sheet.Close
+                {...props}
+                class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Close"
+              >
+                <X class="size-4" />
+                <span class="sr-only">Close</span>
+              </Sheet.Close>
+            {/snippet}
+          </Tooltip.Trigger>
+          <Tooltip.Content>Close</Tooltip.Content>
+        </Tooltip.Root>
+      </div>
     </Sheet.Header>
 
     <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
@@ -276,189 +463,650 @@
         </Alert.Root>
       {/if}
 
-      {#if mode === "form"}
-        <form
-          class="flex flex-col gap-6"
-          onsubmit={(event) => {
-            event.preventDefault();
-            save();
-          }}
-        >
-          <div class="grid gap-4 sm:grid-cols-3">
-            <label
-              class="grid gap-2 text-sm font-medium"
-              for="transaction-date"
-            >
-              Date
-              <Input
-                id="transaction-date"
-                type="date"
-                bind:value={draft.date}
-              />
-            </label>
-            <label
-              class="grid gap-2 text-sm font-medium"
-              for="transaction-flag"
-            >
-              Flag
-              <Input
-                id="transaction-flag"
-                maxlength={1}
-                bind:value={draft.flag}
-              />
-            </label>
-            <label
-              class="grid gap-2 text-sm font-medium"
-              for="transaction-payee"
-            >
-              Payee
-              <Input id="transaction-payee" bind:value={draft.payee} />
-            </label>
-          </div>
-
-          <label
-            class="grid gap-2 text-sm font-medium"
-            for="transaction-narration"
+      {#if yamlMode || isYamlOnly}
+        <div class="grid gap-2 text-sm font-medium">
+          <span id="record-source-label">Beancount source</span>
+          <div
+            class="beancount-editor overflow-hidden rounded-md border border-input min-h-[28rem]"
+            role="textbox"
+            aria-labelledby="record-source-label"
+            aria-multiline="true"
           >
-            Narration
-            <Input
-              id="transaction-narration"
-              bind:value={draft.narration}
-              aria-invalid={!draft.narration.trim()}
+            <div use:codeMirror={rawSource} class="min-h-[28rem]"></div>
+          </div>
+        </div>
+      {:else}
+        <div class="journal-form pl-6 min-w-0 flex flex-col gap-6">
+          <section class="flex flex-col gap-2" aria-label="Details">
+            <FormSectionHeader
+              title="Details"
+              titleClass={sectionTitleClass}
+              editable={false}
+              movable={false}
+              removable={false}
+              titleToggleable={true}
+              open={isSectionOpen("details")}
+              onToggle={() => toggleSection("details")}
             />
-          </label>
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <label
-              class="grid gap-2 text-sm font-medium"
-              for="transaction-tags"
-            >
-              Tags
-              <Input
-                id="transaction-tags"
-                placeholder="tax, reimbursable"
-                bind:value={draft.tags}
-              />
-            </label>
-            <label
-              class="grid gap-2 text-sm font-medium"
-              for="transaction-links"
-            >
-              Links
-              <Input
-                id="transaction-links"
-                placeholder="receipt-123"
-                bind:value={draft.links}
-              />
-            </label>
-          </div>
-
-          <section
-            class="flex flex-col gap-3"
-            aria-labelledby="posting-heading"
-          >
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h3 id="posting-heading" class="text-sm font-semibold">
-                  Postings
-                </h3>
-                <p class="text-xs text-muted-foreground">
-                  Leave one amount and currency pair blank to infer it.
-                </p>
-              </div>
-              <Button size="sm" variant="outline" onclick={addPosting}>
-                <Plus data-icon="inline-start" />
-                Add posting
-              </Button>
-            </div>
-            {#each draft.postings as posting, index}
-              <div class="rounded-lg border bg-muted/30 p-3">
-                <div
-                  class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_7rem_auto] sm:items-end"
-                >
-                  <label class="grid gap-2 text-sm font-medium">
-                    Account
-                    <ComboBox
-                      items={() =>
-                        $accounts.map((account) => ({
-                          label: account,
-                          value: account,
-                        }))}
-                      value={posting.account}
-                      placeholder="Select account"
-                      onValueChange={(value) =>
-                        (draft.postings[index].account = value)}
-                    />
-                  </label>
-                  <label class="grid gap-2 text-sm font-medium">
-                    Amount
-                    <Input inputmode="decimal" bind:value={posting.amount} />
-                  </label>
-                  <label class="grid gap-2 text-sm font-medium">
-                    Currency
-                    <Input
-                      list="journal-currencies"
-                      bind:value={posting.currency}
-                    />
-                  </label>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Remove posting ${index + 1}`}
-                    disabled={draft.postings.length <= 2}
-                    onclick={() => removePosting(index)}
+            {#if isSectionOpen("details")}
+              <div class="journal-section-body">
+                <div class="beancount-structured-form">
+                  <FormField
+                    label="Date"
+                    align="center"
+                    controlId="journal-date"
                   >
-                    <Minus />
-                  </Button>
+                    <Input
+                      id="journal-date"
+                      type="date"
+                      bind:value={draft.date}
+                      oninput={() => scheduleSave()}
+                    />
+                  </FormField>
+
+                  {#if kind === "transaction"}
+                    <FormField label="Flag" controlId="journal-flag">
+                      <Input
+                        id="journal-flag"
+                        maxlength={1}
+                        bind:value={draft.flag}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField label="Payee" controlId="journal-payee">
+                      <Input
+                        id="journal-payee"
+                        bind:value={draft.payee}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField label="Narration" controlId="journal-narration">
+                      <Input
+                        id="journal-narration"
+                        bind:value={draft.narration}
+                        aria-invalid={!draft.narration.trim()}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Tags"
+                      as="div"
+                      align="center"
+                      controlId="journal-tags"
+                    >
+                      <TagEditor
+                        id="journal-tags"
+                        value={draft.tags}
+                        suggestions={$ledgerTags}
+                        label="Tags"
+                        showLabel={false}
+                        embedded
+                        uppercase={false}
+                        placeholder="Add tag..."
+                        onChange={(tags) => {
+                          draft.tags = normalizeTags(tags);
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Links"
+                      as="div"
+                      align="center"
+                      controlId="journal-links"
+                    >
+                      <ChipAutocomplete
+                        id="journal-links"
+                        value={draft.links}
+                        suggestions={[]}
+                        label="Links"
+                        showLabel={false}
+                        embedded
+                        uppercase={false}
+                        placeholder="Add link..."
+                        onChange={(links) => {
+                          draft.links = normalizeLinks(links);
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                  {:else if kind === "open"}
+                    <FormField
+                      label="Account"
+                      as="div"
+                      align="center"
+                      controlId="journal-account"
+                    >
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Account"
+                        ariaLabel="Account"
+                        placeholder="Filter accounts..."
+                        value={draft.account}
+                        options={accountItems}
+                        onChange={(value) => {
+                          draft.account = value;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Currencies"
+                      as="div"
+                      align="center"
+                      controlId="journal-currencies"
+                    >
+                      <ChipAutocomplete
+                        id="journal-currencies"
+                        value={draft.currencies}
+                        suggestions={currencySuggestions}
+                        label="Currencies"
+                        showLabel={false}
+                        embedded
+                        uppercase={false}
+                        placeholder="Add currency..."
+                        onChange={(items) => {
+                          draft.currencies = items;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Booking"
+                      as="div"
+                      align="center"
+                      controlId="journal-booking"
+                    >
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Booking"
+                        ariaLabel="Booking method"
+                        placeholder="Select booking..."
+                        value={draft.booking || "DEFAULT"}
+                        options={bookingOptions}
+                        onChange={(value) => {
+                          draft.booking = value as DirectiveDraft["booking"];
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                  {:else if kind === "close"}
+                    <FormField
+                      label="Account"
+                      as="div"
+                      align="center"
+                      controlId="journal-account"
+                    >
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Account"
+                        ariaLabel="Account"
+                        placeholder="Filter accounts..."
+                        value={draft.account}
+                        options={accountItems}
+                        onChange={(value) => {
+                          draft.account = value;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                  {:else if kind === "commodity"}
+                    <FormField label="Currency" controlId="journal-currency">
+                      <Input
+                        id="journal-currency"
+                        bind:value={draft.currency}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                  {:else if kind === "pad"}
+                    <FormField
+                      label="Source account"
+                      as="div"
+                      align="center"
+                      controlId="journal-source-account"
+                    >
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Source account"
+                        ariaLabel="Source account"
+                        placeholder="Filter accounts..."
+                        value={draft.account}
+                        options={accountItems}
+                        onChange={(value) => {
+                          draft.account = value;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Target account"
+                      as="div"
+                      align="center"
+                      controlId="journal-target-account"
+                    >
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Target account"
+                        ariaLabel="Target account"
+                        placeholder="Filter accounts..."
+                        value={draft.account2}
+                        options={accountItems}
+                        onChange={(value) => {
+                          draft.account2 = value;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                  {:else if kind === "balance"}
+                    <FormField
+                      label="Account"
+                      as="div"
+                      align="center"
+                      controlId="journal-account"
+                    >
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Account"
+                        ariaLabel="Account"
+                        placeholder="Filter accounts..."
+                        value={draft.account}
+                        options={accountItems}
+                        onChange={(value) => {
+                          draft.account = value;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField label="Amount" controlId="journal-amount">
+                      <Input
+                        id="journal-amount"
+                        inputmode="decimal"
+                        bind:value={draft.amount}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField label="Currency" controlId="journal-currency">
+                      <Input
+                        id="journal-currency"
+                        bind:value={draft.currency}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField label="Tolerance" controlId="journal-tolerance">
+                      <Input
+                        id="journal-tolerance"
+                        inputmode="decimal"
+                        bind:value={draft.tolerance}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                  {:else if kind === "price"}
+                    <FormField label="Currency" controlId="journal-currency">
+                      <Input
+                        id="journal-currency"
+                        bind:value={draft.currency}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField label="Amount" controlId="journal-amount">
+                      <Input
+                        id="journal-amount"
+                        inputmode="decimal"
+                        bind:value={draft.amount}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Amount currency"
+                      controlId="journal-amount-currency"
+                    >
+                      <Input
+                        id="journal-amount-currency"
+                        bind:value={draft.currency2}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                  {:else if kind === "note"}
+                    <FormField
+                      label="Account"
+                      as="div"
+                      align="center"
+                      controlId="journal-account"
+                    >
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Account"
+                        ariaLabel="Account"
+                        placeholder="Filter accounts..."
+                        value={draft.account}
+                        options={accountItems}
+                        onChange={(value) => {
+                          draft.account = value;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField label="Comment" controlId="journal-comment">
+                      <Input
+                        id="journal-comment"
+                        bind:value={draft.comment}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Tags"
+                      as="div"
+                      align="center"
+                      controlId="journal-tags"
+                    >
+                      <TagEditor
+                        id="journal-tags"
+                        value={draft.tags}
+                        suggestions={$ledgerTags}
+                        label="Tags"
+                        showLabel={false}
+                        embedded
+                        uppercase={false}
+                        placeholder="Add tag..."
+                        onChange={(tags) => {
+                          draft.tags = normalizeTags(tags);
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Links"
+                      as="div"
+                      align="center"
+                      controlId="journal-links"
+                    >
+                      <ChipAutocomplete
+                        id="journal-links"
+                        value={draft.links}
+                        suggestions={[]}
+                        label="Links"
+                        showLabel={false}
+                        embedded
+                        uppercase={false}
+                        placeholder="Add link..."
+                        onChange={(links) => {
+                          draft.links = normalizeLinks(links);
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                  {:else if kind === "document"}
+                    <FormField
+                      label="Account"
+                      as="div"
+                      align="center"
+                      controlId="journal-account"
+                    >
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Account"
+                        ariaLabel="Account"
+                        placeholder="Filter accounts..."
+                        value={draft.account}
+                        options={accountItems}
+                        onChange={(value) => {
+                          draft.account = value;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField label="Path" controlId="journal-path">
+                      <Input
+                        id="journal-path"
+                        bind:value={draft.path}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Tags"
+                      as="div"
+                      align="center"
+                      controlId="journal-tags"
+                    >
+                      <TagEditor
+                        id="journal-tags"
+                        value={draft.tags}
+                        suggestions={$ledgerTags}
+                        label="Tags"
+                        showLabel={false}
+                        embedded
+                        uppercase={false}
+                        placeholder="Add tag..."
+                        onChange={(tags) => {
+                          draft.tags = normalizeTags(tags);
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Links"
+                      as="div"
+                      align="center"
+                      controlId="journal-links"
+                    >
+                      <ChipAutocomplete
+                        id="journal-links"
+                        value={draft.links}
+                        suggestions={[]}
+                        label="Links"
+                        showLabel={false}
+                        embedded
+                        uppercase={false}
+                        placeholder="Add link..."
+                        onChange={(links) => {
+                          draft.links = normalizeLinks(links);
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                  {:else if kind === "event"}
+                    <FormField label="Type" controlId="journal-event-type">
+                      <Input
+                        id="journal-event-type"
+                        bind:value={draft.eventType}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Description"
+                      controlId="journal-description"
+                    >
+                      <Input
+                        id="journal-description"
+                        bind:value={draft.description}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                  {:else if kind === "query"}
+                    <FormField label="Name" controlId="journal-query-name">
+                      <Input
+                        id="journal-query-name"
+                        bind:value={draft.name}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField label="Query" controlId="journal-query">
+                      <textarea
+                        id="journal-query"
+                        class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[4rem] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                        bind:value={draft.query}
+                        use:autosizeTextarea={draft.query}
+                        oninput={() => scheduleSave()}
+                      ></textarea>
+                    </FormField>
+                  {:else if kind === "custom"}
+                    <FormField label="Type" controlId="journal-custom-type">
+                      <Input
+                        id="journal-custom-type"
+                        bind:value={draft.customType}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Values"
+                      as="div"
+                      align="center"
+                      controlId="journal-custom-values"
+                    >
+                      <ChipAutocomplete
+                        id="journal-custom-values"
+                        value={draft.customValues}
+                        suggestions={[]}
+                        label="Values"
+                        showLabel={false}
+                        embedded
+                        uppercase={false}
+                        placeholder="Add value..."
+                        onChange={(values) => {
+                          draft.customValues = values;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                  {/if}
                 </div>
               </div>
-            {/each}
+            {/if}
+          </section>
+
+          {#if kind === "transaction"}
+            <CollapsibleItemList
+              title="Postings"
+              addLabel="posting"
+              count={draft.postings.length}
+              open={isSectionOpen("postings")}
+              onToggle={() => toggleSection("postings")}
+              onAdd={addPosting}
+            >
+              {#each draft.postings as posting, index (index)}
+                <EntryActions
+                  {index}
+                  total={draft.postings.length}
+                  removeLabel={`Remove posting ${index + 1}`}
+                  onMove={(direction) => movePosting(index, direction)}
+                  onRemove={() => removePosting(index)}
+                >
+                  <div class="beancount-structured-form">
+                    <FormField
+                      label="Account"
+                      as="div"
+                      align="center"
+                      controlId={`posting-${index}-account`}
+                    >
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Account"
+                        ariaLabel={`Posting ${index + 1} account`}
+                        placeholder="Filter accounts..."
+                        value={posting.account}
+                        options={accountItems}
+                        onChange={(value) => {
+                          draft.postings[index].account = value;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Amount"
+                      controlId={`posting-${index}-amount`}
+                    >
+                      <Input
+                        id={`posting-${index}-amount`}
+                        inputmode="decimal"
+                        bind:value={posting.amount}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Currency"
+                      controlId={`posting-${index}-currency`}
+                    >
+                      <Input
+                        id={`posting-${index}-currency`}
+                        list="journal-currencies"
+                        bind:value={posting.currency}
+                        oninput={() => scheduleSave()}
+                      />
+                    </FormField>
+                  </div>
+                </EntryActions>
+              {/each}
+            </CollapsibleItemList>
             <datalist id="journal-currencies">
-              {#each $currencies as currency}
+              {#each $currencies as currency (currency)}
                 <option value={currency}></option>
               {/each}
             </datalist>
-          </section>
+          {/if}
 
-          <div
-            class="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground"
+          <CollapsibleItemList
+            title="Metadata"
+            addLabel="field"
+            count={draft.metadata.length}
+            open={isSectionOpen("metadata")}
+            onToggle={() => toggleSection("metadata")}
+            onAdd={addMetadataRow}
           >
-            Advanced posting syntax is retained. Use source mode to change
-            costs, prices, comments, or metadata.
-          </div>
-        </form>
-      {:else}
-        <label class="grid gap-2 text-sm font-medium" for="record-source">
-          Beancount source
-          <textarea
-            id="record-source"
-            class="min-h-[28rem] w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-sm shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            bind:value={rawSource}
-          ></textarea>
-        </label>
+            {#each draft.metadata as row, index (index)}
+              <EntryActions
+                {index}
+                total={draft.metadata.length}
+                removeLabel={`Remove metadata ${index + 1}`}
+                onMove={(direction) => moveMetadata(index, direction)}
+                onRemove={() => removeMetadataRow(index)}
+              >
+                <div class="beancount-structured-form">
+                  <FormField label="Key" controlId={`meta-${index}-key`}>
+                    <Input
+                      id={`meta-${index}-key`}
+                      bind:value={row.key}
+                      placeholder="Add key"
+                      oninput={() => scheduleSave()}
+                    />
+                  </FormField>
+                  <FormField label="Value" controlId={`meta-${index}-value`}>
+                    <Input
+                      id={`meta-${index}-value`}
+                      bind:value={row.value}
+                      placeholder="Add value"
+                      oninput={() => scheduleSave()}
+                    />
+                  </FormField>
+                </div>
+              </EntryActions>
+            {/each}
+          </CollapsibleItemList>
+        </div>
       {/if}
     </div>
-
-    <Sheet.Footer class="border-t px-6 py-4 sm:gap-2">
-      {#if mode === "form"}
-        <Button type="button" variant="outline" onclick={() => (mode = "raw")}>
-          <Code2 data-icon="inline-start" />
-          Edit source
-        </Button>
-      {:else if directive instanceof Transaction}
-        <Button type="button" variant="outline" onclick={() => (mode = "form")}>
-          <PencilLine data-icon="inline-start" />
-          Use form
-        </Button>
-      {/if}
-      <Sheet.Close
-        class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm hover:bg-accent"
-      >
-        Cancel
-      </Sheet.Close>
-      <Button type="button" disabled={saving} onclick={save}>
-        {saving ? "Saving…" : "Save changes"}
-      </Button>
-    </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>
+
+<style>
+  .journal-form :global(.beancount-structured-form) {
+    min-width: 0;
+  }
+
+  .journal-section-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-left: 0.5rem;
+    min-width: 0;
+  }
+
+  :global(.journal-sheet-title),
+  .journal-form :global(.beancount-form-item-list-toggle),
+  .journal-form :global(.beancount-form-section-title-toggle),
+  .journal-form :global(.beancount-form-section-title-row h3) {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+</style>

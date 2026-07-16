@@ -27,6 +27,7 @@ const snapshot: ProjectSnapshot = {
     },
   ],
   issues: [],
+  envKeys: [],
 };
 
 describe("ledger proposal validation", () => {

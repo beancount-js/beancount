@@ -6,6 +6,7 @@ export {
 export {
   PROJECT_STUDIO_DIR,
   projectAiSessionsRoot,
+  projectBrandfetchCacheRoot,
   projectIngestionRoot,
   projectStudioRoot,
   studioConfigRoot,
@@ -27,17 +28,25 @@ export {
   CodexMerchantAdvisor,
   FilesystemIngestionStore,
   discoverIngestionAccounts,
+  enrichExistingSourceRuns,
+  enrichProposal,
   expandIngestionSource,
   ingestSource,
   merchantAdvisorLabel,
   merchantLogoUrlFor,
   recategorizeProposal,
+  resolveBrandfetchRuntime,
+  type AiEnrichmentDebug,
+  type AiEnrichmentDebugCall,
+  type AiEnrichmentCallRecord,
+  type AiEnrichmentSnapshot,
   type BrandfetchEnrichmentConfig,
   type ExpandedIngestionTarget,
   type IngestionConfig,
   type IngestMerchantContext,
   type IngestProgressOptions,
   type IngestionSyncJob,
+  type IngestionSyncJobKind,
   type IngestionSyncJobProgress,
   type IngestionSyncJobStatus,
   type IngestionSyncJobSummary,
@@ -48,7 +57,22 @@ export { AsyncEventQueue } from "./event-queue";
 export {
   BrandfetchProvider,
   brandfetchLogoUrl,
+  formatBrandfetchRateLimitError,
   isValidDomain,
+  readBrandfetchRateLimit,
+  type BrandfetchRateLimitInfo,
   type DownloadedBrandAsset,
 } from "./brandfetch";
+export {
+  createBrandfetchResponseCache,
+  FilesystemBrandfetchResponseCache,
+  type BrandfetchCachedResponse,
+  type BrandfetchResponseCache,
+} from "./brandfetch-cache";
 export { FilesystemMerchantStore, type ConfirmMerchantInput } from "./merchant";
+export {
+  envSecretAvailable,
+  readProjectEnvEntries,
+  resolveEnvSecret,
+  resolveProjectEnv,
+} from "./project-env";

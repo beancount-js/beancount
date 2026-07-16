@@ -151,10 +151,13 @@
   .beancount-form-field-control :global(output) {
     width: 100%;
     min-width: 0;
+    height: auto;
+    min-height: 0;
     border: 0;
     border-radius: 0;
     border-bottom: 0;
     background: transparent;
+    box-shadow: none;
     color: var(
       --cv-form-foreground,
       var(--beancount-form-foreground, var(--foreground))

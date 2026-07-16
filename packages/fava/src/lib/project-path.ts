@@ -1,4 +1,5 @@
 import { resolve } from "$app/paths";
+import { DEFAULT_LEDGER_VIEW, viewPathToSegments } from "./ledger-route";
 import { getStudioRouteEnv } from "./studio-route-env";
 
 /** App pathname for a registered project (trailing slash). */
@@ -24,7 +25,11 @@ export function projectHref(projectId: string) {
   }
   const env = getStudioRouteEnv();
   if (env.ledgerStem) {
-    return `/${encodeURIComponent(projectId)}/ledger/${env.ledgerStem.split("/").map(encodeURIComponent).join("/")}/journal/`;
+    const view = viewPathToSegments(DEFAULT_LEDGER_VIEW).join("/");
+    return `/${encodeURIComponent(projectId)}/ledger/${env.ledgerStem
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/")}/${view}/`;
   }
   return projectPathname(projectId);
 }

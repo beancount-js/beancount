@@ -355,7 +355,9 @@ export const mainTabs = [
       await expect(
         page.getByRole("tab", { name: "Holdings", exact: true }),
       ).toBeVisible();
-      await expect(page.locator(".scroll-container.no-bars")).toBeVisible();
+      await expect(
+        page.locator("[data-content-scroll-area]").first(),
+      ).toBeVisible();
     },
   },
   {
@@ -370,7 +372,9 @@ export const mainTabs = [
     path: projectView("query"),
     assert: async (page: Page) => {
       await expect(page.locator(".beancount-editor .cm-editor")).toBeVisible();
-      await expect(page.getByRole("button", { name: "Search" })).toBeVisible();
+      await expect(
+        page.locator(".beancount-editor").getByRole("button", { name: "Search" }),
+      ).toBeVisible();
     },
   },
 ] as const;

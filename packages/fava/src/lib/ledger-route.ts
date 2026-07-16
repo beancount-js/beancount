@@ -2,6 +2,9 @@
 
 export const LEDGER_FILE_EXTENSIONS = [".beancount", ".bean", ".ledger"] as const;
 
+/** Default view opened when selecting a ledger or omitting the view segment. */
+export const DEFAULT_LEDGER_VIEW = "/dashboard";
+
 /** Single-segment views (terminal path segment). */
 export const STUDIO_VIEWS = new Set([
   "journal",
@@ -164,11 +167,11 @@ export function parseLedgerAndView(
     };
   }
 
-  // No view → default journal
+  // No view → default dashboard
   return {
     ledgerStem: parts.join("/"),
-    viewPath: "/journal",
-    viewSegment: "journal",
+    viewPath: DEFAULT_LEDGER_VIEW,
+    viewSegment: "dashboard",
     params: {},
   };
 }

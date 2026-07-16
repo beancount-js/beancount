@@ -17,6 +17,7 @@ import type {
 import {
   createProjectId,
   isUuidProjectId,
+  parseDotenvKeys,
   type ProjectIdIndex,
 } from "@beancount-js/workspace";
 import {
@@ -472,7 +473,18 @@ export class FilesystemWorkspaceAdapter implements WorkspaceAdapter {
         })),
       ),
       issues: discovery.issues,
+      envKeys: await this.envKeysFor(project.root),
     };
+  }
+
+  private async envKeysFor(root: string): Promise<string[]> {
+    try {
+      const contents = await fs.readFile(join(root, ".env"), "utf8");
+      return parseDotenvKeys(contents);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+      throw error;
+    }
   }
 
   private async fileFor(root: string, path: string): Promise<ProjectFile> {

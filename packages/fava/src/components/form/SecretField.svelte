@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { SegmentedControl, type FormFieldRenderArgs } from "@beancount-js/forms";
+  import {
+    FilterCommandPicker,
+    SegmentedControl,
+    type FormFieldRenderArgs,
+  } from "@beancount-js/forms";
   import { Input } from "$lib/components/ui/input";
   import {
     secretDisplayValue,
@@ -7,17 +11,25 @@
     secretStoredValue,
     type SecretMode,
   } from "../../ingestion/secret-ref";
+  import type { SourceFormContext } from "../../ingestion/source-form-config";
 
   let {
     value,
     field,
+    context,
     readonly = false,
     update,
-  }: FormFieldRenderArgs<unknown, unknown, string> = $props();
+    envPlaceholder,
+  }: FormFieldRenderArgs<unknown, SourceFormContext, string> & {
+    envPlaceholder?: string;
+  } = $props();
 
   const mode = $derived(secretMode(typeof value === "string" ? value : ""));
   const display = $derived(
     secretDisplayValue(typeof value === "string" ? value : ""),
+  );
+  const envOptions = $derived(
+    (context?.envKeys ?? []).map((key) => ({ value: key, label: key })),
   );
 
   function setMode(next: string) {
@@ -48,15 +60,29 @@
       ariaLabel={`${field.ariaLabel ?? field.label} source`}
       onChange={setMode}
     />
-    <Input
-      type={mode === "inline" ? "password" : "text"}
-      autocomplete="off"
-      spellcheck={false}
-      value={display}
-      placeholder={mode === "env" ? "BANK_API_TOKEN" : "Paste API key"}
-      aria-label={field.ariaLabel ?? field.label}
-      oninput={(event) => setDisplay(event.currentTarget.value)}
-    />
+    {#if mode === "env"}
+      <FilterCommandPicker
+        value={display}
+        options={envOptions}
+        allowCustom={true}
+        fullWidth={true}
+        label={envPlaceholder?.trim() || field.label || "Environment variable"}
+        placeholder="Search project .env keys..."
+        emptyLabel="No matching .env keys. Type a custom name."
+        ariaLabel={field.ariaLabel ?? field.label}
+        onChange={setDisplay}
+      />
+    {:else}
+      <Input
+        type="password"
+        autocomplete="off"
+        spellcheck={false}
+        value={display}
+        placeholder="Paste API key"
+        aria-label={field.ariaLabel ?? field.label}
+        oninput={(event) => setDisplay(event.currentTarget.value)}
+      />
+    {/if}
   </div>
 {/if}
 

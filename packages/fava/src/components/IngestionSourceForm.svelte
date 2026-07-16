@@ -73,6 +73,7 @@
     issues = [],
     credentialAvailable,
     merchantCredentialAvailable,
+    envKeys = [],
     openSections = [...sourceFormSections],
     onOpenSectionsChange = () => {},
     onChange,
@@ -84,6 +85,7 @@
     issues?: FormValidationIssue[];
     credentialAvailable?: boolean;
     merchantCredentialAvailable?: boolean;
+    envKeys?: string[];
     openSections?: string[];
     onOpenSectionsChange?: (sections: string[]) => void;
     onChange: (source: EditableIngestionSource) => void;
@@ -100,6 +102,7 @@
   const apiForm = $derived(grouped ? sourceApiGroupedForm : sourceApiForm);
   const formContext = $derived({
     accounts,
+    envKeys,
     credentialAvailable,
     merchantCredentialAvailable,
   } satisfies SourceFormContext);

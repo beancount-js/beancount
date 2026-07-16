@@ -36,6 +36,7 @@ export const exampleIngestionConfig: EditableIngestionConfig = {
         brandfetch: {
           enabled: false,
           apiKeySecretRef: "env:BRANDFETCH_API_KEY",
+          clientId: "env:BRANDFETCH_CLIENT_ID",
           assetMode: "hotlink",
         },
       },
@@ -397,6 +398,17 @@ function sourceIssues(
         ),
       );
     }
+  }
+  if (
+    brandfetch?.clientId &&
+    !isEnvSecretNameValid(brandfetch.clientId)
+  ) {
+    issues.push(
+      field(
+        "merchantEnrichment.brandfetch.clientId",
+        "Environment variable names may use letters, numbers, and underscores.",
+      ),
+    );
   }
   if (brandfetch?.assetMode === "cache" && !brandfetch.cacheContentAllowed) {
     issues.push(

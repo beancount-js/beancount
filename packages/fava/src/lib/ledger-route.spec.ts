@@ -45,10 +45,11 @@ describe("ledger-route", () => {
     });
   });
 
-  it("defaults to journal when view is omitted", () => {
+  it("defaults to dashboard when view is omitted", () => {
     expect(parseLedgerAndView(["sample"])).toMatchObject({
       ledgerStem: "sample",
-      viewPath: "/journal",
+      viewPath: "/dashboard",
+      viewSegment: "dashboard",
     });
   });
 

@@ -1,16 +1,15 @@
 <script lang="ts">
-  import Check from "lucide-svelte/icons/check";
-  import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
-  import { tick, type Snippet } from "svelte";
-  import * as Command from "$lib/components/ui/command/index.js";
-  import * as Popover from "$lib/components/ui/popover/index.js";
-  import { Button } from "$lib/components/ui/button/index.js";
-  import { cn } from "$lib/utils.js";
-  import { type Icon as IconType } from "lucide-svelte";
-  import ScrollArea from "$lib/components/ui/scroll-area/scroll-area.svelte";
+  import {
+    FilterCommandPicker,
+    type FilterCommandOption,
+  } from "@beancount-js/forms";
+  import { SvelteSet } from "svelte/reactivity";
+  import type { Snippet } from "svelte";
+  import type { Icon as IconType } from "lucide-svelte";
 
   type ComboProps = {
     class?: string;
+    /** @deprecated Custom triggers are ignored; FilterCommandPicker owns the trigger. */
     trigger?: Snippet<
       [
         {
@@ -35,8 +34,7 @@
   };
 
   let {
-    trigger,
-    class: klass,
+    class: klass = "",
     items: options,
     value: selected = "",
     groups = [],
@@ -44,130 +42,57 @@
     onValueChange = () => {},
   }: ComboProps = $props();
 
-  let items = $derived.by(() => {
-    const values: Array<{ label: string; value: string }> = [];
-    if (Array.isArray(options)) {
-      values.push(...options);
-    } else {
-      values.push(...options());
+  const pickerOptions = $derived.by(() => {
+    const values: FilterCommandOption[] = [];
+    const seen = new SvelteSet<string>();
+
+    values.push({ value: "all", label: placeholder });
+    seen.add("all");
+
+    for (const group of groups) {
+      for (const item of group.items) {
+        if (seen.has(item.value)) continue;
+        seen.add(item.value);
+        values.push({
+          value: item.value,
+          label: item.label,
+          keywords: [group.group],
+        });
+      }
     }
-    if (selected && !values.find((it) => it.value === selected)) {
+
+    const list = Array.isArray(options) ? options : options();
+    for (const item of list) {
+      if (seen.has(item.value)) continue;
+      seen.add(item.value);
+      values.push({ value: item.value, label: item.label });
+    }
+
+    if (selected && selected !== "all" && !seen.has(selected)) {
       values.push({ label: selected, value: selected });
     }
+
     return values;
   });
 
-  let open = $state(false);
-  let value = $state(selected);
-  let triggerRef = $state<HTMLButtonElement>(null!);
-
-  $effect(() => {
-    value = selected;
-  });
-
-  const selectedValue = $derived(
-    items.find((f) => f.value === selected)?.label ?? placeholder,
-  );
-
-  // We want to refocus the trigger button when the user selects
-  // an item from the list so users can continue navigating the
-  // rest of the form with the keyboard.
-  function closeAndFocusTrigger() {
-    open = false;
-    tick().then(() => {
-      triggerRef.focus();
-    });
-  }
+  const pickerValue = $derived(selected && selected !== "all" ? selected : "all");
 </script>
 
-<div class={klass}>
-  <Popover.Root bind:open>
-    <Popover.Trigger bind:ref={triggerRef}>
-      {#snippet child({ props })}
-        {#if trigger}
-          {@render trigger({
-            props,
-            value: selectedValue,
-            open,
-            hasSelection: !!selected,
-            placeholder,
-          })}
-        {:else}
-          <Button
-            variant="outline"
-            class="text-mono w-full justify-between text-xs"
-            {...props}
-            role="combobox"
-            size="sm"
-            aria-expanded={open}
-          >
-            <span class={cn(!selected && "text-muted-foreground")}
-              >{selectedValue}</span
-            >
-            <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
-          </Button>
-        {/if}
-      {/snippet}
-    </Popover.Trigger>
-    <Popover.Content class="w-max p-0 text-xs">
-      <Command.Root>
-        <Command.Input placeholder="Search ..." />
-        <Command.List>
-          <Command.Empty>No items found.</Command.Empty>
-          {#each groups as group}
-            <Command.Group heading={group.group} class="">
-              {#each group.items as item}
-                <Command.Item
-                  class="text-mono w-full font-mono text-xs"
-                  value={item.value}
-                  onSelect={() => {
-                    value = item.value;
-                    closeAndFocusTrigger();
-                    onValueChange(item.value);
-                  }}
-                >
-                  {#if value !== item.value && item.icon}
-                    {@const Icon = item.icon}
-                    <Icon class="mr-2 h-4 w-4" />
-                  {:else}
-                    <Check
-                      class={cn(
-                        "mr-2 h-4 w-4",
-                        value !== item.value && "text-transparent",
-                      )}
-                    />
-                  {/if}
-                  {item.label}
-                </Command.Item>
-              {/each}
-            </Command.Group>
-            <Command.Separator></Command.Separator>
-          {/each}
-          <Command.Group>
-            <ScrollArea class="h-[200px]">
-              {#each items as item}
-                <Command.Item
-                  value={item.value}
-                  class="w-full font-mono text-xs"
-                  onSelect={() => {
-                    value = item.value;
-                    onValueChange(item.value);
-                    closeAndFocusTrigger();
-                  }}
-                >
-                  <Check
-                    class={cn(
-                      "mr-2 size-4",
-                      value !== item.value && "text-transparent",
-                    )}
-                  />
-                  {item.label}
-                </Command.Item>
-              {/each}
-            </ScrollArea>
-          </Command.Group>
-        </Command.List>
-      </Command.Root>
-    </Popover.Content>
-  </Popover.Root>
+<div class={["bj-combo-box", klass].filter(Boolean).join(" ")}>
+  <FilterCommandPicker
+    fullWidth
+    label={placeholder}
+    ariaLabel={placeholder}
+    placeholder={`Filter ${placeholder.toLowerCase()}...`}
+    value={pickerValue}
+    options={pickerOptions}
+    onChange={(value) => onValueChange(value === "all" ? "" : value)}
+  />
 </div>
+
+<style>
+  .bj-combo-box {
+    width: 100%;
+    min-width: 0;
+  }
+</style>

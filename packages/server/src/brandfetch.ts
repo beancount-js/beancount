@@ -5,6 +5,10 @@ import type {
   MerchantCandidate,
   MerchantProvenance,
 } from "@beancount-js/beangulp";
+import {
+  brandfetchCacheExpiry,
+  type BrandfetchResponseCache,
+} from "./brandfetch-cache";
 
 const BRAND_API = "https://api.brandfetch.io/v2";
 const MAX_ASSET_BYTES = 2 * 1024 * 1024;
@@ -17,6 +21,10 @@ export interface BrandfetchConfig {
   allowTransactionLookup?: boolean;
   ttlDays?: number;
   fetch?: typeof fetch;
+  /** Durable project-local response cache under `.beancount/ingestion/brandfetch`. */
+  responseCache?: BrandfetchResponseCache;
+  /** Skip reading the cache (still write after a live fetch). */
+  bypassCache?: boolean;
 }
 
 export interface BrandfetchLookupInput {
@@ -113,25 +121,208 @@ function brandfetchUrl(path: string) {
   return new URL(path, `${BRAND_API}/`).toString();
 }
 
+/** Rate-limit / quota headers documented by Brandfetch Brand API. */
+export type BrandfetchRateLimitInfo = {
+  quota?: number;
+  approximateUsage?: number;
+  /** Seconds to wait before retrying, when the API sends Retry-After. */
+  retryAfterSeconds?: number;
+  /** Absolute retry time derived from Retry-After (seconds or HTTP-date). */
+  retryAt?: string;
+};
+
+function parsePositiveInt(value: string | null) {
+  if (!value?.trim()) return undefined;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+/** Parse Brandfetch quota / Retry-After headers from an API response. */
+export function readBrandfetchRateLimit(
+  headers: Headers,
+  now = Date.now(),
+): BrandfetchRateLimitInfo {
+  const quota = parsePositiveInt(headers.get("x-api-key-quota"));
+  const approximateUsage = parsePositiveInt(
+    headers.get("x-api-key-approximate-usage"),
+  );
+  const retryAfterRaw = headers.get("retry-after")?.trim();
+  let retryAfterSeconds: number | undefined;
+  let retryAt: string | undefined;
+  if (retryAfterRaw) {
+    const asSeconds = Number.parseInt(retryAfterRaw, 10);
+    if (Number.isFinite(asSeconds) && String(asSeconds) === retryAfterRaw) {
+      retryAfterSeconds = Math.max(asSeconds, 0);
+      retryAt = new Date(now + retryAfterSeconds * 1000).toISOString();
+    } else {
+      const asDate = Date.parse(retryAfterRaw);
+      if (Number.isFinite(asDate)) {
+        retryAt = new Date(asDate).toISOString();
+        retryAfterSeconds = Math.max(Math.ceil((asDate - now) / 1000), 0);
+      }
+    }
+  }
+  return { quota, approximateUsage, retryAfterSeconds, retryAt };
+}
+
+export function formatBrandfetchRateLimitError(
+  rateLimit: BrandfetchRateLimitInfo,
+  cached = false,
+) {
+  const parts = [
+    cached
+      ? "Brandfetch request failed with 429 (cached)"
+      : "Brandfetch request failed with 429",
+  ];
+  if (
+    rateLimit.quota !== undefined ||
+    rateLimit.approximateUsage !== undefined
+  ) {
+    parts.push(
+      `quota ${rateLimit.approximateUsage ?? "?"}/${rateLimit.quota ?? "?"}`,
+    );
+  }
+  if (rateLimit.retryAt) {
+    parts.push(`retry after ${rateLimit.retryAt}`);
+  } else if (rateLimit.retryAfterSeconds !== undefined) {
+    parts.push(`retry after ${rateLimit.retryAfterSeconds}s`);
+  } else {
+    parts.push("no Retry-After header");
+  }
+  return `${parts[0]} (${parts.slice(1).join("; ")}).`;
+}
+
 export class BrandfetchProvider {
   private readonly fetcher: typeof fetch;
+  /** In-flight dedupe for identical requests within one process/job. */
+  private readonly inflight = new Map<string, Promise<unknown | undefined>>();
 
   constructor(readonly config: BrandfetchConfig) {
     this.fetcher = config.fetch ?? fetch;
   }
 
+  private requestKey(method: string, url: string, body: string) {
+    return `${method}\n${url}\n${body}`;
+  }
+
   private async request(url: string, init?: RequestInit) {
+    const method = (init?.method ?? "GET").toUpperCase();
+    const requestBody =
+      typeof init?.body === "string"
+        ? init.body
+        : init?.body == null
+          ? ""
+          : String(init.body);
+    const key = this.requestKey(method, url, requestBody);
+    const pending = this.inflight.get(key);
+    if (pending) return pending;
+
+    const work = this.requestUncached(url, method, requestBody, init);
+    this.inflight.set(key, work);
+    try {
+      return await work;
+    } finally {
+      this.inflight.delete(key);
+    }
+  }
+
+  private async requestUncached(
+    url: string,
+    method: string,
+    requestBody: string,
+    init?: RequestInit,
+  ) {
+    const cache = this.config.responseCache;
+    if (cache && !this.config.bypassCache) {
+      const cached = await cache.get(method, url, requestBody);
+      if (cached) {
+        if (cached.status === 404) return undefined;
+        if (cached.status === 429) {
+          throw new Error(
+            formatBrandfetchRateLimitError(
+              {
+                quota: cached.rateLimit?.quota,
+                approximateUsage: cached.rateLimit?.approximateUsage,
+                retryAfterSeconds: cached.rateLimit?.retryAfterSeconds,
+                retryAt: cached.retryAt,
+              },
+              true,
+            ),
+          );
+        }
+        return cached.body;
+      }
+    }
+
     const headers = new Headers(init?.headers);
     headers.set("authorization", `Bearer ${this.config.apiKey}`);
     const response = await this.fetcher(url, {
       ...init,
+      method,
       headers,
       signal: init?.signal ?? AbortSignal.timeout(10_000),
     });
-    if (response.status === 404) return undefined;
-    if (!response.ok)
+    const rateLimit = readBrandfetchRateLimit(response.headers);
+
+    if (response.status === 404) {
+      await cache?.set({
+        version: 1,
+        method,
+        url,
+        status: 404,
+        fetchedAt: new Date().toISOString(),
+        expiresAt: brandfetchCacheExpiry(404, this.config.ttlDays),
+        body: null,
+        requestBody,
+      });
+      return undefined;
+    }
+
+    if (response.status === 429) {
+      const fetchedAt = new Date().toISOString();
+      await cache?.set({
+        version: 1,
+        method,
+        url,
+        status: 429,
+        fetchedAt,
+        expiresAt: brandfetchCacheExpiry(
+          429,
+          this.config.ttlDays,
+          rateLimit.retryAfterSeconds,
+        ),
+        body: null,
+        requestBody,
+        retryAt: rateLimit.retryAt,
+        rateLimit: {
+          quota: rateLimit.quota,
+          approximateUsage: rateLimit.approximateUsage,
+          retryAfterSeconds: rateLimit.retryAfterSeconds,
+        },
+      });
+      throw new Error(formatBrandfetchRateLimitError(rateLimit));
+    }
+
+    if (!response.ok) {
       throw new Error(`Brandfetch request failed with ${response.status}.`);
-    return response.json() as Promise<unknown>;
+    }
+
+    const body = (await response.json()) as unknown;
+    await cache?.set({
+      version: 1,
+      method,
+      url,
+      status: 200,
+      fetchedAt: new Date().toISOString(),
+      expiresAt: brandfetchCacheExpiry(200, this.config.ttlDays),
+      body,
+      requestBody,
+      rateLimit: {
+        quota: rateLimit.quota,
+        approximateUsage: rateLimit.approximateUsage,
+      },
+    });
+    return body;
   }
 
   async enrich(

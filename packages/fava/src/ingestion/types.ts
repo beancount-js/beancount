@@ -1,4 +1,6 @@
 import type {
+  AiEnrichmentCallRecord,
+  AiEnrichmentSnapshot,
   ImportProposal,
   IngestionRun,
   JsonApiLinkedAccount,
@@ -6,7 +8,18 @@ import type {
   JsonMappingConfig,
   MerchantRule,
 } from "@beancount-js/beangulp";
-import type { MerchantEnrichmentConfig } from "@beancount-js/server";
+import type {
+  AiEnrichmentDebug,
+  AiEnrichmentDebugCall,
+  MerchantEnrichmentConfig,
+} from "@beancount-js/server";
+
+export type {
+  AiEnrichmentCallRecord,
+  AiEnrichmentDebug,
+  AiEnrichmentDebugCall,
+  AiEnrichmentSnapshot,
+};
 
 export interface IngestionSource {
   id: string;

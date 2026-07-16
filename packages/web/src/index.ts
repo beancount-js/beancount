@@ -13,6 +13,7 @@ import type {
 } from "@beancount-js/workspace";
 import {
   createProjectId,
+  parseDotenvKeys,
   projectIdIndexFromProjects,
 } from "@beancount-js/workspace";
 
@@ -89,6 +90,16 @@ async function fileHandleFor(root: FileSystemDirectoryHandle, path: string, crea
   let directory = root;
   for (const part of parts) directory = await directory.getDirectoryHandle(part, { create });
   return directory.getFileHandle(name, { create });
+}
+
+async function envKeysFor(project: BrowserProject): Promise<string[]> {
+  if (!project.handle) return [];
+  try {
+    const file = await (await project.handle.getFileHandle(".env")).getFile();
+    return parseDotenvKeys(await file.text());
+  } catch {
+    return [];
+  }
 }
 
 async function ledgerFilesFromDirectory(handle: FileSystemDirectoryHandle, prefix = ""): Promise<ProjectFile[]> {
@@ -285,6 +296,7 @@ export class BrowserWorkspaceAdapter implements WorkspaceAdapter {
       resources,
       revisions: ledgerFiles.map((file) => ({ path: file.path, revision: `${file.size}:${file.updatedAt}`, updatedAt: file.updatedAt ?? project.config.updatedAt })),
       issues: discovery.issues,
+      envKeys: await envKeysFor(project),
     };
   }
 

@@ -15,9 +15,18 @@ import SwitchField from "../components/form/SwitchField.svelte";
 
 export type SourceFormContext = {
   accounts: string[];
+  /** Key names from the project-root `.env` (values never included). */
+  envKeys?: string[];
   credentialAvailable?: boolean;
   merchantCredentialAvailable?: boolean;
 };
+
+const DEFAULT_BRANDFETCH_CLIENT_ID = "env:BRANDFETCH_CLIENT_ID";
+
+function brandfetchClientId(value: string | undefined) {
+  const next = value?.trim();
+  return next || DEFAULT_BRANDFETCH_CLIENT_ID;
+}
 
 function optionalString(value: string) {
   const next = value.trim();
@@ -84,11 +93,14 @@ export function secretField<TRoot>(config: {
   label: string;
   path?: string;
   ariaLabel?: string;
+  /** Placeholder shown in Environment mode (e.g. LUNCHFLOW_API_KEY). */
+  envPlaceholder?: string;
   get: (root: TRoot, context: SourceFormContext) => string;
   set: (root: TRoot, value: string, context: SourceFormContext) => TRoot;
 }) {
+  const { envPlaceholder, ...fieldConfig } = config;
   return customViewField<TRoot, SourceFormContext, string>({
-    ...config,
+    ...fieldConfig,
     component: SecretField as FormCustomRenderer<
       TRoot,
       SourceFormContext,
@@ -98,6 +110,7 @@ export function secretField<TRoot>(config: {
     wrapper: "field",
     as: "div",
     align: "start",
+    props: envPlaceholder ? { envPlaceholder } : undefined,
   });
 }
 
@@ -197,6 +210,7 @@ export const sourceApiForm = createFormConfig<
       label: "API key",
       path: "api.secretRef",
       ariaLabel: "API key",
+      envPlaceholder: "BANK_API_TOKEN",
       get: (source) => source.api.secretRef,
       set: (source, secretRef) => ({
         ...source,
@@ -521,6 +535,7 @@ export const sourceEnrichmentDetailsForm = createFormConfig<
             ? {
                 enabled: false,
                 apiKeySecretRef: "env:BRANDFETCH_API_KEY",
+                clientId: DEFAULT_BRANDFETCH_CLIENT_ID,
                 assetMode: "hotlink",
               }
             : undefined,
@@ -558,7 +573,9 @@ export const sourceBrandfetchForm = createFormConfig<
               source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
             cacheContentAllowed:
               source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: source.merchantEnrichment?.brandfetch?.clientId,
+            clientId: brandfetchClientId(
+              source.merchantEnrichment?.brandfetch?.clientId,
+            ),
             ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
           },
         },
@@ -586,7 +603,9 @@ export const sourceBrandfetchForm = createFormConfig<
               source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
             cacheContentAllowed:
               source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: source.merchantEnrichment?.brandfetch?.clientId,
+            clientId: brandfetchClientId(
+              source.merchantEnrichment?.brandfetch?.clientId,
+            ),
             ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
           },
         },
@@ -614,7 +633,9 @@ export const sourceBrandfetchForm = createFormConfig<
             allowTransactionLookup: allowTransactionLookup || undefined,
             cacheContentAllowed:
               source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: source.merchantEnrichment?.brandfetch?.clientId,
+            clientId: brandfetchClientId(
+              source.merchantEnrichment?.brandfetch?.clientId,
+            ),
             ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
           },
         },
@@ -642,7 +663,9 @@ export const sourceBrandfetchForm = createFormConfig<
             allowTransactionLookup:
               source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
             cacheContentAllowed: cacheContentAllowed || undefined,
-            clientId: source.merchantEnrichment?.brandfetch?.clientId,
+            clientId: brandfetchClientId(
+              source.merchantEnrichment?.brandfetch?.clientId,
+            ),
             ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
           },
         },
@@ -653,6 +676,7 @@ export const sourceBrandfetchForm = createFormConfig<
       label: "API key",
       path: "merchantEnrichment.brandfetch.apiKeySecretRef",
       ariaLabel: "Brandfetch API key",
+      envPlaceholder: "BRANDFETCH_API_KEY",
       get: (source) =>
         source.merchantEnrichment?.brandfetch?.apiKeySecretRef ?? "",
       set: (source, apiKeySecretRef) => ({
@@ -670,16 +694,22 @@ export const sourceBrandfetchForm = createFormConfig<
               source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
             cacheContentAllowed:
               source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: source.merchantEnrichment?.brandfetch?.clientId,
+            clientId: brandfetchClientId(
+              source.merchantEnrichment?.brandfetch?.clientId,
+            ),
             ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
           },
         },
       }),
     }),
-    textField({
+    secretField({
       id: "ingestion-brandfetch-client-id",
       label: "Client ID",
-      get: (source) => source.merchantEnrichment?.brandfetch?.clientId ?? "",
+      path: "merchantEnrichment.brandfetch.clientId",
+      ariaLabel: "Brandfetch client ID",
+      envPlaceholder: "BRANDFETCH_CLIENT_ID",
+      get: (source) =>
+        brandfetchClientId(source.merchantEnrichment?.brandfetch?.clientId),
       set: (source, clientId) => ({
         ...source,
         merchantEnrichment: {
@@ -697,7 +727,7 @@ export const sourceBrandfetchForm = createFormConfig<
               source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
             cacheContentAllowed:
               source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: optionalString(clientId),
+            clientId: brandfetchClientId(clientId),
             ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
           },
         },
@@ -730,7 +760,9 @@ export const sourceBrandfetchForm = createFormConfig<
               source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
             cacheContentAllowed:
               source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: source.merchantEnrichment?.brandfetch?.clientId,
+            clientId: brandfetchClientId(
+              source.merchantEnrichment?.brandfetch?.clientId,
+            ),
             ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
           },
         },
@@ -761,7 +793,9 @@ export const sourceBrandfetchForm = createFormConfig<
               source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
             cacheContentAllowed:
               source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: source.merchantEnrichment?.brandfetch?.clientId,
+            clientId: brandfetchClientId(
+              source.merchantEnrichment?.brandfetch?.clientId,
+            ),
             ttlDays: value ? Number(value) : undefined,
           },
         },

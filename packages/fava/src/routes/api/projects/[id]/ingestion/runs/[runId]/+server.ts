@@ -104,10 +104,17 @@ export async function PATCH({
     }
     const account =
       typeof body.account === "string" ? body.account : undefined;
+    const status =
+      body.status === "ready" || body.status === "needs-review"
+        ? body.status
+        : undefined;
     const transaction = parseTransactionPatch(body.transaction);
-    if (!account && !transaction) {
+    if (!account && !transaction && !status) {
       return json(
-        { error: "Provide account and/or transaction fields to update." },
+        {
+          error:
+            "Provide account, status, and/or transaction fields to update.",
+        },
         { status: 400 },
       );
     }
@@ -147,7 +154,7 @@ export async function PATCH({
         params.id,
         params.runId,
         proposalId,
-        { account, transaction },
+        { account, status, transaction },
       ),
     );
   } catch (error) {

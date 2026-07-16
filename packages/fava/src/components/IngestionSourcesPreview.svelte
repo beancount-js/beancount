@@ -2,7 +2,10 @@
   import ArrowRight from "lucide-svelte/icons/arrow-right";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import { isGroupedJsonApiSource } from "@beancount-js/beangulp";
-  import { SegmentedControl } from "@beancount-js/forms";
+  import {
+    FilterCommandPicker,
+    SegmentedControl,
+  } from "@beancount-js/forms";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import type { IngestionSample } from "../ingestion/samples";
@@ -22,6 +25,7 @@
   let {
     sources,
     samples = [],
+    envKeys = [],
     onChange,
     onSave,
     onConnectSample,
@@ -30,12 +34,17 @@
   }: {
     sources: EditableIngestionSource[];
     samples?: IngestionSample[];
+    envKeys?: string[];
     onChange: (index: number, next: EditableIngestionSource) => void;
     onSave: () => void | Promise<void>;
     onConnectSample?: (sample: IngestionSample) => void;
     onManageAccounts?: (source: EditableIngestionSource) => void;
     saving?: boolean;
   } = $props();
+
+  const envOptions = $derived(
+    envKeys.map((key) => ({ value: key, label: key })),
+  );
 
   let openById = $state<Record<string, boolean>>({});
 
@@ -193,25 +202,42 @@
                       );
                     }}
                   />
-                  <Input
-                    type={mode === "inline" ? "password" : "text"}
-                    autocomplete="off"
-                    spellcheck={false}
-                    aria-label={`API Key for ${source.name || "source"}`}
-                    placeholder={mode === "env"
-                      ? "BANK_API_TOKEN"
-                      : "Paste API key"}
-                    value={secretDisplayValue(source.api.secretRef)}
-                    oninput={(event) =>
-                      updateSecret(
-                        index,
-                        source,
-                        secretStoredValue(
-                          mode,
-                          (event.currentTarget as HTMLInputElement).value,
-                        ),
-                      )}
-                  />
+                  {#if mode === "env"}
+                    <FilterCommandPicker
+                      value={secretDisplayValue(source.api.secretRef)}
+                      options={envOptions}
+                      allowCustom={true}
+                      fullWidth={true}
+                      label="Environment variable"
+                      placeholder="Search project .env keys..."
+                      emptyLabel="No matching .env keys. Type a custom name."
+                      ariaLabel={`API Key for ${source.name || "source"}`}
+                      onChange={(next) =>
+                        updateSecret(
+                          index,
+                          source,
+                          secretStoredValue(mode, next),
+                        )}
+                    />
+                  {:else}
+                    <Input
+                      type="password"
+                      autocomplete="off"
+                      spellcheck={false}
+                      aria-label={`API Key for ${source.name || "source"}`}
+                      placeholder="Paste API key"
+                      value={secretDisplayValue(source.api.secretRef)}
+                      oninput={(event) =>
+                        updateSecret(
+                          index,
+                          source,
+                          secretStoredValue(
+                            mode,
+                            (event.currentTarget as HTMLInputElement).value,
+                          ),
+                        )}
+                    />
+                  {/if}
                 </div>
               </label>
 

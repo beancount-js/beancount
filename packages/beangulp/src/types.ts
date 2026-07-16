@@ -235,16 +235,43 @@ export type ProposalStatus =
   | "invalid"
   | "held";
 
+/** One Codex/AI call captured during enrichment for later review. */
+export interface AiEnrichmentCallRecord {
+  id: string;
+  label: string;
+  prompt: string;
+  response?: string;
+  error?: string;
+  ok: boolean;
+  at: string;
+}
+
+/** Latest AI enrichment attempt for a proposal (persisted on the import run). */
+export interface AiEnrichmentSnapshot {
+  at: string;
+  source: "enrich" | "ai-rerun" | "ingest";
+  jobId?: string;
+  ok: boolean;
+  calls: readonly AiEnrichmentCallRecord[];
+}
+
 export interface ImportProposal {
   id: string;
   importId: string;
   transaction?: NormalizedTransaction;
+  /**
+   * Original provider record before normalization (for Workflow review).
+   * Not retained on the normalized transaction itself.
+   */
+  sourceRecord?: JsonRecord;
   merchantResolution?: MerchantResolution;
   suggestions: readonly CategorySuggestion[];
   selectedAccount?: string;
   status: ProposalStatus;
   duplicateOf?: string;
   issues: readonly string[];
+  /** Last AI enrichment attempt (prompts, responses, and errors). */
+  lastAiEnrichment?: AiEnrichmentSnapshot;
 }
 
 export interface PipelineContext {

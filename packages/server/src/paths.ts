@@ -24,6 +24,11 @@ export function projectIngestionRoot(projectRoot: string) {
   return join(projectStudioRoot(projectRoot), "ingestion");
 }
 
+/** Cached Brandfetch API responses: `<projectRoot>/.beancount/ingestion/brandfetch/responses`. */
+export function projectBrandfetchCacheRoot(projectRoot: string) {
+  return join(projectIngestionRoot(projectRoot), "brandfetch", "responses");
+}
+
 /** Project-local AI session root: `<projectRoot>/.beancount/ai-sessions`. */
 export function projectAiSessionsRoot(projectRoot: string) {
   return join(projectStudioRoot(projectRoot), "ai-sessions");

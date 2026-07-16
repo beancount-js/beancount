@@ -10,6 +10,7 @@ import type {
   IngestionProgress,
   IngestionRequest,
   IngestionRun,
+  JsonRecord,
   MerchantResolution,
   NormalizedTransaction,
 } from "./types";
@@ -60,10 +61,12 @@ function proposalForInvalid(
   id: string,
   importId: string,
   issue: string,
+  sourceRecord?: JsonRecord,
 ): ImportProposal {
   return {
     id,
     importId,
+    sourceRecord,
     suggestions: [],
     status: "invalid",
     issues: [issue],
@@ -196,6 +199,7 @@ export async function runIngestion<Config, Record>(
             `invalid:${row}`,
             `invalid:${row}`,
             normalized.message,
+            record as JsonRecord,
           ),
         );
         continue;
@@ -214,6 +218,7 @@ export async function runIngestion<Config, Record>(
           id: proposalId,
           importId,
           transaction,
+          sourceRecord: record as JsonRecord,
           suggestions: [],
           status: "duplicate",
           duplicateOf: importIds.has(importId) ? importId : fingerprint,
@@ -276,6 +281,7 @@ export async function runIngestion<Config, Record>(
         id: proposalId,
         importId,
         transaction,
+        sourceRecord: record as JsonRecord,
         merchantResolution: resolution,
         suggestions: validSuggestions,
         selectedAccount: validSuggestions[0]?.account,

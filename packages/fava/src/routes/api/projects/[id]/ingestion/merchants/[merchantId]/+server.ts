@@ -1,5 +1,8 @@
 import { json } from "@sveltejs/kit";
-import { merchantLogoUrlFor } from "@beancount-js/server";
+import {
+  merchantLogoUrlFor,
+  resolveBrandfetchRuntime,
+} from "@beancount-js/server";
 import { serverIngestion } from "$lib/server/ingestion";
 
 export async function GET({
@@ -16,15 +19,24 @@ export async function GET({
     const source = sourceId
       ? await store.source(params.id, sourceId)
       : undefined;
+    const enrichment = source?.merchantEnrichment;
+    const runtime = enrichment?.brandfetch
+      ? await resolveBrandfetchRuntime(
+          enrichment.brandfetch,
+          await store.projectRoot(params.id),
+        )
+      : undefined;
     return json({
       ...merchant,
-      logoUrl: source
-        ? merchantLogoUrlFor(
-            params.id,
-            merchant,
-            source.merchantEnrichment ?? { enabled: false },
-          )
-        : undefined,
+      logoUrl:
+        source && enrichment
+          ? merchantLogoUrlFor(params.id, merchant, {
+              ...enrichment,
+              brandfetch: enrichment.brandfetch
+                ? { ...enrichment.brandfetch, clientId: runtime?.clientId }
+                : undefined,
+            })
+          : undefined,
     });
   } catch (error) {
     return json(

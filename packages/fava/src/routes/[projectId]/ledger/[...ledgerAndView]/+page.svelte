@@ -8,6 +8,7 @@
   import { projectHref } from "$lib/project-path";
   import {
     buildLedgerHref,
+    DEFAULT_LEDGER_VIEW,
     ledgerStemForPath,
     parseLedgerAndView,
     resolveLedgerPath,
@@ -89,17 +90,17 @@
     );
     if (!parsed || !segmentsHaveView(ledgerAndView)) {
       const stem = ledgerStemForPath(ledgerPath, available);
-      await goto(buildLedgerHref(id, stem, parsed?.viewPath ?? "/journal"), {
-        replaceState: true,
-      });
+      await goto(
+        buildLedgerHref(id, stem, parsed?.viewPath ?? DEFAULT_LEDGER_VIEW),
+        { replaceState: true },
+      );
     }
   }
 
   function segmentsHaveView(segments: string[]) {
     const parsed = parseLedgerAndView(segments);
     if (!parsed) return false;
-    // Default journal when only ledger stem was provided still "has" journal view
-    // but URL should include /journal — redirect if last segment isn't a view
+    // Stem-only URLs default to dashboard — redirect so the URL includes /dashboard
     const last = segments.at(-1);
     return Boolean(
       last &&

@@ -1,14 +1,20 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import type { ProjectSnapshot } from "@beancount-js/workspace";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronUp from "lucide-svelte/icons/chevron-up";
+  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
+  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
+  import Undo2 from "lucide-svelte/icons/undo-2";
   import { useStudioWorkspace } from "../studio/workspace";
+  import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useNavigation } from "../router/router";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import {
     latestIngestionSyncJob,
+    startIngestionSync,
     subscribeIngestionSyncEvents,
   } from "../ingestion/sync";
   import type {
@@ -16,9 +22,15 @@
     IngestionRun,
     ImportProposal,
   } from "../ingestion/types";
-  import { Button } from "$lib/components/ui/button";
   import * as Alert from "$lib/components/ui/alert";
+  import { Button } from "$lib/components/ui/button";
+  import { Progress } from "$lib/components/ui/progress";
+  import * as ToggleGroup from "$lib/components/ui/toggle-group";
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
+
+  const PAGE_SIZES = [25, 50, 100];
+
+  type ReviewFilter = "pending" | "accepted";
 
   type ProposalRow = {
     key: string;
@@ -55,6 +67,9 @@
   const project = $derived($snapshot);
   const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
   const queryRunId = $derived($activeRoute?.query?.runId ?? "");
+  const reviewFilter = $derived<ReviewFilter>(
+    $activeRoute?.query?.review === "accepted" ? "accepted" : "pending",
+  );
   const selectedSource = $derived(
     config?.sources.find((source) => source.id === sourceId),
   );
@@ -77,16 +92,32 @@
     ),
   );
 
-  const accepted = $derived(
-    proposalRows.filter(
-      (row) =>
-        row.proposal.status === "ready" && row.proposal.selectedAccount,
-    ),
+  function isAcceptedRow(row: ProposalRow) {
+    return (
+      row.proposal.status === "ready" && Boolean(row.proposal.selectedAccount)
+    );
+  }
+
+  function isPendingRow(row: ProposalRow) {
+    if (!row.proposal.transaction) return false;
+    if (isAcceptedRow(row)) return false;
+    return (
+      row.proposal.status === "needs-review" ||
+      row.proposal.status === "held" ||
+      row.proposal.status === "ready"
+    );
+  }
+
+  const accepted = $derived(proposalRows.filter(isAcceptedRow));
+  const pending = $derived(proposalRows.filter(isPendingRow));
+
+  const filteredRows = $derived(
+    reviewFilter === "accepted" ? accepted : pending,
   );
 
   const dateGroups = $derived.by((): DateGroup[] => {
     const buckets = new Map<string, ProposalRow[]>();
-    for (const row of proposalRows) {
+    for (const row of filteredRows) {
       const date = row.proposal.transaction?.bookedAt ?? "unknown";
       const list = buckets.get(date) ?? [];
       list.push(row);
@@ -106,6 +137,78 @@
       }));
   });
 
+  const sourceOptions = $derived(
+    (config?.sources ?? []).map((source) => ({
+      value: source.id,
+      label: `${source.name}${source.credentialAvailable ? "" : " (credential unavailable)"}`,
+    })),
+  );
+
+  const canForceRefetch = $derived(
+    Boolean(
+      sourceId &&
+        !loading &&
+        !syncing &&
+        selectedSource?.credentialAvailable,
+    ),
+  );
+
+  const sourceAiEnabled = $derived(
+    selectedSource?.aiEnabled === true ||
+      (selectedSource?.merchantEnrichment?.enabled === true &&
+        selectedSource.merchantEnrichment.aiEnabled === true),
+  );
+
+  const reviewableProposalCount = $derived(
+    activeRuns.reduce(
+      (count, run) =>
+        count +
+        run.proposals.filter(
+          (proposal) =>
+            Boolean(proposal.transaction) &&
+            (proposal.status === "ready" ||
+              proposal.status === "needs-review" ||
+              proposal.status === "held"),
+        ).length,
+      0,
+    ),
+  );
+
+  const canRerunAi = $derived(
+    Boolean(
+      sourceId &&
+        sourceAiEnabled &&
+        reviewableProposalCount > 0 &&
+        !loading &&
+        !syncing,
+    ),
+  );
+
+  const aiRerunBusy = $derived(
+    syncing && syncJob?.kind === "ai-rerun",
+  );
+
+  const aiRerunProgressValue = $derived.by(() => {
+    if (!syncJob || syncJob.kind !== "ai-rerun") return 0;
+    const imported = syncJob.progress.imported ?? 0;
+    if (imported <= 0) return 0;
+    const seen = syncJob.progress.seen ?? 0;
+    return Math.min(100, (seen / imported) * 100);
+  });
+
+  const aiRerunProgressCaption = $derived.by(() => {
+    if (!syncJob || syncJob.kind !== "ai-rerun") return "";
+    const message =
+      syncJob.progress.message ??
+      "Re-running AI enrichment and categorisation…";
+    const imported = syncJob.progress.imported ?? 0;
+    if (imported > 0) {
+      const seen = syncJob.progress.seen ?? 0;
+      return `${message} · ${seen} / ${imported}`;
+    }
+    return message;
+  });
+
   const summaryLine = $derived.by(() => {
     if (!activeRuns.length) return "";
     const totals = activeRuns.reduce(
@@ -119,11 +222,73 @@
     return `${totals.ready} ready · ${totals.needsReview} need review · ${totals.duplicates} duplicates`;
   });
 
+  const pageSize = $derived(
+    PAGE_SIZES.includes(Number($activeRoute?.query?.pageSize))
+      ? Number($activeRoute.query.pageSize)
+      : 50,
+  );
+  const pages = $derived(paginateProposalGroups(dateGroups, pageSize));
+  const requestedPage = $derived(
+    Math.max(1, Number($activeRoute?.query?.page) || 1),
+  );
+  const page = $derived(Math.min(requestedPage, Math.max(1, pages.length)));
+  const visibleGroups = $derived(pages[page - 1] ?? []);
+  const groupsCollapsedAll = $derived(
+    dateGroups.every((group) => !expandedGroups.has(group.key)),
+  );
+
+  function paginateProposalGroups(
+    groups: readonly DateGroup[],
+    size: number,
+  ): DateGroup[][] {
+    const result: DateGroup[][] = [];
+    let current: DateGroup[] = [];
+    let count = 0;
+    for (const group of groups) {
+      if (current.length && count + group.rows.length > size) {
+        result.push(current);
+        current = [];
+        count = 0;
+      }
+      current.push(group);
+      count += group.rows.length;
+    }
+    if (current.length) result.push(current);
+    return result;
+  }
+
+  function updateRoute(values: Record<string, string | undefined>) {
+    const query = new URLSearchParams($activeRoute.query);
+    for (const [key, value] of Object.entries(values)) {
+      if (value) query.set(key, value);
+      else query.delete(key);
+    }
+    const next = query.toString();
+    router.updateState(next ? `?${next}` : "?");
+  }
+
+  function setReviewFilter(value: string | undefined) {
+    if (value !== "pending" && value !== "accepted") return;
+    if (value === reviewFilter) return;
+    updateRoute({
+      review: value === "accepted" ? "accepted" : undefined,
+      page: "1",
+    });
+  }
+
+  function toggleAllGroups() {
+    if (groupsCollapsedAll) {
+      expandedGroups = new Set(dateGroups.map((group) => group.key));
+    } else {
+      expandedGroups = new Set();
+    }
+  }
+
   $effect(() => {
     const signature = dateGroups.map((group) => group.key).join("|");
     if (!signature || signature === expandedSignature) return;
     expandedSignature = signature;
-    expandedGroups = new Set(dateGroups[0] ? [dateGroups[0].key] : []);
+    expandedGroups = new Set(dateGroups.map((group) => group.key));
   });
 
   $effect(() => {
@@ -131,6 +296,36 @@
     if (next && !isWeb && next.project.id !== loadedProjectId) {
       void refresh();
     }
+  });
+
+  $effect(() => {
+    if (isWeb || !project) {
+      ingestionHeaderActions.set(null);
+      return;
+    }
+    ingestionHeaderActions.set({
+      kind: "review",
+      sourceId,
+      sourceOptions,
+      canForceRefetch,
+      canRerunAi,
+      aiRerunBusy,
+      groupsCollapsedAll,
+      canAccept: accepted.length > 0 && !loading && !syncing,
+      acceptCount: accepted.length,
+      acceptBusy: loading,
+      onSourceChange: (nextSourceId) => void loadRunForSource(nextSourceId),
+      onToggleCollapseGroups: toggleAllGroups,
+      onOpenAccounts: openAccounts,
+      onForceRefetch: () => void fetchTransactions(),
+      onRerunAi: () => void rerunAiEnrichment(),
+      onEditSources: () => router.push("/import/editor"),
+      onAccept: () => void accept(),
+    });
+  });
+
+  onDestroy(() => {
+    ingestionHeaderActions.set(null);
   });
 
   function runBelongsToSource(item: IngestionRun, id: string) {
@@ -342,6 +537,22 @@
     }
   }
 
+  async function rerunAiEnrichment() {
+    if (!project || !sourceId || !canRerunAi) return;
+    status = "Starting AI enrichment…";
+    try {
+      const { job } = await startIngestionSync(
+        project.project.id,
+        sourceId,
+        "ai-rerun",
+      );
+      syncJob = job;
+      void watchSync(project.project.id, sourceId);
+    } catch (error) {
+      status = error instanceof Error ? error.message : String(error);
+    }
+  }
+
   function openAccounts() {
     router.push("/import/accounts");
   }
@@ -381,7 +592,9 @@
       proposal.suggestions[0]?.account ??
       proposal.issues[0] ??
       "Uncategorized";
-    return `${proposal.status} · ${category}`;
+    const aiError =
+      proposal.lastAiEnrichment?.ok === false ? " · AI error" : "";
+    return `${proposal.status} · ${category}${aiError}`;
   }
 
   function rowAmount(proposal: ImportProposal) {
@@ -425,6 +638,35 @@
 
   function markLogoFailed(proposalId: string) {
     failedLogoIds = new Set([...failedLogoIds, proposalId]);
+  }
+
+  async function unacceptRow(row: ProposalRow, event?: Event) {
+    event?.stopPropagation();
+    event?.preventDefault();
+    if (!project || loading || syncing) return;
+    loading = true;
+    try {
+      const run = await ingestionJson<IngestionRun>(
+        ingestionPath(
+          project.project.id,
+          `/runs/${encodeURIComponent(row.runId)}`,
+        ),
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            proposalId: row.proposal.id,
+            status: "needs-review",
+          }),
+        },
+      );
+      replaceRun(run);
+      status = "Moved proposal back to pending review.";
+    } catch (error) {
+      status = error instanceof Error ? error.message : String(error);
+    } finally {
+      loading = false;
+    }
   }
 
   async function accept() {
@@ -484,13 +726,6 @@
   data-ingestion-review
 >
   <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
-    <div>
-      <h1 class="text-xl font-semibold">Review imports</h1>
-      <p class="text-sm text-muted-foreground">
-        Sync from Accounts, review proposals, then accept into the ledger.
-      </p>
-    </div>
-
     {#if isWeb}
       <div
         class="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-sm"
@@ -502,53 +737,26 @@
       <div class="rounded-md border p-4 text-sm text-muted-foreground">
         Open a project to configure ingestion.
       </div>
-    {:else}
-      <div class="flex flex-wrap items-end gap-3 rounded-md border p-4">
-        <label class="grid gap-1 text-sm">
-          <span>Source</span>
-          <select
-            class="min-w-64 rounded border bg-background px-2 py-1"
-            value={sourceId}
-            onchange={(event) =>
-              void loadRunForSource(
-                (event.currentTarget as HTMLSelectElement).value,
-              )}
-          >
-            {#each config?.sources ?? [] as source (source.id)}
-              <option value={source.id}
-                >{source.name}{source.credentialAvailable
-                  ? ""
-                  : " (credential unavailable)"}</option
-              >
-            {/each}
-          </select>
-        </label>
-        <Button type="button" variant="outline" onclick={openAccounts}>
-          Open Accounts
-        </Button>
-        <button
-          class="rounded border px-3 py-2 text-sm text-muted-foreground disabled:opacity-50"
-          disabled={!sourceId ||
-            loading ||
-            syncing ||
-            !selectedSource?.credentialAvailable}
-          title="Prefer Sync on the Accounts screen"
-          onclick={fetchTransactions}>Force re-fetch</button
-        >
-        <a class="rounded border px-3 py-2 text-sm" href="/import/editor"
-          >Edit sources</a
-        >
-      </div>
     {/if}
 
     {#if syncing}
-      <Alert.Root>
-        <Alert.Title>Sync in progress</Alert.Title>
-        <Alert.Description>
-          {syncJob?.progress.message || "Fetching transactions from Accounts…"}
-          Accept is disabled until the sync finishes.
-        </Alert.Description>
-      </Alert.Root>
+      {#if syncJob?.kind === "ai-rerun"}
+        <div class="flex flex-col gap-2">
+          <Progress value={aiRerunProgressValue} />
+          <p class="text-center text-sm text-muted-foreground tabular-nums">
+            {aiRerunProgressCaption}
+          </p>
+        </div>
+      {:else}
+        <Alert.Root>
+          <Alert.Title>Sync in progress</Alert.Title>
+          <Alert.Description>
+            {syncJob?.progress.message ||
+              "Fetching transactions from Accounts…"}
+            Accept is disabled until this finishes.
+          </Alert.Description>
+        </Alert.Root>
+      {/if}
     {/if}
 
     {#if status}<p class="text-sm text-muted-foreground">{status}</p>{/if}
@@ -561,14 +769,37 @@
             <p class="text-sm text-muted-foreground">{summaryLine}</p>
           {/if}
         </div>
-        <button
-          class="rounded bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50"
-          disabled={!accepted.length || loading || syncing}
-          onclick={accept}
-          >Accept {accepted.length} reviewed transaction{accepted.length === 1
-            ? ""
-            : "s"}</button
+        <ToggleGroup.Root
+          type="single"
+          value={reviewFilter}
+          aria-label="Review status filter"
+          class="!gap-0 self-start rounded-lg bg-muted p-1"
+          data-ingestion-review-filter
+          onValueChange={setReviewFilter}
         >
+          <ToggleGroup.Item
+            value="pending"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-3 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+          >
+            Pending Review
+            <span
+              class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
+            >
+              {pending.length}
+            </span>
+          </ToggleGroup.Item>
+          <ToggleGroup.Item
+            value="accepted"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-3 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+          >
+            Accepted
+            <span
+              class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
+            >
+              {accepted.length}
+            </span>
+          </ToggleGroup.Item>
+        </ToggleGroup.Root>
       </div>
 
       <div
@@ -582,11 +813,18 @@
         <div
           class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
         >
-          No proposals in this import run.
+          {#if reviewFilter === "accepted"}
+            No accepted proposals yet. Review pending items and set an account
+            first.
+          {:else if pending.length === 0 && accepted.length > 0}
+            All reviewable proposals are accepted.
+          {:else}
+            No proposals pending review in this import run.
+          {/if}
         </div>
       {/if}
 
-      {#each dateGroups as group (group.key)}
+      {#each visibleGroups as group (group.key)}
         {@const expanded = expandedGroups.has(group.key)}
         {@const groupId = `ingestion-group-${group.key}`}
         {@const summaryId = `ingestion-summary-${group.key}`}
@@ -672,15 +910,80 @@
                       {rowDetail(row.proposal)}
                     </div>
                   </div>
-                  <span class="text-sm font-semibold tabular-nums">
-                    {rowAmount(row.proposal)}
-                  </span>
+                  <div class="flex items-center gap-1">
+                    {#if reviewFilter === "accepted"}
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        class="size-8 text-muted-foreground"
+                        aria-label={`Move ${rowTitle(row.proposal)} to pending review`}
+                        title="Move to pending review"
+                        disabled={loading || syncing}
+                        onclick={(event) => void unacceptRow(row, event)}
+                      >
+                        <Undo2 class="size-4" />
+                      </Button>
+                    {/if}
+                    <span class="text-sm font-semibold tabular-nums">
+                      {rowAmount(row.proposal)}
+                    </span>
+                  </div>
                 </div>
               {/each}
             </div>
           {/if}
         </section>
       {/each}
+
+      {#if pages.length > 1}
+        <nav
+          class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+          aria-label="Review import pages"
+        >
+          <span class="text-sm text-muted-foreground"
+            >Page {page} of {pages.length}</span
+          >
+          <div class="flex items-center gap-2">
+            <label
+              class="text-sm text-muted-foreground"
+              for="ingestion-review-page-size">Records per page</label
+            >
+            <select
+              id="ingestion-review-page-size"
+              class="h-8 rounded-md border bg-background px-2 text-sm"
+              value={pageSize}
+              onchange={(event) =>
+                updateRoute({
+                  pageSize: (event.currentTarget as HTMLSelectElement).value,
+                  page: "1",
+                })}
+            >
+              {#each PAGE_SIZES as size}
+                <option value={size}>{size}</option>
+              {/each}
+            </select>
+            <Button
+              size="icon"
+              variant="outline"
+              aria-label="Previous review page"
+              disabled={page <= 1}
+              onclick={() => updateRoute({ page: String(page - 1) })}
+            >
+              <ChevronsLeft />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              aria-label="Next review page"
+              disabled={page >= pages.length}
+              onclick={() => updateRoute({ page: String(page + 1) })}
+            >
+              <ChevronsRight />
+            </Button>
+          </div>
+        </nav>
+      {/if}
     {/if}
   </div>
 </div>
@@ -692,6 +995,7 @@
     runId={selectedRow.runId}
     projectId={project.project.id}
     {allowedAccounts}
+    aiEnabled={sourceAiEnabled}
     onUpdated={replaceRun}
     onStatus={(message) => (status = message)}
   />

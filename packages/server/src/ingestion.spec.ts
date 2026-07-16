@@ -528,5 +528,22 @@ describe("FilesystemIngestionStore", () => {
       links: ["receipt-1"],
       metadata: { note: "edited", tip: "yes" },
     });
+
+    const pending = await store.patchProposal(
+      "project",
+      "run:patch-1",
+      "proposal:1",
+      { status: "needs-review" },
+    );
+    expect(pending.proposals[0]?.status).toBe("needs-review");
+    expect(pending.proposals[0]?.selectedAccount).toBe("Expenses:Food:Dining");
+
+    const readyAgain = await store.patchProposal(
+      "project",
+      "run:patch-1",
+      "proposal:1",
+      { status: "ready" },
+    );
+    expect(readyAgain.proposals[0]?.status).toBe("ready");
   });
 });

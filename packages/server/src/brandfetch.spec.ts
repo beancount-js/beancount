@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { BrandfetchProvider, brandfetchLogoUrl } from "./brandfetch";
+import {
+  BrandfetchProvider,
+  brandfetchLogoUrl,
+  formatBrandfetchRateLimitError,
+  readBrandfetchRateLimit,
+} from "./brandfetch";
 
 const candidate = {
   id: "ai:tesco",
@@ -85,6 +90,44 @@ describe("BrandfetchProvider", () => {
       transactionLabel: "TESCO STORES 1234",
       countryCode: "GB",
     });
+  });
+
+  test("surfaces Brandfetch quota and Retry-After details on 429", async () => {
+    const provider = new BrandfetchProvider({
+      apiKey: "secret",
+      fetch: async () =>
+        new Response("rate limited", {
+          status: 429,
+          headers: {
+            "x-api-key-quota": "100",
+            "x-api-key-approximate-usage": "100",
+            "retry-after": "90",
+          },
+        }),
+    });
+
+    await expect(provider.enrich(candidate)).rejects.toThrow(
+      /429 \(quota 100\/100; retry after /,
+    );
+  });
+
+  test("parses Brandfetch rate-limit headers including HTTP-date Retry-After", () => {
+    const retryAt = "Wed, 16 Jul 2026 15:00:00 GMT";
+    const info = readBrandfetchRateLimit(
+      new Headers({
+        "x-api-key-quota": "1000",
+        "x-api-key-approximate-usage": "42",
+        "retry-after": retryAt,
+      }),
+      Date.parse("Wed, 16 Jul 2026 14:59:00 GMT"),
+    );
+    expect(info).toEqual({
+      quota: 1000,
+      approximateUsage: 42,
+      retryAfterSeconds: 60,
+      retryAt: new Date(retryAt).toISOString(),
+    });
+    expect(formatBrandfetchRateLimitError(info)).toContain("quota 42/1000");
   });
 
   test("rejects a logo whose declared MIME type disagrees with its bytes", async () => {

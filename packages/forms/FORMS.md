@@ -54,6 +54,10 @@ Before shipping an editable Studio form:
 - Use `ChoiceMenu` for larger option sets when a compact inline selector is better than a native select.
 - Use `FormField align="center"` for pill controls and date pickers.
 - Popover controls should render inside `FormField as="div"` instead of a label wrapper.
+- Use `FilterCommandPicker` for all searchable choice pickers (facet filters, accounts, queries, enum-like choices, env var names). Prefer it over `SearchableChoicePicker` and app-local ComboBox wrappers. Use `fullWidth` for sidebar/form fields; pill triggers are the default. For multi-select, set `multiple` with `values` + `onValuesChange`; single-select uses `value` + `onChange`. For free-text / typed custom values (e.g. project `.env` key names), set `allowCustom={true}` — do not fall back to `SearchableChoicePicker`.
+- Use `TagEditor` for tag entry (chips + autocomplete). Prefer `tag-list` fields / `tagListField()` over plain comma-separated text inputs. Use `ChipAutocomplete` / `chip-list` / `string-list` for non-tag string lists. Inside `FormField`, set `showLabel={false}` and `embedded`.
+- `SearchableChoicePicker` is legacy; do not use it in new UI.
+- Use `SearchFilterBar` for search chrome: auto-expanding filter-query CodeMirror pill (`beancountFilter` highlighting), optional expandable filter slot, clear-search / clear-all, and `filters` / `collapsedFilters` / `actions` snippets. Pass `editorExtensions` for host theme highlighters.
 
 ## Evidence references
 

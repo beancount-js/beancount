@@ -13,7 +13,6 @@
   import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import FileText from "lucide-svelte/icons/file-text";
   import Info from "lucide-svelte/icons/info";
-  import JournalEditorSheet from "./JournalEditorSheet.svelte";
   import {
     filterJournalGroupsByTimeframe,
     groupJournalRecords,
@@ -48,8 +47,6 @@
   let expandedGroups = new Set<string>();
   let expandedPageSignature = "";
   let masterCheckbox: HTMLInputElement | undefined;
-  let selectedRecord: JournalRecord | undefined;
-  let editorOpen = false;
   let timeframe: JournalTimeframe = "transactions";
   let toggleValue: JournalTimeframe = "transactions";
 
@@ -121,8 +118,6 @@
   }
 
   function openRecord(record: JournalRecord) {
-    selectedRecord = record;
-    editorOpen = true;
     updateRoute({ record: record.key });
   }
 
@@ -204,25 +199,6 @@
   $: if (pageSignature && pageSignature !== expandedPageSignature) {
     expandedPageSignature = pageSignature;
     expandedGroups = new Set([visibleGroups[0]!.key]);
-  }
-  $: routeRecord = $activeRoute.query.record;
-  $: if (routeRecord) {
-    const record = records.find((item) => item.key === routeRecord);
-    if (record && record.key !== selectedRecord?.key) {
-      selectedRecord = record;
-      editorOpen = true;
-    }
-    if (!record) {
-      selectedRecord = undefined;
-      editorOpen = false;
-    }
-  } else if (editorOpen) {
-    editorOpen = false;
-    selectedRecord = undefined;
-  }
-  $: if (!editorOpen && selectedRecord && routeRecord === selectedRecord.key) {
-    selectedRecord = undefined;
-    updateRoute({ record: undefined });
   }
 </script>
 
@@ -527,10 +503,3 @@
     {/if}
   </div>
 </section>
-
-{#if selectedRecord}
-  <JournalEditorSheet
-    directive={selectedRecord.directive}
-    bind:open={editorOpen}
-  />
-{/if}

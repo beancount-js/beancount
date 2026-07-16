@@ -82,18 +82,51 @@ test.describe("sample ledger navigation", () => {
       settingsSidebar.getByRole("button", { name: /Import/ }),
     ).toBeVisible();
     await expect(
+      settingsSidebar.getByRole("button", { name: /Review imports/ }),
+    ).toBeVisible();
+    await expect(
       settingsSidebar.getByRole("button", { name: /Accounts/ }),
     ).toBeVisible();
     await expect(page.locator("[data-ledger-file-panels]")).toHaveCount(0);
 
     await settingsSidebar.getByRole("button", { name: /Import/ }).click();
     await expect(page).toHaveURL(/\/ledger\/.+\/settings\/?/);
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Import/ }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Review imports/ }),
+    ).not.toHaveAttribute("aria-current", "page");
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Accounts/ }),
+    ).not.toHaveAttribute("aria-current", "page");
+
+    await settingsSidebar
+      .getByRole("button", { name: /Review imports/ })
+      .click();
+    await expect(page).toHaveURL(/\/ledger\/.+\/records\/?/);
+    await expect(page.locator("[data-ingestion-review]")).toBeVisible();
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Review imports/ }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Import/ }),
+    ).not.toHaveAttribute("aria-current", "page");
 
     await settingsSidebar.getByRole("button", { name: /Accounts/ }).click();
     await expect(page).toHaveURL(/\/ledger\/.+\/settings\/accounts\/?/);
     await expect(
       page.locator("[data-ingestion-accounts-setup]"),
     ).toBeVisible();
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Accounts/ }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Import/ }),
+    ).not.toHaveAttribute("aria-current", "page");
+    await expect(
+      settingsSidebar.getByRole("button", { name: /Review imports/ }),
+    ).not.toHaveAttribute("aria-current", "page");
     // Empty or connected: page should not offer review-import Fetch as primary CTA.
     await expect(
       page.getByRole("button", { name: "Fetch transactions" }),
@@ -103,6 +136,7 @@ test.describe("sample ledger navigation", () => {
       .getByRole("button", { name: "Back to ledger navigation" })
       .click();
     await expect(page.locator("[data-ledger-settings-sidebar]")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/ledger\/.+\/editor\/?/);
     await expect(
       page.locator("[data-ledger-file-panels]").first(),
     ).toBeVisible();
@@ -118,11 +152,24 @@ test.describe("sample ledger navigation", () => {
     await expect(page.locator("[data-ingestion-review]")).toBeVisible({
       timeout: 15_000,
     });
+    const header = page.locator("[data-slot='studio-workspace-header']");
+    await expect(header.getByText("Review imports")).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Review imports" }),
+      header.getByRole("button", { name: "Select source" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Force re-fetch" }),
+      header.getByRole("button", { name: "Force re-fetch" }),
+    ).toBeVisible();
+    await expect(
+      header.getByRole("button", { name: "Open Accounts" }),
+    ).toBeVisible();
+    await expect(
+      header.getByRole("button", { name: "Edit sources" }),
+    ).toBeVisible();
+    await expect(
+      header.getByRole("button", {
+        name: /Expand all date groups|Collapse all date groups/,
+      }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Fetch transactions" }),
