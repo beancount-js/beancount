@@ -10,6 +10,7 @@ import {
   Transaction,
   writeScalar,
 } from "../core/data";
+import { hasNonTrivialBalance } from "../core/interpolate";
 
 export interface PrintableError {
   message: string;
@@ -96,10 +97,12 @@ export function formatTransaction(
   );
   const header =
     `${transaction.date.toISODate()} ${renderFlag(transaction.flag)} ${description}`.trimEnd();
+  const includeWeights =
+    renderWeights && transaction.postings.some(hasNonTrivialBalance);
   const postings = rows.map(([account], index) => {
     const line =
       `  ${account.padEnd(accountWidth)}  ${positions[index].padEnd(Math.max(1, positionWidth))}`.trimEnd();
-    return renderWeights
+    return includeWeights
       ? `${line}  ; ${weights[index].padEnd(Math.max(1, weightWidth))}`.trimEnd()
       : line;
   });

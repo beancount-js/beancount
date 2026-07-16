@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { DateTime } from "luxon";
 import { Amount } from "../core/amount";
 import { Balance, newMetadata, Posting, Transaction } from "../core/data";
+import { Cost } from "../core/position";
 import {
   alignPositionStrings,
   formatError,
@@ -51,7 +52,7 @@ describe("printer helpers", () => {
     ).toContain("ledger.bean:12: Example error");
   });
 
-  test("renders posting components and aligned transaction weights", () => {
+  test("renders posting components and only shows weights for non-trivial balances", () => {
     const transaction = new Transaction(
       DateTime.fromISO("2024-01-01"),
       "*",
@@ -72,9 +73,27 @@ describe("printer helpers", () => {
     expect(formatTransaction(transaction, true)).toBe(
       [
         '2024-01-01 * "Lunch"',
-        "  Assets:Cash    -12.34 USD  ; -12.34 USD",
-        "  Expenses:Food   12.34 USD  ;  12.34 USD",
+        "  Assets:Cash    -12.34 USD",
+        "  Expenses:Food   12.34 USD",
       ].join("\n"),
     );
+
+    const costed = new Transaction(
+      DateTime.fromISO("2024-01-02"),
+      "*",
+      "",
+      "Purchase",
+      [],
+      [],
+      [
+        new Posting(
+          "Assets:Brokerage",
+          new Amount("1", "HOOL"),
+          new Cost(DateTime.fromISO("2024-01-02"), new Amount("10", "USD")),
+        ),
+        new Posting("Assets:Cash", new Amount("-10", "USD")),
+      ],
+    );
+    expect(formatTransaction(costed, true)).toMatch(/;\s+10 USD/);
   });
 });
