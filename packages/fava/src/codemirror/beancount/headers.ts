@@ -1,4 +1,5 @@
 import { syntaxTree } from "@codemirror/language";
+import type { SyntaxNode } from "@lezer/common";
 import type { Range } from "@codemirror/state";
 import {
   Decoration,
@@ -56,7 +57,7 @@ function isActiveLine(view: EditorView, at: number) {
 
 /** Markdown-style headings live on DocumentMarkup lines, not transaction flags. */
 function isDocumentMarkupLine(view: EditorView, from: number) {
-  let node = syntaxTree(view.state).resolveInner(from, 1);
+  let node: SyntaxNode | null = syntaxTree(view.state).resolveInner(from, 1);
   while (node) {
     if (node.name === "DocumentMarkup") {
       return true;

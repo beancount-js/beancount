@@ -26,7 +26,7 @@
       {context}
       {issues}
       {readonly}
-      {onChange}
+      onChange={(next) => onChange(next as TRoot)}
     />
   {/each}
 </div>

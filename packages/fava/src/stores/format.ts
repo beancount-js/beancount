@@ -44,12 +44,12 @@ export function useCtx() {
   return derived(
     [incognito, locale, precisions],
     ([$incognito, $locale, $precisions]): FormatterContext => {
-      const formatter = localeFormatter($locale);
+      const locale = $locale as string | null;
+      const formatter = localeFormatter(locale);
       const currencyFormatters = Object.fromEntries(
-        Object.entries($precisions).map(([currency, prec]) => [
-          currency,
-          localeFormatter($locale, prec),
-        ]),
+        Object.entries($precisions as Record<string, number>).map(
+          ([currency, prec]) => [currency, localeFormatter(locale, prec)],
+        ),
       );
       const num_raw = (n: number, c: string) =>
         (currencyFormatters[c] ?? formatter)(n);

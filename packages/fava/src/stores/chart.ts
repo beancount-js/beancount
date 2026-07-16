@@ -1,7 +1,6 @@
 import { writable } from "svelte/store";
 import { storageSyncedStore, valueStore } from "./storage";
-import { z } from "zod";
-import { currency } from "@beancount-js/beancount";
+import { z } from "zod/v3";
 
 const hierarchyChartSchema = z.union([
   z.literal("treemap"),
@@ -58,7 +57,7 @@ export const barChartMode = valueStore(
 export const chartToggledCurrencies = storageSyncedStore<Array<string>>(
   "charts/toggled-currencies",
   () => [],
-  currency,
+  z.string().regex(/^[A-Z][A-Z0-9'._-]{0,22}[A-Z0-9]$/),
 );
 
 /** The currency to show the treemap of. */

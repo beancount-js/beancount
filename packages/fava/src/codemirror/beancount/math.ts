@@ -58,7 +58,7 @@ class MathTag extends WidgetType {
 				</svg>
 			</button>
 		`;
-    const button = span.find("button");
+    const button = span.querySelector("button");
     if (button) {
       button.addEventListener("click", () => {
         view.dispatch({

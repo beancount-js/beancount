@@ -14,6 +14,7 @@ import * as _ from "lodash";
 export type ColumnType =
   | "text"
   | "amount"
+  | "multiplier"
   | "account"
   | "date"
   | "payee"
@@ -293,8 +294,8 @@ export class ImportConfig {
     }
 
     const date = fields["date"]
-      ? DateTime.fromFormat(fields["date"][0] ?? "", this.dateFormat).toJSDate()
-      : new Date(0);
+      ? DateTime.fromFormat(fields["date"][0] ?? "", this.dateFormat)
+      : DateTime.fromMillis(0);
     const multiplier = fields["multiplier"] ? fields["multiplier"][0] : "1";
     const amount = fields["amount"]
       ? new Amount(fields["amount"][0], account.currency)

@@ -394,7 +394,7 @@ export class DateExpression {
       if (operand instanceof DateExpression) {
         return "(" + this.#operands[0] + ")";
       }
-      return operand.toString();
+      return operand.toString() ?? "";
     }
     return this.#operands[0] + " " + this.op + " " + this.#operands[1];
   }

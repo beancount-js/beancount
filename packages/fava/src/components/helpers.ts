@@ -274,7 +274,7 @@ export type ColumnDef = {
 
 function getCircularReplacer() {
   const ancestors: Array<unknown> = [];
-  return function (_key: string, value: unknown) {
+  return function (this: object, _key: string, value: unknown) {
     if (typeof value !== "object" || value === null) {
       return value;
     }

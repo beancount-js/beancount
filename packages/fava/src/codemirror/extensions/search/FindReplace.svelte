@@ -39,8 +39,8 @@
   );
   let replaceValue = "";
 
-  let searchField: HTMLInputElement;
-  let replaceField: HTMLInputElement;
+  let searchField: HTMLInputElement | undefined;
+  let replaceField: HTMLInputElement | undefined;
 
   let query: SearchQuery = new SearchQuery({ search: "" });
   let isReplace: boolean = false;

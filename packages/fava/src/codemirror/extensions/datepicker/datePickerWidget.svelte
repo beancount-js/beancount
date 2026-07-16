@@ -23,7 +23,10 @@
   const df = new DateFormatter("en-US", {
     dateStyle: "long",
   });
-  let value: DateValue | undefined = $state(initialValue);
+  let value: DateValue | undefined = $state();
+  $effect(() => {
+    value = initialValue;
+  });
   const valueString = $derived(
     value ? df.format(value.toDate(getLocalTimeZone())) : "",
   );
@@ -64,7 +67,6 @@
     <Select.Root
       type="single"
       value={valueString}
-      controlledValue
       onValueChange={(v: string) => {
         if (!v) return;
         value = today(getLocalTimeZone()).add({ days: Number.parseInt(v) });

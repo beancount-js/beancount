@@ -60,7 +60,10 @@
 >
   <circle style="opacity:0" r={radius} />
   {#each nodes as d}
-    <a href={urlForAccount(current?.data.account)}>
+    <a
+      href={urlForAccount(d.data.account)}
+      aria-label={`View ${d.data.account}`}
+    >
       <path
         on:mouseover={() => {
           current = d;

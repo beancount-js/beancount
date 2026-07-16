@@ -17,17 +17,8 @@
     "experimentalDecorators": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
+    "types": ["vite/client"],
     "sourceMap": true
   },
-  "include": [
-    "src/*.ts",
-    "src/parser/parser.spec.ts",
-    "src/index.ts",
-    "src/query/query_compile.spec.ts",
-    "src/query/query_env.ts",
-    "src/query/query_env.ts",
-    "src/query/query_execute.spec.ts",
-    "src/query/query_execute.ts",
-    "src/query/compiler.ts"
-  ]
+  "include": ["src/**/*.ts"]
 }

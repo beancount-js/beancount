@@ -194,7 +194,8 @@
                   >
                     {#if col.id === "account" || matchesAccount(value)}
                       <span class="block" style={cellHeight}
-                        ><a href={urlForAccount(value)}>{value}</a></span
+                        ><a href={urlForAccount(String(value ?? ""))}>{value}</a
+                        ></span
                       >
                     {:else if value instanceof Inventory}
                       {#each [...value.values()] as position}
@@ -236,7 +237,9 @@
                       >
                     {:else if value instanceof Amount || value instanceof Decimal}
                       <span class="block" style={cellHeight}
-                        >{value == 0 ? "" : $ctx.money(value)}</span
+                        >{value instanceof Decimal && value.eq(0)
+                          ? ""
+                          : $ctx.money(value)}</span
                       >
                     {:else}
                       {@const rowval = stringify(value)}

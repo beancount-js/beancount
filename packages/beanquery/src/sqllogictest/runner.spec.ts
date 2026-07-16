@@ -4,15 +4,18 @@ import { Context } from "../query/Context";
 import md5 from "md5";
 
 // const testfiles = import.meta.glob("./specs/**/*.spec", { query: "?raw" });
-const testfiles = import.meta.glob("./specs/**/*.test", { query: "?raw" });
+const testfiles = import.meta.glob<string>("./specs/**/*.test", {
+  query: "?raw",
+  import: "default",
+});
 
 const mimic = "sqlite";
 
 for (const path in testfiles) {
   describe.concurrent(path, async () => {
-    const module = await testfiles[path]();
+    const contents = await testfiles[path]();
     const context = new Context();
-    const commands = parseCommands(module.default);
+    const commands = parseCommands(contents);
     const specs: Record<string, (expect: ExpectStatic) => void> = {};
     const setup: Record<string, () => void> = {};
 

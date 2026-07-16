@@ -1,5 +1,5 @@
 import type { DateTime } from "luxon";
-import type { TreeNode } from "./tree";
+import type { TreeNode } from "../lib/tree";
 
 export type AccountTreeNode = TreeNode<{
   readonly account: string;

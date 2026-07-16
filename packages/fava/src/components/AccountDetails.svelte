@@ -18,8 +18,7 @@
   import { useChartContext } from "../charts/context";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import moment from "moment";
-  import { ValidationError } from "@beancount-js/beancount";
-  import type { ParseError } from "@beancount-js/parser";
+  import type { LedgerError } from "@beancount-js/beancount";
   import type { Text } from "@codemirror/state";
   import type { Directive } from "@beancount-js/beancount";
   import { formatDate } from "@beancount-js/parser";
@@ -29,10 +28,7 @@
 
   export let account: string = "";
   export let onValueChange:
-    | ((
-        content: Text,
-        directive: Directive,
-      ) => Array<ValidationError | ParseError>)
+    | ((content: Text, directive: Directive) => LedgerError[])
     | undefined = undefined;
 
   $: ledgerData = useLedger(account ? AccountFilter.of(account) : undefined);

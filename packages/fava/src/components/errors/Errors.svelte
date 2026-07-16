@@ -23,22 +23,23 @@
 
   const data = derived([ledgerData, predicate], ([$ledgerData, $predicate]) => {
     const epoch = DateTime.fromMillis(0, { zone: "utc" });
-    if ($predicate.predicate) {
+    const currentPredicate = $predicate.predicate;
+    if (currentPredicate) {
       return $ledgerData.errors.filter((error) => {
         if (error instanceof ValidationError) {
           const directive = error.context.directive;
           if (isDirective(directive)) {
-            return matchesPredicate($predicate.predicate, directive);
+            return matchesPredicate(currentPredicate, directive);
           }
         }
         if (typeof error === "string") {
           return matchesPredicate(
-            $predicate.predicate,
+            currentPredicate,
             new Custom(epoch, "error", [error]),
           );
         }
         return matchesPredicate(
-          $predicate.predicate,
+          currentPredicate,
           new Custom(epoch, "error", [error.message], { ...error }),
         );
       });

@@ -21,8 +21,7 @@
   import { Amount } from "@beancount-js/beancount";
   import { Grid } from "../grid";
   import { UnfoldVertical, FoldVertical } from "lucide-svelte";
-  import { ValidationError } from "@beancount-js/beancount";
-  import type { ParseError } from "@beancount-js/parser";
+  import type { LedgerError } from "@beancount-js/beancount";
   import type { Text } from "@codemirror/state";
   const { conversion } = useContext();
   const ctx = useCtx();
@@ -30,10 +29,7 @@
   export let account: string;
   export let rowHeight: number = 24;
   export let onValueChange:
-    | ((
-        content: Text,
-        directive: Directive,
-      ) => Array<ValidationError | ParseError>)
+    | ((content: Text, directive: Directive) => LedgerError[])
     | undefined = undefined;
 
   $: ledgerData = useLedger(AccountFilter.of(account));
@@ -248,7 +244,7 @@
             class="transaction cleared border-b border-l border-solid"
             style={`height: ${size}px`}
           >
-            <p
+            <div
               style={`height: ${$toggled.has(directive.id) ? size : size - directive.postings.length * rowHeight}px`}
             >
               <span class="datecell" style={styles.date}>
@@ -318,7 +314,7 @@
                   <span class="block">{$ctx.money(num, currency)}</span>
                 {/each}
               </span>
-            </p>
+            </div>
             {#if !$toggled.has(directive.id)}
               <ul class="postings h-full border-t">
                 {#each directive.postings as posting}

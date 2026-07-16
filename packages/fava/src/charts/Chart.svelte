@@ -96,7 +96,7 @@
     </div>
   </div>
 
-  <span class="spacer" />
+  <span class="spacer"></span>
 </div>
 <div bind:clientWidth={width} class="w-full">
   {#if width}

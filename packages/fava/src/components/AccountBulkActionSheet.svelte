@@ -273,10 +273,7 @@
                 aria-label={sectionsCollapsedAll
                   ? "Expand all"
                   : "Collapse all"}
-                onclick={(event) => {
-                  props.onclick?.(event);
-                  toggleCollapseAll();
-                }}
+                onclick={toggleCollapseAll}
               >
                 {#if sectionsCollapsedAll}
                   <ChevronsUpDown class="size-4" aria-hidden="true" />

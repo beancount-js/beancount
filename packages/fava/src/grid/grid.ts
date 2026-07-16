@@ -6,7 +6,7 @@ import { Inventory, Position } from "@beancount-js/beancount";
 
 function getCircularReplacer() {
   const ancestors: Array<any> = [];
-  return function (key: string, value: any) {
+  return function (this: object, key: string, value: any) {
     if (typeof value !== "object" || value === null) {
       return value;
     }

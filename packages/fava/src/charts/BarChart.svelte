@@ -97,7 +97,10 @@
           width={x0.step()}
           height={innerHeight}
         />
-        <a href={urlForTimeFilter(group.date)}>
+        <a
+          href={urlForTimeFilter(group.date)}
+          aria-label={`View ${group.label}`}
+        >
           <rect
             class="axis-group-box"
             transform={`translate(0,${innerHeight.toString()})`}

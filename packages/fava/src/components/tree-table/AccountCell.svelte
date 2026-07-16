@@ -30,7 +30,9 @@
           } else {
             newSet.add(n.account);
           }
-          n.children.filter((c) => c.children.length).forEach(toggleAll);
+          n.children
+            .filter((c: AccountTreeNode) => c.children.length)
+            .forEach(toggleAll);
         };
         children.forEach(toggleAll);
       }

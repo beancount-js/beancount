@@ -12,34 +12,32 @@
   import { formatLedger } from "../codemirror/beancount/format";
   import { Button } from "$lib/components/ui/button";
   import { LedgerSource } from "../lib/ledger-data";
-  import type { ValidationError } from "@beancount-js/beancount";
-  import type { ParseError } from "@beancount-js/parser";
+  import type { LedgerError } from "@beancount-js/beancount";
   import * as Alert from "$lib/components/ui/alert";
   import { TriangleAlert } from "lucide-svelte";
   import { beancountCompletion } from "../codemirror/beancount/autocomplete";
   import { cn } from "$lib/utils";
   import type { Text } from "@codemirror/state";
+  import { Text as ParserText } from "@beancount-js/parser";
   import * as ScrollArea from "$lib/components/ui/scroll-area";
   const { ledgerSource } = useContext();
   export let directive: Directive;
   let dialogOpen = false;
 
   let editor: EditorView;
-  let errors: Array<ValidationError | ParseError> = [];
+  let errors: LedgerError[] = [];
   let className: string | undefined | null = undefined;
   export { className as class };
-  type ValueChange = (
-    content: Text,
-    directive: Directive,
-  ) => Array<ValidationError | ParseError>;
+  type ValueChange = (content: Text, directive: Directive) => LedgerError[];
 
-  $: changeHandler = (
-    content: Text,
-    directive: Directive,
-  ): Array<ValidationError | ParseError> => {
+  $: changeHandler = (content: Text, directive: Directive): LedgerError[] => {
     const pos = directive.meta["__pos__"] as Record<string, ScalarType>;
     const doc = $ledgerSource.doc.doc;
-    const data = doc.replace(pos.from as number, pos.to as number, content);
+    const data = doc.replace(
+      pos.from as number,
+      pos.to as number,
+      ParserText.of(content.toString().split("\n")),
+    );
     const source = new LedgerSource(data.toString(), $ledgerSource.props);
     if (source.errors.length) {
       return source.errors;
@@ -63,18 +61,26 @@
   }
 
   const codeMirror = (node: HTMLDivElement, directive?: Directive) => {
+    const markdownSourceView = document.createElement("div");
+    markdownSourceView.className =
+      "markdown-source-view cm-s-obsidian mod-cm6 mod-inline is-readable-line-width is-live-preview";
+    const scroller = document.createElement("div");
+    scroller.className = "cm-scroller";
+    const sizer = document.createElement("div");
+    sizer.className = "cm-sizer";
+    const contentContainer = document.createElement("div");
+    contentContainer.className = "cm-contentContainer";
+    node.append(markdownSourceView);
+    markdownSourceView.append(scroller);
+    scroller.append(sizer);
+    sizer.append(contentContainer);
+
     editor = new EditorView({
       state: EditorState.create({
         doc: directive?.toString() ?? "",
         extensions: [basicSetup, ledgerSetup(() => $ledgerSource)],
       }),
-      parent: node
-        .createDiv({
-          cls: "markdown-source-view cm-s-obsidian mod-cm6 mod-inline is-readable-line-width is-live-preview",
-        })
-        .createDiv({ cls: "cm-scroller" })
-        .createDiv({ cls: "cm-sizer" })
-        .createDiv({ cls: "cm-contentContainer" }),
+      parent: contentContainer,
     });
     formatLedger(editor);
     return {

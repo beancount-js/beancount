@@ -5,7 +5,9 @@ import type { Extension, SelectionRange, StateEffect } from "@codemirror/state";
 import { mount, unmount } from "svelte";
 
 class SearchPanel implements Panel {
-  component: FindReplace;
+  component: ReturnType<
+    typeof mount<{ view: EditorView }, Record<string, any>>
+  >;
   readonly dom: HTMLElement;
 
   constructor(readonly view: EditorView) {

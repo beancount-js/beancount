@@ -1,11 +1,11 @@
 import { getContext, tick, type Component, type ComponentType } from "svelte";
-import type { Unsubscriber } from "svelte/motion";
 import {
   derived,
   writable,
   type Readable,
   type Writable,
   get,
+  type Unsubscriber,
 } from "svelte/store";
 import { goto } from "$app/navigation";
 import { page } from "$app/stores";
@@ -384,9 +384,7 @@ export function createRouter(
     return (routePath: string): boolean => {
       routePath = normalizePath(routePath);
       const active = normalizePath($activeRoute.path);
-      return (
-        active === routePath || (routePath && active.startsWith(routePath))
-      );
+      return active === routePath || active.startsWith(routePath);
     };
   });
 
