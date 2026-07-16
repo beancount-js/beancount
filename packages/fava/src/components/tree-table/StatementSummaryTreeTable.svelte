@@ -8,11 +8,12 @@
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import { getAllNodes, getCollapsed, useGetNotShown } from "./helpers";
   import StatementSummaryTreeRow from "./StatementSummaryTreeRow.svelte";
+  import type { DateTime } from "luxon";
 
   export let tree: AccountTreeNode;
   export let title: string;
   export let href: string | undefined = undefined;
-  export let end: Date | null = null;
+  export let end: DateTime | null = null;
   export let multiplier = 1;
 
   const { currencyName, operatingCurrency } = useContext();
@@ -38,7 +39,7 @@
 
   $: $hiddenAccounts = $getNotShown(tree, end);
   $: roots = (tree.account === "" ? tree.children : [tree]).filter(
-    (node) => !$hiddenAccounts.has(node.account),
+    (node: AccountTreeNode) => !$hiddenAccounts.has(node.account),
   );
   $: collapsibleAccounts = roots.reduce((accounts, root) => {
     getAllNodes(root).forEach((account) => accounts.add(account));
@@ -113,7 +114,8 @@
     return (
       Math.abs((node.balance[currency] ?? 0) * scale * invert) +
       node.children.reduce(
-        (sum, child) => sum + directWeightTotal(child, currency, scale, invert),
+        (sum: number, child: AccountTreeNode) =>
+          sum + directWeightTotal(child, currency, scale, invert),
         0,
       )
     );

@@ -18,6 +18,10 @@
   export let depth = 0;
 
   const { toggled, notShown } = getTreeTableContext();
+  let node: AccountTreeNode;
+  let account: string;
+  let children: AccountTreeNode[];
+  let accountBudgets: AccountBudget[] | undefined;
 
   $: [node] = nodes;
   $: ({ account, children } = node);
@@ -39,8 +43,11 @@
       {@const shownBudget = showBalance
         ? accountBudget?.budget
         : accountBudget?.budgetChildren}
+      {@const balanceEntries = Object.entries(shownBalance) as Array<
+        [string, number]
+      >}
       <span class="num other" class:dimmed={!isToggled && !hasBalance}>
-        {#each Object.entries(shownBalance) as [currency, number]}
+        {#each balanceEntries as [currency, number]}
           {@const budget = shownBudget?.[currency]}
           <span title={$currencyName(currency)}>
             {$ctx.amount(number, currency)}
@@ -62,7 +69,7 @@
       </span>
     {/each}
   </p>
-  {#if !isToggled && children.some((n) => !$notShown.has(n.account))}
+  {#if !isToggled && children.some((n: AccountTreeNode) => !$notShown.has(n.account))}
     <ol style={`--tree-closure-indent: ${depth}em;`}>
       {#each children as child, index (child.account)}
         {#if !$notShown.has(child.account)}

@@ -10,6 +10,8 @@
   export let node: AccountTreeNode;
   /** The account's depth in the rendered hierarchy. */
   export let depth = 0;
+  let account: string;
+  let children: AccountTreeNode[];
   $: ({ account, children } = node);
 
   function handleClick(event: MouseEvent) {
