@@ -491,8 +491,9 @@ export function runTransformations(
   if (!props.transform) {
     return [sorted(entries), errors, options];
   }
-  let response: Directives = sorted(entries);
-  const [updatedEntries, bookingErrors] = book(entries, options);
+  const orderedEntries = sorted(entries);
+  let response: Directives = orderedEntries;
+  const [updatedEntries, bookingErrors] = book(orderedEntries, options);
   errors.push(...bookingErrors);
   response = updatedEntries;
 
@@ -503,11 +504,11 @@ export function runTransformations(
     directive?: Plugin;
   };
 
-  const pluginDefaults = props.pluginDefaults?.(entries) ?? {};
+  const pluginDefaults = props.pluginDefaults?.(orderedEntries) ?? {};
   const declaredPluginNames = new Set<string>();
   const declared: PluginInvocation[] = [];
 
-  entries.forEach((entry) => {
+  orderedEntries.forEach((entry) => {
     if (!(entry instanceof Plugin)) return;
     declaredPluginNames.add(entry.name);
     const plugin = props.plugins[entry.name] ?? Plugins[entry.name];
@@ -581,22 +582,36 @@ export function runTransformations(
       props.logTimings,
       2,
       () => {
-        const [updatedEntries, pluginErrors] = invocation.plugin.plugin(
-          response,
-          options,
-          invocation.configuration,
-        );
-        response = sorted(updatedEntries);
-        pluginErrors.forEach((error) => {
-          if (invocation.directive) {
-            error.with({
-              plugin: invocation.name,
-              directive: invocation.directive,
-              lineno: invocation.directive.lineno,
-            });
-          }
-          errors.push(error);
-        });
+        try {
+          const [updatedEntries, pluginErrors] = invocation.plugin.plugin(
+            response,
+            options,
+            invocation.configuration,
+          );
+          response = sorted(updatedEntries);
+          pluginErrors.forEach((error) => {
+            if (invocation.directive) {
+              error.with({
+                plugin: invocation.name,
+                directive: invocation.directive,
+                lineno: invocation.directive.lineno,
+              });
+            }
+            errors.push(error);
+          });
+        } catch (error) {
+          errors.push(
+            new LoadError(
+              `Plugin ${invocation.name} failed: ${error instanceof Error ? error.message : String(error)}`,
+              {
+                plugin: invocation.name,
+                directive: invocation.directive,
+                lineno: invocation.directive?.lineno,
+                error,
+              },
+            ),
+          );
+        }
       },
     );
   });

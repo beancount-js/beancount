@@ -4,8 +4,14 @@ import {
   loadProjectSources,
   loadString,
   resolveProjectInclude,
+  runTransformations,
 } from "./loader";
 import type { PluginType } from "../ops/plugins";
+import { Amount, Booking, defaultBeancountOptions } from "../core";
+import { Posting, Transaction } from "../core/data";
+import { CostSpec } from "../core/position";
+import { DateTime } from "luxon";
+import { Decimal } from "@beancount-js/parser";
 
 describe("Loader", () => {
   test("loadString", () => {
@@ -177,5 +183,78 @@ describe("Loader", () => {
     expect(errors.map((error) => error.message)).toContain(
       "Plugin configuration provided for undeclared plugin example.plugin",
     );
+  });
+
+  test("books entries in chronological order before applying transforms", () => {
+    const buyDate = DateTime.fromISO("2024-01-01");
+    const saleDate = DateTime.fromISO("2024-01-02");
+    const buy = new Transaction(
+      buyDate,
+      "*",
+      "",
+      "Buy",
+      [],
+      [],
+      [
+        new Posting(
+          "Assets:Stock",
+          new Amount("1", "HOOL"),
+          new CostSpec(new Decimal("10"), Decimal.ZERO, "USD"),
+        ),
+      ],
+    );
+    const sale = new Transaction(
+      saleDate,
+      "*",
+      "",
+      "Sell",
+      [],
+      [],
+      [
+        new Posting(
+          "Assets:Stock",
+          new Amount("-1", "HOOL"),
+          new CostSpec(null, null, "USD"),
+        ),
+      ],
+    );
+    const [entries] = runTransformations(
+      [
+        [sale, buy],
+        [],
+        defaultBeancountOptions({ booking_method: Booking.FIFO }),
+      ],
+      { transform: true, plugins: {}, dedent: false },
+    );
+    const bookedSale = entries.find(
+      (entry): entry is Transaction =>
+        entry instanceof Transaction && entry.narration === "Sell",
+    );
+
+    expect(bookedSale?.postings[0].resolvedCost?.date?.toISODate()).toBe(
+      "2024-01-01",
+    );
+  });
+
+  test("reports plugin exceptions as ledger errors and continues loading", () => {
+    const plugins: Record<string, PluginType> = {
+      "example.throwing": {
+        id: "example.throwing",
+        order: 0,
+        plugin() {
+          throw new Error("intentional failure");
+        },
+      },
+    };
+
+    const [, errors] = loadString('plugin "example.throwing"', {
+      plugins,
+    });
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toBe(
+      "Plugin example.throwing failed: intentional failure",
+    );
+    expect(errors[0].context.plugin).toBe("example.throwing");
   });
 });
