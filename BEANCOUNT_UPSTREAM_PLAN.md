@@ -551,11 +551,11 @@ Exit criteria:
 Completion audit (2026-07-16): the 60-record parity manifest is complete, the
 package coverage gate passes, and booking, inventory, prices, and loader each
 meet the dedicated 95% branch threshold. The root `pnpm test`, `pnpm build`,
-and `pnpm test:e2e` commands pass. Root `pnpm checks` stops first on 27
-pre-existing Fava formatting violations. When invoked directly, the subsequent
-Fava Svelte check reports 209 cross-package type errors and 9 warnings in this
-rebased workspace. The plan is therefore not marked fully complete until that
-separate application-quality gate is resolved.
+and `pnpm test:e2e` commands pass. The Fava formatting baseline has also been
+normalized. Root `pnpm checks` now reaches the Fava Svelte check, which reports
+207 cross-package type errors and 9 warnings in 60 files. The plan is therefore
+not marked fully complete until that separate application-quality gate is
+resolved.
 
 Exit criteria are the definition of done in section 11.
 
