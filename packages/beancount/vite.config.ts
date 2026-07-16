@@ -21,6 +21,12 @@ export default defineConfig({
       reporter: ["text", "json-summary"],
       include: ["src/**/*.ts"],
       exclude: ["src/**/*.spec.ts", "src/parity/**"],
+      thresholds: {
+        statements: 90,
+        lines: 90,
+        functions: 90,
+        branches: 85,
+      },
     },
   },
 });
