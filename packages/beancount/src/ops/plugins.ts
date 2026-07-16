@@ -4,6 +4,7 @@ import { autoInsertOpen } from "../plugins/autoaccount";
 import { auto } from "../plugins/auto";
 import { creditCard } from "../plugins/creditcard";
 import { closeTree } from "../plugins/close_tree";
+import { checkClosing } from "../plugins/check_closing";
 import { forecast } from "../plugins/forecast";
 import { addImplicitPrices } from "../plugins/implicit_prices";
 import { validateLeafOnly } from "../plugins/leafonly";
@@ -71,6 +72,12 @@ export const Plugins: Record<string, PluginType> = {
     plugin: closeTree,
     order: 0,
     id: "beancount.plugins.close_tree",
+    supportsConfig: false,
+  },
+  "beancount.plugins.check_closing": {
+    plugin: checkClosing,
+    order: 0,
+    id: "beancount.plugins.check_closing",
     supportsConfig: false,
   },
   "beancount.plugins.leafonly": {

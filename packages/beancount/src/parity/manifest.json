@@ -104,6 +104,14 @@
       "status": "adapted",
       "tests": ["plugins/nounused"],
       "reason": "Uses the existing entry-account getter adapter."
+    },
+    {
+      "upstreamModule": "beancount.plugins.check_closing",
+      "upstreamBehavior": "expand_closing_postings_to_zero_balances",
+      "localBehavior": "checkClosing",
+      "status": "adapted",
+      "tests": ["plugins/check-closing"],
+      "reason": "Uses immutable JavaScript posting copies and Luxon day arithmetic."
     }
   ]
 }
