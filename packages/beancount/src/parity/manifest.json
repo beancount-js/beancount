@@ -2,6 +2,14 @@
   "upstreamCommit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
   "records": [
     {
+      "upstreamModule": "beancount.core.compare",
+      "upstreamBehavior": "stable_hash_and_entry_set_comparison",
+      "localBehavior": "stableHash, hashEntry, compareEntries, includesEntries, excludesEntries",
+      "status": "adapted",
+      "tests": ["core/compare"],
+      "reason": "Uses the browser-safe parser MD5 helper and immutable directive models."
+    },
+    {
       "upstreamModule": "beancount.core.prices",
       "upstreamBehavior": "get_last_price_entries",
       "localBehavior": "getLastPriceEntries",

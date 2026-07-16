@@ -10,5 +10,6 @@ export * from "./realization";
 export * from "./options";
 export * from "./prices";
 export * from "./conversion";
+export * from "./compare";
 export * from "./filter";
 export * from "./getters";
