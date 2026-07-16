@@ -524,7 +524,11 @@
       {/if}
 
       <div class="flex flex-col gap-3">
-        <h2 class="text-sm font-semibold">Recent runs</h2>
+        <h2
+          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        >
+          Recent runs
+        </h2>
         {#if !runs.length}
           <p class="text-sm text-muted-foreground">No rule runs yet.</p>
         {:else}
