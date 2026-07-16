@@ -474,15 +474,27 @@
         <Tooltip.Content>Add rule</Tooltip.Content>
       </Tooltip.Root>
     {:else if header.kind === "ledger"}
-      <Button
-        type="button"
-        size="sm"
-        aria-label="Save Ledger"
-        variant="default"
-        onclick={() => header.onSave()}
-      >
-        <Save class="mr-1 size-4" /> Save
-      </Button>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              type="button"
+              size="icon"
+              variant="default"
+              class="size-8"
+              aria-label="Save ledger"
+              onclick={(event) => {
+                props.onclick?.(event);
+                header.onSave();
+              }}
+            >
+              <Save />
+            </Button>
+          {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>Save ledger</Tooltip.Content>
+      </Tooltip.Root>
     {:else if header.kind === "editor"}
       {#if header.saveHint}
         <p class="text-xs text-muted-foreground" role="status">
