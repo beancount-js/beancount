@@ -7,6 +7,7 @@ import {
   rawMerchantLabel,
 } from "@beancount-js/server";
 import { serverIngestion } from "$lib/server/ingestion";
+import { serverRules } from "$lib/server/rules";
 import { serverWorkspace } from "$lib/server/workspace";
 
 function message(error: unknown) {
@@ -54,13 +55,14 @@ export async function POST({
         contents: file.contents,
       })),
     );
+    const detectionRules = await serverRules().listActive(params.id);
     const { proposal: updated, debug } = await enrichProposal(
       source,
       proposal,
       entries,
       undefined,
       { projectId: params.id, store },
-      { collectDebug: true, merchantOnly },
+      { collectDebug: true, merchantOnly, detectionRules },
     );
 
     if (merchantOnly && updated.merchantResolution) {

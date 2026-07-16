@@ -2,6 +2,7 @@ import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
 import { ingestSource } from "@beancount-js/server";
 import { serverIngestion } from "$lib/server/ingestion";
+import { serverRules } from "$lib/server/rules";
 import { serverWorkspace } from "$lib/server/workspace";
 
 function message(error: unknown) {
@@ -41,13 +42,17 @@ export async function POST({
     const store = serverIngestion();
     const source = await store.source(params.id, sourceId);
     let state = await store.readState(params.id);
+    const detectionRules = await serverRules().listActive(params.id);
     const runs = await ingestSource(
       source,
       state,
       entries,
       typeof model === "string" ? model : undefined,
       { projectId: params.id, store },
-      typeof accountId === "string" ? { accountId } : undefined,
+      {
+        ...(typeof accountId === "string" ? { accountId } : {}),
+        detectionRules,
+      },
     );
     for (const run of runs) {
       await store.saveRun(params.id, run);
