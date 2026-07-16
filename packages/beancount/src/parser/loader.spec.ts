@@ -5,6 +5,7 @@ import {
   loadDocumentStore,
   loadProjectSources,
   loadString,
+  normalizeProjectPath,
   resolveProjectInclude,
 } from "./loader";
 import type { PluginType } from "../ops/plugins";
@@ -148,6 +149,65 @@ describe("Loader", () => {
     expect(() =>
       resolveProjectInclude("main.beancount", "../outside.beancount"),
     ).toThrow('Project file path escapes its root: "../outside.beancount"');
+  });
+
+  test("normalizes bounded project paths and rejects unusable paths", () => {
+    expect(normalizeProjectPath("ledger\\accounts/../main.beancount")).toBe(
+      "ledger/main.beancount",
+    );
+    expect(() => normalizeProjectPath("")).toThrow(
+      'Project file path must be relative: ""',
+    );
+    expect(() => normalizeProjectPath("/outside.beancount")).toThrow(
+      'Project file path must be relative: "/outside.beancount"',
+    );
+    expect(() => normalizeProjectPath(".")).toThrow(
+      'Project file path must name a file: "."',
+    );
+  });
+
+  test("reports unavailable and duplicate include sources without filesystem access", () => {
+    const [, missingLoaderErrors] = loadString('include "missing.beancount"', {
+      transform: false,
+    });
+    const [, missingFileErrors] = loadString('include "missing.beancount"', {
+      transform: false,
+      documentLoader: () => undefined,
+    });
+    const [, cycleErrors] = loadProjectSources("main.beancount", {
+      "main.beancount": 'include "loop.beancount"',
+      "loop.beancount": 'include "main.beancount"',
+    });
+
+    expect(missingLoaderErrors[0].message).toBe(
+      'No document loader for file: "missing.beancount"',
+    );
+    expect(missingFileErrors[0].message).toBe(
+      'Failed to load include file: "missing.beancount"',
+    );
+    expect(cycleErrors[0].message).toBe(
+      'Duplicate filename parsed: "main.beancount"',
+    );
+  });
+
+  test("rejects duplicate bounded sources and records include resolver failures", () => {
+    expect(() =>
+      loadProjectSources("main.beancount", [
+        { path: "main.beancount", contents: "" },
+        { path: "./main.beancount", contents: "" },
+      ]),
+    ).toThrow('Duplicate project source: "main.beancount"');
+
+    const [, errors] = loadString('include "missing.beancount"', {
+      includeResolver: () => {
+        throw new Error("resolver failure");
+      },
+      transform: false,
+    });
+
+    expect(errors[0].message).toBe(
+      'Failed to resolve include "missing.beancount"',
+    );
   });
 
   test("passes each declared plugin configuration in source order", () => {
