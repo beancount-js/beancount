@@ -83,12 +83,20 @@ export type LedgerEditorHeaderActions = {
   onSave: () => void;
 };
 
+/** Per-account activity table bulk actions in the workspace header. */
+export type AccountActivityHeaderActions = {
+  kind: "account-activity";
+  selectedCount: number;
+  onReplace: () => void;
+};
+
 export type IngestionHeaderActions =
   | IngestionEditorHeaderActions
   | IngestionReviewHeaderActions
   | IngestionMerchantsHeaderActions
   | IngestionRulesHeaderActions
-  | LedgerEditorHeaderActions;
+  | LedgerEditorHeaderActions
+  | AccountActivityHeaderActions;
 
 /** Ingestion controls rendered in `studio-workspace-header`. */
 export const ingestionHeaderActions = writable<IngestionHeaderActions | null>(

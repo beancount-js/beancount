@@ -52,8 +52,12 @@
   export let emptyMessage =
     "No dated records match the current Journal filter.";
   export let linkAccounts = false;
+  /** Controlled selection; parent may bind or listen via onSelectionChange. */
+  export let selectedKeys = new Set<string>();
+  export let onSelectionChange:
+    | ((keys: Set<string>, records: JournalRecord[]) => void)
+    | undefined = undefined;
 
-  let selectedKeys = new Set<string>();
   let expandedGroups = new Set<string>();
   let expandedPageSignature = "";
   let masterCheckbox: HTMLInputElement | undefined;
@@ -100,12 +104,20 @@
     });
   }
 
+  function commitSelection(next: Set<string>) {
+    selectedKeys = next;
+    onSelectionChange?.(
+      next,
+      records.filter((record) => next.has(record.key)),
+    );
+  }
+
   function toggleRecord(key: string, checked?: boolean) {
     const next = new Set(selectedKeys);
     const select = checked ?? !next.has(key);
     if (select) next.add(key);
     else next.delete(key);
-    selectedKeys = next;
+    commitSelection(next);
   }
 
   function toggleGroup(group: JournalDateGroup, checked?: boolean) {
@@ -113,7 +125,7 @@
     const select = checked ?? !keys.every((key) => selectedKeys.has(key));
     const next = new Set(selectedKeys);
     keys.forEach((key) => (select ? next.add(key) : next.delete(key)));
-    selectedKeys = next;
+    commitSelection(next);
   }
 
   function toggleVisible(checked?: boolean) {
@@ -123,7 +135,7 @@
     const select = checked ?? !keys.every((key) => selectedKeys.has(key));
     const next = new Set(selectedKeys);
     keys.forEach((key) => (select ? next.add(key) : next.delete(key)));
-    selectedKeys = next;
+    commitSelection(next);
   }
 
   function toggleSummary(groupKey: string) {
@@ -216,8 +228,8 @@
       : emptyMessage;
   $: validKeys = new Set(records.map((record) => record.key));
   $: if ([...selectedKeys].some((key) => !validKeys.has(key))) {
-    selectedKeys = new Set(
-      [...selectedKeys].filter((key) => validKeys.has(key)),
+    commitSelection(
+      new Set([...selectedKeys].filter((key) => validKeys.has(key))),
     );
   }
   $: pageSize = PAGE_SIZES.includes(Number($activeRoute.query.pageSize))

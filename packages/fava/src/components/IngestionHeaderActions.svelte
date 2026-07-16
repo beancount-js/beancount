@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ArrowLeftRight from "lucide-svelte/icons/arrow-left-right";
   import BookOpen from "lucide-svelte/icons/book-open";
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
@@ -481,6 +482,31 @@
         </Tooltip.Trigger>
         <Tooltip.Content>Add rule</Tooltip.Content>
       </Tooltip.Root>
+    {:else if header.kind === "account-activity"}
+      {#if header.selectedCount > 0}
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            {#snippet child({ props })}
+              <Button
+                {...props}
+                type="button"
+                size="sm"
+                variant="ghost"
+                class="h-8 gap-1.5 px-2.5"
+                aria-label={`Replace account in ${header.selectedCount} selected records`}
+                onclick={(event) => {
+                  props.onclick?.(event);
+                  header.onReplace();
+                }}
+              >
+                <ArrowLeftRight class="size-4" />
+                <span class="text-sm">Replace ({header.selectedCount})</span>
+              </Button>
+            {/snippet}
+          </Tooltip.Trigger>
+          <Tooltip.Content>Replace account in selection</Tooltip.Content>
+        </Tooltip.Root>
+      {/if}
     {:else if header.kind === "ledger"}
       <Tooltip.Root>
         <Tooltip.Trigger>
