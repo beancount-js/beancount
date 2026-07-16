@@ -1,7 +1,7 @@
 import { Booking, Posting, Transaction } from "../core/data";
 import { ValidationError } from "../ops/validation";
 
-import type { Position } from "../core/position";
+import { Cost, type Position } from "../core/position";
 import { Amount } from "../core/amount";
 
 function bookingMethodStrictWithSize(
@@ -136,18 +136,51 @@ function bookingMethodNone(
 
 function bookingMethodAverage(
   entry: Transaction,
-  _posting: Posting,
-  _matches: Array<Position>,
+  posting: Posting,
+  matches: Array<Position>,
 ): [Array<Posting>, Array<Position>, Array<ValidationError>, boolean] {
+  if (!posting.units || matches.length === 0) return [[], [], [], true];
+  const available = matches.reduce(
+    (total, match) => total.plus(match.units.abs()),
+    new Amount(0, posting.units.currency),
+  );
+  if (available.lt(posting.units.abs())) return [[], [], [], true];
+  const costCurrency = matches[0].cost?.amount?.currency;
+  if (
+    !costCurrency ||
+    matches.some((match) => match.cost?.amount?.currency !== costCurrency)
+  ) {
+    return [
+      [],
+      [],
+      [
+        new ValidationError(
+          "Cannot average lots with different cost currencies",
+          { directive: entry, errorType: "AmbiguousMatchError" },
+        ),
+      ],
+      false,
+    ];
+  }
+  const totalCost = matches.reduce(
+    (total, match) =>
+      total.plus(match.cost!.amount!.value.mul(match.units.abs().value)),
+    new Amount(0, costCurrency).value,
+  );
+  const average = new Amount(totalCost.div(available.value), costCurrency);
+  const earliest = [...matches].sort(
+    (left, right) =>
+      (left.cost?.date?.toMillis() ?? 0) - (right.cost?.date?.toMillis() ?? 0),
+  )[0];
   return [
-    [],
-    [],
     [
-      new ValidationError("AVERAGE method is not supported", {
-        directive: entry,
-        errorType: "AmbiguousMatchError",
+      posting.copy({
+        cost: new Cost(earliest.cost?.date ?? null, average),
+        flag: "M",
       }),
     ],
+    matches,
+    [],
     false,
   ];
 }

@@ -2,6 +2,14 @@
   "upstreamCommit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
   "records": [
     {
+      "upstreamModule": "beancount.parser.booking_method",
+      "upstreamBehavior": "average_fifo_lifo_hifo_and_strict_size_lot_resolution",
+      "localBehavior": "handleAmbiguousMatches",
+      "status": "adapted",
+      "tests": ["parser/booking-method"],
+      "reason": "Uses local immutable postings and resolved Cost models."
+    },
+    {
       "upstreamModule": "beancount.core.compare",
       "upstreamBehavior": "stable_hash_and_entry_set_comparison",
       "localBehavior": "stableHash, hashEntry, compareEntries, includesEntries, excludesEntries",
