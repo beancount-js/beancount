@@ -378,7 +378,7 @@ export class Pad extends DirectiveBase {
   }
 
   toString() {
-    return `${formatDate(this.date)} ${this.directiveType.toLocaleLowerCase()} ${this.sourceAccount} ${this.account} ${stringifyMeta(this.meta)}`.trim();
+    return `${formatDate(this.date)} ${this.directiveType.toLocaleLowerCase()} ${this.account} ${this.sourceAccount} ${stringifyMeta(this.meta)}`.trim();
   }
 }
 

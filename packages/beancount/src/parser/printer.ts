@@ -9,6 +9,7 @@ import {
   Booking,
   DirectiveBase,
   Open,
+  Pad,
   Posting,
   Price,
   Transaction,
@@ -128,6 +129,10 @@ function formatBalance(entry: Balance): string {
   return `${entry.date.toISODate()} balance ${entry.account.padEnd(47)} ${entry.amount}`;
 }
 
+function formatPad(entry: Pad): string {
+  return `${entry.date.toISODate()} pad ${entry.account} ${entry.sourceAccount}`;
+}
+
 /** Render one local directive using its parser-accepted source representation. */
 export function formatEntry(
   entry: DirectiveBase,
@@ -141,11 +146,13 @@ export function formatEntry(
       ? formatTransaction(entry, renderWeights)
       : entry instanceof Balance
         ? formatBalance(entry)
-        : entry instanceof Open
-          ? formatOpen(entry)
-          : entry instanceof Price
-            ? formatPrice(entry)
-            : entry.toString();
+        : entry instanceof Pad
+          ? formatPad(entry)
+          : entry instanceof Open
+            ? formatOpen(entry)
+            : entry instanceof Price
+              ? formatPrice(entry)
+              : entry.toString();
   return `${source}${prefix}${text}`;
 }
 
