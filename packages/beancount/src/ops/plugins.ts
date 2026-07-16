@@ -4,6 +4,7 @@ import { autoInsertOpen } from "../plugins/autoaccount";
 import { auto } from "../plugins/auto";
 import { creditCard } from "../plugins/creditcard";
 import { closeTree } from "../plugins/close_tree";
+import { validateCommodityAttributes } from "../plugins/commodity_attr";
 import { checkClosing } from "../plugins/check_closing";
 import { checkDrained } from "../plugins/check_drained";
 import { forecast } from "../plugins/forecast";
@@ -75,6 +76,12 @@ export const Plugins: Record<string, PluginType> = {
     order: 0,
     id: "beancount.plugins.close_tree",
     supportsConfig: false,
+  },
+  "beancount.plugins.commodity_attr": {
+    plugin: validateCommodityAttributes,
+    order: 0,
+    id: "beancount.plugins.commodity_attr",
+    supportsConfig: true,
   },
   "beancount.plugins.check_closing": {
     plugin: checkClosing,
