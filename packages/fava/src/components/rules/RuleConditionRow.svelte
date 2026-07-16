@@ -135,7 +135,7 @@
   {@const meta = filterMeta(leaf.conditionType)}
   {@const operators = meta?.operators ?? []}
   <div
-    class="flex min-w-0 flex-wrap items-center gap-2 rounded-md border border-border bg-background p-2"
+    class="flex min-w-0 flex-nowrap items-center gap-2 rounded-md border border-border bg-background p-2"
     data-rule-condition-row
   >
     <div class="min-w-0 flex-[1_1_11rem]">
