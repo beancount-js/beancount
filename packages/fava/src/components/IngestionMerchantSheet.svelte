@@ -14,6 +14,7 @@
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { urlFor } from "../helpers";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
+  import LocalMerchantMatchPicker from "./LocalMerchantMatchPicker.svelte";
 
   type Props = {
     open?: boolean;
@@ -42,6 +43,7 @@
   let correctionName = $state("");
   let correctionDomain = $state("");
   let correctionDescription = $state("");
+  let attachedMerchantId = $state("");
   let failedLogo = $state(false);
   let sheetTitleEl = $state<HTMLElement | null>(null);
   let openSections = $state<Record<string, boolean>>({
@@ -85,6 +87,7 @@
     correctionName = first?.canonicalName ?? cluster.displayName ?? "";
     correctionDomain = first?.domain ?? cluster.domain ?? "";
     correctionDescription = first?.description ?? "";
+    attachedMerchantId = "";
   });
 
   function isSectionOpen(id: string) {
@@ -121,6 +124,7 @@
       void updateMerchant("confirm", {
         candidateId: candidate.id,
         domain,
+        targetMerchantId: attachedMerchantId || undefined,
       });
       return;
     }
@@ -131,6 +135,7 @@
       canonicalName: name,
       domain,
       description: correctionDescription || candidate?.description || undefined,
+      targetMerchantId: attachedMerchantId || undefined,
     });
   }
 
@@ -413,6 +418,21 @@
                 {/if}
               </div>
 
+              {#if primaryStatus !== "suppressed"}
+                <LocalMerchantMatchPicker
+                  {projectId}
+                  domain={correctionDomain}
+                  searchText={`${correctionName} ${correctionDomain}`.trim()}
+                  bind:attachedMerchantId
+                  onAttach={(merchant) => {
+                    correctionName = merchant.canonicalName;
+                    if (merchant.domain) correctionDomain = merchant.domain;
+                    if (merchant.description)
+                      correctionDescription = merchant.description;
+                  }}
+                />
+              {/if}
+
               <div class="mt-3 flex flex-wrap gap-2">
                 {#if primaryStatus === "suggested" && candidate}
                   <Button
@@ -422,6 +442,7 @@
                       void updateMerchant("confirm", {
                         candidateId: candidate.id,
                         domain: correctionDomain.trim() || undefined,
+                        targetMerchantId: attachedMerchantId || undefined,
                       })}>Confirm</Button
                   >
                   <Button
@@ -484,6 +505,7 @@
                         canonicalName: correctionName,
                         domain: correctionDomain || undefined,
                         description: correctionDescription || undefined,
+                        targetMerchantId: attachedMerchantId || undefined,
                       })}>Save merchant</Button
                   >
                   <Button

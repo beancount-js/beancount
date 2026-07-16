@@ -25,6 +25,7 @@
   import CheckCheck from "lucide-svelte/icons/check-check";
   import X from "lucide-svelte/icons/x";
   import { useContext } from "../context";
+  import LocalMerchantMatchPicker from "./LocalMerchantMatchPicker.svelte";
 
   type SectionKey = "workflow" | "merchant" | "transaction" | "metadata";
 
@@ -94,6 +95,7 @@
   let correctionName = $state("");
   let correctionDomain = $state("");
   let correctionDescription = $state("");
+  let attachedMerchantId = $state("");
   let failedLogo = $state(false);
   let saving = $state(false);
   let saveState = $state<SaveState>("idle");
@@ -357,6 +359,7 @@
       "";
     correctionDomain = details?.domain ?? "";
     correctionDescription = details?.description ?? "";
+    attachedMerchantId = "";
     failedLogo = false;
     errors = [];
     if (saveTimer) {
@@ -972,6 +975,7 @@
                         onclick={() =>
                           updateMerchant("confirm", {
                             candidateId: candidate.id,
+                            targetMerchantId: attachedMerchantId || undefined,
                           })}>Confirm</Button
                       >
                       <Button
@@ -1012,6 +1016,20 @@
                   {/if}
                 </div>
               </div>
+              {#if merchantStatus !== "suppressed"}
+                <LocalMerchantMatchPicker
+                  {projectId}
+                  domain={correctionDomain}
+                  searchText={`${correctionName} ${correctionDomain}`.trim()}
+                  bind:attachedMerchantId
+                  onAttach={(merchant) => {
+                    correctionName = merchant.canonicalName;
+                    if (merchant.domain) correctionDomain = merchant.domain;
+                    if (merchant.description)
+                      correctionDescription = merchant.description;
+                  }}
+                />
+              {/if}
               {#if correcting}
                 <div class="beancount-structured-form">
                   <FormField label="Name" controlId="proposal-merchant-name">
@@ -1052,9 +1070,10 @@
                         domain: correctionDomain || undefined,
                         description: correctionDescription || undefined,
                         targetMerchantId:
-                          proposal.merchantResolution?.status === "confirmed"
+                          attachedMerchantId ||
+                          (proposal.merchantResolution?.status === "confirmed"
                             ? proposal.merchantResolution.merchant.merchantId
-                            : undefined,
+                            : undefined),
                       })}>Save merchant</Button
                   >
                   <Button

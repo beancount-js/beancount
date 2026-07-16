@@ -395,6 +395,73 @@ describe("FilesystemIngestionStore", () => {
     ).resolves.toContain('"type":"cleared-suppression"');
   });
 
+  test("confirm with targetMerchantId attaches alias to the existing merchant", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-merge-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+
+    const existing = await store.merchants.confirm("project", {
+      sourceId: "bank",
+      rawLabel: "TESCO STORES 1234",
+      candidate: {
+        id: "ai:tesco",
+        canonicalName: "Tesco",
+        domain: "tesco.com",
+        explanation: "First confirmation.",
+        provenance: [
+          {
+            source: "ai",
+            provider: "codex",
+            observedAt: "2026-07-15T12:00:00.000Z",
+          },
+        ],
+      },
+    });
+
+    const attached = await store.merchants.confirm("project", {
+      sourceId: "bank",
+      rawLabel: "TESCO EXPRESS 99",
+      targetMerchantId: existing.merchantId,
+      candidate: {
+        id: "ai:tesco-express",
+        canonicalName: "Tesco Express",
+        domain: "tesco.com",
+        explanation: "Should merge into existing Tesco.",
+        provenance: [
+          {
+            source: "ai",
+            provider: "codex",
+            observedAt: "2026-07-15T12:05:00.000Z",
+          },
+        ],
+      },
+    });
+
+    expect(attached.merchantId).toBe(existing.merchantId);
+    expect(attached.canonicalName).toBe("Tesco");
+    expect(attached.domain).toBe("tesco.com");
+    expect(attached.aliases.map((alias) => alias.normalizedValue)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("tesco stores"),
+        expect.stringContaining("tesco express"),
+      ]),
+    );
+
+    const listed = await store.merchants.list("project");
+    expect(listed).toHaveLength(1);
+    await expect(
+      store.merchants.resolve("project", "bank", "TESCO EXPRESS 99"),
+    ).resolves.toMatchObject({
+      status: "confirmed",
+      merchant: { merchantId: existing.merchantId, canonicalName: "Tesco" },
+    });
+    await expect(
+      store.merchants.findByDomain("project", "tesco.com"),
+    ).resolves.toMatchObject({ merchantId: existing.merchantId });
+  });
+
   test("persists sync jobs and fails interrupted ones", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-sync-"),
