@@ -588,10 +588,10 @@
     {
       "upstreamModule": "beancount.parser.printer",
       "upstreamBehavior": "directive_error_and_position_text_rendering",
-      "localBehavior": "not implemented",
+      "localBehavior": "alignPositionStrings, formatEntry, formatEntries, formatError, renderSource",
       "status": "pending",
-      "tests": [],
-      "reason": "The current directive stringification is not yet verified against the full upstream printer surface."
+      "tests": ["parser/printer"],
+      "reason": "Shared formatting helpers are ported, but directive-specific display-context and weight rendering remain unverified."
     },
     {
       "upstreamModule": "beancount.parser.version",

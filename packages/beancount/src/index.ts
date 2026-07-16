@@ -5,6 +5,7 @@ export * from "./ops";
 export * from "./parity";
 export * from "./parser/parser";
 export * from "./parser/loader";
+export * from "./parser/printer";
 export * from "./parser/version";
 export * from "./plugins/autoaccount";
 export * from "./plugins/auto";
