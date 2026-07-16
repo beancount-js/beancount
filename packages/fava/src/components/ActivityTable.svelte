@@ -128,11 +128,27 @@
     commitSelection(next);
   }
 
+  function selectAllRecords() {
+    commitSelection(new Set(records.map((record) => record.key)));
+  }
+
+  function clearSelection() {
+    commitSelection(new Set());
+  }
+
   function toggleVisible(checked?: boolean) {
     const keys = visibleGroups.flatMap((group) =>
       group.records.map((record) => record.key),
     );
     const select = checked ?? !keys.every((key) => selectedKeys.has(key));
+    if (
+      !select &&
+      records.length > 0 &&
+      selectedKeys.size === records.length
+    ) {
+      clearSelection();
+      return;
+    }
     const next = new Set(selectedKeys);
     keys.forEach((key) => (select ? next.add(key) : next.delete(key)));
     commitSelection(next);
@@ -248,6 +264,13 @@
   $: masterChecked =
     Boolean(visibleKeys.length) && selectedVisibleCount === visibleKeys.length;
   $: masterIndeterminate = selectedVisibleCount > 0 && !masterChecked;
+  $: hasOffPageRecords = records.length > visibleKeys.length;
+  $: allMatchingSelected =
+    records.length > 0 && selectedKeys.size === records.length;
+  $: showSelectionBanner =
+    hasOffPageRecords &&
+    Boolean(visibleKeys.length) &&
+    (masterChecked || allMatchingSelected);
   $: if (masterCheckbox) masterCheckbox.indeterminate = masterIndeterminate;
   $: pageSignature = visibleGroups.map((group) => group.key).join("|");
   $: if (pageSignature && pageSignature !== expandedPageSignature) {
@@ -301,6 +324,34 @@
       <span>Date</span>
       <span class="text-right">{amountHeading}</span>
     </div>
+
+    {#if showSelectionBanner}
+      <div
+        data-activity-selection-banner
+        role="status"
+        class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+      >
+        {#if allMatchingSelected}
+          All {records.length} {recordLabel} records selected.
+          <button
+            type="button"
+            class="font-medium text-primary underline-offset-2 hover:underline"
+            onclick={clearSelection}
+          >
+            Clear selection
+          </button>
+        {:else}
+          All {visibleKeys.length} records on this page are selected.
+          <button
+            type="button"
+            class="font-medium text-primary underline-offset-2 hover:underline"
+            onclick={selectAllRecords}
+          >
+            Select all {records.length} {recordLabel} records
+          </button>
+        {/if}
+      </div>
+    {/if}
 
     {#if !groups.length}
       <div
