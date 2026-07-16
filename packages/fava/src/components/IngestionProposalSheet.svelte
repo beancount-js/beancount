@@ -585,9 +585,7 @@
         },
       );
       onUpdated?.(run);
-      if (saveState !== "dirty") {
-        saveState = "saved";
-      }
+      saveState = "saved";
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       errors = [message];
@@ -626,7 +624,7 @@
     >
       <Sheet.Title
         bind:ref={sheetTitleEl}
-        tabindex="-1"
+        tabindex={-1}
         class="proposal-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
       >
         Review Proposal
@@ -651,7 +649,6 @@
                   aria-label="Move to pending review"
                   disabled={busy || saving}
                   onclick={(event) => {
-                    props.onclick?.(event);
                     void setProposalStatus("needs-review");
                   }}
                 >
@@ -674,7 +671,6 @@
                   aria-label="Mark as accepted"
                   disabled={busy || saving}
                   onclick={(event) => {
-                    props.onclick?.(event);
                     void setProposalStatus("ready");
                   }}
                 >
@@ -698,7 +694,6 @@
                   aria-label="Re-run AI enrichment"
                   disabled={enriching || busy || saving || !canEnrichAi}
                   onclick={(event) => {
-                    props.onclick?.(event);
                     void rerunAiEnrichment();
                   }}
                 >
@@ -727,7 +722,6 @@
                   ? "Expand all"
                   : "Collapse all"}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   toggleCollapseAll();
                 }}
               >

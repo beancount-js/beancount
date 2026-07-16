@@ -24,6 +24,14 @@ function optionalString(value: string) {
   return next || undefined;
 }
 
+function mappingFor(source: EditableIngestionSource) {
+  return {
+    ...source.mapping,
+    date: source.mapping?.date ?? "",
+    amount: source.mapping?.amount ?? "",
+  };
+}
+
 function joinList(value: string[] | undefined) {
   return (value ?? []).join(", ");
 }
@@ -370,11 +378,11 @@ export const sourceMappingForm = createFormConfig<
         id: `mapping.${field.key}`,
         label: field.label,
         path: `mapping.${field.key}`,
-        get: (source) => source.mapping[field.key] ?? "",
+        get: (source) => mappingFor(source)[field.key] ?? "",
         set: (source, value) => ({
           ...source,
           mapping: {
-            ...source.mapping,
+            ...mappingFor(source),
             [field.key]: optionalString(value),
           },
         }),
@@ -387,11 +395,11 @@ export const sourceMappingForm = createFormConfig<
         { value: "as-is", label: "As-is" },
         { value: "invert", label: "Invert" },
       ],
-      get: (source) => source.mapping.amountSign ?? "as-is",
+      get: (source) => mappingFor(source).amountSign ?? "as-is",
       set: (source, amountSign) => ({
         ...source,
         mapping: {
-          ...source.mapping,
+          ...mappingFor(source),
           amountSign:
             amountSign === "invert"
               ? "invert"

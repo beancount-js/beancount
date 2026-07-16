@@ -45,7 +45,7 @@
 
 <Accordion.Root
   class="w-full pt-2"
-  multiple
+  type="multiple"
   value={[...values]}
   onValueChange={handleChange}
 >
