@@ -93,4 +93,43 @@ describe("Filter", () => {
       });
     });
   });
+
+  test("filters transaction fields, tags, and links", () => {
+    const cases = [
+      "tag: barclays",
+      "link: bitcoin",
+      'payee: "Investing 40% of cash in VBMPX"',
+      'narration: "Investment in Barclays Bitcoin"',
+      "flag: *",
+      "cost: 136.65",
+      "date.year: 2015",
+      "date.month: 1",
+    ];
+
+    for (const query of cases) {
+      const [[matches], errors] = filterLedger(directives, query);
+      expect(errors, query).toEqual([]);
+      expect(
+        matches.map((entry) => entry.directiveType),
+        query,
+      ).toEqual(["transaction"]);
+    }
+    const [[monday], mondayErrors] = filterLedger(
+      directives,
+      "date.weekday: 1",
+    );
+    expect(mondayErrors).toEqual([]);
+    expect(monday.map((entry) => entry.directiveType)).toEqual([
+      "open",
+      "transaction",
+    ]);
+  });
+
+  test("returns parser diagnostics without returning partial query results", () => {
+    const [[matches, excluded], errors] = filterLedger(directives, "(");
+
+    expect(matches).toEqual([]);
+    expect(excluded).toEqual([]);
+    expect(errors).not.toEqual([]);
+  });
 });
