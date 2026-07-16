@@ -2,6 +2,7 @@ import { getContext, setContext } from "svelte";
 import { derived, type Readable, type Writable } from "svelte/store";
 import type { AccountTreeNode } from "../../lib/models";
 import { useContext } from "../../context";
+import type { DateTime } from "luxon";
 
 const key = Symbol("tree-table");
 
@@ -28,7 +29,7 @@ export function useGetNotShown() {
   return derived(
     [ledgerOptions, accounts, isClosedAccount],
     ([$ledgerOptions, $accounts, $isClosedAccount]) =>
-      (node: AccountTreeNode, end: Date | null): Set<string> => {
+      (node: AccountTreeNode, end: DateTime | null): Set<string> => {
         const {
           fava: {
             show_accounts_with_zero_balance,

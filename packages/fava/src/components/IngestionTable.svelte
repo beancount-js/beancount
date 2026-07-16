@@ -893,24 +893,25 @@
     try {
       let lastSnapshot: ProjectSnapshot | undefined;
       for (const [runId, proposalIds] of byRun) {
-        const result = await ingestionJson<{
-          snapshot: ProjectSnapshot;
-          run: IngestionRun;
-        }>(
-          ingestionPath(
-            project.project.id,
-            `/runs/${encodeURIComponent(runId)}/accept`,
-          ),
-          {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ proposalIds, expectedRevision }),
-          },
-        );
-        lastSnapshot = result.snapshot;
-        replaceRun(result.run);
+        const response: { snapshot: ProjectSnapshot; run: IngestionRun } =
+          await ingestionJson<{
+            snapshot: ProjectSnapshot;
+            run: IngestionRun;
+          }>(
+            ingestionPath(
+              project.project.id,
+              `/runs/${encodeURIComponent(runId)}/accept`,
+            ),
+            {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ proposalIds, expectedRevision }),
+            },
+          );
+        lastSnapshot = response.snapshot;
+        replaceRun(response.run);
         expectedRevision =
-          result.snapshot.revisions.find(
+          response.snapshot.revisions.find(
             (revision) => revision.path === destination,
           )?.revision ?? expectedRevision;
       }
