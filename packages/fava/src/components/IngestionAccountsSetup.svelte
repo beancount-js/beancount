@@ -884,13 +884,14 @@
           {/if}
 
           {#if error}
-            <div class="border-t border-border px-4 py-3">
-              <Alert.Root variant="destructive" role="alert">
-                <Alert.Title>Could not load accounts</Alert.Title>
-                <Alert.Description class="break-words font-mono text-xs">
-                  {error}
-                </Alert.Description>
-              </Alert.Root>
+            <div
+              class="bg-destructive/10 px-3 py-2 text-destructive"
+              role="alert"
+            >
+              <p class="text-xs font-medium">Could not load accounts</p>
+              <p class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90">
+                {error}
+              </p>
             </div>
           {/if}
           {#if status}
@@ -904,12 +905,12 @@
         </article>
       </div>
     {:else if error}
-      <Alert.Root variant="destructive" role="alert">
-        <Alert.Title>Could not load accounts</Alert.Title>
-        <Alert.Description class="break-words font-mono text-xs">
+      <div class="rounded-lg bg-destructive/10 px-3 py-2 text-destructive" role="alert">
+        <p class="text-xs font-medium">Could not load accounts</p>
+        <p class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90">
           {error}
-        </Alert.Description>
-      </Alert.Root>
+        </p>
+      </div>
     {/if}
   </div>
 </section>
