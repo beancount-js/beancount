@@ -294,7 +294,7 @@ function interpolateGroup(
       newPosting.meta[AUTOMATIC_META] = true;
       newPostings[index] = convertCostSpecToCost(newPosting);
     } else {
-      newPostings = newPostings.slice(index, 1);
+      newPostings.splice(index, 1);
     }
     outPostings = newPostings;
   }

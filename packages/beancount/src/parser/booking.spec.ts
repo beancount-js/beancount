@@ -176,4 +176,28 @@ describe("book", () => {
       postings.map((posting) => posting.resolvedCost?.amount?.toString()),
     ).toEqual(["10 USD", "10 USD"]);
   });
+
+  test("interpolates one missing unit amount and drops only a zero-residual auto-posting", () => {
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Infer cash", [
+          new Posting("Expenses:Food", new Amount("5", "USD")),
+          new Posting("Assets:Cash"),
+        ]),
+        transaction("2022-01-02", "Omit zero auto-posting", [
+          new Posting("Expenses:Food", new Amount(0, "USD")),
+          new Posting("Assets:Cash"),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    const inferred = entries[0] as Transaction;
+    expect(inferred.postings[1].units?.eq(new Amount("-5", "USD"))).toBe(true);
+    expect(inferred.postings[1].meta.__automatic__).toBe(true);
+    const zeroResidual = entries[1] as Transaction;
+    expect(zeroResidual.postings).toHaveLength(1);
+    expect(zeroResidual.postings[0].account).toBe("Expenses:Food");
+  });
 });
