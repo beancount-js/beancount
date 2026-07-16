@@ -83,7 +83,7 @@ export function inferTolerances(
       continue;
     }
     const units = posting.units;
-    if (!units) {
+    if (!units?.isDefined()) {
       continue;
     }
     const currency = units.currency || "";

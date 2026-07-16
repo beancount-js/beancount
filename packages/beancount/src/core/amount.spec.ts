@@ -9,4 +9,12 @@ describe("Decimal", () => {
   test("precision", () => {
     expect(new Amount("0.000")).toEqual(new Amount("0.000"));
   });
+
+  test("copies a missing numeric value while replacing its currency", () => {
+    const missing = new Amount(null, "HOOL");
+    const copy = missing.copy({ currency: "USD" });
+
+    expect(copy.currency).toBe("USD");
+    expect(copy.isDefined()).toBe(false);
+  });
 });

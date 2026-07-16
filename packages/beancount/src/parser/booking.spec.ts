@@ -200,4 +200,23 @@ describe("book", () => {
     expect(zeroResidual.postings).toHaveLength(1);
     expect(zeroResidual.postings[0].account).toBe("Expenses:Food");
   });
+
+  test("reports an error instead of dividing by zero for total-cost-only unit interpolation", () => {
+    const incomplete = transaction("2022-01-01", "Total cost without units", [
+      new Posting(
+        account,
+        new Amount(null, "HOOL"),
+        new CostSpec(Decimal.ZERO, new Decimal("10"), "USD"),
+      ),
+      new Posting("Equity:Opening-Balances", new Amount("-10", "USD")),
+    ]);
+
+    const [, errors] = book([incomplete], defaultBeancountOptions());
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toBe(
+      "Cannot infer per-unit cost only from total",
+    );
+    expect((errors[0].context.directive as Posting).account).toBe(account);
+  });
 });

@@ -66,10 +66,13 @@ export class Amount {
       currency: Currency | null;
     }>,
   ) {
+    if (props.units === undefined) {
+      return new Amount(this, props.currency ?? this.currency);
+    }
     return new Amount(
-      props.units ?? this.units,
+      props.units,
       props.currency ?? this.currency,
-      this.precision,
+      this.num?.precision,
     );
   }
 

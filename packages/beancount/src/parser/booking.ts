@@ -235,7 +235,7 @@ function interpolateGroup(
       let unitsNumber!: Amount;
       if (cost) {
         if (cost instanceof CostSpec) {
-          if (cost.numberPer === Decimal.ZERO) {
+          if (cost.numberPer?.zero) {
             errors.push(
               new ValidationError(
                 `Cannot infer per-unit cost only from total`,
@@ -245,6 +245,7 @@ function interpolateGroup(
                 },
               ),
             );
+            return [[], errors, true];
           }
           costTotal = cost.numberTotal ?? Decimal.ZERO;
           unitsNumber = weight.minus(costTotal).div(cost.numberPer!);
@@ -630,7 +631,7 @@ function bookReductions(
     }
     const balance = localBalances[account];
 
-    if (cost === null || units === null) {
+    if (cost === null || units === null || !units.isDefined()) {
       bookedPostings.push(posting);
     } else {
       const method = bookingMethods[account] ?? defaultBooking;
