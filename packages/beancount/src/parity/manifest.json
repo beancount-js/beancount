@@ -2,6 +2,14 @@
   "upstreamCommit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
   "records": [
     {
+      "upstreamModule": "beancount.core.getters",
+      "upstreamBehavior": "account_open_close_lifecycle_tracking",
+      "localBehavior": "accountOpenClose",
+      "status": "adapted",
+      "tests": ["core/account"],
+      "reason": "Uses local immutable directives and Luxon dates for account lifecycle state."
+    },
+    {
       "upstreamModule": "beancount.utils.defdict",
       "upstreamBehavior": "default_and_keyed_mapping_semantics",
       "localBehavior": "DefaultMap, DefaultKeyedMap, CaseInsensitiveMap",

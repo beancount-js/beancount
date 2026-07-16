@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  accountOpenClose,
   accountLeaf,
   accountParents,
   accountRoot,
@@ -17,6 +18,9 @@ import {
   splitAccount,
 } from "./account";
 import { AccountTypes, defaultBeancountOptions } from "./options";
+import { DateTime } from "luxon";
+import { Amount } from "./amount";
+import { Close, Open, Posting, Transaction } from "./data";
 
 describe("account names", () => {
   test("validates roots, leaves, and full hierarchical names", () => {
@@ -80,5 +84,46 @@ describe("account type classification", () => {
     expect(types.isInvertedAccount("Passifs:Card")).toBe(true);
     expect(types.getAccountSign("Revenus:Salary")).toBe(-1);
     expect(types.getAccountSign("Dépenses:Food")).toBe(1);
+  });
+});
+
+describe("account lifecycle", () => {
+  test("retains the earliest open and close while tracking later activity", () => {
+    const account = "Assets:Cash";
+    const jan = DateTime.fromISO("2024-01-01");
+    const feb = DateTime.fromISO("2024-02-01");
+    const mar = DateTime.fromISO("2024-03-01");
+    const apr = DateTime.fromISO("2024-04-01");
+    const firstOpen = new Open(jan, account);
+    const firstClose = new Close(mar, account);
+    const entries = [
+      firstOpen,
+      new Transaction(
+        feb,
+        "*",
+        "",
+        "Activity",
+        [],
+        [],
+        [new Posting(account, new Amount("1", "USD"))],
+      ),
+      firstClose,
+      new Open(feb, account),
+      new Close(apr, account),
+      new Transaction(
+        apr,
+        "*",
+        "",
+        "Later activity",
+        [],
+        [],
+        [new Posting(account, new Amount("-1", "USD"))],
+      ),
+    ];
+
+    const lifecycle = accountOpenClose(entries)[account];
+    expect(lifecycle.open).toBe(firstOpen);
+    expect(lifecycle.close).toBe(firstClose);
+    expect(lifecycle.updatedAt).toEqual(apr);
   });
 });
