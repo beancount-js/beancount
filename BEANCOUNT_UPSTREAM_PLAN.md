@@ -435,6 +435,14 @@ The oracle fixture generator must:
 Fixture refreshes require explicit review. Normal tests must never refresh
 snapshots automatically.
 
+The checked-in refresh wrapper requires `BEANCOUNT_UPSTREAM_CHECKOUT` to name a
+JJ checkout whose `@-` commit is the pinned baseline. It runs an explicitly
+selected Python executable (`BEANCOUNT_ORACLE_PYTHON`, default `python3`) and
+only writes the fixture named by `BEANCOUNT_ORACLE_OUTPUT`. A scenario may
+select a small set of canonical paths from a full upstream load result, keeping
+reviewed fixtures focused on observable assertions instead of incidental option
+or source-location noise.
+
 ## 8. Implementation sequence
 
 ### Phase 0: governance and harness

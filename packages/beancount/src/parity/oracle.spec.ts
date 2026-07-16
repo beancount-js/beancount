@@ -18,11 +18,11 @@ describe("upstream oracle fixtures", () => {
     const entry = entries.find(
       (directive): directive is Transaction => directive instanceof Transaction,
     );
-    expect(entry?.postings[0].resolvedCost?.amount?.toString()).toBe(
-      bookingFixture.expected.cost,
-    );
-    expect(entry?.postings[0].resolvedCost?.date?.toISODate()).toBe(
-      bookingFixture.expected.date,
+    expect(
+      canonicalize(entry?.postings[0].resolvedCost?.amount?.units),
+    ).toEqual(bookingFixture.oracle.cost);
+    expect(canonicalize(entry?.postings[0].resolvedCost?.date)).toEqual(
+      bookingFixture.oracle.date,
     );
   });
 

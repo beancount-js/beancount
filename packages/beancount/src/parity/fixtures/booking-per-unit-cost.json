@@ -4,8 +4,20 @@
     "module": "beancount.parser.booking"
   },
   "ledger": "2023-01-01 open Assets:Brokerage\n2023-01-01 open Equity:Opening-Balances\n2024-01-01 * \"Purchase\"\n  Assets:Brokerage  2 HOOL {10 USD}\n  Equity:Opening-Balances  -20 USD\n",
-  "expected": {
-    "cost": "10 USD",
-    "date": "2024-01-01"
+  "scenario": {
+    "operation": "load_string",
+    "ledger": "2023-01-01 open Assets:Brokerage\n2023-01-01 open Equity:Opening-Balances\n2024-01-01 * \"Purchase\"\n  Assets:Brokerage  2 HOOL {10 USD}\n  Equity:Opening-Balances  -20 USD\n",
+    "select": {
+      "cost": ["entries", 2, "postings", 0, "cost", "number"],
+      "date": ["entries", 2, "postings", 0, "cost", "date"]
+    }
+  },
+  "oracle": {
+    "cost": {
+      "$decimal": "10"
+    },
+    "date": {
+      "$date": "2024-01-01"
+    }
   }
 }
