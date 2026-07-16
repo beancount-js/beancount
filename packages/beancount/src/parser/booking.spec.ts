@@ -642,6 +642,46 @@ describe("book", () => {
     expect(balances[account].positions).toHaveLength(2);
   });
 
+  test("books sequential reductions against the transaction-local FIFO balance", () => {
+    // Ported from Beancount's booking_full_test.py::test_reduce__multiple_reductions.
+    const firstDate = DateTime.fromISO("2022-01-15");
+    const secondDate = DateTime.fromISO("2022-01-16");
+    const balances = {
+      [account]: new Inventory(
+        new Position(
+          new Amount("50", "HOOL"),
+          new Cost(firstDate, new Amount("115", "USD")),
+        ),
+        new Position(
+          new Amount("50", "HOOL"),
+          new Cost(secondDate, new Amount("116", "USD")),
+        ),
+      ),
+    };
+    const [entries, errors] = book(
+      [
+        transaction("2022-05-02", "Sell multiple lots", [
+          new Posting(account, new Amount("-40", "HOOL"), new Cost()),
+          new Posting(account, new Amount("-35", "HOOL"), new Cost()),
+        ]),
+      ],
+      defaultBeancountOptions({ booking_method: Booking.FIFO }),
+      balances,
+    );
+
+    expect(errors).toEqual([]);
+    const postings = (entries[0] as Transaction).postings;
+    expect(postings.map((posting) => posting.units?.toString())).toEqual([
+      "-40 HOOL",
+      "-10 HOOL",
+      "-25 HOOL",
+    ]);
+    expect(
+      postings.map((posting) => posting.resolvedCost?.amount?.toString()),
+    ).toEqual(["115 USD", "115 USD", "116 USD"]);
+    expect(balances[account].toString()).toBe("(25 HOOL { 116 USD })");
+  });
+
   test("infers a reduction currency from an account with one held commodity", () => {
     const heldCost = new Cost(
       DateTime.fromISO("2022-01-01"),
