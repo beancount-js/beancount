@@ -58,8 +58,8 @@ test.describe("app workflow", () => {
       await navigateTo(page, tab.name);
       await expect(page).toHaveURL(tab.path);
       await expect(
-        workspaceHeader.getByText(tab.name, { exact: true }),
-      ).toBeVisible();
+        page.locator("[data-ledger-file-panels] button[aria-current=page]"),
+      ).toHaveText(tab.name);
       await tab.assert(page);
     }
 
