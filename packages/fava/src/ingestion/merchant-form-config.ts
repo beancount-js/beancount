@@ -5,7 +5,11 @@ import {
   type FormConfig,
   type FormValidationIssue,
 } from "@beancount-js/forms";
-import type { MerchantAlias } from "@beancount-js/beangulp";
+import type {
+  MerchantAlias,
+  MerchantBrandData,
+  MerchantProvenance,
+} from "@beancount-js/beangulp";
 import type { MerchantProfileDetails } from "@beancount-js/server";
 
 export type EditableMerchantProfile = {
@@ -17,6 +21,8 @@ export type EditableMerchantProfile = {
   countryCode: string;
   notes: string;
   aliases: readonly MerchantAlias[];
+  provenance: readonly MerchantProvenance[];
+  brand?: MerchantBrandData;
   logoUrl?: string;
 };
 
@@ -36,6 +42,8 @@ export function editableMerchantFromDetails(
     countryCode: details.countryCode ?? "",
     notes: details.notes ?? "",
     aliases: details.aliases,
+    provenance: details.provenance,
+    brand: details.brand,
     logoUrl: details.logoUrl,
   };
 }

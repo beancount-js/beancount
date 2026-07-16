@@ -1,10 +1,13 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import {
+    FormField,
     FormSectionHeader,
     StructuredForm,
     type FormValidationIssue,
   } from "@beancount-js/forms";
+  import type { MerchantProvenance } from "@beancount-js/beangulp";
+  import { DateTime } from "luxon";
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import CircleAlert from "lucide-svelte/icons/circle-alert";
@@ -55,6 +58,8 @@
   let openSections = $state<Record<string, boolean>>({
     details: true,
     aliases: true,
+    provenance: true,
+    brand: true,
   });
 
   const issues = $derived<FormValidationIssue[]>(
@@ -87,6 +92,19 @@
               : "",
   );
 
+  function formatTimestamp(value: string): string {
+    const dt = DateTime.fromISO(value);
+    return dt.isValid ? dt.toFormat("yyyy-MM-dd HH:mm") : value;
+  }
+
+  function provenanceSecondary(entry: MerchantProvenance): string {
+    const meta = [entry.provider, entry.model, entry.version]
+      .filter(Boolean)
+      .join(" · ");
+    const observed = formatTimestamp(entry.observedAt);
+    return meta ? `${meta} · ${observed}` : observed;
+  }
+
   function isSectionOpen(id: string) {
     return openSections[id] !== false;
   }
@@ -110,7 +128,12 @@
     saveState = "idle";
     status = "";
     loadedKey = "";
-    openSections = { details: true, aliases: true };
+    openSections = {
+      details: true,
+      aliases: true,
+      provenance: true,
+      brand: true,
+    };
     if (saveTimer) {
       window.clearTimeout(saveTimer);
       saveTimer = null;
@@ -398,6 +421,115 @@
                       >
                     </div>
                   {/each}
+                </div>
+              </div>
+            {/if}
+          </section>
+
+          <section class="flex flex-col gap-2">
+            <FormSectionHeader
+              title="Provenance"
+              titleClass={sectionTitleClass}
+              editable={false}
+              movable={false}
+              removable={false}
+              titleToggleable={true}
+              open={isSectionOpen("provenance")}
+              onToggle={() => toggleSection("provenance")}
+            />
+            {#if isSectionOpen("provenance") && merchant.provenance.length}
+              <div class="merchant-edit-section-body">
+                <div
+                  class="overflow-hidden rounded-lg border bg-card text-sm shadow-sm"
+                >
+                  {#each merchant.provenance as entry, index (`${index}:${entry.source}:${entry.observedAt}`)}
+                    <div
+                      class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-3 py-2 last:border-b-0"
+                    >
+                      <span class="min-w-0 truncate capitalize"
+                        >{entry.source}</span
+                      >
+                      <span
+                        class="truncate text-xs text-muted-foreground tabular-nums"
+                        >{provenanceSecondary(entry)}</span
+                      >
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          </section>
+
+          <section class="flex flex-col gap-2">
+            <FormSectionHeader
+              title="Brand"
+              titleClass={sectionTitleClass}
+              editable={false}
+              movable={false}
+              removable={false}
+              titleToggleable={true}
+              open={isSectionOpen("brand")}
+              onToggle={() => toggleSection("brand")}
+            />
+            {#if isSectionOpen("brand") && merchant.brand}
+              <div class="merchant-edit-section-body">
+                <div class="beancount-structured-form">
+                  <FormField
+                    label="Provider"
+                    as="div"
+                    align="center"
+                    controlId="merchant-brand-provider"
+                  >
+                    <output id="merchant-brand-provider" class="truncate"
+                      >{merchant.brand.provider}</output
+                    >
+                  </FormField>
+                  <FormField
+                    label="Brand ID"
+                    as="div"
+                    align="center"
+                    controlId="merchant-brand-id"
+                  >
+                    <output id="merchant-brand-id" class="truncate"
+                      >{merchant.brand.brandId ?? "—"}</output
+                    >
+                  </FormField>
+                  <FormField
+                    label="Fetched"
+                    as="div"
+                    align="center"
+                    controlId="merchant-brand-fetched"
+                  >
+                    <output
+                      id="merchant-brand-fetched"
+                      class="truncate tabular-nums"
+                      >{formatTimestamp(merchant.brand.fetchedAt)}</output
+                    >
+                  </FormField>
+                  <FormField
+                    label="Expires"
+                    as="div"
+                    align="center"
+                    controlId="merchant-brand-expires"
+                  >
+                    <output
+                      id="merchant-brand-expires"
+                      class="truncate tabular-nums"
+                      >{formatTimestamp(merchant.brand.expiresAt)}</output
+                    >
+                  </FormField>
+                  <FormField
+                    label="Cached logo"
+                    as="div"
+                    align="center"
+                    controlId="merchant-brand-asset"
+                  >
+                    <output id="merchant-brand-asset" class="truncate"
+                      >{merchant.brand.asset
+                        ? `${merchant.brand.asset.filename} · ${merchant.brand.asset.mediaType}`
+                        : "—"}</output
+                    >
+                  </FormField>
                 </div>
               </div>
             {/if}
