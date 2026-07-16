@@ -149,6 +149,41 @@ describe("Filter", () => {
     }
   });
 
+  test("supports comparison operators for text, numbers, dates, and posting prices", () => {
+    const cases: Array<[string, Array<string>]> = [
+      ['narration != "Investment in Barclays Bitcoin"', []],
+      ['payee = "Investing 40% of cash in VBMPX"', ["transaction"]],
+      ["date >= 2015-01-05", ["transaction"]],
+      ["date <= 2014-02-03", ["open"]],
+      ["amount != 480.05", ["balance", "transaction"]],
+      ["amount ~ 480.05", ["transaction"]],
+      ["date.day: 5", ["transaction"]],
+      ["date.ms > 0", ["open", "balance", "transaction"]],
+    ];
+
+    for (const [query, expected] of cases) {
+      const [[matches], errors] = filterLedger(directives, query);
+      expect(errors, query).toEqual([]);
+      expect(
+        matches.map((entry) => entry.directiveType),
+        query,
+      ).toEqual(expected);
+    }
+
+    const [pricedDirectives, pricedErrors] = parseDirectives(`
+      2024-01-01 * "Exchange"
+        Assets:Cash  1 EUR @ 1.1 USD
+        Assets:Other -1.1 USD
+    `);
+    expect(pricedErrors).toEqual([]);
+    const [[priced], priceErrors] = filterLedger(
+      pricedDirectives,
+      "price: 1.1",
+    );
+    expect(priceErrors).toEqual([]);
+    expect(priced.map((entry) => entry.directiveType)).toEqual(["transaction"]);
+  });
+
   test("returns parser diagnostics without returning partial query results", () => {
     const [[matches, excluded], errors] = filterLedger(directives, "(");
 
