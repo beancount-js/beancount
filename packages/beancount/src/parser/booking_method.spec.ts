@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { DateTime } from "luxon";
 import { Amount } from "../core/amount";
 import { Booking, Posting, Transaction } from "../core/data";
-import { Cost, Position } from "../core/position";
+import { Cost, CostSpec, Position } from "../core/position";
 import { handleAmbiguousMatches } from "./booking_method";
 
 function transaction() {
@@ -111,5 +111,107 @@ describe("booking methods", () => {
       "M",
       "",
     ]);
+  });
+
+  test("STRICT reports ambiguity unless matching lots exactly satisfy the reduction", () => {
+    const first = lot("2", "10", "2020-01-01");
+    const second = lot("3", "20", "2021-01-01");
+
+    const [postings, matches, errors] = handleAmbiguousMatches(
+      transaction(),
+      reduction("-4"),
+      [first, second],
+      Booking.STRICT,
+    );
+
+    expect(postings).toEqual([]);
+    expect(matches).toEqual([]);
+    expect(errors[0].message).toContain("Ambiguous matches");
+  });
+
+  test("STRICT preserves each matched lot when their total exactly satisfies the reduction", () => {
+    const first = lot("2", "10", "2020-01-01");
+    const second = lot("3", "20", "2021-01-01");
+
+    const [postings, matches, errors] = handleAmbiguousMatches(
+      transaction(),
+      reduction("-5"),
+      [first, second],
+      Booking.STRICT,
+    );
+
+    expect(errors).toEqual([]);
+    expect(matches).toEqual([]);
+    expect(postings.map((posting) => posting.units?.toString())).toEqual([
+      "-2 HOOL",
+      "-3 HOOL",
+    ]);
+  });
+
+  test("reports insufficient lots for strict and FIFO reductions", () => {
+    const match = lot("1", "10", "2020-01-01");
+
+    for (const method of [Booking.STRICT, Booking.FIFO]) {
+      const [postings, matches, errors] = handleAmbiguousMatches(
+        transaction(),
+        reduction("-2"),
+        [match],
+        method,
+      );
+
+      expect(postings).toHaveLength(1);
+      expect(matches).toEqual([match]);
+      expect(errors[0].message).toContain("Not enough lots to reduce");
+    }
+  });
+
+  test("NONE returns an independent costed reduction without selecting a lot", () => {
+    const posting = reduction("-1");
+    const [postings, matches, errors] = handleAmbiguousMatches(
+      transaction(),
+      posting,
+      [lot("1", "10", "2020-01-01")],
+      Booking.NONE,
+    );
+
+    expect(errors).toEqual([]);
+    expect(matches).toEqual([]);
+    expect(postings).toEqual([posting]);
+  });
+
+  test("AVERAGE rejects incompatible currencies and explicit reduction costs", () => {
+    const entry = transaction();
+    const unitCurrencyMismatch = new Position(
+      new Amount("1", "AAPL"),
+      new Cost(DateTime.fromISO("2021-01-01"), new Amount("20", "USD")),
+    );
+    const [currencyPostings, currencyMatches, currencyErrors] =
+      handleAmbiguousMatches(
+        entry,
+        reduction("-1"),
+        [lot("1", "10", "2020-01-01"), unitCurrencyMismatch],
+        Booking.AVERAGE,
+      );
+    const [costPostings, costMatches, costErrors] = handleAmbiguousMatches(
+      entry,
+      new Posting(
+        "Assets:Investments",
+        new Amount("-1", "HOOL"),
+        new CostSpec(new Amount("10", "USD").value, null, "USD"),
+      ),
+      [lot("1", "10", "2020-01-01"), lot("1", "20", "2021-01-01")],
+      Booking.AVERAGE,
+    );
+
+    expect(currencyPostings).toEqual([]);
+    expect(currencyMatches).toEqual([]);
+    expect(currencyErrors[0].message).toBe(
+      "Cannot merge positions in multiple currencies",
+    );
+    expect(costPostings).toEqual([]);
+    expect(costMatches).toEqual([]);
+    expect(costErrors[0].message).toBe(
+      "Explicit cost reductions are not supported",
+    );
   });
 });

@@ -232,9 +232,12 @@ function bookingMethodStrict(
   let insufficient: boolean = false;
   // In strict mode, we require at most a single matching posting.
   if (matches.length > 1) {
-    const sumMatches = matches.reduce((acc, cur) => {
-      return acc.plus(cur.units);
-    }, new Amount(0));
+    const sumMatches = matches.reduce(
+      (acc, cur) => {
+        return acc.plus(cur.units);
+      },
+      new Amount(0, matches[0].units.currency),
+    );
     if (sumMatches.eq(posting.units?.neg())) {
       matches.forEach((match) => {
         bookedReductions.push(
