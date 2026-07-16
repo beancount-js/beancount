@@ -19,14 +19,16 @@ import {
 } from "../lib/ledger-route";
 import { getStudioRouteEnv, setStudioRouteEnv } from "../lib/studio-route-env";
 
+type RouteComponent = Component<any> | ComponentType;
+
 export interface Route {
   path: string;
-  element: ComponentType<Component>;
+  element: RouteComponent;
 }
 
 export interface RouteProperties {
   path: string;
-  element?: ComponentType<Component>;
+  element?: RouteComponent;
   query: Record<string, string>;
   params: Record<string, string | undefined>;
 }
