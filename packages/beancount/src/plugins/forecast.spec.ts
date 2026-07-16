@@ -20,6 +20,13 @@ function recurringTransaction() {
   );
 }
 
+function forecastTransaction(
+  narration: string,
+  meta: Record<string, unknown> = {},
+) {
+  return recurringTransaction().copy({ narration, meta });
+}
+
 describe("forecast plugin", () => {
   test("expands a monthly repeat into dated forecast transactions", () => {
     const [entries, errors] = forecast(
@@ -58,5 +65,60 @@ describe("forecast plugin", () => {
     expect(errors[0].message).toContain(
       "Invalid forecast plugin configuration",
     );
+  });
+
+  test("preserves unmatched forecast entries and non-forecast directives", () => {
+    const unmatched = forecastTransaction("Rent without a schedule");
+    const regular = recurringTransaction().copy({ flag: "*" });
+
+    const [entries, errors] = forecast(
+      [unmatched, regular],
+      defaultBeancountOptions(),
+      "now: 2024-01-15",
+    );
+
+    expect(errors).toEqual([]);
+    expect(
+      entries.map((entry) => [
+        (entry as Transaction).flag,
+        (entry as Transaction).narration,
+      ]),
+    ).toEqual([
+      ["*", "Rent [MONTHLY REPEAT 3 TIMES]"],
+      ["#", "Rent without a schedule"],
+    ]);
+  });
+
+  test("supports RFC and natural-language recurrence rules", () => {
+    const rfc = forecastTransaction("Rent [FREQ=MONTHLY;COUNT=2]");
+    const natural = forecastTransaction("Gym [Every week]");
+
+    const [entries, errors] = forecast(
+      [rfc, natural],
+      defaultBeancountOptions(),
+      "now: 2024-01-15\nend: 2024-02-01",
+    );
+
+    expect(errors).toEqual([]);
+    expect(entries).toHaveLength(5);
+    expect(
+      entries.map((entry) => (entry as Transaction).narration.trim()),
+    ).toEqual(["Gym", "Gym", "Rent", "Gym", "Gym"]);
+  });
+
+  test("records an invalid declared end while retaining the default horizon", () => {
+    const entry = forecastTransaction("Rent [MONTHLY REPEAT 2 TIMES]", {
+      end: "not a date",
+    });
+
+    const [entries, errors] = forecast(
+      [entry],
+      defaultBeancountOptions(),
+      "now: 2024-01-15",
+    );
+
+    expect(entries).toHaveLength(2);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toContain("Invalid forecast value for 'end'");
   });
 });
