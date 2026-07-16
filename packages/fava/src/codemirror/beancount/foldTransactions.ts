@@ -1,4 +1,3 @@
-/* eslint-disable prefer-const */
 import { foldEffect, syntaxTree, unfoldEffect } from "@codemirror/language";
 import type { StateEffect } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";

@@ -64,7 +64,12 @@ export default [
         sourceType: "module",
       },
     },
+    plugins: {
+      "@typescript-eslint": tseslint.plugin,
+    },
     rules: {
+      // TypeScript already checks undefined names and unused locals.
+      "no-undef": "off",
       "no-unused-vars": "off",
     },
   },
@@ -80,8 +85,12 @@ export default [
         ...globals.browser,
       },
     },
+    plugins: {
+      "@typescript-eslint": tseslint.plugin,
+    },
     rules: {
       ...legacySvelteRulesOff,
+      "no-undef": "off",
       "no-unused-vars": "off",
       "svelte/no-useless-mustaches": "off",
       "svelte/no-at-html-tags": "off",

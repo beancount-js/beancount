@@ -62,7 +62,6 @@ export function beanCountLinter() {
           });
 
         const lines: string[] = [];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         parser.errors.forEach((err: any) => {
           const lineNo = +(err?.source?.lineno || err.line);
           const key = lineNo.toString();

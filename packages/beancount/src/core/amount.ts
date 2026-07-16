@@ -1,5 +1,9 @@
 import { Decimal } from "@beancount-js/parser";
-import type { Currency, NumberSource, RoundingMode } from "@beancount-js/parser";
+import type {
+  Currency,
+  NumberSource,
+  RoundingMode,
+} from "@beancount-js/parser";
 import type { Typing } from "./data";
 
 export function sameSign(a: NumberSource, b: NumberSource) {

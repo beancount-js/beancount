@@ -56,7 +56,7 @@ export function beancountCompletion(source: () => LedgerSource) {
       };
     }
 
-    const date = context.matchBefore(/\d{4}[./\-]\d{2}[./\-]\d{2}/);
+    const date = context.matchBefore(/\d{4}[./-]\d{2}[./-]\d{2}/);
     if (date) {
       return {
         options: opts(datedDirectives),

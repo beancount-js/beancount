@@ -52,7 +52,6 @@ export class LedgerData {
   #balanceTree: Record<string, Array<IntervalTree>> = {};
   #changeTrees: Record<string, Array<IntervalTree>> = {};
   #intervalTotals: Record<string, ParsedBarChartData> = {};
-  #intervalBudgets: Record<string, Record<string, Array<AccountBudget>>> = {};
   #accountBalanceByDate: Record<
     string,
     Record<string, Record<string, number>>

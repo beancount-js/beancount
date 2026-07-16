@@ -14,7 +14,12 @@ test.describe("Docs-shell visual foundation", () => {
 
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ colorScheme: "light" });
-    await page.addInitScript(() => localStorage.clear());
+    // Clear once per page context so later reloads can persist shell prefs.
+    await page.addInitScript(() => {
+      if (sessionStorage.getItem("__e2e_storage_cleared") === "1") return;
+      localStorage.clear();
+      sessionStorage.setItem("__e2e_storage_cleared", "1");
+    });
     await gotoStudio(page, "/editor");
     await expect(
       page
@@ -194,14 +199,14 @@ test.describe("Docs-shell visual foundation", () => {
       "",
     );
     await expect(page).toHaveURL(
-      new RegExp(`/ledger/${journalStem.replaceAll("/", "\\/")}/journal/?`),
+      new RegExp(`/ledger/${journalStem.replaceAll("/", "\\/")}/dashboard/?`),
     );
     const selectedLedgerPanels = page.locator(
       `[data-ledger-file-panels="${collapsedLedgerPath}"]`,
     );
     await expect(
       selectedLedgerPanels.getByRole("button", {
-        name: "Journal",
+        name: "Dashboard",
         exact: true,
       }),
     ).toHaveAttribute("aria-current", "page");
@@ -216,7 +221,7 @@ test.describe("Docs-shell visual foundation", () => {
     await expect(editorPanel).toHaveAttribute("aria-current", "page");
     await expect(
       selectedLedgerPanels.getByRole("button", {
-        name: "Journal",
+        name: "Dashboard",
         exact: true,
       }),
     ).not.toHaveAttribute("aria-current");
@@ -337,6 +342,8 @@ test.describe("Docs-shell visual foundation", () => {
       .toBe(48);
 
     await page.getByRole("button", { name: "Expand project rail" }).click();
+    await page.getByRole("button", { name: "Workspace" }).click();
+    await page.getByRole("button", { name: "Ledgers", exact: true }).click();
     await expect(page.locator("[data-ledger-file-row]").first()).toBeVisible();
   });
 
@@ -360,7 +367,12 @@ test.describe("Docs-shell mobile navigation", () => {
 
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ colorScheme: "light" });
-    await page.addInitScript(() => localStorage.clear());
+    // Clear once per page context so later reloads can persist shell prefs.
+    await page.addInitScript(() => {
+      if (sessionStorage.getItem("__e2e_storage_cleared") === "1") return;
+      localStorage.clear();
+      sessionStorage.setItem("__e2e_storage_cleared", "1");
+    });
     await gotoStudio(page, "/editor");
     await expect(
       page
