@@ -160,6 +160,14 @@
       "status": "adapted",
       "tests": ["plugins/check-average-cost"],
       "reason": "Uses local Inventory averaging and safe numeric configuration parsing."
+    },
+    {
+      "upstreamModule": "beancount.plugins.sellgains",
+      "upstreamBehavior": "validate_sell_gains",
+      "localBehavior": "validateSellGains",
+      "status": "adapted",
+      "tests": ["plugins/sellgains"],
+      "reason": "Uses local weight and tolerance helpers with immutable directive models."
     }
   ]
 }

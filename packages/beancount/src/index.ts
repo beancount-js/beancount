@@ -16,6 +16,7 @@ export * from "./plugins/check_average_cost";
 export * from "./plugins/check_commodity";
 export * from "./plugins/check_drained";
 export * from "./plugins/unique_prices";
+export * from "./plugins/sellgains";
 export * from "./plugins/leafonly";
 export * from "./plugins/onecommodity";
 export * from "./plugins/noduplicates";

@@ -17,6 +17,7 @@ import { validateOneCommodity } from "../plugins/onecommodity";
 import { validateNoDuplicates } from "../plugins/noduplicates";
 import { validateUnusedAccounts } from "../plugins/nounused";
 import { validateUniquePrices } from "../plugins/unique_prices";
+import { validateSellGains } from "../plugins/sellgains";
 import { checkBalance } from "./balance";
 import { pad } from "./pad";
 import type { ValidationError } from "./validation";
@@ -120,6 +121,12 @@ export const Plugins: Record<string, PluginType> = {
     plugin: validateUniquePrices,
     order: 0,
     id: "beancount.plugins.unique_prices",
+    supportsConfig: false,
+  },
+  "beancount.plugins.sellgains": {
+    plugin: validateSellGains,
+    order: 0,
+    id: "beancount.plugins.sellgains",
     supportsConfig: false,
   },
   "beancount.plugins.leafonly": {
