@@ -515,9 +515,9 @@ prices, auto, close-tree, closing, drained-account, commodity declaration and
 attribute checks, coherent-cost, leaf-only, duplicate, unused-account,
 one-commodity, average-cost, sell-gains, unique-price, currency-account, and
 the pedantic bundle. Each implementation has upstream-derived regression
-coverage and a parity-manifest record. The Phase 4 exit criteria remain open
-until the loader integration suite covers default/raw ordering, duplicate
-declarations, configuration propagation, and thrown plugin errors.
+coverage and a parity-manifest record. The loader integration suite now covers
+default/raw ordering, duplicate declarations, configuration propagation, and
+thrown plugin errors, satisfying the Phase 4 exit criteria.
 
 Exit criteria:
 

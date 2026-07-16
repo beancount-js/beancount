@@ -229,6 +229,49 @@ describe("Loader", () => {
     );
   });
 
+  test("limits raw mode to declared plugins while default mode runs post plugins", () => {
+    const calls: string[] = [];
+    const plugins: Record<string, PluginType> = {
+      "example.plugin": {
+        id: "example.plugin",
+        order: 0,
+        plugin(entries) {
+          calls.push("declared");
+          return [entries, []];
+        },
+      },
+      "beancount.ops.pad": {
+        id: "beancount.ops.pad",
+        order: 10,
+        plugin(entries) {
+          calls.push("pad");
+          return [entries, []];
+        },
+      },
+      "beancount.ops.balance": {
+        id: "beancount.ops.balance",
+        order: 0,
+        plugin(entries) {
+          calls.push("balance");
+          return [entries, []];
+        },
+      },
+    };
+
+    const source = 'plugin "example.plugin"';
+    const [, rawErrors] = loadString(
+      `option "plugin_processing_mode" "raw"\n${source}`,
+      { plugins },
+    );
+    expect(rawErrors).toEqual([]);
+    expect(calls).toEqual(["declared"]);
+
+    calls.length = 0;
+    const [, defaultErrors] = loadString(source, { plugins });
+    expect(defaultErrors).toEqual([]);
+    expect(calls).toEqual(["declared", "pad", "balance"]);
+  });
+
   test("books entries in chronological order before applying transforms", () => {
     const [entries, errors] = loadString(
       `
