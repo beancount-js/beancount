@@ -88,7 +88,12 @@ export {
   type BrandfetchCachedResponse,
   type BrandfetchResponseCache,
 } from "./brandfetch-cache";
-export { FilesystemMerchantStore, type ConfirmMerchantInput } from "./merchant";
+export {
+  FilesystemMerchantStore,
+  type ConfirmMerchantInput,
+  type MerchantProfileDetails,
+  type UpdateMerchantInput,
+} from "./merchant";
 export {
   applyMerchantResolutionToPendingProposals,
   buildMerchantReviewClusters,

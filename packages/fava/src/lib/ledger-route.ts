@@ -48,6 +48,7 @@ export const HASH_VIEW_TO_SEGMENT: Record<string, string> = {
   "/import/editor": "settings",
   "/import/accounts": "settings/accounts",
   "/import/merchants": "settings/merchants",
+  "/import/manage-merchants": "settings/manage-merchants",
   "/import/brands": "settings/brands",
   "/import/rules": "settings/rules",
 };
@@ -71,6 +72,7 @@ export const SEGMENT_TO_HASH_VIEW: Record<string, string> = {
   settings: "/import/editor",
   "settings/accounts": "/import/accounts",
   "settings/merchants": "/import/merchants",
+  "settings/manage-merchants": "/import/manage-merchants",
   "settings/brands": "/import/brands",
   "settings/rules": "/import/rules",
 };
@@ -141,29 +143,26 @@ export function parseLedgerAndView(
     .filter(Boolean);
   if (!parts.length) return null;
 
-  // settings/accounts | settings/merchants | settings/brands | settings/rules
+  // settings/accounts | settings/merchants | settings/manage-merchants | …
+  const settingsSubpages: Record<string, string> = {
+    accounts: "/import/accounts",
+    merchants: "/import/merchants",
+    "manage-merchants": "/import/manage-merchants",
+    brands: "/import/brands",
+    rules: "/import/rules",
+  };
   if (
     parts.length >= 2 &&
     parts.at(-2) === "settings" &&
-    (parts.at(-1) === "accounts" ||
-      parts.at(-1) === "merchants" ||
-      parts.at(-1) === "brands" ||
-      parts.at(-1) === "rules")
+    parts.at(-1) &&
+    parts.at(-1)! in settingsSubpages
   ) {
     const settingsView = parts.at(-1)!;
     const ledgerParts = parts.slice(0, -2);
     if (!ledgerParts.length) return null;
-    const viewPath =
-      settingsView === "merchants"
-        ? "/import/merchants"
-        : settingsView === "brands"
-          ? "/import/brands"
-          : settingsView === "rules"
-            ? "/import/rules"
-            : "/import/accounts";
     return {
       ledgerStem: ledgerParts.join("/"),
-      viewPath,
+      viewPath: settingsSubpages[settingsView]!,
       viewSegment: `settings/${settingsView}`,
       params: {},
     };

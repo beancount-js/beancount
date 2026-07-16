@@ -106,7 +106,9 @@
       last &&
         (last === "accounts" ||
           last === "merchants" ||
+          last === "manage-merchants" ||
           last === "brands" ||
+          last === "rules" ||
           segments.includes("account") ||
           [
             "journal",

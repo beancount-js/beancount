@@ -49,6 +49,14 @@ describe("ledger-route", () => {
       viewSegment: "settings/merchants",
       params: {},
     });
+    expect(
+      parseLedgerAndView(["sample", "settings", "manage-merchants"]),
+    ).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/manage-merchants",
+      viewSegment: "settings/manage-merchants",
+      params: {},
+    });
     expect(parseLedgerAndView(["sample", "settings", "brands"])).toEqual({
       ledgerStem: "sample",
       viewPath: "/import/brands",

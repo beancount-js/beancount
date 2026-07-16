@@ -128,6 +128,7 @@ function viewSegmentFromPath(viewPath: string): string {
     "/import/editor": "settings",
     "/import/accounts": "settings/accounts",
     "/import/merchants": "settings/merchants",
+    "/import/manage-merchants": "settings/manage-merchants",
   };
   let segment = map[clean];
   if (!segment && clean.startsWith("/account/")) {

@@ -23,6 +23,7 @@
   import IngestionConfigEditor from "./components/IngestionConfigEditor.svelte";
   import IngestionAccountsSetup from "./components/IngestionAccountsSetup.svelte";
   import IngestionMerchantReview from "./components/IngestionMerchantReview.svelte";
+  import IngestionMerchantManage from "./components/IngestionMerchantManage.svelte";
   import IngestionBrandSettings from "./components/IngestionBrandSettings.svelte";
   import RulesSettings from "./components/RulesSettings.svelte";
   import FavaNavigation from "./components/FavaNavigation.svelte";
@@ -83,6 +84,7 @@
       { path: "/import/editor", element: IngestionConfigEditor },
       { path: "/import/accounts", element: IngestionAccountsSetup },
       { path: "/import/merchants", element: IngestionMerchantReview },
+      { path: "/import/manage-merchants", element: IngestionMerchantManage },
       { path: "/import/brands", element: IngestionBrandSettings },
       { path: "/import/rules", element: RulesSettings },
       { path: "/directives", element: Editor },
@@ -106,6 +108,7 @@
     "/import/editor": "Sources",
     "/import/accounts": "Accounts",
     "/import/merchants": "Review merchants",
+    "/import/manage-merchants": "Manage merchants",
     "/import/brands": "Brand match",
     "/import/rules": "Rules",
     "/directives": "Editor",

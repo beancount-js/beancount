@@ -55,6 +55,19 @@ export interface ConfirmMerchantInput {
   overwriteDetails?: boolean;
 }
 
+export interface UpdateMerchantInput {
+  canonicalName?: string;
+  domain?: string;
+  description?: string;
+  industry?: string;
+  countryCode?: string;
+  notes?: string;
+}
+
+export type MerchantProfileDetails = MerchantIdentity & {
+  notes: string;
+};
+
 function safeProject(value: string) {
   if (!/^[a-zA-Z0-9_-]+$/.test(value))
     throw new Error("Invalid project identifier.");
@@ -398,6 +411,14 @@ export class FilesystemMerchantStore {
     return (await this.readProfile(project, merchantId)).merchant;
   }
 
+  async getDetails(
+    project: string,
+    merchantId: string,
+  ): Promise<MerchantProfileDetails> {
+    const profile = await this.readProfile(project, merchantId);
+    return { ...profile.merchant, notes: profile.notes };
+  }
+
   async findByDomain(project: string, domain: string) {
     const normalized = validDomain(domain);
     if (!normalized) return undefined;
@@ -521,6 +542,67 @@ export class FilesystemMerchantStore {
       });
       await this.rebuildIndex(project);
       return merchant;
+    });
+  }
+
+  /**
+   * Direct catalog edit for a persisted merchant profile (no proposal context).
+   * Empty optional strings clear those fields; invalid domains are rejected.
+   */
+  async update(
+    project: string,
+    merchantId: string,
+    input: UpdateMerchantInput,
+  ): Promise<MerchantProfileDetails> {
+    return this.withLock(project, async () => {
+      const profile = await this.readProfile(project, merchantId);
+      const merchant = profile.merchant;
+      const timestamp = now();
+
+      if (input.canonicalName !== undefined) {
+        const canonicalName = input.canonicalName.trim();
+        if (!canonicalName) throw new Error("A merchant name is required.");
+        merchant.canonicalName = canonicalName;
+      }
+
+      if (input.domain !== undefined) {
+        const raw = input.domain.trim();
+        if (!raw) {
+          merchant.domain = undefined;
+        } else {
+          const domain = validDomain(raw);
+          if (!domain) throw new Error("Enter a valid domain hostname.");
+          merchant.domain = domain;
+        }
+      }
+
+      if (input.description !== undefined) {
+        merchant.description = value(input.description);
+      }
+      if (input.industry !== undefined) {
+        merchant.industry = value(input.industry);
+      }
+      if (input.countryCode !== undefined) {
+        merchant.countryCode = value(input.countryCode)?.toUpperCase();
+      }
+      if (input.notes !== undefined) {
+        profile.notes = input.notes;
+      }
+
+      merchant.provenance = [
+        ...merchant.provenance,
+        { source: "manual", observedAt: timestamp },
+      ];
+
+      await this.writeProfile(project, profile);
+      await this.appendEvent(project, {
+        version: 1,
+        type: "corrected",
+        at: timestamp,
+        merchantId: merchant.merchantId,
+      });
+      await this.rebuildIndex(project);
+      return { ...merchant, notes: profile.notes };
     });
   }
 

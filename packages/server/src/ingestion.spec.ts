@@ -395,6 +395,67 @@ describe("FilesystemIngestionStore", () => {
     ).resolves.toContain('"type":"cleared-suppression"');
   });
 
+  test("updates persisted merchant profile details directly", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-test-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+
+    const merchant = await store.merchants.confirm("project", {
+      sourceId: "bank",
+      rawLabel: "TESCO STORES 1234",
+      candidate: {
+        id: "ai:tesco",
+        canonicalName: "Tesco",
+        domain: "tesco.com",
+        description: "British supermarket.",
+        rawScore: 0.9,
+        explanation: "AI merchant suggestion.",
+        provenance: [
+          {
+            source: "ai",
+            provider: "codex",
+            observedAt: "2026-07-15T12:00:00.000Z",
+          },
+        ],
+      },
+    });
+
+    const updated = await store.merchants.update("project", merchant.merchantId, {
+      canonicalName: "Tesco Stores",
+      domain: "www.tesco.com",
+      description: "Updated description.",
+      industry: "Grocery",
+      countryCode: "gb",
+      notes: "Preferred grocery merchant.",
+    });
+
+    expect(updated).toMatchObject({
+      merchantId: merchant.merchantId,
+      canonicalName: "Tesco Stores",
+      domain: "www.tesco.com",
+      description: "Updated description.",
+      industry: "Grocery",
+      countryCode: "GB",
+      notes: "Preferred grocery merchant.",
+    });
+    await expect(
+      store.merchants.getDetails("project", merchant.merchantId),
+    ).resolves.toMatchObject({
+      canonicalName: "Tesco Stores",
+      notes: "Preferred grocery merchant.",
+    });
+    await expect(
+      store.merchants.findByDomain("project", "www.tesco.com"),
+    ).resolves.toMatchObject({ merchantId: merchant.merchantId });
+    await expect(
+      store.merchants.update("project", merchant.merchantId, {
+        domain: "not a domain",
+      }),
+    ).rejects.toThrow(/valid domain/i);
+  });
+
   test("confirm with targetMerchantId attaches alias to the existing merchant", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-merge-"),

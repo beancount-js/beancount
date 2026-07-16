@@ -11,6 +11,7 @@
   import ImportIcon from "lucide-svelte/icons/import";
   import Landmark from "lucide-svelte/icons/landmark";
   import Palette from "lucide-svelte/icons/palette";
+  import BookUser from "lucide-svelte/icons/book-user";
   import Store from "lucide-svelte/icons/store";
   import List from "lucide-svelte/icons/list";
   import ListFilter from "lucide-svelte/icons/list-filter";
@@ -259,6 +260,7 @@
       routePath === "/import/editor" ||
       routePath === "/import/accounts" ||
       routePath === "/import/merchants" ||
+      routePath === "/import/manage-merchants" ||
       routePath === "/import/brands" ||
       routePath === "/import/rules" ||
       routePath === "/records"
@@ -563,6 +565,33 @@
             <span class="block text-xs font-medium">Review merchants</span>
             <span class="block truncate text-[11px] text-muted-foreground"
               >Confirm merchants across pending imports</span
+            >
+          </span>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          class={cn(
+            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+            isLedgerSettingActive("/import/manage-merchants", activeViewPath)
+              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+          )}
+          aria-current={isLedgerSettingActive(
+            "/import/manage-merchants",
+            activeViewPath,
+          )
+            ? "page"
+            : undefined}
+          disabled={files.length === 0}
+          onclick={() => openLedgerSetting("/import/manage-merchants")}
+        >
+          <BookUser data-icon="inline-start" />
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-medium">Manage merchants</span>
+            <span class="block truncate text-[11px] text-muted-foreground"
+              >Edit saved merchant profiles and aliases</span
             >
           </span>
         </Button>
