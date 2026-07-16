@@ -255,4 +255,29 @@ describe("Inventory", () => {
     expect(new InventoryKey("USD").copy().hash).toBe("USD");
     expect(new CounterInventory().add(null)).toBeUndefined();
   });
+
+  test("sorts positions through cost and unit tie-breakers", () => {
+    const inventory = new Inventory(
+      new Position(
+        new Amount("1", "HOOL"),
+        new Cost(DateTime.fromISO("2024-01-01"), new Amount("3", "USD")),
+      ),
+      new Position(
+        new Amount("2", "HOOL"),
+        new Cost(DateTime.fromISO("2024-01-02"), new Amount("5", "USD")),
+      ),
+      new Position(
+        new Amount("3", "HOOL"),
+        new Cost(DateTime.fromISO("2024-01-03"), new Amount("5", "EUR")),
+      ),
+      new Position(
+        new Amount("4", "HOOL"),
+        new Cost(DateTime.fromISO("2024-01-04"), new Amount("5", "EUR")),
+      ),
+    );
+
+    expect(inventory.toString(true)).toBe(
+      "(1 HOOL { 3 USD, 2024-01-01 }, 3 HOOL { 5 EUR, 2024-01-03 }, 4 HOOL { 5 EUR, 2024-01-04 }, 2 HOOL { 5 USD, 2024-01-02 })",
+    );
+  });
 });
