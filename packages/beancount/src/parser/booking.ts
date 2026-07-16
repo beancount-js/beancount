@@ -95,7 +95,39 @@ export function book(
     newEntries.push(entry);
   });
 
-  return [newEntries, errors, balances];
+  return [
+    newEntries,
+    [...errors, ...validateMissingEliminated(newEntries)],
+    balances,
+  ];
+}
+
+/** Reports postings whose missing fields could not be eliminated during booking. */
+export function validateMissingEliminated(
+  entries: Directives,
+): Array<ValidationError> {
+  const errors: Array<ValidationError> = [];
+  entries.forEach((entry) => {
+    if (!(entry instanceof Transaction)) return;
+    const incomplete = entry.postings.some((posting) => {
+      const units = posting.units;
+      if (!units?.isDefined() || !units.currency) return true;
+
+      const cost = posting.cost;
+      if (!cost) return false;
+      if (cost instanceof CostSpec) return true;
+      return !cost.amount?.isDefined() || !cost.amount.currency || !cost.date;
+    });
+    if (incomplete) {
+      errors.push(
+        new ValidationError("Transaction has incomplete elements", {
+          directive: entry,
+          errorType: "BookingError",
+        }),
+      );
+    }
+  });
+  return errors;
 }
 
 enum MissingTypes {

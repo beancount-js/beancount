@@ -3,8 +3,9 @@ import { DateTime } from "luxon";
 import { Amount } from "../core/amount";
 import { Booking, Open, Posting, Transaction } from "../core/data";
 import { defaultBeancountOptions } from "../core/options";
-import { Cost } from "../core/position";
-import { book } from "./booking";
+import { Inventory } from "../core/inventory";
+import { Cost, Position } from "../core/position";
+import { book, validateMissingEliminated } from "./booking";
 
 const account = "Assets:Investments";
 
@@ -97,5 +98,49 @@ describe("book", () => {
     expect(errors).toEqual([]);
     const sale = entries.at(-1) as Transaction;
     expect(sale.postings[0].resolvedCost?.amount?.toString()).toBe("20 USD");
+  });
+
+  test("reduces against caller-supplied initial balances", () => {
+    const initialBalances = {
+      [account]: new Inventory(
+        new Position(
+          new Amount("1", "HOOL"),
+          new Cost(DateTime.fromISO("2020-01-01"), new Amount("10", "USD")),
+        ),
+      ),
+    };
+    const [entries, errors, balances] = book(
+      [
+        transaction("2022-01-01", "Sell opening lot", [
+          new Posting(account, new Amount("-1", "HOOL"), new Cost()),
+          new Posting("Assets:Cash", new Amount("10", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+      initialBalances,
+    );
+
+    expect(errors).toEqual([]);
+    expect(
+      (entries[0] as Transaction).postings[0].resolvedCost?.amount?.toString(),
+    ).toBe("10 USD");
+    expect(balances[account].isEmpty()).toBe(true);
+  });
+
+  test("reports transactions that retain incomplete resolved costs", () => {
+    const incomplete = transaction("2022-01-01", "Missing lot date", [
+      new Posting(
+        account,
+        new Amount("1", "HOOL"),
+        new Cost(null, new Amount("10", "USD")),
+      ),
+      new Posting("Equity:Opening-Balances", new Amount("-10", "USD")),
+    ]);
+
+    const errors = validateMissingEliminated([incomplete]);
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toBe("Transaction has incomplete elements");
+    expect(errors[0].context.directive).toBe(incomplete);
   });
 });

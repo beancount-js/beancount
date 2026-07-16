@@ -2,6 +2,14 @@
   "upstreamCommit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
   "records": [
     {
+      "upstreamModule": "beancount.parser.booking",
+      "upstreamBehavior": "initial_balances_and_missing_element_validation",
+      "localBehavior": "book, validateMissingEliminated",
+      "status": "adapted",
+      "tests": ["parser/booking"],
+      "reason": "Uses caller-owned Inventory instances and local Amount/Cost missing-field checks."
+    },
+    {
       "upstreamModule": "beancount.parser.booking_method",
       "upstreamBehavior": "average_fifo_lifo_hifo_and_strict_size_lot_resolution",
       "localBehavior": "handleAmbiguousMatches",
