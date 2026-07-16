@@ -68,7 +68,9 @@ export function renderPostingStrings(
     ? `${renderFlag(posting.flag)} ${posting.account}`
     : posting.account;
   if (!posting.units?.isDefined()) return [flagAccount, "", ""];
-  const cost = posting.cost?.toString(true) ?? "";
+  const cost = (posting.cost?.toString(true) ?? "")
+    .replace(/^\{\s*/, "{")
+    .replace(/\s*\}$/, "}");
   const price = posting.price ? ` @ ${writeScalar(posting.price)}` : "";
   const position = `${posting.units}${cost ? ` ${cost}` : ""}${price}`;
   return [flagAccount, position, getWeight(posting).toString()];
@@ -100,11 +102,10 @@ export function formatTransaction(
   const includeWeights =
     renderWeights && transaction.postings.some(hasNonTrivialBalance);
   const postings = rows.map(([account], index) => {
-    const line =
-      `  ${account.padEnd(accountWidth)}  ${positions[index].padEnd(Math.max(1, positionWidth))}`.trimEnd();
+    const line = `  ${account.padEnd(accountWidth)}  ${positions[index].padEnd(Math.max(1, positionWidth))}`;
     return includeWeights
       ? `${line}  ; ${weights[index].padEnd(Math.max(1, weightWidth))}`.trimEnd()
-      : line;
+      : line.trimEnd();
   });
   return [header, ...postings].join("\n");
 }

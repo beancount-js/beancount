@@ -9,6 +9,7 @@ import loaderFixture from "./fixtures/loader-recursive-relative-includes.json";
 import pricesFixture from "./fixtures/prices-last-price-entries.json";
 import bookingFixture from "./fixtures/booking-per-unit-cost.json";
 import printerFixture from "./fixtures/printer-transaction-weights.json";
+import costedPrinterFixture from "./fixtures/printer-costed-transaction.json";
 import { UPSTREAM_COMMIT } from "./manifest";
 
 describe("upstream oracle fixtures", () => {
@@ -77,6 +78,17 @@ describe("upstream oracle fixtures", () => {
     expect(entry).toBeInstanceOf(Transaction);
     expect(formatTransaction(entry as Transaction)).toBe(
       printerFixture.oracle.text.trimEnd(),
+    );
+  });
+
+  test("parity/printer/costed-transaction-weights", () => {
+    expect(costedPrinterFixture.upstream.commit).toBe(UPSTREAM_COMMIT);
+    const [entries, errors] = loadString(costedPrinterFixture.scenario.ledger);
+    expect(errors).toEqual(costedPrinterFixture.oracle.errors);
+    const entry = entries[costedPrinterFixture.scenario.entryIndex];
+    expect(entry).toBeInstanceOf(Transaction);
+    expect(formatTransaction(entry as Transaction, true)).toBe(
+      costedPrinterFixture.oracle.text.trimEnd(),
     );
   });
 });

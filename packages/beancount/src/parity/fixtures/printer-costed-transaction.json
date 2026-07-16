@@ -1,0 +1,19 @@
+{
+  "upstream": {
+    "commit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
+    "module": "beancount.parser.printer",
+    "source": "beancount/parser/printer_test.py::TestEntryPrinter.test_render_weight",
+    "copyright": "Copyright (C) 2014-2020, 2024-2025 Martin Blais",
+    "license": "GPL-2.0-only"
+  },
+  "scenario": {
+    "operation": "format_transaction",
+    "ledger": "2024-01-01 open Assets:Brokerage\n2024-01-01 open Assets:Cash\n2024-01-02 * \"Purchase\"\n  Assets:Brokerage 1 HOOL {10 USD}\n  Assets:Cash -10 USD\n",
+    "entryIndex": 2,
+    "renderWeights": true
+  },
+  "oracle": {
+    "errors": [],
+    "text": "2024-01-02 * \"Purchase\"\n  Assets:Brokerage    1 HOOL {10 USD, 2024-01-02}  ;  10 USD\n  Assets:Cash       -10 USD                        ; -10 USD\n"
+  }
+}
