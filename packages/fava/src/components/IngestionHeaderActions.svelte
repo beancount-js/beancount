@@ -335,6 +335,12 @@
         </Tooltip.Trigger>
         <Tooltip.Content>Edit sources</Tooltip.Content>
       </Tooltip.Root>
+    {:else if header.kind === "status"}
+      {#if header.saveHint}
+        <p class="text-xs text-muted-foreground" role="status">
+          {header.saveHint}
+        </p>
+      {/if}
     {:else}
       {#if header.saveHint}
         <p class="text-xs text-muted-foreground" role="status">

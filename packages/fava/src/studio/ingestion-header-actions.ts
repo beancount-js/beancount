@@ -51,10 +51,17 @@ export type IngestionMerchantsHeaderActions = {
   onEditSources: () => void;
 };
 
+/** Lightweight status/save hint for pages like Rules settings. */
+export type IngestionStatusHeaderActions = {
+  kind: "status";
+  saveHint: string;
+};
+
 export type IngestionHeaderActions =
   | IngestionEditorHeaderActions
   | IngestionReviewHeaderActions
-  | IngestionMerchantsHeaderActions;
+  | IngestionMerchantsHeaderActions
+  | IngestionStatusHeaderActions;
 
 /** Ingestion controls rendered in `studio-workspace-header`. */
 export const ingestionHeaderActions = writable<IngestionHeaderActions | null>(

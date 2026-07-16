@@ -12,12 +12,14 @@
     summarizeRule,
     type DetectionRule,
   } from "@beancount-js/beangulp";
+  import { onDestroy } from "svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import * as Empty from "$lib/components/ui/empty";
   import { Switch } from "$lib/components/ui/switch";
   import { cn } from "$lib/utils";
+  import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { rulesJson, rulesPath } from "../rules/api";
   import type {
@@ -286,6 +288,19 @@
       void load();
     }
   });
+
+  $effect(() => {
+    if (isWeb || !project) {
+      ingestionHeaderActions.set(null);
+      return;
+    }
+    ingestionHeaderActions.set({
+      kind: "status",
+      saveHint: status,
+    });
+  });
+
+  onDestroy(() => ingestionHeaderActions.set(null));
 </script>
 
 <section class="h-full overflow-y-auto p-4 sm:p-6" data-rules-settings>
@@ -357,10 +372,6 @@
           </Button>
         </div>
       </div>
-
-      {#if status}
-        <p class="text-sm text-muted-foreground" role="status">{status}</p>
-      {/if}
 
       {#if loading && !rules.length}
         <div

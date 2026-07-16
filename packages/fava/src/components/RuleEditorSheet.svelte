@@ -232,7 +232,7 @@
       <Sheet.Title
         bind:ref={sheetTitleEl}
         tabindex="-1"
-        class="min-w-0 flex-1 truncate text-sm font-semibold leading-none outline-none"
+        class="rule-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
       >
         {dialogTitle}
       </Sheet.Title>
@@ -472,3 +472,12 @@
     </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>
+
+<style>
+  :global(.rule-sheet-title) {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+</style>
