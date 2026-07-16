@@ -46,17 +46,6 @@ export interface ConversionContext {
   date: DateTime;
 }
 
-export function getCost(entry: {
-  units: Amount;
-  cost?: Cost | CostSpec | null;
-}) {
-  const cost = entry.cost;
-  if (cost instanceof Cost && cost.amount) {
-    return cost.amount.mul(entry.units);
-  }
-  return entry.units;
-}
-
 export function costOrValue(
   inventory: CounterInventory,
   conversion: Conversion,
