@@ -16,7 +16,7 @@ import { ingestionSamples } from "./samples";
 describe("ingestion source form draft", () => {
   test("removes server-computed source properties without changing editable values", () => {
     const response = {
-      version: 1 as const,
+      version: 2 as const,
       accounts: ["Assets:Bank:Checking"],
       sources: [
         {
@@ -36,7 +36,7 @@ describe("ingestion source form draft", () => {
 
   test("round-trips optional configuration and strips server-only JSON fields", () => {
     const raw = JSON.stringify({
-      version: 1,
+      version: 2,
       sources: [
         {
           ...exampleIngestionConfig.sources[0],
@@ -61,14 +61,14 @@ describe("ingestion source form draft", () => {
       "must be an object",
     );
     expect(() =>
-      parseEditableIngestionConfig('{"version":2,"sources":[]}'),
-    ).toThrow("version must be 1");
+      parseEditableIngestionConfig('{"version":3,"sources":[]}'),
+    ).toThrow("version must be 1 or 2");
     expect(() => parseEditableIngestionConfig('{"version":1}')).toThrow(
       "sources must be an array",
     );
     expect(() =>
       parseEditableIngestionConfig('{"version":1,"sources":[{}]}'),
-    ).toThrow("kind must be json-api");
+    ).toThrow("kind must be a string");
   });
 
   test("round-trips the YAML source editor through the same safe draft shape", () => {
@@ -79,8 +79,8 @@ describe("ingestion source form draft", () => {
     expect(() => parseEditableIngestionYaml("sources: [")).toThrow(
       "Invalid YAML",
     );
-    expect(() => parseEditableIngestionYaml("version: 2\nsources: []")).toThrow(
-      "version must be 1",
+    expect(() => parseEditableIngestionYaml("version: 3\nsources: []")).toThrow(
+      "version must be 1 or 2",
     );
   });
 
@@ -97,8 +97,8 @@ describe("ingestion source form draft", () => {
     expect(second.id).toBe("source-2");
     expect(copy.id).not.toBe(exampleIngestionConfig.sources[0].id);
     expect(copy.name).toBe("My bank copy");
-    copy.api.endpoint = "https://changed.example.test";
-    expect(exampleIngestionConfig.sources[0].api.endpoint).toBe(
+    copy.api!.endpoint = "https://changed.example.test";
+    expect(exampleIngestionConfig.sources[0].api!.endpoint).toBe(
       "https://api.example.com/transactions",
     );
   });
@@ -110,11 +110,14 @@ describe("ingestion source form draft", () => {
     expect(lunchflow).toBeDefined();
     const connected = sourceFromSample(lunchflow!.template, []);
     expect(connected.id).toBe("lunchflow");
-    expect(connected.api.baseUrl).toBe("https://www.lunchflow.app/api/v1");
-    expect(connected.api.secretRef).toBe("env:LUNCHFLOW_API_KEY");
-    expect(connected.merchantEnrichment?.brandfetch?.clientId).toBe(
-      "env:BRANDFETCH_CLIENT_ID",
+    expect(connected.kind).toBe("lunchflow");
+    expect((connected.config as { baseUrl?: string }).baseUrl).toBe(
+      "https://www.lunchflow.app/api/v1",
     );
+    expect((connected.config as { secretRef?: string }).secretRef).toBe(
+      "env:LUNCHFLOW_API_KEY",
+    );
+    expect(connected.merchantEnrichment?.brandfetch).toBeUndefined();
     expect(connected.accounts).toEqual([]);
 
     const conflict = sourceFromSample(lunchflow!.template, [connected]);
@@ -126,7 +129,7 @@ describe("ingestion source form draft", () => {
       (sample) => sample.id === "lunchflow",
     )!;
     const draft = {
-      version: 1 as const,
+      version: 2 as const,
       sources: [
         {
           ...structuredClone(lunchflow.template),
@@ -151,8 +154,8 @@ describe("ingestion source form draft", () => {
 
     const invalid = structuredClone(exampleIngestionConfig);
     invalid.sources[0].id = "bad identifier";
-    invalid.sources[0].api.endpoint = "http://api.example.test/transactions";
-    invalid.sources[0].api.secretRef = "";
+    invalid.sources[0].api!.endpoint = "http://api.example.test/transactions";
+    invalid.sources[0].api!.secretRef = "";
     invalid.sources.push({ ...structuredClone(invalid.sources[0]) });
 
     const issues = validateEditableIngestionConfig(invalid);

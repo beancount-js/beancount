@@ -23,6 +23,8 @@
   import IngestionConfigEditor from "./components/IngestionConfigEditor.svelte";
   import IngestionAccountsSetup from "./components/IngestionAccountsSetup.svelte";
   import IngestionMerchantReview from "./components/IngestionMerchantReview.svelte";
+  import IngestionBrandSettings from "./components/IngestionBrandSettings.svelte";
+  import RulesSettings from "./components/RulesSettings.svelte";
   import FavaNavigation from "./components/FavaNavigation.svelte";
   import Search from "./components/Search.svelte";
   import JournalRecordRouteSheet from "./components/JournalRecordRouteSheet.svelte";
@@ -81,6 +83,8 @@
       { path: "/import/editor", element: IngestionConfigEditor },
       { path: "/import/accounts", element: IngestionAccountsSetup },
       { path: "/import/merchants", element: IngestionMerchantReview },
+      { path: "/import/brands", element: IngestionBrandSettings },
+      { path: "/import/rules", element: RulesSettings },
       { path: "/directives", element: Editor },
       { path: "/resource", element: ResourceViewer },
     ],
@@ -102,6 +106,8 @@
     "/import/editor": "Sources",
     "/import/accounts": "Accounts",
     "/import/merchants": "Review merchants",
+    "/import/brands": "Brand match",
+    "/import/rules": "Rules",
     "/directives": "Editor",
     "/resource": "Resource",
     "/404": "Page not found",

@@ -1,7 +1,15 @@
 import type { FormValidationIssue } from "@beancount-js/forms";
-import { isGroupedJsonApiSource } from "@beancount-js/beangulp";
-import type { IngestionConfigResponse, IngestionSource } from "./types";
+import type {
+  BrandfetchEnrichmentConfig,
+  IngestionConfigResponse,
+  IngestionSource,
+} from "./types";
 import { isEnvSecretNameValid, isSecretConfigured } from "./secret-ref";
+import {
+  isConnectorSource,
+  isGroupedSource,
+  sourceSecretRef,
+} from "./connectors";
 import { parse, stringify } from "yaml";
 
 export type EditableIngestionSource = Omit<
@@ -10,12 +18,13 @@ export type EditableIngestionSource = Omit<
 >;
 
 export type EditableIngestionConfig = {
-  version: 1;
+  version: 1 | 2;
+  brandfetch?: BrandfetchEnrichmentConfig;
   sources: EditableIngestionSource[];
 };
 
 export const exampleIngestionConfig: EditableIngestionConfig = {
-  version: 1,
+  version: 2,
   sources: [
     {
       id: "bank",
@@ -33,12 +42,6 @@ export const exampleIngestionConfig: EditableIngestionConfig = {
         enabled: true,
         aiEnabled: false,
         countryCode: "GB",
-        brandfetch: {
-          enabled: false,
-          apiKeySecretRef: "env:BRANDFETCH_API_KEY",
-          clientId: "env:BRANDFETCH_CLIENT_ID",
-          assetMode: "hotlink",
-        },
       },
       api: {
         endpoint: "https://api.example.com/transactions",
@@ -59,7 +62,7 @@ export const exampleIngestionConfig: EditableIngestionConfig = {
         narration: "description",
         status: "status",
       },
-      rules: [{ merchant: "Tesco", account: "Expenses:Food:Groceries" }],
+      rules: [],
     },
   ],
 };
@@ -81,6 +84,7 @@ export function editableIngestionConfig(
 ): EditableIngestionConfig {
   return clone({
     version: response.version,
+    brandfetch: response.brandfetch,
     sources: response.sources.map(
       ({
         credentialAvailable: _credentialAvailable,
@@ -112,46 +116,54 @@ export function parseEditableIngestionConfig(
   }
 
   const root = asRecord(parsed, "Source configuration");
-  if (root.version !== 1) {
-    throw new Error("Source configuration version must be 1.");
+  if (root.version !== 1 && root.version !== 2) {
+    throw new Error("Source configuration version must be 1 or 2.");
   }
   if (!Array.isArray(root.sources)) {
     throw new Error("Source configuration sources must be an array.");
   }
 
   return clone({
-    version: 1,
+    version: root.version as 1 | 2,
+    brandfetch: root.brandfetch as BrandfetchEnrichmentConfig | undefined,
     sources: root.sources.map((source, index) => {
       const item = asRecord(source, `Source ${index + 1}`);
-      if (item.kind !== "json-api") {
-        throw new Error(`Source ${index + 1} kind must be json-api.`);
+      if (typeof item.kind !== "string" || !item.kind.trim()) {
+        throw new Error(`Source ${index + 1} kind must be a string.`);
       }
       for (const key of ["id", "name"]) {
         if (typeof item[key] !== "string") {
           throw new Error(`Source ${index + 1} ${key} must be a string.`);
         }
       }
+      const connector = item.kind !== "json-api";
       const grouped = Array.isArray(item.accounts);
-      if (!grouped && typeof item.sourceAccount !== "string") {
+      if (!connector && !grouped && typeof item.sourceAccount !== "string") {
         throw new Error(`Source ${index + 1} sourceAccount must be a string.`);
       }
-      const api = asRecord(item.api, `Source ${index + 1} api`);
-      if (typeof api.secretRef !== "string") {
-        throw new Error(`Source ${index + 1} api.secretRef must be a string.`);
-      }
-      if (grouped) {
-        if (typeof api.baseUrl !== "string") {
-          throw new Error(`Source ${index + 1} api.baseUrl must be a string.`);
+      if (connector) {
+        if (!item.config || typeof item.config !== "object") {
+          throw new Error(`Source ${index + 1} config must be an object.`);
         }
-      } else if (typeof api.endpoint !== "string") {
-        throw new Error(`Source ${index + 1} api.endpoint must be a string.`);
-      }
-      const mapping = asRecord(item.mapping, `Source ${index + 1} mapping`);
-      for (const key of ["date", "amount"]) {
-        if (typeof mapping[key] !== "string") {
-          throw new Error(
-            `Source ${index + 1} mapping.${key} must be a string.`,
-          );
+      } else {
+        const api = asRecord(item.api, `Source ${index + 1} api`);
+        if (typeof api.secretRef !== "string") {
+          throw new Error(`Source ${index + 1} api.secretRef must be a string.`);
+        }
+        if (grouped) {
+          if (typeof api.baseUrl !== "string") {
+            throw new Error(`Source ${index + 1} api.baseUrl must be a string.`);
+          }
+        } else if (typeof api.endpoint !== "string") {
+          throw new Error(`Source ${index + 1} api.endpoint must be a string.`);
+        }
+        const mapping = asRecord(item.mapping, `Source ${index + 1} mapping`);
+        for (const key of ["date", "amount"]) {
+          if (typeof mapping[key] !== "string") {
+            throw new Error(
+              `Source ${index + 1} mapping.${key} must be a string.`,
+            );
+          }
         }
       }
       if (!Array.isArray(item.rules)) {
@@ -279,7 +291,8 @@ function sourceIssues(
     severity: "error",
   });
   const issues: FormValidationIssue[] = [];
-  const grouped = isGroupedJsonApiSource(source);
+  const connector = isConnectorSource(source);
+  const grouped = isGroupedSource(source);
 
   if (!source.id?.trim())
     issues.push(field("id", "A source identifier is required."));
@@ -292,7 +305,22 @@ function sourceIssues(
     issues.push(field("name", "A source name is required."));
 
   if (grouped) {
-    if (!source.api?.baseUrl?.trim()) {
+    if (connector) {
+      const baseUrl = (source.config as { baseUrl?: string } | undefined)
+        ?.baseUrl;
+      if (!baseUrl?.trim()) {
+        issues.push(field("config.baseUrl", "A base API URL is required."));
+      } else {
+        validateUrlField(
+          baseUrl,
+          (source.config as { allowedHosts?: string[] } | undefined)
+            ?.allowedHosts,
+          "config.baseUrl",
+          sourceIndex,
+          issues,
+        );
+      }
+    } else if (!source.api?.baseUrl?.trim()) {
       issues.push(field("api.baseUrl", "A base API URL is required."));
     } else {
       validateUrlField(
@@ -336,7 +364,7 @@ function sourceIssues(
         }
       });
     }
-  } else {
+  } else if (!connector) {
     if (!source.sourceAccount?.trim()) {
       issues.push(field("sourceAccount", "A source account is required."));
     }
@@ -353,23 +381,27 @@ function sourceIssues(
     }
   }
 
-  if (!isSecretConfigured(source.api?.secretRef)) {
+  const secretRef = sourceSecretRef(source);
+  const secretFieldId = connector ? "config.secretRef" : "api.secretRef";
+  if (!isSecretConfigured(secretRef)) {
     issues.push(
-      field("api.secretRef", "Enter an API key or environment variable name."),
+      field(secretFieldId, "Enter an API key or environment variable name."),
     );
-  } else if (!isEnvSecretNameValid(source.api.secretRef)) {
+  } else if (!isEnvSecretNameValid(secretRef!)) {
     issues.push(
       field(
-        "api.secretRef",
+        secretFieldId,
         "Environment variable names may use letters, numbers, and underscores.",
       ),
     );
   }
-  if (!source.mapping?.date?.trim()) {
-    issues.push(field("mapping.date", "A date mapping is required."));
-  }
-  if (!source.mapping?.amount?.trim()) {
-    issues.push(field("mapping.amount", "An amount mapping is required."));
+  if (!connector) {
+    if (!source.mapping?.date?.trim()) {
+      issues.push(field("mapping.date", "A date mapping is required."));
+    }
+    if (!source.mapping?.amount?.trim()) {
+      issues.push(field("mapping.amount", "An amount mapping is required."));
+    }
   }
 
   const enrichment = source.merchantEnrichment;
@@ -381,57 +413,62 @@ function sourceIssues(
       ),
     );
   }
-  const brandfetch = enrichment?.brandfetch;
-  if (brandfetch?.enabled) {
+  return issues;
+}
+
+function brandfetchIssues(
+  brandfetch: BrandfetchEnrichmentConfig | undefined,
+): FormValidationIssue[] {
+  if (!brandfetch) return [];
+  const field = (id: string, message: string): FormValidationIssue => ({
+    fieldId: id,
+    path: id,
+    message,
+    severity: "error",
+  });
+  const issues: FormValidationIssue[] = [];
+  if (brandfetch.enabled) {
     if (!isSecretConfigured(brandfetch.apiKeySecretRef)) {
       issues.push(
         field(
-          "merchantEnrichment.brandfetch.apiKeySecretRef",
+          "brandfetch.apiKeySecretRef",
           "Enter a Brandfetch API key or environment variable name.",
         ),
       );
     } else if (!isEnvSecretNameValid(brandfetch.apiKeySecretRef)) {
       issues.push(
         field(
-          "merchantEnrichment.brandfetch.apiKeySecretRef",
+          "brandfetch.apiKeySecretRef",
           "Environment variable names may use letters, numbers, and underscores.",
         ),
       );
     }
   }
-  if (brandfetch?.clientId && !isEnvSecretNameValid(brandfetch.clientId)) {
+  if (brandfetch.clientId && !isEnvSecretNameValid(brandfetch.clientId)) {
     issues.push(
       field(
-        "merchantEnrichment.brandfetch.clientId",
+        "brandfetch.clientId",
         "Environment variable names may use letters, numbers, and underscores.",
       ),
     );
   }
-  if (brandfetch?.assetMode === "cache" && !brandfetch.cacheContentAllowed) {
+  if (brandfetch.assetMode === "cache" && !brandfetch.cacheContentAllowed) {
     issues.push(
       field(
-        "merchantEnrichment.brandfetch.cacheContentAllowed",
+        "brandfetch.cacheContentAllowed",
         "Confirm content caching before using the cache asset mode.",
       ),
     );
   }
-  if (brandfetch?.allowTransactionLookup && !enrichment?.countryCode?.trim()) {
-    issues.push(
-      field(
-        "merchantEnrichment.countryCode",
-        "Transaction lookup needs a country code.",
-      ),
-    );
-  }
   if (
-    brandfetch?.ttlDays !== undefined &&
+    brandfetch.ttlDays !== undefined &&
     (!Number.isInteger(brandfetch.ttlDays) ||
       brandfetch.ttlDays < 1 ||
       brandfetch.ttlDays > 29)
   ) {
     issues.push(
       field(
-        "merchantEnrichment.brandfetch.ttlDays",
+        "brandfetch.ttlDays",
         "Cache TTL must be a whole number from 1 to 29.",
       ),
     );
@@ -442,7 +479,10 @@ function sourceIssues(
 export function validateEditableIngestionConfig(
   config: EditableIngestionConfig,
 ): FormValidationIssue[] {
-  const issues = config.sources.flatMap(sourceIssues);
+  const issues = [
+    ...config.sources.flatMap(sourceIssues),
+    ...brandfetchIssues(config.brandfetch),
+  ];
   const seen = new Set<string>();
   config.sources.forEach((source, index) => {
     const id = source.id?.trim();

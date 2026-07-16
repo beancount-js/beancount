@@ -14,7 +14,7 @@
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import { ingestionSamples, type IngestionSample } from "../ingestion/samples";
-  import { isGroupedJsonApiSource } from "@beancount-js/beangulp";
+  import { isGroupedSource } from "../ingestion/connectors";
   import {
     duplicateIngestionSource,
     editableIngestionConfig,
@@ -60,10 +60,7 @@
   const sectionsCollapsedAll = $derived(
     config
       ? config.sources.some((source, index) => {
-          const expected = sourceFormSectionIds(
-            source.rules?.length ?? 0,
-            isGroupedJsonApiSource(source),
-          );
+          const expected = sourceFormSectionIds(isGroupedSource(source));
           const open = openBySourceIndex[index] ?? expected;
           return open.length !== expected.length;
         })
@@ -106,10 +103,7 @@
   function expandAllSections(sources: EditableIngestionSource[]) {
     const next: Record<number, string[]> = {};
     sources.forEach((source, index) => {
-      next[index] = sourceFormSectionIds(
-        source.rules?.length ?? 0,
-        isGroupedJsonApiSource(source),
-      );
+      next[index] = sourceFormSectionIds(isGroupedSource(source));
     });
     openBySourceIndex = next;
   }
@@ -123,8 +117,8 @@
     openBySourceIndex = next;
   }
 
-  function openSectionsFor(index: number, ruleCount: number, grouped = false) {
-    return openBySourceIndex[index] ?? sourceFormSectionIds(ruleCount, grouped);
+  function openSectionsFor(index: number, grouped = false) {
+    return openBySourceIndex[index] ?? sourceFormSectionIds(grouped);
   }
 
   function setOpenSectionsFor(index: number, sections: string[]) {
@@ -159,13 +153,7 @@
     const index = config.sources.length;
     config = { ...config, sources: [...config.sources, source] };
     mode = "form";
-    setOpenSectionsFor(
-      index,
-      sourceFormSectionIds(
-        source.rules?.length ?? 0,
-        isGroupedJsonApiSource(source),
-      ),
-    );
+    setOpenSectionsFor(index, sourceFormSectionIds(isGroupedSource(source)));
     scheduleSave();
   }
 
@@ -184,13 +172,7 @@
     }
     const index = config.sources.length;
     config = { ...config, sources: [...config.sources, next] };
-    setOpenSectionsFor(
-      index,
-      sourceFormSectionIds(
-        next.rules?.length ?? 0,
-        isGroupedJsonApiSource(next),
-      ),
-    );
+    setOpenSectionsFor(index, sourceFormSectionIds(isGroupedSource(next)));
     scheduleSave();
   }
 
@@ -202,13 +184,7 @@
     const nextIndex = config.sources.length;
     config = { ...config, sources: [...config.sources, source] };
     mode = "form";
-    setOpenSectionsFor(
-      nextIndex,
-      sourceFormSectionIds(
-        source.rules?.length ?? 0,
-        isGroupedJsonApiSource(source),
-      ),
-    );
+    setOpenSectionsFor(nextIndex, sourceFormSectionIds(isGroupedSource(source)));
     scheduleSave();
   }
 
@@ -318,10 +294,7 @@
         const invalid = config.sources[invalidIndex];
         setOpenSectionsFor(
           invalidIndex,
-          sourceFormSectionIds(
-            invalid?.rules?.length ?? 0,
-            invalid ? isGroupedJsonApiSource(invalid) : false,
-          ),
+          sourceFormSectionIds(invalid ? isGroupedSource(invalid) : false),
         );
       }
       mode = "form";
@@ -453,8 +426,7 @@
                   envKeys={$snapshot?.envKeys ?? []}
                   openSections={openSectionsFor(
                     index,
-                    source.rules?.length ?? 0,
-                    isGroupedJsonApiSource(source),
+                    isGroupedSource(source),
                   )}
                   onOpenSectionsChange={(sections) =>
                     setOpenSectionsFor(index, sections)}

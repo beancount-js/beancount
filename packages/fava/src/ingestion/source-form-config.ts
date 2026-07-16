@@ -4,10 +4,8 @@ import {
   segmentedField,
   textField,
   textareaField,
-  type FormConfig,
   type FormCustomRenderer,
 } from "@beancount-js/forms";
-import type { MerchantRule } from "@beancount-js/beangulp";
 import type { EditableIngestionSource } from "./source-form";
 import AccountComboField from "../components/form/AccountComboField.svelte";
 import SecretField from "../components/form/SecretField.svelte";
@@ -20,13 +18,6 @@ export type SourceFormContext = {
   credentialAvailable?: boolean;
   merchantCredentialAvailable?: boolean;
 };
-
-const DEFAULT_BRANDFETCH_CLIENT_ID = "env:BRANDFETCH_CLIENT_ID";
-
-function brandfetchClientId(value: string | undefined) {
-  const next = value?.trim();
-  return next || DEFAULT_BRANDFETCH_CLIENT_ID;
-}
 
 function optionalString(value: string) {
   const next = value.trim();
@@ -204,10 +195,10 @@ export const sourceApiForm = createFormConfig<
       inputType: "url",
       path: "api.endpoint",
       placeholder: "https://api.example.com/transactions",
-      get: (source) => source.api.endpoint ?? "",
+      get: (source) => source.api?.endpoint ?? "",
       set: (source, endpoint) => ({
         ...source,
-        api: { ...source.api, endpoint: optionalString(endpoint) },
+        api: { ...(source.api ?? { secretRef: "" }), endpoint: optionalString(endpoint) },
       }),
     }),
     secretField({
@@ -216,10 +207,10 @@ export const sourceApiForm = createFormConfig<
       path: "api.secretRef",
       ariaLabel: "API key",
       envPlaceholder: "BANK_API_TOKEN",
-      get: (source) => source.api.secretRef,
+      get: (source) => source.api?.secretRef ?? "",
       set: (source, secretRef) => ({
         ...source,
-        api: { ...source.api, secretRef },
+        api: { ...(source.api ?? { secretRef: "" }), secretRef },
       }),
     }),
     segmentedField({
@@ -230,11 +221,11 @@ export const sourceApiForm = createFormConfig<
         { value: "bearer", label: "Bearer" },
         { value: "x-api-key", label: "X-API-Key" },
       ],
-      get: (source) => source.api.authScheme ?? "bearer",
+      get: (source) => source.api?.authScheme ?? "bearer",
       set: (source, authScheme) => ({
         ...source,
         api: {
-          ...source.api,
+          ...(source.api ?? { secretRef: "" }),
           authScheme:
             authScheme === "x-api-key"
               ? "x-api-key"
@@ -249,10 +240,10 @@ export const sourceApiForm = createFormConfig<
       label: "Records path",
       path: "api.recordsPath",
       placeholder: "transactions",
-      get: (source) => source.api.recordsPath ?? "",
+      get: (source) => source.api?.recordsPath ?? "",
       set: (source, recordsPath) => ({
         ...source,
-        api: { ...source.api, recordsPath: optionalString(recordsPath) },
+        api: { ...(source.api ?? { secretRef: "" }), recordsPath: optionalString(recordsPath) },
       }),
     }),
     textField({
@@ -260,21 +251,21 @@ export const sourceApiForm = createFormConfig<
       label: "Allowed hosts",
       path: "api.allowedHosts",
       placeholder: "api.example.com",
-      get: (source) => joinList(source.api.allowedHosts),
+      get: (source) => joinList(source.api?.allowedHosts),
       set: (source, value) => ({
         ...source,
-        api: { ...source.api, allowedHosts: parseList(value) },
+        api: { ...(source.api ?? { secretRef: "" }), allowedHosts: parseList(value) },
       }),
     }),
     switchField({
       id: "api.pagination",
       label: "Cursor pagination",
       ariaLabel: "Configure cursor pagination",
-      get: (source) => Boolean(source.api.pagination),
+      get: (source) => Boolean(source.api?.pagination),
       set: (source, enabled) => ({
         ...source,
         api: {
-          ...source.api,
+          ...(source.api ?? { secretRef: "" }),
           pagination: enabled
             ? { cursorQueryParam: "cursor", nextCursorPath: "next_cursor" }
             : undefined,
@@ -296,10 +287,10 @@ export const sourceApiGroupedForm = createFormConfig<
       inputType: "url",
       path: "api.baseUrl",
       placeholder: "https://lunchflow.app/api/v1",
-      get: (source) => source.api.baseUrl ?? "",
+      get: (source) => source.api?.baseUrl ?? "",
       set: (source, baseUrl) => ({
         ...source,
-        api: { ...source.api, baseUrl: optionalString(baseUrl) },
+        api: { ...(source.api ?? { secretRef: "" }), baseUrl: optionalString(baseUrl) },
       }),
     }),
     ...sourceApiForm.fields.filter((field) => field.id !== "api.endpoint"),
@@ -314,14 +305,14 @@ export const sourcePaginationForm = createFormConfig<
     textField({
       id: "ingestion-pagination-cursor",
       label: "Cursor parameter",
-      get: (source) => source.api.pagination?.cursorQueryParam ?? "",
+      get: (source) => source.api?.pagination?.cursorQueryParam ?? "",
       set: (source, cursorQueryParam) => ({
         ...source,
         api: {
-          ...source.api,
+          ...(source.api ?? { secretRef: "" }),
           pagination: {
             cursorQueryParam,
-            nextCursorPath: source.api.pagination?.nextCursorPath ?? "",
+            nextCursorPath: source.api?.pagination?.nextCursorPath ?? "",
           },
         },
       }),
@@ -329,13 +320,13 @@ export const sourcePaginationForm = createFormConfig<
     textField({
       id: "ingestion-pagination-next",
       label: "Next cursor path",
-      get: (source) => source.api.pagination?.nextCursorPath ?? "",
+      get: (source) => source.api?.pagination?.nextCursorPath ?? "",
       set: (source, nextCursorPath) => ({
         ...source,
         api: {
-          ...source.api,
+          ...(source.api ?? { secretRef: "" }),
           pagination: {
-            cursorQueryParam: source.api.pagination?.cursorQueryParam ?? "",
+            cursorQueryParam: source.api?.pagination?.cursorQueryParam ?? "",
             nextCursorPath,
           },
         },
@@ -400,57 +391,6 @@ export const sourceMappingForm = createFormConfig<
     }),
   ],
 });
-
-export function createRuleForm(
-  index: number,
-): FormConfig<MerchantRule, SourceFormContext> {
-  return createFormConfig<MerchantRule, SourceFormContext>({
-    id: `ingestion-rule-${index}`,
-    fields: [
-      textField({
-        id: `ingestion-rule-${index}-merchant-id`,
-        label: "Merchant ID",
-        get: (rule) => rule.merchantId ?? "",
-        set: (rule, merchantId) => ({
-          ...rule,
-          merchantId: optionalString(merchantId),
-        }),
-      }),
-      accountField({
-        id: `ingestion-rule-${index}-account`,
-        label: "Category account",
-        get: (rule) => rule.account,
-        set: (rule, account) => ({ ...rule, account }),
-      }),
-      accountField({
-        id: `ingestion-rule-${index}-source-account`,
-        label: "Match source account",
-        get: (rule) => rule.sourceAccount ?? "",
-        set: (rule, sourceAccount) => ({
-          ...rule,
-          sourceAccount: optionalString(sourceAccount),
-        }),
-      }),
-      segmentedField({
-        id: `ingestion-rule-${index}-direction`,
-        label: "Direction",
-        options: [
-          { value: "any", label: "Any direction" },
-          { value: "debit", label: "Debit" },
-          { value: "credit", label: "Credit" },
-        ],
-        get: (rule) => rule.direction ?? "any",
-        set: (rule, direction) => ({
-          ...rule,
-          direction:
-            direction === "debit" || direction === "credit"
-              ? direction
-              : undefined,
-        }),
-      }),
-    ],
-  });
-}
 
 export const sourceEnrichmentForm = createFormConfig<
   EditableIngestionSource,
@@ -524,285 +464,6 @@ export const sourceEnrichmentDetailsForm = createFormConfig<
         merchantEnrichment: {
           ...(source.merchantEnrichment ?? { enabled: false }),
           countryCode: optionalString(countryCode)?.toUpperCase(),
-        },
-      }),
-    }),
-    switchField({
-      id: "ingestion-brandfetch-toggle",
-      label: "Brandfetch",
-      ariaLabel: "Configure Brandfetch",
-      get: (source) => Boolean(source.merchantEnrichment?.brandfetch),
-      set: (source, enabled) => ({
-        ...source,
-        merchantEnrichment: {
-          ...(source.merchantEnrichment ?? { enabled: false }),
-          brandfetch: enabled
-            ? {
-                enabled: false,
-                apiKeySecretRef: "env:BRANDFETCH_API_KEY",
-                clientId: DEFAULT_BRANDFETCH_CLIENT_ID,
-                assetMode: "hotlink",
-              }
-            : undefined,
-        },
-      }),
-    }),
-  ],
-});
-
-export const sourceBrandfetchForm = createFormConfig<
-  EditableIngestionSource,
-  SourceFormContext
->({
-  id: "ingestion-source-brandfetch",
-  fields: [
-    switchField({
-      id: "ingestion-brandfetch-enabled",
-      label: "Enable Brandfetch",
-      ariaLabel: "Enable Brandfetch",
-      get: (source) => source.merchantEnrichment?.brandfetch?.enabled === true,
-      set: (source, enabled) => ({
-        ...source,
-        merchantEnrichment: {
-          ...(source.merchantEnrichment ?? { enabled: false }),
-          brandfetch: {
-            enabled,
-            apiKeySecretRef:
-              source.merchantEnrichment?.brandfetch?.apiKeySecretRef ??
-              "env:BRANDFETCH_API_KEY",
-            assetMode:
-              source.merchantEnrichment?.brandfetch?.assetMode ?? "hotlink",
-            allowNameSearch:
-              source.merchantEnrichment?.brandfetch?.allowNameSearch,
-            allowTransactionLookup:
-              source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
-            cacheContentAllowed:
-              source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: brandfetchClientId(
-              source.merchantEnrichment?.brandfetch?.clientId,
-            ),
-            ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
-          },
-        },
-      }),
-    }),
-    switchField({
-      id: "ingestion-brandfetch-name-search",
-      label: "Allow name search",
-      ariaLabel: "Allow Brandfetch name search",
-      get: (source) =>
-        source.merchantEnrichment?.brandfetch?.allowNameSearch === true,
-      set: (source, allowNameSearch) => ({
-        ...source,
-        merchantEnrichment: {
-          ...(source.merchantEnrichment ?? { enabled: false }),
-          brandfetch: {
-            enabled: source.merchantEnrichment?.brandfetch?.enabled ?? false,
-            apiKeySecretRef:
-              source.merchantEnrichment?.brandfetch?.apiKeySecretRef ??
-              "env:BRANDFETCH_API_KEY",
-            assetMode:
-              source.merchantEnrichment?.brandfetch?.assetMode ?? "hotlink",
-            allowNameSearch: allowNameSearch || undefined,
-            allowTransactionLookup:
-              source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
-            cacheContentAllowed:
-              source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: brandfetchClientId(
-              source.merchantEnrichment?.brandfetch?.clientId,
-            ),
-            ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
-          },
-        },
-      }),
-    }),
-    switchField({
-      id: "ingestion-brandfetch-txn-lookup",
-      label: "Allow transaction lookup",
-      ariaLabel: "Allow Brandfetch transaction lookup",
-      get: (source) =>
-        source.merchantEnrichment?.brandfetch?.allowTransactionLookup === true,
-      set: (source, allowTransactionLookup) => ({
-        ...source,
-        merchantEnrichment: {
-          ...(source.merchantEnrichment ?? { enabled: false }),
-          brandfetch: {
-            enabled: source.merchantEnrichment?.brandfetch?.enabled ?? false,
-            apiKeySecretRef:
-              source.merchantEnrichment?.brandfetch?.apiKeySecretRef ??
-              "env:BRANDFETCH_API_KEY",
-            assetMode:
-              source.merchantEnrichment?.brandfetch?.assetMode ?? "hotlink",
-            allowNameSearch:
-              source.merchantEnrichment?.brandfetch?.allowNameSearch,
-            allowTransactionLookup: allowTransactionLookup || undefined,
-            cacheContentAllowed:
-              source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: brandfetchClientId(
-              source.merchantEnrichment?.brandfetch?.clientId,
-            ),
-            ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
-          },
-        },
-      }),
-    }),
-    switchField({
-      id: "ingestion-brandfetch-cache",
-      label: "Allow content caching",
-      ariaLabel: "Allow Brandfetch cache content",
-      get: (source) =>
-        source.merchantEnrichment?.brandfetch?.cacheContentAllowed === true,
-      set: (source, cacheContentAllowed) => ({
-        ...source,
-        merchantEnrichment: {
-          ...(source.merchantEnrichment ?? { enabled: false }),
-          brandfetch: {
-            enabled: source.merchantEnrichment?.brandfetch?.enabled ?? false,
-            apiKeySecretRef:
-              source.merchantEnrichment?.brandfetch?.apiKeySecretRef ??
-              "env:BRANDFETCH_API_KEY",
-            assetMode:
-              source.merchantEnrichment?.brandfetch?.assetMode ?? "hotlink",
-            allowNameSearch:
-              source.merchantEnrichment?.brandfetch?.allowNameSearch,
-            allowTransactionLookup:
-              source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
-            cacheContentAllowed: cacheContentAllowed || undefined,
-            clientId: brandfetchClientId(
-              source.merchantEnrichment?.brandfetch?.clientId,
-            ),
-            ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
-          },
-        },
-      }),
-    }),
-    secretField({
-      id: "merchantEnrichment.brandfetch.apiKeySecretRef",
-      label: "API key",
-      path: "merchantEnrichment.brandfetch.apiKeySecretRef",
-      ariaLabel: "Brandfetch API key",
-      envPlaceholder: "BRANDFETCH_API_KEY",
-      get: (source) =>
-        source.merchantEnrichment?.brandfetch?.apiKeySecretRef ?? "",
-      set: (source, apiKeySecretRef) => ({
-        ...source,
-        merchantEnrichment: {
-          ...(source.merchantEnrichment ?? { enabled: false }),
-          brandfetch: {
-            enabled: source.merchantEnrichment?.brandfetch?.enabled ?? false,
-            apiKeySecretRef,
-            assetMode:
-              source.merchantEnrichment?.brandfetch?.assetMode ?? "hotlink",
-            allowNameSearch:
-              source.merchantEnrichment?.brandfetch?.allowNameSearch,
-            allowTransactionLookup:
-              source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
-            cacheContentAllowed:
-              source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: brandfetchClientId(
-              source.merchantEnrichment?.brandfetch?.clientId,
-            ),
-            ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
-          },
-        },
-      }),
-    }),
-    secretField({
-      id: "ingestion-brandfetch-client-id",
-      label: "Client ID",
-      path: "merchantEnrichment.brandfetch.clientId",
-      ariaLabel: "Brandfetch client ID",
-      envPlaceholder: "BRANDFETCH_CLIENT_ID",
-      get: (source) =>
-        brandfetchClientId(source.merchantEnrichment?.brandfetch?.clientId),
-      set: (source, clientId) => ({
-        ...source,
-        merchantEnrichment: {
-          ...(source.merchantEnrichment ?? { enabled: false }),
-          brandfetch: {
-            enabled: source.merchantEnrichment?.brandfetch?.enabled ?? false,
-            apiKeySecretRef:
-              source.merchantEnrichment?.brandfetch?.apiKeySecretRef ??
-              "env:BRANDFETCH_API_KEY",
-            assetMode:
-              source.merchantEnrichment?.brandfetch?.assetMode ?? "hotlink",
-            allowNameSearch:
-              source.merchantEnrichment?.brandfetch?.allowNameSearch,
-            allowTransactionLookup:
-              source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
-            cacheContentAllowed:
-              source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: brandfetchClientId(clientId),
-            ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
-          },
-        },
-      }),
-    }),
-    segmentedField({
-      id: "ingestion-brandfetch-asset-mode",
-      label: "Asset mode",
-      options: [
-        { value: "hotlink", label: "Hotlink" },
-        { value: "cache", label: "Cache" },
-      ],
-      get: (source) =>
-        source.merchantEnrichment?.brandfetch?.assetMode ?? "hotlink",
-      set: (source, assetMode) => ({
-        ...source,
-        merchantEnrichment: {
-          ...(source.merchantEnrichment ?? { enabled: false }),
-          brandfetch: {
-            enabled: source.merchantEnrichment?.brandfetch?.enabled ?? false,
-            apiKeySecretRef:
-              source.merchantEnrichment?.brandfetch?.apiKeySecretRef ??
-              "env:BRANDFETCH_API_KEY",
-            assetMode: (assetMode === "cache" ? "cache" : "hotlink") as
-              | "hotlink"
-              | "cache",
-            allowNameSearch:
-              source.merchantEnrichment?.brandfetch?.allowNameSearch,
-            allowTransactionLookup:
-              source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
-            cacheContentAllowed:
-              source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: brandfetchClientId(
-              source.merchantEnrichment?.brandfetch?.clientId,
-            ),
-            ttlDays: source.merchantEnrichment?.brandfetch?.ttlDays,
-          },
-        },
-      }),
-    }),
-    textField({
-      id: "ingestion-brandfetch-ttl",
-      label: "Cache TTL (days)",
-      inputType: "number",
-      get: (source) =>
-        source.merchantEnrichment?.brandfetch?.ttlDays != null
-          ? String(source.merchantEnrichment.brandfetch.ttlDays)
-          : "",
-      set: (source, value) => ({
-        ...source,
-        merchantEnrichment: {
-          ...(source.merchantEnrichment ?? { enabled: false }),
-          brandfetch: {
-            enabled: source.merchantEnrichment?.brandfetch?.enabled ?? false,
-            apiKeySecretRef:
-              source.merchantEnrichment?.brandfetch?.apiKeySecretRef ??
-              "env:BRANDFETCH_API_KEY",
-            assetMode:
-              source.merchantEnrichment?.brandfetch?.assetMode ?? "hotlink",
-            allowNameSearch:
-              source.merchantEnrichment?.brandfetch?.allowNameSearch,
-            allowTransactionLookup:
-              source.merchantEnrichment?.brandfetch?.allowTransactionLookup,
-            cacheContentAllowed:
-              source.merchantEnrichment?.brandfetch?.cacheContentAllowed,
-            clientId: brandfetchClientId(
-              source.merchantEnrichment?.brandfetch?.clientId,
-            ),
-            ttlDays: value ? Number(value) : undefined,
-          },
         },
       }),
     }),

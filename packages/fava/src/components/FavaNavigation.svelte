@@ -10,10 +10,12 @@
   import Hash from "lucide-svelte/icons/hash";
   import ImportIcon from "lucide-svelte/icons/import";
   import Landmark from "lucide-svelte/icons/landmark";
+  import Palette from "lucide-svelte/icons/palette";
   import Store from "lucide-svelte/icons/store";
   import List from "lucide-svelte/icons/list";
   import ListFilter from "lucide-svelte/icons/list-filter";
   import ShieldX from "lucide-svelte/icons/shield-x";
+  import Wand2 from "lucide-svelte/icons/wand-2";
   import Sparkles from "lucide-svelte/icons/sparkles";
   import X from "lucide-svelte/icons/x";
   import { Query } from "@beancount-js/beancount";
@@ -257,6 +259,8 @@
       routePath === "/import/editor" ||
       routePath === "/import/accounts" ||
       routePath === "/import/merchants" ||
+      routePath === "/import/brands" ||
+      routePath === "/import/rules" ||
       routePath === "/records"
     );
   }
@@ -559,6 +563,54 @@
             <span class="block text-xs font-medium">Review merchants</span>
             <span class="block truncate text-[11px] text-muted-foreground"
               >Confirm merchants across pending imports</span
+            >
+          </span>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          class={cn(
+            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+            isLedgerSettingActive("/import/brands", activeViewPath)
+              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+          )}
+          aria-current={isLedgerSettingActive("/import/brands", activeViewPath)
+            ? "page"
+            : undefined}
+          disabled={files.length === 0}
+          onclick={() => openLedgerSetting("/import/brands")}
+        >
+          <Palette data-icon="inline-start" />
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-medium">Brand match</span>
+            <span class="block truncate text-[11px] text-muted-foreground"
+              >Configure Brandfetch matching for all sources</span
+            >
+          </span>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          class={cn(
+            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+            isLedgerSettingActive("/import/rules", activeViewPath)
+              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+          )}
+          aria-current={isLedgerSettingActive("/import/rules", activeViewPath)
+            ? "page"
+            : undefined}
+          disabled={files.length === 0}
+          onclick={() => openLedgerSetting("/import/rules")}
+        >
+          <Wand2 data-icon="inline-start" />
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-medium">Rules</span>
+            <span class="block truncate text-[11px] text-muted-foreground"
+              >Detection rules for imports and ledger</span
             >
           </span>
         </Button>

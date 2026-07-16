@@ -4,7 +4,6 @@
     "api",
     "query-parameters",
     "mapping",
-    "rules",
     "enrichment",
   ] as const;
 
@@ -14,47 +13,36 @@
     "linked-accounts",
     "query-parameters",
     "mapping",
-    "rules",
     "enrichment",
   ] as const;
 
-  export function ruleSectionId(index: number) {
-    return `rule-${index}`;
-  }
-
-  export function sourceFormSectionIds(ruleCount: number, grouped = false) {
-    const sections = grouped ? groupedSourceFormSections : sourceFormSections;
-    return [
-      ...sections,
-      ...Array.from({ length: ruleCount }, (_, index) => ruleSectionId(index)),
-    ];
+  export function sourceFormSectionIds(grouped = false) {
+    return [...(grouped ? groupedSourceFormSections : sourceFormSections)];
   }
 </script>
 
 <script lang="ts">
+  import ArrowRight from "lucide-svelte/icons/arrow-right";
+  import Copy from "lucide-svelte/icons/copy";
   import {
     CollapsibleItemList,
     EntryActions,
-    FormAddButton,
     FormField,
     FormSectionHeader,
     StructuredForm,
     type FormValidationIssue,
   } from "@beancount-js/forms";
-  import {
-    isGroupedJsonApiSource,
-    type JsonApiLinkedAccount,
-    type MerchantRule,
-  } from "@beancount-js/beangulp";
-  import Copy from "lucide-svelte/icons/copy";
+  import { type JsonApiLinkedAccount } from "@beancount-js/beangulp";
   import { untrack } from "svelte";
+  import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
+  import { useNavigation } from "../router/router";
+  import { clientConnector, isConnectorSource, isGroupedSource } from "../ingestion/connectors";
+  import { connectorFieldsForm } from "../ingestion/connector-fields";
   import type { EditableIngestionSource } from "../ingestion/source-form";
   import {
-    createRuleForm,
     sourceApiForm,
     sourceApiGroupedForm,
-    sourceBrandfetchForm,
     sourceDetailsForm,
     sourceDetailsGroupedForm,
     sourceEnrichmentDetailsForm,
@@ -93,13 +81,28 @@
     onRemove?: () => void;
   } = $props();
 
+  const { router } = useNavigation();
+
   let queryDraft: KeyValue[] = $state([]);
 
-  const grouped = $derived(isGroupedJsonApiSource(source));
+  const connector = $derived(
+    isConnectorSource(source) ? clientConnector(source.kind) : undefined,
+  );
+  const grouped = $derived(isGroupedSource(source));
   const detailsForm = $derived(
     grouped ? sourceDetailsGroupedForm : sourceDetailsForm,
   );
   const apiForm = $derived(grouped ? sourceApiGroupedForm : sourceApiForm);
+  const connectionFieldsForm = $derived(
+    connector
+      ? connectorFieldsForm(connector.connectionFields, `${connector.kind}-connection`)
+      : undefined,
+  );
+  const advancedFieldsForm = $derived(
+    connector?.advancedFields.length
+      ? connectorFieldsForm(connector.advancedFields, `${connector.kind}-advanced`)
+      : undefined,
+  );
   const formContext = $derived({
     accounts,
     envKeys,
@@ -113,7 +116,7 @@
   const detailsIssues = $derived(augmentCredentialIssues(issues));
 
   const sourceQueryFingerprint = $derived(
-    `${source.id}:${JSON.stringify(source.api.query ?? {})}`,
+    `${source.id}:${JSON.stringify(source.api?.query ?? {})}`,
   );
 
   function queryObjectFromDraft(entries: KeyValue[]) {
@@ -132,7 +135,7 @@
       () => `${source.id}:${JSON.stringify(queryObjectFromDraft(queryDraft))}`,
     );
     if (fingerprint !== draftFingerprint) {
-      queryDraft = Object.entries(source.api.query ?? {});
+      queryDraft = Object.entries(source.api?.query ?? {});
     }
   });
 
@@ -145,14 +148,11 @@
         severity: "warning",
       });
     }
-    if (merchantCredentialAvailable === false) {
-      next.push({
-        fieldId: "merchantEnrichment.brandfetch.apiKeySecretRef",
-        message: "Brandfetch credential is not available",
-        severity: "warning",
-      });
-    }
     return next;
+  }
+
+  function openBrandSettings() {
+    router.push("/import/brands");
   }
 
   function isSectionOpen(section: string) {
@@ -172,6 +172,7 @@
     onChange({
       ...source,
       api: {
+        secretRef: "",
         ...source.api,
         query: Object.keys(query).length ? query : undefined,
       },
@@ -240,72 +241,6 @@
     onChange({ ...source, accounts: next });
   }
 
-  function rules() {
-    return source.rules ?? [];
-  }
-
-  function updateRules(next: MerchantRule[]) {
-    onChange({ ...source, rules: next });
-  }
-
-  function remapOpenRuleSections(mapper: (ruleIndex: number) => number | null) {
-    const next = openSections
-      .map((id) => {
-        const match = /^rule-(\d+)$/.exec(id);
-        if (!match) return id;
-        const mapped = mapper(Number(match[1]));
-        return mapped === null ? null : ruleSectionId(mapped);
-      })
-      .filter((id): id is string => id !== null);
-    onOpenSectionsChange(next);
-  }
-
-  function moveRule(index: number, direction: -1 | 1) {
-    const current = rules();
-    const target = index + direction;
-    if (target < 0 || target >= current.length) return;
-    const next = [...current];
-    const [item] = next.splice(index, 1);
-    next.splice(target, 0, item!);
-    updateRules(next);
-    remapOpenRuleSections((ruleIndex) => {
-      if (ruleIndex === index) return target;
-      if (ruleIndex === target) return index;
-      return ruleIndex;
-    });
-  }
-
-  function addRule() {
-    const index = rules().length;
-    const expected = sourceFormSectionIds(index, grouped);
-    const expandedAll =
-      openSections.length === expected.length &&
-      expected.every((id) => openSections.includes(id));
-    updateRules([...rules(), { merchant: "", account: "" }]);
-    if (expandedAll) {
-      onOpenSectionsChange([...openSections, ruleSectionId(index)]);
-    }
-  }
-
-  function removeRule(index: number) {
-    updateRules(rules().filter((_, itemIndex) => itemIndex !== index));
-    remapOpenRuleSections((ruleIndex) => {
-      if (ruleIndex === index) return null;
-      if (ruleIndex > index) return ruleIndex - 1;
-      return ruleIndex;
-    });
-  }
-
-  function updateRuleMerchant(index: number, merchant: string) {
-    const nextMerchant = merchant.trim() || undefined;
-    const current = rules();
-    updateRules(
-      current.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, merchant: nextMerchant } : item,
-      ),
-    );
-  }
-
   function updateSourceName(name: string) {
     onChange({ ...source, name });
   }
@@ -349,7 +284,7 @@
 
         <section class="ingestion-source-section">
           <FormSectionHeader
-            title="JSON API"
+            title={connector ? "Connection" : "JSON API"}
             open={isSectionOpen("api")}
             editable={false}
             titleToggleable={true}
@@ -359,79 +294,105 @@
           />
           {#if isSectionOpen("api")}
             <div class="ingestion-section-body">
-              <div class="beancount-structured-form">
-                <StructuredForm
-                  value={source}
-                  config={apiForm}
-                  context={formContext}
-                  issues={detailsIssues}
-                  embedded
-                  {onChange}
-                />
-                {#if source.api.pagination}
+              {#if connector && connectionFieldsForm}
+                <div class="beancount-structured-form">
                   <StructuredForm
                     value={source}
-                    config={sourcePaginationForm}
+                    config={connectionFieldsForm}
                     context={formContext}
                     issues={detailsIssues}
                     embedded
                     {onChange}
                   />
-                {/if}
-              </div>
+                  {#if advancedFieldsForm}
+                    <StructuredForm
+                      value={source}
+                      config={advancedFieldsForm}
+                      context={formContext}
+                      issues={detailsIssues}
+                      embedded
+                      {onChange}
+                    />
+                  {/if}
+                </div>
+              {:else}
+                <div class="beancount-structured-form">
+                  <StructuredForm
+                    value={source}
+                    config={apiForm}
+                    context={formContext}
+                    issues={detailsIssues}
+                    embedded
+                    {onChange}
+                  />
+                  {#if source.api?.pagination}
+                    <StructuredForm
+                      value={source}
+                      config={sourcePaginationForm}
+                      context={formContext}
+                      issues={detailsIssues}
+                      embedded
+                      {onChange}
+                    />
+                  {/if}
+                </div>
 
-              <CollapsibleItemList
-                title="Query parameters"
-                addLabel="parameter"
-                count={queryDraft.length}
-                open={isSectionOpen("query-parameters")}
-                onToggle={() => toggleSection("query-parameters")}
-                onAdd={addQueryParam}
-              >
-                {#each queryDraft as [key, value], index (index)}
-                  <EntryActions
-                    {index}
-                    total={queryDraft.length}
-                    removeLabel={`Remove query parameter ${index + 1}`}
-                    onMove={(direction) => moveQuery(index, direction)}
-                    onRemove={() => removeQuery(index)}
-                  >
-                    <div class="beancount-structured-form">
-                      <FormField label="Name" controlId={`query-${index}-name`}>
-                        <Input
-                          id={`query-${index}-name`}
-                          value={key}
-                          aria-label={`Query parameter ${index + 1} name`}
-                          placeholder="Add name"
-                          oninput={(event) =>
-                            patchQueryDraft(
-                              index,
-                              0,
-                              event.currentTarget.value,
-                            )}
-                        />
-                      </FormField>
-                      <FormField
-                        label="Value"
-                        controlId={`query-${index}-value`}
-                      >
-                        <Input
-                          id={`query-${index}-value`}
-                          {value}
-                          aria-label={`Query parameter ${index + 1} value`}
-                          placeholder="Add value"
-                          oninput={(event) =>
-                            patchQueryDraft(
-                              index,
-                              1,
-                              event.currentTarget.value,
-                            )}
-                        />
-                      </FormField>
-                    </div>
-                  </EntryActions>
-                {/each}
-              </CollapsibleItemList>
+                <CollapsibleItemList
+                  title="Query parameters"
+                  addLabel="parameter"
+                  count={queryDraft.length}
+                  open={isSectionOpen("query-parameters")}
+                  onToggle={() => toggleSection("query-parameters")}
+                  onAdd={addQueryParam}
+                >
+                  {#each queryDraft as [key, value], index (index)}
+                    <EntryActions
+                      {index}
+                      total={queryDraft.length}
+                      removeLabel={`Remove query parameter ${index + 1}`}
+                      onMove={(direction) => moveQuery(index, direction)}
+                      onRemove={() => removeQuery(index)}
+                    >
+                      <div class="beancount-structured-form">
+                        <FormField
+                          label="Name"
+                          controlId={`query-${index}-name`}
+                        >
+                          <Input
+                            id={`query-${index}-name`}
+                            value={key}
+                            aria-label={`Query parameter ${index + 1} name`}
+                            placeholder="Add name"
+                            oninput={(event) =>
+                              patchQueryDraft(
+                                index,
+                                0,
+                                event.currentTarget.value,
+                              )}
+                          />
+                        </FormField>
+                        <FormField
+                          label="Value"
+                          controlId={`query-${index}-value`}
+                        >
+                          <Input
+                            id={`query-${index}-value`}
+                            {value}
+                            aria-label={`Query parameter ${index + 1} value`}
+                            placeholder="Add value"
+                            oninput={(event) =>
+                              patchQueryDraft(
+                                index,
+                                1,
+                                event.currentTarget.value,
+                              )}
+                          />
+                        </FormField>
+                      </div>
+                    </EntryActions>
+                  {/each}
+                </CollapsibleItemList>
+              {/if}
             </div>
           {/if}
         </section>
@@ -506,84 +467,30 @@
           </section>
         {/if}
 
-        <section class="ingestion-source-section">
-          <FormSectionHeader
-            title="Record mapping"
-            open={isSectionOpen("mapping")}
-            editable={false}
-            titleToggleable={true}
-            movable={false}
-            removable={false}
-            onToggle={() => toggleSection("mapping")}
-          />
-          {#if isSectionOpen("mapping")}
-            <div class="ingestion-section-body">
-              <StructuredForm
-                value={source}
-                config={sourceMappingForm}
-                context={formContext}
-                issues={detailsIssues}
-                {onChange}
-              />
-            </div>
-          {/if}
-        </section>
-
-        <section class="ingestion-source-section">
-          <FormSectionHeader
-            title="Merchant rules"
-            open={isSectionOpen("rules")}
-            editable={false}
-            titleToggleable={true}
-            movable={false}
-            removable={false}
-            onToggle={() => toggleSection("rules")}
-          />
-          {#if isSectionOpen("rules")}
-            <div class="ingestion-section-body">
-              {#each rules() as rule, index (index)}
-                <div
-                  class="ingestion-rule"
-                  aria-label={`Merchant rule ${index + 1}`}
-                >
-                  <FormSectionHeader
-                    title={rule.merchant ?? ""}
-                    titleLabel="Merchant"
-                    titlePlaceholder="Add Merchant"
-                    {index}
-                    total={rules().length}
-                    open={isSectionOpen(ruleSectionId(index))}
-                    removeLabel={`Remove rule ${index + 1}`}
-                    onTitleChange={(value) => updateRuleMerchant(index, value)}
-                    onMove={(direction) => moveRule(index, direction)}
-                    onRemove={() => removeRule(index)}
-                    onToggle={() => toggleSection(ruleSectionId(index))}
-                  />
-                  {#if isSectionOpen(ruleSectionId(index))}
-                    <div class="ingestion-rule-body">
-                      <StructuredForm
-                        value={rule}
-                        config={createRuleForm(index)}
-                        context={formContext}
-                        onChange={(next) => {
-                          const current = rules();
-                          updateRules(
-                            current.map((item, itemIndex) =>
-                              itemIndex === index ? next : item,
-                            ),
-                          );
-                        }}
-                      />
-                    </div>
-                  {/if}
-                </div>
-              {/each}
-              <div class="ingestion-array-footer">
-                <FormAddButton label="Add rule" onclick={addRule} />
+        {#if !connector}
+          <section class="ingestion-source-section">
+            <FormSectionHeader
+              title="Record mapping"
+              open={isSectionOpen("mapping")}
+              editable={false}
+              titleToggleable={true}
+              movable={false}
+              removable={false}
+              onToggle={() => toggleSection("mapping")}
+            />
+            {#if isSectionOpen("mapping")}
+              <div class="ingestion-section-body">
+                <StructuredForm
+                  value={source}
+                  config={sourceMappingForm}
+                  context={formContext}
+                  issues={detailsIssues}
+                  {onChange}
+                />
               </div>
-            </div>
-          {/if}
-        </section>
+            {/if}
+          </section>
+        {/if}
 
         <section class="ingestion-source-section">
           <FormSectionHeader
@@ -615,18 +522,17 @@
                     embedded
                     {onChange}
                   />
-                  {#if source.merchantEnrichment.brandfetch}
-                    <StructuredForm
-                      value={source}
-                      config={sourceBrandfetchForm}
-                      context={formContext}
-                      issues={detailsIssues}
-                      embedded
-                      {onChange}
-                    />
-                  {/if}
                 {/if}
               </div>
+              <Button
+                type="button"
+                variant="link"
+                class="h-auto gap-1 px-0 text-sm"
+                onclick={openBrandSettings}
+              >
+                Manage brand matching
+                <ArrowRight class="size-3.5" aria-hidden="true" />
+              </Button>
             </div>
           {/if}
         </section>
@@ -658,24 +564,6 @@
     gap: 1.5rem;
     /* Room for nested disclosure chevrons */
     padding-left: 1.5rem;
-  }
-
-  .ingestion-array-footer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .ingestion-rule {
-    min-width: 0;
-    display: grid;
-    gap: 0.75rem;
-  }
-
-  .ingestion-rule-body {
-    padding-left: 0.5rem;
-    min-width: 0;
   }
 
   .ingestion-source-duplicate {
