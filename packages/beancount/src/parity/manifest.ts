@@ -74,3 +74,16 @@ export function validateParityManifest(manifest: ParityManifest): string[] {
   }
   return errors;
 }
+
+/** Checks the release gate in addition to ordinary manifest consistency. */
+export function validateParityCompletion(manifest: ParityManifest): string[] {
+  return [
+    ...validateParityManifest(manifest),
+    ...manifest.records
+      .filter((record) => record.status === "pending")
+      .map(
+        (record) =>
+          `${record.upstreamModule}:${record.upstreamBehavior} is still pending`,
+      ),
+  ];
+}
