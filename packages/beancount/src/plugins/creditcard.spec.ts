@@ -76,4 +76,66 @@ describe("credit-card plugin", () => {
       "Invalid credit-card plugin configuration",
     );
   });
+
+  test("uses minimum payments and omits payment details when requested", () => {
+    const schedule = createPaymentSchedule({
+      balance: new Decimal("10"),
+      interestRate: new Decimal("0"),
+      minPaymentPercent: new Decimal("0.1"),
+      minPayment: new Decimal("5"),
+    });
+
+    expect(schedule.monthsToPayOff).toBe(2);
+    expect(schedule.firstPaymentAmount.toString()).toBe("5.00");
+    expect(schedule.payments).toBeUndefined();
+    expect(schedule.totalRepaymentAmount.toString()).toBe("10.00");
+  });
+
+  test("accepts a plain custom tag and reports malformed card entries", () => {
+    const customTagged = creditCardEntry().copy({ tags: ["card"] });
+    const [, customTagErrors] = creditCard(
+      [customTagged],
+      defaultBeancountOptions(),
+      "card",
+    );
+    const [, configErrors] = creditCard(
+      [creditCardEntry().copy({ meta: {} })],
+      defaultBeancountOptions(),
+    );
+    const [, postingErrors] = creditCard(
+      [
+        creditCardEntry().copy({
+          postings: creditCardEntry().postings.slice(0, 2),
+        }),
+      ],
+      defaultBeancountOptions(),
+    );
+    const invalidAccounts = creditCardEntry().copy({
+      postings: [
+        new Posting("Assets:Cash", new Amount("-100", "USD")),
+        new Posting("Equity:Card", new Amount("100", "USD")),
+        new Posting("Income:Interest", new Amount("0", "USD")),
+      ],
+    });
+    const [, accountErrors] = creditCard(
+      [invalidAccounts],
+      defaultBeancountOptions(),
+    );
+    const missingCurrency = creditCardEntry().copy({
+      postings: [
+        new Posting("Assets:Cash", new Amount("-100", null)),
+        ...creditCardEntry().postings.slice(1),
+      ],
+    });
+    const [, currencyErrors] = creditCard(
+      [missingCurrency],
+      defaultBeancountOptions(),
+    );
+
+    expect(customTagErrors).toEqual([]);
+    expect(configErrors[0].message).toContain("balance:");
+    expect(postingErrors[0].message).toContain("Expected 3 accounts");
+    expect(accountErrors[0].message).toContain("Missing account Liabilities:");
+    expect(currencyErrors[0].message).toContain("missing units/currency");
+  });
 });
