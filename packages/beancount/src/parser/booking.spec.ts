@@ -525,6 +525,40 @@ describe("book", () => {
     expect(postings[3].units?.eq(new Amount("-200", "CAD"))).toBe(true);
   });
 
+  test("fills missing cost and price currencies from their currency group", () => {
+    // Ported from Beancount's booking_full_test.py::TestReplaceCurrenciesInGroup.test_missing.
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Infer cost currency", [
+          new Posting(
+            "Assets:Cost",
+            new Amount("10", "HOOL"),
+            new CostSpec(new Decimal("10"), null, null),
+            new Amount("12", "USD"),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-100", "USD")),
+        ]),
+        transaction("2022-01-02", "Infer price currency", [
+          new Posting(
+            "Assets:Price",
+            new Amount("10", "HOOL"),
+            new CostSpec(new Decimal("10"), null, "USD"),
+            new Amount("12", null),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-100", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    const [costPosting, pricePosting] = entries.map(
+      (entry) => (entry as Transaction).postings[0],
+    );
+    expect(costPosting.resolvedCost?.amount?.currency).toBe("USD");
+    expect(pricePosting.price?.currency).toBe("USD");
+  });
+
   test("filters candidate lots by every specified reduction attribute", () => {
     const wantedDate = DateTime.fromISO("2022-01-01");
     const balances = {
