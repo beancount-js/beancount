@@ -9,6 +9,7 @@ import { addImplicitPrices } from "../plugins/implicit_prices";
 import { validateLeafOnly } from "../plugins/leafonly";
 import { validateOneCommodity } from "../plugins/onecommodity";
 import { validateNoDuplicates } from "../plugins/noduplicates";
+import { validateUnusedAccounts } from "../plugins/nounused";
 import { checkBalance } from "./balance";
 import { pad } from "./pad";
 import type { ValidationError } from "./validation";
@@ -88,6 +89,12 @@ export const Plugins: Record<string, PluginType> = {
     plugin: validateNoDuplicates,
     order: 0,
     id: "beancount.plugins.noduplicates",
+    supportsConfig: false,
+  },
+  "beancount.plugins.nounused": {
+    plugin: validateUnusedAccounts,
+    order: 0,
+    id: "beancount.plugins.nounused",
     supportsConfig: false,
   },
   "beancount.plugins.forecast": {

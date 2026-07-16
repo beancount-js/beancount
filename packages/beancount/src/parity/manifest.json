@@ -96,6 +96,14 @@
       "status": "adapted",
       "tests": ["plugins/noduplicates"],
       "reason": "Uses stable local directive identities and preserves duplicate balance/price allowances."
+    },
+    {
+      "upstreamModule": "beancount.plugins.nounused",
+      "upstreamBehavior": "validate_unused_accounts",
+      "localBehavior": "validateUnusedAccounts",
+      "status": "adapted",
+      "tests": ["plugins/nounused"],
+      "reason": "Uses the existing entry-account getter adapter."
     }
   ]
 }
