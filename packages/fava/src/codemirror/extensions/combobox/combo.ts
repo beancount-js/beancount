@@ -70,7 +70,8 @@ class ComboWidget extends WidgetType {
 
 class ComboWidgetView implements PluginValue {
   comboDecorations: Array<Range<Decoration>> = [];
-  ranges: Record<string, number> = {};
+  /** Map decoration position → account span so the icon shows while the caret is in the account. */
+  ranges: Record<string, { from: number; to: number }> = {};
 
   constructor(
     readonly view: EditorView,
@@ -87,7 +88,7 @@ class ComboWidgetView implements PluginValue {
           if (this.props.match(node, update)) {
             const value = update.state.sliceDoc(node.from, node.to);
             const account = this.props.read ? this.props.read(value) : value;
-            const widget = Decoration.widget({
+            const widget = Decstructions.widget({
               widget: new ComboWidget({
                 from: node.from,
                 to: node.to,
@@ -95,9 +96,14 @@ class ComboWidgetView implements PluginValue {
                 props: this.props,
                 nodeName: node.name,
               }),
+              side: 1,
             });
-            this.ranges[node.from.toString()] = node.to;
-            this.comboDecorations.push(widget.range(node.from));
+            // Sit just after the account text as a small affordance.
+            this.ranges[node.to.toString()] = {
+              from: node.from,
+              to: node.to,
+            };
+            this.comboDecorations.push(widget.range(node.to));
           }
         });
     }
@@ -107,8 +113,8 @@ class ComboWidgetView implements PluginValue {
     const pos = this.view.state.selection.main.head;
     return Decoration.set(
       this.comboDecorations.filter((it) => {
-        const to = this.ranges[it.from.toString()];
-        return pos >= it.from && pos <= to;
+        const span = this.ranges[it.from.toString()];
+        return span ? pos >= span.from && pos <= span.to : false;
       }),
     );
   }
