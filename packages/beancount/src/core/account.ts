@@ -2,6 +2,83 @@ import { DateTime } from "luxon";
 import { Close, Open } from "./data";
 import type { Directives } from "./data";
 
+export const ACCOUNT_SEPARATOR = ":";
+
+const ROOT_COMPONENT = /^\p{Lu}[\p{L}\p{Nd}-]*$/u;
+const LEAF_COMPONENT = /^(?:\p{Lu}|\p{Nd})[\p{L}\p{Nd}-]*$/u;
+
+/** Check whether a component is valid as the root of an account name. */
+export function isValidRoot(value: unknown): value is string {
+  return typeof value === "string" && ROOT_COMPONENT.test(value);
+}
+
+/** Check whether a component is valid below an account root. */
+export function isValidLeaf(value: unknown): value is string {
+  return typeof value === "string" && LEAF_COMPONENT.test(value);
+}
+
+/** Check whether a value is a complete, hierarchical account name. */
+export function isValidAccount(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+
+  const components = value.split(ACCOUNT_SEPARATOR);
+  return (
+    components.length > 1 &&
+    isValidRoot(components[0]) &&
+    components.slice(1).every(isValidLeaf)
+  );
+}
+
+export function joinAccount(...components: string[]): string {
+  return components.join(ACCOUNT_SEPARATOR);
+}
+
+export function splitAccount(account: string): string[] {
+  return account.split(ACCOUNT_SEPARATOR);
+}
+
+export function accountLeaf(account: string): string {
+  return splitAccount(account).at(-1) ?? "";
+}
+
+export function accountRoot(account: string): string {
+  return splitAccount(account)[0] ?? "";
+}
+
+export function sansRoot(account: string): string {
+  return splitAccount(account).slice(1).join(ACCOUNT_SEPARATOR);
+}
+
+export function hasAccountComponent(
+  account: string,
+  component: string,
+): boolean {
+  return splitAccount(account).includes(component);
+}
+
+/** Return the longest shared hierarchy prefix for the supplied account names. */
+export function commonAccountPrefix(accounts: readonly string[]): string {
+  if (accounts.length === 0) return "";
+
+  const first = splitAccount(accounts[0]);
+  const common = first.filter((component, index) =>
+    accounts.every((account) => splitAccount(account)[index] === component),
+  );
+  return joinAccount(...common);
+}
+
+/** Create a predicate which matches an account and all of its descendants. */
+export function parentMatcher(parentAccount: string) {
+  return (account: string) => isDescendantOf(parentAccount, account);
+}
+
+/** Iterate from an account to its root, including both endpoints. */
+export function* accountParents(account: string): Generator<string> {
+  for (let current = account; current; current = parent(current)) {
+    yield current;
+  }
+}
+
 /**
  * Check whether an account is a descendant of another.
  *
@@ -9,20 +86,19 @@ import type { Directives } from "./data";
  * @param of - The possible ancestor
  */
 export function isDescendantOf(parent: string, child: string): boolean {
-  return child === parent || parent == "" || child.startsWith(`${parent}:`);
-}
-
-export function matchesAccount(account: unknown) {
   return (
-    typeof account === "string" &&
-    /^((Assets|Equity|Liabilities|Income|Expenses):([A-Z][A-Za-z0-9_-]+:)*[A-Z][A-Za-z0-9_-]+)$/.test(
-      account.trim(),
-    )
+    child === parent ||
+    parent === "" ||
+    child.startsWith(`${parent}${ACCOUNT_SEPARATOR}`)
   );
 }
 
+export function matchesAccount(account: unknown): account is string {
+  return typeof account === "string" && isValidAccount(account.trim());
+}
+
 export function parent(account: string) {
-  const idx = account.lastIndexOf(":");
+  const idx = account.lastIndexOf(ACCOUNT_SEPARATOR);
   if (idx !== -1) {
     return account.substring(0, idx);
   }

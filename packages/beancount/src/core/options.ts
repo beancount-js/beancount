@@ -1,6 +1,7 @@
 import { z, ZodIssueCode } from "zod";
 import { parseDocument } from "yaml";
 import { Booking } from "./data";
+import { accountRoot, isDescendantOf, isValidAccount } from "./account";
 import {
   BeanCountDocument,
   Decimal,
@@ -47,9 +48,7 @@ export const bool = z.preprocess((val, ctx) => {
 
 export const account = z
   .string()
-  .regex(
-    /(^((?:[\p{Lu}][\p{L}\p{Nd}-]*)(?::[\p{Lu}\p{Nd}][\p{L}\p{Nd}-]*))$)|(^([A-Z][a-zA-Z0-9_-]+(:([A-Z0-9][A-Za-z0-9-_]*:)*[A-Z0-9][A-Za-z0-9-]*)?)?$)/gu,
-  );
+  .refine((value) => isValidAccount(value), "Invalid account name");
 export const currency = z.string().regex(/^[A-Z][A-Z0-9'._-]{0,22}[A-Z0-9]$/);
 export const bookingSchema = z.nativeEnum(Booking);
 
@@ -244,11 +243,47 @@ export class AccountTypes {
   }
 
   accountType(account: string) {
-    return account.split(":", 2)[0];
+    return accountRoot(account);
+  }
+
+  getAccountType(account: string) {
+    return this.accountType(account);
+  }
+
+  isAccountType(account: string, accountType: string): boolean {
+    return this.accountType(account) === accountType;
+  }
+
+  isRootAccount(account: string, root: string): boolean {
+    return isDescendantOf(root, account);
+  }
+
+  isBalanceSheetAccount(account: string): boolean {
+    return [this.assets, this.liabilities, this.equity].includes(
+      this.accountType(account),
+    );
+  }
+
+  isIncomeStatementAccount(account: string): boolean {
+    return [this.income, this.expenses].includes(this.accountType(account));
+  }
+
+  isEquityAccount(account: string): boolean {
+    return this.isAccountType(account, this.equity);
+  }
+
+  isInvertedAccount(account: string): boolean {
+    return [this.liabilities, this.equity, this.income].includes(
+      this.accountType(account),
+    );
+  }
+
+  getAccountSign(account: string): 1 | -1 {
+    return this.isInvertedAccount(account) ? -1 : 1;
   }
 
   isIncomeAccount(account: string) {
-    return [this.income, this.expenses].includes(this.accountType(account));
+    return this.isIncomeStatementAccount(account);
   }
 
   previousAccounts() {
