@@ -663,7 +663,7 @@ function bookReductions(
   const empty = new Inventory();
   const localBalances: Record<string, Inventory> = {};
   const bookedPostings: Array<Posting> = [];
-  groupPostings.forEach((posting) => {
+  for (let posting of groupPostings) {
     let { units, cost, account } = posting;
     if (!localBalances[account]) {
       const previousBalance = balances[account] || empty;
@@ -758,7 +758,7 @@ function bookReductions(
         bookedPostings.push(posting);
       }
     }
-  });
+  }
   return [bookedPostings, errors];
 }
 

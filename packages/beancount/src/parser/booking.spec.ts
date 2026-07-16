@@ -613,6 +613,35 @@ describe("book", () => {
     expect(balances[account].positions).toHaveLength(6);
   });
 
+  test("reports ambiguous strict reductions through the booking pipeline", () => {
+    // Ported from Beancount's booking_full_test.py::test_reduce__ambiguous__strict.
+    const date = DateTime.fromISO("2022-01-01");
+    const balances = {
+      [account]: new Inventory(
+        new Position(
+          new Amount("10", "HOOL"),
+          new Cost(date, new Amount("115", "USD"), "lot-1"),
+        ),
+        new Position(
+          new Amount("10", "HOOL"),
+          new Cost(date, new Amount("115", "USD"), "lot-2"),
+        ),
+      ),
+    };
+    const [, errors] = book(
+      [
+        transaction("2022-05-02", "Ambiguous sale", [
+          new Posting(account, new Amount("-5", "HOOL"), new Cost()),
+        ]),
+      ],
+      defaultBeancountOptions({ booking_method: Booking.STRICT }),
+      balances,
+    );
+
+    expect(errors[0].message).toContain("Ambiguous matches");
+    expect(balances[account].positions).toHaveLength(2);
+  });
+
   test("infers a reduction currency from an account with one held commodity", () => {
     const heldCost = new Cost(
       DateTime.fromISO("2022-01-01"),
