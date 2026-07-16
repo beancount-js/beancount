@@ -27,16 +27,17 @@ export async function GET({
       ? { ...config.brandfetch, clientId: runtime?.clientId }
       : undefined;
 
+    const tokens = query ? query.split(/\s+/).filter(Boolean) : [];
     const merchants = (await store.merchants.list(params.id))
       .filter((merchant) => {
-        if (!query) return true;
-        return (
-          normalizeMerchant(merchant.canonicalName).includes(query) ||
-          normalizeMerchant(merchant.domain).includes(query) ||
-          merchant.aliases.some((alias) =>
-            alias.normalizedValue.includes(query),
-          )
-        );
+        if (!tokens.length) return true;
+        const haystack = [
+          normalizeMerchant(merchant.canonicalName),
+          normalizeMerchant(merchant.domain),
+          ...merchant.aliases.map((alias) => alias.normalizedValue),
+        ].join(" ");
+        // Every token must appear somewhere (name, domain, or alias).
+        return tokens.every((token) => haystack.includes(token));
       })
       .map((merchant) => ({
         ...merchant,

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
     FilterCommandPicker,
     FormField,
@@ -40,25 +39,50 @@
   const controlId = $props.id();
 
   let merchants = $state<Merchant[]>([]);
+  let loadError = $state("");
   let lastAutoAttachedId = $state<string | null>(null);
 
-  const query = $derived((searchText || domain).trim());
   const normalizedDomain = $derived(domain.trim().toLowerCase());
+  const rankTokens = $derived(
+    searchText
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean),
+  );
 
   const rankedMerchants = $derived.by(() => {
-    const exact: Merchant[] = [];
-    const rest: Merchant[] = [];
-    for (const merchant of merchants) {
-      if (
+    const scored = merchants.map((merchant) => {
+      let score = 0;
+      const merchantDomain = merchant.domain?.toLowerCase() ?? "";
+      if (normalizedDomain && merchantDomain === normalizedDomain) {
+        score += 100;
+      } else if (
         normalizedDomain &&
-        merchant.domain?.toLowerCase() === normalizedDomain
+        merchantDomain.includes(normalizedDomain)
       ) {
-        exact.push(merchant);
-      } else {
-        rest.push(merchant);
+        score += 40;
       }
-    }
-    return [...exact, ...rest];
+      const haystack = [
+        merchant.canonicalName,
+        merchant.domain ?? "",
+        ...(merchant.aliases?.map((alias) => alias.normalizedValue) ?? []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      for (const token of rankTokens) {
+        if (haystack.includes(token)) score += 10;
+      }
+      return { merchant, score };
+    });
+    scored.sort((left, right) => {
+      if (right.score !== left.score) return right.score - left.score;
+      return left.merchant.canonicalName.localeCompare(
+        right.merchant.canonicalName,
+        undefined,
+        { sensitivity: "base" },
+      );
+    });
+    return scored.map((item) => item.merchant);
   });
 
   const options = $derived.by((): FilterCommandOption[] => {
@@ -95,27 +119,40 @@
     });
   }
 
-  async function fetchMerchants(q: string) {
-    try {
-      merchants = await ingestionJson<Merchant[]>(
-        ingestionPath(projectId, `/merchants?query=${encodeURIComponent(q)}`),
-      );
-    } catch {
+  async function fetchMerchants() {
+    if (!projectId) {
       merchants = [];
+      return;
+    }
+    try {
+      // Load the full project merchant catalog; FilterCommandPicker filters
+      // client-side, and domain/name only affect ranking + auto-select.
+      const listed = await ingestionJson<Merchant[]>(
+        ingestionPath(projectId, "/merchants"),
+      );
+      merchants = Array.isArray(listed) ? listed : [];
+      loadError = "";
+    } catch (error) {
+      merchants = [];
+      loadError =
+        error instanceof Error ? error.message : "Failed to load merchants";
     }
   }
 
   $effect(() => {
-    const q = query;
+    // Refresh whenever the sheet context changes so newly confirmed
+    // merchants appear without requiring a full page reload.
+    if (!projectId) {
+      merchants = [];
+      return;
+    }
+    void projectId;
+    void searchText;
+    void domain;
     const timer = window.setTimeout(() => {
-      void fetchMerchants(q);
-    }, 250);
-
+      void fetchMerchants();
+    }, 150);
     return () => window.clearTimeout(timer);
-  });
-
-  onMount(() => {
-    void fetchMerchants(query);
   });
 
   $effect(() => {
@@ -151,12 +188,16 @@
   as="div"
   align="center"
   controlId={controlId}
+  messages={loadError ? [loadError] : []}
 >
   <FilterCommandPicker
     fullWidth
     label="Existing merchant"
     ariaLabel="Select existing merchant"
     placeholder="Search merchants..."
+    emptyLabel={merchants.length
+      ? "No matching merchants."
+      : "No saved merchants yet."}
     value={attachedMerchantId}
     {options}
     onChange={handleChange}
