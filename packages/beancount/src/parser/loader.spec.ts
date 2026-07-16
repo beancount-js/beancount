@@ -2,14 +2,19 @@ import { describe, test, expect } from "vitest";
 import {
   DocumentLoader,
   type DocumentStore,
+  LoadError,
+  loadBeancountOptions,
   loadDocumentStore,
   loadProjectSources,
   loadString,
   normalizeProjectPath,
+  parseRecursive,
   resolveProjectInclude,
+  runTransformations,
 } from "./loader";
 import type { PluginType } from "../ops/plugins";
-import { Transaction } from "../core/data";
+import { defaultBeancountOptions } from "../core/options";
+import { Plugin, Transaction } from "../core/data";
 
 describe("Loader", () => {
   test("loadString", () => {
@@ -381,5 +386,113 @@ describe("Loader", () => {
       "Plugin example.throwing failed: intentional failure",
     );
     expect(errors[0].context.plugin).toBe("example.throwing");
+  });
+
+  test("normalizes relative include paths and supports direct string parsing", () => {
+    const files: Record<string, string> = {
+      ".": "2024-01-01 open Assets:Dot",
+      "shared.beancount": "2024-01-01 open Assets:Shared",
+    };
+    const [entries, errors] = loadString(
+      'include "."\ninclude "nested/../shared.beancount"',
+      { documentLoader: (filename) => files[filename], transform: false },
+    );
+
+    expect(errors).toEqual([]);
+    expect(
+      entries
+        .filter((entry) => entry.directiveType === "open")
+        .map((entry) => entry.accounts[0]),
+    ).toEqual(["Assets:Dot", "Assets:Shared"]);
+    expect(
+      parseRecursive("2024-01-01 open Assets:Direct", {
+        transform: false,
+        plugins: {},
+        dedent: false,
+      })[0],
+    ).toHaveLength(1);
+  });
+
+  test("bounds document stores and reports option schema failures without directives", () => {
+    const duplicateStore: DocumentStore = {
+      list: () => [
+        { path: "main.beancount", contents: "" },
+        { path: "./main.beancount", contents: "" },
+      ],
+      exists: () => true,
+    };
+    expect(() => loadDocumentStore("main.beancount", duplicateStore)).toThrow(
+      'Duplicate project source: "main.beancount"',
+    );
+
+    const missingStore: DocumentStore = {
+      list: () => [
+        {
+          path: "main.beancount",
+          contents: 'include "missing.beancount"',
+        },
+      ],
+      exists: (path) => path === "main.beancount",
+    };
+    expect(
+      loadDocumentStore("main.beancount", missingStore, {
+        transform: false,
+      })[1][0].message,
+    ).toBe('Failed to load include file: "missing.beancount"');
+
+    const [, optionErrors] = loadBeancountOptions(
+      [[], [], { include: "child.beancount", unknown_option: "value" }],
+      { transform: false, plugins: {}, dedent: false },
+    );
+    expect(optionErrors[0].context.lineno).toBe(0);
+    expect(optionErrors[0].message).toContain("unknown_option");
+  });
+
+  test("reports unsupported plugins and attributes returned or non-Error failures", () => {
+    const reported = new LoadError("reported plugin error");
+    const configurations: string[] = [];
+    const plugins: Record<string, PluginType> = {
+      "example.string": {
+        id: "example.string",
+        order: 0,
+        plugin(entries, _options, configuration) {
+          configurations.push(configuration ?? "");
+          return [entries, [reported]];
+        },
+      },
+      "example.non-error": {
+        id: "example.non-error",
+        order: 0,
+        plugin() {
+          throw "string failure";
+        },
+      },
+    };
+
+    const [, unsupportedErrors] = loadString('plugin "example.unknown"', {
+      plugins,
+    });
+    expect(unsupportedErrors[0].message).toBe(
+      "Unsupported plugin example.unknown",
+    );
+
+    const [, errors] = runTransformations(
+      [
+        [
+          new Plugin("example.string", "inline: value"),
+          new Plugin("example.non-error"),
+        ],
+        [],
+        defaultBeancountOptions({ plugin_processing_mode: "raw" }),
+      ],
+      { transform: true, plugins, dedent: false },
+    );
+
+    expect(configurations).toEqual(["inline: value"]);
+    expect(reported.context.plugin).toBe("example.string");
+    expect(errors.map((error) => error.message)).toEqual([
+      "reported plugin error",
+      "Plugin example.non-error failed: string failure",
+    ]);
   });
 });
