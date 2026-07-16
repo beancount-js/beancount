@@ -37,9 +37,12 @@ describe("auto-account plugin", () => {
       ["Expenses:Food", "2024-01-01"],
       ["Income:Salary", "2024-02-01"],
     ]);
-    expect(opens.every((entry) => entry.meta["<auto_accounts>"] === 0)).toBe(
-      true,
-    );
+    expect(opens.map((entry) => entry.meta.filename)).toEqual([
+      "<auto_accounts>",
+      "<auto_accounts>",
+      "<auto_accounts>",
+    ]);
+    expect(opens.map((entry) => entry.meta.lineno)).toEqual([0, 1, 2]);
   });
 
   test("does not replace an explicit open directive", () => {

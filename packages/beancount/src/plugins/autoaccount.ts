@@ -36,19 +36,26 @@ export function autoInsertOpen(
   entries: Directives,
   _options?: BeancountOptions,
 ): [Directives, Array<ValidationError>] {
-  const response: Directives = sorted([...entries]);
-  const errors: Array<ValidationError> = [];
   const openedAccounts = new Set<string>(
     entries.filter((it) => it instanceof Open).map((it) => it.account),
   );
   const [first] = accountsUseMap(entries);
-  for (const [account, date] of Object.entries(first)) {
+  const generated: Directives = [];
+  for (const [index, [account, date]] of Object.entries(first)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .entries()) {
     if (!openedAccounts.has(account)) {
-      response.push(
-        new Open(date, account, undefined, undefined, { "<auto_accounts>": 0 }),
+      generated.push(
+        new Open(date, account, undefined, undefined, {
+          filename: "<auto_accounts>",
+          lineno: index,
+        }),
       );
     }
   }
 
-  return [sorted(response), errors];
+  return [
+    generated.length > 0 ? sorted([...generated, ...entries]) : entries,
+    [],
+  ];
 }

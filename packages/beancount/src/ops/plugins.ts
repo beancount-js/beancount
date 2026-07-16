@@ -1,8 +1,10 @@
 import type { BeancountOptions } from "../core";
 import type { Directives } from "../core/data";
 import { autoInsertOpen } from "../plugins/autoaccount";
+import { auto } from "../plugins/auto";
 import { creditCard } from "../plugins/creditcard";
 import { forecast } from "../plugins/forecast";
+import { addImplicitPrices } from "../plugins/implicit_prices";
 import { checkBalance } from "./balance";
 import { pad } from "./pad";
 import type { ValidationError } from "./validation";
@@ -43,9 +45,21 @@ export const Plugins: Record<string, PluginType> = {
     supportsConfig: false,
   },
   "beancount.plugins.auto": {
-    plugin: autoInsertOpen,
+    plugin: auto,
     order: 0,
     id: "beancount.plugins.auto",
+    supportsConfig: false,
+  },
+  "beancount.plugins.auto_accounts": {
+    plugin: autoInsertOpen,
+    order: 0,
+    id: "beancount.plugins.auto_accounts",
+    supportsConfig: false,
+  },
+  "beancount.plugins.implicit_prices": {
+    plugin: addImplicitPrices,
+    order: 0,
+    id: "beancount.plugins.implicit_prices",
     supportsConfig: false,
   },
   "beancount.plugins.forecast": {

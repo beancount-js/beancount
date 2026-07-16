@@ -16,6 +16,30 @@
       "status": "adapted",
       "tests": ["parity/loader/recursive-relative-includes"],
       "reason": "Uses a bounded source-map capability instead of Python filesystem access."
+    },
+    {
+      "upstreamModule": "beancount.plugins.auto_accounts",
+      "upstreamBehavior": "auto_insert_open",
+      "localBehavior": "autoInsertOpen",
+      "status": "adapted",
+      "tests": ["plugins/autoaccount"],
+      "reason": "Uses JavaScript metadata objects and Luxon dates."
+    },
+    {
+      "upstreamModule": "beancount.plugins.implicit_prices",
+      "upstreamBehavior": "add_implicit_prices",
+      "localBehavior": "addImplicitPrices",
+      "status": "adapted",
+      "tests": ["plugins/implicit-prices"],
+      "reason": "Uses the local Inventory MatchResult and directive models."
+    },
+    {
+      "upstreamModule": "beancount.plugins.auto",
+      "upstreamBehavior": "combined_auto_plugins",
+      "localBehavior": "auto",
+      "status": "adapted",
+      "tests": ["plugins/auto"],
+      "reason": "Composes the JavaScript auto-account and implicit-price adapters."
     }
   ]
 }
