@@ -144,6 +144,14 @@
       "status": "adapted",
       "tests": ["plugins/coherent-cost"],
       "reason": "Uses local Posting cost models and ValidationError contexts."
+    },
+    {
+      "upstreamModule": "beancount.plugins.check_commodity",
+      "upstreamBehavior": "get_commodity_map_ex, validate_commodity_directives",
+      "localBehavior": "getCommodityMap, validateCommodityDirectives",
+      "status": "adapted",
+      "tests": ["plugins/check-commodity"],
+      "reason": "Uses safe YAML or JSON regexp configuration and local metadata objects."
     }
   ]
 }

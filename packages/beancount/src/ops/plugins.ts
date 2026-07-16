@@ -7,6 +7,7 @@ import { closeTree } from "../plugins/close_tree";
 import { validateCommodityAttributes } from "../plugins/commodity_attr";
 import { validateCoherentCost } from "../plugins/coherent_cost";
 import { checkClosing } from "../plugins/check_closing";
+import { validateCommodityDirectives } from "../plugins/check_commodity";
 import { checkDrained } from "../plugins/check_drained";
 import { forecast } from "../plugins/forecast";
 import { addImplicitPrices } from "../plugins/implicit_prices";
@@ -89,6 +90,12 @@ export const Plugins: Record<string, PluginType> = {
     order: 0,
     id: "beancount.plugins.coherent_cost",
     supportsConfig: false,
+  },
+  "beancount.plugins.check_commodity": {
+    plugin: validateCommodityDirectives,
+    order: 0,
+    id: "beancount.plugins.check_commodity",
+    supportsConfig: true,
   },
   "beancount.plugins.check_closing": {
     plugin: checkClosing,
