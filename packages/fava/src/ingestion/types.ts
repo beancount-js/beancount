@@ -11,6 +11,7 @@ import type {
 import type {
   AiEnrichmentDebug,
   AiEnrichmentDebugCall,
+  BrandfetchEnrichmentConfig,
   MerchantEnrichmentConfig,
 } from "@beancount-js/server";
 
@@ -19,12 +20,13 @@ export type {
   AiEnrichmentDebug,
   AiEnrichmentDebugCall,
   AiEnrichmentSnapshot,
+  BrandfetchEnrichmentConfig,
 };
 
 export interface IngestionSource {
   id: string;
   name: string;
-  kind: "json-api";
+  kind: string;
   /**
    * Beancount asset account for standalone sources. Grouped connections use
    * nested `accounts[]` instead.
@@ -37,8 +39,12 @@ export interface IngestionSource {
   /** Markdown shown in the connection preview setup callout. */
   setup?: string;
   merchantEnrichment?: MerchantEnrichmentConfig;
-  api: JsonApiSourceConfig;
-  mapping: JsonMappingConfig;
+  /** Legacy json-api transport config. */
+  api?: JsonApiSourceConfig;
+  /** Legacy json-api field mapping. */
+  mapping?: JsonMappingConfig;
+  /** Connector-owned config for registered kinds. */
+  config?: unknown;
   rules: MerchantRule[];
   /** Nested bank accounts for multi-account providers (e.g. Lunch Flow). */
   accounts?: JsonApiLinkedAccount[];
@@ -48,9 +54,11 @@ export interface IngestionSource {
 }
 
 export interface IngestionConfigResponse {
-  version: 1;
+  version: 1 | 2;
+  brandfetch?: BrandfetchEnrichmentConfig;
   sources: IngestionSource[];
   accounts: string[];
+  brandCredentialAvailable?: boolean;
 }
 
 export type { ImportProposal, IngestionRun, JsonApiLinkedAccount };

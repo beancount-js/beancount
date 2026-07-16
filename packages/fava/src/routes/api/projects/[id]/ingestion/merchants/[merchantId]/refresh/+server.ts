@@ -25,7 +25,8 @@ export async function POST({
       return json({ error: "sourceId is required." }, { status: 400 });
     const store = serverIngestion();
     const source = await store.sourceForRunSourceId(params.id, body.sourceId);
-    const brandfetch = source.merchantEnrichment?.brandfetch;
+    const config = await store.readConfig(params.id);
+    const brandfetch = config.brandfetch;
     if (
       !source.merchantEnrichment?.enabled ||
       !brandfetch?.enabled ||
@@ -99,9 +100,10 @@ export async function POST({
       ...updated,
       logoUrl: merchantLogoUrlFor(params.id, updated, {
         ...enrichment,
-        brandfetch: enrichment.brandfetch
-          ? { ...enrichment.brandfetch, clientId: runtime.clientId }
-          : undefined,
+        brandfetch: {
+          ...brandfetch,
+          clientId: runtime.clientId,
+        },
       }),
     });
   } catch (error) {

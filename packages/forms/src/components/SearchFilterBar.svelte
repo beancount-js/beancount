@@ -25,6 +25,8 @@
     shortcut = "",
     disabled = false,
     inputId = undefined,
+    /** `filter-query` uses CodeMirror + Beancount filter syntax; `plain` is a normal search input. */
+    inputMode = "filter-query",
     clearSearchLabel = "Clear search",
     clearAllLabel = "Clear all",
     expandFiltersLabel = "Expand filter options",
@@ -48,6 +50,7 @@
     shortcut?: string;
     disabled?: boolean;
     inputId?: string;
+    inputMode?: "filter-query" | "plain";
     clearSearchLabel?: string;
     clearAllLabel?: string;
     expandFiltersLabel?: string;
@@ -68,6 +71,7 @@
   } = $props();
 
   let editor = $state<EditorView | null>(null);
+  let plainInput = $state<HTMLInputElement | null>(null);
   let replacing = false;
   const editableCompartment = new Compartment();
   const placeholderCompartment = new Compartment();
@@ -86,6 +90,10 @@
   );
 
   export function focus() {
+    if (inputMode === "plain") {
+      plainInput?.focus();
+      return;
+    }
     editor?.focus();
   }
 
@@ -94,6 +102,11 @@
   }
 
   function clearEditor() {
+    if (inputMode === "plain") {
+      if (value) onValueChange("");
+      void onClearSearch();
+      return;
+    }
     if (editor && editor.state.doc.length > 0) {
       replacing = true;
       editor.dispatch({
@@ -191,7 +204,27 @@
 
     <div class="cv-search-filter-bar__search-pill">
       <SearchIcon size={12} strokeWidth={1.75} />
-      <div class="cv-search-filter-bar__editor" use:filterQueryEditor={value}></div>
+      {#if inputMode === "plain"}
+        <input
+          bind:this={plainInput}
+          class="cv-search-filter-bar__plain-input"
+          type="search"
+          id={inputId}
+          {value}
+          {placeholder}
+          {disabled}
+          aria-label={ariaLabel}
+          autocomplete="off"
+          spellcheck="false"
+          oninput={(event) =>
+            onValueChange((event.currentTarget as HTMLInputElement).value)}
+        />
+      {:else}
+        <div
+          class="cv-search-filter-bar__editor"
+          use:filterQueryEditor={value}
+        ></div>
+      {/if}
       {#if shortcut && !hasValue && (!showFilterToggle || filtersExpanded)}
         <kbd>{shortcut}</kbd>
       {/if}

@@ -105,6 +105,8 @@
     return Boolean(
       last &&
         (last === "accounts" ||
+          last === "merchants" ||
+          last === "brands" ||
           segments.includes("account") ||
           [
             "journal",

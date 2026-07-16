@@ -20,9 +20,10 @@ export async function GET({
       ? await store.sourceForRunSourceId(params.id, sourceId)
       : undefined;
     const enrichment = source?.merchantEnrichment;
-    const runtime = enrichment?.brandfetch
+    const config = await store.readConfig(params.id);
+    const runtime = config.brandfetch
       ? await resolveBrandfetchRuntime(
-          enrichment.brandfetch,
+          config.brandfetch,
           await store.projectRoot(params.id),
         )
       : undefined;
@@ -32,8 +33,8 @@ export async function GET({
         source && enrichment
           ? merchantLogoUrlFor(params.id, merchant, {
               ...enrichment,
-              brandfetch: enrichment.brandfetch
-                ? { ...enrichment.brandfetch, clientId: runtime?.clientId }
+              brandfetch: config.brandfetch
+                ? { ...config.brandfetch, clientId: runtime?.clientId }
                 : undefined,
             })
           : undefined,

@@ -8,10 +8,7 @@
   import MoreVertical from "lucide-svelte/icons/more-vertical";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
   import Settings from "lucide-svelte/icons/settings";
-  import {
-    isGroupedJsonApiSource,
-    type JsonApiLinkedAccount,
-  } from "@beancount-js/beangulp";
+  import type { JsonApiLinkedAccount } from "@beancount-js/beangulp";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
@@ -26,6 +23,12 @@
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import { isSecretConfigured } from "../ingestion/secret-ref";
   import AccountsPageSkeleton from "./skeletons/AccountsPageSkeleton.svelte";
+  import {
+    isConnectorSource,
+    isGroupedSource,
+    sourceBaseUrl,
+    sourceSecretRef,
+  } from "../ingestion/connectors";
   import {
     editableIngestionConfig,
     type EditableIngestionConfig,
@@ -80,7 +83,7 @@
   let syncJob = $state<IngestionSyncJob | null>(null);
 
   const connections = $derived(
-    (config?.sources ?? []).filter((source) => isGroupedJsonApiSource(source)),
+    (config?.sources ?? []).filter((source) => isGroupedSource(source)),
   );
   const selectedConnection = $derived(
     connections.find((source) => source.id === selectedSourceId) ??
@@ -115,8 +118,9 @@
   );
   const canDiscover = $derived(
     Boolean(
-      selectedConnection?.api.baseUrl?.trim() &&
-        isSecretConfigured(selectedConnection?.api.secretRef),
+      selectedConnection &&
+        sourceBaseUrl(selectedConnection)?.trim() &&
+        isSecretConfigured(sourceSecretRef(selectedConnection)),
     ),
   );
   const canLink = $derived(
@@ -164,7 +168,11 @@
     if (discovering || serverConnection?.credentialAvailable) {
       return "Credential available · Discovering accounts…";
     }
-    if (isSecretConfigured(selectedConnection?.api.secretRef)) {
+    if (
+      isSecretConfigured(
+        selectedConnection ? sourceSecretRef(selectedConnection) : undefined,
+      )
+    ) {
       return "Credential saved · Ready to discover";
     }
     return "No API key configured";
@@ -268,6 +276,27 @@
     return discoveryById.get(account.id)?.institutionName?.trim() || undefined;
   }
 
+  /** Discovery scheme for connector sources; the generic /discover endpoint
+   * needs an auth header hint and connectors don't expose one directly. */
+  function sourceAuthScheme(
+    source: EditableIngestionSource,
+  ): "bearer" | "x-api-key" | undefined {
+    if (isConnectorSource(source)) return "x-api-key";
+    return source.api?.authScheme;
+  }
+
+  function sourceAllowedHosts(
+    source: EditableIngestionSource,
+  ): string[] | undefined {
+    if (isConnectorSource(source)) {
+      const config = source.config as { allowedHosts?: unknown } | undefined;
+      return Array.isArray(config?.allowedHosts)
+        ? (config.allowedHosts as string[])
+        : undefined;
+    }
+    return source.api?.allowedHosts;
+  }
+
   async function load() {
     if (!$snapshot || isWeb) return;
     loading = true;
@@ -282,7 +311,7 @@
       config = draft;
       loadedProjectId = $snapshot.project.id;
       const grouped = draft.sources.filter((source) =>
-        isGroupedJsonApiSource(source),
+        isGroupedSource(source),
       );
       if (
         !selectedSourceId ||
@@ -393,10 +422,10 @@
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            baseUrl: selectedConnection.api.baseUrl,
-            secretRef: selectedConnection.api.secretRef,
-            authScheme: selectedConnection.api.authScheme,
-            allowedHosts: selectedConnection.api.allowedHosts,
+            baseUrl: sourceBaseUrl(selectedConnection),
+            secretRef: sourceSecretRef(selectedConnection),
+            authScheme: sourceAuthScheme(selectedConnection),
+            allowedHosts: sourceAllowedHosts(selectedConnection),
           }),
         },
       );

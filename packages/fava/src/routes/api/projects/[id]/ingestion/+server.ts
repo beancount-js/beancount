@@ -1,6 +1,10 @@
 import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
-import { envSecretAvailable, resolveProjectEnv } from "@beancount-js/server";
+import {
+  envSecretAvailable,
+  resolveProjectEnv,
+  sourceSecretRef,
+} from "@beancount-js/server";
 import {
   categoryAccountsForSource,
   serverIngestion,
@@ -25,23 +29,23 @@ export async function GET({ params }: { params: { id: string } }) {
   const config = await serverIngestion().readConfig(params.id);
   return json({
     ...config,
-    sources: config.sources.map((source) => ({
-      ...source,
-      credentialAvailable: envSecretAvailable(source.api.secretRef, env),
-      // Only report unavailability when Brandfetch is enabled; a disabled
-      // provider must not surface "credential is not available".
-      merchantCredentialAvailable:
-        source.merchantEnrichment?.brandfetch?.enabled === true
-          ? envSecretAvailable(
-              source.merchantEnrichment.brandfetch.apiKeySecretRef,
-              env,
-            )
-          : undefined,
-      allowedAccounts: categoryAccountsForSource(
-        source,
-        entries.flatMap((entry) => entry.accounts),
-      ),
-    })),
+    brandCredentialAvailable:
+      config.brandfetch?.enabled === true
+        ? envSecretAvailable(config.brandfetch.apiKeySecretRef, env)
+        : undefined,
+    sources: config.sources.map((source) => {
+      const secretRef = sourceSecretRef(source);
+      return {
+        ...source,
+        credentialAvailable: secretRef
+          ? envSecretAvailable(secretRef, env)
+          : false,
+        allowedAccounts: categoryAccountsForSource(
+          source,
+          entries.flatMap((entry) => entry.accounts),
+        ),
+      };
+    }),
     accounts: [...new Set(entries.flatMap((entry) => entry.accounts))]
       .filter(Boolean)
       .sort(),

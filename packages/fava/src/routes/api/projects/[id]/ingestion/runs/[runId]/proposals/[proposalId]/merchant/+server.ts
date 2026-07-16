@@ -75,9 +75,10 @@ async function cacheLogoIfConfigured(
   projectId: string,
   merchant: MerchantIdentity,
   candidate: MerchantCandidate,
-  source: IngestionSourceDefinition,
+  _source: IngestionSourceDefinition,
 ) {
-  const brandfetch = source.merchantEnrichment?.brandfetch;
+  const store = serverIngestion();
+  const brandfetch = (await store.readConfig(projectId)).brandfetch;
   if (
     brandfetch?.enabled !== true ||
     brandfetch.assetMode !== "cache" ||
@@ -87,7 +88,6 @@ async function cacheLogoIfConfigured(
   ) {
     return merchant;
   }
-  const store = serverIngestion();
   const runtime = await resolveBrandfetchRuntime(
     brandfetch,
     await store.projectRoot(projectId),
@@ -200,9 +200,10 @@ export async function PATCH({
         source,
       );
       const enrichment = source.merchantEnrichment ?? { enabled: false };
-      const runtime = enrichment.brandfetch
+      const brandfetch = (await store.readConfig(params.id)).brandfetch;
+      const runtime = brandfetch
         ? await resolveBrandfetchRuntime(
-            enrichment.brandfetch,
+            brandfetch,
             await store.projectRoot(params.id),
           )
         : undefined;
@@ -213,8 +214,8 @@ export async function PATCH({
           ...merchant,
           logoUrl: merchantLogoUrlFor(params.id, merchant, {
             ...enrichment,
-            brandfetch: enrichment.brandfetch
-              ? { ...enrichment.brandfetch, clientId: runtime?.clientId }
+            brandfetch: brandfetch
+              ? { ...brandfetch, clientId: runtime?.clientId }
               : undefined,
           }),
         },

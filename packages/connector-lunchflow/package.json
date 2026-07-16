@@ -1,0 +1,34 @@
+{
+  "name": "@beancount-js/connector-lunchflow",
+  "version": "0.1.0",
+  "description": "Lunch Flow connector for Beancount JS Studio ingestion",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "vite build",
+    "check-types": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "fmt": "prettier ./src --write",
+    "fmt:check": "prettier ./src --check"
+  },
+  "dependencies": {
+    "@beancount-js/beangulp": "workspace:*",
+    "luxon": "^3.7.2"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.7.1",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11",
+    "vite-plugin-dts": "^4.3.0",
+    "vitest": "^2.1.5",
+    "prettier": "3.3.3",
+    "prettier-plugin-jsdoc": "^1.3.0"
+  },
+  "license": "MIT"
+}

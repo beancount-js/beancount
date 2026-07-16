@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "b6bbce18-d175-42c4-83b6-436343787f22",
+      "name": null,
+      "resourceType": "transaction",
+      "active": true,
+      "effectiveDate": "2027-03-16",
+      "conditions": [
+        {
+          "id": "9fb0bdbb-0bc4-4f74-ba3a-08c8b2b4b70a",
+          "conditionType": "transaction_amount",
+          "operator": ">",
+          "value": "20"
+        },
+        {
+          "id": "5737ab66-276f-4256-bd30-759c7a122ea6",
+          "conditionType": "compound",
+          "operator": "and",
+          "value": null,
+          "subConditions": []
+        }
+      ],
+      "actions": [
+        {
+          "id": "a7a12dec-86b3-4fbc-9c58-923a37101f29",
+          "actionType": "set_transaction_category",
+          "value": "Assets:Checking:Starling"
+        }
+      ]
+    }
+  ]
+}

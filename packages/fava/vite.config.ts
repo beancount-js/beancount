@@ -33,6 +33,12 @@ export default defineConfig({
         replacement: fileURLToPath(new URL("../beangulp/src/index.ts", import.meta.url)),
       },
       {
+        find: "@beancount-js/connector-lunchflow",
+        replacement: fileURLToPath(
+          new URL("../connector-lunchflow/src/index.ts", import.meta.url),
+        ),
+      },
+      {
         find: "@beancount-js/beanquery",
         replacement: fileURLToPath(new URL("../beanquery/src/index.ts", import.meta.url)),
       },
@@ -52,6 +58,7 @@ export default defineConfig({
       "@beancount-js/beancount",
       "@beancount-js/forms",
       "@beancount-js/beangulp",
+      "@beancount-js/connector-lunchflow",
       "@beancount-js/filters",
       "@beancount-js/parser",
       "@beancount-js/server",

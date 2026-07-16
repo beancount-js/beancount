@@ -13,6 +13,7 @@
   "dependencies": {
     "@beancount-js/beancount": "workspace:*",
     "@beancount-js/beangulp": "workspace:*",
+    "@beancount-js/connector-lunchflow": "workspace:*",
     "@beancount-js/parser": "workspace:*",
     "@beancount-js/workspace": "workspace:*",
     "yaml": "^2.9.0"

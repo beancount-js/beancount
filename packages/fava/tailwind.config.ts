@@ -8,7 +8,11 @@ const cssColor = (variable: string) =>
 const config: Config = {
   darkMode: ["class"],
   content: ["./src/**/*.{html,js,svelte,ts}"],
-  safelist: ["dark"],
+  safelist: [
+    "dark",
+    // Connector catalog accent tiles (also referenced from samples.ts).
+    "bg-orange-600",
+  ],
   theme: {
     container: {
       center: true,

@@ -2,6 +2,7 @@ import {
   exampleIngestionConfig,
   type EditableIngestionSource,
 } from "./source-form";
+import { clientConnectors, ensureClientConnectors } from "./connectors";
 
 export type IngestionSampleProvider = {
   id: string;
@@ -26,66 +27,62 @@ export type IngestionSample = {
 
 const exampleSource = exampleIngestionConfig.sources[0]!;
 
-const lunchFlowSource: EditableIngestionSource = {
-  id: "lunchflow",
-  name: "Lunch Flow",
-  kind: "json-api",
-  aiEnabled: false,
-  setup: [
-    "1. Go to [Lunch Flow](https://lunchflow.app/) and create an API key.",
-    "2. Paste the API key and confirm the base URL below, then save the connection.",
-    "3. Open **Settings → Accounts** to load and link the bank accounts you want to import.",
-  ].join("\n"),
-  merchantEnrichment: {
-    enabled: true,
-    aiEnabled: false,
-    countryCode: "GB",
-    brandfetch: {
-      enabled: false,
-      apiKeySecretRef: "env:BRANDFETCH_API_KEY",
-      clientId: "env:BRANDFETCH_CLIENT_ID",
-      assetMode: "hotlink",
-    },
-  },
-  api: {
-    baseUrl: "https://www.lunchflow.app/api/v1",
-    allowedHosts: ["lunchflow.app", "www.lunchflow.app"],
-    secretRef: "env:LUNCHFLOW_API_KEY",
-    authScheme: "x-api-key",
-    recordsPath: "transactions",
-  },
-  mapping: {
-    id: "id",
-    date: "date",
-    amount: "amount",
-    currency: "currency",
-    merchant: "merchant",
-    narration: "description",
-    status: "isPending",
-  },
-  accounts: [],
-  rules: [],
-};
+/**
+ * Accent classes must appear as string literals in this package so Tailwind's
+ * content scanner includes them (connector packages are outside `content`).
+ */
+function connectorAccentClass(kind: string, fallback: string) {
+  if (kind === "lunchflow") return "bg-orange-600";
+  return fallback;
+}
+
+function connectorSamples(): IngestionSample[] {
+  ensureClientConnectors();
+  return clientConnectors().map((connector) => {
+    const config = connector.defaultConfig() as Record<string, unknown>;
+    const baseUrl =
+      typeof config.baseUrl === "string" ? config.baseUrl : undefined;
+    return {
+      id: connector.kind,
+      name: connector.name,
+      initials: connector.catalog.initials,
+      accentClass: connectorAccentClass(
+        connector.kind,
+        connector.catalog.accentClass,
+      ),
+      region: connector.catalog.region,
+      category: connector.catalog.category,
+      description: connector.description,
+      badge: connector.catalog.badge,
+      provider: baseUrl
+        ? {
+            id: connector.kind,
+            baseUrl,
+            accountsPath: "accounts",
+          }
+        : undefined,
+      template: {
+        id: connector.kind,
+        name: connector.name,
+        kind: connector.kind,
+        aiEnabled: false,
+        setup: connector.setupMarkdown,
+        merchantEnrichment: {
+          enabled: true,
+          aiEnabled: false,
+          countryCode: "GB",
+        },
+        config: structuredClone(config),
+        accounts: connector.capabilities.groupedAccounts ? [] : undefined,
+        rules: [],
+      },
+    } satisfies IngestionSample;
+  });
+}
 
 /** Catalog of pre-configured sources shown under the connections preview. */
 export const ingestionSamples: IngestionSample[] = [
-  {
-    id: "lunchflow",
-    name: "Lunch Flow",
-    initials: "LF",
-    accentClass: "bg-orange-600",
-    region: "Global",
-    category: "Bank aggregation",
-    description:
-      "Import transactions from banks connected through Lunch Flow’s JSON API.",
-    badge: "Beta",
-    provider: {
-      id: "lunchflow",
-      baseUrl: "https://www.lunchflow.app/api/v1",
-      accountsPath: "accounts",
-    },
-    template: structuredClone(lunchFlowSource),
-  },
+  ...connectorSamples(),
   {
     id: "example-bank",
     name: "Example bank",

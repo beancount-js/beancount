@@ -1,5 +1,10 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import {
+    FilterCommandPicker,
+    SearchFilterBar,
+    type FilterCommandOption,
+  } from "@beancount-js/forms";
   import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
   import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
   import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
@@ -14,8 +19,20 @@
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
+  import { debounceWithDelay } from "../hooks/debounce";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type { IngestionConfigResponse } from "../ingestion/types";
+  import {
+    appendIngestionMerchantSearchParams,
+    cloneIngestionMerchantSearchState,
+    hasActiveIngestionMerchantSearch,
+    matchesIngestionMerchantSearch,
+    MERCHANT_CLUSTER_STATUS_OPTIONS,
+    MERCHANT_DOMAIN_OPTIONS,
+    parseIngestionMerchantSearchState,
+    type IngestionMerchantSearchState,
+    type MerchantDomainFacet,
+  } from "../lib/ingestion-merchant-search-state";
   import IngestionMerchantSheet from "./IngestionMerchantSheet.svelte";
   import MerchantsPageSkeleton from "./skeletons/MerchantsPageSkeleton.svelte";
 
@@ -53,6 +70,11 @@
   });
   /** Order sorts were added; earlier entries are primary. */
   let sortPriority = $state<SortKey[]>([]);
+  let filtersExpanded = $state(false);
+  let searchState = $state<IngestionMerchantSearchState>(
+    cloneIngestionMerchantSearchState(),
+  );
+  let lastSearchSignature = $state("");
 
   const project = $derived($snapshot);
   const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
@@ -69,10 +91,20 @@
       ? Number($activeRoute.query.pageSize)
       : 50,
   );
+  const activeSearch = $derived(hasActiveIngestionMerchantSearch(searchState));
+  const statusOptions = $derived<FilterCommandOption[]>(
+    MERCHANT_CLUSTER_STATUS_OPTIONS.map((option) => ({ ...option })),
+  );
+  const domainOptions = $derived<FilterCommandOption[]>(
+    MERCHANT_DOMAIN_OPTIONS.map((option) => ({ ...option })),
+  );
+  const matchedClusters = $derived(
+    clusters.filter((item) => matchesIngestionMerchantSearch(item, searchState)),
+  );
   const sortedClusters = $derived.by(() => {
     const keys = sortPriority.filter((key) => sortOrders[key] !== "none");
-    if (!keys.length) return clusters;
-    const next = [...clusters];
+    if (!keys.length) return matchedClusters;
+    const next = [...matchedClusters];
     next.sort((left, right) => {
       for (const key of keys) {
         const direction = sortOrders[key] === "asc" ? 1 : -1;
@@ -96,8 +128,8 @@
   const visibleClusters = $derived(pages[page - 1] ?? []);
 
   const summaryLine = $derived(
-    clusters.length
-      ? `${clusters.length} merchant cluster${clusters.length === 1 ? "" : "s"} · ${clusters.reduce((sum, item) => sum + item.pendingCount, 0)} pending transactions`
+    matchedClusters.length
+      ? `${matchedClusters.length} merchant cluster${matchedClusters.length === 1 ? "" : "s"}${activeSearch && matchedClusters.length !== clusters.length ? ` of ${clusters.length}` : ""} · ${matchedClusters.reduce((sum, item) => sum + item.pendingCount, 0)} pending transactions`
       : "",
   );
 
@@ -158,6 +190,63 @@
     const next = query.toString();
     router.updateState(next ? `?${next}` : "?");
   }
+
+  function searchSignature(query: Record<string, string>) {
+    const params = new URLSearchParams(query);
+    return [
+      params.get("merchantQ") ?? "",
+      params.get("merchantStatus") ?? "",
+      params.get("merchantDomain") ?? "",
+    ].join("\0");
+  }
+
+  function applySearchState(
+    next: IngestionMerchantSearchState,
+    resetPage = true,
+  ) {
+    searchState = cloneIngestionMerchantSearchState(next);
+    const params = new URLSearchParams($activeRoute.query);
+    appendIngestionMerchantSearchParams(params, next);
+    if (resetPage) params.set("page", "1");
+    lastSearchSignature = searchSignature(Object.fromEntries(params));
+    const search = params.toString();
+    router.updateState(search ? `?${search}` : "?");
+  }
+
+  const [scheduleSearchSync, delaySearchSync] = debounceWithDelay(
+    (next: IngestionMerchantSearchState) => {
+      applySearchState(next);
+    },
+    250,
+  );
+
+  function onSearchQueryInput(value: string) {
+    searchState = { ...searchState, query: value };
+    scheduleSearchSync(searchState);
+    delaySearchSync();
+  }
+
+  function setSearchFacet<K extends keyof IngestionMerchantSearchState>(
+    key: K,
+    value: IngestionMerchantSearchState[K],
+  ) {
+    applySearchState({ ...searchState, [key]: value });
+  }
+
+  function clearSearchQuery() {
+    applySearchState({ ...searchState, query: "" });
+  }
+
+  function clearAllSearch() {
+    applySearchState(cloneIngestionMerchantSearchState());
+  }
+
+  $effect(() => {
+    const signature = searchSignature($activeRoute.query);
+    if (signature === lastSearchSignature) return;
+    lastSearchSignature = signature;
+    searchState = parseIngestionMerchantSearchState($activeRoute.query);
+  });
 
   function openCluster(cluster: MerchantReviewCluster) {
     if (queryClusterId === cluster.id && sheetOpen) return;
@@ -358,6 +447,82 @@
         {/if}
 
         <div
+          class="ingestion-page-search"
+          style="--cv-search-filter-justify: stretch; --cv-search-filter-content-justify: stretch; --cv-search-filter-max-width: 100%;"
+        >
+          <SearchFilterBar
+            inputMode="plain"
+            value={searchState.query}
+            placeholder="Search merchants…"
+            ariaLabel="Search merchants"
+            clearSearchLabel="Clear search"
+            clearAllLabel="Clear all filters"
+            expandFiltersLabel="Expand filter options"
+            collapseFiltersLabel="Collapse filter options"
+            showActiveQueryChip={true}
+            showFilterToggle={true}
+            showClearAll={activeSearch}
+            clearAllDisabled={!activeSearch}
+            bind:filtersExpanded
+            onValueChange={onSearchQueryInput}
+            onClearSearch={clearSearchQuery}
+            onClearAll={clearAllSearch}
+          >
+            {#snippet filters()}
+              <div class="ingestion-page-search__facet-row">
+                <FilterCommandPicker
+                  multiple
+                  label="Status"
+                  values={searchState.statuses}
+                  options={statusOptions}
+                  placeholder="Filter by status…"
+                  onValuesChange={(statuses) =>
+                    setSearchFacet("statuses", statuses)}
+                />
+                <FilterCommandPicker
+                  label="Domain"
+                  value={searchState.domain}
+                  options={domainOptions}
+                  placeholder="Filter by domain…"
+                  onChange={(domain) =>
+                    setSearchFacet("domain", domain as MerchantDomainFacet)}
+                />
+              </div>
+            {/snippet}
+            {#snippet collapsedFilters()}
+              <div class="ingestion-page-search__facet-row">
+                {#if searchState.statuses.length > 0}
+                  <FilterCommandPicker
+                    multiple
+                    label="Status"
+                    values={searchState.statuses}
+                    options={statusOptions}
+                    onValuesChange={(statuses) =>
+                      setSearchFacet("statuses", statuses)}
+                  />
+                {/if}
+                {#if searchState.domain}
+                  <FilterCommandPicker
+                    label="Domain"
+                    value={searchState.domain}
+                    options={domainOptions}
+                    onChange={(domain) =>
+                      setSearchFacet("domain", domain as MerchantDomainFacet)}
+                  />
+                {/if}
+              </div>
+            {/snippet}
+          </SearchFilterBar>
+        </div>
+
+        {#if activeSearch && !matchedClusters.length}
+          <div
+            class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+          >
+            No merchants match this search.
+          </div>
+        {:else if matchedClusters.length}
+        <div
           role="row"
           class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
@@ -496,6 +661,7 @@
             </div>
           </nav>
         {/if}
+        {/if}
       {:else}
         <Empty.Root class="min-h-64 border">
           <Empty.Header>
@@ -544,3 +710,24 @@
     />
   {/key}
 {/if}
+
+<style>
+  .ingestion-page-search :global(.cv-search-filter-bar) {
+    padding: 0;
+  }
+
+  .ingestion-page-search :global(.cv-search-filter-bar__search-pill) {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+  }
+
+  .ingestion-page-search__facet-row {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+</style>

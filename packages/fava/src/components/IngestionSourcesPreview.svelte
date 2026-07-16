@@ -1,10 +1,15 @@
 <script lang="ts">
   import ArrowRight from "lucide-svelte/icons/arrow-right";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
-  import { isGroupedJsonApiSource } from "@beancount-js/beangulp";
   import { FilterCommandPicker, SegmentedControl } from "@beancount-js/forms";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
+  import {
+    isConnectorSource,
+    isGroupedSource,
+    sourceBaseUrl,
+    sourceSecretRef,
+  } from "../ingestion/connectors";
   import type { IngestionSample } from "../ingestion/samples";
   import type { EditableIngestionSource } from "../ingestion/source-form";
   import {
@@ -59,15 +64,40 @@
     openById = { ...openById, [key]: !isOpen(source, index) };
   }
 
+  function withConfig(
+    source: EditableIngestionSource,
+    patch: Record<string, unknown>,
+  ): EditableIngestionSource {
+    return {
+      ...source,
+      config: {
+        ...((source.config as Record<string, unknown> | undefined) ?? {}),
+        ...patch,
+      },
+    };
+  }
+
+  function withApi(
+    source: EditableIngestionSource,
+    patch: Partial<{ endpoint: string; baseUrl: string; secretRef: string }>,
+  ): EditableIngestionSource {
+    return {
+      ...source,
+      api: { ...(source.api ?? { secretRef: "" }), ...patch },
+    };
+  }
+
   function updateSecret(
     index: number,
     source: EditableIngestionSource,
     secretRef: string,
   ) {
-    onChange(index, {
-      ...source,
-      api: { ...source.api, secretRef },
-    });
+    onChange(
+      index,
+      isConnectorSource(source)
+        ? withConfig(source, { secretRef })
+        : withApi(source, { secretRef }),
+    );
   }
 
   function updateEndpoint(
@@ -75,10 +105,7 @@
     source: EditableIngestionSource,
     endpoint: string,
   ) {
-    onChange(index, {
-      ...source,
-      api: { ...source.api, endpoint },
-    });
+    onChange(index, withApi(source, { endpoint }));
   }
 
   function updateBaseUrl(
@@ -86,10 +113,12 @@
     source: EditableIngestionSource,
     baseUrl: string,
   ) {
-    onChange(index, {
-      ...source,
-      api: { ...source.api, baseUrl },
-    });
+    onChange(
+      index,
+      isConnectorSource(source)
+        ? withConfig(source, { baseUrl })
+        : withApi(source, { baseUrl }),
+    );
   }
 
   function setupHtml(source: EditableIngestionSource) {
@@ -97,8 +126,8 @@
     return markdown ? renderSetupMarkdown(markdown) : "";
   }
 
-  function apiUrl(source: EditableIngestionSource) {
-    return source.api.baseUrl ?? source.api.endpoint ?? "";
+  function previewUrl(source: EditableIngestionSource) {
+    return sourceBaseUrl(source) || source.api?.endpoint || "";
   }
 </script>
 
@@ -112,12 +141,13 @@
 
     {#each sources as source, index (sourceKey(source, index))}
       {@const open = isOpen(source, index)}
-      {@const url = apiUrl(source)}
+      {@const url = previewUrl(source)}
       {@const host = setupHost(url)}
       {@const href = setupHref(url)}
       {@const customSetup = setupHtml(source)}
-      {@const mode = secretMode(source.api.secretRef)}
-      {@const grouped = isGroupedJsonApiSource(source)}
+      {@const secretRef = sourceSecretRef(source)}
+      {@const mode = secretMode(secretRef)}
+      {@const grouped = isGroupedSource(source)}
       <article
         class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
         data-ingestion-connection-card
@@ -203,7 +233,7 @@
                   />
                   {#if mode === "env"}
                     <FilterCommandPicker
-                      value={secretDisplayValue(source.api.secretRef)}
+                      value={secretDisplayValue(secretRef)}
                       options={envOptions}
                       allowCustom={true}
                       fullWidth={true}
@@ -225,7 +255,7 @@
                       spellcheck={false}
                       aria-label={`API Key for ${source.name || "source"}`}
                       placeholder="Paste API key"
-                      value={secretDisplayValue(source.api.secretRef)}
+                      value={secretDisplayValue(secretRef)}
                       oninput={(event) =>
                         updateSecret(
                           index,
@@ -251,7 +281,7 @@
                     spellcheck={false}
                     aria-label={`Base URL for ${source.name || "source"}`}
                     placeholder="https://api.example.com/v1"
-                    value={source.api.baseUrl ?? ""}
+                    value={sourceBaseUrl(source) ?? ""}
                     oninput={(event) =>
                       updateBaseUrl(
                         index,
@@ -305,7 +335,7 @@
                     spellcheck={false}
                     aria-label={`Endpoint for ${source.name || "source"}`}
                     placeholder="https://api.example.com/transactions"
-                    value={source.api.endpoint ?? ""}
+                    value={source.api?.endpoint ?? ""}
                     oninput={(event) =>
                       updateEndpoint(
                         index,

@@ -85,9 +85,38 @@
     opacity: 0.55;
   }
 
-  .cv-search-filter-bar__editor {
+  .cv-search-filter-bar__editor,
+  .cv-search-filter-bar__plain-input {
     min-width: 0;
     flex: 1 1 auto;
+  }
+
+  .cv-search-filter-bar__plain-input {
+    width: 100%;
+    min-height: 1.35rem;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: var(
+      --cv-form-foreground,
+      var(--kanban-foreground, var(--foreground))
+    );
+    padding: 0.15rem 0;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.35;
+    outline: none;
+  }
+
+  .cv-search-filter-bar__plain-input::placeholder {
+    color: var(--cv-form-muted, var(--kanban-muted, var(--muted-foreground)));
+    font-weight: 700;
+    opacity: 0.72;
+  }
+
+  .cv-search-filter-bar__plain-input::-webkit-search-cancel-button {
+    display: none;
   }
 
   .cv-search-filter-bar__editor .cm-editor {
