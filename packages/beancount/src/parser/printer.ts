@@ -115,9 +115,14 @@ export function formatEntry(
   entry: DirectiveBase,
   prefix = "",
   writeSource = false,
+  renderWeights = false,
 ): string {
   const source = writeSource ? `; source: ${renderSource(entry.meta)}\n` : "";
-  return `${source}${prefix}${entry.toString()}`;
+  const text =
+    entry instanceof Transaction
+      ? formatTransaction(entry, renderWeights)
+      : entry.toString();
+  return `${source}${prefix}${text}`;
 }
 
 /** Render a single error without depending on Python-style output streams. */

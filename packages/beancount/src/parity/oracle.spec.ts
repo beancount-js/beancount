@@ -3,7 +3,7 @@ import { DateTime } from "luxon";
 import { getLastPriceEntries } from "../core/prices";
 import { Transaction } from "../core/data";
 import { loadProjectSources, loadString } from "../parser/loader";
-import { formatTransaction } from "../parser/printer";
+import { formatEntry } from "../parser/printer";
 import { canonicalize } from "./canonical";
 import loaderFixture from "./fixtures/loader-recursive-relative-includes.json";
 import pricesFixture from "./fixtures/prices-last-price-entries.json";
@@ -76,7 +76,7 @@ describe("upstream oracle fixtures", () => {
     expect(errors).toEqual(printerFixture.oracle.errors);
     const entry = entries[printerFixture.scenario.entryIndex];
     expect(entry).toBeInstanceOf(Transaction);
-    expect(formatTransaction(entry as Transaction)).toBe(
+    expect(formatEntry(entry as Transaction)).toBe(
       printerFixture.oracle.text.trimEnd(),
     );
   });
@@ -87,7 +87,7 @@ describe("upstream oracle fixtures", () => {
     expect(errors).toEqual(costedPrinterFixture.oracle.errors);
     const entry = entries[costedPrinterFixture.scenario.entryIndex];
     expect(entry).toBeInstanceOf(Transaction);
-    expect(formatTransaction(entry as Transaction, true)).toBe(
+    expect(formatEntry(entry as Transaction, "", false, true)).toBe(
       costedPrinterFixture.oracle.text.trimEnd(),
     );
   });
