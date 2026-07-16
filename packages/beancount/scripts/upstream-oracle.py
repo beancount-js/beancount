@@ -24,6 +24,7 @@ from typing import Any
 
 from beancount import loader
 from beancount.core import prices
+from beancount.parser import printer
 
 
 def canonicalize(value: Any, fixture_root: Path | None = None) -> Any:
@@ -113,6 +114,17 @@ def last_price_entries(scenario: Mapping[str, Any]) -> Mapping[str, Any]:
     return {"errors": errors, "assertions": assertions}
 
 
+def format_transaction(scenario: Mapping[str, Any]) -> Mapping[str, Any]:
+    entries, errors, options = loader.load_string(scenario["ledger"])
+    index = scenario.get("entryIndex", 0)
+    return {
+        "errors": errors,
+        "text": printer.format_entry(
+            entries[index], options["dcontext"], scenario.get("renderWeights", False)
+        ),
+    }
+
+
 def run_scenario(scenario: Mapping[str, Any]) -> Any:
     operation = scenario.get("operation")
     if operation == "load_string":
@@ -122,6 +134,8 @@ def run_scenario(scenario: Mapping[str, Any]) -> Any:
         result = canonicalize(result, fixture_root)
     elif operation == "last_price_entries":
         result = canonicalize(last_price_entries(scenario))
+    elif operation == "format_transaction":
+        result = canonicalize(format_transaction(scenario))
     else:
         raise ValueError(f"Unsupported upstream oracle operation: {operation!r}")
 

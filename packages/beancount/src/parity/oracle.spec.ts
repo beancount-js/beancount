@@ -3,10 +3,12 @@ import { DateTime } from "luxon";
 import { getLastPriceEntries } from "../core/prices";
 import { Transaction } from "../core/data";
 import { loadProjectSources, loadString } from "../parser/loader";
+import { formatTransaction } from "../parser/printer";
 import { canonicalize } from "./canonical";
 import loaderFixture from "./fixtures/loader-recursive-relative-includes.json";
 import pricesFixture from "./fixtures/prices-last-price-entries.json";
 import bookingFixture from "./fixtures/booking-per-unit-cost.json";
+import printerFixture from "./fixtures/printer-transaction-weights.json";
 import { UPSTREAM_COMMIT } from "./manifest";
 
 describe("upstream oracle fixtures", () => {
@@ -64,6 +66,17 @@ describe("upstream oracle fixtures", () => {
     ).toEqual(loaderFixture.oracle.accounts);
     expect(options.include.map((source) => `<fixture>/${source}`)).toEqual(
       loaderFixture.oracle.includes,
+    );
+  });
+
+  test("parity/printer/transaction-alignment", () => {
+    expect(printerFixture.upstream.commit).toBe(UPSTREAM_COMMIT);
+    const [entries, errors] = loadString(printerFixture.scenario.ledger);
+    expect(errors).toEqual(printerFixture.oracle.errors);
+    const entry = entries[printerFixture.scenario.entryIndex];
+    expect(entry).toBeInstanceOf(Transaction);
+    expect(formatTransaction(entry as Transaction)).toBe(
+      printerFixture.oracle.text.trimEnd(),
     );
   });
 });
