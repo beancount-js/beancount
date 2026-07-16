@@ -72,6 +72,14 @@
       "status": "adapted",
       "tests": ["plugins/close-tree"],
       "reason": "Uses JavaScript metadata objects and deterministic descendant ordering."
+    },
+    {
+      "upstreamModule": "beancount.plugins.leafonly",
+      "upstreamBehavior": "validate_leaf_only",
+      "localBehavior": "validateLeafOnly",
+      "status": "adapted",
+      "tests": ["plugins/leafonly"],
+      "reason": "Uses the existing account and open-close getter adapters."
     }
   ]
 }

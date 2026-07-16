@@ -6,6 +6,7 @@ import { creditCard } from "../plugins/creditcard";
 import { closeTree } from "../plugins/close_tree";
 import { forecast } from "../plugins/forecast";
 import { addImplicitPrices } from "../plugins/implicit_prices";
+import { validateLeafOnly } from "../plugins/leafonly";
 import { checkBalance } from "./balance";
 import { pad } from "./pad";
 import type { ValidationError } from "./validation";
@@ -67,6 +68,12 @@ export const Plugins: Record<string, PluginType> = {
     plugin: closeTree,
     order: 0,
     id: "beancount.plugins.close_tree",
+    supportsConfig: false,
+  },
+  "beancount.plugins.leafonly": {
+    plugin: validateLeafOnly,
+    order: 0,
+    id: "beancount.plugins.leafonly",
     supportsConfig: false,
   },
   "beancount.plugins.forecast": {
