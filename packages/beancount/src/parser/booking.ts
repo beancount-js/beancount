@@ -55,6 +55,7 @@ export function book(
           groupPostings,
           balances,
           bookingMethods,
+          options.booking_method,
         );
         // If there were any errors, skip this group of postings.
         if (bookingErrors.length) {
@@ -81,7 +82,7 @@ export function book(
         meta[AUTOMATIC_TOLERANCES] = tolerances;
         tx = tx.copy({ postings: replacedPostings, meta });
 
-        replacedPostings.forEach((posting) => {
+        interGroups.forEach((posting) => {
           balances[posting.account] ||= new Inventory();
           balances[posting.account].addAmount(
             posting.units,
@@ -585,6 +586,7 @@ function bookReductions(
   groupPostings: Array<Posting>,
   balances: Record<string, Inventory>,
   bookingMethods: Record<string, Booking>,
+  defaultBooking: Booking,
 ): [Array<Posting>, Array<ValidationError>] {
   const errors: Array<ValidationError> = [];
   const empty = new Inventory();
@@ -601,7 +603,7 @@ function bookReductions(
     if (cost === null || units === null) {
       bookedPostings.push(posting);
     } else {
-      const method = bookingMethods[account];
+      const method = bookingMethods[account] ?? defaultBooking;
       if (method != Booking.NONE && balance && balance.isReducedBy(units)) {
         const costNumber = computeCost(cost, units);
         const matches: Array<Position> = [];
@@ -668,7 +670,7 @@ function bookReductions(
         // the same transaction. Note that we only do this for postings
         // held at cost because the other postings may need interpolation
         // in order to be resolved properly.
-        reductionPostings.forEach((it) => balance.addAmount(it.units));
+        reductionPostings.forEach((it) => balance.addPosting(it));
       } else {
         // This posting is an augmentation.
         //

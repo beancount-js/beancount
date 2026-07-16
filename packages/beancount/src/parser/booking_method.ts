@@ -1,7 +1,7 @@
-import { Booking, Posting, Transaction } from "../core/data";
+import { Booking, FLAG_MERGING, Posting, Transaction } from "../core/data";
 import { ValidationError } from "../ops/validation";
 
-import { Cost, type Position } from "../core/position";
+import { Cost, CostSpec, type Position } from "../core/position";
 import { Amount } from "../core/amount";
 
 function bookingMethodStrictWithSize(
@@ -140,48 +140,83 @@ function bookingMethodAverage(
   matches: Array<Position>,
 ): [Array<Posting>, Array<Position>, Array<ValidationError>, boolean] {
   if (!posting.units || matches.length === 0) return [[], [], [], true];
-  const available = matches.reduce(
-    (total, match) => total.plus(match.units.abs()),
-    new Amount(0, posting.units.currency),
-  );
-  if (available.lt(posting.units.abs())) return [[], [], [], true];
+
+  const hasExplicitCost =
+    posting.cost instanceof CostSpec &&
+    (posting.cost.numberPer !== null || posting.cost.numberTotal !== null);
+  if (matches.length === 1 && !hasExplicitCost) {
+    return bookingMethodStrict(entry, posting, matches);
+  }
+
+  const unitCurrency = matches[0].units.currency;
   const costCurrency = matches[0].cost?.amount?.currency;
   if (
+    !unitCurrency ||
     !costCurrency ||
-    matches.some((match) => match.cost?.amount?.currency !== costCurrency)
+    matches.some(
+      (match) =>
+        match.units.currency !== unitCurrency ||
+        match.cost?.amount?.currency !== costCurrency,
+    )
   ) {
     return [
       [],
       [],
       [
-        new ValidationError(
-          "Cannot average lots with different cost currencies",
-          { directive: entry, errorType: "AmbiguousMatchError" },
-        ),
+        new ValidationError("Cannot merge positions in multiple currencies", {
+          directive: entry,
+          errorType: "AmbiguousMatchError",
+        }),
       ],
       false,
     ];
   }
+  if (hasExplicitCost) {
+    return [
+      [],
+      [],
+      [
+        new ValidationError("Explicit cost reductions are not supported", {
+          directive: entry,
+          errorType: "AmbiguousMatchError",
+        }),
+      ],
+      false,
+    ];
+  }
+
+  const units = matches.reduce(
+    (total, match) => total.plus(match.units),
+    new Amount(0, unitCurrency),
+  );
   const totalCost = matches.reduce(
     (total, match) =>
-      total.plus(match.cost!.amount!.value.mul(match.units.abs().value)),
+      total.plus(match.cost!.amount!.value.mul(match.units.value)),
     new Amount(0, costCurrency).value,
   );
-  const average = new Amount(totalCost.div(available.value), costCurrency);
-  const earliest = [...matches].sort(
-    (left, right) =>
-      (left.cost?.date?.toMillis() ?? 0) - (right.cost?.date?.toMillis() ?? 0),
-  )[0];
+  const cost = new Cost(
+    matches[0].cost?.date ?? null,
+    new Amount(totalCost.div(units.value), costCurrency),
+  );
   return [
     [
+      ...matches.map((match) =>
+        posting.copy({
+          units: match.units.neg(),
+          cost: match.cost,
+          flag: FLAG_MERGING,
+        }),
+      ),
       posting.copy({
-        cost: new Cost(earliest.cost?.date ?? null, average),
-        flag: "M",
+        units,
+        cost,
+        flag: FLAG_MERGING,
       }),
+      posting.copy({ cost }),
     ],
     matches,
     [],
-    false,
+    units.abs().lt(posting.units.abs()),
   ];
 }
 

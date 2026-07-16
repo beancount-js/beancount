@@ -96,9 +96,20 @@ describe("booking methods", () => {
 
     expect(errors).toEqual([]);
     expect(matches).toHaveLength(2);
-    expect(postings).toHaveLength(1);
-    expect(postings[0].units?.toString()).toBe("-2 HOOL");
-    expect(postings[0].resolvedCost?.amount?.toString()).toBe("17.5 USD");
-    expect(postings[0].flag).toBe("M");
+    expect(postings.map((posting) => posting.units?.toString())).toEqual([
+      "-1 HOOL",
+      "-3 HOOL",
+      "4 HOOL",
+      "-2 HOOL",
+    ]);
+    expect(
+      postings.map((posting) => posting.resolvedCost?.amount?.toString()),
+    ).toEqual(["10 USD", "20 USD", "17.5 USD", "17.5 USD"]);
+    expect(postings.map((posting) => posting.flag)).toEqual([
+      "M",
+      "M",
+      "M",
+      "",
+    ]);
   });
 });
