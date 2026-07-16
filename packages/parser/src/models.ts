@@ -329,7 +329,7 @@ export class Attribute extends NodeBase {
       (it) => (str += pad + it.toString() + "\n"),
     );
     str += pad + this.name + ":";
-    if (this.value !== null) {
+    if (this.value != null) {
       str += " " + writeAttribute(this.value);
     }
     if (this.comments.inlineComment) {

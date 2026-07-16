@@ -81,10 +81,8 @@ export abstract class AbstractVisitor<T> implements DocumentVisitor<T> {
     } else if (directive instanceof EventDirective) {
       return this.visitEvent(directive);
     }
+    throw new Error(`Unsupported directive: ${directive.constructor.name}`);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  visitPosting(directive: Posting): T {
-    return;
-  }
+  abstract visitPosting: (directive: Posting) => T;
 }

@@ -976,8 +976,9 @@ export class BalanceDirective extends DatedDirective {
       formatDate(this.date) + " " + this.type + " " + this.account + " ";
 
     if (this.tolerance) {
+      const value = this.amount.value;
       str +=
-        this.amount.value.toString() +
+        (value ? value.toString() : "") +
         " ~ " +
         this.tolerance +
         " " +

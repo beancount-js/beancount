@@ -411,7 +411,7 @@ export class BeanCountDocument {
     let amount = this.amount(node.getChild("Amount"));
     let el = node.getChild("CostPer");
     if (el) {
-      amount = this.amount(el.getChild("Amount"));
+      amount = this.amount(el.getChild("Amount")) ?? new Amount("");
       return new CostSpec(
         amount.value,
         null,
@@ -424,7 +424,7 @@ export class BeanCountDocument {
     el = node.getChild("CostTotal");
     if (el) {
       const expr = el.firstChild;
-      amount = this.amount(el.getChild("Amount"));
+      amount = this.amount(el.getChild("Amount")) ?? new Amount("");
       return new CostSpec(
         expr?.name === "NumberExpr" ? this.numberExpression(expr) : null,
         amount.value,
@@ -446,10 +446,12 @@ export class BeanCountDocument {
     if (!node || node.name !== "Amount") {
       return null;
     }
-    const numberExpr =
-      this.numberExpression(node.getChild("NumberExpr")) || null;
+    const numberExpr = this.numberExpression(node.getChild("NumberExpr"));
     const currency = node.getChild("Currency");
-    return new Amount(numberExpr, currency ? this.content(currency) : null);
+    return new Amount(
+      numberExpr ?? "",
+      currency ? this.content(currency) : null,
+    );
   }
 
   private attributes(node: SyntaxNode | null): Attributes {
@@ -468,10 +470,10 @@ export class BeanCountDocument {
       const name = attr.getChild("AttributeName");
       if (!name) {
         this.error(attr, "Expected: (AttributeName ':' [MetaValue])");
-        return;
+        continue;
       }
       const el = attr.getChild("MetaValue");
-      const next = el.nextSibling?.firstChild;
+      const next = el?.nextSibling?.firstChild;
       let value = this.attributeValue(el);
       if (
         next &&
@@ -503,7 +505,7 @@ export class BeanCountDocument {
       return this.attributeValue(node.firstChild);
     }
     if (node.name === "Number") {
-      return parseNumber(this.content(node));
+      return parseNumber(this.content(node)) ?? undefined;
     } else if (node.name === "NumberExpr") {
       return this.numberExpression(node)!;
     } else if (node.name === "Date") {

@@ -78,8 +78,11 @@ export class Decimal {
     }
 
     if (precision && this.num && this.precision < precision) {
-      this.source = this.toFixed(Math.abs(precision));
-      this.num = new Big(this.source);
+      const fixed = this.toFixed(Math.abs(precision));
+      if (fixed !== undefined) {
+        this.source = fixed;
+        this.num = new Big(fixed);
+      }
     }
   }
 

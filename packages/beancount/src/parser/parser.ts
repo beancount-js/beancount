@@ -142,6 +142,8 @@ export class LedgerParser extends AbstractVisitor<void> {
     return this.document.errors;
   }
 
+  visitPosting = (_directive: Posting) => {};
+
   metadataFor(directive: Directive): Metadata {
     const meta = this.attributesFor(directive.position, directive.metadata);
     const pos = positionFor(directive);
