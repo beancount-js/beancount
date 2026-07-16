@@ -6,11 +6,17 @@ import {
   Close,
   Document,
   findAccountsWithComponent,
+  findClosestSource,
+  hasEntryAccountComponent,
   findClosest,
   iterateEntryRange,
   Open,
   Posting,
   removePosting,
+  removeAccountPostings,
+  createSimplePosting,
+  createSimplePostingWithCost,
+  newMetadata,
   sorted,
   Transaction,
 } from "./data";
@@ -37,6 +43,28 @@ describe("Transaction metadata", () => {
 });
 
 describe("directive helpers", () => {
+  test("creates source metadata and immutable simple postings", () => {
+    const date = DateTime.fromISO("2024-01-01");
+    const transaction = new Transaction(date, "*", "", "");
+    expect(newMetadata("ledger.bean", 12, { key: "value" })).toEqual({
+      filename: "ledger.bean",
+      lineno: 12,
+      key: "value",
+    });
+    expect(
+      createSimplePosting("Assets:Cash", "10", "USD").toString(),
+    ).toContain("10 USD");
+    expect(
+      createSimplePostingWithCost(
+        transaction,
+        "Assets:Invest",
+        "1",
+        "HOOL",
+        "10",
+        "USD",
+      ).resolvedCost?.amount?.toString(),
+    ).toBe("10 USD");
+  });
   test("sorts directives without mutating the original sequence", () => {
     const date = DateTime.fromISO("2024-01-01");
     const transaction = new Transaction(date, "*", "", "Payment");
@@ -94,5 +122,22 @@ describe("directive helpers", () => {
     const withoutFirst = removePosting(transaction, first);
     expect(withoutFirst.postings).toEqual([second]);
     expect(transaction.postings).toEqual([first, second]);
+    expect(removeAccountPostings("Assets:Cash", [transaction])[0]).not.toBe(
+      transaction,
+    );
+    expect(hasEntryAccountComponent(transaction, "Salary")).toBe(true);
+  });
+
+  test("finds the closest preceding directive by source location", () => {
+    const date = DateTime.fromISO("2024-01-01");
+    const first = new Open(date, "Assets:Cash", [], undefined, {
+      filename: "ledger.bean",
+      lineno: 10,
+    });
+    const second = new Open(date, "Assets:Savings", [], undefined, {
+      filename: "ledger.bean",
+      lineno: 20,
+    });
+    expect(findClosestSource([first, second], "ledger.bean", 25)).toBe(second);
   });
 });

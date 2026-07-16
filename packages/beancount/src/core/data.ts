@@ -128,6 +128,15 @@ export function writeScalar(value: ScalarType | Array<ScalarType>): string {
   return value.toString();
 }
 
+/** Creates directive metadata with the canonical source fields. */
+export function newMetadata(
+  filename: string,
+  lineno: number,
+  values: Metadata = {},
+): Metadata {
+  return { filename, lineno, ...values };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export type Typing = Function | [Typing] | Array<Typing>;
 
@@ -1330,6 +1339,82 @@ export function removePosting(
   return transaction.copy({
     postings: transaction.postings.filter((candidate) => candidate !== posting),
   });
+}
+
+/** Removes every posting for an account, preserving immutable transaction copies. */
+export function removeAccountPostings(
+  account: Account,
+  entries: readonly Directive[],
+): Directives {
+  return entries.map((entry) =>
+    entry instanceof Transaction
+      ? entry.copy({
+          postings: entry.postings.filter(
+            (posting) => posting.account !== account,
+          ),
+        })
+      : entry,
+  );
+}
+
+/** Finds the closest preceding directive at a given source filename and line. */
+export function findClosestSource(
+  entries: readonly Directive[],
+  filename: string,
+  lineno: number,
+): Directive | null {
+  let closest: Directive | null = null;
+  let smallest = Number.POSITIVE_INFINITY;
+  for (const entry of entries) {
+    if (entry.meta.filename !== filename || entry.lineno <= 0) continue;
+    const difference = lineno - entry.lineno;
+    if (difference >= 0 && difference < smallest) {
+      closest = entry;
+      smallest = difference;
+    }
+  }
+  return closest;
+}
+
+/** Tests an entry's posting accounts for a complete hierarchy component. */
+export function hasEntryAccountComponent(
+  entry: Directive,
+  component: string,
+): boolean {
+  return (
+    entry instanceof Transaction &&
+    entry.postings.some((posting) =>
+      posting.account.split(":").includes(component),
+    )
+  );
+}
+
+/** Creates a simple uncosted posting without mutating its transaction owner. */
+export function createSimplePosting(
+  account: Account,
+  number: Decimal | string | null,
+  currency: Currency | null,
+): Posting {
+  return new Posting(
+    account,
+    number === null || currency === null ? null : new Amount(number, currency),
+  );
+}
+
+/** Creates a simple posting with a resolved lot cost dated at its transaction. */
+export function createSimplePostingWithCost(
+  transaction: Transaction,
+  account: Account,
+  number: Decimal | string,
+  currency: Currency,
+  costNumber: Decimal | string,
+  costCurrency: Currency,
+): Posting {
+  return new Posting(
+    account,
+    new Amount(number, currency),
+    new Cost(transaction.date, new Amount(costNumber, costCurrency)),
+  );
 }
 
 /** Iterate directives in a half-open date range: [begin, end). */

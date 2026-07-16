@@ -34,6 +34,14 @@
       "reason": "Uses local Cost and CostSpec models with Luxon lot dates."
     },
     {
+      "upstreamModule": "beancount.core.data",
+      "upstreamBehavior": "metadata_posting_and_source_helpers",
+      "localBehavior": "newMetadata, createSimplePosting, createSimplePostingWithCost, findClosestSource, removeAccountPostings",
+      "status": "adapted",
+      "tests": ["core/data"],
+      "reason": "Uses immutable transaction copies rather than mutating posting lists."
+    },
+    {
       "upstreamModule": "beancount.core.prices",
       "upstreamBehavior": "get_last_price_entries",
       "localBehavior": "getLastPriceEntries",
