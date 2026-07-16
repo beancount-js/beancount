@@ -910,16 +910,15 @@ export class NoteDirective extends DatedDirective {
   }
 
   public toString() {
+    const labels = [...this.tags, ...this.links].map((item) => item.toString());
     return this.comments.toString(
-      formatDate(this.date) +
-        " " +
-        this.type +
-        " " +
-        this.account +
-        " " +
-        writeString(this.narrative) +
-        "\n" +
-        this.metadata,
+      [
+        formatDate(this.date),
+        this.type,
+        this.account,
+        writeString(this.narrative),
+        ...labels,
+      ].join(" ") + this.metadata.toString(2),
     );
   }
 }

@@ -91,6 +91,9 @@ const testCases: Record<string, Array<{ input: string; expected?: string }>> = {
     {
       input: `2013-11-03 note Liabilities:CreditCard "Called about fraudulent card."`,
     },
+    {
+      input: '2014-07-09 note Assets:Cash "Memo" #z #a ^y ^b',
+    },
   ],
   Document: [
     {

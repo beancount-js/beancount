@@ -9,6 +9,7 @@ import {
   Booking,
   DirectiveBase,
   Open,
+  Note,
   Pad,
   Posting,
   Price,
@@ -133,6 +134,17 @@ function formatPad(entry: Pad): string {
   return `${entry.date.toISODate()} pad ${entry.account} ${entry.sourceAccount}`;
 }
 
+function formatNote(entry: Note): string {
+  const labels = [
+    ...[...entry.tags].sort().map((tag) => `#${tag}`),
+    ...[...entry.links].sort().map((link) => `^${link}`),
+  ];
+  return [
+    `${entry.date.toISODate()} note ${entry.account} ${writeScalar(entry.comment)}`,
+    ...labels,
+  ].join(" ");
+}
+
 /** Render one local directive using its parser-accepted source representation. */
 export function formatEntry(
   entry: DirectiveBase,
@@ -148,11 +160,13 @@ export function formatEntry(
         ? formatBalance(entry)
         : entry instanceof Pad
           ? formatPad(entry)
-          : entry instanceof Open
-            ? formatOpen(entry)
-            : entry instanceof Price
-              ? formatPrice(entry)
-              : entry.toString();
+          : entry instanceof Note
+            ? formatNote(entry)
+            : entry instanceof Open
+              ? formatOpen(entry)
+              : entry instanceof Price
+                ? formatPrice(entry)
+                : entry.toString();
   return `${source}${prefix}${text}`;
 }
 

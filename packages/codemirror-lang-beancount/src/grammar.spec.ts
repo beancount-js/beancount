@@ -54,6 +54,12 @@ const testCases: Record<string, Array<{ input: string; expected: string }>> = {
       expected: "Journal(Close(Date,CLOSE,AccountName))",
     },
   ],
+  Note: [
+    {
+      input: '2014-05-01 note Assets:Cash "Memo" #z #a ^y ^b',
+      expected: "Journal(Note(Date,NOTE,AccountName,String,Tag,Tag,Link,Link))",
+    },
+  ],
   Commodity: [
     {
       input: "1867-07-01 commodity CAD",

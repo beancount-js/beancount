@@ -14,6 +14,7 @@ import openPrinterFixture from "./fixtures/printer-open-directive.json";
 import pricePrinterFixture from "./fixtures/printer-price-directive.json";
 import balancePrinterFixture from "./fixtures/printer-balance-directive.json";
 import padPrinterFixture from "./fixtures/printer-pad-directive.json";
+import notePrinterFixture from "./fixtures/printer-note-directive.json";
 import { UPSTREAM_COMMIT } from "./manifest";
 
 describe("upstream oracle fixtures", () => {
@@ -129,6 +130,15 @@ describe("upstream oracle fixtures", () => {
     expect(errors).toEqual(padPrinterFixture.oracle.errors);
     expect(formatEntry(entries[padPrinterFixture.scenario.entryIndex])).toBe(
       padPrinterFixture.oracle.text.trimEnd(),
+    );
+  });
+
+  test("parity/printer/note-directive", () => {
+    expect(notePrinterFixture.upstream.commit).toBe(UPSTREAM_COMMIT);
+    const [entries, errors] = loadString(notePrinterFixture.scenario.ledger);
+    expect(errors).toEqual(notePrinterFixture.oracle.errors);
+    expect(formatEntry(entries[notePrinterFixture.scenario.entryIndex])).toBe(
+      notePrinterFixture.oracle.text.trimEnd(),
     );
   });
 });

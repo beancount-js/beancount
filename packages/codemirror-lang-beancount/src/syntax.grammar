@@ -54,7 +54,7 @@ PopTag {  POPTAG Tag tx }
 Plugin {  PLUGIN String (String | CodeBlock)? tx }
 Balance { Date BALANCE AccountName NumberExpr Tolerance? Currency tx Metadata?}
 Pad { Date PAD AccountName AccountName tx Metadata?}
-Note { Date NOTE AccountName String tx Metadata?  }
+Note { Date NOTE AccountName String (Tag | Link)* tx Metadata?  }
 Option { OPTION String String tx Metadata?}
 Price { Date PRICE Currency Amount tx Metadata? }
 Event { Date EVENT String String? tx Metadata? }
