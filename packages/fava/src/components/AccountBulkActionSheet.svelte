@@ -19,7 +19,9 @@
     applyPatchesToContents,
     buildAccountReplacePatches,
     groupPatchesByPath,
+    type AccountReplacePatch,
   } from "../lib/account-bulk-replace";
+  import { buildDuplicateDeletePatches } from "../lib/journal-duplicates";
   import type { JournalRecord } from "./journal-table/model";
   import { useStudioWorkspace } from "../studio/workspace";
 
@@ -47,7 +49,10 @@
 
   let fromAccount = $state("");
   let toAccount = $state("");
-  let openSections = $state<Record<string, boolean>>({ replace: true });
+  let openSections = $state<Record<string, boolean>>({
+    replace: true,
+    duplicates: true,
+  });
   let applying = $state(false);
   let errors = $state<string[]>([]);
   let sheetTitleEl = $state<HTMLElement | null>(null);
@@ -77,12 +82,18 @@
     buildAccountReplacePatches(records, fromAccount, toAccount),
   );
 
+  const duplicatePlan = $derived(buildDuplicateDeletePatches(records));
+
   const canApply = $derived(
     Boolean(fromAccount) &&
       Boolean(toAccount) &&
       fromAccount !== toAccount &&
       preview.changedCount > 0 &&
       !applying,
+  );
+
+  const canDeleteDuplicates = $derived(
+    duplicatePlan.deleteCount > 0 && !applying,
   );
 
   const sectionsCollapsedAll = $derived(
@@ -113,7 +124,7 @@
     toAccount = "";
     errors = [];
     applying = false;
-    openSections = { replace: true };
+    openSections = { replace: true, duplicates: true };
   }
 
   function resetForm() {
@@ -121,7 +132,7 @@
     toAccount = "";
     errors = [];
     applying = false;
-    openSections = { replace: true };
+    openSections = { replace: true, duplicates: true };
   }
 
   let wasOpen = false;
@@ -141,13 +152,10 @@
     }
   }
 
-  async function applyReplace() {
-    if (!canApply) return;
-    const confirmed = window.confirm(
-      `Replace ${fromAccount} → ${toAccount} in ${preview.changedCount} record${preview.changedCount === 1 ? "" : "s"}?`,
-    );
-    if (!confirmed) return;
-
+  async function applyPatches(
+    patches: AccountReplacePatch[],
+    failureMessage: string,
+  ) {
     applying = true;
     errors = [];
     try {
@@ -156,18 +164,18 @@
         throw new Error("No project is selected.");
       }
 
-      const byPath = groupPatchesByPath(preview.patches);
+      const byPath = groupPatchesByPath(patches);
       let workingFiles = currentSnapshot.ledgerFiles.map((file) => ({
         path: file.path,
         contents: file.contents,
       }));
 
-      for (const [path, patches] of byPath) {
+      for (const [path, filePatches] of byPath) {
         const file = workingFiles.find((item) => item.path === path);
         if (!file) {
           throw new Error(`Source file is no longer available: ${path}`);
         }
-        const contents = applyPatchesToContents(file.contents, patches);
+        const contents = applyPatchesToContents(file.contents, filePatches);
         workingFiles = workingFiles.map((item) =>
           item.path === path ? { path, contents } : item,
         );
@@ -194,13 +202,35 @@
       onApplied?.();
     } catch (error) {
       errors = [
-        error instanceof Error
-          ? error.message
-          : "Unable to replace accounts in the selection.",
+        error instanceof Error ? error.message : failureMessage,
       ];
     } finally {
       applying = false;
     }
+  }
+
+  async function applyReplace() {
+    if (!canApply) return;
+    const confirmed = window.confirm(
+      `Replace ${fromAccount} → ${toAccount} in ${preview.changedCount} record${preview.changedCount === 1 ? "" : "s"}?`,
+    );
+    if (!confirmed) return;
+    await applyPatches(
+      preview.patches,
+      "Unable to replace accounts in the selection.",
+    );
+  }
+
+  async function applyDeleteDuplicates() {
+    if (!canDeleteDuplicates) return;
+    const confirmed = window.confirm(
+      `Delete ${duplicatePlan.deleteCount} duplicate record${duplicatePlan.deleteCount === 1 ? "" : "s"} and keep ${duplicatePlan.keepCount} original${duplicatePlan.keepCount === 1 ? "" : "s"}?`,
+    );
+    if (!confirmed) return;
+    await applyPatches(
+      duplicatePlan.patches,
+      "Unable to delete duplicates in the selection.",
+    );
   }
 </script>
 
@@ -287,7 +317,7 @@
       {#if errors.length}
         <Alert.Root variant="destructive" class="mb-3">
           <CircleAlert />
-          <Alert.Title>Could not replace accounts</Alert.Title>
+          <Alert.Title>Could not apply bulk action</Alert.Title>
           <Alert.Description class="whitespace-pre-wrap"
             >{errors.join("\n")}</Alert.Description
           >
@@ -361,6 +391,47 @@
                 onclick={() => void applyReplace()}
               >
                 {applying ? "Applying…" : "Apply"}
+              </Button>
+            </div>
+          {/if}
+        </section>
+
+        <section class="flex flex-col gap-2">
+          <FormSectionHeader
+            title="Delete duplicates"
+            titleClass={sectionTitleClass}
+            editable={false}
+            movable={false}
+            removable={false}
+            titleToggleable={true}
+            open={isSectionOpen("duplicates")}
+            onToggle={() => toggleSection("duplicates")}
+          />
+          {#if isSectionOpen("duplicates")}
+            <div class="account-bulk-section-body">
+              <p class="text-xs text-muted-foreground">
+                {#if duplicatePlan.groups.length === 0}
+                  No duplicates found in the selection. Matching uses
+                  raw_fingerprint when present, otherwise date, amount, payee,
+                  flag, narration, and sorted posting amounts.
+                {:else}
+                  {duplicatePlan.groups.length} duplicate group{duplicatePlan
+                    .groups.length === 1
+                    ? ""
+                    : "s"} · {duplicatePlan.deleteCount} record{duplicatePlan
+                    .deleteCount === 1
+                    ? ""
+                    : "s"} will be deleted · {duplicatePlan.keepCount} kept{#if duplicatePlan.skipped.length}
+                    ; {duplicatePlan.skipped.length} skipped (no source){/if}.
+                {/if}
+              </p>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={!canDeleteDuplicates}
+                onclick={() => void applyDeleteDuplicates()}
+              >
+                {applying ? "Deleting…" : "Delete duplicates"}
               </Button>
             </div>
           {/if}
