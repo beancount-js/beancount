@@ -2,6 +2,7 @@ import {
   type Account,
   type Directive,
   type Directives,
+  type Posting,
   Transaction,
   TxnPosting,
 } from "./data";
@@ -23,7 +24,7 @@ export class RealAccount {
    */
   constructor(
     readonly account: string,
-    readonly txnPostings: Array<TxnPosting> = [],
+    readonly txnPostings: Array<Directive | TxnPosting> = [],
     readonly balance: Inventory = new Inventory(),
   ) {}
 
@@ -78,7 +79,9 @@ export class RealAccount {
       if (this.empty) {
         yield this;
       } else {
-        for (const [_, child] of Object.entries(this.children)) {
+        for (const child of Object.values(this.children).sort((left, right) =>
+          left.account.localeCompare(right.account),
+        )) {
           for (const subChild of child.traverse(leafOnly)) {
             yield subChild;
           }
@@ -86,7 +89,9 @@ export class RealAccount {
       }
     } else {
       yield this;
-      for (const [_, child] of Object.entries(this.children)) {
+      for (const child of Object.values(this.children).sort((left, right) =>
+        left.account.localeCompare(right.account),
+      )) {
         for (const subChild of child.traverse(leafOnly)) {
           yield subChild;
         }
@@ -170,4 +175,129 @@ export function entriesByAccount(
     }
   });
   return txnPostings;
+}
+
+export type AccountEntry = Directive | TxnPosting;
+
+/** Compute the inventory resulting from the postings in an account entry list. */
+export function computePostingsBalance(
+  entries: readonly AccountEntry[],
+): Inventory {
+  const balance = new Inventory();
+  for (const entry of entries) {
+    if (entry instanceof TxnPosting) {
+      balance.addPosting(entry.posting);
+    }
+  }
+  return balance;
+}
+
+/** Build a realization tree from directives, optionally creating empty roots. */
+export function realize(
+  entries: Directives,
+  minimumAccounts: readonly Account[] = [],
+  computeBalances: boolean = true,
+): RealAccount {
+  const root = new RealAccount("");
+  for (const [account, accountEntries] of Object.entries(
+    entriesByAccount(entries),
+  )) {
+    const realized = root.getOrCreate(account);
+    realized.txnPostings.push(...accountEntries);
+    if (computeBalances) {
+      realized.balance.addInventory(computePostingsBalance(accountEntries));
+    }
+  }
+  for (const account of minimumAccounts) {
+    root.getOrCreate(account);
+  }
+  return root;
+}
+
+/** Return every entry under an account, in deterministic account-tree order. */
+export function getPostings(account: RealAccount): AccountEntry[] {
+  return [...account.traverse()].flatMap((node) => node.txnPostings);
+}
+
+/**
+ * Keep accounts that satisfy a predicate and their ancestors, preserving the
+ * original account entries and balances.
+ */
+export function filterRealAccounts(
+  account: RealAccount,
+  predicate: (account: RealAccount) => boolean,
+): RealAccount | null {
+  const filtered = new RealAccount(
+    account.account,
+    [...account.txnPostings],
+    account.balance.copy(),
+  );
+  for (const [name, child] of Object.entries(account.children)) {
+    const retained = filterRealAccounts(child, predicate);
+    if (retained) filtered.put(name, retained);
+  }
+  return Object.keys(filtered.children).length || predicate(account)
+    ? filtered
+    : null;
+}
+
+export type BalanceIteration = [
+  entry: Directive | Transaction,
+  postings: Posting[],
+  change: Inventory,
+  balance: Inventory,
+];
+
+/**
+ * Group account entries by parent directive while yielding their running
+ * balance. Input must be in non-decreasing directive-date order.
+ */
+export function* iterateWithBalance(
+  accountEntries: readonly AccountEntry[],
+): Generator<BalanceIteration> {
+  let previousDate: number | null = null;
+  const running = new Inventory();
+  let group:
+    | { entry: Directive | Transaction; postings: Posting[] }
+    | undefined;
+
+  const flush = function* () {
+    if (!group) return;
+    const change = new Inventory();
+    group.postings.forEach((posting) => change.addPosting(posting));
+    running.addInventory(change);
+    yield [
+      group.entry,
+      group.postings,
+      change,
+      running.copy(),
+    ] as BalanceIteration;
+  };
+
+  for (const accountEntry of accountEntries) {
+    const entry =
+      accountEntry instanceof TxnPosting ? accountEntry.txn : accountEntry;
+    const date = entry.date?.toMillis() ?? Number.NEGATIVE_INFINITY;
+    if (previousDate !== null && date < previousDate) {
+      throw new Error("Account entries must be sorted by date");
+    }
+    previousDate = date;
+
+    if (group && group.entry !== entry) {
+      yield* flush();
+      group = undefined;
+    }
+    group ??= { entry, postings: [] };
+    if (accountEntry instanceof TxnPosting) {
+      group.postings.push(accountEntry.posting);
+    }
+  }
+  yield* flush();
+}
+
+/** Return the last transactional posting or account directive, if present. */
+export function findLastActivePosting(
+  accountEntries: readonly AccountEntry[],
+): AccountEntry | null {
+  return accountEntries.at(-1) ?? null;
 }
