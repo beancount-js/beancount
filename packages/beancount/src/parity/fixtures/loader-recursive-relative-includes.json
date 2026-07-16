@@ -13,19 +13,35 @@
     "ledger/legumes/tomates.beancount": "2014-01-03 open Assets:Tomates",
     "ledger/legumes/patates.beancount": "2014-01-04 open Assets:Patates"
   },
-  "expected": {
+  "scenario": {
+    "operation": "load_sources",
+    "entryFile": "ledger/apples.beancount",
+    "sources": {
+      "ledger/apples.beancount": "include \"fruits/oranges.beancount\"\ninclude \"legumes/patates.beancount\"\n2014-01-01 open Assets:Apples",
+      "ledger/fruits/oranges.beancount": "include \"../legumes/tomates.beancount\"\n2014-01-02 open Assets:Oranges",
+      "ledger/legumes/tomates.beancount": "2014-01-03 open Assets:Tomates",
+      "ledger/legumes/patates.beancount": "2014-01-04 open Assets:Patates"
+    },
+    "includeOptions": true,
+    "select": {
+      "accounts": ["$open_accounts"],
+      "errors": ["errors"],
+      "includes": ["options", "include"]
+    }
+  },
+  "oracle": {
     "accounts": [
       "Assets:Apples",
       "Assets:Oranges",
       "Assets:Tomates",
       "Assets:Patates"
     ],
+    "errors": [],
     "includes": [
-      "ledger/apples.beancount",
-      "ledger/fruits/oranges.beancount",
-      "ledger/legumes/patates.beancount",
-      "ledger/legumes/tomates.beancount"
-    ],
-    "errors": []
+      "<fixture>/ledger/apples.beancount",
+      "<fixture>/ledger/fruits/oranges.beancount",
+      "<fixture>/ledger/legumes/patates.beancount",
+      "<fixture>/ledger/legumes/tomates.beancount"
+    ]
   }
 }

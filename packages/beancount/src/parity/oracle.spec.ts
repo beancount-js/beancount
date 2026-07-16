@@ -55,13 +55,15 @@ describe("upstream oracle fixtures", () => {
     );
 
     expect(errors.map((error) => error.message)).toEqual(
-      loaderFixture.expected.errors,
+      loaderFixture.oracle.errors,
     );
     expect(
       entries
         .filter((entry) => entry.directiveType === "open")
         .map((entry) => entry.accounts[0]),
-    ).toEqual(loaderFixture.expected.accounts);
-    expect(options.include).toEqual(loaderFixture.expected.includes);
+    ).toEqual(loaderFixture.oracle.accounts);
+    expect(options.include.map((source) => `<fixture>/${source}`)).toEqual(
+      loaderFixture.oracle.includes,
+    );
   });
 });

@@ -130,9 +130,16 @@ def run_scenario(scenario: Mapping[str, Any]) -> Any:
         return result
     selected = {}
     for name, path in selections.items():
-        value = result
-        for key in path:
-            value = value[key]
+        if path == ["$open_accounts"]:
+            value = [
+                entry["account"]
+                for entry in result["entries"]
+                if entry["$type"] == "Open"
+            ]
+        else:
+            value = result
+            for key in path:
+                value = value[key]
         selected[name] = value
     return selected
 
