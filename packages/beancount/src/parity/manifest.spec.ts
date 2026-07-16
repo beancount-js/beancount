@@ -12,8 +12,22 @@ describe("parity manifest", () => {
   });
 
   test("does not report completion while in-scope work is pending", () => {
-    expect(validateParityCompletion(manifest as ParityManifest)).toHaveLength(
-      1,
-    );
+    const pending: ParityManifest = {
+      ...(manifest as ParityManifest),
+      records: [
+        ...(manifest as ParityManifest).records,
+        {
+          upstreamModule: "beancount.parser.printer",
+          upstreamBehavior: "synthetic_pending_coverage",
+          localBehavior: "unimplemented",
+          status: "pending",
+          tests: [],
+          reason: "Exercises the completion gate.",
+        },
+      ],
+    };
+    expect(validateParityCompletion(pending)).toEqual([
+      "beancount.parser.printer:synthetic_pending_coverage is still pending",
+    ]);
   });
 });

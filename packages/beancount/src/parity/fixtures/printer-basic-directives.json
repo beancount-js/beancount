@@ -1,0 +1,25 @@
+{
+  "upstream": {
+    "commit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
+    "module": "beancount.parser.printer",
+    "source": "beancount/parser/printer.py::EntryPrinter.Close,Commodity,Event,Query,Custom",
+    "copyright": "Copyright (C) 2014-2020, 2024-2025 Martin Blais",
+    "license": "GPL-2.0-only"
+  },
+  "scenario": {
+    "operation": "format_entries",
+    "ledger": "2024-01-01 open Assets:Cash\n2024-01-02 close Assets:Cash\n2024-01-03 commodity HOOL\n2024-01-04 event \"location\" \"Paris\"\n2024-01-05 query \"balances\" \"SELECT 1\"\n2024-01-06 custom \"example\" \"value\" TRUE 3 USD 2024-01-06\n",
+    "entryIndices": [1, 2, 3, 4, 5],
+    "renderWeights": false
+  },
+  "oracle": {
+    "errors": [],
+    "text": [
+      "2024-01-02 close Assets:Cash\n",
+      "2024-01-03 commodity HOOL\n",
+      "2024-01-04 event \"location\" \"Paris\"\n",
+      "2024-01-05 query \"balances\" \"SELECT 1\"\n",
+      "2024-01-06 custom \"example\" \"value\" TRUE 3 USD 2024-01-06\n"
+    ]
+  }
+}

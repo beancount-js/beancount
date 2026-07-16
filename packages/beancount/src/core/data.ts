@@ -119,10 +119,18 @@ export function writeScalar(value: ScalarType | Array<ScalarType>): string {
     return "";
   } else if (typeof value === "string") {
     return writeString(value);
+  } else if (typeof value === "boolean") {
+    return value ? "TRUE" : "FALSE";
   }
 
-  if (value instanceof DateTime) {
+  if (value instanceof DateTime || value instanceof Date) {
     return formatDate(value);
+  }
+  if (
+    typeof (value as unknown as { toISODate?: unknown }).toISODate ===
+    "function"
+  ) {
+    return (value as unknown as { toISODate(): string }).toISODate();
   }
 
   return value.toString();

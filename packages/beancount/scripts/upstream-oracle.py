@@ -125,6 +125,22 @@ def format_transaction(scenario: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+def format_entries(scenario: Mapping[str, Any]) -> Mapping[str, Any]:
+    entries, errors, options = loader.load_string(scenario["ledger"])
+    indices = scenario.get("entryIndices", range(len(entries)))
+    return {
+        "errors": errors,
+        "text": [
+            printer.format_entry(
+                entries[index],
+                options["dcontext"],
+                scenario.get("renderWeights", False),
+            )
+            for index in indices
+        ],
+    }
+
+
 def run_scenario(scenario: Mapping[str, Any]) -> Any:
     operation = scenario.get("operation")
     if operation == "load_string":
@@ -135,7 +151,9 @@ def run_scenario(scenario: Mapping[str, Any]) -> Any:
     elif operation == "last_price_entries":
         result = canonicalize(last_price_entries(scenario))
     elif operation == "format_transaction":
-        result = canonicalize(format_transaction(scenario))
+      result = canonicalize(format_transaction(scenario))
+    elif operation == "format_entries":
+        result = canonicalize(format_entries(scenario))
     else:
         raise ValueError(f"Unsupported upstream oracle operation: {operation!r}")
 

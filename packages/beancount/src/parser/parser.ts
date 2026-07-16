@@ -447,7 +447,7 @@ export class LedgerParser extends AbstractVisitor<void> {
     this.directives.push(
       new Event(
         directive.date,
-        directive.type,
+        directive.eventType,
         directive.description,
         this.metadataFor(directive),
       ),

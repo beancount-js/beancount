@@ -589,9 +589,14 @@
       "upstreamModule": "beancount.parser.printer",
       "upstreamBehavior": "directive_error_and_position_text_rendering",
       "localBehavior": "alignPositionStrings, formatEntry, formatEntries, formatError, renderPostingStrings, formatTransaction, renderSource",
-      "status": "pending",
-      "tests": ["parser/printer"],
-      "reason": "Shared formatting helpers are ported, but directive-specific display-context and weight rendering remain unverified."
+      "status": "adapted",
+      "tests": [
+        "parser/printer",
+        "parity/printer/transaction-alignment",
+        "parity/printer/costed-transaction-weights",
+        "parity/printer/basic-directives"
+      ],
+      "reason": "Uses local DisplayContext and immutable directive models while preserving upstream layout, weights, source references, errors, and directive rendering."
     },
     {
       "upstreamModule": "beancount.parser.version",
