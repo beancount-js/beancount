@@ -882,20 +882,34 @@
               {/if}
             </div>
           {/if}
+
+          {#if error}
+            <div class="border-t border-border px-4 py-3">
+              <Alert.Root variant="destructive" role="alert">
+                <Alert.Title>Could not load accounts</Alert.Title>
+                <Alert.Description class="break-words font-mono text-xs">
+                  {error}
+                </Alert.Description>
+              </Alert.Root>
+            </div>
+          {/if}
+          {#if status}
+            <p
+              class="border-t border-border px-4 py-3 text-sm text-muted-foreground"
+              role="status"
+            >
+              {status}
+            </p>
+          {/if}
         </article>
       </div>
-    {/if}
-
-    {#if error}
+    {:else if error}
       <Alert.Root variant="destructive" role="alert">
         <Alert.Title>Could not load accounts</Alert.Title>
         <Alert.Description class="break-words font-mono text-xs">
           {error}
         </Alert.Description>
       </Alert.Root>
-    {/if}
-    {#if status}
-      <p class="text-sm text-muted-foreground" role="status">{status}</p>
     {/if}
   </div>
 </section>
