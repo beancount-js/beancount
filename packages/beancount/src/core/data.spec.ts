@@ -16,9 +16,21 @@ import {
   removeAccountPostings,
   createSimplePosting,
   createSimplePostingWithCost,
+  directiveSortKey,
+  filterPostings,
+  filterTransactions,
+  getEntry,
+  isDirective,
+  isInstanceOf,
   newMetadata,
+  optionKey,
+  postingHasConversion,
+  SOURCE_META,
   sorted,
   Transaction,
+  transactionHasConversion,
+  TxnPosting,
+  writeScalar,
 } from "./data";
 
 describe("Transaction metadata", () => {
@@ -139,5 +151,91 @@ describe("directive helpers", () => {
       lineno: 20,
     });
     expect(findClosestSource([first, second], "ledger.bean", 25)).toBe(second);
+  });
+
+  test("formats scalar metadata and keeps copies independent", () => {
+    const date = DateTime.fromISO("2024-01-01");
+    const original = new Transaction(
+      date,
+      "*",
+      "Payee",
+      "Narration",
+      ["tag"],
+      ["link"],
+      [new Posting("Assets:Cash", new Amount("1", "USD"))],
+      { category: "test" },
+    );
+    const copy = original.copy();
+
+    expect(writeScalar(["quoted", date, new Amount("1", "USD")])).toBe(
+      '"quoted" 2024-01-01 1 USD',
+    );
+    expect(copy.tags).not.toBe(original.tags);
+    expect(copy.links).not.toBe(original.links);
+    expect(copy.postings).not.toBe(original.postings);
+    expect(copy.meta).not.toBe(original.meta);
+    expect(copy.toString()).toContain("#tag ^link");
+  });
+
+  test("uses source metadata for stable directive identity", () => {
+    const transaction = new Transaction(
+      DateTime.fromISO("2024-01-01"),
+      "*",
+      "",
+      "Narration",
+      [],
+      [],
+      [],
+      { [SOURCE_META]: "canonical source" },
+    );
+
+    expect(transaction.content).toBe("canonical source");
+    expect(transaction.id).toBe(transaction.id);
+    expect(transaction.id).not.toBe("");
+  });
+
+  test("identifies conversion postings and provides transaction posting views", () => {
+    const priced = new Posting(
+      "Assets:Cash",
+      new Amount("1", "EUR"),
+      null,
+      new Amount("1.1", "USD"),
+    );
+    const transaction = new Transaction(
+      DateTime.fromISO("2024-01-01"),
+      "*",
+      "",
+      "Conversion",
+      [],
+      [],
+      [priced],
+    );
+    const postingView = new TxnPosting(transaction, priced);
+
+    expect(postingHasConversion(priced)).toBe(true);
+    expect(transactionHasConversion(transaction)).toBe(true);
+    expect(filterTransactions([transaction])).toEqual([transaction]);
+    expect(filterPostings([transaction])).toEqual([postingView]);
+    expect(getEntry(postingView)).toBe(transaction);
+    expect(isInstanceOf(transaction, Transaction)).toBe(true);
+    expect(isDirective(transaction)).toBe(true);
+  });
+
+  test("keeps directive ordering deterministic and normalizes option keys", () => {
+    const date = DateTime.fromISO("2024-01-01");
+    const laterLine = new Open(date, "Assets:Cash", [], undefined, {
+      lineno: 20,
+    });
+    const earlierLine = new Open(date, "Assets:Savings", [], undefined, {
+      lineno: 10,
+    });
+
+    expect(directiveSortKey(earlierLine)).toEqual([date.toMillis(), -2, 10]);
+    expect(sorted([laterLine, earlierLine])).toEqual([earlierLine, laterLine]);
+    expect(
+      findClosest([earlierLine, laterLine], DateTime.fromISO("2024-01-01")),
+    ).toBe(earlierLine);
+    expect(optionKey(" Operating-Currency ")).toBe("operating_currency");
+    expect(optionKey(null)).toBe("");
   });
 });

@@ -1456,9 +1456,11 @@ export function filterPostings(
     .flatMap((txn) => txn.postings.map((p) => new TxnPosting(txn, p)));
 }
 
+type DirectiveConstructor = abstract new (...args: never[]) => DirectiveBase;
+
 export function isInstanceOf(
   directive: unknown,
-  ...types: Array<typeof DirectiveBase>
+  ...types: Array<DirectiveConstructor>
 ) {
   return types.some((type) => directive instanceof type);
 }
