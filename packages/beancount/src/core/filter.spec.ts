@@ -125,6 +125,30 @@ describe("Filter", () => {
     ]);
   });
 
+  test("filters date aliases, account fields, and Boolean combinations", () => {
+    const cases: Array<[string, Array<string>]> = [
+      ["type: transaction", ["transaction"]],
+      ["account: Assets:US:Vanguard", ["transaction"]],
+      ["tx.flag: *", ["transaction"]],
+      ["posting.flag: *", []],
+      ["date.week: 2", ["transaction"]],
+      ["date.quarter: 1", ["open", "transaction"]],
+      ["date.timestamp > 0", ["open", "balance", "transaction"]],
+      ["tag: barclays OR link: bitcoin", ["transaction"]],
+      ["NOT tag: barclays", ["open", "balance"]],
+      ["account: Assets AND amount: 480.05", ["transaction"]],
+    ];
+
+    for (const [query, expected] of cases) {
+      const [[matches], errors] = filterLedger(directives, query);
+      expect(errors, query).toEqual([]);
+      expect(
+        matches.map((entry) => entry.directiveType),
+        query,
+      ).toEqual(expected);
+    }
+  });
+
   test("returns parser diagnostics without returning partial query results", () => {
     const [[matches, excluded], errors] = filterLedger(directives, "(");
 
