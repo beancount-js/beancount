@@ -424,11 +424,7 @@ export class LedgerParser extends AbstractVisitor<void> {
     if (!cost) {
       return cost;
     } else if (cost && cost instanceof ParserCost && cost.amount) {
-      return new Cost(
-        cost.date || directive.date,
-        this.visitAmount(cost.amount),
-        cost.label,
-      );
+      return new Cost(cost.date, this.visitAmount(cost.amount), cost.label);
     } else if (cost && cost instanceof ParserCostSpec) {
       const numberPer = this.visitNumber(cost.numberPer);
       const numberTotal = this.visitNumber(cost.numberTotal);

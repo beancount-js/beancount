@@ -4,14 +4,9 @@ import {
   loadProjectSources,
   loadString,
   resolveProjectInclude,
-  runTransformations,
 } from "./loader";
 import type { PluginType } from "../ops/plugins";
-import { Amount, Booking, defaultBeancountOptions } from "../core";
-import { Posting, Transaction } from "../core/data";
-import { CostSpec } from "../core/position";
-import { DateTime } from "luxon";
-import { Decimal } from "@beancount-js/parser";
+import { Transaction } from "../core/data";
 
 describe("Loader", () => {
   test("loadString", () => {
@@ -186,45 +181,22 @@ describe("Loader", () => {
   });
 
   test("books entries in chronological order before applying transforms", () => {
-    const buyDate = DateTime.fromISO("2024-01-01");
-    const saleDate = DateTime.fromISO("2024-01-02");
-    const buy = new Transaction(
-      buyDate,
-      "*",
-      "",
-      "Buy",
-      [],
-      [],
-      [
-        new Posting(
-          "Assets:Stock",
-          new Amount("1", "HOOL"),
-          new CostSpec(new Decimal("10"), Decimal.ZERO, "USD"),
-        ),
-      ],
-    );
-    const sale = new Transaction(
-      saleDate,
-      "*",
-      "",
-      "Sell",
-      [],
-      [],
-      [
-        new Posting(
-          "Assets:Stock",
-          new Amount("-1", "HOOL"),
-          new CostSpec(null, null, "USD"),
-        ),
-      ],
-    );
-    const [entries] = runTransformations(
-      [
-        [sale, buy],
-        [],
-        defaultBeancountOptions({ booking_method: Booking.FIFO }),
-      ],
-      { transform: true, plugins: {}, dedent: false },
+    const [entries, errors] = loadString(
+      `
+        option "booking_method" "FIFO"
+
+        2024-01-03 * "Sell"
+          Assets:Stock  -1 HOOL {10 USD}
+          Assets:Cash   10 USD
+
+        2024-01-01 open Assets:Stock "HOOL"
+        2024-01-01 open Assets:Cash "USD"
+
+        2024-01-02 * "Buy"
+          Assets:Stock   1 HOOL {10 USD}
+          Assets:Cash  -10 USD
+      `,
+      { dedent: true },
     );
     const bookedSale = entries.find(
       (entry): entry is Transaction =>
@@ -232,8 +204,9 @@ describe("Loader", () => {
     );
 
     expect(bookedSale?.postings[0].resolvedCost?.date?.toISODate()).toBe(
-      "2024-01-01",
+      "2024-01-02",
     );
+    expect(errors).toEqual([]);
   });
 
   test("reports plugin exceptions as ledger errors and continues loading", () => {
