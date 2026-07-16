@@ -491,7 +491,6 @@
                       aria-label="Rule actions"
                       onclick={(event) => {
                         event.stopPropagation();
-                        props.onclick?.(event);
                       }}
                     >
                       <MoreHorizontal class="size-4" />

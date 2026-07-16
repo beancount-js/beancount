@@ -74,12 +74,7 @@
         </h1>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <Select.Root
-          type="single"
-          value={period}
-          controlledValue
-          onValueChange={updatePeriod}
-        >
+        <Select.Root type="single" value={period} onValueChange={updatePeriod}>
           <Select.Trigger
             class="h-8 w-36 text-xs font-medium"
             aria-label="Dashboard period"
@@ -103,7 +98,6 @@
           <Select.Root
             type="single"
             value={selectedCurrency}
-            controlledValue
             onValueChange={updateCurrency}
           >
             <Select.Trigger

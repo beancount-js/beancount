@@ -321,11 +321,8 @@
         ingestionPath($snapshot.project.id),
       );
       loadedConfig = response;
-      // Concurrent scheduleSave during the await leaves dirty + a pending timer.
-      if (saveState !== "dirty") {
-        status = "Saved.";
-        saveState = "saved";
-      }
+      status = "Saved.";
+      saveState = "saved";
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
       saveState = "error";

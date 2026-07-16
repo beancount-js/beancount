@@ -9,7 +9,6 @@
     sorted,
     Transaction,
     type Directive,
-    type MissingType,
   } from "@beancount-js/beancount";
   import { useContext } from "../context";
   import { AccountFilter } from "@beancount-js/filters";
@@ -120,7 +119,7 @@
       type: "amount",
       class: "border-solid border-r text-right",
       value: (row: Directive) => {
-        const data: Array<Amount | MissingType> = [];
+        const data: Array<Amount | null> = [];
         for (const [currency, value] of Object.entries(
           changes[formatDate(row.date)] || {},
         )) {
@@ -142,7 +141,7 @@
       type: "amount",
       class: "border-solid text-right border-r",
       value: (row: Directive) => {
-        const data: Array<Amount | MissingType> = [];
+        const data: Array<Amount | null> = [];
         for (const [currency, value] of Object.entries(
           balances[formatDate(row.date)] || {},
         )) {
