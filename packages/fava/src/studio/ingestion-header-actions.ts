@@ -56,10 +56,8 @@ export type IngestionRulesHeaderActions = {
   kind: "rules";
   saveHint: string;
   ruleCount: number;
-  sortKey: "name" | "active";
   canApplyAll: boolean;
   applyBusy: boolean;
-  onSortChange: (sortKey: "name" | "active") => void;
   onApplyAll: () => void;
   onAddRule: () => void;
 };

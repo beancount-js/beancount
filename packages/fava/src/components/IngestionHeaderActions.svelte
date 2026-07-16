@@ -1,9 +1,7 @@
 <script lang="ts">
-  import ArrowDownAZ from "lucide-svelte/icons/arrow-down-a-z";
   import BookOpen from "lucide-svelte/icons/book-open";
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
-  import CircleDot from "lucide-svelte/icons/circle-dot";
   import ClipboardList from "lucide-svelte/icons/clipboard-list";
   import Landmark from "lucide-svelte/icons/landmark";
   import Pencil from "lucide-svelte/icons/pencil";
@@ -19,7 +17,6 @@
   import { Button } from "$lib/components/ui/button";
   import { Switch } from "$lib/components/ui/switch";
   import * as Tooltip from "$lib/components/ui/tooltip";
-  import { cn } from "$lib/utils";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
 </script>
 
@@ -346,58 +343,6 @@
           {header.saveHint}
         </p>
       {/if}
-      <Tooltip.Root>
-        <Tooltip.Trigger>
-          {#snippet child({ props })}
-            <Button
-              {...props}
-              type="button"
-              size="icon"
-              variant="ghost"
-              class={cn(
-                "size-8",
-                header.sortKey === "name" &&
-                  "border border-border bg-background hover:bg-background",
-              )}
-              aria-label="Sort by name"
-              aria-pressed={header.sortKey === "name"}
-              onclick={(event) => {
-                props.onclick?.(event);
-                header.onSortChange("name");
-              }}
-            >
-              <ArrowDownAZ />
-            </Button>
-          {/snippet}
-        </Tooltip.Trigger>
-        <Tooltip.Content>Sort by name</Tooltip.Content>
-      </Tooltip.Root>
-      <Tooltip.Root>
-        <Tooltip.Trigger>
-          {#snippet child({ props })}
-            <Button
-              {...props}
-              type="button"
-              size="icon"
-              variant="ghost"
-              class={cn(
-                "size-8",
-                header.sortKey === "active" &&
-                  "border border-border bg-background hover:bg-background",
-              )}
-              aria-label="Sort by active"
-              aria-pressed={header.sortKey === "active"}
-              onclick={(event) => {
-                props.onclick?.(event);
-                header.onSortChange("active");
-              }}
-            >
-              <CircleDot />
-            </Button>
-          {/snippet}
-        </Tooltip.Trigger>
-        <Tooltip.Content>Sort by active</Tooltip.Content>
-      </Tooltip.Root>
       <Tooltip.Root>
         <Tooltip.Trigger>
           {#snippet child({ props })}

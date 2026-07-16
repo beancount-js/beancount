@@ -1,4 +1,7 @@
 <script lang="ts">
+  import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
+  import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
+  import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
   import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
   import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import FileCode2 from "lucide-svelte/icons/file-code-2";
@@ -18,6 +21,7 @@
   import * as Empty from "$lib/components/ui/empty";
   import { Switch } from "$lib/components/ui/switch";
   import { cn } from "$lib/utils";
+  import type { SortOrder } from "../grid/sort";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { rulesJson, rulesPath } from "../rules/api";
@@ -35,6 +39,12 @@
   const { snapshot } = useStudioWorkspace();
 
   const RUNS_LIMIT = 10;
+  const SORT_CYCLE: Record<SortOrder, SortOrder> = {
+    none: "asc",
+    asc: "desc",
+    desc: "none",
+  };
+
   type SortKey = "name" | "active";
 
   let rules = $state<DetectionRule[]>([]);
@@ -45,7 +55,12 @@
   let runsOffset = $state(0);
   let loading = $state(false);
   let status = $state("");
-  let sortKey = $state<SortKey>("name");
+  let sortOrders = $state<Record<SortKey, SortOrder>>({
+    name: "asc",
+    active: "none",
+  });
+  /** Order sorts were added; earlier entries are primary. */
+  let sortPriority = $state<SortKey[]>(["name"]);
   let loadedProjectId = $state("");
   let editorOpen = $state(false);
   let editingRule = $state<DetectionRule | null>(null);
@@ -53,13 +68,19 @@
 
   const project = $derived($snapshot);
   const sortedRules = $derived.by(() => {
+    const keys = sortPriority.filter((key) => sortOrders[key] !== "none");
+    if (!keys.length) return rules;
     const next = [...rules];
     next.sort((left, right) => {
-      if (sortKey === "active") {
-        if (left.active === right.active) return compareNames(left, right);
-        return left.active ? -1 : 1;
+      for (const key of keys) {
+        const direction = sortOrders[key] === "asc" ? 1 : -1;
+        const cmp =
+          key === "name"
+            ? compareNames(left, right)
+            : Number(left.active) - Number(right.active);
+        if (cmp !== 0) return direction * cmp;
       }
-      return compareNames(left, right);
+      return 0;
     });
     return next;
   });
@@ -72,6 +93,22 @@
       undefined,
       { sensitivity: "base" },
     );
+  }
+
+  function cycleSort(key: SortKey) {
+    const next = SORT_CYCLE[sortOrders[key]];
+    sortOrders = { ...sortOrders, [key]: next };
+    if (next === "none") {
+      sortPriority = sortPriority.filter((item) => item !== key);
+    } else if (!sortPriority.includes(key)) {
+      sortPriority = [...sortPriority, key];
+    }
+  }
+
+  function ariaSortFor(key: SortKey): "ascending" | "descending" | "none" {
+    const order = sortOrders[key];
+    if (order === "none") return "none";
+    return order === "asc" ? "ascending" : "descending";
   }
 
   function message(error: unknown) {
@@ -298,12 +335,8 @@
       kind: "rules",
       saveHint: status,
       ruleCount: rules.length,
-      sortKey,
       canApplyAll: rules.some((rule) => rule.active),
       applyBusy,
-      onSortChange: (next) => {
-        sortKey = next;
-      },
       onApplyAll: () => {
         void applyAll();
       },
@@ -350,6 +383,54 @@
           </Empty.Header>
         </Empty.Root>
       {:else}
+        <div
+          role="row"
+          class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 rounded-2xl bg-muted px-4 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        >
+          <div
+            role="columnheader"
+            aria-sort={ariaSortFor("name")}
+            class="justify-self-start"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by rule name"
+              onclick={() => cycleSort("name")}
+            >
+              Rule
+              {#if sortOrders.name === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.name === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
+          <div
+            role="columnheader"
+            aria-sort={ariaSortFor("active")}
+            class="justify-self-end"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by active status"
+              onclick={() => cycleSort("active")}
+            >
+              Active
+              {#if sortOrders.active === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.active === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
+          <div role="columnheader" aria-hidden="true"></div>
+        </div>
         <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
           {#each sortedRules as rule, index (rule.id)}
             {@const summary = summarizeRule(rule)}
