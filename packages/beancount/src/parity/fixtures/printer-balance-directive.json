@@ -1,0 +1,19 @@
+{
+  "upstream": {
+    "commit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
+    "module": "beancount.parser.printer",
+    "source": "beancount/parser/printer.py::EntryPrinter.Balance",
+    "copyright": "Copyright (C) 2014-2020, 2024-2025 Martin Blais",
+    "license": "GPL-2.0-only"
+  },
+  "scenario": {
+    "operation": "format_transaction",
+    "ledger": "2024-01-01 open Assets:Cash\n2024-01-02 balance Assets:Cash 0 USD\n",
+    "entryIndex": 1,
+    "renderWeights": false
+  },
+  "oracle": {
+    "errors": [],
+    "text": "2024-01-02 balance Assets:Cash                                     0 USD\n"
+  }
+}

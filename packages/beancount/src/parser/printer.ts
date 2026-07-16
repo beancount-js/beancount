@@ -4,6 +4,7 @@
 
 import { getWeight } from "../core/convert";
 import {
+  Balance,
   type Metadata,
   Booking,
   DirectiveBase,
@@ -123,6 +124,10 @@ function formatPrice(entry: Price): string {
   return `${entry.date.toISODate()} price ${entry.currency.padEnd(22)} ${entry.amount.toString().padStart(22)}`;
 }
 
+function formatBalance(entry: Balance): string {
+  return `${entry.date.toISODate()} balance ${entry.account.padEnd(47)} ${entry.amount}`;
+}
+
 /** Render one local directive using its parser-accepted source representation. */
 export function formatEntry(
   entry: DirectiveBase,
@@ -134,11 +139,13 @@ export function formatEntry(
   const text =
     entry instanceof Transaction
       ? formatTransaction(entry, renderWeights)
-      : entry instanceof Open
-        ? formatOpen(entry)
-        : entry instanceof Price
-          ? formatPrice(entry)
-          : entry.toString();
+      : entry instanceof Balance
+        ? formatBalance(entry)
+        : entry instanceof Open
+          ? formatOpen(entry)
+          : entry instanceof Price
+            ? formatPrice(entry)
+            : entry.toString();
   return `${source}${prefix}${text}`;
 }
 
