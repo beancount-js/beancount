@@ -8,8 +8,8 @@ import { defaultBeancountOptions } from "./options";
 
 const OPTIONS_MAP = defaultBeancountOptions({
   inferred_tolerance_default: {},
-  inferred_tolerance_multiplier: new Decimal(0.5),
-  account_rounding: undefined,
+  tolerance_multiplier: new Decimal(0.5),
+  account_rounding: null,
   infer_tolerance_from_cost: false,
 });
 

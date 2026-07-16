@@ -31,13 +31,7 @@ export const yamlProcessor = (value: unknown, ctx: z.RefinementCtx) => {
 
 export const bool = z.preprocess((val, ctx) => {
   if (typeof val === "string") {
-    if (["1", "true"].includes(val.toLowerCase())) return true;
-    if (["0", "false"].includes(val.toLowerCase())) return false;
-    ctx.addIssue({
-      code: ZodIssueCode.custom,
-      message: `Invalid boolean value: ${val}`,
-    });
-    return;
+    return ["1", "true", "yes"].includes(val.toLowerCase());
   }
   if (typeof val === "number") {
     if (val === 0) return false;
@@ -58,6 +52,20 @@ export const account = z
   );
 export const currency = z.string().regex(/^[A-Z][A-Z0-9'._-]{0,22}[A-Z0-9]$/);
 export const bookingSchema = z.nativeEnum(Booking);
+
+/**
+ * Input aliases are normalized before validation so consumers only observe the
+ * canonical option names.
+ */
+export const OPTION_ALIASES: Record<string, string> = {
+  inferred_tolerance_multiplier: "tolerance_multiplier",
+};
+
+export function canonicalOptionKey(name: string | null | undefined) {
+  if (!name) return "";
+  const key = name.trim().replaceAll("-", "_").toLocaleLowerCase();
+  return OPTION_ALIASES[key] ?? key;
+}
 
 export const decimal = z.preprocess((val, ctx) => {
   if (typeof val === "string" || typeof val === "number") {
@@ -85,7 +93,7 @@ export const beanCountOptionsSchema = z.object({
   account_previous_balances: z.string().regex(/^[A-Z][A-Za-z0-9_-]*$/gu),
   account_previous_conversions: account,
   account_previous_earnings: account,
-  account_rounding: account,
+  account_rounding: account.nullable(),
   account_unrealized_gains: account,
   allow_deprecated_none_for_tags_and_links: bool,
   allow_pipe_separator: bool,
@@ -93,6 +101,7 @@ export const beanCountOptionsSchema = z.object({
   commodities: z.array(currency),
   conversion_currency: z.string().regex(/^([A-Z]+)?$/),
   documents: z.array(z.string()),
+  display_precision: z.record(currency, decimal),
   include: z.array(z.string()),
   files: z.array(
     z.object({
@@ -104,12 +113,12 @@ export const beanCountOptionsSchema = z.object({
   filename: z.string(),
   infer_tolerance_from_cost: bool,
   inferred_tolerance_default: z.record(currency, decimal),
-  inferred_tolerance_multiplier: decimal.refine(
+  tolerance_multiplier: decimal.refine(
     (num) => num.gte(0),
     "tolerance multiplier must be greater than 0",
   ),
   input_hash: z.string(),
-  insert_pythonpath: z.string(),
+  insert_pythonpath: bool,
   long_string_maxlines: z.coerce.number(),
   name_assets: z.string(),
   name_equity: z.string(),
@@ -121,6 +130,7 @@ export const beanCountOptionsSchema = z.object({
   plugin_processing_mode: z.string().regex(/^(raw|default)$/),
   render_commas: bool,
   title: z.string(),
+  use_precise_interpolation: bool,
 });
 
 export type BeancountOptions = z.infer<typeof beanCountOptionsSchema>;
@@ -134,8 +144,8 @@ export function defaultBeancountOptions(
     account_previous_balances: "Opening-Balances",
     account_previous_conversions: "Conversions:Previous",
     account_previous_earnings: "Earnings:Previous",
-    account_unrealized_gains: "Unrealized",
-    account_rounding: "Rounding",
+    account_unrealized_gains: "Earnings:Unrealized",
+    account_rounding: null,
     allow_deprecated_none_for_tags_and_links: false,
     allow_pipe_separator: false,
     booking_method: Booking.STRICT,
@@ -144,12 +154,13 @@ export function defaultBeancountOptions(
     include: [],
     files: [],
     documents: [],
+    display_precision: {},
     filename: "",
     infer_tolerance_from_cost: false,
     inferred_tolerance_default: {},
-    inferred_tolerance_multiplier: new Decimal(0.5),
+    tolerance_multiplier: new Decimal(0.5),
     input_hash: "",
-    insert_pythonpath: "",
+    insert_pythonpath: false,
     long_string_maxlines: 64,
     name_assets: "Assets",
     name_equity: "Equity",
@@ -159,8 +170,9 @@ export function defaultBeancountOptions(
     operating_currency: [],
     plugin: [],
     plugin_processing_mode: "default",
-    render_commas: true,
-    title: "",
+    render_commas: false,
+    title: "Beancount",
+    use_precise_interpolation: false,
     ...props,
   };
 }

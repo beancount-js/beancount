@@ -68,7 +68,7 @@ export function inferTolerances(
   useCost: boolean | null = null,
 ): Record<string, Decimal> {
   useCost = useCost === null ? options.infer_tolerance_from_cost : useCost;
-  const inferredToleranceMultiplier = options.inferred_tolerance_multiplier;
+  const toleranceMultiplier = options.tolerance_multiplier;
   const tolerances: Record<string, Decimal> = {};
   for (const [key, value] of Object.entries(
     options.inferred_tolerance_default || {},
@@ -91,9 +91,7 @@ export function inferTolerances(
 
     if (expo < 0) {
       // Note: the exponent is a negative value.
-      const tolerance = new Decimal(1)
-        .scaleb(expo)
-        .mul(inferredToleranceMultiplier);
+      const tolerance = new Decimal(1).scaleb(expo).mul(toleranceMultiplier);
 
       // Note that we take the max() and not the min() here because the
       // tolerance has a dual purpose: it's used to infer the resolution

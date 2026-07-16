@@ -4,7 +4,7 @@ import {
   beanCountOptionsSchema,
   defaultBeancountOptions,
   LedgerOption,
-  optionKey,
+  canonicalOptionKey,
   Plugin,
   Document,
   sorted,
@@ -414,7 +414,7 @@ export function loadBeancountOptions(
   const source: Record<string, unknown> = { ...options };
 
   for (let [key, value] of Object.entries(optionsMap)) {
-    key = optionKey(key);
+    key = canonicalOptionKey(key);
     const existing = source[key];
     if (existing) {
       if (Array.isArray(existing)) {

@@ -21,7 +21,7 @@ export function balanceTolerance(
   } else {
     const expo = balance.amount.exponent;
     if (expo < 0) {
-      tolerance = options.inferred_tolerance_multiplier
+      tolerance = options.tolerance_multiplier
         .mul(2)
         .mul(new Decimal(1).scaleb(expo));
     } else {
