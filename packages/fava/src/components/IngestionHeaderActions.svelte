@@ -122,16 +122,22 @@
               type="button"
               size="sm"
               class="h-8"
-              aria-label={header.acceptCount
-                ? `Accept ${header.acceptCount} reviewed transaction${header.acceptCount === 1 ? "" : "s"}`
-                : "Accept reviewed transactions"}
+              aria-label={header.acceptBusy
+                ? "Accepting reviewed transactions"
+                : header.acceptCount
+                  ? `Accept ${header.acceptCount} reviewed transaction${header.acceptCount === 1 ? "" : "s"}`
+                  : "Accept reviewed transactions"}
               disabled={!header.canAccept || header.acceptBusy}
               onclick={(event) => {
                 props.onclick?.(event);
                 header.onAccept();
               }}
             >
-              Accept{header.acceptCount ? ` ${header.acceptCount}` : ""}
+              {#if header.acceptBusy}
+                Accepting…
+              {:else}
+                Accept{header.acceptCount ? ` ${header.acceptCount}` : ""}
+              {/if}
             </Button>
           {/snippet}
         </Tooltip.Trigger>

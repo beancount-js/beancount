@@ -3,6 +3,11 @@
   import { DateTime } from "luxon";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import type { ProjectSnapshot } from "@beancount-js/workspace";
+  import {
+    FilterCommandPicker,
+    SearchFilterBar,
+    type FilterCommandOption,
+  } from "@beancount-js/forms";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronUp from "lucide-svelte/icons/chevron-up";
   import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
@@ -13,6 +18,7 @@
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useNavigation } from "../router/router";
+  import { debounceWithDelay } from "../hooks/debounce";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import {
     latestIngestionSyncJob,
@@ -24,6 +30,16 @@
     IngestionRun,
     ImportProposal,
   } from "../ingestion/types";
+  import {
+    appendIngestionReviewSearchParams,
+    cloneIngestionReviewSearchState,
+    collectIngestionReviewFacetOptions,
+    hasActiveIngestionReviewSearch,
+    matchesIngestionReviewSearch,
+    MERCHANT_RESOLUTION_STATUS_OPTIONS,
+    parseIngestionReviewSearchState,
+    type IngestionReviewSearchState,
+  } from "../lib/ingestion-review-search-state";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
@@ -67,6 +83,11 @@
   let selectedRow = $state<ProposalRow | undefined>(undefined);
   let sheetOpen = $state(false);
   let failedLogoIds = $state(new Set<string>());
+  let filtersExpanded = $state(false);
+  let searchState = $state<IngestionReviewSearchState>(
+    cloneIngestionReviewSearchState(),
+  );
+  let lastSearchSignature = $state("");
 
   const project = $derived($snapshot);
   const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
@@ -116,8 +137,33 @@
   const accepted = $derived(proposalRows.filter(isAcceptedRow));
   const pending = $derived(proposalRows.filter(isPendingRow));
 
-  const filteredRows = $derived(
+  const reviewTabRows = $derived(
     reviewFilter === "accepted" ? accepted : pending,
+  );
+
+  const activeSearch = $derived(hasActiveIngestionReviewSearch(searchState));
+
+  const filteredRows = $derived(
+    reviewTabRows.filter((row) =>
+      matchesIngestionReviewSearch(row.proposal, searchState),
+    ),
+  );
+
+  const facetOptions = $derived(
+    collectIngestionReviewFacetOptions(reviewTabRows.map((row) => row.proposal)),
+  );
+
+  const accountOptions = $derived<FilterCommandOption[]>(
+    facetOptions.accounts.map((value) => ({ value, label: value })),
+  );
+  const yearOptions = $derived<FilterCommandOption[]>(
+    facetOptions.years.map((value) => ({ value, label: value })),
+  );
+  const currencyOptions = $derived<FilterCommandOption[]>(
+    facetOptions.currencies.map((value) => ({ value, label: value })),
+  );
+  const merchantStatusOptions = $derived<FilterCommandOption[]>(
+    MERCHANT_RESOLUTION_STATUS_OPTIONS.map((option) => ({ ...option })),
   );
 
   const dateGroups = $derived.by((): DateGroup[] => {
@@ -266,6 +312,62 @@
     const next = query.toString();
     router.updateState(next ? `?${next}` : "?");
   }
+
+  function searchSignature(query: Record<string, string>) {
+    const params = new URLSearchParams(query);
+    return [
+      params.get("reviewQ") ?? "",
+      params.get("reviewAccounts") ?? "",
+      params.get("reviewMerchant") ?? "",
+      params.get("reviewYears") ?? "",
+      params.get("reviewCurrency") ?? "",
+    ].join("\0");
+  }
+
+  function applySearchState(next: IngestionReviewSearchState, resetPage = true) {
+    searchState = cloneIngestionReviewSearchState(next);
+    const params = new URLSearchParams($activeRoute.query);
+    appendIngestionReviewSearchParams(params, next);
+    if (resetPage) params.set("page", "1");
+    lastSearchSignature = searchSignature(Object.fromEntries(params));
+    const search = params.toString();
+    router.updateState(search ? `?${search}` : "?");
+  }
+
+  const [scheduleSearchSync, delaySearchSync] = debounceWithDelay(
+    (next: IngestionReviewSearchState) => {
+      applySearchState(next);
+    },
+    250,
+  );
+
+  function onSearchQueryInput(value: string) {
+    searchState = { ...searchState, query: value };
+    scheduleSearchSync(searchState);
+    delaySearchSync();
+  }
+
+  function setSearchFacet<K extends keyof IngestionReviewSearchState>(
+    key: K,
+    value: IngestionReviewSearchState[K],
+  ) {
+    applySearchState({ ...searchState, [key]: value });
+  }
+
+  function clearSearchQuery() {
+    applySearchState({ ...searchState, query: "" });
+  }
+
+  function clearAllSearch() {
+    applySearchState(cloneIngestionReviewSearchState());
+  }
+
+  $effect(() => {
+    const signature = searchSignature($activeRoute.query);
+    if (signature === lastSearchSignature) return;
+    lastSearchSignature = signature;
+    searchState = parseIngestionReviewSearchState($activeRoute.query);
+  });
 
   function setReviewFilter(value: string | undefined) {
     if (value !== "pending" && value !== "accepted") return;
@@ -711,26 +813,79 @@
     }
   }
 
+  function markProposalsAcceptedLocally(
+    run: IngestionRun,
+    proposalIds: ReadonlySet<string>,
+  ): IngestionRun {
+    const proposals = run.proposals.map((proposal) =>
+      proposalIds.has(proposal.id)
+        ? {
+            ...proposal,
+            status: "duplicate" as const,
+            duplicateOf: proposal.importId,
+            transaction: undefined,
+          }
+        : proposal,
+    );
+    return {
+      ...run,
+      proposals,
+      summary: {
+        total: proposals.length,
+        ready: proposals.filter((item) => item.status === "ready").length,
+        needsReview: proposals.filter((item) => item.status === "needs-review")
+          .length,
+        duplicates: proposals.filter((item) => item.status === "duplicate")
+          .length,
+        invalid: proposals.filter((item) => item.status === "invalid").length,
+        held: proposals.filter((item) => item.status === "held").length,
+        excluded: proposals.filter((item) => item.status === "excluded").length,
+      },
+    };
+  }
+
   async function accept() {
     if (!project || !accepted.length || !selectedSource) return;
     const destination =
       selectedSource.destinationPath ?? project.project.entryFile;
-    const expectedRevision = project.revisions.find(
+    let expectedRevision = project.revisions.find(
       (revision) => revision.path === destination,
     )?.revision;
     if (!expectedRevision) {
       status = "The configured destination is not an editable ledger file.";
       return;
     }
+
+    const byRun = new Map<string, string[]>();
+    for (const row of accepted) {
+      const list = byRun.get(row.runId) ?? [];
+      list.push(row.proposal.id);
+      byRun.set(row.runId, list);
+    }
+    const acceptedCount = accepted.length;
+    const previousActiveRuns = activeRuns;
+    const previousRuns = runs;
+
+    // Drop the Accept count and Accepted list immediately; reconcile from the
+    // server response (or roll back) once the ledger write finishes.
+    activeRuns = activeRuns.map((run) => {
+      const ids = byRun.get(run.id);
+      return ids ? markProposalsAcceptedLocally(run, new Set(ids)) : run;
+    });
+    runs = runs.map((run) => {
+      const ids = byRun.get(run.id);
+      return ids ? markProposalsAcceptedLocally(run, new Set(ids)) : run;
+    });
+    closeProposalSheet();
+    sheetOpen = false;
+    selectedRow = undefined;
+    if (reviewFilter === "accepted") {
+      updateRoute({ review: undefined, page: "1" });
+    }
+
     loading = true;
+    status = `Accepting ${acceptedCount} transaction${acceptedCount === 1 ? "" : "s"}…`;
     try {
-      const byRun = new Map<string, string[]>();
-      for (const row of accepted) {
-        const list = byRun.get(row.runId) ?? [];
-        list.push(row.proposal.id);
-        byRun.set(row.runId, list);
-      }
-      let acceptedCount = 0;
       let lastSnapshot: ProjectSnapshot | undefined;
       for (const [runId, proposalIds] of byRun) {
         const result = await ingestionJson<{
@@ -749,14 +904,16 @@
         );
         lastSnapshot = result.snapshot;
         replaceRun(result.run);
-        acceptedCount += proposalIds.length;
+        expectedRevision =
+          result.snapshot.revisions.find(
+            (revision) => revision.path === destination,
+          )?.revision ?? expectedRevision;
       }
       if (lastSnapshot) snapshot.set(lastSnapshot);
       status = `Accepted ${acceptedCount} transaction${acceptedCount === 1 ? "" : "s"}.`;
-      closeProposalSheet();
-      sheetOpen = false;
-      selectedRow = undefined;
     } catch (error) {
+      activeRuns = previousActiveRuns;
+      runs = previousRuns;
       status = error instanceof Error ? error.message : String(error);
     } finally {
       loading = false;
@@ -845,6 +1002,113 @@
       </div>
 
       <div
+        class="ingestion-page-search"
+        style="--cv-search-filter-justify: stretch; --cv-search-filter-content-justify: stretch; --cv-search-filter-max-width: 100%;"
+      >
+        <SearchFilterBar
+          inputMode="plain"
+          value={searchState.query}
+          placeholder="Search proposals…"
+          ariaLabel="Search proposals"
+          clearSearchLabel="Clear search"
+          clearAllLabel="Clear all filters"
+          expandFiltersLabel="Expand filter options"
+          collapseFiltersLabel="Collapse filter options"
+          showActiveQueryChip={true}
+          showFilterToggle={true}
+          showClearAll={activeSearch}
+          clearAllDisabled={!activeSearch}
+          bind:filtersExpanded
+          onValueChange={onSearchQueryInput}
+          onClearSearch={clearSearchQuery}
+          onClearAll={clearAllSearch}
+        >
+          {#snippet filters()}
+            <div class="ingestion-page-search__facet-row">
+              <FilterCommandPicker
+                multiple
+                label="Account"
+                values={searchState.accounts}
+                options={accountOptions}
+                placeholder="Filter by account…"
+                onValuesChange={(accounts) =>
+                  setSearchFacet("accounts", accounts)}
+              />
+              <FilterCommandPicker
+                multiple
+                label="Merchant"
+                values={searchState.merchantStatuses}
+                options={merchantStatusOptions}
+                placeholder="Filter by merchant status…"
+                onValuesChange={(merchantStatuses) =>
+                  setSearchFacet("merchantStatuses", merchantStatuses)}
+              />
+              <FilterCommandPicker
+                multiple
+                label="Year"
+                values={searchState.years}
+                options={yearOptions}
+                placeholder="Filter by year…"
+                onValuesChange={(years) => setSearchFacet("years", years)}
+              />
+              <FilterCommandPicker
+                multiple
+                label="Currency"
+                values={searchState.currencies}
+                options={currencyOptions}
+                placeholder="Filter by currency…"
+                onValuesChange={(currencies) =>
+                  setSearchFacet("currencies", currencies)}
+              />
+            </div>
+          {/snippet}
+          {#snippet collapsedFilters()}
+            <div class="ingestion-page-search__facet-row">
+              {#if searchState.accounts.length > 0}
+                <FilterCommandPicker
+                  multiple
+                  label="Account"
+                  values={searchState.accounts}
+                  options={accountOptions}
+                  onValuesChange={(accounts) =>
+                    setSearchFacet("accounts", accounts)}
+                />
+              {/if}
+              {#if searchState.merchantStatuses.length > 0}
+                <FilterCommandPicker
+                  multiple
+                  label="Merchant"
+                  values={searchState.merchantStatuses}
+                  options={merchantStatusOptions}
+                  onValuesChange={(merchantStatuses) =>
+                    setSearchFacet("merchantStatuses", merchantStatuses)}
+                />
+              {/if}
+              {#if searchState.years.length > 0}
+                <FilterCommandPicker
+                  multiple
+                  label="Year"
+                  values={searchState.years}
+                  options={yearOptions}
+                  onValuesChange={(years) => setSearchFacet("years", years)}
+                />
+              {/if}
+              {#if searchState.currencies.length > 0}
+                <FilterCommandPicker
+                  multiple
+                  label="Currency"
+                  values={searchState.currencies}
+                  options={currencyOptions}
+                  onValuesChange={(currencies) =>
+                    setSearchFacet("currencies", currencies)}
+                />
+              {/if}
+            </div>
+          {/snippet}
+        </SearchFilterBar>
+      </div>
+
+      <div
         class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
       >
         <span>Date</span>
@@ -855,7 +1119,9 @@
         <div
           class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
         >
-          {#if reviewFilter === "accepted"}
+          {#if activeSearch}
+            No proposals match this search.
+          {:else if reviewFilter === "accepted"}
             No accepted proposals yet. Review pending items and set an account
             first.
           {:else if pending.length === 0 && accepted.length > 0}
@@ -1075,3 +1341,24 @@
     />
   {/key}
 {/if}
+
+<style>
+  .ingestion-page-search :global(.cv-search-filter-bar) {
+    padding: 0;
+  }
+
+  .ingestion-page-search :global(.cv-search-filter-bar__search-pill) {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+  }
+
+  .ingestion-page-search__facet-row {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+</style>
