@@ -158,6 +158,8 @@ function interpolateGroup(
         incomplete.push({ type: MissingTypes.COST_TOTAL, index });
       } else if (cost.numberPer === null) {
         incomplete.push({ type: MissingTypes.COST_PER, index });
+      } else if (cost.numberTotalMissing) {
+        incomplete.push({ type: MissingTypes.COST_TOTAL, index });
       }
     } else if (cost instanceof Cost) {
       if (!cost.amount?.value) {
@@ -303,6 +305,23 @@ function interpolateGroup(
         const numberPer = weight.minus(costTotal).div(units);
         newPosting = incompletePosting.copy({
           cost: cost.copy({ numberPer: numberPer.value }),
+        });
+      }
+    }
+
+    if (type === MissingTypes.COST_TOTAL) {
+      const { units, cost } = incompletePosting;
+      if (
+        cost instanceof CostSpec &&
+        units?.isDefined() &&
+        cost.numberPer !== null
+      ) {
+        const numberTotal = weight.minus(units.mul(cost.numberPer));
+        newPosting = incompletePosting.copy({
+          cost: cost.copy({
+            numberTotal: numberTotal.value,
+            numberTotalMissing: false,
+          }),
         });
       }
     }

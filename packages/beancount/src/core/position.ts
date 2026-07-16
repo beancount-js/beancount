@@ -83,6 +83,7 @@ export class CostSpec {
     readonly date: DateTime | null = null,
     readonly label: string = "",
     readonly merge: boolean = false,
+    readonly numberTotalMissing: boolean = false,
   ) {}
 
   public copy(
@@ -93,6 +94,7 @@ export class CostSpec {
       date: DateTime | null;
       label: string;
       merge: boolean;
+      numberTotalMissing: boolean;
     }> = {},
   ) {
     return new CostSpec(
@@ -102,6 +104,9 @@ export class CostSpec {
       data.date === undefined ? this.date : data.date,
       data.label === undefined ? this.label : data.label,
       data.merge === undefined ? this.merge : data.merge,
+      data.numberTotalMissing === undefined
+        ? this.numberTotalMissing
+        : data.numberTotalMissing,
     );
   }
 
@@ -110,8 +115,10 @@ export class CostSpec {
     const amountList: Array<string> = [];
     const date = this.date;
     if (this.numberPer != null) amountList.push(this.numberPer.toString());
-    if (this.numberTotal != null) {
+    if (this.numberTotal != null || this.numberTotalMissing) {
       amountList.push("#");
+    }
+    if (this.numberTotal != null) {
       amountList.push(this.numberTotal.toString());
     }
     if (this.currency) amountList.push(this.currency.toString());

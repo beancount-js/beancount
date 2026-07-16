@@ -264,6 +264,7 @@ export class CostSpec {
     readonly currency: string | null = null,
     readonly date: DateTime | null = null,
     readonly label: string = "",
+    readonly numberTotalMissing: boolean = false,
   ) {}
 
   public toString() {

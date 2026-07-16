@@ -434,6 +434,9 @@ export class LedgerParser extends AbstractVisitor<void> {
         cost.currency ?? null,
         cost.date ?? null,
         cost.label ?? "",
+        false,
+        (cost as ParserCostSpec & { numberTotalMissing?: boolean })
+          .numberTotalMissing ?? false,
       );
     }
     return null;

@@ -431,6 +431,7 @@ export class BeanCountDocument {
         amount.currency,
         date ? parseDate(this.content(date)) : undefined,
         label ? this.content(label) : undefined,
+        amount.value === null,
       );
     }
 

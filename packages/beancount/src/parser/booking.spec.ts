@@ -7,6 +7,7 @@ import { defaultBeancountOptions } from "../core/options";
 import { Inventory } from "../core/inventory";
 import { Cost, CostSpec, Position } from "../core/position";
 import { book, validateMissingEliminated } from "./booking";
+import { parseDirectives } from "./parser";
 
 const account = "Assets:Investments";
 
@@ -271,6 +272,25 @@ describe("book", () => {
       ],
       defaultBeancountOptions(),
     );
+
+    expect(errors).toEqual([]);
+    expect(
+      (entries[0] as Transaction).postings[0].resolvedCost?.amount?.eq(
+        new Amount("100.995", "USD"),
+      ),
+    ).toBe(true);
+  });
+
+  test("interpolates a parser-marked missing total cost", () => {
+    // Ported from Beancount's booking_full_test.py::test_incomplete_cost_total.
+    const [parsed, parseErrors] = parseDirectives(`
+      2022-01-01 * "Infer total cost"
+        Assets:Investments  10 HOOL {100 # USD}
+        Equity:Opening-Balances -1009.95 USD
+    `);
+    expect(parseErrors).toEqual([]);
+
+    const [entries, errors] = book(parsed, defaultBeancountOptions());
 
     expect(errors).toEqual([]);
     expect(
