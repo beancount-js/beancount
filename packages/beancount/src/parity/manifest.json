@@ -40,6 +40,14 @@
       "status": "adapted",
       "tests": ["plugins/auto"],
       "reason": "Composes the JavaScript auto-account and implicit-price adapters."
+    },
+    {
+      "upstreamModule": "beancount.ops.compress",
+      "upstreamBehavior": "merge_and_compress_consecutive_transactions",
+      "localBehavior": "merge, compress",
+      "status": "adapted",
+      "tests": ["ops/compress"],
+      "reason": "Uses the JavaScript Transaction model and drops tags, links, and posting metadata as upstream does."
     }
   ]
 }
