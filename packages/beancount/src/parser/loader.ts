@@ -30,12 +30,27 @@ export type DocumentLoader = (
     filenames: Set<string>;
     sources: Array<[string, boolean]>;
   },
-) => string;
+) => string | undefined;
 
-/** A source file supplied by a filesystem, browser directory, or in-memory store. */
-export interface ProjectSource {
+/** A project document supplied by a filesystem, browser, or in-memory adapter. */
+export interface ProjectDocument {
   path: string;
+  contents?: string;
+}
+
+/** A project source with ledger text available for parsing. */
+export interface ProjectSource extends ProjectDocument {
   contents: string;
+}
+
+/**
+ * A bounded project capability for ledger sources and document validation.
+ * Runtime code deliberately depends on this interface rather than Node's
+ * filesystem APIs, so callers can adapt browser and server projects alike.
+ */
+export interface DocumentStore {
+  list(root: string): Iterable<ProjectDocument>;
+  exists(path: string): boolean;
 }
 
 export type ProjectSourceMap = Record<string, string>;
@@ -251,6 +266,36 @@ export function loadProjectSources(
     ...props,
     includeResolver: resolveProjectInclude,
     documentLoader: (filename) => sourceMap[filename],
+  });
+}
+
+/**
+ * Load an entry file from a bounded document store. Only documents with text
+ * content may be parsed as ledger sources; binary documents remain available to
+ * document-validation operations through the same store.
+ */
+export function loadDocumentStore(
+  entryFile: string,
+  store: DocumentStore,
+  props: Partial<LoadProps> = {},
+) {
+  const sourceMap: ProjectSourceMap = {};
+  for (const document of store.list(".")) {
+    const path = normalizeProjectPath(document.path);
+    if (path in sourceMap) {
+      throw new LoadError(`Duplicate project source: "${path}"`, { path });
+    }
+    if (document.contents !== undefined) sourceMap[path] = document.contents;
+  }
+  const root = normalizeProjectPath(entryFile);
+  return parseRecursive([[root, true]], {
+    transform: true,
+    plugins: {},
+    dedent: false,
+    ...props,
+    includeResolver: resolveProjectInclude,
+    documentLoader: (filename) =>
+      store.exists(filename) ? sourceMap[filename] : undefined,
   });
 }
 

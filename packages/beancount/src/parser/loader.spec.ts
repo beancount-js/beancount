@@ -1,6 +1,8 @@
 import { describe, test, expect } from "vitest";
 import {
   DocumentLoader,
+  type DocumentStore,
+  loadDocumentStore,
   loadProjectSources,
   loadString,
   resolveProjectInclude,
@@ -112,6 +114,34 @@ describe("Loader", () => {
         .filter((entry) => entry.directiveType === "open")
         .map((entry) => entry.accounts[0]),
     ).toEqual(["Assets:A", "Assets:B", "Assets:Main"]);
+  });
+
+  test("loads ledgers from a bounded document store without filesystem access", () => {
+    const documents = new Map([
+      [
+        "ledger/main.beancount",
+        'include "accounts.beancount"\n2024-01-01 open Assets:Cash',
+      ],
+      ["ledger/accounts.beancount", "2024-01-01 open Equity:Opening"],
+      ["ledger/2024-01-01-statement.pdf", undefined],
+    ]);
+    const store: DocumentStore = {
+      list() {
+        return [...documents].map(([path, contents]) => ({ path, contents }));
+      },
+      exists(path) {
+        return documents.has(path);
+      },
+    };
+
+    const [entries, errors] = loadDocumentStore("ledger/main.beancount", store);
+
+    expect(errors).toEqual([]);
+    expect(
+      entries
+        .filter((entry) => entry.directiveType === "open")
+        .map((entry) => entry.accounts[0]),
+    ).toEqual(["Equity:Opening", "Assets:Cash"]);
   });
 
   test("rejects includes that escape the project root", () => {
