@@ -239,7 +239,7 @@ export function summarize(
     { "<summarize>": 0 },
   );
 
-  const priceEntries = getLastPriceEntries(summarizingEntries, date);
+  const priceEntries = getLastPriceEntries(entries, date);
   const openEntries = getOpenEntries(entries, date);
 
   const beforeEntries = sorted([

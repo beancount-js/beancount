@@ -1,8 +1,14 @@
 import { describe, test, expect } from "vitest";
 import { loadString } from "../parser/loader";
 import { DateTime } from "luxon";
-import { clear, close, open } from "./summarize";
-import { AccountTypes, computeEntriesBalance, LedgerOption } from "../core";
+import { clear, close, open, summarize } from "./summarize";
+import {
+  AccountTypes,
+  Amount,
+  computeEntriesBalance,
+  LedgerOption,
+  Price,
+} from "../core";
 
 describe("TestOpenClose", () => {
   const INPUT = `
@@ -303,5 +309,26 @@ describe("TestOpenClose", () => {
             Expenses:Taxes               -3,200 USD
             Equity:Earnings:Current       3,200 USD    
         `);
+  });
+});
+
+describe("summarize", () => {
+  test("retains the last historical price from the original ledger", () => {
+    const firstDate = DateTime.fromISO("2024-01-01");
+    const secondDate = DateTime.fromISO("2024-02-01");
+    const cutoff = DateTime.fromISO("2024-03-01");
+    const [entries, index] = summarize(
+      [
+        new Price(firstDate, "HOOL", new Amount("10", "USD")),
+        new Price(secondDate, "HOOL", new Amount("12", "USD")),
+      ],
+      cutoff,
+      "Equity:Opening-Balances",
+    );
+
+    expect(index).toBe(1);
+    expect(entries).toEqual([
+      new Price(secondDate, "HOOL", new Amount("12", "USD")),
+    ]);
   });
 });
