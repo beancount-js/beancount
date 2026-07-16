@@ -223,6 +223,39 @@ describe("book", () => {
     expect(units?.currency).toBe("HOOL");
   });
 
+  test("interpolates a missing price and rejects price interpolation for costed units", () => {
+    // Ported from Beancount's booking_full_test.py::test_incomplete_price.
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Infer price", [
+          new Posting(
+            account,
+            new Amount("125", "CAD"),
+            null,
+            new Amount(null, "USD"),
+          ),
+          new Posting("Assets:Cash", new Amount("-100", "USD")),
+        ]),
+        transaction("2022-01-02", "Reject price on costed units", [
+          new Posting(
+            account,
+            new Amount("10", "HOOL"),
+            new CostSpec(new Decimal("100"), new Decimal("9.95"), "USD"),
+            new Amount(null, "USD"),
+          ),
+          new Posting("Assets:Cash", new Amount("-1009.95", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect((entries[0] as Transaction).postings[0].price?.eq("0.8")).toBe(true);
+    expect((entries[0] as Transaction).postings[0].price?.currency).toBe("USD");
+    expect(errors.map((error) => error.message)).toContain(
+      "Cannot infer price for postings with units held at cost",
+    );
+  });
+
   test("reports an error instead of dividing by zero for total-cost-only unit interpolation", () => {
     const incomplete = transaction("2022-01-01", "Total cost without units", [
       new Posting(

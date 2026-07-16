@@ -167,7 +167,9 @@ function interpolateGroup(
         );
         return;
       }
-    } else if (price && !price.value) {
+    }
+
+    if (price && !price.isDefined()) {
       incomplete.push({ type: MissingTypes.PRICE, index });
     }
   });
@@ -289,6 +291,29 @@ function interpolateGroup(
         });
       } else {
         newPosting = null;
+      }
+    }
+
+    if (type === MissingTypes.PRICE) {
+      const { units, cost, price } = incompletePosting;
+      if (cost !== null) {
+        errors.push(
+          new ValidationError(
+            "Cannot infer price for postings with units held at cost",
+            {
+              directive: incompletePosting,
+              errorType: "InterpolationError",
+            },
+          ),
+        );
+        return [[], errors, true];
+      }
+
+      if (units?.isDefined() && price) {
+        const priceNumber = weight.div(units).abs();
+        newPosting = incompletePosting.copy({
+          price: priceNumber.copy({ currency: price.currency }),
+        });
       }
     }
 
