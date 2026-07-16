@@ -413,10 +413,14 @@ Allowed statuses:
 
 - `matched`: the public behavior and representation both correspond closely.
 - `adapted`: behavior matches but the JS interface or environment differs.
+- `pending`: an in-scope module or behavior has been inventoried but is not yet
+  demonstrated as matched or adapted; it must explain the remaining work.
 - `excluded`: outside the scope in section 2, with a non-empty reason.
 
 `unknown`, missing records, and included behaviors marked `excluded` must fail
-the parity audit.
+the manifest validation. A completion audit must also fail while any `pending`
+records remain; ordinary package checks permit them so incremental slices can
+remain green without misrepresenting unimplemented work as parity.
 
 The oracle fixture generator must:
 
@@ -444,11 +448,14 @@ snapshots automatically.
   weakening the final thresholds.
 
 Progress note (2026-07-16): GPL licensing and attribution are committed. The
-first manifest records and upstream-derived core and loader oracle fixtures are
-committed incrementally; the manifest will expand with each implemented module
-and test family. The package now measures a V8 coverage baseline without
-thresholds; thresholds will be added only after the full module inventory and
-fixture suite are represented.
+pinned checkout's 57 in-scope runtime modules and 56 corresponding upstream
+test modules are recorded in the manifest. Existing translated behavior is
+marked `matched` or `adapted`; the source-aware context renderer, full printer
+surface, and parser-build version behavior are explicitly `pending`, while
+Python-only test helpers and native-parser source hashing are excluded under
+section 2. The package now measures a V8 coverage baseline without thresholds;
+thresholds will be added only after the scenario and fixture suite are
+represented.
 
 Exit criteria:
 
@@ -651,7 +658,7 @@ than automatic merges:
 
 1. Select and record a new upstream commit.
 2. Diff upstream runtime modules and tests against the previous pinned commit.
-3. Add new behaviors and tests to the parity manifest as `unknown` in an audit
+3. Add new behaviors and tests to the parity manifest as `pending` in an audit
    branch.
 4. Classify and implement them before changing the pinned production baseline.
 5. Regenerate only affected fixtures and review semantic differences.
