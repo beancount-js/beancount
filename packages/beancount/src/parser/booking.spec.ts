@@ -1,10 +1,11 @@
 import { describe, expect, test } from "vitest";
 import { DateTime } from "luxon";
+import { Decimal } from "@beancount-js/parser";
 import { Amount } from "../core/amount";
 import { Booking, Open, Posting, Transaction } from "../core/data";
 import { defaultBeancountOptions } from "../core/options";
 import { Inventory } from "../core/inventory";
-import { Cost, Position } from "../core/position";
+import { Cost, CostSpec, Position } from "../core/position";
 import { book, validateMissingEliminated } from "./booking";
 
 const account = "Assets:Investments";
@@ -142,5 +143,37 @@ describe("book", () => {
     expect(errors).toHaveLength(1);
     expect(errors[0].message).toBe("Transaction has incomplete elements");
     expect(errors[0].context.directive).toBe(incomplete);
+  });
+
+  test("resolves per-unit and total cost specifications without treating omitted components as missing", () => {
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Per-unit cost", [
+          new Posting(
+            account,
+            new Amount("2", "HOOL"),
+            new CostSpec(new Decimal("10"), null, "USD"),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-20", "USD")),
+        ]),
+        transaction("2022-01-02", "Total cost", [
+          new Posting(
+            "Assets:Other",
+            new Amount("2", "HOOL"),
+            new CostSpec(null, new Decimal("20"), "USD"),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-20", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    const postings = entries
+      .filter((entry): entry is Transaction => entry instanceof Transaction)
+      .map((entry) => entry.postings[0]);
+    expect(
+      postings.map((posting) => posting.resolvedCost?.amount?.toString()),
+    ).toEqual(["10 USD", "10 USD"]);
   });
 });

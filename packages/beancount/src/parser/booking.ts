@@ -153,10 +153,8 @@ function interpolateGroup(
     }
 
     if (cost instanceof CostSpec) {
-      if (!cost.numberPer) {
+      if (cost.numberPer === null && cost.numberTotal === null) {
         incomplete.push({ type: MissingTypes.COST_PER, index });
-      }
-      if (!cost.numberTotal) {
         incomplete.push({ type: MissingTypes.COST_TOTAL, index });
       }
     } else if (cost instanceof Cost) {
@@ -736,7 +734,7 @@ function computeCost(cost: Cost | CostSpec | null, units: Amount | null) {
     return null;
   }
 
-  if (!cost.numberPer || !cost.numberTotal) {
+  if (cost.numberPer === null && cost.numberTotal === null) {
     return null;
   }
 
@@ -744,11 +742,11 @@ function computeCost(cost: Cost | CostSpec | null, units: Amount | null) {
 
   if (cost.numberTotal !== null) {
     let costTotal = new Amount(cost.numberTotal);
-    if (cost.numberPer) {
+    if (cost.numberPer !== null) {
       costTotal = costTotal.add(units.abs().mul(cost.numberPer));
     }
     return costTotal.div(units.abs()).copy({ currency: currency });
   } else {
-    return new Amount(cost.numberPer, currency);
+    return new Amount(cost.numberPer!, currency);
   }
 }

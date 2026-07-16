@@ -2,6 +2,14 @@
   "upstreamCommit": "a3cb3fd9f946d6213dd350fb87709a8ef198301d",
   "records": [
     {
+      "upstreamModule": "beancount.parser.booking",
+      "upstreamBehavior": "per_unit_and_total_cost_spec_resolution",
+      "localBehavior": "book, computeCost",
+      "status": "adapted",
+      "tests": ["parser/booking"],
+      "reason": "Treats an omitted CostSpec component as syntax absence, not an unresolved field."
+    },
+    {
       "upstreamModule": "beancount.core.inventory",
       "upstreamBehavior": "exact_lot_mutation_copying_and_counter_reductions",
       "localBehavior": "Inventory, CounterInventory",
