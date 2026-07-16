@@ -156,6 +156,8 @@ function interpolateGroup(
       if (cost.numberPer === null && cost.numberTotal === null) {
         incomplete.push({ type: MissingTypes.COST_PER, index });
         incomplete.push({ type: MissingTypes.COST_TOTAL, index });
+      } else if (cost.numberPer === null) {
+        incomplete.push({ type: MissingTypes.COST_PER, index });
       }
     } else if (cost instanceof Cost) {
       if (!cost.amount?.value) {
@@ -291,6 +293,17 @@ function interpolateGroup(
         });
       } else {
         newPosting = null;
+      }
+    }
+
+    if (type === MissingTypes.COST_PER) {
+      const { units, cost } = incompletePosting;
+      if (cost instanceof CostSpec && units?.isDefined() && !units.zero) {
+        const costTotal = cost.numberTotal ?? Decimal.ZERO;
+        const numberPer = weight.minus(costTotal).div(units);
+        newPosting = incompletePosting.copy({
+          cost: cost.copy({ numberPer: numberPer.value }),
+        });
       }
     }
 

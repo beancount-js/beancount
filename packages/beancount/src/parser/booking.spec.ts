@@ -256,6 +256,30 @@ describe("book", () => {
     );
   });
 
+  test("interpolates a missing per-unit cost from the transaction residual", () => {
+    // Ported from Beancount's booking_full_test.py::test_incomplete_cost_per.
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Infer cost per unit", [
+          new Posting(
+            account,
+            new Amount("10", "HOOL"),
+            new CostSpec(null, new Decimal("9.95"), "USD"),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-1009.95", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    expect(
+      (entries[0] as Transaction).postings[0].resolvedCost?.amount?.eq(
+        new Amount("100.995", "USD"),
+      ),
+    ).toBe(true);
+  });
+
   test("reports an error instead of dividing by zero for total-cost-only unit interpolation", () => {
     const incomplete = transaction("2022-01-01", "Total cost without units", [
       new Posting(
