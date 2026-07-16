@@ -212,6 +212,7 @@ function interpolateGroup(
     let weight: Amount = new Amount(0, currency);
     if (!residual.empty) {
       const respos = residual.positions[0];
+      /* v8 ignore next -- computeResidual always returns uncosted weights. */
       if (respos.cost !== null) {
         errors.push(
           new ValidationError(
@@ -691,6 +692,9 @@ function bookReductions(
     const balance = localBalances[account];
 
     if (cost === null || units === null || !units.isDefined()) {
+      if (cost instanceof CostSpec && !cost.date) {
+        posting = posting.copy({ cost: cost.copy({ date: entry.date }) });
+      }
       bookedPostings.push(posting);
     } else {
       const method = bookingMethods[account] ?? defaultBooking;

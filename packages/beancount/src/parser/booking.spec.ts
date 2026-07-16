@@ -146,6 +146,19 @@ describe("book", () => {
     expect(errors[0].context.directive).toBe(incomplete);
   });
 
+  test("reports unresolved cost specifications during final validation", () => {
+    const incomplete = transaction("2022-01-01", "Missing cost number", [
+      new Posting(
+        account,
+        new Amount("1", "HOOL"),
+        new CostSpec(new Decimal("10"), null, "USD"),
+      ),
+      new Posting("Equity:Opening-Balances", new Amount("-10", "USD")),
+    ]);
+
+    expect(validateMissingEliminated([incomplete])).toHaveLength(1);
+  });
+
   test("reports an incomplete resolved cost without evaluating its missing number", () => {
     const [, errors] = book(
       [
@@ -339,6 +352,66 @@ describe("book", () => {
     expect((errors[0].context.directive as Posting).account).toBe(account);
   });
 
+  test("rejects missing units when a zero per-unit cost cannot determine them", () => {
+    const [, errors] = book(
+      [
+        transaction("2022-01-01", "Zero per-unit cost", [
+          new Posting(
+            account,
+            new Amount(null, "HOOL"),
+            new CostSpec(new Decimal(0), new Decimal("10"), "USD"),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-10", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors.map((error) => error.message)).toContain(
+      "Cannot infer per-unit cost only from total",
+    );
+  });
+
+  test("infers missing units for a costed automatic posting", () => {
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Infer costed units", [
+          new Posting(
+            account,
+            new Amount(null, "HOOL"),
+            new CostSpec(new Decimal("10"), null, "USD"),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-20", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    const inferred = (entries[0] as Transaction).postings[0];
+    expect(inferred.units?.eq(new Amount("2", "HOOL"))).toBe(true);
+    expect(inferred.resolvedCost?.amount?.toString()).toBe("10 USD");
+  });
+
+  test("infers a costed automatic posting whose unit currency is omitted", () => {
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Missing inferred unit currency", [
+          new Posting(
+            account,
+            null,
+            new CostSpec(new Decimal("10"), null, "USD"),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-20", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    expect((entries[0] as Transaction).postings[0].units?.currency).toBe("USD");
+  });
+
   test("reports multiple automatic postings before attempting interpolation", () => {
     const [, errors] = book(
       [
@@ -383,6 +456,44 @@ describe("book", () => {
     expect(
       errors.some((error) => error.message.includes("No position matches")),
     ).toBe(true);
+  });
+
+  test("matches a reduction after skipping an otherwise identical lot in another cost currency", () => {
+    const date = DateTime.fromISO("2022-01-01");
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Buy CAD lot", [
+          new Posting(
+            account,
+            new Amount("1", "HOOL"),
+            new Cost(date, new Amount("10", "CAD")),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-10", "CAD")),
+        ]),
+        transaction("2022-01-02", "Buy USD lot", [
+          new Posting(
+            account,
+            new Amount("1", "HOOL"),
+            new Cost(date, new Amount("10", "USD")),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-10", "USD")),
+        ]),
+        transaction("2022-01-03", "Sell USD lot", [
+          new Posting(
+            account,
+            new Amount("-1", "HOOL"),
+            new CostSpec(null, null, "USD"),
+          ),
+          new Posting("Assets:Cash", new Amount("10", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    expect(
+      (entries[2] as Transaction).postings[0].resolvedCost?.amount?.currency,
+    ).toBe("USD");
   });
 
   test("does not match a costed reduction against an uncosted inventory position", () => {
