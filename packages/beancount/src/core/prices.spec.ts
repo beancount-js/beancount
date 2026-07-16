@@ -7,6 +7,7 @@ import {
   BaseQuote,
   getLastPriceEntries,
   PriceMap,
+  PricePoint,
   normalizeBaseQuote,
 } from "./prices";
 
@@ -81,5 +82,31 @@ describe("PriceMap", () => {
         (entry) => entry.amount.toString(),
       ),
     ).toEqual(["1.3 USD"]);
+  });
+
+  test("retains the lexical direction for tied inverse pairs and accepts sparse quotes", () => {
+    const baseQuote = new BaseQuote("EUR", "USD");
+    expect(normalizeBaseQuote(baseQuote)).toBe(baseQuote);
+    expect(new BaseQuote(null, null).hash).toBe("");
+    expect(BaseQuote.from("EUR").hash).toBe("EUR");
+    expect(
+      new PricePoint(DateTime.fromISO("2024-02-03"), new Decimal("1.25")).hash,
+    ).toBe("2024-02-03 1.25");
+
+    const entries = [
+      price("2024-01-01", "USD", "0.5", "EUR"),
+      price("2024-01-01", "EUR", "2", "USD"),
+    ];
+    const prices = new PriceMap(entries);
+
+    expect(prices.forwardPairs.map((pair) => pair.hash)).toEqual(["EUR USD"]);
+    expect(prices.commodityPairs(["EUR"]).map((pair) => pair.hash)).toEqual([
+      "EUR USD",
+    ]);
+    expect(
+      getLastPriceEntries(entries, DateTime.fromISO("2024-01-02")).map(
+        (entry) => entry.amount.toString(),
+      ),
+    ).toEqual(["0.5 EUR", "2 USD"]);
   });
 });
