@@ -136,6 +136,14 @@
       "status": "adapted",
       "tests": ["plugins/commodity-attr"],
       "reason": "Parses safe YAML or JSON configuration instead of Python eval."
+    },
+    {
+      "upstreamModule": "beancount.plugins.coherent_cost",
+      "upstreamBehavior": "validate_coherent_cost",
+      "localBehavior": "validateCoherentCost",
+      "status": "adapted",
+      "tests": ["plugins/coherent-cost"],
+      "reason": "Uses local Posting cost models and ValidationError contexts."
     }
   ]
 }
