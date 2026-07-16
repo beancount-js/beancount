@@ -14,6 +14,7 @@
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type { IngestionConfigResponse } from "../ingestion/types";
   import IngestionMerchantSheet from "./IngestionMerchantSheet.svelte";
+  import MerchantsPageSkeleton from "./skeletons/MerchantsPageSkeleton.svelte";
 
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
   const { snapshot } = useStudioWorkspace();
@@ -397,11 +398,7 @@
       </div>
 
       {#if loading && !clusters.length}
-        <div
-          class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-        >
-          Loading merchants…
-        </div>
+        <MerchantsPageSkeleton />
       {:else if !clusters.length}
         <div
           class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"

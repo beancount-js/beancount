@@ -29,6 +29,7 @@
     RulesResponse,
   } from "../rules/types";
   import RuleEditorSheet from "./RuleEditorSheet.svelte";
+  import RulesPageSkeleton from "./skeletons/RulesPageSkeleton.svelte";
 
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
   const { snapshot } = useStudioWorkspace();
@@ -336,11 +337,7 @@
       </Empty.Root>
     {:else}
       {#if loading && !rules.length}
-        <div
-          class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-        >
-          Loading rules…
-        </div>
+        <RulesPageSkeleton />
       {:else if !rules.length}
         <Empty.Root class="min-h-48 border">
           <Empty.Header>

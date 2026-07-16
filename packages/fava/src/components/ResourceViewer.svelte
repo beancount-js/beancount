@@ -1,3 +1,5 @@
+<svelte:options runes={false} />
+
 <script lang="ts">
   import { onDestroy } from "svelte";
   import FileWarning from "lucide-svelte/icons/file-warning";
@@ -6,6 +8,7 @@
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
   import * as ScrollArea from "$lib/components/ui/scroll-area";
+  import ResourceViewerSkeleton from "./skeletons/ResourceViewerSkeleton.svelte";
 
   const { router } = useNavigation();
   const { activeRoute } = router;
@@ -90,8 +93,6 @@
       <pre class="p-3 text-sm">{text}</pre>
     </ScrollArea.Root>
   {:else}
-    <div class="rounded-md border p-4 text-sm text-muted-foreground">
-      Loading resource…
-    </div>
+    <ResourceViewerSkeleton />
   {/if}
 </section>

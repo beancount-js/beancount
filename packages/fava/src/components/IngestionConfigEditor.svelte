@@ -28,6 +28,7 @@
     type EditableIngestionSource,
   } from "../ingestion/source-form";
   import type { IngestionConfigResponse } from "../ingestion/types";
+  import SourcesPageSkeleton from "./skeletons/SourcesPageSkeleton.svelte";
   import IngestionSourceForm, {
     sourceFormSectionIds,
   } from "./IngestionSourceForm.svelte";
@@ -377,15 +378,7 @@
         >
       </Alert.Root>
     {:else if !config}
-      <Empty.Root class="min-h-64 border">
-        <Empty.Header>
-          <Empty.Media variant="icon"><FileCode2 /></Empty.Media>
-          <Empty.Title>Loading sources</Empty.Title>
-          <Empty.Description
-            >Reading the local project ingestion configuration.</Empty.Description
-          >
-        </Empty.Header>
-      </Empty.Root>
+      <SourcesPageSkeleton />
     {:else}
       <div class="flex min-w-0 flex-col gap-6">
         <YamlBackedForm

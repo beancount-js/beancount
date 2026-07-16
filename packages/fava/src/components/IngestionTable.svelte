@@ -27,6 +27,7 @@
   import { Progress } from "$lib/components/ui/progress";
   import * as ToggleGroup from "$lib/components/ui/toggle-group";
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
+  import ReviewImportsSkeleton from "./skeletons/ReviewImportsSkeleton.svelte";
 
   const PAGE_SIZES = [25, 50, 100];
 
@@ -800,7 +801,9 @@
 
     {#if status}<p class="text-sm text-muted-foreground">{status}</p>{/if}
 
-    {#if activeRuns.length}
+    {#if loading && !activeRuns.length && !isWeb && project}
+      <ReviewImportsSkeleton />
+    {:else if activeRuns.length}
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 class="text-lg font-semibold">Review</h2>

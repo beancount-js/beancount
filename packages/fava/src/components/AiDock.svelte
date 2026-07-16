@@ -1,3 +1,5 @@
+<svelte:options runes={false} />
+
 <script lang="ts">
   import { onMount } from "svelte";
   import Brain from "lucide-svelte/icons/brain";
@@ -29,6 +31,7 @@
   } from "$lib/ai/chat";
   import type { InlineAiRequest } from "../studio/workspace";
   import AiUnifiedReviewDiff from "./AiUnifiedReviewDiff.svelte";
+  import AiDockSkeleton from "./skeletons/AiDockSkeleton.svelte";
 
   type ModelOption = { value: string; label: string };
   type Mention = { path: string };
@@ -418,11 +421,7 @@
     <ScrollArea.Root class="min-h-0 flex-1">
       <div class="flex min-h-full flex-col gap-3 p-3">
         {#if loadingSession}
-          <div
-            class="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground"
-          >
-            <LoaderCircle class="animate-spin" /> Loading chat…
-          </div>
+          <AiDockSkeleton />
         {:else if !hasProject}
           <div
             class="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground"

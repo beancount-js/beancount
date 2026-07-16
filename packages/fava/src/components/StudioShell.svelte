@@ -24,6 +24,7 @@
   } from "@beancount-js/forms";
   import StudioShellHeader from "./StudioShellHeader.svelte";
   import IngestionHeaderActions from "./IngestionHeaderActions.svelte";
+  import RouteLoadingSkeleton from "./skeletons/RouteLoadingSkeleton.svelte";
   import { activeSyncTracks } from "../studio/sync-status";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
@@ -521,6 +522,8 @@
       <div class="min-h-0 min-w-0 flex-1 overflow-hidden">
         {#if snapshot}
           <slot></slot>
+        {:else if status.startsWith("Loading")}
+          <RouteLoadingSkeleton />
         {:else}
           <Empty.Root>
             <Empty.Header>
@@ -536,7 +539,7 @@
                 <FolderOpen data-icon="inline-start" />
                 Open project
               </Button>
-              {#if status && !status.startsWith("Loading") && !status.startsWith("Add a local")}
+              {#if status && !status.startsWith("Add a local")}
                 <Empty.Description role="alert" class="text-destructive">
                   {status}
                 </Empty.Description>

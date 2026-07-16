@@ -25,6 +25,7 @@
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import { isSecretConfigured } from "../ingestion/secret-ref";
+  import AccountsPageSkeleton from "./skeletons/AccountsPageSkeleton.svelte";
   import {
     editableIngestionConfig,
     type EditableIngestionConfig,
@@ -564,15 +565,7 @@
         >
       </Alert.Root>
     {:else if loading && !config}
-      <Empty.Root class="min-h-64 border">
-        <Empty.Header>
-          <Empty.Media variant="icon"><Landmark /></Empty.Media>
-          <Empty.Title>Loading accounts</Empty.Title>
-          <Empty.Description
-            >Reading connected providers from the ingestion config.</Empty.Description
-          >
-        </Empty.Header>
-      </Empty.Root>
+      <AccountsPageSkeleton />
     {:else if !connections.length}
       <Empty.Root class="min-h-64 border">
         <Empty.Header>
