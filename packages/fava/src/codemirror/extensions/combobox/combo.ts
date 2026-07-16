@@ -35,7 +35,9 @@ class ComboWidget extends WidgetType {
   }
 
   toDOM(view: EditorView) {
+    // Zero-width host so the icon does not contribute to CodeMirror line wrapping.
     const span = document.createElement("span");
+    span.className = "cm-account-combo-host";
     mount(ComboWidgetComponent, {
       target: span,
       props: {

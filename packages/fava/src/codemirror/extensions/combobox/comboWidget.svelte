@@ -92,16 +92,30 @@
 {/if}
 
 <style>
+  /* Zero horizontal width so CodeMirror does not wrap the line for the icon. */
+  :global(.cm-account-combo-host) {
+    display: inline-block;
+    position: relative;
+    width: 0;
+    height: 1em;
+    overflow: visible;
+    vertical-align: text-bottom;
+  }
+
   :global(.cm-account-combo) {
-    display: inline-flex;
-    width: auto;
-    margin-left: 0.15rem;
-    vertical-align: middle;
+    position: absolute;
+    left: 0.15rem;
+    top: 50%;
+    z-index: 1;
+    display: block;
+    width: max-content;
+    transform: translateY(-50%);
   }
 
   :global(.cm-account-combo__trigger) {
-    min-width: 1.25rem;
-    height: 1.25rem;
+    min-width: 1rem;
+    width: 1rem;
+    height: 1rem;
     padding: 0;
   }
 </style>
