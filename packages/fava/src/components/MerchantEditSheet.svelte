@@ -224,10 +224,8 @@
       );
       merchant = editableMerchantFromDetails(response);
       onUpdated?.();
-      if (saveState !== "dirty") {
-        status = "Saved.";
-        saveState = "saved";
-      }
+      status = "Saved.";
+      saveState = "saved";
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
       saveState = "error";
@@ -318,7 +316,6 @@
                   ? "Expand all"
                   : "Collapse all"}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   toggleCollapseAll();
                 }}
               >
@@ -385,6 +382,7 @@
                     value={merchant}
                     config={merchantDetailsForm}
                     embedded
+                    context={undefined}
                     {issues}
                     onChange={updateMerchant}
                   />

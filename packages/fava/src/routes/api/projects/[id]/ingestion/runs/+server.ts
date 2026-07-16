@@ -43,7 +43,7 @@ export async function POST({
     const source = await store.source(params.id, sourceId);
     let state = await store.readState(params.id);
     const detectionRules = await serverRules().listActive(params.id);
-    const runs = await ingestSource(
+    const { runs, syncStatePatches } = await ingestSource(
       source,
       state,
       entries,
@@ -55,7 +55,9 @@ export async function POST({
       },
     );
     for (const run of runs) {
-      await store.saveRun(params.id, run);
+      await store.saveRun(params.id, run, {
+        syncState: syncStatePatches[run.sourceId],
+      });
       state = await store.readState(params.id);
     }
     return json(runs.length === 1 ? runs[0] : { runs }, { status: 201 });

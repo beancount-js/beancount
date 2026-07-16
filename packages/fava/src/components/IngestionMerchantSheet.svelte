@@ -224,7 +224,7 @@
     >
       <Sheet.Title
         bind:ref={sheetTitleEl}
-        tabindex="-1"
+        tabindex={-1}
         class="merchant-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
       >
         Review Merchant
@@ -246,7 +246,6 @@
                   ? "Expand all"
                   : "Collapse all"}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   toggleCollapseAll();
                 }}
               >
@@ -274,7 +273,6 @@
                 aria-label="Detect merchant"
                 disabled={busy}
                 onclick={(event) => {
-                  props.onclick?.(event);
                   void detectMerchant();
                 }}
               >
