@@ -2,10 +2,14 @@ import { DateTime } from "luxon";
 import { describe, expect, test } from "vitest";
 import { Amount, Cost, Posting, Transaction } from "../core";
 import {
+  type CommodityLifetimes,
+  commodityPairFromKey,
   commodityPairKey,
+  compressLifetimesDays,
   compressIntervalsDays,
   getCommodityLifetimes,
   requiredDailyPrices,
+  requiredWeeklyPrices,
   trimIntervals,
 } from "./lifetimes";
 
@@ -68,5 +72,50 @@ describe("commodity lifetimes", () => {
       true,
     );
     expect(daily).toEqual([]);
+  });
+
+  test("round-trips pair keys and preserves separated interval boundaries", () => {
+    const intervals = [
+      [date("2024-01-01"), date("2024-01-02")],
+      [date("2024-01-10"), null],
+    ] as const;
+    const key = commodityPairKey(["AAPL", "USD"]);
+
+    expect(commodityPairFromKey(key)).toEqual(["AAPL", "USD"]);
+    expect(commodityPairFromKey(commodityPairKey(["USD", null]))).toEqual([
+      "USD",
+      null,
+    ]);
+    expect(compressIntervalsDays(intervals, 2)).toEqual(intervals);
+    expect(
+      compressLifetimesDays(new Map([[key, [...intervals]]]), 2).get(key),
+    ).toEqual(intervals);
+    expect(() =>
+      trimIntervals(intervals, date("2024-02-01"), date("2024-01-01")),
+    ).toThrow("Trim end date is before start date");
+  });
+
+  test("enumerates daily and weekly price requirements only for costed lifetimes", () => {
+    const lifetimes: CommodityLifetimes = new Map([
+      [
+        commodityPairKey(["AAPL", "USD"]),
+        [[date("2024-01-01"), date("2024-01-03")]],
+      ],
+      [commodityPairKey(["USD", null]), [[date("2024-01-01"), null]]],
+    ]);
+
+    expect(
+      requiredDailyPrices(lifetimes, date("2024-01-10")).map(
+        ([when, base, quote]) => [when.toISODate(), base, quote],
+      ),
+    ).toEqual([
+      ["2024-01-01", "AAPL", "USD"],
+      ["2024-01-02", "AAPL", "USD"],
+    ]);
+    expect(
+      requiredWeeklyPrices(lifetimes, date("2024-01-10")).map(
+        ([when, base, quote]) => [when.toISODate(), base, quote],
+      ),
+    ).toEqual([["2023-12-29", "AAPL", "USD"]]);
   });
 });
