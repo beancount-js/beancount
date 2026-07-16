@@ -3,34 +3,45 @@ import { DateTime } from "luxon";
 import { Amount } from "./amount";
 import {
   Balance,
+  CodeBlock,
   Close,
+  Commodity,
+  Custom,
   Document,
+  Event,
   findAccountsWithComponent,
-  findClosestSource,
-  hasEntryAccountComponent,
   findClosest,
+  findClosestSource,
   iterateEntryRange,
-  Open,
-  Posting,
-  removePosting,
-  removeAccountPostings,
-  createSimplePosting,
-  createSimplePostingWithCost,
-  directiveSortKey,
-  filterPostings,
-  filterTransactions,
-  getEntry,
+  hasEntryAccountComponent,
   isDirective,
   isInstanceOf,
+  LedgerInclude,
+  LedgerOption,
   newMetadata,
+  Note,
+  Open,
   optionKey,
+  Pad,
+  Plugin,
+  Posting,
   postingHasConversion,
+  Price,
+  Query,
+  removeAccountPostings,
+  removePosting,
   SOURCE_META,
   sorted,
   Transaction,
   transactionHasConversion,
   TxnPosting,
   writeScalar,
+  createSimplePosting,
+  createSimplePostingWithCost,
+  directiveSortKey,
+  filterPostings,
+  filterTransactions,
+  getEntry,
 } from "./data";
 
 describe("Transaction metadata", () => {
@@ -55,6 +66,54 @@ describe("Transaction metadata", () => {
 });
 
 describe("directive helpers", () => {
+  test("renders every directive family through its public model", () => {
+    const date = DateTime.fromISO("2024-01-01");
+    const block = new CodeBlock("SELECT 1", "sql", "SELECT 1");
+    const directives = [
+      new Commodity(date, "HOOL", { note: "stock" }),
+      new Pad(date, "Assets:Cash", "Equity:Opening-Balances"),
+      new Balance(date, "Assets:Cash", new Amount("10", "USD")),
+      new Note(date, "Assets:Cash", "checked", ["review"], ["ticket"]),
+      new Event(date, "location", "London"),
+      new Query(date, "accounts", block),
+      new LedgerOption("title", "Ledger"),
+      new LedgerInclude("includes/accounts.bean"),
+      new Plugin("example.plugin", block),
+      new Price(date, "HOOL", new Amount("10", "USD")),
+      new Document(date, "Assets:Cash", "statement.pdf", ["tax"], ["file"]),
+      new Custom(date, "budget", [
+        "Assets:Cash",
+        true,
+        new Amount("10", "USD"),
+      ]),
+    ];
+    const rendered = directives
+      .map((directive) => directive.toString())
+      .join("\n");
+
+    expect(directives.map((directive) => directive.directiveType)).toEqual([
+      "commodity",
+      "pad",
+      "balance",
+      "note",
+      "event",
+      "query",
+      "option",
+      "include",
+      "plugin",
+      "price",
+      "document",
+      "custom",
+    ]);
+    expect(rendered).toContain('2024-01-01 event "location" "London"');
+    expect(rendered).toContain(
+      '2024-01-01 custom "budget" "Assets:Cash" TRUE 10 USD',
+    );
+    expect(directives[5].accounts).toEqual([]);
+    expect(directives[10].accounts).toEqual(["Assets:Cash"]);
+    expect((directives[5] as Query).query).toBe("SELECT 1");
+  });
+
   test("creates source metadata and immutable simple postings", () => {
     const date = DateTime.fromISO("2024-01-01");
     const transaction = new Transaction(date, "*", "", "");
