@@ -112,6 +112,14 @@
       "status": "adapted",
       "tests": ["plugins/check-closing"],
       "reason": "Uses immutable JavaScript posting copies and Luxon day arithmetic."
+    },
+    {
+      "upstreamModule": "beancount.plugins.check_drained",
+      "upstreamBehavior": "insert_zero_balances_for_closed_balance_sheet_accounts",
+      "localBehavior": "checkDrained",
+      "status": "adapted",
+      "tests": ["plugins/check-drained"],
+      "reason": "Uses local account types and Luxon day arithmetic."
     }
   ]
 }
