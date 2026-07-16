@@ -126,9 +126,6 @@ export async function PATCH({
     const notFound =
       message.includes("ENOENT") ||
       /no such file|not found|missing/i.test(message);
-    return json(
-      { error: message },
-      { status: notFound ? 404 : 400 },
-    );
+    return json({ error: message }, { status: notFound ? 404 : 400 });
   }
 }
