@@ -6,7 +6,7 @@
       "upstreamBehavior": "per_unit_and_total_cost_spec_resolution",
       "localBehavior": "book, computeCost",
       "status": "adapted",
-      "tests": ["parser/booking"],
+      "tests": ["parser/booking", "parity/booking/per-unit-cost"],
       "reason": "Treats an omitted CostSpec component as syntax absence, not an unresolved field."
     },
     {

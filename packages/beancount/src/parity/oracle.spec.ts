@@ -1,13 +1,31 @@
 import { describe, expect, test } from "vitest";
 import { DateTime } from "luxon";
 import { getLastPriceEntries } from "../core/prices";
+import { Transaction } from "../core/data";
 import { loadProjectSources, loadString } from "../parser/loader";
 import { canonicalize } from "./canonical";
 import loaderFixture from "./fixtures/loader-recursive-relative-includes.json";
 import pricesFixture from "./fixtures/prices-last-price-entries.json";
+import bookingFixture from "./fixtures/booking-per-unit-cost.json";
 import { UPSTREAM_COMMIT } from "./manifest";
 
 describe("upstream oracle fixtures", () => {
+  test("parity/booking/per-unit-cost", () => {
+    expect(bookingFixture.upstream.commit).toBe(UPSTREAM_COMMIT);
+    const [entries, errors] = loadString(bookingFixture.ledger);
+
+    expect(errors).toEqual([]);
+    const entry = entries.find(
+      (directive): directive is Transaction => directive instanceof Transaction,
+    );
+    expect(entry?.postings[0].resolvedCost?.amount?.toString()).toBe(
+      bookingFixture.expected.cost,
+    );
+    expect(entry?.postings[0].resolvedCost?.date?.toISODate()).toBe(
+      bookingFixture.expected.date,
+    );
+  });
+
   test("parity/prices/last-price-entries", () => {
     expect(pricesFixture.upstream.commit).toBe(UPSTREAM_COMMIT);
     const [entries, errors] = loadString(pricesFixture.ledger, {
