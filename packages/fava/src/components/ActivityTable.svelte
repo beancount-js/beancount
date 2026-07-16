@@ -408,6 +408,7 @@
           class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
         >
           {#each group.records as record, index}
+            {@const logo = recordLogo(record)}
             <div
               role="button"
               tabindex="0"
@@ -429,7 +430,6 @@
                     (event.currentTarget as HTMLInputElement).checked,
                   )}
               />
-              {@const logo = recordLogo(record)}
               {#if logo && !failedLogoKeys.has(record.key)}
                 <img
                   class="size-10 rounded-full border object-contain"
