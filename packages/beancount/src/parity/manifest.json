@@ -152,6 +152,14 @@
       "status": "adapted",
       "tests": ["plugins/check-commodity"],
       "reason": "Uses safe YAML or JSON regexp configuration and local metadata objects."
+    },
+    {
+      "upstreamModule": "beancount.plugins.check_average_cost",
+      "upstreamBehavior": "validate_average_cost",
+      "localBehavior": "validateAverageCost",
+      "status": "adapted",
+      "tests": ["plugins/check-average-cost"],
+      "reason": "Uses local Inventory averaging and safe numeric configuration parsing."
     }
   ]
 }

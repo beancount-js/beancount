@@ -12,6 +12,7 @@ export * from "./plugins/close_tree";
 export * from "./plugins/commodity_attr";
 export * from "./plugins/coherent_cost";
 export * from "./plugins/check_closing";
+export * from "./plugins/check_average_cost";
 export * from "./plugins/check_commodity";
 export * from "./plugins/check_drained";
 export * from "./plugins/unique_prices";
