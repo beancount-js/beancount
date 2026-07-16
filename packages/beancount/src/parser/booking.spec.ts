@@ -460,6 +460,22 @@ describe("book", () => {
     );
   });
 
+  test("infers an omitted units currency from the other posting", () => {
+    // Ported from Beancount's booking_full_test.py::test_categorize__units__ambiguous.
+    const [entries, errors] = book(
+      [
+        transaction("2022-01-01", "Infer units currency", [
+          new Posting("Assets:Account", new Amount("100", null)),
+          new Posting("Assets:Other", new Amount("-100", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(errors).toEqual([]);
+    expect((entries[0] as Transaction).postings[0].units?.currency).toBe("USD");
+  });
+
   test("filters candidate lots by every specified reduction attribute", () => {
     const wantedDate = DateTime.fromISO("2022-01-01");
     const balances = {

@@ -493,8 +493,9 @@ function groupByCurrency(
   if (unknown.length == 1 && groupKeys.length == 1) {
     let { index, unitsCurrency, costCurrency, priceCurrency } = unknown.pop()!;
     const otherCurrency = groupKeys[0];
+    const posting = transaction.postings[index];
 
-    if (priceCurrency === null && costCurrency === null) {
+    if (posting.cost === null && posting.price === null) {
       unitsCurrency = otherCurrency;
     } else {
       if (!priceCurrency) {
