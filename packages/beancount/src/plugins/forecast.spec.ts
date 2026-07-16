@@ -121,4 +121,34 @@ describe("forecast plugin", () => {
     expect(errors).toHaveLength(1);
     expect(errors[0].message).toContain("Invalid forecast value for 'end'");
   });
+
+  test("supports yearly, daily, skip, and until recurrence variants", () => {
+    const yearly = forecastTransaction("Insurance [YEARLY REPEAT 2 TIMES]");
+    const weekly = forecastTransaction(
+      "Gym [WEEKLY SKIP 1 TIME REPEAT 2 TIMES]",
+    );
+    const daily = forecastTransaction("Coffee [DAILY UNTIL 2024-01-03]");
+
+    const [entries, errors] = forecast(
+      [yearly, weekly, daily],
+      defaultBeancountOptions(),
+      "now: 2024-01-01",
+    );
+
+    expect(errors).toEqual([]);
+    expect(
+      entries.map((entry) => [
+        entry.date?.toISODate(),
+        (entry as Transaction).narration.trim(),
+      ]),
+    ).toEqual([
+      ["2024-01-01", "Insurance"],
+      ["2024-01-01", "Gym"],
+      ["2024-01-01", "Coffee"],
+      ["2024-01-02", "Coffee"],
+      ["2024-01-03", "Coffee"],
+      ["2024-01-15", "Gym"],
+      ["2025-01-01", "Insurance"],
+    ]);
+  });
 });
