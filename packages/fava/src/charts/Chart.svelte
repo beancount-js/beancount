@@ -32,12 +32,12 @@
   const treemapCurrencies = writable<string[]>([]);
   const legend = writable<[string, string | null][]>([]);
 
-  function updateConversion(value: { value: string; label: string }) {
-    conversion.set(getConversion(value.value));
+  function updateConversion(value: string) {
+    conversion.set(getConversion(value));
   }
 
-  function updateInterval(value: { value: string; label: string }) {
-    interval.set(getInterval(value.value));
+  function updateInterval(value: string) {
+    interval.set(getInterval(value));
   }
 </script>
 
@@ -56,8 +56,9 @@
     <div class="flex">
       {#if !hideButtons}
         <Select.Root
-          selected={{ value: $conversion, label: conversionLabel($conversion) }}
-          onSelectedChange={updateConversion}
+          type="single"
+          value={$conversion}
+          onValueChange={updateConversion}
         >
           <Select.Trigger class="mr-1 w-[150px]">
             {conversionLabel($conversion) || "At Cost"}
@@ -69,8 +70,9 @@
           </Select.Content>
         </Select.Root>
         <Select.Root
-          selected={{ value: $interval, label: intervalLabel($interval) }}
-          onSelectedChange={updateInterval}
+          type="single"
+          value={$interval}
+          onValueChange={updateInterval}
         >
           <Select.Trigger class="mr-1 w-auto">
             {intervalLabel($interval) || "Monthly"}

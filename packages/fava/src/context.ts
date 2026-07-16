@@ -14,12 +14,8 @@ import {
   LoadError,
   sorted,
 } from "@beancount-js/beancount";
-import {
-  DEFAULT_INTERVAL,
-  Filter,
-  parseQuery,
-  type Interval,
-} from "@beancount-js/filters";
+import { Filter, parseQuery } from "@beancount-js/filters";
+import { DEFAULT_INTERVAL, type Interval } from "./lib/interval";
 import type { DateTime } from "luxon";
 import type { FavaOptions, LedgerOptions } from "./options";
 import { LedgerSource, type LedgerData } from "./core/ledger";

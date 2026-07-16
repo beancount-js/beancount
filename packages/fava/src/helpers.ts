@@ -1,4 +1,5 @@
 import { formatDate } from "@beancount-js/parser";
+import type { DateTime } from "luxon";
 import { buildLedgerHref, splitViewAndQuery } from "./lib/ledger-route";
 import { getStudioRouteEnv } from "./lib/studio-route-env";
 
@@ -42,7 +43,7 @@ export function urlForAccount(
 }
 
 export function urlForDate(
-  date: Date | null | undefined,
+  date: Date | DateTime | null | undefined,
   params?: Record<string, string>,
 ) {
   if (!date) {
