@@ -13,7 +13,7 @@ describe("parity manifest", () => {
 
   test("does not report completion while in-scope work is pending", () => {
     expect(validateParityCompletion(manifest as ParityManifest)).toHaveLength(
-      2,
+      1,
     );
   });
 });

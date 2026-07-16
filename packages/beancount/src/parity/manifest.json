@@ -540,10 +540,10 @@
     {
       "upstreamModule": "beancount.parser.context",
       "upstreamBehavior": "render_entry_and_file_context",
-      "localBehavior": "not implemented",
-      "status": "pending",
-      "tests": [],
-      "reason": "The browser-safe text context renderer and its source-aware entry lookup have not yet been ported."
+      "localBehavior": "renderEntryContext, renderFileContext",
+      "status": "adapted",
+      "tests": ["parser/context"],
+      "reason": "Uses caller-supplied parsed entries and loaded sources instead of direct filesystem reparsing."
     },
     {
       "upstreamModule": "beancount.parser.grammar",
