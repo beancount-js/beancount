@@ -97,7 +97,21 @@
 
 .tooltip {
   position: fixed;
+  z-index: 50;
   pointer-events: none;
+  min-width: 9rem;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  box-shadow:
+    0 10px 15px -3px color-mix(in srgb, oklch(0% 0 0) 10%, transparent),
+    0 4px 6px -4px color-mix(in srgb, oklch(0% 0 0) 10%, transparent);
+  opacity: 0;
+  visibility: hidden;
 }
 
 div[role="menu"] {

@@ -8,7 +8,7 @@ const tooltip = (() => {
     if (value === null) {
       value = document.createElement("div");
       value.className = "tooltip font-mono";
-      value.style.minWidth = "150px";
+      value.dataset.chartTooltip = "";
       document.body.appendChild(value);
     }
     return value;
