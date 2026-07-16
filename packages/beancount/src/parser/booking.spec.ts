@@ -146,6 +146,26 @@ describe("book", () => {
     expect(errors[0].context.directive).toBe(incomplete);
   });
 
+  test("reports an incomplete resolved cost without evaluating its missing number", () => {
+    const [, errors] = book(
+      [
+        transaction("2022-01-01", "Missing resolved cost number", [
+          new Posting(
+            account,
+            new Amount("1", "HOOL"),
+            new Cost(DateTime.fromISO("2022-01-01"), new Amount(null, "USD")),
+          ),
+          new Posting("Equity:Opening-Balances", new Amount("-10", "USD")),
+        ]),
+      ],
+      defaultBeancountOptions(),
+    );
+
+    expect(
+      errors.some((error) => error.message.startsWith("cost has no number")),
+    ).toBe(true);
+  });
+
   test("resolves per-unit and total cost specifications without treating omitted components as missing", () => {
     const [entries, errors] = book(
       [

@@ -162,7 +162,7 @@ function interpolateGroup(
         incomplete.push({ type: MissingTypes.COST_TOTAL, index });
       }
     } else if (cost instanceof Cost) {
-      if (!cost.amount?.value) {
+      if (!cost.amount?.isDefined()) {
         errors.push(
           new ValidationError(
             `cost has no number: ${cost}; on postings: ${postings}`,
@@ -382,7 +382,7 @@ function interpolateGroup(
     }
 
     const costAmount = cost.amount;
-    if (costAmount && costAmount.lt(0)) {
+    if (costAmount?.isDefined() && costAmount.lt(0)) {
       errors.push(
         new ValidationError(`Cost is negative: "${cost}"`, {
           directive: posting,
