@@ -146,10 +146,10 @@
                 size="sm"
                 class="h-8"
                 aria-label={header.acceptBusy
-                  ? "Accepting reviewed transactions"
+                  ? "Accepting ready transactions"
                   : header.acceptCount
-                    ? `Accept ${header.acceptCount} reviewed transaction${header.acceptCount === 1 ? "" : "s"}`
-                    : "Accept reviewed transactions"}
+                    ? `Accept ${header.acceptCount} ready transaction${header.acceptCount === 1 ? "" : "s"}`
+                    : "Accept ready transactions"}
                 disabled={!header.canAccept || header.acceptBusy}
                 onclick={(event) => {
                   header.onAccept();
@@ -167,8 +167,8 @@
             {header.acceptBusy
               ? "Accepting…"
               : header.acceptCount
-                ? `Write ${header.acceptCount} reviewed transaction${header.acceptCount === 1 ? "" : "s"} to the ledger`
-                : "No reviewed transactions ready to accept"}
+                ? `Write ${header.acceptCount} ready transaction${header.acceptCount === 1 ? "" : "s"} to the ledger`
+                : "No transactions ready to accept"}
           </Tooltip.Content>
         </Tooltip.Root>
         <CycleSelect

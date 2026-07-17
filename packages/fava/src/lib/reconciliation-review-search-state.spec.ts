@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ReconciliationReviewItem } from "@beancount-js/server";
+import type { ReconciliationReviewDisplayItem } from "./reconciliation-review-response";
 import {
   appendReconciliationReviewSearchParams,
   collectReconciliationReviewFacetOptions,
@@ -13,8 +13,8 @@ import {
 } from "./reconciliation-review-search-state";
 
 function candidate(
-  partial: Partial<ReconciliationReviewItem> = {},
-): ReconciliationReviewItem {
+  partial: Partial<ReconciliationReviewDisplayItem> = {},
+): ReconciliationReviewDisplayItem {
   return {
     candidate: {
       id: "candidate-1",

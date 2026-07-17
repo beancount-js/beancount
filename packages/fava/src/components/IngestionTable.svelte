@@ -84,6 +84,7 @@
   let sourceId = $state(ALL_CONNECTIONS);
   let status = $state("");
   let loading = $state(false);
+  let accepting = $state(false);
   let loadedProjectId = $state("");
   let syncJob = $state<IngestionSyncJob | null>(null);
   let syncAbort = $state<AbortController | null>(null);
@@ -149,14 +150,14 @@
     );
   }
 
-  const accepted = $derived(proposalRows.filter(isReadyRow));
+  const ready = $derived(proposalRows.filter(isReadyRow));
   const pending = $derived(proposalRows.filter(isPendingRow));
 
   const reviewTabRows = $derived(
     reviewFilter === "reconciliation"
       ? []
       : reviewFilter === "accepted"
-        ? accepted
+        ? ready
         : pending,
   );
 
@@ -290,15 +291,10 @@
 
   const summaryLine = $derived.by(() => {
     if (!activeRuns.length) return "";
-    const totals = activeRuns.reduce(
-      (acc, run) => ({
-        ready: acc.ready + run.summary.ready,
-        needsReview: acc.needsReview + run.summary.needsReview,
-        duplicates: acc.duplicates + run.summary.duplicates,
-      }),
-      { ready: 0, needsReview: 0, duplicates: 0 },
-    );
-    return `${totals.ready} ready · ${totals.needsReview} need review · ${totals.duplicates} duplicates`;
+    const duplicates = proposalRows.filter(
+      (row) => row.proposal.status === "duplicate",
+    ).length;
+    return `${ready.length} ready · ${pending.length} need review · ${duplicates} duplicates`;
   });
   const reconciliationRefreshKey = $derived(
     activeRuns
@@ -463,9 +459,9 @@
       canRerunAi,
       aiRerunBusy,
       groupsCollapsedAll,
-      canAccept: accepted.length > 0 && !loading && !syncing,
-      acceptCount: accepted.length,
-      acceptBusy: loading,
+      canAccept: ready.length > 0 && !loading && !accepting && !syncing,
+      acceptCount: ready.length,
+      acceptBusy: accepting,
       canOpenLedger: Boolean($reviewLedger),
       onSourceChange: (nextSourceId) => void loadRunForSource(nextSourceId),
       onToggleCollapseGroups: toggleAllGroups,
@@ -928,7 +924,7 @@
         },
       );
       replaceRun(run);
-      status = "Moved proposal back to pending review.";
+      status = "Moved proposal back to review.";
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {
@@ -968,19 +964,19 @@
   }
 
   async function accept() {
-    if (!project || !accepted.length || !config) return;
+    if (!project || !ready.length || !config || accepting) return;
 
     const byRun = new Map<string, string[]>();
-    for (const row of accepted) {
+    for (const row of ready) {
       const list = byRun.get(row.runId) ?? [];
       list.push(row.proposal.id);
       byRun.set(row.runId, list);
     }
-    const acceptedCount = accepted.length;
+    const acceptedCount = ready.length;
     const previousActiveRuns = activeRuns;
     const previousRuns = runs;
 
-    // Drop the Accept count and Accepted list immediately; reconcile from the
+    // Drop the Accept count and Ready list immediately; reconcile from the
     // server response (or roll back) once the ledger write finishes.
     activeRuns = activeRuns.map((run) => {
       const ids = byRun.get(run.id);
@@ -997,6 +993,7 @@
       updateRoute({ review: undefined, page: "1" });
     }
 
+    accepting = true;
     loading = true;
     status = `Accepting ${acceptedCount} transaction${acceptedCount === 1 ? "" : "s"}…`;
     try {
@@ -1046,6 +1043,7 @@
       runs = previousRuns;
       status = error instanceof Error ? error.message : String(error);
     } finally {
+      accepting = false;
       loading = false;
     }
   }
@@ -1088,11 +1086,13 @@
 
     {#if status}<p class="text-sm text-muted-foreground">{status}</p>{/if}
 
-    {#if loading && !activeRuns.length && !isWeb && project}
+    {#if (loading || !loadedProjectId) && !activeRuns.length && !isWeb && project}
       <ReviewImportsSkeleton />
     {:else if activeRuns.length}
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
+      <div
+        class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div class="min-w-0">
           <h2 class="text-lg font-semibold">Review</h2>
           {#if summaryLine}
             <p class="text-sm text-muted-foreground">{summaryLine}</p>
@@ -1102,15 +1102,15 @@
           type="single"
           value={reviewFilter}
           aria-label="Review content filter"
-          class="!gap-0 self-start rounded-lg bg-muted p-1"
+          class="grid w-full grid-cols-3 !gap-0 rounded-lg bg-muted p-1 sm:flex sm:w-auto sm:self-start"
           data-ingestion-review-filter
           onValueChange={setReviewFilter}
         >
           <ToggleGroup.Item
             value="pending"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-3 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:!px-3"
           >
-            Pending Review
+            Review
             <span
               class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
             >
@@ -1119,20 +1119,20 @@
           </ToggleGroup.Item>
           <ToggleGroup.Item
             value="accepted"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-3 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:!px-3"
           >
-            Accepted
+            Ready
             <span
               class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
             >
-              {accepted.length}
+              {ready.length}
             </span>
           </ToggleGroup.Item>
           <ToggleGroup.Item
             value="reconciliation"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-3 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:!px-3"
           >
-            Reconcile matches
+            Reconcile
           </ToggleGroup.Item>
         </ToggleGroup.Root>
       </div>
@@ -1267,10 +1267,9 @@
             {#if activeSearch}
               No proposals match this search.
             {:else if reviewFilter === "accepted"}
-              No accepted proposals yet. Review pending items and set an account
-              first.
-            {:else if pending.length === 0 && accepted.length > 0}
-              All reviewable proposals are accepted.
+              No transactions are ready to accept.
+            {:else if pending.length === 0 && ready.length > 0}
+              All proposals are ready to accept.
             {:else}
               No proposals pending review in this import run.
             {/if}
@@ -1334,7 +1333,7 @@
                       role="button"
                       tabindex="0"
                       class:rounded-b-xl={index === group.rows.length - 1}
-                      class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                      class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_auto]"
                       aria-label={`Review ${rowTitle(row.proposal)}`}
                       onclick={() => openRow(row)}
                       onkeydown={(event) => handleRowKeydown(event, row)}
@@ -1355,28 +1354,30 @@
                         </div>
                       {/if}
                       <div class="min-w-0">
-                        <div class="truncate text-sm font-semibold">
+                        <div
+                          class="break-words text-sm font-semibold sm:truncate"
+                        >
                           {rowTitle(row.proposal)}
                         </div>
-                        <div
-                          class="mt-1 truncate text-xs text-muted-foreground"
-                        >
+                        <div class="mt-1 text-xs text-muted-foreground">
                           {rowDetail(row.proposal)}
                         </div>
                       </div>
-                      <div class="flex items-center gap-1">
+                      <div
+                        class="col-start-2 flex flex-wrap items-center justify-between gap-1 sm:col-start-auto sm:row-start-1 sm:justify-end"
+                      >
                         {#if reviewFilter === "accepted"}
                           <Button
                             type="button"
                             size="icon"
                             variant="ghost"
                             class="size-8 text-muted-foreground"
-                            aria-label={`Move ${rowTitle(row.proposal)} to pending review`}
-                            title="Move to pending review"
+                            aria-label={`Move ${rowTitle(row.proposal)} to review`}
+                            title="Move to review"
                             disabled={loading || syncing}
                             onclick={(event) => void unacceptRow(row, event)}
                           >
-                            <Undo2 class="size-4" />
+                            <Undo2 data-icon />
                           </Button>
                         {/if}
                         <span class="text-sm font-semibold tabular-nums">
@@ -1394,13 +1395,15 @@
 
       {#if !showingReconciliation && pages.length > 1}
         <nav
-          class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+          class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
           aria-label="Review import pages"
         >
           <span class="text-sm text-muted-foreground"
             >Page {page} of {pages.length}</span
           >
-          <div class="flex items-center gap-2">
+          <div
+            class="flex flex-wrap items-center justify-between gap-2 sm:justify-end"
+          >
             <label
               class="text-sm text-muted-foreground"
               for="ingestion-review-page-size">Records per page</label
@@ -1426,7 +1429,7 @@
               disabled={page <= 1}
               onclick={() => updateRoute({ page: String(page - 1) })}
             >
-              <ChevronsLeft />
+              <ChevronsLeft data-icon />
             </Button>
             <Button
               size="icon"
@@ -1435,7 +1438,7 @@
               disabled={page >= pages.length}
               onclick={() => updateRoute({ page: String(page + 1) })}
             >
-              <ChevronsRight />
+              <ChevronsRight data-icon />
             </Button>
           </div>
         </nav>

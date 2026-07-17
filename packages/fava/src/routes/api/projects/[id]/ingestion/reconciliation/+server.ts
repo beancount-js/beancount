@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
 import { buildReconciliationReview } from "@beancount-js/server";
+import { compactReconciliationReview } from "$lib/reconciliation-review-response";
 import { serverIngestion, serverReconciliations } from "$lib/server/ingestion";
 import { serverWorkspace } from "$lib/server/workspace";
 
@@ -29,7 +30,7 @@ async function review(projectId: string) {
 
 export async function GET({ params }: { params: { id: string } }) {
   try {
-    return json(await review(params.id));
+    return json(compactReconciliationReview(await review(params.id)));
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });
   }
@@ -101,7 +102,7 @@ export async function PUT({
       canonicalObservationId,
       updatedAt: new Date().toISOString(),
     });
-    return json(await review(params.id));
+    return json(compactReconciliationReview(await review(params.id)));
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });
   }

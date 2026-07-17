@@ -4,9 +4,14 @@
     SearchFilterBar,
     type FilterCommandOption,
   } from "@beancount-js/forms";
-  import type { ReconciliationReviewItem } from "@beancount-js/server";
+  import type {
+    ReconciliationReviewDisplayItem,
+    ReconciliationReviewResponse,
+  } from "../lib/reconciliation-review-response";
+  import Check from "lucide-svelte/icons/check";
   import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
   import ChevronsRight from "lucide-svelte/icons/chevrons-right";
+  import X from "lucide-svelte/icons/x";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import { debounceWithDelay } from "../hooks/debounce";
   import {
@@ -24,10 +29,11 @@
   import { useNavigation } from "../router/router";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
+  import ReconciliationReviewSkeleton from "./skeletons/ReconciliationReviewSkeleton.svelte";
 
   const PAGE_SIZES = [25, 50, 100];
 
-  type Review = { candidates: ReconciliationReviewItem[] };
+  type Review = ReconciliationReviewResponse;
 
   let {
     projectId,
@@ -42,6 +48,7 @@
 
   let review = $state<Review | undefined>(undefined);
   let reviewLoaded = $state(false);
+  let loading = $state(false);
   let error = $state("");
   let busyCandidateId = $state("");
   let loadedKey = $state("");
@@ -100,7 +107,9 @@
   const page = $derived(Math.min(requestedPage, Math.max(1, pages.length)));
   const visibleCandidates = $derived(pages[page - 1] ?? []);
 
-  function memberLabel(member: ReconciliationReviewItem["members"][number]) {
+  function memberLabel(
+    member: ReconciliationReviewDisplayItem["members"][number],
+  ) {
     const observation = member.observation;
     return (
       observation.merchant ??
@@ -110,11 +119,15 @@
     );
   }
 
-  function memberInitial(member: ReconciliationReviewItem["members"][number]) {
+  function memberInitial(
+    member: ReconciliationReviewDisplayItem["members"][number],
+  ) {
     return memberLabel(member).slice(0, 1).toUpperCase() || "?";
   }
 
-  function memberDetail(member: ReconciliationReviewItem["members"][number]) {
+  function memberDetail(
+    member: ReconciliationReviewDisplayItem["members"][number],
+  ) {
     const observation = member.observation;
     return [
       observation.origin === "ledger"
@@ -191,9 +204,11 @@
     if (!projectId) {
       review = undefined;
       reviewLoaded = false;
+      loading = false;
       return;
     }
     error = "";
+    loading = true;
     try {
       review = await ingestionJson<Review>(
         ingestionPath(projectId, "/reconciliation"),
@@ -202,11 +217,12 @@
       error = cause instanceof Error ? cause.message : String(cause);
     } finally {
       reviewLoaded = true;
+      loading = false;
     }
   }
 
   async function decide(
-    item: ReconciliationReviewItem,
+    item: ReconciliationReviewDisplayItem,
     state: "confirmed" | "dismissed",
     canonicalObservationId?: string,
   ) {
@@ -233,7 +249,7 @@
     }
   }
 
-  async function apply(item: ReconciliationReviewItem) {
+  async function apply(item: ReconciliationReviewDisplayItem) {
     if (!projectId || busyCandidateId) return;
     busyCandidateId = item.candidate.id;
     try {
@@ -270,7 +286,9 @@
   });
 </script>
 
-{#if candidates.length}
+{#if loading && !reviewLoaded}
+  <ReconciliationReviewSkeleton />
+{:else if candidates.length}
   <div
     class="ingestion-page-search"
     style="--cv-search-filter-justify: stretch; --cv-search-filter-content-justify: stretch; --cv-search-filter-max-width: 100%;"
@@ -433,7 +451,7 @@
           item.candidate.recommendedCanonicalId}
         <section class="overflow-hidden rounded-2xl bg-muted/80">
           <div
-            class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 px-5 py-4"
+            class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 px-4 py-4 sm:px-5"
           >
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
@@ -446,48 +464,63 @@
                   )}</Badge
                 >
               </div>
-              <p class="mt-1 text-xs text-muted-foreground">
-                {item.candidate.evidence
-                  .map((evidence) => evidence.summary)
-                  .join(" · ")}
-              </p>
             </div>
             <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
               {#if item.decision?.state === "confirmed"}
                 <Button
-                  size="sm"
+                  size="icon"
+                  aria-label="Apply confirmed match"
+                  title="Apply confirmed match"
                   disabled={busy}
-                  onclick={() => void apply(item)}>Apply safely</Button
+                  onclick={() => void apply(item)}
                 >
+                  <Check data-icon />
+                </Button>
               {:else}
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="outline"
+                  aria-label="Not a match"
+                  title="Not a match"
                   disabled={busy}
                   onclick={() => void decide(item, "dismissed")}
-                  >Not a match</Button
                 >
+                  <X data-icon />
+                </Button>
                 {#if chosen}
                   <Button
-                    size="sm"
+                    size="icon"
+                    aria-label="Confirm match"
+                    title="Confirm match"
                     disabled={busy}
                     onclick={() => void decide(item, "confirmed", chosen)}
-                    >Confirm match</Button
                   >
+                    <Check data-icon />
+                  </Button>
                 {:else}
                   {#each item.members as member (member.observation.id)}
                     <Button
-                      size="sm"
+                      size="icon"
                       variant="outline"
+                      aria-label={`Use ${memberLabel(member)} as the canonical record`}
+                      title={`Use ${memberLabel(member)} as the canonical record`}
                       disabled={busy}
                       onclick={() =>
                         void decide(item, "confirmed", member.observation.id)}
-                      >Use {member.observation.origin}</Button
                     >
+                      <Check data-icon />
+                    </Button>
                   {/each}
                 {/if}
               {/if}
             </div>
+            <p
+              class="col-span-full text-xs leading-relaxed text-muted-foreground"
+            >
+              {item.candidate.evidence
+                .map((evidence) => evidence.summary)
+                .join(" · ")}
+            </p>
           </div>
 
           <div
@@ -496,7 +529,7 @@
             {#each item.members as member, memberIndex (member.observation.id)}
               <div
                 class:rounded-b-xl={memberIndex === item.members.length - 1}
-                class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 last:border-b-0"
+                class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 last:border-b-0 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
               >
                 <div
                   class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
@@ -505,14 +538,18 @@
                   {memberInitial(member)}
                 </div>
                 <div class="min-w-0">
-                  <div class="truncate text-sm font-semibold">
+                  <div class="break-words text-sm font-semibold sm:truncate">
                     {memberLabel(member)}
                   </div>
-                  <div class="mt-1 truncate text-xs text-muted-foreground">
+                  <div
+                    class="mt-1 break-words text-xs text-muted-foreground sm:truncate"
+                  >
                     {memberDetail(member)}
                   </div>
                 </div>
-                <span class="text-sm font-semibold tabular-nums">
+                <span
+                  class="col-start-2 text-sm font-semibold tabular-nums sm:col-start-auto sm:row-start-1"
+                >
                   {member.observation.amount}&nbsp;{member.observation.currency}
                 </span>
               </div>
@@ -524,13 +561,15 @@
 
     {#if pages.length > 1}
       <nav
-        class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+        class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
         aria-label="Reconciliation match pages"
       >
         <span class="text-sm text-muted-foreground"
           >Page {page} of {pages.length}</span
         >
-        <div class="flex items-center gap-2">
+        <div
+          class="flex flex-wrap items-center justify-between gap-2 sm:justify-end"
+        >
           <label
             class="text-sm text-muted-foreground"
             for="reconciliation-review-page-size">Matches per page</label
@@ -558,7 +597,7 @@
             onclick={() =>
               updateRoute({ reconcilePage: String(Math.max(1, page - 1)) })}
           >
-            <ChevronsLeft />
+            <ChevronsLeft data-icon />
           </Button>
           <Button
             size="icon"
@@ -567,7 +606,7 @@
             disabled={page >= pages.length}
             onclick={() => updateRoute({ reconcilePage: String(page + 1) })}
           >
-            <ChevronsRight />
+            <ChevronsRight data-icon />
           </Button>
         </div>
       </nav>

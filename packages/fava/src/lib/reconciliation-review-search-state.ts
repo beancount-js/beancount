@@ -1,5 +1,5 @@
 import { fuzzySearch } from "@beancount-js/filters";
-import type { ReconciliationReviewItem } from "@beancount-js/server";
+import type { ReconciliationReviewDisplayItem } from "./reconciliation-review-response";
 
 export const RECONCILIATION_REVIEW_SEARCH_PARAM_KEYS = [
   "reconcileQ",
@@ -59,7 +59,10 @@ function joinCsv(values: readonly string[]): string | undefined {
   return values.length ? values.join(",") : undefined;
 }
 
-function sourceLabel(item: ReconciliationReviewItem, memberIndex: number) {
+function sourceLabel(
+  item: ReconciliationReviewDisplayItem,
+  memberIndex: number,
+) {
   const member = item.members[memberIndex];
   if (!member) return "";
   return member.observation.origin === "ledger"
@@ -71,7 +74,7 @@ function year(value: string): string | undefined {
   return value.length >= 4 ? value.slice(0, 4) : undefined;
 }
 
-function label(item: ReconciliationReviewItem, memberIndex: number) {
+function label(item: ReconciliationReviewDisplayItem, memberIndex: number) {
   const observation = item.members[memberIndex]?.observation;
   if (!observation) return "";
   return (
@@ -82,7 +85,7 @@ function label(item: ReconciliationReviewItem, memberIndex: number) {
   );
 }
 
-function candidateSearchDocument(item: ReconciliationReviewItem) {
+function candidateSearchDocument(item: ReconciliationReviewDisplayItem) {
   return {
     item,
     labels: item.members.map((_, index) => label(item, index)),
@@ -109,7 +112,7 @@ function hasValue(values: readonly string[], value: string | undefined) {
 }
 
 function matchesFacets(
-  item: ReconciliationReviewItem,
+  item: ReconciliationReviewDisplayItem,
   state: ReconciliationReviewSearchState,
 ) {
   if (
@@ -217,7 +220,7 @@ export function appendReconciliationReviewSearchParams(
 }
 
 export function collectReconciliationReviewFacetOptions(
-  items: readonly ReconciliationReviewItem[],
+  items: readonly ReconciliationReviewDisplayItem[],
 ) {
   const accounts = new Set<string>();
   const sources = new Set<string>();
@@ -252,9 +255,9 @@ export function collectReconciliationReviewFacetOptions(
 }
 
 export function filterReconciliationReviewSearch(
-  items: readonly ReconciliationReviewItem[],
+  items: readonly ReconciliationReviewDisplayItem[],
   state: ReconciliationReviewSearchState,
-): ReconciliationReviewItem[] {
+): ReconciliationReviewDisplayItem[] {
   const faceted = items.filter((item) => matchesFacets(item, state));
   if (!state.query.trim()) return faceted;
   return fuzzySearch(faceted.map(candidateSearchDocument), state.query, {
@@ -268,10 +271,10 @@ export function filterReconciliationReviewSearch(
 }
 
 export function paginateReconciliationReviewItems(
-  items: readonly ReconciliationReviewItem[],
+  items: readonly ReconciliationReviewDisplayItem[],
   size: number,
-): ReconciliationReviewItem[][] {
-  const result: ReconciliationReviewItem[][] = [];
+): ReconciliationReviewDisplayItem[][] {
+  const result: ReconciliationReviewDisplayItem[][] = [];
   for (let index = 0; index < items.length; index += size) {
     result.push(items.slice(index, index + size));
   }

@@ -3,12 +3,14 @@
 </script>
 
 <div class="flex flex-col gap-5" data-review-imports-skeleton aria-busy="true">
-  <div class="flex flex-wrap items-center justify-between gap-4">
+  <div
+    class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+  >
     <div class="flex flex-col gap-2">
       <Skeleton class="h-5 w-24" />
       <Skeleton class="h-3.5 w-48" />
     </div>
-    <Skeleton class="h-9 w-56 rounded-lg" />
+    <Skeleton class="h-9 w-full rounded-lg sm:w-56" />
   </div>
   <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
     {#each Array.from({ length: 3 }, (_, index) => index) as group (group)}
@@ -20,15 +22,15 @@
         </div>
         {#each Array.from({ length: 3 }, (_, index) => index) as row (row)}
           <div
-            class="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 border-t px-4 py-2.5"
+            class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-t px-4 py-2.5 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]"
           >
             <Skeleton class="size-4 rounded-sm" />
             <div class="flex min-w-0 flex-col gap-1.5">
               <Skeleton class="h-3.5 w-52" />
               <Skeleton class="h-3 w-28" />
             </div>
-            <Skeleton class="h-3.5 w-20" />
-            <Skeleton class="h-3.5 w-16" />
+            <Skeleton class="col-start-2 h-3.5 w-20 sm:col-start-auto" />
+            <Skeleton class="hidden h-3.5 w-16 sm:block" />
           </div>
         {/each}
       </div>
