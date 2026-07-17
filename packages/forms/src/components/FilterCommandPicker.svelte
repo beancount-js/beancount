@@ -4,7 +4,10 @@
   import CheckIcon from "lucide-svelte/icons/check";
   import ChevronDownIcon from "lucide-svelte/icons/chevron-down";
   import SearchIcon from "lucide-svelte/icons/search";
-  import type { FilterCommandOption } from "../picker-options";
+  import type {
+    FilterCommandOption,
+    FilterCommandSearchAction,
+  } from "../picker-options";
 
   let {
     value = "",
@@ -17,7 +20,11 @@
     emptyLabel = "No options found.",
     closeOnSelect,
     fullWidth = false,
+    stackedOptions = false,
     allowCustom = false,
+    searchAction,
+    searchActionGroupLabel = "Actions",
+    onSearchAction,
     normalize = (next: string) => next.trim(),
     onChange = () => {},
     onValuesChange = () => {},
@@ -32,7 +39,15 @@
     emptyLabel?: string;
     closeOnSelect?: boolean;
     fullWidth?: boolean;
+    /** Use a larger avatar and vertically stacked, wrapping option details. */
+    stackedOptions?: boolean;
     allowCustom?: boolean;
+    /** Optionally offer a context-specific action for the typed search text. */
+    searchAction?: (
+      search: string,
+    ) => FilterCommandSearchAction | null | undefined;
+    searchActionGroupLabel?: string;
+    onSearchAction?: (search: string) => void | Promise<void>;
     normalize?: (value: string) => string;
     onChange?: (value: string) => void | Promise<void>;
     onValuesChange?: (values: string[]) => void | Promise<void>;
@@ -92,6 +107,11 @@
   const canCreateCustom = $derived(
     allowCustom && !multiple && trimmedSearch.length > 0 && !exactMatch,
   );
+  const availableSearchAction = $derived.by(() =>
+    trimmedSearch && onSearchAction
+      ? (searchAction?.(trimmedSearch) ?? null)
+      : null,
+  );
 
   const filteredOptions = $derived.by(() => {
     const needle = search.trim().toLowerCase();
@@ -141,12 +161,22 @@
     selectOption(trimmedSearch);
   }
 
+  async function selectSearchAction() {
+    if (!trimmedSearch || !availableSearchAction || !onSearchAction) return;
+    open = false;
+    await onSearchAction(trimmedSearch);
+  }
+
   function markImageFailed(imageUrl: string) {
     failedImageUrls = new Set([...failedImageUrls, imageUrl]);
   }
 
   function canShowImage(option: FilterCommandOption) {
     return Boolean(option.imageUrl && !failedImageUrls.has(option.imageUrl));
+  }
+
+  function optionInitial(option: Pick<FilterCommandOption, "label">) {
+    return (option.label.trim().charAt(0) || "?").toUpperCase();
   }
 </script>
 
@@ -186,11 +216,13 @@
       class="bj-filter-command-picker__popover"
       align="start"
       sideOffset={6}
+      data-stacked-options={stackedOptions}
       aria-label={`Choose ${label.toLowerCase()}`}
     >
       <CommandPrimitive.Root
         class="bj-filter-command-picker__command"
         label={ariaLabel}
+        data-stacked-options={stackedOptions}
         shouldFilter={false}
         loop
       >
@@ -232,7 +264,8 @@
                   >
                     {#if canShowImage(option)}
                       <img
-                        class="bj-filter-command-picker__image"
+                        class:bj-filter-command-picker__image={!stackedOptions}
+                        class:bj-filter-command-picker__item-avatar={stackedOptions}
                         src={option.imageUrl}
                         alt=""
                         onerror={() => markImageFailed(option.imageUrl!)}
@@ -243,6 +276,11 @@
                         style={`--filter-accent: ${option.accent}`}
                         aria-hidden="true"
                       ></span>
+                    {:else if stackedOptions}
+                      <span
+                        class="bj-filter-command-picker__item-avatar bj-filter-command-picker__item-avatar--fallback"
+                        aria-hidden="true">{optionInitial(option)}</span
+                      >
                     {/if}
                     <span class="bj-filter-command-picker__item-content">
                       <span class="bj-filter-command-picker__item-label"
@@ -265,6 +303,37 @@
               </CommandPrimitive.GroupItems>
             </CommandPrimitive.Group>
           {/if}
+          {#if availableSearchAction}
+            <CommandPrimitive.Group
+              class="bj-filter-command-picker__group"
+              value="search-action"
+              forceMount
+            >
+              <CommandPrimitive.GroupHeading
+                class="bj-filter-command-picker__heading"
+              >
+                {searchActionGroupLabel}
+              </CommandPrimitive.GroupHeading>
+              <CommandPrimitive.GroupItems>
+                <CommandPrimitive.Item
+                  class="bj-filter-command-picker__item bj-filter-command-picker__item--create"
+                  value={`__search_action__:${trimmedSearch}`}
+                  onSelect={() => void selectSearchAction()}
+                >
+                  <span class="bj-filter-command-picker__item-content">
+                    <span class="bj-filter-command-picker__item-label">
+                      {availableSearchAction.label}
+                    </span>
+                    {#if availableSearchAction.description}
+                      <span class="bj-filter-command-picker__item-description">
+                        {availableSearchAction.description}
+                      </span>
+                    {/if}
+                  </span>
+                </CommandPrimitive.Item>
+              </CommandPrimitive.GroupItems>
+            </CommandPrimitive.Group>
+          {/if}
           {#if canCreateCustom}
             <CommandPrimitive.Group
               class="bj-filter-command-picker__group"
@@ -283,7 +352,7 @@
                 </CommandPrimitive.Item>
               </CommandPrimitive.GroupItems>
             </CommandPrimitive.Group>
-          {:else if filteredOptions.length === 0}
+          {:else if filteredOptions.length === 0 && !availableSearchAction}
             <CommandPrimitive.Empty
               class="bj-filter-command-picker__empty"
               forceMount

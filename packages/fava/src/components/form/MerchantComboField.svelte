@@ -2,6 +2,7 @@
   import {
     FilterCommandPicker,
     type FilterCommandOption,
+    type FilterCommandSearchAction,
     type FormFieldRenderArgs,
   } from "@beancount-js/forms";
   import { ingestionJson, ingestionPath } from "../../ingestion/api";
@@ -17,6 +18,7 @@
   };
 
   let {
+    root,
     value,
     field,
     context,
@@ -26,17 +28,26 @@
 
   let merchants = $state<Merchant[]>([]);
   let loadError = $state("");
+  let brandMatchBusy = $state(false);
 
   const projectId = $derived(context?.projectId ?? "");
+  const source = $derived.by(() => {
+    if (!root || typeof root !== "object" || Array.isArray(root)) {
+      return { id: "", name: "" };
+    }
+    const sourceRoot = root as { id?: unknown; name?: unknown };
+    return {
+      id: typeof sourceRoot.id === "string" ? sourceRoot.id : "",
+      name: typeof sourceRoot.name === "string" ? sourceRoot.name : "",
+    };
+  });
   const options = $derived.by((): FilterCommandOption[] => {
     const listed = merchants.map((merchant) => ({
       value: merchant.merchantId,
-      label: merchant.domain
-        ? `${merchant.canonicalName} · ${merchant.domain}`
-        : merchant.canonicalName,
-      description: [merchant.description, merchant.domain]
+      label: merchant.canonicalName,
+      description: [merchant.domain, merchant.description]
         .filter(Boolean)
-        .join(" · "),
+        .join("\n"),
       imageUrl: merchant.logoUrl,
       keywords: [
         merchant.canonicalName,
@@ -69,6 +80,36 @@
     options.find((option) => option.value === value)?.label ?? value ?? "",
   );
 
+  function domainFromUrl(value: string) {
+    const input = value.trim();
+    if (!input) return undefined;
+    try {
+      const url = new URL(
+        /^[a-z][a-z\d+.-]*:\/\//i.test(input) ? input : `https://${input}`,
+      );
+      const domain = url.hostname.toLowerCase().replace(/^(?:www\.|api\.)/, "");
+      return domain.includes(".") ? domain : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  function brandMatchAction(search: string): FilterCommandSearchAction | null {
+    const domain = domainFromUrl(search);
+    if (
+      !projectId ||
+      !source.id ||
+      !domain ||
+      merchants.some((merchant) => merchant.domain?.toLowerCase() === domain)
+    ) {
+      return null;
+    }
+    return {
+      label: `Fetch ${domain} with Brand Match`,
+      description: "Create and save a merchant with its brand logo.",
+    };
+  }
+
   async function loadMerchants(nextProjectId: string) {
     try {
       const listed = await ingestionJson<Merchant[]>(
@@ -82,6 +123,40 @@
       merchants = [];
       loadError =
         error instanceof Error ? error.message : "Failed to load merchants";
+    }
+  }
+
+  async function createMerchantFromBrandMatch(url: string) {
+    if (brandMatchBusy || !projectId) return;
+    brandMatchBusy = true;
+    loadError = "";
+    try {
+      const merchant = await ingestionJson<Merchant>(
+        ingestionPath(projectId, "/merchants/brand-match"),
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            url,
+            sourceId: source.id,
+            sourceName: source.name,
+          }),
+        },
+      );
+      merchants = [
+        merchant,
+        ...merchants.filter((item) => item.merchantId !== merchant.merchantId),
+      ].sort((left, right) =>
+        left.canonicalName.localeCompare(right.canonicalName),
+      );
+      await update(merchant.merchantId);
+    } catch (error) {
+      loadError =
+        error instanceof Error
+          ? error.message
+          : "Could not create a merchant from that URL.";
+    } finally {
+      brandMatchBusy = false;
     }
   }
 
@@ -107,8 +182,12 @@
       emptyLabel={merchants.length
         ? "No matching merchants."
         : "No saved merchants yet."}
+      stackedOptions
       value={value ?? ""}
       {options}
+      searchAction={brandMatchAction}
+      searchActionGroupLabel="Brand Match"
+      onSearchAction={createMerchantFromBrandMatch}
       onChange={(next) => void update(next)}
     />
     {#if loadError}

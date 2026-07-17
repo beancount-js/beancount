@@ -9,6 +9,9 @@ export type FilterCommandOption = {
   keywords?: string[];
 };
 
+/** An optional action offered for the current picker search text. */
+export type FilterCommandSearchAction = Omit<FilterCommandOption, "value">;
+
 export type SearchableChoiceOption = {
   value: string;
   label: string;

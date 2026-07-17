@@ -50,6 +50,7 @@ export type {
 } from "./types";
 export type {
   FilterCommandOption,
+  FilterCommandSearchAction,
   SearchableChoiceOption,
 } from "./picker-options";
 export * from "./core";
