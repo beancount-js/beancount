@@ -48,6 +48,13 @@ interface DownloadedMerchantLogo extends ResolvedMerchantLogo {
   size: BrandfetchLogoSize;
 }
 
+interface LocalRefresh {
+  /** The fetched bytes that can be proxied to the requesting browser now. */
+  remote: Promise<DownloadedMerchantLogo>;
+  /** The same bytes being persisted for subsequent local delivery. */
+  cache: Promise<ResolvedMerchantLogo>;
+}
+
 export function brandfetchLogoSize(
   settings: Pick<BrandfetchLogoSettings, "highResolution">,
 ): BrandfetchLogoSize {
@@ -72,6 +79,7 @@ export class BrandfetchLogoService {
     string,
     Promise<DownloadedMerchantLogo>
   >();
+  private readonly localRefreshes = new Map<string, LocalRefresh>();
 
   constructor(
     private readonly merchants: MerchantLogoStore,
@@ -147,6 +155,7 @@ export class BrandfetchLogoService {
     }
 
     const size = brandfetchLogoSize(options.settings);
+    if (options.force) return this.refreshMerchant(options);
     if (stored && !options.force && isFresh(stored, size)) {
       return { ...stored, persisted: true };
     }
@@ -164,7 +173,51 @@ export class BrandfetchLogoService {
     if (!options.domain || !options.clientId) {
       return stored ? { ...stored, persisted: true } : undefined;
     }
-    return this.refreshMerchant(options);
+    const refresh = this.startLocalRefresh({
+      ...options,
+      domain: options.domain,
+      clientId: options.clientId,
+    });
+    // Do not make the first render wait for filesystem persistence. The image
+    // still comes through this same-origin endpoint; the cache completes for
+    // subsequent requests and is deliberately kept alive after this returns.
+    return refresh.remote;
+  }
+
+  private startLocalRefresh(options: {
+    project: string;
+    merchantId: string;
+    domain: string;
+    clientId: string;
+    settings: BrandfetchLogoSettings;
+  }) {
+    const size = brandfetchLogoSize(options.settings);
+    const key = `merchant:${options.project}:${options.merchantId}:${size}`;
+    const existing = this.localRefreshes.get(key);
+    if (existing) return existing;
+
+    const remote = this.download(key, options.domain, options.clientId, size);
+    const cache = remote.then(async (downloaded) => {
+      const expiresAt = refreshDeadline(options.settings.refreshDays);
+      await this.merchants.cacheLogo(options.project, options.merchantId, {
+        ...downloaded,
+        expiresAt,
+      });
+      return { ...downloaded, expiresAt, persisted: true };
+    });
+    const refresh = { remote, cache } satisfies LocalRefresh;
+    this.localRefreshes.set(key, refresh);
+    void cache.then(
+      () => {
+        if (this.localRefreshes.get(key) === refresh)
+          this.localRefreshes.delete(key);
+      },
+      () => {
+        if (this.localRefreshes.get(key) === refresh)
+          this.localRefreshes.delete(key);
+      },
+    );
+    return refresh;
   }
 
   async refreshMerchant(options: {
@@ -179,19 +232,10 @@ export class BrandfetchLogoService {
       throw new Error(
         "A merchant domain and Brandfetch client ID are required.",
       );
-    const size = brandfetchLogoSize(options.settings);
-    const key = `merchant:${options.project}:${options.merchantId}:${size}`;
-    const downloaded = await this.download(
-      key,
-      options.domain,
-      options.clientId,
-      size,
-    );
-    const expiresAt = refreshDeadline(options.settings.refreshDays);
-    await this.merchants.cacheLogo(options.project, options.merchantId, {
-      ...downloaded,
-      expiresAt,
-    });
-    return { ...downloaded, expiresAt, persisted: true };
+    return this.startLocalRefresh({
+      ...options,
+      domain: options.domain,
+      clientId: options.clientId,
+    }).cache;
   }
 }

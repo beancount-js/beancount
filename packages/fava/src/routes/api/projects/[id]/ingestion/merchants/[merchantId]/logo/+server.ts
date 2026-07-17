@@ -33,6 +33,7 @@ export async function GET({
     const store = serverIngestion();
     const merchant = await store.merchants.get(params.id, params.merchantId);
     fallbackLabel = merchant.canonicalName || fallbackLabel;
+    if (!merchant.domain) return logoFallbackResponse(fallbackLabel);
     const config = await store.readConfig(params.id);
     const brandfetch = config.brandfetch;
     const runtime =

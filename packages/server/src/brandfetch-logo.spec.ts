@@ -22,7 +22,7 @@ function store(initial?: StoredMerchantLogo) {
 }
 
 describe("BrandfetchLogoService", () => {
-  test("persists a 120px logo in local-cache mode", async () => {
+  test("proxies a missing 120px logo immediately and persists it in the background", async () => {
     const merchants = store();
     const requests: string[] = [];
     const service = new BrandfetchLogoService(merchants, async (input) => {
@@ -47,10 +47,11 @@ describe("BrandfetchLogoService", () => {
     expect(requests).toEqual([
       expect.stringContaining("/h/120/w/120/icon.png"),
     ]);
+    expect(logo).toMatchObject({ persisted: false, size: 120 });
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(merchants.writes).toEqual([
       expect.objectContaining({ size: 120, mediaType: "image/png" }),
     ]);
-    expect(logo).toMatchObject({ persisted: true, size: 120 });
   });
 
   test("proxies without writing an asset in server-proxy mode", async () => {

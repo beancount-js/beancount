@@ -92,4 +92,21 @@ describe("GET /ingestion/merchants/:merchantId/logo", () => {
     expect(response.headers.get("content-type")).toContain("image/svg+xml");
     expect(response.headers.get("x-logo-fallback")).toBe("true");
   });
+
+  test("returns a two-letter SVG avatar without calling Brandfetch when no domain exists", async () => {
+    mocks.get.mockResolvedValue({
+      merchantId: "merchant",
+      canonicalName: "Lunch Flow",
+    });
+
+    const response = await GET({
+      params: { id: "demo", merchantId: "merchant" },
+      request: new Request("http://localhost/logo"),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-logo-fallback")).toBe("true");
+    await expect(response.text()).resolves.toContain(">LF</text>");
+    expect(mocks.merchantLogo).not.toHaveBeenCalled();
+  });
 });
