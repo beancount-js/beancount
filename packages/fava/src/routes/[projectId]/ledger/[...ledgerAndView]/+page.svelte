@@ -214,10 +214,12 @@
     return next;
   }
 
-  async function refreshProject() {
-    if (!snapshot) return;
+  async function refreshProject(): Promise<ProjectSnapshot> {
+    if (!snapshot) throw new Error("No project is selected.");
     await loadProject(snapshot.project.id);
     await refreshProjects();
+    if (!snapshot) throw new Error("No project is selected.");
+    return snapshot;
   }
 
   async function resourceUrl(path: string) {

@@ -80,7 +80,9 @@
   onSaveFile={async () => {
     throw new Error("No ledger is open.");
   }}
-  onRefreshProject={async () => undefined}
+  onRefreshProject={async () => {
+    throw new Error("No ledger is open.");
+  }}
   onResourceUrl={async () => {
     throw new Error("No ledger is open.");
   }}

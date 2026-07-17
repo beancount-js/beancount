@@ -66,7 +66,7 @@
   }: Props = $props();
 
   const { accounts, currencies, ledgerSource, tags: ledgerTags } = useContext();
-  const { snapshot, saveFile } = useStudioWorkspace();
+  const { snapshot, saveFile, refreshSnapshot } = useStudioWorkspace();
 
   const sectionTitleClass = "text-xs font-semibold uppercase tracking-wide";
 
@@ -258,7 +258,14 @@
     return { anchor: nextAnchor, file: relocatedFile };
   }
 
-  async function persist(source: string) {
+  function isRevisionConflict(error: unknown) {
+    return (
+      error instanceof Error &&
+      error.message.includes("File changed since it was read")
+    );
+  }
+
+  async function persist(source: string, refreshed = false): Promise<void> {
     const currentSnapshot = $snapshot;
     if (!currentSnapshot) {
       throw new Error(
@@ -288,7 +295,15 @@
     const expectedRevision = currentSnapshot.revisions.find(
       (item) => item.path === path,
     )?.revision;
-    await saveFile(path, contents, expectedRevision);
+    try {
+      await saveFile(path, contents, expectedRevision);
+    } catch (error) {
+      if (!refreshed && isRevisionConflict(error)) {
+        await refreshSnapshot();
+        return persist(source, true);
+      }
+      throw error;
+    }
 
     const saved = findDirectiveByRecordAnchor(candidate.directives, {
       filename: path,

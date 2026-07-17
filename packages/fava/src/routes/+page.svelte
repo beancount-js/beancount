@@ -99,7 +99,9 @@
   onSaveFile={async () => {
     throw new Error("No project is selected.");
   }}
-  onRefreshProject={async () => undefined}
+  onRefreshProject={async () => {
+    throw new Error("No project is selected.");
+  }}
   onResourceUrl={async () => {
     throw new Error("No project is selected.");
   }}

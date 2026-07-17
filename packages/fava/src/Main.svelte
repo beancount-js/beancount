@@ -60,7 +60,7 @@
     contents: string,
     expectedRevision?: string,
   ) => Promise<ProjectSnapshot>;
-  export let onRefreshProject: () => Promise<void>;
+  export let onRefreshProject: () => Promise<ProjectSnapshot>;
   export let onResourceUrl: (
     path: string,
   ) => Promise<{ url: string; mimeType: string; revoke?: () => void }>;
@@ -100,6 +100,7 @@
   let inlineAiRequest: InlineAiRequest | undefined;
   const workspace = createStudioWorkspace(
     saveFile,
+    refreshSnapshot,
     onResourceUrl,
     (request) => {
       inlineAiRequest = request;
@@ -198,6 +199,12 @@
     applySnapshot(next);
   }
 
+  async function refreshSnapshot() {
+    const next = await onRefreshProject();
+    applySnapshot(next);
+    return next;
+  }
+
   function titleForRoute(
     path: string,
     params: Record<string, string | undefined>,
@@ -276,7 +283,9 @@
         hasProject={Boolean(snapshot)}
         {isWeb}
         inlineRequest={inlineAiRequest}
-        onProjectChanged={onRefreshProject}
+        onProjectChanged={async () => {
+          await onRefreshProject();
+        }}
       />
     </svelte:fragment>
   </StudioShell>

@@ -20,6 +20,7 @@ export interface StudioWorkspaceContext {
     contents: string,
     expectedRevision?: string,
   ) => Promise<void>;
+  refreshSnapshot: () => Promise<ProjectSnapshot>;
   resourceUrl: (
     path: string,
   ) => Promise<{ url: string; mimeType: string; revoke?: () => void }>;
@@ -30,6 +31,7 @@ const StudioWorkspaceKey = Symbol("beancount-studio-workspace");
 
 export function createStudioWorkspace(
   saveFile: StudioWorkspaceContext["saveFile"],
+  refreshSnapshot: StudioWorkspaceContext["refreshSnapshot"],
   resourceUrl: StudioWorkspaceContext["resourceUrl"],
   requestInlineAi: StudioWorkspaceContext["requestInlineAi"],
 ) {
@@ -38,6 +40,7 @@ export function createStudioWorkspace(
     activeFile: writable(""),
     ledgerSidebarMode: writable<LedgerSidebarMode>("workspace"),
     saveFile,
+    refreshSnapshot,
     resourceUrl,
     requestInlineAi,
   } satisfies StudioWorkspaceContext;
