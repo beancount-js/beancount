@@ -232,7 +232,7 @@
   }
 
   .beancount-icon-color-picker__content {
-    z-index: 50;
+    z-index: 60;
     width: min(22rem, calc(100vw - 2rem));
     border: 1px solid var(--border);
     border-radius: 0.875rem;
