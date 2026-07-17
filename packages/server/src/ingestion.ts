@@ -51,7 +51,7 @@ import {
 import { ensureConnectorsRegistered } from "./connectors";
 import {
   migrateIngestionConfig,
-  migrateIngestionState,
+  parseIngestionState,
 } from "./ingestion-migrate";
 import type { Directive } from "@beancount-js/beancount";
 import {
@@ -69,7 +69,7 @@ import {
 import { resolveEnvSecret, resolveProjectEnv } from "./project-env";
 
 const VERSION = 2;
-const STATE_VERSION = 2;
+const STATE_VERSION = 3;
 const SEEN_LIMIT = 10_000;
 
 export interface BrandfetchEnrichmentConfig {
@@ -216,13 +216,12 @@ function buildRuleHooks(
 }
 
 interface IngestionState {
-  version: 1 | 2;
+  version: 3;
   cursors: Record<string, string | undefined>;
   /** Connector-owned sync bookmarks keyed by target sourceId. */
   syncState: Record<string, ConnectorSyncState>;
   seenImportIds: string[];
   seenFingerprints: string[];
-  runs: IngestionRun[];
 }
 
 function projectId(value: string) {
@@ -259,7 +258,6 @@ function stateDefaults(): IngestionState {
     syncState: {},
     seenImportIds: [],
     seenFingerprints: [],
-    runs: [],
   };
 }
 
@@ -614,44 +612,28 @@ export class FilesystemIngestionStore {
       await this.path(project, "state.json"),
       stateDefaults(),
     );
-    return migrateIngestionState(raw) as IngestionState;
+    return parseIngestionState(raw);
   }
 
   private async writeState(project: string, state: IngestionState) {
-    const { runs: _runs, ...operational } = state;
     await this.write(await this.path(project, "state.json"), {
-      ...operational,
-      version: STATE_VERSION,
-    } satisfies Omit<IngestionState, "runs">);
-  }
-
-  /**
-   * Compatibility view for callers that still need operational checkpoints and
-   * full runs together. Persisted `state.json` deliberately contains only the
-   * checkpoint fields; the run payload is read from the archive.
-   */
-  async readState(project: string) {
-    const state = await this.readPersistedState(project);
-    await this.runs.ensure(project, state.runs);
-    if (state.version !== STATE_VERSION || state.runs.length) {
-      await this.writeState(project, state);
-    }
-    return {
       ...state,
       version: STATE_VERSION,
-      runs: await this.runs.readAll(project),
-    } satisfies IngestionState;
+    } satisfies IngestionState);
+  }
+
+  async readState(project: string) {
+    return this.readPersistedState(project);
+  }
+
+  async readRuns(project: string) {
+    return this.runs.readAll(project);
   }
 
   async listRuns(
     project: string,
     options: { limit?: number; offset?: number; sourceId?: string } = {},
   ): Promise<IngestionRunPage> {
-    const state = await this.readPersistedState(project);
-    await this.runs.ensure(project, state.runs);
-    if (state.version !== STATE_VERSION || state.runs.length) {
-      await this.writeState(project, state);
-    }
     return this.runs.list(project, options);
   }
 
@@ -706,7 +688,6 @@ export class FilesystemIngestionStore {
           ),
         ]),
       ].slice(-SEEN_LIMIT),
-      runs: state.runs,
     } satisfies IngestionState;
     await this.runs.write(project, run);
     await this.writeState(project, next);
@@ -714,11 +695,6 @@ export class FilesystemIngestionStore {
   }
 
   async run(project: string, runId: string) {
-    const state = await this.readPersistedState(project);
-    await this.runs.ensure(project, state.runs);
-    if (state.version !== STATE_VERSION || state.runs.length) {
-      await this.writeState(project, state);
-    }
     return this.runs.read(project, runId);
   }
 

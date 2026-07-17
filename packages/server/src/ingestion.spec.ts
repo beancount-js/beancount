@@ -56,7 +56,7 @@ function config(
 }
 
 describe("FilesystemIngestionStore", () => {
-  test("migrates legacy runs into individual archive files", async () => {
+  test("persists runs separately from operational state", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-runs-"),
     );
@@ -64,10 +64,11 @@ describe("FilesystemIngestionStore", () => {
     const store = storeFor(directory);
     await store.writeConfig("project", config());
     const run = {
-      id: "run:legacy-1",
+      id: "run:archive-1",
       sourceId: "bank",
       startedAt: "2026-07-16T00:00:00.000Z",
       completedAt: "2026-07-16T00:00:01.000Z",
+      cursor: "cursor-2",
       proposals: [],
       summary: {
         total: 0,
@@ -84,27 +85,29 @@ describe("FilesystemIngestionStore", () => {
     await writeFile(
       statePath,
       JSON.stringify({
-        version: 1,
+        version: 3,
         cursors: { bank: "cursor-1" },
         syncState: {},
         seenImportIds: [],
         seenFingerprints: [],
-        runs: [run],
       }),
       { encoding: "utf8", mode: 0o600 },
     );
 
-    await expect(store.readState("project")).resolves.toMatchObject({
-      version: 2,
-      cursors: { bank: "cursor-1" },
-      runs: [expect.objectContaining({ id: "run:legacy-1" })],
+    await store.saveRun("project", run);
+    await expect(store.readState("project")).resolves.toEqual({
+      version: 3,
+      cursors: { bank: "cursor-2" },
+      syncState: {},
+      seenImportIds: [],
+      seenFingerprints: [],
     });
-    await expect(store.run("project", "run:legacy-1")).resolves.toEqual(run);
+    await expect(store.run("project", "run:archive-1")).resolves.toEqual(run);
     await expect(store.listRuns("project")).resolves.toMatchObject({
       total: 1,
       runs: [
         expect.objectContaining({
-          id: "run:legacy-1",
+          id: "run:archive-1",
           reviewState: "completed",
         }),
       ],
@@ -113,7 +116,7 @@ describe("FilesystemIngestionStore", () => {
     await writeFile(indexPath, "{", { encoding: "utf8", mode: 0o600 });
     await expect(store.listRuns("project")).resolves.toMatchObject({
       total: 1,
-      runs: [expect.objectContaining({ id: "run:legacy-1" })],
+      runs: [expect.objectContaining({ id: "run:archive-1" })],
     });
     await expect(readFile(indexPath, "utf8")).resolves.toContain(
       '"version": 1',
@@ -121,8 +124,8 @@ describe("FilesystemIngestionStore", () => {
 
     const persistedState = JSON.parse(await readFile(statePath, "utf8"));
     expect(persistedState).toEqual({
-      version: 2,
-      cursors: { bank: "cursor-1" },
+      version: 3,
+      cursors: { bank: "cursor-2" },
       syncState: {},
       seenImportIds: [],
       seenFingerprints: [],

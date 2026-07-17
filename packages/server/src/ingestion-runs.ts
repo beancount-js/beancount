@@ -235,21 +235,10 @@ export class FilesystemIngestionRunArchive {
     return index;
   }
 
-  /** Import legacy state records exactly once before the caller clears them. */
-  async ensure(project: string, legacyRuns: readonly IngestionRun[] = []) {
+  async ensure(project: string) {
     return this.withLock(project, async () => {
-      for (const run of legacyRuns) {
-        const normalized = normalizedRun(run);
-        await this.writeJson(await this.path(project, run.id), {
-          version: RUN_FILE_VERSION,
-          updatedAt: new Date().toISOString(),
-          run: normalized,
-        } satisfies PersistedIngestionRun);
-      }
       const index = await this.readIndex(project);
-      return legacyRuns.length > 0 || !index
-        ? this.rebuildIndex(project)
-        : index;
+      return index ?? this.rebuildIndex(project);
     });
   }
 

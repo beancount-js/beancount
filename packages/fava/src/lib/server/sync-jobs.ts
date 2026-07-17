@@ -119,8 +119,7 @@ async function runAiRerunJob(active: ActiveSyncJob, job: IngestionSyncJob) {
       })),
     );
     const source = await store.source(active.projectId, active.sourceId);
-    const state = await store.readState(active.projectId);
-    const sourceRuns = state.runs.filter((run) =>
+    const sourceRuns = (await store.readRuns(active.projectId)).filter((run) =>
       runBelongsToSource(run.sourceId, active.sourceId),
     );
     if (!sourceRuns.length) {

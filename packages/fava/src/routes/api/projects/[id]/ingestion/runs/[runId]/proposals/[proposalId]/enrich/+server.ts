@@ -68,9 +68,9 @@ export async function POST({
     if (merchantOnly && updated.merchantResolution) {
       const label = rawMerchantLabel(updated);
       if (label) labels.add(normalizeMerchant(label));
-      const state = await store.readState(params.id);
+      const archivedRuns = await store.readRuns(params.id);
       const fanOut = applyMerchantResolutionToPendingProposals(
-        state.runs,
+        archivedRuns,
         source.id,
         labels,
         updated.merchantResolution,

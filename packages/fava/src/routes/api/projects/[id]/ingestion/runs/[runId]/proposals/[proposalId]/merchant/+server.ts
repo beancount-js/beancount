@@ -238,9 +238,9 @@ export async function PATCH({
       };
     }
 
-    const state = await store.readState(params.id);
+    const archivedRuns = await store.readRuns(params.id);
     const fanOut = applyMerchantResolutionToPendingProposals(
-      state.runs,
+      archivedRuns,
       source.id,
       labelsForFanOut(body, label),
       merchantResolution,

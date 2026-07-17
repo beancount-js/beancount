@@ -21,9 +21,9 @@ export async function GET({
     const preferredRunId = url.searchParams.get("runId") ?? undefined;
     const store = serverIngestion();
     await store.source(params.id, sourceId);
-    const state = await store.readState(params.id);
+    const runs = await store.readRuns(params.id);
     const latest = await store.latestSyncJob(params.id, sourceId);
-    const result = buildMerchantReviewClusters(state.runs, sourceId, {
+    const result = buildMerchantReviewClusters(runs, sourceId, {
       preferredRunId,
       syncRunIds: latest?.runIds,
     });

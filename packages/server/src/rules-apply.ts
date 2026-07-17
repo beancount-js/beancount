@@ -238,7 +238,7 @@ export async function previewRuleApply(options: {
   const selected = options.ruleIds?.length
     ? file.rules.filter((rule) => options.ruleIds!.includes(rule.id))
     : file.rules.filter((rule) => rule.active);
-  const state = await options.ingestionStore.readState(options.projectId);
+  const runs = await options.ingestionStore.readRuns(options.projectId);
   const snapshot = await options.workspace.readProject(options.projectId);
   const [entries] = loadProjectSources(
     snapshot.project.entryFile,
@@ -250,7 +250,7 @@ export async function previewRuleApply(options: {
   return selected.map((rule) => ({
     ruleId: rule.id,
     ruleName: rule.name ?? "Untitled rule",
-    ...countRuleMatches(rule, state.runs, entries),
+    ...countRuleMatches(rule, runs, entries),
   }));
 }
 
@@ -284,9 +284,9 @@ export async function applyDetectionRules(options: {
       let modified = 0;
 
       // Patch pending proposals.
-      const state = await options.ingestionStore.readState(options.projectId);
+      const runs = await options.ingestionStore.readRuns(options.projectId);
       const changedRuns: IngestionRun[] = [];
-      for (const ingestionRun of state.runs) {
+      for (const ingestionRun of runs) {
         let runChanged = false;
         const proposals = ingestionRun.proposals.map((proposal) => {
           if (
