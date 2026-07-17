@@ -944,22 +944,27 @@
                     : '-rotate-90'}"
                   aria-hidden="true"
                 />
-                <span
-                  class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
-                  aria-hidden="true"
-                >
-                  {#if merchant?.logoUrl && !failedMerchantLogoIds.has(merchant.merchantId)}
+                {#if merchant?.logoUrl && !failedMerchantLogoIds.has(merchant.merchantId)}
+                  <span
+                    class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-background p-1 shadow-sm"
+                    aria-hidden="true"
+                  >
                     <img
-                      class="size-full object-contain p-1"
+                      class="size-full object-contain"
                       src={merchant.logoUrl}
                       alt=""
                       onerror={() =>
                         markMerchantLogoFailed(merchant.merchantId)}
                     />
-                  {:else}
+                  </span>
+                {:else}
+                  <span
+                    class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
+                    aria-hidden="true"
+                  >
                     {accountAvatarInitial(connection.name || connection.id)}
-                  {/if}
-                </span>
+                  </span>
+                {/if}
                 <span class="min-w-0 flex-1">
                   <span class="block truncate text-sm font-semibold">
                     {connection.name || connection.id}
