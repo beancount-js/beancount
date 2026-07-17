@@ -799,16 +799,17 @@
                   <div class="flex flex-col gap-4">
                     {#each linkedGroups as group (group.label)}
                       {@const groupBalance = groupBalanceText(group)}
-                      <div
-                        class="overflow-hidden rounded-lg border border-border bg-muted/30"
-                      >
+                      <section class="overflow-hidden rounded-2xl bg-muted/80">
                         <div
-                          class="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-3 py-2"
+                          class="flex items-center justify-between gap-3 px-5 py-4"
                         >
                           <p
-                            class="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+                            class="text-sm font-semibold tracking-wide text-foreground"
                           >
-                            {group.label} · {group.accounts.length}
+                            {group.label}
+                            <span class="ml-2 text-muted-foreground"
+                              >· {group.accounts.length}</span
+                            >
                           </p>
                           {#if groupBalance}
                             <span
@@ -818,12 +819,17 @@
                             </span>
                           {/if}
                         </div>
-                        <ul class="divide-y divide-border" role="list">
-                          {#each group.accounts as account (account.id)}
+                        <ul
+                          class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+                          role="list"
+                        >
+                          {#each group.accounts as account, index (account.id)}
                             {@const institution = institutionForLinked(account)}
                             {@const balance = accountBalanceText(account)}
                             <li
-                              class="flex items-center gap-3 bg-card/70 px-3 py-2.5"
+                              class:rounded-b-xl={index ===
+                                group.accounts.length - 1}
+                              class="flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
                             >
                               <div
                                 class="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold {accountAvatarClass(
@@ -898,7 +904,7 @@
                             </li>
                           {/each}
                         </ul>
-                      </div>
+                      </section>
                     {/each}
                   </div>
                 {:else if discovering}
