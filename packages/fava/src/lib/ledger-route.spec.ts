@@ -63,6 +63,12 @@ describe("ledger-route", () => {
       viewSegment: "settings/brands",
       params: {},
     });
+    expect(parseLedgerAndView(["sample", "settings", "history"])).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/history",
+      viewSegment: "settings/history",
+      params: {},
+    });
     expect(parseLedgerAndView(["sample", "settings", "rules"])).toEqual({
       ledgerStem: "sample",
       viewPath: "/import/rules",
@@ -98,12 +104,19 @@ describe("ledger-route", () => {
       "settings",
       "brands",
     ]);
+    expect(viewPathToSegments("/import/history")).toEqual([
+      "settings",
+      "history",
+    ]);
     expect(viewPathToSegments("/import/rules")).toEqual(["settings", "rules"]);
     expect(buildLedgerHref("bean-budget", "a/b/sample", "/dashboard")).toBe(
       "/bean-budget/ledger/a/b/sample/dashboard/",
     );
     expect(buildLedgerHref("bean-budget", "sample", "/import/brands")).toBe(
       "/bean-budget/ledger/sample/settings/brands/",
+    );
+    expect(buildLedgerHref("bean-budget", "sample", "/import/history")).toBe(
+      "/bean-budget/ledger/sample/settings/history/",
     );
     expect(buildLedgerHref("bean-budget", "sample", "/import/rules")).toBe(
       "/bean-budget/ledger/sample/settings/rules/",

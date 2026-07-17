@@ -8,6 +8,7 @@
   import Folder from "lucide-svelte/icons/folder";
   import FolderTree from "lucide-svelte/icons/folder-tree";
   import Hash from "lucide-svelte/icons/hash";
+  import History from "lucide-svelte/icons/history";
   import ImportIcon from "lucide-svelte/icons/import";
   import Landmark from "lucide-svelte/icons/landmark";
   import Palette from "lucide-svelte/icons/palette";
@@ -262,6 +263,7 @@
       routePath === "/import/merchants" ||
       routePath === "/import/manage-merchants" ||
       routePath === "/import/brands" ||
+      routePath === "/import/history" ||
       routePath === "/import/rules" ||
       routePath === "/records"
     );
@@ -514,6 +516,30 @@
             <span class="block text-xs font-medium">Import</span>
             <span class="block truncate text-[11px] text-muted-foreground"
               >Configure ingestion sources</span
+            >
+          </span>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          class={cn(
+            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+            isLedgerSettingActive("/import/history", activeViewPath)
+              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+          )}
+          aria-current={isLedgerSettingActive("/import/history", activeViewPath)
+            ? "page"
+            : undefined}
+          disabled={files.length === 0}
+          onclick={() => openLedgerSetting("/import/history")}
+        >
+          <History data-icon="inline-start" />
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-medium">Import history</span>
+            <span class="block truncate text-[11px] text-muted-foreground"
+              >Browse completed and pending ingestion runs</span
             >
           </span>
         </Button>

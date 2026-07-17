@@ -28,6 +28,8 @@
   import type {
     IngestionConfigResponse,
     IngestionRun,
+    IngestionRunPage,
+    IngestionRunSummary,
     ImportProposal,
   } from "../ingestion/types";
   import {
@@ -70,6 +72,7 @@
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
 
   let config = $state<IngestionConfigResponse | undefined>(undefined);
+  let runSummaries = $state<IngestionRunSummary[]>([]);
   let runs = $state<IngestionRun[]>([]);
   let activeRuns = $state<IngestionRun[]>([]);
   let sourceId = $state("");
@@ -437,49 +440,76 @@
     ingestionHeaderActions.set(null);
   });
 
-  function runBelongsToSource(item: IngestionRun, id: string) {
+  function runBelongsToSource(item: IngestionRunSummary, id: string) {
     return item.sourceId === id || item.sourceId.startsWith(`${id}:`);
   }
 
-  function reviewableCount(run: IngestionRun) {
-    return run.proposals.filter(
-      (proposal) =>
-        proposal.status === "ready" || proposal.status === "needs-review",
-    ).length;
-  }
-
-  function sortRunsNewest(items: IngestionRun[]) {
-    return [...items].sort((a, b) =>
-      (b.completedAt || b.startedAt).localeCompare(
-        a.completedAt || a.startedAt,
-      ),
-    );
-  }
-
-  function pickRunsForSource(
-    items: IngestionRun[],
+  function pickRunIdsForSource(
+    items: readonly IngestionRunSummary[],
     id: string,
     preferredRunId?: string,
     syncRunIds?: readonly string[],
   ) {
     const belonging = items.filter((item) => runBelongsToSource(item, id));
-    if (!belonging.length) return [];
-
-    if (preferredRunId) {
-      const preferred = belonging.find((item) => item.id === preferredRunId);
-      if (preferred) return [preferred];
-    }
+    if (preferredRunId) return [preferredRunId];
+    if (!belonging.length) return [] as string[];
 
     if (syncRunIds?.length) {
-      const fromSync = syncRunIds
-        .map((runId) => belonging.find((item) => item.id === runId))
-        .filter((item): item is IngestionRun => Boolean(item));
+      const fromSync = syncRunIds.filter((runId) =>
+        belonging.some((item) => item.id === runId),
+      );
       if (fromSync.length) return fromSync;
     }
 
-    const sorted = sortRunsNewest(belonging);
-    const reviewable = sorted.find((run) => reviewableCount(run) > 0);
-    return reviewable ? [reviewable] : sorted[0] ? [sorted[0]] : [];
+    const reviewable = belonging.find((run) => run.reviewState === "pending");
+    return reviewable ? [reviewable.id] : belonging[0] ? [belonging[0].id] : [];
+  }
+
+  function runsListPath(projectId: string, nextSourceId?: string) {
+    const query = new URLSearchParams({ limit: "100" });
+    if (nextSourceId) query.set("sourceId", nextSourceId);
+    return ingestionPath(projectId, `/runs?${query}`);
+  }
+
+  async function refreshRunSummaries(nextSourceId = sourceId) {
+    if (!project || isWeb) return [] as IngestionRunSummary[];
+    const page = await ingestionJson<IngestionRunPage>(
+      runsListPath(project.project.id, nextSourceId),
+    );
+    runSummaries = page.runs;
+    return page.runs;
+  }
+
+  async function loadActiveRunsForSource(
+    nextSourceId: string,
+    preferredRunId?: string,
+    syncRunIds?: readonly string[],
+    summaries = runSummaries,
+  ) {
+    if (!project || isWeb || !nextSourceId) return;
+    const runIds = pickRunIdsForSource(
+      summaries,
+      nextSourceId,
+      preferredRunId,
+      syncRunIds,
+    );
+    if (!runIds.length) {
+      runs = [];
+      applyActiveRuns([]);
+      return;
+    }
+    const loaded = await Promise.all(
+      runIds.map((runId) =>
+        ingestionJson<IngestionRun>(
+          ingestionPath(
+            project.project.id,
+            `/runs/${encodeURIComponent(runId)}`,
+          ),
+        ),
+      ),
+    );
+    runs = loaded;
+    applyActiveRuns(loaded);
   }
 
   function applyActiveRuns(next: IngestionRun[]) {
@@ -534,7 +564,7 @@
           syncAbort.signal,
         );
       } else if (latest?.runIds.length && !activeRuns.length) {
-        applyActiveRuns(pickRunsForSource(runs, id, undefined, latest.runIds));
+        void loadActiveRunsForSource(id, undefined, latest.runIds);
       }
     } catch {
       // Review page can still work without live sync status.
@@ -545,16 +575,10 @@
     if (!project || isWeb) return;
     loading = true;
     try {
-      const [configResponse, runList] = await Promise.all([
-        ingestionJson<IngestionConfigResponse>(
-          ingestionPath(project.project.id),
-        ),
-        ingestionJson<IngestionRun[]>(
-          ingestionPath(project.project.id, "/runs"),
-        ),
-      ]);
+      const configResponse = await ingestionJson<IngestionConfigResponse>(
+        ingestionPath(project.project.id),
+      );
       config = configResponse;
-      runs = runList;
       const preferredSource =
         querySourceId &&
         config.sources.some((source) => source.id === querySourceId)
@@ -563,6 +587,7 @@
       sourceId = config.sources.some((source) => source.id === preferredSource)
         ? preferredSource
         : (config.sources[0]?.id ?? "");
+      const summaries = await refreshRunSummaries(sourceId);
       let syncRunIds: string[] | undefined;
       if (sourceId) {
         try {
@@ -576,16 +601,17 @@
           syncRunIds = undefined;
         }
       }
-      applyActiveRuns(
-        sourceId
-          ? pickRunsForSource(
-              runs,
-              sourceId,
-              queryRunId || undefined,
-              syncRunIds,
-            )
-          : [],
-      );
+      if (sourceId) {
+        await loadActiveRunsForSource(
+          sourceId,
+          queryRunId || undefined,
+          syncRunIds,
+          summaries,
+        );
+      } else {
+        runs = [];
+        applyActiveRuns([]);
+      }
       loadedProjectId = project.project.id;
       if (sourceId) void watchSync(project.project.id, sourceId);
     } catch (error) {
@@ -616,9 +642,17 @@
         syncRunIds = undefined;
       }
     }
-    applyActiveRuns(
-      pickRunsForSource(runs, nextSourceId, undefined, syncRunIds),
-    );
+    try {
+      const summaries = await refreshRunSummaries(nextSourceId);
+      await loadActiveRunsForSource(
+        nextSourceId,
+        undefined,
+        syncRunIds,
+        summaries,
+      );
+    } catch (error) {
+      status = error instanceof Error ? error.message : String(error);
+    }
     if (project) void watchSync(project.project.id, nextSourceId);
   }
 
@@ -626,16 +660,17 @@
     if (!project || !sourceId) return;
     loading = true;
     try {
-      const run = await ingestionJson<IngestionRun>(
-        ingestionPath(project.project.id, "/runs"),
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ sourceId }),
-        },
-      );
-      runs = [run, ...runs.filter((item) => item.id !== run.id)];
-      applyActiveRuns([run]);
+      const response = await ingestionJson<
+        IngestionRun | { runs: IngestionRun[] }
+      >(ingestionPath(project.project.id, "/runs"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sourceId }),
+      });
+      const createdRuns = "runs" in response ? response.runs : [response];
+      runs = createdRuns;
+      applyActiveRuns(createdRuns);
+      await refreshRunSummaries(sourceId);
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {
@@ -756,11 +791,9 @@
   }
 
   $effect(() => {
-    if (!queryRunId || !sourceId || !runs.length) return;
+    if (!queryRunId || !sourceId) return;
     if (activeRuns.some((run) => run.id === queryRunId)) return;
-    applyActiveRuns(
-      pickRunsForSource(runs, sourceId, queryRunId, syncJob?.runIds),
-    );
+    void loadActiveRunsForSource(sourceId, queryRunId, syncJob?.runIds);
   });
 
   $effect(() => {
@@ -916,6 +949,7 @@
           )?.revision ?? expectedRevision;
       }
       if (lastSnapshot) snapshot.set(lastSnapshot);
+      await refreshRunSummaries(sourceId);
       status = `Accepted ${acceptedCount} transaction${acceptedCount === 1 ? "" : "s"}.`;
     } catch (error) {
       activeRuns = previousActiveRuns;

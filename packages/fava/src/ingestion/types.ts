@@ -13,6 +13,8 @@ import type {
   AiEnrichmentDebugCall,
   BrandfetchEnrichmentConfig,
   MerchantEnrichmentConfig,
+  IngestionRunPage,
+  IngestionRunSummary,
 } from "@beancount-js/server";
 
 export type {
@@ -61,4 +63,10 @@ export interface IngestionConfigResponse {
   brandCredentialAvailable?: boolean;
 }
 
-export type { ImportProposal, IngestionRun, JsonApiLinkedAccount };
+export type {
+  ImportProposal,
+  IngestionRun,
+  IngestionRunPage,
+  IngestionRunSummary,
+  JsonApiLinkedAccount,
+};

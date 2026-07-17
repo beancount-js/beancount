@@ -25,6 +25,7 @@
   import IngestionMerchantReview from "./components/IngestionMerchantReview.svelte";
   import IngestionMerchantManage from "./components/IngestionMerchantManage.svelte";
   import IngestionBrandSettings from "./components/IngestionBrandSettings.svelte";
+  import IngestionRunHistory from "./components/IngestionRunHistory.svelte";
   import RulesSettings from "./components/RulesSettings.svelte";
   import FavaNavigation from "./components/FavaNavigation.svelte";
   import Search from "./components/Search.svelte";
@@ -86,6 +87,7 @@
       { path: "/import/merchants", element: IngestionMerchantReview },
       { path: "/import/manage-merchants", element: IngestionMerchantManage },
       { path: "/import/brands", element: IngestionBrandSettings },
+      { path: "/import/history", element: IngestionRunHistory },
       { path: "/import/rules", element: RulesSettings },
       { path: "/directives", element: Editor },
       { path: "/resource", element: ResourceViewer },
@@ -110,6 +112,7 @@
     "/import/merchants": "Review merchants",
     "/import/manage-merchants": "Manage merchants",
     "/import/brands": "Brand match",
+    "/import/history": "Import history",
     "/import/rules": "Rules",
     "/directives": "Editor",
     "/resource": "Resource",

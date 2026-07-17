@@ -9,9 +9,32 @@ function message(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-export async function GET({ params }: { params: { id: string } }) {
-  const state = await serverIngestion().readState(params.id);
-  return json(state.runs);
+function boundedInteger(
+  value: string | null,
+  fallback: number,
+  maximum: number,
+) {
+  if (value === null) return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) return fallback;
+  return Math.min(parsed, maximum);
+}
+
+export async function GET({
+  params,
+  url,
+}: {
+  params: { id: string };
+  url: URL;
+}) {
+  const sourceId = url.searchParams.get("sourceId")?.trim() || undefined;
+  return json(
+    await serverIngestion().listRuns(params.id, {
+      offset: boundedInteger(url.searchParams.get("offset"), 0, 1_000_000),
+      limit: boundedInteger(url.searchParams.get("limit"), 25, 100),
+      sourceId,
+    }),
+  );
 }
 
 export async function POST({

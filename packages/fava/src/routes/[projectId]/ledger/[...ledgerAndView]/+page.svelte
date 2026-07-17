@@ -108,6 +108,7 @@
           last === "merchants" ||
           last === "manage-merchants" ||
           last === "brands" ||
+          last === "history" ||
           last === "rules" ||
           segments.includes("account") ||
           [

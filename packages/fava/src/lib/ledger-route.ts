@@ -50,6 +50,7 @@ export const HASH_VIEW_TO_SEGMENT: Record<string, string> = {
   "/import/merchants": "settings/merchants",
   "/import/manage-merchants": "settings/manage-merchants",
   "/import/brands": "settings/brands",
+  "/import/history": "settings/history",
   "/import/rules": "settings/rules",
 };
 
@@ -74,6 +75,7 @@ export const SEGMENT_TO_HASH_VIEW: Record<string, string> = {
   "settings/merchants": "/import/merchants",
   "settings/manage-merchants": "/import/manage-merchants",
   "settings/brands": "/import/brands",
+  "settings/history": "/import/history",
   "settings/rules": "/import/rules",
 };
 
@@ -149,6 +151,7 @@ export function parseLedgerAndView(
     merchants: "/import/merchants",
     "manage-merchants": "/import/manage-merchants",
     brands: "/import/brands",
+    history: "/import/history",
     rules: "/import/rules",
   };
   if (
