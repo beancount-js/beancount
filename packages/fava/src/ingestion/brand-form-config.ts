@@ -1,4 +1,9 @@
-import { createFormConfig, type FormConfig } from "@beancount-js/forms";
+import {
+  createFormConfig,
+  segmentedField,
+  textField,
+  type FormConfig,
+} from "@beancount-js/forms";
 import type { BrandfetchEnrichmentConfig } from "@beancount-js/server";
 import {
   secretField,
@@ -28,6 +33,9 @@ function currentBrandfetch(
     config.brandfetch ?? {
       enabled: false,
       clientId: DEFAULT_BRANDFETCH_CLIENT_ID,
+      delivery: "local-cache",
+      refreshDays: 30,
+      highResolution: false,
     }
   );
 }
@@ -50,6 +58,9 @@ export const brandSettingsToggleForm = createFormConfig<
             ? {
                 enabled: false,
                 clientId: DEFAULT_BRANDFETCH_CLIENT_ID,
+                delivery: "local-cache",
+                refreshDays: 30,
+                highResolution: false,
               }
             : undefined,
         ),
@@ -71,6 +82,38 @@ export const brandSettingsForm: FormConfig<
       set: (config, enabled) =>
         withBrandfetch(config, { ...currentBrandfetch(config), enabled }),
     }),
+    segmentedField({
+      id: "ingestion-global-brandfetch-delivery",
+      label: "Logo delivery",
+      path: "brandfetch.delivery",
+      as: "div",
+      align: "center",
+      options: [
+        { value: "local-cache", label: "Local cache" },
+        { value: "server-proxy", label: "Server proxy" },
+      ],
+      get: (config) =>
+        config.brandfetch?.delivery === "server-proxy"
+          ? "server-proxy"
+          : "local-cache",
+      set: (config, delivery) =>
+        withBrandfetch(config, {
+          ...currentBrandfetch(config),
+          delivery:
+            delivery === "server-proxy" ? "server-proxy" : "local-cache",
+        }),
+    }),
+    switchField({
+      id: "ingestion-global-brandfetch-high-resolution",
+      label: "High-resolution logos",
+      ariaLabel: "Enable high-resolution logos",
+      get: (config) => config.brandfetch?.highResolution === true,
+      set: (config, highResolution) =>
+        withBrandfetch(config, {
+          ...currentBrandfetch(config),
+          highResolution,
+        }),
+    }),
     secretField({
       id: "ingestion-global-brandfetch-client-id",
       label: "Client ID",
@@ -83,6 +126,32 @@ export const brandSettingsForm: FormConfig<
           ...currentBrandfetch(config),
           clientId: brandfetchClientId(clientId),
         }),
+    }),
+  ],
+});
+
+export const brandSettingsLocalCacheForm: FormConfig<
+  EditableIngestionConfig,
+  SourceFormContext
+> = createFormConfig({
+  id: "ingestion-brand-settings-local-cache",
+  fields: [
+    textField({
+      id: "ingestion-global-brandfetch-refresh-days",
+      label: "Refresh after days",
+      path: "brandfetch.refreshDays",
+      inputType: "number",
+      placeholder: "30",
+      as: "div",
+      align: "center",
+      get: (config) => String(config.brandfetch?.refreshDays ?? 30),
+      set: (config, value) => {
+        const parsed = Number(value);
+        return withBrandfetch(config, {
+          ...currentBrandfetch(config),
+          refreshDays: Number.isInteger(parsed) ? parsed : 0,
+        });
+      },
     }),
   ],
 });

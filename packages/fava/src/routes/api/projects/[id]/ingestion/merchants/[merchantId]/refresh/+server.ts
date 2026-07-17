@@ -11,20 +11,14 @@ function message(error: unknown) {
 
 export async function POST({
   params,
-  request,
 }: {
   params: { id: string; merchantId: string };
-  request: Request;
 }) {
   try {
-    const body = (await request.json()) as { sourceId?: unknown };
-    if (typeof body.sourceId !== "string")
-      return json({ error: "sourceId is required." }, { status: 400 });
     const store = serverIngestion();
-    const source = await store.sourceForRunSourceId(params.id, body.sourceId);
     const config = await store.readConfig(params.id);
     const brandfetch = config.brandfetch;
-    if (!source.merchantEnrichment?.enabled || !brandfetch?.enabled) {
+    if (!brandfetch?.enabled) {
       return json(
         { error: "Brandfetch Logo API is not enabled." },
         { status: 400 },
@@ -43,11 +37,24 @@ export async function POST({
         { error: "This merchant has no confirmed domain." },
         { status: 400 },
       );
-    const enrichment = source.merchantEnrichment ?? { enabled: false };
+    await store.logos.merchantLogo({
+      project: params.id,
+      merchantId: merchant.merchantId,
+      domain: merchant.domain,
+      clientId: runtime.clientId,
+      force: true,
+      settings: {
+        delivery: brandfetch.delivery ?? "local-cache",
+        refreshDays: brandfetch.refreshDays ?? 30,
+        highResolution: brandfetch.highResolution === true,
+      },
+    });
+    const refreshed = await store.merchants.get(params.id, params.merchantId);
     return json({
-      ...merchant,
-      logoUrl: merchantLogoUrlFor(params.id, merchant, {
-        ...enrichment,
+      ...refreshed,
+      logoDelivery: brandfetch.delivery ?? "local-cache",
+      logoUrl: merchantLogoUrlFor(params.id, refreshed, {
+        enabled: true,
         brandfetch: {
           ...brandfetch,
           clientId: runtime.clientId,

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  brandfetchLogoUrl: vi.fn(),
+  brandfetchDomainLogoUrl: vi.fn(),
   confirm: vi.fn(),
   findByDomain: vi.fn(),
   logoUrl: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock("$lib/server/ingestion", () => ({
 }));
 
 vi.mock("@beancount-js/server", () => ({
-  brandfetchLogoUrl: mocks.brandfetchLogoUrl,
+  brandfetchDomainLogoUrl: mocks.brandfetchDomainLogoUrl,
   isValidDomain: (domain: string) => domain.includes("."),
   merchantLogoUrlFor: mocks.logoUrl,
   resolveBrandfetchRuntime: mocks.resolveRuntime,
@@ -41,9 +41,7 @@ describe("POST /ingestion/merchants/brand-match", () => {
     mocks.readConfig.mockResolvedValue({ version: 2, brandfetch, sources: [] });
     mocks.projectRoot.mockResolvedValue("/projects/demo");
     mocks.resolveRuntime.mockResolvedValue({ clientId: "client-id" });
-    mocks.brandfetchLogoUrl.mockReturnValue(
-      "https://cdn.brandfetch.io/domain/starlingbank.com?c=client-id",
-    );
+    mocks.brandfetchDomainLogoUrl.mockReturnValue("/internal-logo.png");
     mocks.findByDomain.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue({
       merchantId: "merchant-starling",
@@ -70,9 +68,9 @@ describe("POST /ingestion/merchants/brand-match", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(mocks.brandfetchLogoUrl).toHaveBeenCalledWith(
+    expect(mocks.brandfetchDomainLogoUrl).toHaveBeenCalledWith(
+      "demo",
       "starlingbank.com",
-      "client-id",
     );
     expect(mocks.confirm).toHaveBeenCalledWith(
       "demo",

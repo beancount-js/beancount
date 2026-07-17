@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  brandfetchLogoUrl: vi.fn(),
+  brandfetchDomainLogoUrl: vi.fn(),
   confirm: vi.fn(),
   findByDomain: vi.fn(),
   logoUrl: vi.fn(),
@@ -25,7 +25,7 @@ vi.mock("$lib/server/ingestion", () => ({
 }));
 
 vi.mock("@beancount-js/server", () => ({
-  brandfetchLogoUrl: mocks.brandfetchLogoUrl,
+  brandfetchDomainLogoUrl: mocks.brandfetchDomainLogoUrl,
   isValidDomain: (domain: string) => domain.includes("."),
   merchantLogoUrlFor: mocks.logoUrl,
   resolveBrandfetchRuntime: mocks.resolveRuntime,
@@ -53,9 +53,7 @@ describe("POST /ingestion/sources/:sourceId/merchant", () => {
     mocks.resolveRuntime.mockResolvedValue({
       clientId: "client-id",
     });
-    mocks.brandfetchLogoUrl.mockReturnValue(
-      "https://cdn.brandfetch.io/domain/starlingbank.com?c=client-id",
-    );
+    mocks.brandfetchDomainLogoUrl.mockReturnValue("/internal-logo.png");
     mocks.confirm.mockResolvedValue({
       merchantId: "merchant-starling",
       canonicalName: "Starling Bank",
@@ -83,9 +81,9 @@ describe("POST /ingestion/sources/:sourceId/merchant", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(mocks.brandfetchLogoUrl).toHaveBeenCalledWith(
+    expect(mocks.brandfetchDomainLogoUrl).toHaveBeenCalledWith(
+      "demo",
       "starlingbank.com",
-      "client-id",
     );
     expect(mocks.confirm).toHaveBeenCalledWith(
       "demo",
@@ -93,8 +91,7 @@ describe("POST /ingestion/sources/:sourceId/merchant", () => {
         candidate: expect.objectContaining({
           domain: "starlingbank.com",
           canonicalName: "Starling Bank",
-          logoUrl:
-            "https://cdn.brandfetch.io/domain/starlingbank.com?c=client-id",
+          logoUrl: "/internal-logo.png",
         }),
       }),
     );
@@ -128,7 +125,7 @@ describe("POST /ingestion/sources/:sourceId/merchant", () => {
     await expect(response.json()).resolves.toEqual({
       error: "Enable Brandfetch Logo API before updating a connection logo.",
     });
-    expect(mocks.brandfetchLogoUrl).not.toHaveBeenCalled();
+    expect(mocks.brandfetchDomainLogoUrl).not.toHaveBeenCalled();
     expect(mocks.writeConfig).not.toHaveBeenCalled();
   });
 });

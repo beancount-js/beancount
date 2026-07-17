@@ -13,6 +13,7 @@
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import {
     brandSettingsForm,
+    brandSettingsLocalCacheForm,
     brandSettingsToggleForm,
   } from "../ingestion/brand-form-config";
   import {
@@ -178,9 +179,9 @@
     {:else}
       <div class="flex min-w-0 flex-col gap-6">
         <p class="text-sm text-muted-foreground">
-          Brandfetch Logo API adds logos for merchants with a known domain. AI
-          and manual review provide merchant names, descriptions, and other
-          details across all connections.
+          Brandfetch Logo API adds logos for merchants with a known domain.
+          Local cache keeps validated images in this project; server proxy
+          fetches them through the app without storing a file.
         </p>
 
         <article
@@ -203,8 +204,22 @@
                 embedded
                 onChange={updateConfig}
               />
+              {#if config.brandfetch.delivery !== "server-proxy"}
+                <StructuredForm
+                  value={config}
+                  config={brandSettingsLocalCacheForm}
+                  context={formContext}
+                  {issues}
+                  embedded
+                  onChange={updateConfig}
+                />
+              {/if}
             {/if}
           </div>
+          <p class="mt-3 text-sm text-muted-foreground">
+            High-resolution logos use 120×120 images instead of 40×40 for
+            sharper high-DPI displays.
+          </p>
         </article>
 
         <div>

@@ -71,6 +71,7 @@ export async function GET({
       : undefined;
     return json({
       ...details,
+      logoDelivery: config.brandfetch?.delivery ?? "local-cache",
       logoUrl:
         source && enrichment
           ? merchantLogoUrlFor(params.id, details, {
@@ -117,8 +118,10 @@ export async function PATCH({
       params.merchantId,
       input,
     );
+    const config = await store.readConfig(params.id);
     return json({
       ...details,
+      logoDelivery: config.brandfetch?.delivery ?? "local-cache",
       logoUrl: await logoUrlFor(params.id, details),
     });
   } catch (error) {

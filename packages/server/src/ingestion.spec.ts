@@ -7,7 +7,9 @@ import {
   categoryAccountsForSource,
   expandIngestionSource,
   FilesystemIngestionStore,
+  brandfetchDomainLogoUrl,
   merchantAdvisorLabel,
+  merchantLogoUrlFor,
   type IngestionConfig,
 } from "./ingestion";
 import { ensureProposalMerchantPersisted } from "./merchant-persist";
@@ -735,6 +737,38 @@ describe("FilesystemIngestionStore", () => {
     expect(persisted).not.toContain("BRANDFETCH_API_KEY");
     expect(persisted).not.toContain("allowNameSearch");
     expect(persisted).not.toContain("cacheContentAllowed");
+  });
+
+  test("only emits internal application URLs for merchant and domain logos", () => {
+    const enrichmentWithBrandfetch = {
+      enabled: true,
+      brandfetch: { enabled: true, clientId: "private-client-id" },
+    };
+    const merchantUrl = merchantLogoUrlFor(
+      "project with spaces",
+      {
+        merchantId: "merchant:tesco",
+        domain: "tesco.com",
+        brand: {
+          asset: {
+            sha256: "asset hash",
+            expiresAt: "2030-01-01T00:00:00.000Z",
+          },
+        },
+      },
+      enrichmentWithBrandfetch,
+    );
+
+    expect(merchantUrl).toBe(
+      "/api/projects/project%20with%20spaces/ingestion/merchants/merchant%3Atesco/logo?v=asset%20hash",
+    );
+    expect(brandfetchDomainLogoUrl("project with spaces", "Tesco.COM")).toBe(
+      "/api/projects/project%20with%20spaces/ingestion/logos/tesco.com",
+    );
+    expect(`${merchantUrl} ${brandfetchDomainLogoUrl("project", "tesco.com")}`)
+      .not.toContain("brandfetch.io");
+    expect(`${merchantUrl} ${brandfetchDomainLogoUrl("project", "tesco.com")}`)
+      .not.toContain("private-client-id");
   });
 
   test("auto-persists an enriched suggested merchant on accept", async () => {

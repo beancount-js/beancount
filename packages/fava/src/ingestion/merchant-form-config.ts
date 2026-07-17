@@ -24,10 +24,12 @@ export type EditableMerchantProfile = {
   provenance: readonly MerchantProvenance[];
   brand?: MerchantBrandData;
   logoUrl?: string;
+  logoDelivery?: "local-cache" | "server-proxy";
 };
 
 export type MerchantProfileResponse = MerchantProfileDetails & {
   logoUrl?: string;
+  logoDelivery?: "local-cache" | "server-proxy";
 };
 
 export function editableMerchantFromDetails(
@@ -45,6 +47,7 @@ export function editableMerchantFromDetails(
     provenance: details.provenance,
     brand: details.brand,
     logoUrl: details.logoUrl,
+    logoDelivery: details.logoDelivery,
   };
 }
 

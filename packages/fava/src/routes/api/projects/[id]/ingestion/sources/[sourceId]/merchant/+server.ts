@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit";
 import type { MerchantCandidate } from "@beancount-js/beangulp";
 import {
-  brandfetchLogoUrl,
+  brandfetchDomainLogoUrl,
   isValidDomain,
   merchantLogoUrlFor,
   resolveBrandfetchRuntime,
@@ -91,7 +91,7 @@ export async function POST({
           observedAt: new Date().toISOString(),
         },
       ],
-      logoUrl: brandfetchLogoUrl(domain, runtime.clientId),
+      logoUrl: brandfetchDomainLogoUrl(params.id, domain),
     };
 
     let existing = source.merchantId

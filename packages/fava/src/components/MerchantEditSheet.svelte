@@ -11,6 +11,7 @@
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import CircleAlert from "lucide-svelte/icons/circle-alert";
+  import RefreshCw from "lucide-svelte/icons/refresh-cw";
   import X from "lucide-svelte/icons/x";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
@@ -50,6 +51,7 @@
   let loading = $state(false);
   let loadError = $state("");
   let failedLogo = $state(false);
+  let refreshingLogo = $state(false);
   let saveState = $state<SaveState>("idle");
   let status = $state("");
   let saveTimer: number | null = null;
@@ -79,17 +81,19 @@
   );
 
   const statusMessage = $derived(
-    loadError
-      ? loadError
-      : saveState === "dirty"
-        ? "Unsaved changes…"
-        : saveState === "saving"
-          ? "Saving…"
-          : saveState === "saved"
-            ? "Saved."
-            : saveState === "error"
-              ? status || "Save failed."
-              : "",
+    refreshingLogo
+      ? "Refreshing logo…"
+      : loadError
+        ? loadError
+        : saveState === "dirty"
+          ? "Unsaved changes…"
+          : saveState === "saving"
+            ? "Saving…"
+            : saveState === "saved"
+              ? "Saved."
+              : saveState === "error"
+                ? status || "Save failed."
+                : "",
   );
 
   function formatTimestamp(value: string): string {
@@ -125,6 +129,7 @@
     loading = false;
     loadError = "";
     failedLogo = false;
+    refreshingLogo = false;
     saveState = "idle";
     status = "";
     loadedKey = "";
@@ -229,6 +234,29 @@
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
       saveState = "error";
+    }
+  }
+
+  async function refreshLogo() {
+    if (!merchant || !projectId || !merchantId) return;
+    refreshingLogo = true;
+    status = "";
+    try {
+      const response = await ingestionJson<MerchantProfileResponse>(
+        ingestionPath(
+          projectId,
+          `/merchants/${encodeURIComponent(merchantId)}/refresh`,
+        ),
+        { method: "POST" },
+      );
+      merchant = editableMerchantFromDetails(response);
+      failedLogo = false;
+      onUpdated?.();
+    } catch (error) {
+      status = error instanceof Error ? error.message : String(error);
+      saveState = "error";
+    } finally {
+      refreshingLogo = false;
     }
   }
 
@@ -468,65 +496,101 @@
               open={isSectionOpen("brand")}
               onToggle={() => toggleSection("brand")}
             />
-            {#if isSectionOpen("brand") && merchant.brand}
+            {#if isSectionOpen("brand") && (merchant.brand || merchant.domain)}
               <div class="merchant-edit-section-body">
                 <div class="beancount-structured-form">
                   <FormField
-                    label="Provider"
+                    label="Delivery"
                     as="div"
                     align="center"
-                    controlId="merchant-brand-provider"
+                    controlId="merchant-brand-delivery"
                   >
-                    <output id="merchant-brand-provider" class="truncate"
-                      >{merchant.brand.provider}</output
+                    <output id="merchant-brand-delivery"
+                      >{merchant.logoDelivery === "server-proxy"
+                        ? "Server proxy"
+                        : "Local cache"}</output
                     >
                   </FormField>
-                  <FormField
-                    label="Brand ID"
-                    as="div"
-                    align="center"
-                    controlId="merchant-brand-id"
-                  >
-                    <output id="merchant-brand-id" class="truncate"
-                      >{merchant.brand.brandId ?? "—"}</output
+                  {#if merchant.brand}
+                    <FormField
+                      label="Provider"
+                      as="div"
+                      align="center"
+                      controlId="merchant-brand-provider"
                     >
-                  </FormField>
-                  <FormField
-                    label="Fetched"
-                    as="div"
-                    align="center"
-                    controlId="merchant-brand-fetched"
-                  >
-                    <output
-                      id="merchant-brand-fetched"
-                      class="truncate tabular-nums"
-                      >{formatTimestamp(merchant.brand.fetchedAt)}</output
+                      <output id="merchant-brand-provider" class="truncate"
+                        >{merchant.brand.provider}</output
+                      >
+                    </FormField>
+                    <FormField
+                      label="Brand ID"
+                      as="div"
+                      align="center"
+                      controlId="merchant-brand-id"
                     >
-                  </FormField>
-                  <FormField
-                    label="Expires"
-                    as="div"
-                    align="center"
-                    controlId="merchant-brand-expires"
-                  >
-                    <output
-                      id="merchant-brand-expires"
-                      class="truncate tabular-nums"
-                      >{formatTimestamp(merchant.brand.expiresAt)}</output
+                      <output id="merchant-brand-id" class="truncate"
+                        >{merchant.brand.brandId ?? "—"}</output
+                      >
+                    </FormField>
+                    <FormField
+                      label="Fetched"
+                      as="div"
+                      align="center"
+                      controlId="merchant-brand-fetched"
                     >
-                  </FormField>
-                  <FormField
-                    label="Cached logo"
-                    as="div"
-                    align="center"
-                    controlId="merchant-brand-asset"
-                  >
-                    <output id="merchant-brand-asset" class="truncate"
-                      >{merchant.brand.asset
-                        ? `${merchant.brand.asset.filename} · ${merchant.brand.asset.mediaType}`
-                        : "—"}</output
+                      <output
+                        id="merchant-brand-fetched"
+                        class="truncate tabular-nums"
+                        >{formatTimestamp(merchant.brand.fetchedAt)}</output
+                      >
+                    </FormField>
+                    <FormField
+                      label="Next refresh"
+                      as="div"
+                      align="center"
+                      controlId="merchant-brand-expires"
                     >
-                  </FormField>
+                      <output
+                        id="merchant-brand-expires"
+                        class="truncate tabular-nums"
+                        >{formatTimestamp(merchant.brand.expiresAt)}</output
+                      >
+                    </FormField>
+                    <FormField
+                      label="Cached logo"
+                      as="div"
+                      align="center"
+                      controlId="merchant-brand-asset"
+                    >
+                      <output id="merchant-brand-asset" class="truncate"
+                        >{merchant.brand.asset
+                          ? `${merchant.brand.asset.filename} · ${merchant.brand.asset.size ?? "legacy"}px · ${merchant.brand.asset.mediaType}`
+                          : "—"}</output
+                      >
+                    </FormField>
+                  {/if}
+                  {#if merchant.domain}
+                    <FormField
+                      label="Logo"
+                      as="div"
+                      align="center"
+                      controlId="merchant-brand-refresh"
+                    >
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={refreshingLogo}
+                        onclick={refreshLogo}
+                      >
+                        <RefreshCw
+                          data-icon="inline-start"
+                          aria-hidden="true"
+                        />
+                        Refresh logo
+                      </Button>
+                    </FormField>
+                  {/if}
                 </div>
               </div>
             {/if}
