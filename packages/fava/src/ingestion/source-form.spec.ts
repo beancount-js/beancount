@@ -162,6 +162,30 @@ describe("ingestion source form draft", () => {
     });
   });
 
+  test("provides a secure Monzo connection template", () => {
+    const monzo = ingestionSamples.find((sample) => sample.id === "monzo");
+    expect(monzo).toMatchObject({
+      name: "Monzo Bank",
+      initials: "MO",
+      accentClass: "bg-rose-600",
+      region: "United Kingdom",
+      category: "Bank",
+      badge: "Beta",
+    });
+    expect(monzo?.template).toMatchObject({
+      id: "monzo",
+      kind: "monzo",
+      accounts: [],
+      config: {
+        secretRef: "env:MONZO_ACCESS_TOKEN",
+        baseUrl: "https://api.monzo.com",
+        allowedHosts: ["api.monzo.com"],
+        lookbackDays: 30,
+      },
+    });
+    expect(monzo?.template.setup).toContain("expire after several hours");
+  });
+
   test("keeps only unconfigured samples in the connection catalog", () => {
     const available = availableIngestionSamples([
       { id: "custom-lunchflow", kind: "lunchflow" },
@@ -170,6 +194,7 @@ describe("ingestion source form draft", () => {
 
     expect(available.map((sample) => sample.id)).not.toContain("lunchflow");
     expect(available.map((sample) => sample.id)).not.toContain("example-bank");
+    expect(available.map((sample) => sample.id)).toContain("monzo");
     expect(available.map((sample) => sample.id)).toContain("starling");
   });
 

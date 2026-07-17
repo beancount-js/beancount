@@ -26,6 +26,7 @@
     "@beancount-js/beangulp": "workspace:*",
     "@beancount-js/beanquery": "workspace:*",
     "@beancount-js/connector-lunchflow": "workspace:*",
+    "@beancount-js/connector-monzo": "workspace:*",
     "@beancount-js/connector-starling": "workspace:*",
     "@beancount-js/codemirror-lang-beancount": "workspace:*",
     "@beancount-js/filters": "workspace:*",

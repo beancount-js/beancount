@@ -33,6 +33,7 @@ const exampleSource = exampleIngestionConfig.sources[0]!;
  */
 function connectorAccentClass(kind: string, fallback: string) {
   if (kind === "lunchflow") return "bg-orange-600";
+  if (kind === "monzo") return "bg-rose-600";
   if (kind === "starling") return "bg-violet-700";
   return fallback;
 }

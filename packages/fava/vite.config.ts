@@ -39,6 +39,12 @@ export default defineConfig({
         ),
       },
       {
+        find: "@beancount-js/connector-monzo",
+        replacement: fileURLToPath(
+          new URL("../connector-monzo/src/index.ts", import.meta.url),
+        ),
+      },
+      {
         find: "@beancount-js/connector-starling",
         replacement: fileURLToPath(
           new URL("../connector-starling/src/index.ts", import.meta.url),
@@ -65,6 +71,7 @@ export default defineConfig({
       "@beancount-js/forms",
       "@beancount-js/beangulp",
       "@beancount-js/connector-lunchflow",
+      "@beancount-js/connector-monzo",
       "@beancount-js/connector-starling",
       "@beancount-js/filters",
       "@beancount-js/parser",

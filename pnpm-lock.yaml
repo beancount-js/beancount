@@ -274,6 +274,37 @@ importers:
         specifier: ^2.1.5
         version: 2.1.9(@types/node@20.19.43)(@vitest/ui@2.1.9)(jsdom@24.1.3)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)
 
+  packages/connector-monzo:
+    dependencies:
+      '@beancount-js/beangulp':
+        specifier: workspace:*
+        version: link:../beangulp
+      luxon:
+        specifier: ^3.7.2
+        version: 3.7.2
+    devDependencies:
+      '@types/luxon':
+        specifier: ^3.7.1
+        version: 3.7.1
+      prettier:
+        specifier: 3.3.3
+        version: 3.3.3
+      prettier-plugin-jsdoc:
+        specifier: ^1.3.0
+        version: 1.8.1(prettier@3.3.3)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.11
+        version: 5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)
+      vite-plugin-dts:
+        specifier: ^4.3.0
+        version: 4.5.4(@types/node@20.19.43)(rollup@4.61.1)(typescript@5.9.3)(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0))
+      vitest:
+        specifier: ^2.1.5
+        version: 2.1.9(@types/node@20.19.43)(@vitest/ui@2.1.9)(jsdom@24.1.3)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)
+
   packages/connector-starling:
     dependencies:
       '@beancount-js/beangulp':
@@ -322,6 +353,9 @@ importers:
       '@beancount-js/connector-lunchflow':
         specifier: workspace:*
         version: link:../connector-lunchflow
+      '@beancount-js/connector-monzo':
+        specifier: workspace:*
+        version: link:../connector-monzo
       '@beancount-js/connector-starling':
         specifier: workspace:*
         version: link:../connector-starling
@@ -829,6 +863,9 @@ importers:
       '@beancount-js/connector-lunchflow':
         specifier: workspace:*
         version: link:../connector-lunchflow
+      '@beancount-js/connector-monzo':
+        specifier: workspace:*
+        version: link:../connector-monzo
       '@beancount-js/connector-starling':
         specifier: workspace:*
         version: link:../connector-starling

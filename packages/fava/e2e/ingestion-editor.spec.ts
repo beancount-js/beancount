@@ -96,6 +96,9 @@ test.describe("ingestion sources editor", () => {
     await expect(
       editor.getByRole("button", { name: "Connect Starling Bank" }),
     ).toBeVisible();
+    await expect(
+      editor.getByRole("button", { name: "Connect Monzo Bank" }),
+    ).toBeVisible();
     await editor.getByRole("button", { name: "Connect Lunch Flow" }).click();
     await expect(
       page.getByRole("dialog", { name: /Connect Lunch Flow/i }),

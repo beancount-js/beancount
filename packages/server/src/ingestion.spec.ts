@@ -1194,6 +1194,82 @@ describe("FilesystemIngestionStore", () => {
     ]);
   });
 
+  test("discovers Monzo accounts and currencies with the project access token", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-monzo-discovery-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    await store.writeConfig("project", {
+      version: 2,
+      sources: [
+        {
+          id: "monzo",
+          name: "Monzo Bank",
+          kind: "monzo",
+          config: {
+            baseUrl: "https://api.monzo.com",
+            allowedHosts: ["api.monzo.com"],
+            secretRef: "env:MONZO_ACCESS_TOKEN",
+            lookbackDays: 30,
+          },
+          rules: [],
+          accounts: [],
+        },
+      ],
+    });
+    await writeFile(
+      join(directory, "project", ".env"),
+      "MONZO_ACCESS_TOKEN=monzo-token\n",
+    );
+
+    const requests: string[] = [];
+    const fetchMock = (async (
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      const url = String(input);
+      requests.push(url);
+      expect(new Headers(init?.headers).get("authorization")).toBe(
+        "Bearer monzo-token",
+      );
+      if (url === "https://api.monzo.com/accounts") {
+        return new Response(
+          JSON.stringify({
+            accounts: [
+              {
+                id: "account-1",
+                description: "Personal",
+                type: "uk_retail",
+              },
+            ],
+          }),
+          { status: 200 },
+        );
+      }
+      expect(url).toBe("https://api.monzo.com/balance?account_id=account-1");
+      return new Response(JSON.stringify({ currency: "GBP" }), {
+        status: 200,
+      });
+    }) as typeof fetch;
+
+    await expect(
+      store.discoverAccounts("project", "monzo", { fetch: fetchMock }),
+    ).resolves.toEqual([
+      {
+        id: "account-1",
+        name: "Personal",
+        currency: "GBP",
+        institutionName: "Monzo Bank",
+        status: "uk_retail",
+      },
+    ]);
+    expect(requests).toEqual([
+      "https://api.monzo.com/accounts",
+      "https://api.monzo.com/balance?account_id=account-1",
+    ]);
+  });
+
   test("patchProposal updates transaction fields tags and metadata", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-patch-"),

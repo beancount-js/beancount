@@ -192,4 +192,47 @@ describe("ingestion sync state", () => {
       },
     ]);
   });
+
+  test("expands Monzo account targets without json-api endpoints", async () => {
+    ensureConnectorsRegistered();
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-monzo-expand-"),
+    );
+    directories.push(directory);
+    const store = new FilesystemIngestionStore({
+      resolveProjectRoot: (project) => join(directory, project),
+    });
+    await store.writeConfig("project", {
+      version: 2,
+      sources: [
+        {
+          id: "monzo",
+          name: "Monzo Bank",
+          kind: "monzo",
+          config: {
+            secretRef: "env:MONZO_ACCESS_TOKEN",
+            baseUrl: "https://api.monzo.com",
+          },
+          accounts: [
+            {
+              id: "account-1",
+              name: "Personal",
+              sourceAccount: "Assets:Bank:Monzo",
+              defaultCurrency: "GBP",
+            },
+          ],
+          rules: [],
+        },
+      ],
+    });
+    const source = await store.source("project", "monzo");
+    expect(expandIngestionSource(source)).toEqual([
+      {
+        sourceId: "monzo:account-1",
+        sourceAccount: "Assets:Bank:Monzo",
+        defaultCurrency: "GBP",
+        accountId: "account-1",
+      },
+    ]);
+  });
 });
