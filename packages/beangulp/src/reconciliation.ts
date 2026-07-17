@@ -74,6 +74,7 @@ export interface ReconciliationResult {
 const DEFAULT_DUPLICATE_WINDOW_DAYS = 5;
 const DEFAULT_TRANSFER_WINDOW_DAYS = 4;
 const DEFAULT_FX_RATE_TOLERANCE = 0.02;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function normalizedText(value: string | undefined) {
   return (value ?? "")
@@ -101,11 +102,9 @@ function labelsMatch(
   return common.length >= 2;
 }
 
-function daysBetween(left: string, right: string) {
-  const leftDate = DateTime.fromISO(left, { zone: "utc" });
-  const rightDate = DateTime.fromISO(right, { zone: "utc" });
-  if (!leftDate.isValid || !rightDate.isValid) return undefined;
-  return Math.abs(Math.round(leftDate.diff(rightDate, "days").days));
+function observationTimestamp(value: string) {
+  const parsed = DateTime.fromISO(value, { zone: "utc" });
+  return parsed.isValid ? parsed.toMillis() : undefined;
 }
 
 function decimal(value: string) {
@@ -308,18 +307,45 @@ export function findReconciliationCandidates(
   const fxRateTolerance = options.fxRateTolerance ?? DEFAULT_FX_RATE_TOLERANCE;
   const dismissed = options.dismissedCandidateIds ?? new Set<string>();
   const candidates: ReconciliationCandidate[] = [];
+  const maximumWindowDays = Math.max(duplicateWindowDays, transferWindowDays);
+  const datedObservations = observations
+    .map((observation, originalIndex) => ({
+      observation,
+      originalIndex,
+      timestamp: observationTimestamp(observation.bookedAt),
+    }))
+    .filter(
+      (
+        item,
+      ): item is typeof item & {
+        timestamp: number;
+      } => item.timestamp !== undefined,
+    )
+    .sort(
+      (left, right) =>
+        left.timestamp - right.timestamp ||
+        left.originalIndex - right.originalIndex,
+    );
 
-  for (let leftIndex = 0; leftIndex < observations.length; leftIndex += 1) {
-    const left = observations[leftIndex]!;
+  for (
+    let leftIndex = 0;
+    leftIndex < datedObservations.length;
+    leftIndex += 1
+  ) {
+    const leftItem = datedObservations[leftIndex]!;
+    const left = leftItem.observation;
     for (
       let rightIndex = leftIndex + 1;
-      rightIndex < observations.length;
+      rightIndex < datedObservations.length;
       rightIndex += 1
     ) {
-      const right = observations[rightIndex]!;
+      const rightItem = datedObservations[rightIndex]!;
+      const days = Math.round(
+        (rightItem.timestamp - leftItem.timestamp) / MILLISECONDS_PER_DAY,
+      );
+      if (days > maximumWindowDays) break;
+      const right = rightItem.observation;
       if (!isEligiblePair(left, right)) continue;
-      const days = daysBetween(left.bookedAt, right.bookedAt);
-      if (days === undefined) continue;
 
       if (
         left.sourceAccount === right.sourceAccount &&

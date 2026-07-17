@@ -124,4 +124,25 @@ describe("findReconciliationCandidates", () => {
     });
     expect(next.candidates).toEqual([]);
   });
+
+  test("scans only the configured date window without depending on input order", () => {
+    const observations = Array.from({ length: 336 }, (_, index) =>
+      observation(`distant:${index}`, {
+        bookedAt: `2025-${String(Math.floor(index / 28) + 1).padStart(2, "0")}-${String((index % 28) + 1).padStart(2, "0")}`,
+        amount: String(index + 1),
+      }),
+    );
+    observations.push(
+      observation("match:later", { bookedAt: "2026-07-03" }),
+      observation("match:earlier", { bookedAt: "2026-07-01" }),
+    );
+
+    const result = findReconciliationCandidates(observations.reverse());
+
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0]?.memberIds).toEqual([
+      "match:earlier",
+      "match:later",
+    ]);
+  });
 });
