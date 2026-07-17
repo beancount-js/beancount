@@ -55,7 +55,11 @@ import {
   parseIngestionState,
 } from "./ingestion-migrate";
 import type { Directive } from "@beancount-js/beancount";
-import { brandfetchLogoUrl, isValidDomain } from "./brandfetch";
+import { isValidDomain } from "./brandfetch";
+import {
+  BrandfetchLogoService,
+  type BrandfetchLogoDelivery,
+} from "./brandfetch-logo";
 import { FilesystemMerchantStore, type ProjectRootResolver } from "./merchant";
 import { projectIngestionRoot } from "./paths";
 import {
@@ -77,6 +81,12 @@ export interface IngestionReconciliationConfig {
 export interface BrandfetchEnrichmentConfig {
   enabled: boolean;
   clientId?: string;
+  /** Store validated logo files beside merchant profiles, or proxy only. */
+  delivery?: BrandfetchLogoDelivery;
+  /** Lazy local-cache refresh interval. */
+  refreshDays?: number;
+  /** Request 120px logos instead of the default 40px variant. */
+  highResolution?: boolean;
 }
 
 export interface MerchantEnrichmentConfig {
@@ -328,9 +338,36 @@ export function validateBrandfetchConfig(
   }
   // Kept for compatibility with callers that still pass a country hint.
   void countryCode;
+  const legacy = value as BrandfetchEnrichmentConfig & {
+    assetMode?: unknown;
+    ttlDays?: unknown;
+  };
+  const delivery =
+    legacy.delivery === "local-cache" || legacy.delivery === "server-proxy"
+      ? legacy.delivery
+      : legacy.assetMode === "hotlink"
+        ? "server-proxy"
+        : "local-cache";
+  const refreshDays =
+    legacy.refreshDays ??
+    (typeof legacy.ttlDays === "number" ? legacy.ttlDays : 30);
+  if (!Number.isInteger(refreshDays) || refreshDays < 1 || refreshDays > 365) {
+    throw new Error(
+      "brandfetch.refreshDays must be a whole number from 1 to 365.",
+    );
+  }
+  if (
+    value.highResolution !== undefined &&
+    typeof value.highResolution !== "boolean"
+  ) {
+    throw new Error("brandfetch.highResolution must be a boolean.");
+  }
   return {
     enabled: value.enabled,
     clientId: value.clientId?.trim() || undefined,
+    delivery,
+    refreshDays,
+    highResolution: value.highResolution === true,
   } satisfies BrandfetchEnrichmentConfig;
 }
 
@@ -614,12 +651,14 @@ export type FilesystemIngestionStoreOptions = {
 /** Local persistence for configurations and actionable, normalized runs. */
 export class FilesystemIngestionStore {
   readonly merchants: FilesystemMerchantStore;
+  readonly logos: BrandfetchLogoService;
   private readonly resolveProjectRoot: ProjectRootResolver;
   private readonly runs: FilesystemIngestionRunArchive;
 
   constructor(options: FilesystemIngestionStoreOptions) {
     this.resolveProjectRoot = options.resolveProjectRoot;
     this.merchants = new FilesystemMerchantStore(options.resolveProjectRoot);
+    this.logos = new BrandfetchLogoService(this.merchants);
     this.runs = new FilesystemIngestionRunArchive(options.resolveProjectRoot);
   }
 
@@ -647,7 +686,11 @@ export class FilesystemIngestionStore {
       await this.path(project, "sources.json"),
       configDefaults(),
     );
-    return migrateIngestionConfig(raw);
+    const migrated = migrateIngestionConfig(raw);
+    return {
+      ...migrated,
+      brandfetch: validateBrandfetchConfig(migrated.brandfetch),
+    } satisfies IngestionConfig;
   }
 
   async writeConfig(project: string, config: IngestionConfig) {
@@ -1530,15 +1573,22 @@ export function merchantLogoUrlFor(
   enrichment: MerchantEnrichmentConfig,
 ) {
   const asset = merchant.brand?.asset;
-  if (asset && Date.parse(asset.expiresAt) > Date.now()) {
-    return `/api/projects/${encodeURIComponent(project)}/ingestion/merchants/${encodeURIComponent(merchant.merchantId)}/logo?v=${asset.sha256}`;
-  }
   const clientId = enrichment.brandfetch?.clientId;
-  // Unresolved `env:` refs must not be embedded in CDN URLs.
-  if (!merchant.domain || !clientId || clientId.startsWith("env:")) {
+  // An internal URL keeps the Logo API client ID out of every browser payload.
+  if (
+    !asset &&
+    (!merchant.domain || !clientId || clientId.startsWith("env:"))
+  ) {
     return undefined;
   }
-  return brandfetchLogoUrl(merchant.domain, clientId);
+  const base = `/api/projects/${encodeURIComponent(project)}/ingestion/merchants/${encodeURIComponent(merchant.merchantId)}/logo`;
+  return asset ? `${base}?v=${encodeURIComponent(asset.sha256)}` : base;
+}
+
+/** Internal app URL for an unpersisted Brand Match candidate. */
+export function brandfetchDomainLogoUrl(project: string, domain: string) {
+  if (!isValidDomain(domain)) return undefined;
+  return `/api/projects/${encodeURIComponent(project)}/ingestion/logos/${encodeURIComponent(domain.toLowerCase())}`;
 }
 
 class ProfileMerchantResolver implements MerchantResolverPlugin {
@@ -1790,12 +1840,12 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
 
 export function withBrandfetchLogo(
   candidate: MerchantCandidate,
-  clientId: string,
+  project: string,
 ): MerchantCandidate | undefined {
   if (!isValidDomain(candidate.domain)) return undefined;
   return {
     ...candidate,
-    logoUrl: brandfetchLogoUrl(candidate.domain!, clientId),
+    logoUrl: brandfetchDomainLogoUrl(project, candidate.domain!),
     provenance: [
       ...candidate.provenance,
       {
@@ -1811,7 +1861,7 @@ export function withBrandfetchLogo(
 class BrandfetchLogoResolver implements MerchantResolverPlugin {
   readonly id = "brandfetch-logo";
 
-  constructor(private readonly clientId: string) {}
+  constructor(private readonly project: string) {}
 
   async resolve(context: Parameters<MerchantResolverPlugin["resolve"]>[0]) {
     const rawLabel = transactionMerchantLabel(context.transaction);
@@ -1831,7 +1881,7 @@ class BrandfetchLogoResolver implements MerchantResolverPlugin {
             provenance: [{ source: "source", observedAt: nowIso() }],
           } satisfies MerchantCandidate);
     if (!candidate) return undefined;
-    const enriched = withBrandfetchLogo(candidate, this.clientId);
+    const enriched = withBrandfetchLogo(candidate, this.project);
     if (!enriched) return undefined;
     return {
       status: "suggested",
@@ -1905,7 +1955,7 @@ async function merchantResolversFor(
       ),
     );
   if (brandfetch?.enabled && brandfetchRuntime?.clientId) {
-    resolvers.push(new BrandfetchLogoResolver(brandfetchRuntime.clientId));
+    resolvers.push(new BrandfetchLogoResolver(context.projectId));
   }
   return resolvers;
 }

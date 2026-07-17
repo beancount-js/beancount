@@ -150,13 +150,19 @@ function parseBrand(input: unknown): MerchantBrandData | undefined {
   const entry = record(input);
   if (entry.provider !== "brandfetch") return undefined;
   const fetchedAt = value(entry.fetchedAt);
-  const expiresAt = value(entry.expiresAt);
-  if (!fetchedAt || !expiresAt || Date.parse(expiresAt) <= Date.now())
-    return undefined;
+  if (!fetchedAt) return undefined;
+  // A stale logo stays useful while the app refreshes it in the background.
+  // Older profiles use `expiresAt` as their refresh deadline, so preserve it.
+  const expiresAt = timestamp(entry.expiresAt, fetchedAt);
   const assetRecord = record(entry.asset);
   const filename = value(assetRecord.filename);
   const sha256 = value(assetRecord.sha256);
   const mediaType = value(assetRecord.mediaType);
+  const parsedSize = Number(assetRecord.size);
+  const size: 40 | 120 | undefined =
+    parsedSize === 40 || parsedSize === 120
+      ? (parsedSize as 40 | 120)
+      : undefined;
   const asset =
     filename &&
     sha256 &&
@@ -167,6 +173,7 @@ function parseBrand(input: unknown): MerchantBrandData | undefined {
           sha256,
           mediaType: mediaType as "image/png" | "image/jpeg" | "image/webp",
           expiresAt: timestamp(assetRecord.expiresAt, expiresAt),
+          ...(size ? { size } : {}),
         }
       : undefined;
   return {
@@ -670,10 +677,51 @@ export class FilesystemMerchantStore {
     });
   }
 
+  /** Persist a validated Logo API image beside its merchant profile. */
+  async cacheLogo(
+    project: string,
+    merchantId: string,
+    asset: {
+      bytes: Uint8Array;
+      mediaType: "image/png" | "image/jpeg" | "image/webp";
+      extension: "png" | "jpg" | "webp";
+      sha256: string;
+      size: 40 | 120;
+      expiresAt: string;
+    },
+  ) {
+    return this.withLock(project, async () => {
+      const profile = await this.readProfile(project, merchantId);
+      const directory = dirname(await this.profilePath(project, merchantId));
+      const filename = `logo-${asset.sha256}.${asset.extension}`;
+      const previousFilename = profile.merchant.brand?.asset?.filename;
+      await this.write(join(directory, filename), asset.bytes);
+      const fetchedAt = now();
+      profile.merchant.brand = {
+        provider: "brandfetch",
+        brandId: profile.merchant.brand?.brandId,
+        fetchedAt,
+        expiresAt: asset.expiresAt,
+        asset: {
+          filename,
+          mediaType: asset.mediaType,
+          sha256: asset.sha256,
+          size: asset.size,
+          expiresAt: asset.expiresAt,
+        },
+      };
+      await this.writeProfile(project, profile);
+      if (previousFilename && previousFilename !== filename) {
+        await fs.rm(join(directory, previousFilename), { force: true });
+      }
+      return profile.merchant;
+    });
+  }
+
   async logo(project: string, merchantId: string) {
     const merchant = await this.get(project, merchantId);
     const asset = merchant.brand?.asset;
-    if (!asset || Date.parse(asset.expiresAt) <= Date.now()) return undefined;
+    if (!asset) return undefined;
     const path = join(
       dirname(await this.profilePath(project, merchantId)),
       asset.filename,
@@ -683,6 +731,7 @@ export class FilesystemMerchantStore {
         bytes: await fs.readFile(path),
         mediaType: asset.mediaType,
         sha256: asset.sha256,
+        size: asset.size,
         expiresAt: asset.expiresAt,
       };
     } catch (error: unknown) {

@@ -158,13 +158,18 @@ export interface MerchantBrandAsset {
   filename: string;
   mediaType: "image/png" | "image/jpeg" | "image/webp";
   sha256: string;
+  /** Pixel width/height requested from the Logo API. */
+  size?: 40 | 120;
+  /** The time after which the asset is eligible for a lazy refresh. */
   expiresAt: string;
 }
 
 export interface MerchantBrandData {
   provider: "brandfetch";
   brandId?: string;
+  /** Time the current logo asset was last fetched. */
   fetchedAt: string;
+  /** The next time the current logo may be refreshed. */
   expiresAt: string;
   asset?: MerchantBrandAsset;
 }

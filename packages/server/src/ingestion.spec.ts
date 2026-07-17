@@ -723,6 +723,9 @@ describe("FilesystemIngestionStore", () => {
       brandfetch: {
         enabled: true,
         clientId: "env:BRANDFETCH_CLIENT_ID",
+        delivery: "local-cache",
+        refreshDays: 14,
+        highResolution: false,
       },
     });
     const persisted = await readFile(

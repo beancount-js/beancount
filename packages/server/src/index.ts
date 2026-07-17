@@ -54,6 +54,7 @@ export {
   isConnectorIngestionSource,
   isGroupedIngestionSource,
   merchantAdvisorLabel,
+  brandfetchDomainLogoUrl,
   merchantLogoUrlFor,
   recategorizeProposal,
   resolveBrandfetchRuntime,
