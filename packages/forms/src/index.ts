@@ -18,6 +18,16 @@ export { default as ChipAutocomplete } from "./components/ChipAutocomplete.svelt
 export { default as IconColorPicker } from "./components/IconColorPicker.svelte";
 export { default as TagEditor } from "./components/TagEditor.svelte";
 export { autosizeTextarea } from "./autosize-textarea";
+export {
+  appearanceIconContrast,
+  appearanceIconForeground,
+  appearanceIconTint,
+  autoCorrectAppearanceColor,
+  isAppearanceColor,
+  MINIMUM_APPEARANCE_CONTRAST,
+  needsAppearanceContrastCorrection,
+  normalizeAppearanceColor,
+} from "./appearance-color";
 export { unifiedDiff } from "./review-diff";
 export type {
   UnifiedDiffLine,

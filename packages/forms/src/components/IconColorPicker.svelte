@@ -26,6 +26,12 @@
   import Store from "lucide-svelte/icons/store";
   import Utensils from "lucide-svelte/icons/utensils";
   import Wallet from "lucide-svelte/icons/wallet";
+  import {
+    appearanceIconForeground,
+    autoCorrectAppearanceColor,
+    needsAppearanceContrastCorrection,
+    normalizeAppearanceColor,
+  } from "../appearance-color";
 
   const DEFAULT_COLOR = "#7667D9";
 
@@ -83,26 +89,47 @@
   } = $props();
 
   let open = $state(false);
+  let pendingColor = $state<string | null>(null);
 
   const currentColor = $derived(
-    isHexColor(color) ? color.toUpperCase() : DEFAULT_COLOR,
+    pendingColor ?? normalizeAppearanceColor(color) ?? DEFAULT_COLOR,
+  );
+  const currentForeground = $derived(
+    appearanceIconForeground(currentColor) ?? DEFAULT_COLOR,
+  );
+  const needsContrastCorrection = $derived(
+    needsAppearanceContrastCorrection(currentColor),
   );
   const selectedIcon = $derived(
     iconOptions.find((option) => option.value === icon) ?? iconOptions[0],
   );
   const SelectedIcon = $derived(selectedIcon.icon);
 
-  function isHexColor(value: string) {
-    return /^#[0-9A-F]{6}$/i.test(value);
+  function chooseColor(nextColor: string) {
+    const normalized = normalizeAppearanceColor(nextColor);
+    if (!normalized) return;
+
+    if (needsAppearanceContrastCorrection(normalized)) {
+      pendingColor = normalized;
+      return;
+    }
+
+    pendingColor = null;
+    onChange({ color: normalized, icon });
   }
 
-  function chooseColor(nextColor: string) {
-    if (!isHexColor(nextColor)) return;
-    onChange({ color: nextColor.toUpperCase(), icon });
+  function autoCorrectColor() {
+    const corrected = autoCorrectAppearanceColor(currentColor);
+    if (!corrected) return;
+
+    pendingColor = null;
+    onChange({ color: corrected, icon });
   }
 
   function chooseIcon(nextIcon: string) {
-    onChange({ color, icon: nextIcon });
+    if (needsContrastCorrection) return;
+    pendingColor = null;
+    onChange({ color: currentColor, icon: nextIcon });
   }
 </script>
 
@@ -117,7 +144,7 @@
       >
         <span
           class="beancount-icon-color-picker__preview"
-          style={`--appearance-color: ${currentColor}`}
+          style={`--appearance-color: ${currentColor}; --appearance-foreground: ${currentForeground}`}
           aria-hidden="true"
         >
           <SelectedIcon class="size-5" strokeWidth={1.9} />
@@ -164,6 +191,18 @@
             />
           </label>
         </div>
+        {#if needsContrastCorrection}
+          <div
+            id="beancount-icon-color-picker-contrast-warning"
+            class="beancount-icon-color-picker__contrast-warning"
+            role="alert"
+          >
+            <span>The generated icon colour needs more contrast.</span>
+            <button type="button" onclick={autoCorrectColor}
+              >Auto-correct</button
+            >
+          </div>
+        {/if}
       </div>
 
       <div class="beancount-icon-color-picker__section">
@@ -175,8 +214,16 @@
               type="button"
               class="beancount-icon-color-picker__icon"
               class:selected={icon === option.value}
+              style={`--appearance-color: ${currentColor}; --appearance-foreground: ${currentForeground}`}
               aria-label={`Use ${option.label} icon`}
               aria-pressed={icon === option.value}
+              aria-describedby={needsContrastCorrection
+                ? "beancount-icon-color-picker-contrast-warning"
+                : undefined}
+              disabled={needsContrastCorrection}
+              title={needsContrastCorrection
+                ? "Correct the colour contrast before choosing an icon"
+                : undefined}
               onclick={() => chooseIcon(option.value)}
             >
               <Icon class="size-5" strokeWidth={1.8} aria-hidden="true" />
@@ -221,8 +268,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--appearance-color) 16%, transparent);
-    color: var(--appearance-color);
+    background: color-mix(in srgb, var(--appearance-color) 10%, transparent);
+    color: var(--appearance-foreground);
   }
 
   .beancount-icon-color-picker__trigger-label {
@@ -346,7 +393,7 @@
     align-items: center;
     justify-content: center;
     border: 0;
-    border-radius: 0.5rem;
+    border-radius: 999px;
     background: transparent;
     color: var(--muted-foreground);
     cursor: pointer;
@@ -354,13 +401,60 @@
   }
 
   .beancount-icon-color-picker__icon:hover,
-  .beancount-icon-color-picker__icon.selected {
+  .beancount-icon-color-picker__icon:focus-visible {
     background: color-mix(in srgb, var(--primary) 10%, transparent);
     color: var(--primary);
+  }
+
+  .beancount-icon-color-picker__icon.selected {
+    background: color-mix(in srgb, var(--appearance-color) 10%, transparent);
+    color: var(--appearance-foreground);
+  }
+
+  .beancount-icon-color-picker__icon:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .beancount-icon-color-picker__icon:disabled:hover {
+    background: transparent;
+    color: var(--muted-foreground);
+  }
+
+  .beancount-icon-color-picker__icon.selected:disabled {
+    background: color-mix(in srgb, var(--appearance-color) 10%, transparent);
+    color: var(--appearance-foreground);
   }
 
   .beancount-icon-color-picker__icon:focus-visible::after,
   .beancount-icon-color-picker__icon.selected::after {
     border-color: var(--ring);
+  }
+
+  .beancount-icon-color-picker__contrast-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    color: var(--destructive);
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+
+  .beancount-icon-color-picker__contrast-warning button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    padding: 0;
+    text-decoration: underline;
+  }
+
+  .beancount-icon-color-picker__contrast-warning button:focus-visible {
+    border-radius: 0.2rem;
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 </style>
