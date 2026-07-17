@@ -75,6 +75,7 @@ describe("ingestion sync state", () => {
           total: 0,
           ready: 0,
           needsReview: 0,
+          accepted: 0,
           duplicates: 0,
           invalid: 0,
           held: 0,

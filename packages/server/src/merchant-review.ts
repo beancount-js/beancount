@@ -90,7 +90,8 @@ export function needsMerchantReview(proposal: ImportProposal) {
   if (!proposal.transaction) return false;
   if (
     proposal.status === "duplicate" ||
-    proposal.status === "invalid"
+    proposal.status === "invalid" ||
+    proposal.status === "accepted"
   ) {
     return false;
   }
@@ -376,7 +377,8 @@ export function applyMerchantResolutionToPendingProposals(
       if (!proposal.transaction) return proposal;
       if (
         proposal.status === "duplicate" ||
-        proposal.status === "invalid"
+        proposal.status === "invalid" ||
+        proposal.status === "accepted"
       ) {
         return proposal;
       }

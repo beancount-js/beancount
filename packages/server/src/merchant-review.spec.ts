@@ -144,6 +144,7 @@ describe("applyMerchantResolutionToPendingProposals", () => {
           total: 3,
           ready: 1,
           needsReview: 2,
+          accepted: 0,
           duplicates: 0,
           invalid: 0,
           held: 0,

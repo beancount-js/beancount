@@ -826,9 +826,8 @@
       proposalIds.has(proposal.id)
         ? {
             ...proposal,
-            status: "duplicate" as const,
-            duplicateOf: proposal.importId,
-            transaction: undefined,
+            status: "accepted" as const,
+            duplicateOf: undefined,
           }
         : proposal,
     );
@@ -840,6 +839,7 @@
         ready: proposals.filter((item) => item.status === "ready").length,
         needsReview: proposals.filter((item) => item.status === "needs-review")
           .length,
+        accepted: proposals.filter((item) => item.status === "accepted").length,
         duplicates: proposals.filter((item) => item.status === "duplicate")
           .length,
         invalid: proposals.filter((item) => item.status === "invalid").length,

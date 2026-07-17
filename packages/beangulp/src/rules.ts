@@ -757,6 +757,7 @@ export class RuleActionsHook implements ProposalHook {
     if (
       proposal.status === "duplicate" ||
       proposal.status === "invalid" ||
+      proposal.status === "accepted" ||
       proposal.status === "excluded"
     ) {
       return proposal;

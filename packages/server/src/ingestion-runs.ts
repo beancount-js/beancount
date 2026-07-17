@@ -1,7 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
-import type { IngestionRun } from "@beancount-js/beangulp";
+import {
+  summarizeIngestionProposals,
+  type IngestionRun,
+} from "@beancount-js/beangulp";
 import { projectIngestionRunsRoot } from "./paths";
 import type { ProjectRootResolver } from "./merchant";
 
@@ -65,8 +68,15 @@ function summaryFor(
     startedAt: run.startedAt,
     completedAt: run.completedAt,
     reviewState: reviewState(run),
-    summary: run.summary,
+    summary: summarizeIngestionProposals(run.proposals),
     updatedAt,
+  };
+}
+
+function normalizedRun(run: IngestionRun): IngestionRun {
+  return {
+    ...run,
+    summary: summarizeIngestionProposals(run.proposals),
   };
 }
 
@@ -161,6 +171,7 @@ export class FilesystemIngestionRunArchive {
           typeof run.completedAt === "string" &&
           (run.reviewState === "pending" || run.reviewState === "completed") &&
           !!run.summary &&
+          typeof run.summary.accepted === "number" &&
           typeof run.updatedAt === "string",
       ),
     } satisfies IngestionRunIndex;
@@ -179,7 +190,7 @@ export class FilesystemIngestionRunArchive {
     ) {
       throw new Error(`Unknown ingestion run: ${runId}`);
     }
-    return persisted;
+    return { ...persisted, run: normalizedRun(persisted.run) };
   }
 
   private async readAllPersisted(project: string) {
@@ -228,10 +239,11 @@ export class FilesystemIngestionRunArchive {
   async ensure(project: string, legacyRuns: readonly IngestionRun[] = []) {
     return this.withLock(project, async () => {
       for (const run of legacyRuns) {
+        const normalized = normalizedRun(run);
         await this.writeJson(await this.path(project, run.id), {
           version: RUN_FILE_VERSION,
           updatedAt: new Date().toISOString(),
-          run,
+          run: normalized,
         } satisfies PersistedIngestionRun);
       }
       const index = await this.readIndex(project);
@@ -296,7 +308,8 @@ export class FilesystemIngestionRunArchive {
         (await this.readIndex(project)) ?? (await this.rebuildIndex(project));
       const summaries = new Map(index.runs.map((item) => [item.id, item]));
       const updatedAt = new Date().toISOString();
-      for (const run of runs) {
+      const normalized = runs.map(normalizedRun);
+      for (const run of normalized) {
         await this.writeJson(await this.path(project, run.id), {
           version: RUN_FILE_VERSION,
           updatedAt,
@@ -308,7 +321,7 @@ export class FilesystemIngestionRunArchive {
         version: INDEX_VERSION,
         runs: [...summaries.values()].sort(newestFirst),
       } satisfies IngestionRunIndex);
-      return [...runs];
+      return normalized;
     });
   }
 }

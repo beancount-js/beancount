@@ -42,13 +42,18 @@ export function importIdentity(transaction: NormalizedTransaction) {
     : `${transaction.sourceId}:fingerprint:${transactionFingerprint(transaction)}`;
 }
 
-function statusSummary(proposals: readonly ImportProposal[]) {
+/** Produce a current status summary for an archived or in-flight import run. */
+export function summarizeIngestionProposals(
+  proposals: readonly ImportProposal[],
+) {
   return {
     total: proposals.length,
     ready: proposals.filter((proposal) => proposal.status === "ready").length,
     needsReview: proposals.filter(
       (proposal) => proposal.status === "needs-review",
     ).length,
+    accepted: proposals.filter((proposal) => proposal.status === "accepted")
+      .length,
     duplicates: proposals.filter((proposal) => proposal.status === "duplicate")
       .length,
     invalid: proposals.filter((proposal) => proposal.status === "invalid")
@@ -319,7 +324,7 @@ export async function runIngestion<Config, Record>(
   }
 
   const completedAt = new Date().toISOString();
-  const summary = statusSummary(proposals);
+  const summary = summarizeIngestionProposals(proposals);
   await emitProgress(request as IngestionRequest<unknown, unknown>, {
     stage: "complete",
     message: `Finished ${summary.total} proposal${summary.total === 1 ? "" : "s"}`,

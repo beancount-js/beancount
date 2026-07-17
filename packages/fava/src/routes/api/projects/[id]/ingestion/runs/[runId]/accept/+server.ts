@@ -113,12 +113,16 @@ export async function POST({
       );
     }
 
-    await workspace.writeFile(
+    const written = await workspace.writeFile(
       params.id,
       { path: destinationPath, contents: nextContents },
       { expectedRevision },
     );
-    await store.markAccepted(params.id, params.runId, proposalIds);
+    await store.markAccepted(params.id, params.runId, persisted, {
+      acceptedAt: new Date().toISOString(),
+      destinationPath,
+      ledgerRevision: written.revision,
+    });
     return json({
       snapshot: await workspace.readProject(params.id),
       run: await store.run(params.id, params.runId),

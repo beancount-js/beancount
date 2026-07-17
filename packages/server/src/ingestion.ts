@@ -11,6 +11,7 @@ import {
   HistoricalCategorizer,
   RecurringCategorizer,
   historySamplesFromEntries,
+  summarizeIngestionProposals,
   migrateMerchantRules,
   runIngestion,
   normalizeMerchant,
@@ -36,6 +37,7 @@ import {
   type ImportProposal,
   type IngestionProgress,
   type IngestionRun,
+  type ProposalAcceptance,
   type NormalizedTransactionPatch,
   type JsonApiLinkedAccount,
   type JsonApiSourceConfig,
@@ -837,6 +839,7 @@ export class FilesystemIngestionStore {
         !proposal.transaction ||
         proposal.status === "duplicate" ||
         proposal.status === "invalid" ||
+        proposal.status === "accepted" ||
         proposal.status === "held"
       ) {
         throw new Error("This proposal cannot be edited.");
@@ -1012,20 +1015,35 @@ export class FilesystemIngestionStore {
   async markAccepted(
     project: string,
     runId: string,
-    proposalIds: readonly string[],
+    acceptedProposals: readonly Pick<
+      ImportProposal,
+      "id" | "merchantResolution"
+    >[],
+    acceptance: ProposalAcceptance,
   ) {
     const run = await this.run(project, runId);
-    const accepted = new Set(proposalIds);
-    const proposals = run.proposals.map((proposal) =>
-      accepted.has(proposal.id)
-        ? {
-            ...proposal,
-            status: "duplicate" as const,
-            duplicateOf: proposal.importId,
-            transaction: undefined,
-          }
-        : proposal,
+    const accepted = new Map(
+      acceptedProposals.map((proposal) => [proposal.id, proposal]),
     );
+    const known = new Set(run.proposals.map((proposal) => proposal.id));
+    for (const proposal of acceptedProposals) {
+      if (!known.has(proposal.id)) {
+        throw new Error(`Unknown ingestion proposal: ${proposal.id}`);
+      }
+    }
+    const proposals = run.proposals.map((proposal) => {
+      const persisted = accepted.get(proposal.id);
+      if (!persisted) return proposal;
+      if (proposal.status === "accepted") return proposal;
+      return {
+        ...proposal,
+        merchantResolution:
+          persisted.merchantResolution ?? proposal.merchantResolution,
+        status: "accepted" as const,
+        acceptance,
+        duplicateOf: undefined,
+      } satisfies ImportProposal;
+    });
     const updated = { ...run, proposals, summary: summarize(proposals) };
     await this.runs.write(project, updated);
     return updated;
@@ -1033,20 +1051,7 @@ export class FilesystemIngestionStore {
 }
 
 function summarize(proposals: readonly ImportProposal[]) {
-  return {
-    total: proposals.length,
-    ready: proposals.filter((proposal) => proposal.status === "ready").length,
-    needsReview: proposals.filter(
-      (proposal) => proposal.status === "needs-review",
-    ).length,
-    duplicates: proposals.filter((proposal) => proposal.status === "duplicate")
-      .length,
-    invalid: proposals.filter((proposal) => proposal.status === "invalid")
-      .length,
-    held: proposals.filter((proposal) => proposal.status === "held").length,
-    excluded: proposals.filter((proposal) => proposal.status === "excluded")
-      .length,
-  };
+  return summarizeIngestionProposals(proposals);
 }
 
 /** Returns the only accounts that a source may suggest or accept manually. */
@@ -1851,9 +1856,11 @@ export async function ingestSource(
       allAccounts,
     );
     const detectionRules = resolveDetectionRules(source, options);
+    const aiCalls: AiEnrichmentCallRecord[] = [];
     const categorizers = buildCategorizers(detectionRules, {
       aiEnabled: source.aiEnabled === true,
       model,
+      onAiDebug: (call) => aiCalls.push(call),
     });
     const hooks = buildRuleHooks(detectionRules);
     const projectRoot = merchantContext
@@ -1892,7 +1899,10 @@ export async function ingestSource(
             source,
             model,
             merchantContext,
-            { brandfetch },
+            {
+              brandfetch,
+              onAiDebug: (call) => aiCalls.push(call),
+            },
           ),
           history: historySamplesFromEntries(entries),
           availableAccounts,
@@ -1925,7 +1935,10 @@ export async function ingestSource(
             source,
             model,
             merchantContext,
-            { brandfetch },
+            {
+              brandfetch,
+              onAiDebug: (call) => aiCalls.push(call),
+            },
           ),
           history: historySamplesFromEntries(entries),
           availableAccounts,
@@ -1947,7 +1960,10 @@ export async function ingestSource(
           },
         });
 
-    runs.push(run);
+    const archivedRun = aiCalls.length
+      ? { ...run, audit: { ai: aiCalls } }
+      : run;
+    runs.push(archivedRun);
     if (connector) {
       syncStatePatches[target.sourceId] = connector.commitSyncState({
         config: source.config,

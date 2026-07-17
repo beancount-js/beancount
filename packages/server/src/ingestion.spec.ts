@@ -2,6 +2,7 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
+import type { IngestionRun } from "@beancount-js/beangulp";
 import {
   categoryAccountsForSource,
   expandIngestionSource,
@@ -72,6 +73,7 @@ describe("FilesystemIngestionStore", () => {
         total: 0,
         ready: 0,
         needsReview: 0,
+        accepted: 0,
         duplicates: 0,
         invalid: 0,
         held: 0,
@@ -130,6 +132,159 @@ describe("FilesystemIngestionStore", () => {
     expect(
       names.filter((name) => /^[a-f0-9]{64}\.json$/.test(name)),
     ).toHaveLength(1);
+  });
+
+  test("keeps accepted source, AI, and merchant audit data", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-accepted-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    const run: IngestionRun = {
+      id: "run:accepted-1",
+      sourceId: "bank",
+      startedAt: "2026-07-16T00:00:00.000Z",
+      completedAt: "2026-07-16T00:00:01.000Z",
+      audit: {
+        ai: [
+          {
+            id: "codex-merchant-advisor",
+            label: "AI merchant advisor",
+            prompt: '{"merchant":"brand shop"}',
+            response: '{"canonicalName":"Brand Shop"}',
+            ok: true,
+            at: "2026-07-16T00:00:00.000Z",
+          },
+        ],
+      },
+      proposals: [
+        {
+          id: "proposal:accepted-1",
+          importId: "bank:accepted-1",
+          sourceRecord: { provider_id: "accepted-1", original: "record" },
+          transaction: {
+            sourceId: "bank",
+            sourceAccount: "Assets:Bank:Checking",
+            bookedAt: "2026-07-16",
+            amount: "-12.00",
+            currency: "GBP",
+            merchant: "BRAND SHOP",
+            narration: "Store purchase",
+            status: "posted",
+            fetchedAt: "2026-07-16T00:00:00.000Z",
+            metadata: { source_note: "kept" },
+          },
+          merchantResolution: {
+            status: "suggested",
+            rawLabel: "BRAND SHOP",
+            candidates: [],
+            explanation: "Candidate before acceptance.",
+          },
+          suggestions: [
+            {
+              account: "Expenses:Shopping",
+              rawScore: 0.9,
+              scoreKind: "ai-advisory",
+              method: "ai",
+              explanation: "AI suggestion",
+              evidence: [],
+            },
+          ],
+          selectedAccount: "Expenses:Shopping",
+          status: "ready",
+          issues: [],
+          lastAiEnrichment: {
+            at: "2026-07-16T00:00:00.000Z",
+            source: "ingest",
+            ok: true,
+            calls: [
+              {
+                id: "codex-ai",
+                label: "AI categoriser",
+                prompt: '{"account":"Expenses:Shopping"}',
+                response: '{"account":"Expenses:Shopping"}',
+                ok: true,
+                at: "2026-07-16T00:00:00.000Z",
+              },
+            ],
+          },
+        },
+      ],
+      summary: {
+        total: 1,
+        ready: 1,
+        needsReview: 0,
+        accepted: 0,
+        duplicates: 0,
+        invalid: 0,
+        held: 0,
+        excluded: 0,
+      },
+    };
+    await store.saveRun("project", run);
+    const acceptance = {
+      acceptedAt: "2026-07-16T00:01:00.000Z",
+      destinationPath: "imports.bean",
+      ledgerRevision: "ledger-revision-after-write",
+    };
+    await store.markAccepted(
+      "project",
+      run.id,
+      [
+        {
+          id: "proposal:accepted-1",
+          merchantResolution: {
+            status: "confirmed",
+            rawLabel: "BRAND SHOP",
+            merchant: {
+              merchantId: "merchant-brand-shop",
+              canonicalName: "Brand Shop",
+              aliases: [],
+              provenance: [
+                {
+                  source: "brandfetch",
+                  provider: "brandfetch",
+                  observedAt: "2026-07-16T00:00:30.000Z",
+                },
+              ],
+              brand: {
+                provider: "brandfetch",
+                fetchedAt: "2026-07-16T00:00:30.000Z",
+                expiresAt: "2026-07-23T00:00:30.000Z",
+              },
+            },
+            explanation: "Confirmed and retained on acceptance.",
+          },
+        },
+      ],
+      acceptance,
+    );
+
+    await expect(store.run("project", run.id)).resolves.toMatchObject({
+      audit: run.audit,
+      summary: expect.objectContaining({ accepted: 1, ready: 0 }),
+      proposals: [
+        expect.objectContaining({
+          id: "proposal:accepted-1",
+          status: "accepted",
+          acceptance,
+          sourceRecord: { provider_id: "accepted-1", original: "record" },
+          transaction: expect.objectContaining({
+            metadata: { source_note: "kept" },
+          }),
+          merchantResolution: expect.objectContaining({
+            status: "confirmed",
+            merchant: expect.objectContaining({
+              merchantId: "merchant-brand-shop",
+              brand: expect.objectContaining({ provider: "brandfetch" }),
+            }),
+          }),
+          lastAiEnrichment: expect.objectContaining({
+            calls: [expect.objectContaining({ id: "codex-ai" })],
+          }),
+        }),
+      ],
+    });
   });
 
   test("removes long merchant identifiers before AI merchant advice", () => {
@@ -833,6 +988,7 @@ describe("FilesystemIngestionStore", () => {
         total: 1,
         ready: 0,
         needsReview: 1,
+        accepted: 0,
         duplicates: 0,
         invalid: 0,
         held: 0,

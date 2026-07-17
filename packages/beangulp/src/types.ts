@@ -236,6 +236,8 @@ export interface CategorizerPlugin {
 export type ProposalStatus =
   | "ready"
   | "needs-review"
+  /** Written to the ledger and retained as an immutable import audit record. */
+  | "accepted"
   | "duplicate"
   | "invalid"
   | "held"
@@ -261,6 +263,13 @@ export interface AiEnrichmentSnapshot {
   calls: readonly AiEnrichmentCallRecord[];
 }
 
+/** Ledger write that completed an import proposal. */
+export interface ProposalAcceptance {
+  acceptedAt: string;
+  destinationPath: string;
+  ledgerRevision: string;
+}
+
 export interface ImportProposal {
   id: string;
   importId: string;
@@ -275,6 +284,8 @@ export interface ImportProposal {
   selectedAccount?: string;
   status: ProposalStatus;
   duplicateOf?: string;
+  /** Present once this proposal has been written to the ledger. */
+  acceptance?: ProposalAcceptance;
   issues: readonly string[];
   /** Last AI enrichment attempt (prompts, responses, and errors). */
   lastAiEnrichment?: AiEnrichmentSnapshot;
@@ -337,10 +348,15 @@ export interface IngestionRun {
   completedAt: string;
   cursor?: string;
   proposals: readonly ImportProposal[];
+  /** AI calls made while this source was initially ingested. */
+  audit?: {
+    ai: readonly AiEnrichmentCallRecord[];
+  };
   summary: {
     total: number;
     ready: number;
     needsReview: number;
+    accepted: number;
     duplicates: number;
     invalid: number;
     held: number;

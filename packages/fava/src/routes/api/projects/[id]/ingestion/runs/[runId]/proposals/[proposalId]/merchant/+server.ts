@@ -152,7 +152,8 @@ export async function PATCH({
     if (
       !proposal.transaction ||
       proposal.status === "duplicate" ||
-      proposal.status === "invalid"
+      proposal.status === "invalid" ||
+      proposal.status === "accepted"
     )
       return json(
         { error: "This proposal cannot be updated." },
