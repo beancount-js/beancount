@@ -10,7 +10,6 @@
   import FolderTree from "lucide-svelte/icons/folder-tree";
   import Hash from "lucide-svelte/icons/hash";
   import History from "lucide-svelte/icons/history";
-  import ImportIcon from "lucide-svelte/icons/import";
   import Landmark from "lucide-svelte/icons/landmark";
   import Palette from "lucide-svelte/icons/palette";
   import BookUser from "lucide-svelte/icons/book-user";
@@ -18,6 +17,7 @@
   import List from "lucide-svelte/icons/list";
   import ListFilter from "lucide-svelte/icons/list-filter";
   import ShieldX from "lucide-svelte/icons/shield-x";
+  import RefreshCw from "lucide-svelte/icons/refresh-cw";
   import Wand2 from "lucide-svelte/icons/wand-2";
   import Sparkles from "lucide-svelte/icons/sparkles";
   import X from "lucide-svelte/icons/x";
@@ -328,7 +328,7 @@
     $ledgerSidebarMode === "settings" &&
     !isSettingsViewPath(activeViewPath)
   ) {
-    router.push("/import/editor");
+    router.push("/import/accounts");
   }
   $: if (
     isSettingsViewPath(activeViewPath) &&
@@ -564,16 +564,16 @@
               disabled={files.length === 0}
               onclick={() => openLedgerSetting("/import/editor")}
             >
-              <ImportIcon data-icon="inline-start" />
+              <RefreshCw data-icon="inline-start" />
               <span class="min-w-0 flex-1 truncate text-xs font-medium"
-                >Import</span
+                >Bank Sync</span
               >
             </Button>
           </div>
 
           {#if importSettingsOpen}
             <div
-              class="ml-3 flex flex-col gap-1 border-l border-sidebar-border pl-2"
+              class="ml-4 flex flex-col gap-1 border-l border-sidebar-border pl-2"
             >
               <Button
                 type="button"
