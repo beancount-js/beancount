@@ -80,7 +80,7 @@
     logoUrl?: string;
   };
 
-  const { snapshot } = useStudioWorkspace();
+  const { snapshot, ledgerSidebarMode } = useStudioWorkspace();
   const { ledgerData, conversion } = useContext();
   const { router, activeRoute } = useNavigation();
   const ctx = useCtx();
@@ -409,6 +409,7 @@
     }
     event.preventDefault();
     event.stopPropagation();
+    ledgerSidebarMode.set("workspace");
     router.push(`/account/${account}`);
   }
 
