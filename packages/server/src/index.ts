@@ -94,7 +94,11 @@ export {
 } from "./reconciliation";
 export { applyReconciliation } from "./reconciliation-apply";
 export { AsyncEventQueue } from "./event-queue";
-export { brandfetchLogoUrl, isValidDomain } from "./brandfetch";
+export {
+  brandfetchLogoUrl,
+  downloadBrandfetchLogo,
+  isValidDomain,
+} from "./brandfetch";
 export {
   FilesystemMerchantStore,
   type ConfirmMerchantInput,

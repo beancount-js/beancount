@@ -1,4 +1,8 @@
-import { createFormConfig, type FormConfig } from "@beancount-js/forms";
+import {
+  createFormConfig,
+  textField,
+  type FormConfig,
+} from "@beancount-js/forms";
 import type { BrandfetchEnrichmentConfig } from "@beancount-js/server";
 import {
   secretField,
@@ -83,6 +87,24 @@ export const brandSettingsForm: FormConfig<
           ...currentBrandfetch(config),
           highResolution,
         }),
+    }),
+    textField({
+      id: "ingestion-global-brandfetch-cache-user-agent",
+      label: "Cache User-Agent",
+      path: "brandfetch.cacheUserAgent",
+      placeholder: "Bean Budget logo cache/1.0",
+      as: "div",
+      align: "center",
+      get: (config) => config.brandfetch?.cacheUserAgent ?? "",
+      set: (config, cacheUserAgent) => {
+        const { cacheUserAgent: _currentUserAgent, ...brandfetch } =
+          currentBrandfetch(config);
+        const value = cacheUserAgent.trim();
+        return withBrandfetch(config, {
+          ...brandfetch,
+          ...(value ? { cacheUserAgent: value } : {}),
+        });
+      },
     }),
     secretField({
       id: "ingestion-global-brandfetch-client-id",

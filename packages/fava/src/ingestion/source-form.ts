@@ -485,6 +485,18 @@ function brandfetchIssues(
       );
     }
   }
+  const cacheUserAgent = brandfetch.cacheUserAgent?.trim();
+  if (
+    cacheUserAgent &&
+    (cacheUserAgent.length > 512 || /[\r\n]/.test(cacheUserAgent))
+  ) {
+    issues.push(
+      field(
+        "brandfetch.cacheUserAgent",
+        "Use at most 512 characters without line breaks.",
+      ),
+    );
+  }
   return issues;
 }
 

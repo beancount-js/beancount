@@ -413,6 +413,7 @@ describe("FilesystemIngestionStore", () => {
     full.brandfetch = {
       enabled: true,
       clientId: "  test-client  ",
+      cacheUserAgent: "  Bean Budget cache test/1.0  ",
     };
     full.sources[0] = {
       ...full.sources[0],
@@ -466,6 +467,7 @@ describe("FilesystemIngestionStore", () => {
       brandfetch: expect.objectContaining({
         enabled: true,
         clientId: "test-client",
+        cacheUserAgent: "Bean Budget cache test/1.0",
       }),
       sources: [
         expect.objectContaining({

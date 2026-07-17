@@ -207,7 +207,9 @@
           </div>
           <p class="mt-3 text-sm text-muted-foreground">
             High-resolution logos use 120×120 images instead of 40×40 for
-            sharper high-DPI displays.
+            sharper high-DPI displays. Set Cache User-Agent to opt into testing
+            server-side cache fills; failed requests still redirect in the
+            browser.
           </p>
         </article>
 

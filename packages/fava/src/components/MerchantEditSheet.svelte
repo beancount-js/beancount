@@ -575,7 +575,7 @@
                           data-icon="inline-start"
                           aria-hidden="true"
                         />
-                        Reload logo
+                        Refresh logo
                       </Button>
                     </FormField>
                   {/if}

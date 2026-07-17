@@ -1,5 +1,6 @@
 import { json } from "@sveltejs/kit";
 import {
+  downloadBrandfetchLogo,
   merchantLogoUrlFor,
   resolveBrandfetchRuntime,
 } from "@beancount-js/server";
@@ -36,12 +37,29 @@ export async function POST({
         { error: "Brandfetch Logo API client ID is unavailable." },
         { status: 400 },
       );
-    const merchant = await store.merchants.get(params.id, params.merchantId);
+    let merchant = await store.merchants.get(params.id, params.merchantId);
     if (!merchant.domain)
       return json(
         { error: "This merchant has no confirmed domain." },
         { status: 400 },
       );
+    if (brandfetch.cacheUserAgent) {
+      try {
+        const fetched = await downloadBrandfetchLogo({
+          domain: merchant.domain,
+          clientId: runtime.clientId,
+          size: brandfetch.highResolution ? 120 : 40,
+          userAgent: brandfetch.cacheUserAgent,
+        });
+        merchant = await store.merchants.cacheLogo(
+          params.id,
+          merchant.merchantId,
+          fetched,
+        );
+      } catch {
+        // Return the normal browser-delivery URL below.
+      }
+    }
     const logoUrl = merchantLogoUrlFor(params.id, merchant, {
       enabled: true,
       brandfetch: {

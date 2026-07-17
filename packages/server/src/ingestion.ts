@@ -77,6 +77,8 @@ export interface IngestionReconciliationConfig {
 export interface BrandfetchEnrichmentConfig {
   enabled: boolean;
   clientId?: string;
+  /** Opt-in User-Agent for experimental server-side logo cache fills. */
+  cacheUserAgent?: string;
   /** Request 120px logos instead of the default 40px variant. */
   highResolution?: boolean;
 }
@@ -339,9 +341,19 @@ export function validateBrandfetchConfig(
   ) {
     throw new Error("brandfetch.highResolution must be a boolean.");
   }
+  const cacheUserAgent = value.cacheUserAgent?.trim();
+  if (
+    cacheUserAgent &&
+    (cacheUserAgent.length > 512 || /[\r\n]/.test(cacheUserAgent))
+  ) {
+    throw new Error(
+      "brandfetch.cacheUserAgent must be at most 512 characters without line breaks.",
+    );
+  }
   return {
     enabled: value.enabled,
     clientId: value.clientId?.trim() || undefined,
+    ...(cacheUserAgent ? { cacheUserAgent } : {}),
     highResolution: value.highResolution === true,
   } satisfies BrandfetchEnrichmentConfig;
 }
