@@ -127,4 +127,31 @@ describe("directive-draft round-trip", () => {
       ),
     ).toBeInstanceOf(Custom);
   });
+
+  it("stores an open account's appearance as directive metadata", () => {
+    const ledger = new LedgerSource(
+      `${PRELUDE}2020-01-01 open Assets:Appearance USD\n  color: "#f97316"\n  icon: "wallet"\n  note: "Everyday spending"\n`,
+    );
+    const directive = ledger.directives.find(
+      (entry) => entry instanceof Open && entry.account === "Assets:Appearance",
+    );
+    expect(directive).toBeTruthy();
+    const draft = loadDirectiveDraft(directive);
+
+    expect(draft.color).toBe("#F97316");
+    expect(draft.icon).toBe("wallet");
+    expect(draft.metadata).toEqual([
+      { key: "note", value: "Everyday spending" },
+    ]);
+
+    draft.color = "#06B6D4";
+    draft.icon = "landmark";
+    const next = buildDirectiveSource(directive, draft);
+    const parsed = tryParseDirectiveDraft(next, "open");
+
+    expect(parsed).not.toBeNull();
+    expect(parsed!.directive.meta.color).toBe("#06B6D4");
+    expect(parsed!.directive.meta.icon).toBe("landmark");
+    expect(parsed!.directive.meta.note).toBe("Everyday spending");
+  });
 });

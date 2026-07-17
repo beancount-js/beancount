@@ -85,6 +85,8 @@ export type DirectiveDraft = {
   // open
   currencies: string[];
   booking: BookingMethod | "";
+  color: string;
+  icon: string;
   // text bodies
   comment: string;
   path: string;
@@ -133,6 +135,8 @@ export function emptyDraft(kind: DirectiveKind = "unknown"): DirectiveDraft {
     tolerance: "",
     currencies: [],
     booking: "",
+    color: "",
+    icon: "",
     comment: "",
     path: "",
     eventType: "",
@@ -211,11 +215,23 @@ export function hasEditableAst(value: DirectiveBase) {
   return false;
 }
 
-function publicMetadata(meta: Record<string, unknown>): MetadataRow[] {
+const OPEN_APPEARANCE_METADATA_KEYS = new Set(["color", "icon"]);
+
+function isHexColor(value: unknown): value is string {
+  return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
+}
+
+function publicMetadata(
+  meta: Record<string, unknown>,
+  omittedKeys: ReadonlySet<string> = new Set(),
+): MetadataRow[] {
   return Object.entries(meta)
     .filter(
       ([key]) =>
-        !key.startsWith("__") && key !== "filename" && key !== "lineno",
+        !key.startsWith("__") &&
+        key !== "filename" &&
+        key !== "lineno" &&
+        !omittedKeys.has(key),
     )
     .map(([key, value]) => ({
       key,
@@ -278,7 +294,11 @@ export function loadDirectiveDraft(value: DirectiveBase): DirectiveDraft {
   const kind = directiveKind(value);
   const draft = emptyDraft(kind);
   draft.date = value.date ? formatDate(value.date) : "";
-  draft.metadata = publicMetadata(value.meta as Record<string, unknown>);
+  const metadata = value.meta as Record<string, unknown>;
+  draft.metadata = publicMetadata(
+    metadata,
+    value instanceof Open ? OPEN_APPEARANCE_METADATA_KEYS : undefined,
+  );
 
   if (value instanceof Transaction) {
     draft.flag = value.flag || "*";
@@ -300,6 +320,10 @@ export function loadDirectiveDraft(value: DirectiveBase): DirectiveDraft {
     draft.account = value.account;
     draft.currencies = [...value.currencies];
     draft.booking = (value.booking as BookingMethod | undefined) ?? "";
+    draft.color = isHexColor(metadata.color)
+      ? metadata.color.toUpperCase()
+      : "";
+    draft.icon = typeof metadata.icon === "string" ? metadata.icon : "";
   } else if (value instanceof Close) {
     draft.account = value.account;
   } else if (value instanceof Commodity) {
@@ -342,17 +366,26 @@ export function loadDirectiveDraft(value: DirectiveBase): DirectiveDraft {
 }
 
 function metadataFromDraft(draft: DirectiveDraft, existing: Attributes) {
-  const attributes = draft.metadata
+  const rows = draft.metadata
     .map((row) => ({
       key: row.key.trim(),
       value: row.value,
     }))
-    .filter((row) => row.key)
-    .map((row) => {
-      const previous = existing.get(row.key);
-      if (previous) return previous.copy({ value: row.value });
-      return new Attribute(new Position(0, 0, 0), row.key, row.value);
-    });
+    .filter((row) => row.key);
+
+  if (draft.kind === "open") {
+    if (isHexColor(draft.color)) {
+      rows.push({ key: "color", value: draft.color.toUpperCase() });
+    }
+    const icon = draft.icon.trim();
+    if (icon) rows.push({ key: "icon", value: icon });
+  }
+
+  const attributes = rows.map((row) => {
+    const previous = existing.get(row.key);
+    if (previous) return previous.copy({ value: row.value });
+    return new Attribute(new Position(0, 0, 0), row.key, row.value);
+  });
   return new Attributes(attributes);
 }
 

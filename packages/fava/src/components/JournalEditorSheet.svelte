@@ -8,6 +8,7 @@
     FilterCommandPicker,
     FormField,
     FormSectionHeader,
+    IconColorPicker,
     TagEditor,
   } from "@beancount-js/forms";
   import { onDestroy } from "svelte";
@@ -575,6 +576,23 @@
                       />
                     </FormField>
                   {:else if kind === "open"}
+                    <FormField
+                      label="Appearance"
+                      as="div"
+                      align="center"
+                      controlId="journal-account-appearance"
+                    >
+                      <IconColorPicker
+                        id="journal-account-appearance"
+                        color={draft.color}
+                        icon={draft.icon}
+                        onChange={(appearance) => {
+                          draft.color = appearance.color;
+                          draft.icon = appearance.icon;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
                     <FormField
                       label="Account"
                       as="div"
