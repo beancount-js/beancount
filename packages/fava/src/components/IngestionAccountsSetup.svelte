@@ -1129,9 +1129,11 @@
                                     class="block truncate text-sm font-medium"
                                   >
                                     {account.name}{#if institution}<span
-                                        class="font-normal text-muted-foreground"
-                                      >
-                                        • {institution}</span
+                                        class="ml-2 font-normal text-muted-foreground"
+                                        >•</span
+                                      ><span
+                                        class="ml-2 font-normal text-muted-foreground"
+                                        >{institution}</span
                                       >{/if}
                                   </span>
                                   <span
