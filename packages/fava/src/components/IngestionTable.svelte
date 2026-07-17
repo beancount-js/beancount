@@ -16,6 +16,8 @@
   import Link2 from "lucide-svelte/icons/link-2";
   import Undo2 from "lucide-svelte/icons/undo-2";
   import { useStudioWorkspace } from "../studio/workspace";
+  import { ledgerStemForPath } from "../lib/ledger-route";
+  import { setStudioRouteEnv } from "../lib/studio-route-env";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useNavigation } from "../router/router";
   import { debounceWithDelay } from "../hooks/debounce";
@@ -69,7 +71,8 @@
     rows: ProposalRow[];
   };
 
-  const { snapshot } = useStudioWorkspace();
+  const { activeFile, refreshReviewLedger, reviewLedger, snapshot } =
+    useStudioWorkspace();
   const { activeRoute, router } = useNavigation();
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
 
@@ -449,6 +452,7 @@
       canAccept: accepted.length > 0 && !loading && !syncing,
       acceptCount: accepted.length,
       acceptBusy: loading,
+      canOpenLedger: Boolean($reviewLedger),
       onSourceChange: (nextSourceId) => void loadRunForSource(nextSourceId),
       onToggleCollapseGroups: toggleAllGroups,
       onOpenAccounts: openAccounts,
@@ -457,6 +461,7 @@
       onRerunAi: () => void rerunAiEnrichment(),
       onEditSources: () => router.push("/import/editor"),
       onAccept: () => void accept(),
+      onOpenLedger: openReviewLedger,
       onReviewMerchants: () => router.push("/import/merchants"),
     });
   });
@@ -577,6 +582,24 @@
         };
       }
     }
+    void refreshReviewLedger();
+  }
+
+  function openReviewLedger() {
+    const review = $reviewLedger;
+    if (!project || !review) return;
+    const available = [
+      ...project.ledgerFiles.map((file) => file.path),
+      review.path,
+    ];
+    activeFile.set(review.path);
+    setStudioRouteEnv({
+      projectId: project.project.id,
+      ledgerPath: review.path,
+      ledgerStem: ledgerStemForPath(review.path, available),
+      availableLedgers: available,
+    });
+    router.push("/journal");
   }
 
   async function watchSync(projectId: string, id: string) {

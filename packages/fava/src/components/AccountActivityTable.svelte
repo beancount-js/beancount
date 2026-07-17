@@ -11,6 +11,7 @@
   import { onDestroy } from "svelte";
   import { useContext } from "../context";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
+  import { useStudioWorkspace } from "../studio/workspace";
   import { useLedger } from "./helpers";
   import ActivityTable from "./ActivityTable.svelte";
   import AccountBulkActionSheet from "./AccountBulkActionSheet.svelte";
@@ -19,6 +20,7 @@
   export let account: string;
 
   const { conversion } = useContext();
+  const { activeLedgerKind } = useStudioWorkspace();
 
   let selectedKeys = new Set<string>();
   let selectedRecords: JournalRecord[] = [];
@@ -34,14 +36,21 @@
       directive instanceof Close,
   ) as readonly DirectiveBase[];
   $: balancesByDate = $ledgerData.accountBalanceByDate($conversion, account);
+  $: readOnly = $activeLedgerKind === "ingestion-review";
 
-  $: ingestionHeaderActions.set({
-    kind: "account-activity",
-    selectedCount: selectedKeys.size,
-    onReplace: () => {
-      bulkSheetOpen = true;
-    },
-  });
+  $: {
+    if (readOnly) {
+      ingestionHeaderActions.set(null);
+    } else {
+      ingestionHeaderActions.set({
+        kind: "account-activity",
+        selectedCount: selectedKeys.size,
+        onReplace: () => {
+          bulkSheetOpen = true;
+        },
+      });
+    }
+  }
 
   function handleSelectionChange(keys: Set<string>, records: JournalRecord[]) {
     selectedKeys = keys;
@@ -69,11 +78,14 @@
   balanceDescription="Shows the running balance for this account on this date"
   emptyMessage="No dated records match the current account filter."
   linkAccounts={true}
+  selectable={!readOnly}
 />
 
-<AccountBulkActionSheet
-  bind:open={bulkSheetOpen}
-  records={selectedRecords}
-  focusedAccount={account}
-  onApplied={clearSelection}
-/>
+{#if !readOnly}
+  <AccountBulkActionSheet
+    bind:open={bulkSheetOpen}
+    records={selectedRecords}
+    focusedAccount={account}
+    onApplied={clearSelection}
+  />
+{/if}

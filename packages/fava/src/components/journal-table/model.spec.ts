@@ -7,6 +7,7 @@ import {
   journalRecords,
   paginateJournalGroups,
 } from "./model";
+import { REVIEW_CONTEXT_META } from "../../ingestion/review-ledger";
 
 function transaction(
   date: string,
@@ -50,6 +51,17 @@ describe("grouped journal model", () => {
       change: { USD: 20 },
       final: { USD: 120 },
     });
+  });
+
+  test("omits generated review-ledger context directives", () => {
+    const records = journalRecords([
+      new Custom(DateTime.fromISO("2026-04-03"), "fava-option", [], {
+        [REVIEW_CONTEXT_META]: true,
+      }),
+      transaction("2026-04-03", "Dinner", "20"),
+    ]);
+
+    expect(records.map((record) => record.title)).toEqual(["Dinner"]);
   });
 
   test("uses configured balance-sheet roots for the featured amount", () => {

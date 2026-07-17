@@ -18,6 +18,7 @@
     ProjectSnapshot,
     ProjectSummary,
   } from "@beancount-js/workspace";
+  import type { IngestionReviewLedgerSnapshot } from "../../../../ingestion/types";
 
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
   let webWorkspace = isWeb ? getWebWorkspace() : undefined;
@@ -26,6 +27,7 @@
   let status = "Loading project…";
   let loadedProjectId = "";
   let routeLedgerPath: string | undefined;
+  let reviewLedger: IngestionReviewLedgerSnapshot | null = null;
 
   $: projectId = $page.params.projectId ?? "";
   $: ledgerAndView = ($page.params.ledgerAndView ?? "")
@@ -53,8 +55,31 @@
     await goto(projectHref(id), { keepFocus: true, noScroll: true });
   }
 
-  function syncLedgerFromRoute(next: ProjectSnapshot, segments: string[]) {
-    const available = next.ledgerFiles.map((file) => file.path);
+  function availableLedgers(next: ProjectSnapshot, review = reviewLedger) {
+    return [
+      ...next.ledgerFiles.map((file) => file.path),
+      ...(review ? [review.path] : []),
+    ];
+  }
+
+  async function loadReviewLedger(id: string) {
+    if (isWeb) return null;
+    const response = await responseJson<{
+      ledger: IngestionReviewLedgerSnapshot | null;
+    }>(
+      await fetch(
+        `/api/projects/${encodeURIComponent(id)}/ingestion/review-ledger`,
+      ),
+    );
+    return response.ledger;
+  }
+
+  function syncLedgerFromRoute(
+    next: ProjectSnapshot,
+    segments: string[],
+    review = reviewLedger,
+  ) {
+    const available = availableLedgers(next, review);
     const parsed = parseLedgerAndView(segments);
     const fallback = next.project.entryFile;
     let ledgerPath = fallback;
@@ -82,6 +107,7 @@
         : await responseJson<ProjectSnapshot>(
             await fetch(`/api/projects/${encodeURIComponent(id)}`),
           );
+    reviewLedger = await loadReviewLedger(id);
     loadedProjectId = id;
     status = `${snapshot.ledgerFiles.length} Beancount sources · ${snapshot.resources.length} resources`;
     const { ledgerPath, parsed, available } = syncLedgerFromRoute(
@@ -222,6 +248,12 @@
     return snapshot;
   }
 
+  async function refreshReviewLedger() {
+    if (!snapshot) throw new Error("No project is selected.");
+    reviewLedger = await loadReviewLedger(snapshot.project.id);
+    return reviewLedger;
+  }
+
   async function resourceUrl(path: string) {
     if (!snapshot) throw new Error("No project is selected.");
     const resource = snapshot.resources.find((item) => item.path === path);
@@ -281,16 +313,22 @@
     const timer = window.setInterval(async () => {
       if (isWeb || !snapshot) return;
       try {
-        const next = await responseJson<ProjectSnapshot>(
-          await fetch(
-            `/api/projects/${encodeURIComponent(snapshot.project.id)}`,
+        const [next, nextReviewLedger] = await Promise.all([
+          responseJson<ProjectSnapshot>(
+            await fetch(
+              `/api/projects/${encodeURIComponent(snapshot.project.id)}`,
+            ),
           ),
-        );
+          loadReviewLedger(snapshot.project.id),
+        ]);
         if (
           JSON.stringify(next.revisions) !== JSON.stringify(snapshot.revisions)
         ) {
           snapshot = next;
           status = "Reloaded external filesystem changes";
+        }
+        if (nextReviewLedger?.revision !== reviewLedger?.revision) {
+          reviewLedger = nextReviewLedger;
         }
       } catch {
         // A later poll reconciles a restarting local server.
@@ -306,9 +344,11 @@
   {isWeb}
   {status}
   {routeLedgerPath}
+  {reviewLedger}
   onSelectProject={selectProject}
   onAddProject={addProject}
   onSaveFile={saveFile}
   onRefreshProject={refreshProject}
+  onRefreshReviewLedger={refreshReviewLedger}
   onResourceUrl={resourceUrl}
 />

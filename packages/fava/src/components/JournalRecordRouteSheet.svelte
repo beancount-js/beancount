@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { DirectiveBase } from "@beancount-js/beancount";
+  import { Transaction, type DirectiveBase } from "@beancount-js/beancount";
   import { tick } from "svelte";
   import { useContext } from "../context";
   import { useNavigation } from "../router/router";
@@ -10,9 +10,16 @@
     journalRecordKey,
   } from "../lib/journal-record-key";
   import JournalEditorSheet from "./JournalEditorSheet.svelte";
+  import { useStudioWorkspace } from "../studio/workspace";
+  import {
+    REVIEW_CONNECTION_META,
+    REVIEW_PROPOSAL_META,
+    REVIEW_RUN_META,
+  } from "../ingestion/review-ledger";
 
   const { activeRoute, router } = useNavigation();
   const { ledgerData } = useContext();
+  const { activeLedgerKind } = useStudioWorkspace();
 
   let editorOpen = $state(false);
   let sheetDirective = $state<DirectiveBase | undefined>(undefined);
@@ -68,6 +75,23 @@
     opening = false;
   }
 
+  function openReviewProposal(directive: DirectiveBase) {
+    if ($activeLedgerKind !== "ingestion-review") return false;
+    if (!(directive instanceof Transaction)) return false;
+    const runId = String(directive.meta[REVIEW_RUN_META] ?? "");
+    const proposalId = String(directive.meta[REVIEW_PROPOSAL_META] ?? "");
+    const sourceId = String(directive.meta[REVIEW_CONNECTION_META] ?? "");
+    if (!runId || !proposalId) return false;
+
+    const query = new URLSearchParams($activeRoute.query);
+    query.delete("record");
+    query.set("runId", runId);
+    query.set("proposalId", proposalId);
+    if (sourceId) query.set("sourceId", sourceId);
+    router.push(`/records?${query.toString()}`);
+    return true;
+  }
+
   $effect(() => {
     const key = routeRecord;
     if (!key) {
@@ -91,6 +115,11 @@
       // Keep ?record= while the ledger is still loading or a record was edited
       // externally. The editor can still re-locate unchanged source content
       // before it saves.
+      return;
+    }
+
+    if (openReviewProposal(found)) {
+      resetSheet();
       return;
     }
 

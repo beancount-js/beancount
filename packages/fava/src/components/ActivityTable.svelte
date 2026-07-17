@@ -52,6 +52,8 @@
   export let emptyMessage =
     "No dated records match the current Journal filter.";
   export let linkAccounts = false;
+  /** Review ledgers retain inspection but cannot be bulk-edited. */
+  export let selectable = true;
   /** Controlled selection; parent may bind or listen via onSelectionChange. */
   export let selectedKeys = new Set<string>();
   export let onSelectionChange:
@@ -105,6 +107,7 @@
   }
 
   function commitSelection(next: Set<string>) {
+    if (!selectable) return;
     selectedKeys = next;
     onSelectionChange?.(
       next,
@@ -113,6 +116,7 @@
   }
 
   function toggleRecord(key: string, checked?: boolean) {
+    if (!selectable) return;
     const next = new Set(selectedKeys);
     const select = checked ?? !next.has(key);
     if (select) next.add(key);
@@ -121,6 +125,7 @@
   }
 
   function toggleGroup(group: JournalDateGroup, checked?: boolean) {
+    if (!selectable) return;
     const keys = group.records.map((record) => record.key);
     const select = checked ?? !keys.every((key) => selectedKeys.has(key));
     const next = new Set(selectedKeys);
@@ -129,14 +134,17 @@
   }
 
   function selectAllRecords() {
+    if (!selectable) return;
     commitSelection(new Set(records.map((record) => record.key)));
   }
 
   function clearSelection() {
+    if (!selectable) return;
     commitSelection(new Set());
   }
 
   function toggleVisible(checked?: boolean) {
+    if (!selectable) return;
     const keys = visibleGroups.flatMap((group) =>
       group.records.map((record) => record.key),
     );
@@ -305,23 +313,27 @@
     </ToggleGroup.Root>
 
     <div
-      class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+      class={selectable
+        ? "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        : "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"}
     >
-      <input
-        bind:this={masterCheckbox}
-        use:setIndeterminate={masterIndeterminate}
-        type="checkbox"
-        class="size-4 rounded border-input text-primary focus:ring-ring"
-        aria-label={`Select visible ${recordLabel} records`}
-        checked={masterChecked}
-        onchange={(event) =>
-          toggleVisible((event.currentTarget as HTMLInputElement).checked)}
-      />
+      {#if selectable}
+        <input
+          bind:this={masterCheckbox}
+          use:setIndeterminate={masterIndeterminate}
+          type="checkbox"
+          class="size-4 rounded border-input text-primary focus:ring-ring"
+          aria-label={`Select visible ${recordLabel} records`}
+          checked={masterChecked}
+          onchange={(event) =>
+            toggleVisible((event.currentTarget as HTMLInputElement).checked)}
+        />
+      {/if}
       <span>Date</span>
       <span class="text-right">{amountHeading}</span>
     </div>
 
-    {#if showSelectionBanner}
+    {#if selectable && showSelectionBanner}
       <div
         data-activity-selection-banner
         role="status"
@@ -374,20 +386,24 @@
         aria-labelledby={groupId}
       >
         <div
-          class="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-5 py-4"
+          class={selectable
+            ? "grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-5 py-4"
+            : "grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-5 py-4"}
         >
-          <input
-            use:setIndeterminate={groupIndeterminate}
-            type="checkbox"
-            class="size-4 rounded border-input text-primary focus:ring-ring"
-            aria-label={`Select all ${group.records.length} records from ${groupDate(group)}`}
-            checked={groupChecked}
-            onchange={(event) =>
-              toggleGroup(
-                group,
-                (event.currentTarget as HTMLInputElement).checked,
-              )}
-          />
+          {#if selectable}
+            <input
+              use:setIndeterminate={groupIndeterminate}
+              type="checkbox"
+              class="size-4 rounded border-input text-primary focus:ring-ring"
+              aria-label={`Select all ${group.records.length} records from ${groupDate(group)}`}
+              checked={groupChecked}
+              onchange={(event) =>
+                toggleGroup(
+                  group,
+                  (event.currentTarget as HTMLInputElement).checked,
+                )}
+            />
+          {/if}
           <button
             type="button"
             class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
@@ -474,23 +490,27 @@
               role="button"
               tabindex="0"
               class:rounded-b-xl={index === group.records.length - 1}
-              class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={`Edit ${record.title}`}
+              class={selectable
+                ? "grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                : "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"}
+              aria-label={`Open ${record.title}`}
               onclick={() => openRecord(record)}
               onkeydown={(event) => handleRecordKeydown(event, record)}
             >
-              <input
-                type="checkbox"
-                class="size-4 rounded border-input text-primary focus:ring-ring"
-                aria-label={`Select ${record.title}`}
-                checked={selectedKeys.has(record.key)}
-                onclick={(event) => event.stopPropagation()}
-                onchange={(event) =>
-                  toggleRecord(
-                    record.key,
-                    (event.currentTarget as HTMLInputElement).checked,
-                  )}
-              />
+              {#if selectable}
+                <input
+                  type="checkbox"
+                  class="size-4 rounded border-input text-primary focus:ring-ring"
+                  aria-label={`Select ${record.title}`}
+                  checked={selectedKeys.has(record.key)}
+                  onclick={(event) => event.stopPropagation()}
+                  onchange={(event) =>
+                    toggleRecord(
+                      record.key,
+                      (event.currentTarget as HTMLInputElement).checked,
+                    )}
+                />
+              {/if}
               {#if logo && !failedLogoKeys.has(record.key)}
                 <img
                   class="size-10 rounded-full border object-contain"

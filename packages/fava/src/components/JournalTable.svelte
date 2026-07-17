@@ -3,11 +3,13 @@
   import { onDestroy } from "svelte";
   import { useContext } from "../context";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
+  import { useStudioWorkspace } from "../studio/workspace";
   import ActivityTable from "./ActivityTable.svelte";
   import AccountBulkActionSheet from "./AccountBulkActionSheet.svelte";
   import type { JournalRecord } from "./journal-table/model";
 
   const { conversion, ledgerData, ledgerSource } = useContext();
+  const { activeLedgerKind } = useStudioWorkspace();
 
   let selectedKeys = $state(new Set<string>());
   let selectedRecords = $state<JournalRecord[]>([]);
@@ -20,8 +22,13 @@
   const balancesByDate = $derived(
     $ledgerSource.data.accountBalanceByDate($conversion, ...balanceRoots),
   );
+  const readOnly = $derived($activeLedgerKind === "ingestion-review");
 
   $effect(() => {
+    if (readOnly) {
+      ingestionHeaderActions.set(null);
+      return;
+    }
     ingestionHeaderActions.set({
       kind: "account-activity",
       selectedCount: selectedKeys.size,
@@ -57,10 +64,13 @@
   balanceDescription="Shows the net worth balance for this date"
   emptyMessage="No dated records match the current Journal filter."
   linkAccounts={true}
+  selectable={!readOnly}
 />
 
-<AccountBulkActionSheet
-  bind:open={bulkSheetOpen}
-  records={selectedRecords}
-  onApplied={clearSelection}
-/>
+{#if !readOnly}
+  <AccountBulkActionSheet
+    bind:open={bulkSheetOpen}
+    records={selectedRecords}
+    onApplied={clearSelection}
+  />
+{/if}

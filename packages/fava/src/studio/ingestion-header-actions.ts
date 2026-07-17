@@ -28,6 +28,7 @@ export type IngestionReviewHeaderActions = {
   canAccept: boolean;
   acceptCount: number;
   acceptBusy: boolean;
+  canOpenLedger: boolean;
   onSourceChange: (sourceId: string) => void;
   onToggleCollapseGroups: () => void;
   onOpenAccounts: () => void;
@@ -36,6 +37,7 @@ export type IngestionReviewHeaderActions = {
   onRerunAi: () => void;
   onEditSources: () => void;
   onAccept: () => void;
+  onOpenLedger: () => void;
   onReviewMerchants: () => void;
 };
 

@@ -124,6 +124,25 @@
               <Button
                 {...props}
                 type="button"
+                size="icon"
+                variant="ghost"
+                class="size-8"
+                aria-label="Open active review ledger"
+                disabled={!header.canOpenLedger}
+                onclick={() => header.onOpenLedger()}
+              >
+                <BookOpen />
+              </Button>
+            {/snippet}
+          </Tooltip.Trigger>
+          <Tooltip.Content>Open active review ledger</Tooltip.Content>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            {#snippet child({ props })}
+              <Button
+                {...props}
+                type="button"
                 size="sm"
                 class="h-8"
                 aria-label={header.acceptBusy

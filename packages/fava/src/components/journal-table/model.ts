@@ -11,6 +11,7 @@ import {
   type Amount,
   type Posting,
 } from "@beancount-js/beancount";
+import { REVIEW_CONTEXT_META } from "../../ingestion/review-ledger";
 import { formatDate } from "@beancount-js/parser";
 import { DateTime } from "luxon";
 import { journalRecordKey as sourcePositionKey } from "../../lib/journal-record-key";
@@ -200,6 +201,7 @@ function toRecord(
   balanceSheetRoots: readonly string[],
   focusedAccount?: string,
 ): JournalRecord | undefined {
+  if (directive.meta[REVIEW_CONTEXT_META] === true) return undefined;
   if (!directive.date) return undefined;
   const date = directive.date;
   const base =

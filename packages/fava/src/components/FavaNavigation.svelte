@@ -73,12 +73,8 @@
   const ledgerData = useLedger();
   const { router } = useNavigation();
   const { activeRoute } = router;
-  const {
-    snapshot,
-    activeFile,
-    ledgerSidebarMode,
-    reviewLedger,
-  } = useStudioWorkspace();
+  const { snapshot, activeFile, ledgerSidebarMode, reviewLedger } =
+    useStudioWorkspace();
 
   let workspaceView: WorkspaceView = initialState.view ?? "ledgers";
   let tagsViewMode: TagsViewMode = initialState.tagsViewMode ?? "tree";
