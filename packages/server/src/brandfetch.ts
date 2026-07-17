@@ -23,7 +23,7 @@ export function brandfetchLogoUrl(
 ) {
   const identifier = encodeURIComponent(domain.toLowerCase());
   const client = encodeURIComponent(clientId);
-  return `https://cdn.brandfetch.io/domain/${identifier}/h/${size}/w/${size}/icon.png?c=${client}`;
+  return `https://cdn.brandfetch.io/${identifier}/h/${size}/w/${size}/icon.png?c=${client}`;
 }
 
 export function isValidDomain(value: string | undefined) {
