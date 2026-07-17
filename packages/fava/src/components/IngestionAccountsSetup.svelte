@@ -1,6 +1,8 @@
 <script lang="ts">
   import BookOpen from "lucide-svelte/icons/book-open";
+  import CircleSlash from "lucide-svelte/icons/circle-slash";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
+  import Download from "lucide-svelte/icons/download";
   import FileCode2 from "lucide-svelte/icons/file-code-2";
   import Landmark from "lucide-svelte/icons/landmark";
   import Link2 from "lucide-svelte/icons/link-2";
@@ -11,9 +13,12 @@
   import type { JsonApiLinkedAccount } from "@beancount-js/beangulp";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import * as Alert from "$lib/components/ui/alert";
+  import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import * as Empty from "$lib/components/ui/empty";
+  import { Progress } from "$lib/components/ui/progress";
+  import { Separator } from "$lib/components/ui/separator";
   import * as Sheet from "$lib/components/ui/sheet";
   import { useContext } from "../context";
   import { useNavigation } from "../router/router";
@@ -220,7 +225,22 @@
   const syncSkipped = $derived(
     syncJob?.summary != null ? syncJob.summary.duplicates : "—",
   );
+  const syncUpdated = $derived(syncJob?.summary != null ? 0 : "—");
   const healthErrors = $derived(syncJob?.status === "failed" ? 1 : 0);
+  const linkedPercent = $derived(
+    totalAccountCount > 0
+      ? Math.round((linkedCount / totalAccountCount) * 100)
+      : 0,
+  );
+  const syncSummaryTimeLabel = $derived.by(() => {
+    if (syncing) {
+      return syncJob?.progress.message?.trim() || "Syncing…";
+    }
+    if (syncJob?.completedAt) {
+      return `Last synced ${relativeSyncTime(syncJob.completedAt)}`;
+    }
+    return "Not synced yet";
+  });
   const showReviewCta = $derived(
     syncJob?.status === "completed" &&
       ((syncJob.summary?.seen ?? 0) > 0 || syncJob.runIds.length > 0),
@@ -917,20 +937,46 @@
                   </p>
                 {/if}
 
-                <div
-                  class="mt-4 overflow-hidden rounded-lg border border-border bg-secondary text-secondary-foreground"
-                >
+                <div class="mt-4 overflow-hidden rounded-2xl border bg-card">
                   <button
                     type="button"
-                    class="flex w-full items-center gap-2 px-3 py-2.5 text-left hover:bg-background/10"
+                    class="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/60"
                     aria-expanded={syncSummaryOpen}
                     onclick={() => (syncSummaryOpen = !syncSummaryOpen)}
                   >
-                    <span class="text-sm font-semibold">Sync summary</span>
                     <span
-                      class="min-w-0 flex-1 truncate text-right text-xs text-muted-foreground"
+                      class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
                     >
-                      {lastSyncLabel}
+                      <RefreshCw class="size-5" aria-hidden="true" />
+                    </span>
+                    <span class="min-w-0 flex-1">
+                      <span class="flex flex-wrap items-center gap-2">
+                        <span class="text-lg font-semibold">Sync summary</span>
+                        <Badge
+                          variant={healthErrors > 0
+                            ? "destructive"
+                            : "secondary"}
+                          class="gap-1.5"
+                        >
+                          <span
+                            class={[
+                              "size-1.5 rounded-full",
+                              healthErrors > 0
+                                ? "bg-destructive"
+                                : "bg-primary",
+                            ]}
+                            aria-hidden="true"
+                          ></span>
+                          {healthErrors > 0
+                            ? `${healthErrors} error${healthErrors === 1 ? "" : "s"}`
+                            : "Healthy"}
+                        </Badge>
+                      </span>
+                    </span>
+                    <span
+                      class="hidden min-w-0 truncate text-right text-sm text-muted-foreground sm:block"
+                    >
+                      {syncSummaryTimeLabel}
                     </span>
                     <ChevronDown
                       class="size-4 shrink-0 text-muted-foreground transition-transform {syncSummaryOpen
@@ -940,79 +986,148 @@
                     />
                   </button>
                   {#if syncSummaryOpen}
-                    <div
-                      class="grid gap-4 border-t border-border px-3 py-3 sm:grid-cols-3"
-                    >
-                      <div class="flex flex-col gap-1.5">
-                        <p
-                          class="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+                    <div class="grid border-t border-border lg:grid-cols-3">
+                      <section
+                        class="flex flex-col gap-5 border-b border-border px-5 py-6 lg:border-b-0 lg:border-r"
+                        aria-labelledby="sync-summary-accounts"
+                      >
+                        <div class="flex items-center gap-3">
+                          <span
+                            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                          >
+                            <Landmark class="size-5" aria-hidden="true" />
+                          </span>
+                          <h3 id="sync-summary-accounts" class="font-semibold">
+                            Accounts
+                          </h3>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                          <span class="text-4xl font-semibold tabular-nums">
+                            {linkedCount} / {totalAccountCount}
+                          </span>
+                          <span class="text-lg text-muted-foreground"
+                            >linked</span
+                          >
+                        </div>
+                        <div class="flex items-center gap-3">
+                          <Progress value={linkedPercent} class="h-2 flex-1" />
+                          <span
+                            class="text-sm font-medium tabular-nums text-muted-foreground"
+                          >
+                            {linkedPercent}%
+                          </span>
+                        </div>
+                        <dl
+                          class="flex flex-col gap-3 text-sm text-muted-foreground"
                         >
-                          Accounts
-                        </p>
-                        <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-                          <div>
-                            <dt class="text-muted-foreground">Total</dt>
-                            <dd class="font-medium">{totalAccountCount}</dd>
-                          </div>
-                          <div>
-                            <dt class="text-muted-foreground">Linked</dt>
-                            <dd class="font-medium">{linkedCount}</dd>
-                          </div>
-                          <div>
-                            <dt class="text-muted-foreground">Unlinked</dt>
-                            <dd class="font-medium">
-                              {discoveryKnown ? unlinkedCount : "—"}
+                          <div class="flex items-center gap-3">
+                            <dt>
+                              <Link2
+                                class="size-4 text-primary"
+                                aria-hidden="true"
+                              />
+                            </dt>
+                            <dd>
+                              {discoveryKnown ? unlinkedCount : "—"} need linking
                             </dd>
                           </div>
-                          <div>
-                            <dt class="text-muted-foreground">Institutions</dt>
-                            <dd class="font-medium">{institutionCount}</dd>
+                          <div class="flex items-center gap-3">
+                            <dt>
+                              <Landmark
+                                class="size-4 text-primary"
+                                aria-hidden="true"
+                              />
+                            </dt>
+                            <dd>{institutionCount} institutions</dd>
                           </div>
                         </dl>
-                      </div>
-                      <div class="flex flex-col gap-1.5">
-                        <p
-                          class="text-xs font-bold uppercase tracking-wide text-muted-foreground"
-                        >
-                          Transactions
-                        </p>
-                        <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-                          <div>
-                            <dt class="text-muted-foreground">Seen</dt>
-                            <dd class="font-medium">{syncSeen}</dd>
-                          </div>
-                          <div>
-                            <dt class="text-muted-foreground">Imported</dt>
-                            <dd class="font-medium">{syncImported}</dd>
-                          </div>
-                          <div>
-                            <dt class="text-muted-foreground">Updated</dt>
-                            <dd class="font-medium">—</dd>
-                          </div>
-                          <div>
-                            <dt class="text-muted-foreground">Skipped</dt>
-                            <dd class="font-medium">{syncSkipped}</dd>
-                          </div>
-                        </dl>
-                      </div>
-                      <div class="flex flex-col gap-1.5">
-                        <p
-                          class="text-xs font-bold uppercase tracking-wide text-muted-foreground"
-                        >
-                          Health
-                        </p>
-                        <p class="text-sm">
-                          Errors:
+                      </section>
+
+                      <section
+                        class="flex flex-col gap-5 border-b border-border px-5 py-6 lg:border-b-0 lg:border-r"
+                        aria-labelledby="sync-summary-transactions"
+                      >
+                        <div class="flex items-center gap-3">
                           <span
-                            class={[
-                              "font-medium",
-                              healthErrors > 0
-                                ? "text-red-600"
-                                : "text-emerald-600",
-                            ]}>{healthErrors}</span
+                            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
                           >
-                        </p>
-                      </div>
+                            <RefreshCw class="size-5" aria-hidden="true" />
+                          </span>
+                          <h3
+                            id="sync-summary-transactions"
+                            class="font-semibold"
+                          >
+                            Transactions
+                          </h3>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                          <span class="text-4xl font-semibold tabular-nums">
+                            {syncSeen}
+                          </span>
+                          <span class="text-lg text-muted-foreground">seen</span
+                          >
+                        </div>
+                        <Separator />
+                        <div
+                          class="flex items-center gap-3 text-muted-foreground"
+                        >
+                          <span
+                            class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                          >
+                            <RefreshCw class="size-4" aria-hidden="true" />
+                          </span>
+                          <span class="text-sm">
+                            <span
+                              class="font-medium tabular-nums text-foreground"
+                            >
+                              {syncUpdated}
+                            </span>
+                            updated
+                          </span>
+                        </div>
+                      </section>
+
+                      <section
+                        class="flex flex-col gap-5 px-5 py-6"
+                        aria-labelledby="sync-summary-import"
+                      >
+                        <div class="flex items-center gap-3">
+                          <span
+                            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                          >
+                            <Download class="size-5" aria-hidden="true" />
+                          </span>
+                          <h3 id="sync-summary-import" class="font-semibold">
+                            Import
+                          </h3>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                          <span class="text-4xl font-semibold tabular-nums">
+                            {syncImported}
+                          </span>
+                          <span class="text-lg text-muted-foreground"
+                            >imported</span
+                          >
+                        </div>
+                        <Separator />
+                        <div
+                          class="flex items-center gap-3 text-muted-foreground"
+                        >
+                          <span
+                            class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                          >
+                            <CircleSlash class="size-4" aria-hidden="true" />
+                          </span>
+                          <span class="text-sm">
+                            <span
+                              class="font-medium tabular-nums text-foreground"
+                            >
+                              {syncSkipped}
+                            </span>
+                            skipped
+                          </span>
+                        </div>
+                      </section>
                     </div>
                   {/if}
                 </div>
