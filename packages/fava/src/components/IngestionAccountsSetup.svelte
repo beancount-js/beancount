@@ -105,6 +105,8 @@
   let selectedIds = $state<string[]>([]);
   let sourceAccounts = $state<Record<string, string>>({});
   let connectionExpanded = $state(false);
+  let otherAccountsOpen = $state(false);
+  let openOtherAccountGroups = $state<Set<string>>(new Set());
   let syncSummaryOpen = $state(false);
   let setupSheetOpen = $state(false);
   let autoDiscoveredFor = $state("");
@@ -500,6 +502,16 @@
     }
     selectConnection(source);
     connectionExpanded = true;
+  }
+
+  function toggleOtherAccountGroup(label: string) {
+    const next = new Set(openOtherAccountGroups);
+    if (next.has(label)) {
+      next.delete(label);
+    } else {
+      next.add(label);
+    }
+    openOtherAccountGroups = next;
   }
 
   function connectionStatusLineFor(source: EditableIngestionSource) {
@@ -1405,11 +1417,24 @@
           class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
           aria-labelledby="other-ledger-accounts"
         >
-          <div class="flex items-center gap-3 px-4 py-3">
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+            aria-expanded={otherAccountsOpen}
+            aria-controls="other-ledger-account-groups"
+            onclick={() => (otherAccountsOpen = !otherAccountsOpen)}
+          >
+            <ChevronDown
+              class="size-4 shrink-0 text-muted-foreground transition-transform {otherAccountsOpen
+                ? ''
+                : '-rotate-90'}"
+              aria-hidden="true"
+            />
             <span
               class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+              aria-hidden="true"
             >
-              <Landmark class="size-4" aria-hidden="true" />
+              <Landmark class="size-4" />
             </span>
             <span class="min-w-0 flex-1">
               <span
@@ -1425,104 +1450,124 @@
             <Badge variant="secondary" class="shrink-0 tabular-nums">
               {otherAccountCount}
             </Badge>
-          </div>
+          </button>
 
-          {#if otherAccountGroups.length}
-            <div class="border-t border-border px-4 pb-4 pt-3">
+          {#if otherAccountsOpen && otherAccountGroups.length}
+            <div
+              id="other-ledger-account-groups"
+              class="border-t border-border px-4 pb-4 pt-3"
+            >
               <div class="flex flex-col gap-4">
                 {#each otherAccountGroups as group (group.label)}
                   {@const groupBalance = otherGroupBalanceText(group)}
+                  {@const groupOpen = openOtherAccountGroups.has(group.label)}
                   <section class="overflow-hidden rounded-2xl bg-muted/80">
-                    <div
-                      class="flex items-center justify-between gap-3 px-5 py-4"
+                    <button
+                      type="button"
+                      class="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-background/30"
+                      aria-expanded={groupOpen}
+                      aria-controls={`other-account-group-${group.label}`}
+                      onclick={() => toggleOtherAccountGroup(group.label)}
                     >
-                      <p
+                      <span
                         class="text-sm font-semibold tracking-wide text-foreground"
                       >
                         {group.label}
                         <span class="ml-2 text-muted-foreground"
                           >· {group.accounts.length}</span
                         >
-                      </p>
-                      {#if groupBalance}
-                        <span
-                          class="shrink-0 text-sm font-semibold tabular-nums"
-                        >
-                          {groupBalance}
-                        </span>
-                      {/if}
-                    </div>
-                    <ul
-                      class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
-                      role="list"
-                    >
-                      {#each group.accounts as account, index (account.name)}
-                        {@const balance = otherAccountBalanceText(account)}
-                        <li
-                          class:rounded-b-xl={index ===
-                            group.accounts.length - 1}
-                          class="flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
-                        >
-                          <div
-                            class="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold {accountAvatarClass(
-                              account.name,
-                            )}"
-                            aria-hidden="true"
+                      </span>
+                      <span class="flex shrink-0 items-center gap-3">
+                        {#if groupBalance}
+                          <span class="text-sm font-semibold tabular-nums">
+                            {groupBalance}
+                          </span>
+                        {/if}
+                        <ChevronDown
+                          class="size-4 text-muted-foreground transition-transform {groupOpen
+                            ? ''
+                            : '-rotate-90'}"
+                          aria-hidden="true"
+                        />
+                      </span>
+                    </button>
+                    {#if groupOpen}
+                      <ul
+                        id={`other-account-group-${group.label}`}
+                        class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+                        role="list"
+                      >
+                        {#each group.accounts as account, index (account.name)}
+                          {@const balance = otherAccountBalanceText(account)}
+                          <li
+                            class:rounded-b-xl={index ===
+                              group.accounts.length - 1}
+                            class="flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
                           >
-                            {initialLetter(account.name)}
-                          </div>
-                          <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-medium">
-                              {account.name}
-                            </p>
-                            <p class="truncate text-xs text-muted-foreground">
-                              Open directive
-                            </p>
-                          </div>
-                          {#if balance}
-                            <span
-                              class="shrink-0 text-sm font-semibold tabular-nums"
+                            <div
+                              class="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold {accountAvatarClass(
+                                account.name,
+                              )}"
+                              aria-hidden="true"
                             >
-                              {balance}
-                            </span>
-                          {/if}
-                          <DropdownMenu.Root>
-                            <DropdownMenu.Trigger>
-                              {#snippet child({ props })}
-                                <Button
-                                  {...props}
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  class="shrink-0 text-muted-foreground"
-                                  aria-label={`${account.name} actions`}
-                                >
-                                  <MoreVertical
-                                    class="size-4"
-                                    aria-hidden="true"
-                                  />
-                                </Button>
-                              {/snippet}
-                            </DropdownMenu.Trigger>
-                            <DropdownMenu.Content align="end">
-                              <DropdownMenu.Group>
-                                <DropdownMenu.Item
-                                  onSelect={() => editOtherAccount(account)}
-                                >
-                                  <Pencil class="size-3.5" aria-hidden="true" />
-                                  Edit
-                                </DropdownMenu.Item>
-                              </DropdownMenu.Group>
-                            </DropdownMenu.Content>
-                          </DropdownMenu.Root>
-                        </li>
-                      {/each}
-                    </ul>
+                              {initialLetter(account.name)}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                              <p class="truncate text-sm font-medium">
+                                {account.name}
+                              </p>
+                              <p class="truncate text-xs text-muted-foreground">
+                                Open directive
+                              </p>
+                            </div>
+                            {#if balance}
+                              <span
+                                class="shrink-0 text-sm font-semibold tabular-nums"
+                              >
+                                {balance}
+                              </span>
+                            {/if}
+                            <DropdownMenu.Root>
+                              <DropdownMenu.Trigger>
+                                {#snippet child({ props })}
+                                  <Button
+                                    {...props}
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    class="shrink-0 text-muted-foreground"
+                                    aria-label={`${account.name} actions`}
+                                  >
+                                    <MoreVertical
+                                      class="size-4"
+                                      aria-hidden="true"
+                                    />
+                                  </Button>
+                                {/snippet}
+                              </DropdownMenu.Trigger>
+                              <DropdownMenu.Content align="end">
+                                <DropdownMenu.Group>
+                                  <DropdownMenu.Item
+                                    onSelect={() => editOtherAccount(account)}
+                                  >
+                                    <Pencil
+                                      class="size-3.5"
+                                      aria-hidden="true"
+                                    />
+                                    Edit
+                                  </DropdownMenu.Item>
+                                </DropdownMenu.Group>
+                              </DropdownMenu.Content>
+                            </DropdownMenu.Root>
+                          </li>
+                        {/each}
+                      </ul>
+                    {/if}
                   </section>
                 {/each}
               </div>
             </div>
-          {:else}
+          {:else if otherAccountsOpen}
             <p
               class="border-t border-border px-4 py-3 text-sm text-muted-foreground"
             >
