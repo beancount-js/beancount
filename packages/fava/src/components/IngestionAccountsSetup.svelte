@@ -397,6 +397,21 @@
     editOpenDirective(account.open);
   }
 
+  function openLedgerAccount(event: MouseEvent, account: string) {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    router.push(`/account/${account}`);
+  }
+
   function merchantFor(source: EditableIngestionSource) {
     return source.merchantId ? merchantsById[source.merchantId] : undefined;
   }
@@ -1076,11 +1091,21 @@
                             <li
                               class:rounded-b-xl={index ===
                                 group.accounts.length - 1}
-                              class="flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
+                              class="relative flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
                             >
                               <a
                                 href={urlForAccount(account.sourceAccount)}
-                                class="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-foreground no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                class="absolute inset-0 z-0 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                aria-label={`Open ${account.sourceAccount}`}
+                                onclick={(event) =>
+                                  openLedgerAccount(
+                                    event,
+                                    account.sourceAccount,
+                                  )}
+                              >
+                              </a>
+                              <div
+                                class="pointer-events-none relative z-10 flex min-w-0 flex-1 items-center gap-3"
                               >
                                 <AccountAvatar
                                   account={account.sourceAccount}
@@ -1116,56 +1141,58 @@
                                     {account.defaultCurrency}
                                   </span>
                                 {/if}
-                              </a>
-                              <DropdownMenu.Root>
-                                <DropdownMenu.Trigger>
-                                  {#snippet child({ props })}
-                                    <Button
-                                      {...props}
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      class="shrink-0 text-muted-foreground"
-                                      aria-label={`${account.name} actions`}
-                                    >
-                                      <MoreVertical
-                                        class="size-4"
-                                        aria-hidden="true"
-                                      />
-                                    </Button>
-                                  {/snippet}
-                                </DropdownMenu.Trigger>
-                                <DropdownMenu.Content align="end">
-                                  <DropdownMenu.Group>
-                                    <DropdownMenu.Item
-                                      disabled={!openDirective}
-                                      onSelect={() =>
-                                        editLinkedAccount(account)}
-                                    >
-                                      <Pencil
-                                        class="size-3.5"
-                                        aria-hidden="true"
-                                      />
-                                      Edit
-                                    </DropdownMenu.Item>
-                                  </DropdownMenu.Group>
-                                  <DropdownMenu.Separator />
-                                  <DropdownMenu.Group>
-                                    <DropdownMenu.Item
-                                      class="text-destructive focus:text-destructive"
-                                      disabled={saving}
-                                      onSelect={() =>
-                                        void unlinkAccount(account.id)}
-                                    >
-                                      <Trash2
-                                        class="size-3.5"
-                                        aria-hidden="true"
-                                      />
-                                      Unlink account
-                                    </DropdownMenu.Item>
-                                  </DropdownMenu.Group>
-                                </DropdownMenu.Content>
-                              </DropdownMenu.Root>
+                              </div>
+                              <div class="relative z-10 shrink-0">
+                                <DropdownMenu.Root>
+                                  <DropdownMenu.Trigger>
+                                    {#snippet child({ props })}
+                                      <Button
+                                        {...props}
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        class="text-muted-foreground"
+                                        aria-label={`${account.name} actions`}
+                                      >
+                                        <MoreVertical
+                                          class="size-4"
+                                          aria-hidden="true"
+                                        />
+                                      </Button>
+                                    {/snippet}
+                                  </DropdownMenu.Trigger>
+                                  <DropdownMenu.Content align="end">
+                                    <DropdownMenu.Group>
+                                      <DropdownMenu.Item
+                                        disabled={!openDirective}
+                                        onSelect={() =>
+                                          editLinkedAccount(account)}
+                                      >
+                                        <Pencil
+                                          class="size-3.5"
+                                          aria-hidden="true"
+                                        />
+                                        Edit
+                                      </DropdownMenu.Item>
+                                    </DropdownMenu.Group>
+                                    <DropdownMenu.Separator />
+                                    <DropdownMenu.Group>
+                                      <DropdownMenu.Item
+                                        class="text-destructive focus:text-destructive"
+                                        disabled={saving}
+                                        onSelect={() =>
+                                          void unlinkAccount(account.id)}
+                                      >
+                                        <Trash2
+                                          class="size-3.5"
+                                          aria-hidden="true"
+                                        />
+                                        Unlink account
+                                      </DropdownMenu.Item>
+                                    </DropdownMenu.Group>
+                                  </DropdownMenu.Content>
+                                </DropdownMenu.Root>
+                              </div>
                             </li>
                           {/each}
                         </ul>
@@ -1543,11 +1570,18 @@
                           <li
                             class:rounded-b-xl={index ===
                               group.accounts.length - 1}
-                            class="flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
+                            class="relative flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
                           >
                             <a
                               href={urlForAccount(account.name)}
-                              class="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-foreground no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              class="absolute inset-0 z-0 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              aria-label={`Open ${account.name}`}
+                              onclick={(event) =>
+                                openLedgerAccount(event, account.name)}
+                            >
+                            </a>
+                            <div
+                              class="pointer-events-none relative z-10 flex min-w-0 flex-1 items-center gap-3"
                             >
                               <AccountAvatar
                                 account={account.name}
@@ -1573,39 +1607,41 @@
                                   {balance}
                                 </span>
                               {/if}
-                            </a>
-                            <DropdownMenu.Root>
-                              <DropdownMenu.Trigger>
-                                {#snippet child({ props })}
-                                  <Button
-                                    {...props}
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    class="shrink-0 text-muted-foreground"
-                                    aria-label={`${account.name} actions`}
-                                  >
-                                    <MoreVertical
-                                      class="size-4"
-                                      aria-hidden="true"
-                                    />
-                                  </Button>
-                                {/snippet}
-                              </DropdownMenu.Trigger>
-                              <DropdownMenu.Content align="end">
-                                <DropdownMenu.Group>
-                                  <DropdownMenu.Item
-                                    onSelect={() => editOtherAccount(account)}
-                                  >
-                                    <Pencil
-                                      class="size-3.5"
-                                      aria-hidden="true"
-                                    />
-                                    Edit
-                                  </DropdownMenu.Item>
-                                </DropdownMenu.Group>
-                              </DropdownMenu.Content>
-                            </DropdownMenu.Root>
+                            </div>
+                            <div class="relative z-10 shrink-0">
+                              <DropdownMenu.Root>
+                                <DropdownMenu.Trigger>
+                                  {#snippet child({ props })}
+                                    <Button
+                                      {...props}
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      class="text-muted-foreground"
+                                      aria-label={`${account.name} actions`}
+                                    >
+                                      <MoreVertical
+                                        class="size-4"
+                                        aria-hidden="true"
+                                      />
+                                    </Button>
+                                  {/snippet}
+                                </DropdownMenu.Trigger>
+                                <DropdownMenu.Content align="end">
+                                  <DropdownMenu.Group>
+                                    <DropdownMenu.Item
+                                      onSelect={() => editOtherAccount(account)}
+                                    >
+                                      <Pencil
+                                        class="size-3.5"
+                                        aria-hidden="true"
+                                      />
+                                      Edit
+                                    </DropdownMenu.Item>
+                                  </DropdownMenu.Group>
+                                </DropdownMenu.Content>
+                              </DropdownMenu.Root>
+                            </div>
                           </li>
                         {/each}
                       </ul>
