@@ -1,8 +1,11 @@
 import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
 import { proposalTransaction } from "@beancount-js/beangulp";
-import { ensureProposalsMerchantsPersisted } from "@beancount-js/server";
-import { serverIngestion } from "$lib/server/ingestion";
+import {
+  buildReconciliationReview,
+  ensureProposalsMerchantsPersisted,
+} from "@beancount-js/server";
+import { serverIngestion, serverReconciliations } from "$lib/server/ingestion";
 import { serverWorkspace } from "$lib/server/workspace";
 
 function message(error: unknown) {
@@ -71,6 +74,37 @@ export async function POST({
       if (proposal.status !== "ready" || !proposal.selectedAccount) {
         throw new Error("Only reviewed, ready proposals can be accepted.");
       }
+    }
+    const [entries] = loadProjectSources(
+      snapshot.project.entryFile,
+      snapshot.ledgerFiles.map((file) => ({
+        path: file.path,
+        contents: file.contents,
+      })),
+    );
+    const reconciliation = buildReconciliationReview({
+      config: await store.readConfig(params.id),
+      runs: await store.readRuns(params.id),
+      entries,
+      decisions: await serverReconciliations().read(params.id),
+    });
+    const selectedObservationIds = new Set(
+      selected.map((proposal) => `proposal:${run.id}:${proposal.id}`),
+    );
+    if (
+      reconciliation.candidates.some((candidate) =>
+        candidate.candidate.memberIds.some((id) =>
+          selectedObservationIds.has(id),
+        ),
+      )
+    ) {
+      return json(
+        {
+          error:
+            "One or more selected imports has a reconciliation match. Confirm and apply it from Reconcile matches instead.",
+        },
+        { status: 409 },
+      );
     }
     const persisted = await ensureProposalsMerchantsPersisted(
       store.merchants,
