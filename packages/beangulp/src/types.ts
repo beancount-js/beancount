@@ -357,6 +357,12 @@ export interface IngestionRequest<Config, Record> {
   availableAccounts?: readonly string[];
   existingImportIds?: ReadonlySet<string>;
   existingFingerprints?: ReadonlySet<string>;
+  /** Exact provider identities already imported by another connection. */
+  existingProviderImportIds?: ReadonlySet<string>;
+  /** Supplies a provider-scoped identity for safe cross-connection repeats. */
+  providerImportIdentity?: (
+    transaction: NormalizedTransaction,
+  ) => string | undefined;
   cursor?: string;
   defaultCurrency?: string;
   fetchedAt?: string;

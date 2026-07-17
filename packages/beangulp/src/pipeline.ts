@@ -43,6 +43,20 @@ export function importIdentity(transaction: NormalizedTransaction) {
     : `${transaction.sourceId}:fingerprint:${transactionFingerprint(transaction)}`;
 }
 
+/**
+ * Namespace an external record id by a connector kind. Unlike `importIdentity`
+ * this deliberately excludes the configured connection/account so that the
+ * exact same provider record repeated by another connection is safe to skip.
+ */
+export function providerImportIdentity(
+  provider: string | undefined,
+  transaction: NormalizedTransaction,
+) {
+  const key = provider?.trim().toLowerCase();
+  const externalId = transaction.externalId?.trim();
+  return key && externalId ? `${key}:${externalId}` : undefined;
+}
+
 /** Produce a current status summary for an archived or in-flight import run. */
 export function summarizeIngestionProposals(
   proposals: readonly ImportProposal[],
@@ -160,6 +174,7 @@ export async function runIngestion<Config, Record>(
   const proposals: ImportProposal[] = [];
   const importIds = new Set(request.existingImportIds ?? []);
   const fingerprints = new Set(request.existingFingerprints ?? []);
+  const providerImportIds = new Set(request.existingProviderImportIds ?? []);
   const knownProposalIds = new Set<string>();
   const merchantResolutions = new Map<
     string,
@@ -217,10 +232,13 @@ export async function runIngestion<Config, Record>(
       const importId = importIdentity(transaction);
       const fingerprint = transactionFingerprint(transaction);
       const proposalId = `proposal:${md5(importId)}`;
+      const providerImportId = request.providerImportIdentity?.(transaction);
       if (
         importIds.has(importId) ||
         knownProposalIds.has(proposalId) ||
-        fingerprints.has(fingerprint)
+        fingerprints.has(fingerprint) ||
+        (providerImportId !== undefined &&
+          providerImportIds.has(providerImportId))
       ) {
         proposals.push({
           id: proposalId,
@@ -229,7 +247,11 @@ export async function runIngestion<Config, Record>(
           sourceRecord: record as JsonRecord,
           suggestions: [],
           status: "duplicate",
-          duplicateOf: importIds.has(importId) ? importId : fingerprint,
+          duplicateOf: importIds.has(importId)
+            ? importId
+            : providerImportId && providerImportIds.has(providerImportId)
+              ? providerImportId
+              : fingerprint,
           issues: ["A matching imported transaction already exists."],
         });
         continue;
@@ -309,6 +331,7 @@ export async function runIngestion<Config, Record>(
       }
       importIds.add(importId);
       fingerprints.add(fingerprint);
+      if (providerImportId) providerImportIds.add(providerImportId);
       knownProposalIds.add(proposalId);
       proposals.push(proposal);
     }

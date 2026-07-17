@@ -13,6 +13,88 @@ type ProposalTransactionOptions = {
   alternates?: readonly ImportProposal[];
 };
 
+function firstPresent(...values: Array<string | undefined>) {
+  return values.find((value) => Boolean(value?.trim()));
+}
+
+function confirmedMerchantResolution(proposals: readonly ImportProposal[]) {
+  return proposals.find(
+    (proposal) => proposal.merchantResolution?.status === "confirmed",
+  )?.merchantResolution;
+}
+
+/**
+ * Preserve the preferred source's accounting facts while using compatible,
+ * lower-priority source details only to fill blanks. This is intentionally
+ * narrow: amount, date, source account, selected category, and the preferred
+ * provider's explicit fields never change as a side effect of reconciliation.
+ */
+export function mergeEquivalentProposal(
+  canonical: ImportProposal,
+  alternates: readonly ImportProposal[],
+) {
+  if (!canonical.transaction) {
+    throw new Error(
+      "Cannot merge a proposal without a normalized transaction.",
+    );
+  }
+  const alternativeTransactions = alternates.flatMap((proposal) =>
+    proposal.transaction ? [proposal.transaction] : [],
+  );
+  const transaction = canonical.transaction;
+  const mergedMetadata = Object.assign(
+    {},
+    ...alternativeTransactions.map((item) => item.metadata),
+    transaction.metadata,
+  );
+  const merchantResolution =
+    canonical.merchantResolution?.status === "confirmed"
+      ? canonical.merchantResolution
+      : (confirmedMerchantResolution(alternates) ??
+        canonical.merchantResolution);
+  return {
+    ...canonical,
+    merchantResolution,
+    transaction: {
+      ...transaction,
+      merchant: firstPresent(
+        transaction.merchant,
+        ...alternativeTransactions.map((item) => item.merchant),
+      ),
+      payee: firstPresent(
+        transaction.payee,
+        ...alternativeTransactions.map((item) => item.payee),
+      ),
+      narration:
+        firstPresent(
+          transaction.narration,
+          ...alternativeTransactions.map((item) => item.narration),
+        ) ?? transaction.narration,
+      tags: [
+        ...new Set(
+          [
+            ...(transaction.tags ?? []),
+            ...alternativeTransactions.flatMap((item) => item.tags ?? []),
+          ].filter(Boolean),
+        ),
+      ],
+      links: [
+        ...new Set(
+          [
+            ...(transaction.links ?? []),
+            ...alternativeTransactions.flatMap((item) => item.links ?? []),
+          ].filter(Boolean),
+        ),
+      ],
+      metadata: mergedMetadata,
+      transferEvidence:
+        transaction.transferEvidence ??
+        alternativeTransactions.find((item) => item.transferEvidence)
+          ?.transferEvidence,
+    },
+  } satisfies ImportProposal;
+}
+
 function sourceMetadata(proposal: ImportProposal) {
   const transaction = proposal.transaction;
   if (!transaction) throw new Error("Proposal has no normalized transaction.");
@@ -20,6 +102,9 @@ function sourceMetadata(proposal: ImportProposal) {
     import_id: proposal.importId,
     import_source: transaction.sourceId,
     import_fetched_at: transaction.fetchedAt,
+    ...(transaction.externalId
+      ? { import_provider_id: transaction.externalId }
+      : {}),
   };
 }
 
@@ -34,6 +119,9 @@ function alternateMetadata(
     metadata[`${prefix}_id`] = proposal.importId;
     metadata[`${prefix}_source`] = transaction.sourceId;
     metadata[`${prefix}_fetched_at`] = transaction.fetchedAt;
+    if (transaction.externalId) {
+      metadata[`${prefix}_provider_id`] = transaction.externalId;
+    }
   }
 }
 

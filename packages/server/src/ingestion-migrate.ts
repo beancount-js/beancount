@@ -167,15 +167,16 @@ export function migrateIngestionConfig(raw: unknown): IngestionConfig {
 }
 
 export function parseIngestionState(raw: unknown): {
-  version: 4;
+  version: 5;
   cursors: Record<string, string | undefined>;
   syncState: Record<string, ConnectorSyncState>;
   seenImportIds: string[];
   seenFingerprints: string[];
+  seenProviderImportIds: string[];
 } {
   const record = isRecord(raw) ? raw : {};
   return {
-    version: 4,
+    version: 5,
     cursors: isRecord(record.cursors)
       ? (record.cursors as Record<string, string | undefined>)
       : {},
@@ -187,6 +188,9 @@ export function parseIngestionState(raw: unknown): {
       : [],
     seenFingerprints: Array.isArray(record.seenFingerprints)
       ? (record.seenFingerprints as string[])
+      : [],
+    seenProviderImportIds: Array.isArray(record.seenProviderImportIds)
+      ? (record.seenProviderImportIds as string[])
       : [],
   };
 }

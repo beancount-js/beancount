@@ -136,6 +136,42 @@ describe("buildReconciliationReview", () => {
       },
     ]);
   });
+
+  test("uses a connector-scoped provider identity when comparing an existing import", () => {
+    const providerConfig: IngestionConfig = {
+      ...config,
+      sources: config.sources.map((source) => ({
+        ...source,
+        kind: "starling",
+      })),
+    };
+    const [entries] = loadProjectSources("main.bean", [
+      {
+        path: "main.bean",
+        contents: `2026-07-17 * "Lunch"\n  import_source: "bank:checking"\n  Assets:Bank:Checking  -12.34 GBP\n    import_provider_id: "shared-record"\n  Expenses:Food\n`,
+      },
+    ]);
+    const review = buildReconciliationReview({
+      config: providerConfig,
+      runs: [
+        run("bank-run", "bank", [
+          proposal({
+            transaction: {
+              ...proposal().transaction!,
+              sourceId: "bank:checking",
+              externalId: "shared-record",
+            },
+          }),
+        ]),
+      ],
+      entries,
+    });
+    expect(review.candidates[0]?.candidate.evidence).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "matching-import-id" }),
+      ]),
+    );
+  });
 });
 
 describe("applyReconciliation", () => {

@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { proposalTransaction, transferTransaction } from "./beancount";
+import {
+  mergeEquivalentProposal,
+  proposalTransaction,
+  transferTransaction,
+} from "./beancount";
 import type { ImportProposal } from "./types";
 
 function proposal(overrides: Partial<ImportProposal> = {}): ImportProposal {
@@ -42,6 +46,46 @@ describe("proposalTransaction", () => {
     expect(rendered).toContain('import_alt_1_id: "provider-2"');
     expect(rendered).toContain('import_id: "provider-1"');
     expect(rendered).toContain('    import_source: "bank:checking"');
+  });
+
+  test("fills blank descriptive fields from an overlapping lower-priority source", () => {
+    const canonical = proposal({
+      transaction: {
+        ...proposal().transaction!,
+        sourceId: "starling:checking",
+        merchant: undefined,
+        tags: ["reviewed"],
+        metadata: { starling_reference: "ABC" },
+      },
+    });
+    const alternate = proposal({
+      id: "proposal-2",
+      importId: "lunchflow-2",
+      transaction: {
+        ...proposal().transaction!,
+        sourceId: "lunchflow:checking",
+        merchant: "Example Lunch",
+        payee: "Example Lunch",
+        narration: "Lower priority narration",
+        tags: ["lunch"],
+        links: ["receipt-1"],
+        metadata: { lunchflow_category: "meal", starling_reference: "older" },
+      },
+    });
+
+    const merged = mergeEquivalentProposal(canonical, [alternate]);
+
+    expect(merged.transaction).toMatchObject({
+      sourceId: "starling:checking",
+      merchant: "Example Lunch",
+      narration: "Lunch",
+      metadata: {
+        starling_reference: "ABC",
+        lunchflow_category: "meal",
+      },
+    });
+    expect(merged.transaction?.tags).toEqual(["reviewed", "lunch"]);
+    expect(merged.transaction?.links).toEqual(["receipt-1"]);
   });
 });
 

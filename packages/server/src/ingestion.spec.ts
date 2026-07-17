@@ -112,11 +112,12 @@ describe("FilesystemIngestionStore", () => {
 
     await store.saveRun("project", run);
     await expect(store.readState("project")).resolves.toEqual({
-      version: 4,
+      version: 5,
       cursors: { bank: "cursor-2" },
       syncState: {},
       seenImportIds: [],
       seenFingerprints: [],
+      seenProviderImportIds: [],
     });
     await expect(store.run("project", "run:archive-1")).resolves.toEqual(run);
     await expect(store.listRuns("project")).resolves.toMatchObject({
@@ -140,17 +141,84 @@ describe("FilesystemIngestionStore", () => {
 
     const persistedState = JSON.parse(await readFile(statePath, "utf8"));
     expect(persistedState).toEqual({
-      version: 4,
+      version: 5,
       cursors: { bank: "cursor-2" },
       syncState: {},
       seenImportIds: [],
       seenFingerprints: [],
+      seenProviderImportIds: [],
     });
     const names = await readdir(ingestionPath(directory, "project", "runs"));
     expect(names).toContain("index.json");
     expect(
       names.filter((name) => /^[a-f0-9]{64}\.json$/.test(name)),
     ).toHaveLength(1);
+  });
+
+  test("persists connector-scoped provider identities for exact repeat suppression", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-provider-identity-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    await store.writeConfig("project", {
+      version: 3,
+      sources: [
+        {
+          id: "lunchflow",
+          name: "Lunch Flow",
+          kind: "lunchflow",
+          config: {
+            secretRef: "env:LUNCHFLOW_API_KEY",
+            baseUrl: "https://www.lunchflow.app/api/v1",
+          },
+          accounts: [],
+          rules: [],
+        },
+      ],
+    });
+    await store.saveRun("project", {
+      id: "run:provider-id",
+      sourceId: "lunchflow",
+      startedAt: "2026-07-17T00:00:00.000Z",
+      completedAt: "2026-07-17T00:00:01.000Z",
+      proposals: [
+        {
+          id: "proposal:provider-id",
+          importId: "lunchflow:connection:provider-record",
+          status: "ready",
+          selectedAccount: "Expenses:Food",
+          suggestions: [],
+          issues: [],
+          transaction: {
+            sourceId: "lunchflow",
+            sourceAccount: "Assets:Bank:Current",
+            externalId: "provider-record",
+            bookedAt: "2026-07-17",
+            amount: "-12.34",
+            currency: "GBP",
+            narration: "Lunch",
+            status: "posted",
+            fetchedAt: "2026-07-17T00:00:00.000Z",
+            metadata: {},
+          },
+        },
+      ],
+      summary: {
+        total: 1,
+        ready: 1,
+        needsReview: 0,
+        accepted: 0,
+        duplicates: 0,
+        invalid: 0,
+        held: 0,
+        excluded: 0,
+      },
+    });
+
+    await expect(store.readState("project")).resolves.toMatchObject({
+      seenProviderImportIds: ["lunchflow:provider-record"],
+    });
   });
 
   test("keeps accepted source, AI, and merchant audit data", async () => {

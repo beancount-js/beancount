@@ -17,6 +17,7 @@ import {
   normalizeMerchant,
   sortSuggestions,
   transactionFingerprint,
+  providerImportIdentity,
   discoverJsonApiAccounts,
   isGroupedJsonApiSource,
   jsonApiAccountSourceId,
@@ -64,7 +65,7 @@ import {
 import { resolveEnvSecret, resolveProjectEnv } from "./project-env";
 
 const VERSION = 3;
-const STATE_VERSION = 4;
+const STATE_VERSION = 5;
 const SEEN_LIMIT = 10_000;
 
 export interface IngestionReconciliationConfig {
@@ -217,13 +218,15 @@ function buildRuleHooks(
 }
 
 interface IngestionState {
-  version: 4;
+  version: 5;
   cursors: Record<string, string | undefined>;
   /** Connector-owned sync bookmarks keyed by target sourceId. */
   syncState: Record<string, ConnectorSyncState>;
   seenImportIds: string[];
   /** Version 4 values include the concrete target source id. */
   seenFingerprints: string[];
+  /** Exact connector/provider record ids, independent of a connection id. */
+  seenProviderImportIds: string[];
 }
 
 function projectId(value: string) {
@@ -304,6 +307,7 @@ function stateDefaults(): IngestionState {
     syncState: {},
     seenImportIds: [],
     seenFingerprints: [],
+    seenProviderImportIds: [],
   };
 }
 
@@ -775,6 +779,19 @@ export class FilesystemIngestionStore {
     options?: { syncState?: ConnectorSyncState },
   ) {
     const state = await this.readState(project);
+    const config = await this.readConfig(project);
+    const source = config.sources.find(
+      (item) =>
+        item.id === run.sourceId || run.sourceId.startsWith(`${item.id}:`),
+    );
+    const providerIds =
+      !source || source.kind === "json-api"
+        ? []
+        : run.proposals.flatMap((proposal) =>
+            proposal.transaction
+              ? [providerImportIdentity(source.kind, proposal.transaction)]
+              : [],
+          );
     const next = {
       ...state,
       cursors: { ...state.cursors, [run.sourceId]: run.cursor },
@@ -797,6 +814,12 @@ export class FilesystemIngestionStore {
               ? [transactionFingerprint(proposal.transaction)]
               : [],
           ),
+        ]),
+      ].slice(-SEEN_LIMIT),
+      seenProviderImportIds: [
+        ...new Set([
+          ...state.seenProviderImportIds,
+          ...providerIds.filter((id): id is string => Boolean(id)),
         ]),
       ].slice(-SEEN_LIMIT),
     } satisfies IngestionState;
@@ -1897,7 +1920,11 @@ export async function ingestSource(
   source: IngestionSourceDefinition,
   state: Pick<
     IngestionState,
-    "cursors" | "syncState" | "seenImportIds" | "seenFingerprints"
+    | "cursors"
+    | "syncState"
+    | "seenImportIds"
+    | "seenFingerprints"
+    | "seenProviderImportIds"
   >,
   entries: readonly Directive[],
   model?: string,
@@ -1910,6 +1937,7 @@ export async function ingestSource(
   const syncStatePatches: Record<string, ConnectorSyncState> = {};
   let seenImportIds = [...state.seenImportIds];
   let seenFingerprints = [...state.seenFingerprints];
+  let seenProviderImportIds = [...state.seenProviderImportIds];
   const accountTotal = targets.length;
   const connector = isConnectorIngestionSource(source)
     ? requireConnector(source.kind)
@@ -2000,6 +2028,9 @@ export async function ingestSource(
           availableAccounts,
           existingImportIds: new Set(seenImportIds),
           existingFingerprints: new Set(seenFingerprints),
+          existingProviderImportIds: new Set(seenProviderImportIds),
+          providerImportIdentity: (transaction) =>
+            providerImportIdentity(source.kind, transaction),
           cursor: prepare.cursor,
           defaultCurrency: target.defaultCurrency,
           sourceContext: {
@@ -2082,6 +2113,16 @@ export async function ingestSource(
           : [],
       ),
     ];
+    if (connector) {
+      seenProviderImportIds = [
+        ...seenProviderImportIds,
+        ...run.proposals.flatMap((proposal) =>
+          proposal.transaction
+            ? [providerImportIdentity(source.kind, proposal.transaction)]
+            : [],
+        ),
+      ].filter((id): id is string => Boolean(id));
+    }
   }
 
   return { runs, syncStatePatches };

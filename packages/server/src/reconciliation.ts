@@ -69,14 +69,31 @@ function asString(value: unknown) {
   return typeof value === "string" ? value : undefined;
 }
 
-function importIds(metadata: Record<string, unknown>) {
-  return Object.entries(metadata)
+function providerImportId(provider: string | undefined, value: unknown) {
+  if (!provider || provider === "json-api" || typeof value !== "string") {
+    return undefined;
+  }
+  return `${provider.toLowerCase()}:${value}`;
+}
+
+function importIds(metadata: Record<string, unknown>, provider?: string) {
+  const ids = Object.entries(metadata)
     .filter(
       ([key, value]) =>
         (key === "import_id" || /^import_alt_\d+_id$/.test(key)) &&
         typeof value === "string",
     )
     .map(([, value]) => value as string);
+  for (const [key, value] of Object.entries(metadata)) {
+    if (
+      key === "import_provider_id" ||
+      /^import_alt_\d+_provider_id$/.test(key)
+    ) {
+      const providerId = providerImportId(provider, value);
+      if (providerId) ids.push(providerId);
+    }
+  }
+  return ids;
 }
 
 function sourcePriority(
@@ -109,7 +126,13 @@ function proposalMember(
       payee: transaction.payee,
       narration: transaction.narration,
       status: transaction.status,
-      importIds: [proposal.importId],
+      importIds: [
+        proposal.importId,
+        ...importIds(
+          { import_provider_id: transaction.externalId },
+          source?.kind,
+        ),
+      ],
       rawFingerprint: transaction.metadata.raw_fingerprint,
       priority: sourcePriority(source, run.sourceId),
       transferEvidence: transaction.transferEvidence,
@@ -121,6 +144,7 @@ function proposalMember(
 
 function ledgerMembers(
   entries: readonly Directive[],
+  config: IngestionConfig,
 ): ReconciliationReviewMember[] {
   const result: ReconciliationReviewMember[] = [];
   for (const entry of entries) {
@@ -136,11 +160,17 @@ function ledgerMembers(
       )
         continue;
       const metadata = { ...entry.meta, ...posting.meta };
+      const sourceId = asString(metadata.import_source);
+      const source = sourceId
+        ? config.sources.find(
+            (item) => item.id === sourceConnectionId(sourceId),
+          )
+        : undefined;
       result.push({
         observation: {
           id: `ledger:${filename}:${lineno}:${postingIndex}`,
           origin: "ledger",
-          sourceId: asString(metadata.import_source),
+          sourceId,
           sourceAccount: posting.account,
           bookedAt: entry.date.toISODate() ?? "",
           amount: posting.units.number.toString(),
@@ -148,7 +178,7 @@ function ledgerMembers(
           merchant: asString(metadata.merchant_raw),
           payee: entry.payee || undefined,
           narration: entry.narration,
-          importIds: importIds(metadata),
+          importIds: importIds(metadata, source?.kind),
           rawFingerprint: asString(metadata.raw_fingerprint),
           // Preserve ledger descriptions and user changes by default.
           priority: 1_000,
@@ -190,7 +220,7 @@ export function buildReconciliationReview(options: {
       if (member) observations.push(member);
     }
   }
-  observations.push(...ledgerMembers(options.entries));
+  observations.push(...ledgerMembers(options.entries, options.config));
 
   const dismissedCandidateIds = new Set(
     options.decisions

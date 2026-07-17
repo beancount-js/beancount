@@ -5,7 +5,11 @@ import {
   RecurringCategorizer,
 } from "./categorize";
 import { ArraySource } from "./json-api";
-import { proposalTransaction, runIngestion } from "./pipeline";
+import {
+  proposalTransaction,
+  providerImportIdentity,
+  runIngestion,
+} from "./pipeline";
 
 const sourceAccount = "Assets:Bank:Current";
 const history = ["2026-04-01", "2026-05-01", "2026-06-01"].map((bookedAt) => ({
@@ -86,6 +90,9 @@ describe("runIngestion", () => {
     ).toContain('import_id: "bank:txn-1"');
     expect(
       proposalTransaction(proposal, "Expenses:Food:Groceries").toString(),
+    ).toContain('import_provider_id: "txn-1"');
+    expect(
+      proposalTransaction(proposal, "Expenses:Food:Groceries").toString(),
     ).toContain("category_score:");
     expect(
       proposalTransaction(proposal, "Expenses:Food:Groceries").toString(),
@@ -121,6 +128,45 @@ describe("runIngestion", () => {
     expect(rendered).toContain("#coffee");
     expect(rendered).toContain("^receipt-9");
     expect(rendered).toContain('tip: "yes"');
+  });
+
+  test("automatically suppresses an exact repeated provider record from another connection", async () => {
+    const run = await runIngestion({
+      source: new ArraySource<{ id: string }>(),
+      sourceConfig: [{ id: "shared-provider-record" }],
+      sourceId: "starling-copy",
+      sourceAccount,
+      existingProviderImportIds: new Set(["starling:shared-provider-record"]),
+      providerImportIdentity: (transaction) =>
+        providerImportIdentity("starling", transaction),
+      normalizer: {
+        kind: "test",
+        normalize(record, context) {
+          return {
+            ok: true,
+            transaction: {
+              sourceId: context.sourceId,
+              sourceAccount: context.sourceAccount,
+              externalId: record.id,
+              bookedAt: "2026-07-01",
+              amount: "-12.00",
+              currency: "GBP",
+              narration: "Exact provider repeat",
+              status: "posted",
+              fetchedAt: context.fetchedAt,
+              metadata: {},
+            },
+          };
+        },
+      },
+    });
+
+    expect(run.proposals).toMatchObject([
+      {
+        status: "duplicate",
+        duplicateOf: "starling:shared-provider-record",
+      },
+    ]);
   });
 
   test("emits onProgress during fetch and process stages", async () => {

@@ -1,5 +1,6 @@
 import { loadProjectSources, Transaction } from "@beancount-js/beancount";
 import {
+  mergeEquivalentProposal,
   proposalTransaction,
   transferTransaction,
   type ImportProposal,
@@ -85,6 +86,9 @@ function withLedgerProvenance(
       [`${prefix}_id`]: proposal.importId,
       [`${prefix}_source`]: transaction.sourceId,
       [`${prefix}_fetched_at`]: transaction.fetchedAt,
+      ...(transaction.externalId
+        ? { [`${prefix}_provider_id`]: transaction.externalId }
+        : {}),
     },
   });
   const postings = [...entry.postings];
@@ -232,7 +236,12 @@ export async function applyReconciliation(options: {
       appendDirective(
         destination.contents,
         proposalTransaction(
-          canonical.proposal,
+          mergeEquivalentProposal(
+            canonical.proposal,
+            proposalRowsForCandidate
+              .filter((row) => row !== canonical)
+              .map((row) => row.proposal),
+          ),
           canonical.proposal.selectedAccount,
           {
             alternates: proposalRowsForCandidate
