@@ -20,6 +20,19 @@ export {
   type IngestionRunSummary,
 } from "./ingestion-runs";
 export {
+  ACTIVE_REVIEW_LEDGER_PATH,
+  REVIEW_CONNECTION_META,
+  REVIEW_CONTEXT_META,
+  REVIEW_PROPOSAL_META,
+  REVIEW_RUN_META,
+  REVIEW_STATUS_META,
+  buildIngestionReviewLedger,
+  isReviewLedgerProposal,
+  pickActiveReviewRuns,
+  type IngestionReviewLedgerSnapshot,
+  type ReviewLedgerProjectionIssue,
+} from "./review-ledger";
+export {
   FilesystemRulesStore,
   type FilesystemRulesStoreOptions,
 } from "./rules";
