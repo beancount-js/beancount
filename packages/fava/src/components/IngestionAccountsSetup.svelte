@@ -65,6 +65,7 @@
     institutionName?: string;
     status?: string;
     iban?: string;
+    closed?: boolean;
   };
 
   type LinkedGroup = {
@@ -1731,7 +1732,14 @@
                     )}
                 />
                 <span class="min-w-0 flex-1">
-                  <span class="block text-sm font-medium">{account.name}</span>
+                  <span
+                    class="flex flex-wrap items-center gap-2 text-sm font-medium"
+                  >
+                    <span>{account.name}</span>
+                    {#if account.closed}
+                      <Badge variant="outline" class="shrink-0">Closed</Badge>
+                    {/if}
+                  </span>
                   <span class="mt-0.5 block text-xs text-muted-foreground">
                     {[account.institutionName, account.currency, account.status]
                       .filter(Boolean)
@@ -1756,7 +1764,14 @@
                   class="flex flex-col gap-1.5 rounded-lg border border-border p-3"
                 >
                   <div class="min-w-0">
-                    <p class="text-sm font-medium">{account.name}</p>
+                    <div
+                      class="flex flex-wrap items-center gap-2 text-sm font-medium"
+                    >
+                      <span>{account.name}</span>
+                      {#if account.closed}
+                        <Badge variant="outline" class="shrink-0">Closed</Badge>
+                      {/if}
+                    </div>
                     <p class="text-xs text-muted-foreground">
                       {[account.institutionName, account.currency]
                         .filter(Boolean)

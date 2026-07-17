@@ -1279,8 +1279,11 @@ describe("FilesystemIngestionStore", () => {
             accounts: [
               {
                 id: "account-1",
-                description: "Personal",
+                description: "user_00022349ddjdjlsl",
                 type: "uk_retail",
+                sort_code: "040004",
+                account_number: "42979962",
+                closed: true,
               },
             ],
           }),
@@ -1298,10 +1301,10 @@ describe("FilesystemIngestionStore", () => {
     ).resolves.toEqual([
       {
         id: "account-1",
-        name: "Personal",
+        name: "Personal · 04-00-04 · 42979962",
         currency: "GBP",
         institutionName: "Monzo Bank",
-        status: "uk_retail",
+        closed: true,
       },
     ]);
     expect(requests).toEqual([
