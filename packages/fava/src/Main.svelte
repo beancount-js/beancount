@@ -41,6 +41,7 @@
     setStudioWorkspace,
     type InlineAiRequest,
   } from "./studio/workspace";
+  import type { IngestionReviewLedgerSnapshot } from "./ingestion/types";
   import { hashUrlToLedgerHref, ledgerStemForPath } from "./lib/ledger-route";
   import { setStudioRouteEnv } from "./lib/studio-route-env";
   import { goto } from "$app/navigation";
@@ -61,11 +62,14 @@
     expectedRevision?: string,
   ) => Promise<ProjectSnapshot>;
   export let onRefreshProject: () => Promise<ProjectSnapshot>;
+  export let onRefreshReviewLedger: () => Promise<IngestionReviewLedgerSnapshot | null> =
+    async () => null;
   export let onResourceUrl: (
     path: string,
   ) => Promise<{ url: string; mimeType: string; revoke?: () => void }>;
   /** Canonical ledger path from the URL (with extension). */
   export let routeLedgerPath: string | undefined = undefined;
+  export let reviewLedger: IngestionReviewLedgerSnapshot | null = null;
 
   const context = createContext();
   const navigation = createRouter(
@@ -101,13 +105,14 @@
   const workspace = createStudioWorkspace(
     saveFile,
     refreshSnapshot,
+    refreshReviewLedger,
     onResourceUrl,
     (request) => {
       inlineAiRequest = request;
     },
   );
-  const { activeFile } = workspace;
-  const { activeRoute, routerLink } = navigation;
+  const { activeFile, activeLedgerKind } = workspace;
+  const { activeRoute, router, routerLink } = navigation;
   const utilityPageTitles: Record<string, string> = {
     "/errors": "Errors",
     "/records": "Review imports",
@@ -132,8 +137,21 @@
   setContext(RouterKey, navigation);
   setStudioWorkspace(workspace);
 
+  async function refreshReviewLedger() {
+    const next = await onRefreshReviewLedger();
+    workspace.reviewLedger.set(next);
+    return next;
+  }
+
+  function availableLedgerPaths(next: ProjectSnapshot) {
+    return [
+      ...next.ledgerFiles.map((file) => file.path),
+      ...(reviewLedger ? [reviewLedger.path] : []),
+    ];
+  }
+
   function syncRouteEnv(next: ProjectSnapshot, ledgerPath: string) {
-    const available = next.ledgerFiles.map((file) => file.path);
+    const available = availableLedgerPaths(next);
     setStudioRouteEnv({
       projectId: next.project.id,
       ledgerPath,
@@ -144,7 +162,7 @@
 
   function applySnapshot(next: ProjectSnapshot) {
     workspace.snapshot.set(next);
-    const available = next.ledgerFiles.map((file) => file.path);
+    const available = availableLedgerPaths(next);
     const selected =
       (routeLedgerPath && available.includes(routeLedgerPath)
         ? routeLedgerPath
@@ -161,7 +179,7 @@
     if (typeof window === "undefined" || !snapshot) return;
     const hash = window.location.hash;
     if (!hash || hash === "#") return;
-    const available = snapshot.ledgerFiles.map((file) => file.path);
+    const available = availableLedgerPaths(snapshot);
     const href = hashUrlToLedgerHref(
       snapshot.project.id,
       hash,
@@ -174,19 +192,22 @@
   });
 
   function loadLedger(next: ProjectSnapshot, entryFile: string) {
-    const signature = `${next.project.id}:${entryFile}:${next.revisions
-      .map((item) => item.revision)
-      .join(":")}`;
+    const virtual = entryFile === reviewLedger?.path ? reviewLedger : undefined;
+    const signature = `${next.project.id}:${entryFile}:${
+      virtual?.revision ?? next.revisions.map((item) => item.revision).join(":")
+    }`;
     if (signature === loadedLedgerSignature) return;
 
     loadedLedgerSignature = signature;
     context.ledgerSource.set(
       LedgerSource.fromProject(
         entryFile,
-        next.ledgerFiles.map((file) => ({
-          path: file.path,
-          contents: file.contents,
-        })),
+        virtual
+          ? [{ path: virtual.path, contents: virtual.contents }]
+          : next.ledgerFiles.map((file) => ({
+              path: file.path,
+              contents: file.contents,
+            })),
       ),
     );
   }
@@ -234,6 +255,8 @@
 
   $: pageTitle = titleForRoute($activeRoute.path, $activeRoute.params);
 
+  $: workspace.reviewLedger.set(reviewLedger);
+
   $: if (snapshot) {
     const signature = `${snapshot.project.id}:${snapshot.revisions.map((item) => item.revision).join(":")}`;
     if (signature !== loadedSignature) {
@@ -245,9 +268,19 @@
   }
 
   $: activeLedgerPath =
-    snapshot && snapshot.ledgerFiles.some((file) => file.path === $activeFile)
+    snapshot && availableLedgerPaths(snapshot).includes($activeFile)
       ? $activeFile
       : (snapshot?.project.entryFile ?? "");
+
+  $: activeLedgerKind.set(
+    reviewLedger?.path === activeLedgerPath ? "ingestion-review" : "file",
+  );
+
+  $: context.menu.set([
+    $activeLedgerKind === "ingestion-review"
+      ? MainNav.filter((item) => item.path !== "/editor")
+      : MainNav,
+  ]);
 
   $: if (snapshot && activeLedgerPath) {
     loadLedger(snapshot, activeLedgerPath);
@@ -255,9 +288,25 @@
   }
 
   $: if (snapshot && routeLedgerPath && routeLedgerPath !== $activeFile) {
-    if (snapshot.ledgerFiles.some((file) => file.path === routeLedgerPath)) {
+    if (availableLedgerPaths(snapshot).includes(routeLedgerPath)) {
       workspace.activeFile.set(routeLedgerPath);
     }
+  }
+
+  $: if (
+    snapshot &&
+    !reviewLedger &&
+    $activeFile === ".beancount/ingestion/active-review.beancount"
+  ) {
+    workspace.activeFile.set(snapshot.project.entryFile);
+    router.push("/records");
+  }
+
+  $: if (
+    $activeLedgerKind === "ingestion-review" &&
+    ($activeRoute.path === "/editor" || $activeRoute.path === "/directives")
+  ) {
+    router.push("/journal");
   }
 </script>
 

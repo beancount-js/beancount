@@ -73,7 +73,12 @@
   const ledgerData = useLedger();
   const { router } = useNavigation();
   const { activeRoute } = router;
-  const { snapshot, activeFile, ledgerSidebarMode } = useStudioWorkspace();
+  const {
+    snapshot,
+    activeFile,
+    ledgerSidebarMode,
+    reviewLedger,
+  } = useStudioWorkspace();
 
   let workspaceView: WorkspaceView = initialState.view ?? "ledgers";
   let tagsViewMode: TagsViewMode = initialState.tagsViewMode ?? "tree";
@@ -94,6 +99,11 @@
   let closingSettings = false;
 
   $: files = $snapshot?.ledgerFiles ?? [];
+  $: review = $reviewLedger;
+  $: allLedgerPaths = [
+    ...files.map((file) => file.path),
+    ...(review ? [review.path] : []),
+  ];
   $: routeSearchTags = parseLedgerSearchState($activeRoute.query).tags;
   $: if (!tagsEqual(routeSearchTags, selectedTags)) {
     selectedTags = [...routeSearchTags];
@@ -102,7 +112,7 @@
   $: if (
     selectedRouteLedger &&
     selectedRouteLedger !== $activeFile &&
-    files.some((file) => file.path === selectedRouteLedger)
+    allLedgerPaths.includes(selectedRouteLedger)
   ) {
     activeFile.set(selectedRouteLedger);
     expandedFilePaths = { ...expandedFilePaths, [selectedRouteLedger]: true };
@@ -234,7 +244,7 @@
 
   function activateLedger(path: string) {
     activeFile.set(path);
-    const available = files.map((file) => file.path);
+    const available = allLedgerPaths;
     setStudioRouteEnv({
       ledgerPath: path,
       ledgerStem: ledgerStemForPath(path, available),
@@ -829,6 +839,10 @@
             </p>
           {/each}
 
+          {#if review && !ledgerQuery.trim() && !selectedTags.length}
+            {@render ReviewLedgerRow({ review })}
+          {/if}
+
           {#if queries.length || accounts.length || $snapshot?.resources.length}
             <div
               class="mt-2 flex flex-col gap-2 border-t border-sidebar-border pt-3"
@@ -1079,6 +1093,88 @@
             onclick={() => openLedgerPanel(file.path, panel)}
           >
             {@render IndentGuides({ depth: depth + 1 })}
+            <svelte:component this={panel.icon} data-icon="inline-start" />
+            <span class="truncate">{panel.name}</span>
+          </Button>
+        {/each}
+      </div>
+    {/if}
+  </div>
+{/snippet}
+
+{#snippet ReviewLedgerRow({
+  review,
+}: {
+  review: NonNullable<typeof $reviewLedger>;
+})}
+  {@const expanded = isFileExpanded(review.path, expandedFilePaths)}
+  {@const active = review.path === $activeFile}
+  <div class="min-w-0" data-review-ledger-node={review.path}>
+    <div
+      class={cn(
+        "relative flex h-8 min-w-0 items-center rounded-md text-xs font-semibold transition-colors",
+        active
+          ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+          : "border border-transparent text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+      )}
+      style={fileRowStyle(0)}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        class="relative z-10 size-7 shrink-0 rounded-sm p-0 hover:bg-background/70"
+        aria-label={expanded
+          ? "Collapse review transactions"
+          : "Expand review transactions"}
+        aria-expanded={expanded}
+        onclick={() => toggleLedgerFile(review.path)}
+      >
+        <ChevronRight
+          data-icon
+          class={cn("transition-transform", expanded && "rotate-90")}
+        />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs font-semibold hover:bg-background/70"
+        title="Active review transactions"
+        onclick={() => {
+          activateLedger(review.path);
+          expandedFilePaths = { ...expandedFilePaths, [review.path]: true };
+          router.push("/journal");
+        }}
+      >
+        <ClipboardList data-icon="inline-start" />
+        <span class="min-w-0 flex-1 truncate text-left"
+          >Review transactions</span
+        >
+        <span class="text-[10px] tabular-nums text-muted-foreground"
+          >{review.reviewableCount}</span
+        >
+      </Button>
+    </div>
+    {#if expanded}
+      <div class="min-w-0" data-review-ledger-panels={review.path}>
+        {#each menuItems as panel (panel.path)}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            class={cn(
+              "relative h-8 w-full justify-start rounded-md pr-2 text-xs",
+              active && isPanelActive(panel, $activeRoute.path)
+                ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+            )}
+            style={filePanelStyle(0)}
+            aria-current={active && isPanelActive(panel, $activeRoute.path)
+              ? "page"
+              : undefined}
+            onclick={() => openLedgerPanel(review.path, panel)}
+          >
             <svelte:component this={panel.icon} data-icon="inline-start" />
             <span class="truncate">{panel.name}</span>
           </Button>

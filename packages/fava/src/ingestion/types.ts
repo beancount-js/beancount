@@ -16,6 +16,7 @@ import type {
   IngestionRunPage,
   IngestionRunSummary,
   IngestionReconciliationConfig,
+  IngestionReviewLedgerSnapshot,
 } from "@beancount-js/server";
 
 export type {
@@ -25,6 +26,7 @@ export type {
   AiEnrichmentSnapshot,
   BrandfetchEnrichmentConfig,
   IngestionReconciliationConfig,
+  IngestionReviewLedgerSnapshot,
 };
 
 export interface IngestionSource {
