@@ -10,7 +10,10 @@
     sourceBaseUrl,
     sourceSecretRef,
   } from "../ingestion/connectors";
-  import type { IngestionSample } from "../ingestion/samples";
+  import {
+    availableIngestionSamples,
+    type IngestionSample,
+  } from "../ingestion/samples";
   import type { EditableIngestionSource } from "../ingestion/source-form";
   import {
     secretDisplayValue,
@@ -46,6 +49,9 @@
 
   const envOptions = $derived(
     envKeys.map((key) => ({ value: key, label: key })),
+  );
+  const availableSamples = $derived(
+    availableIngestionSamples(sources, samples),
   );
 
   let openById = $state<Record<string, boolean>>({});
@@ -365,15 +371,15 @@
     {/each}
   </div>
 
-  {#if sources.length === 0 && samples.length && onConnectSample}
+  {#if availableSamples.length && onConnectSample}
     <div class="flex min-w-0 flex-col gap-4" data-ingestion-samples>
       <p
         class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
       >
-        Available · {samples.length}
+        Available · {availableSamples.length}
       </p>
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {#each samples as sample (sample.id)}
+        {#each availableSamples as sample (sample.id)}
           <article
             class="flex min-h-44 flex-col gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:border-foreground/20 hover:bg-muted/40 hover:shadow-md"
             data-ingestion-sample-card

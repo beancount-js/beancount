@@ -106,3 +106,23 @@ export const ingestionSamples: IngestionSample[] = [
     },
   },
 ];
+
+/**
+ * Catalog entries that are not already configured in the current source list.
+ * Connector samples are unique per provider, while standalone samples match by
+ * their configured source id.
+ */
+export function availableIngestionSamples(
+  sources: readonly Pick<EditableIngestionSource, "id" | "kind">[],
+  samples: readonly IngestionSample[] = ingestionSamples,
+): IngestionSample[] {
+  return samples.filter(
+    (sample) =>
+      !sources.some(
+        (source) =>
+          source.id === sample.template.id ||
+          (sample.template.kind !== "json-api" &&
+            source.kind === sample.template.kind),
+      ),
+  );
+}

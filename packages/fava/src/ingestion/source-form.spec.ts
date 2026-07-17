@@ -11,7 +11,7 @@ import {
   sourceFromSample,
   validateEditableIngestionConfig,
 } from "./source-form";
-import { ingestionSamples } from "./samples";
+import { availableIngestionSamples, ingestionSamples } from "./samples";
 
 describe("ingestion source form draft", () => {
   test("removes server-computed source properties without changing editable values", () => {
@@ -147,6 +147,17 @@ describe("ingestion source form draft", () => {
         lookbackDays: 7,
       },
     });
+  });
+
+  test("keeps only unconfigured samples in the connection catalog", () => {
+    const available = availableIngestionSamples([
+      { id: "custom-lunchflow", kind: "lunchflow" },
+      { id: "example-bank", kind: "json-api" },
+    ]);
+
+    expect(available.map((sample) => sample.id)).not.toContain("lunchflow");
+    expect(available.map((sample) => sample.id)).not.toContain("example-bank");
+    expect(available.map((sample) => sample.id)).toContain("starling");
   });
 
   test("validates grouped connections separately from standalone sources", () => {
