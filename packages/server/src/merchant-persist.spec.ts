@@ -57,6 +57,7 @@ describe("proposalMerchantLabel / candidateForAutoPersist", () => {
             narration: "Narration",
             status: "posted",
             fetchedAt: "2026-07-02T00:00:00.000Z",
+            metadata: {},
           },
         }),
       ),
@@ -86,7 +87,9 @@ describe("proposalMerchantLabel / candidateForAutoPersist", () => {
               domain: "tesco.com",
               rawScore: 0.9,
               explanation: "high",
-              provenance: [{ source: "ai", observedAt: "2026-07-01T00:00:00Z" }],
+              provenance: [
+                { source: "ai", observedAt: "2026-07-01T00:00:00Z" },
+              ],
             },
           ],
           explanation: "suggested",
@@ -143,6 +146,7 @@ describe("proposalMerchantLabel / candidateForAutoPersist", () => {
             narration: "Membership",
             status: "posted",
             fetchedAt: "2026-07-02T00:00:00.000Z",
+            metadata: {},
           },
           merchantResolution: {
             status: "unresolved",

@@ -58,19 +58,16 @@ import {
   isValidDomain,
 } from "./brandfetch";
 import { createBrandfetchResponseCache } from "./brandfetch-cache";
-import {
-  FilesystemMerchantStore,
-  type ProjectRootResolver,
-} from "./merchant";
+import { FilesystemMerchantStore, type ProjectRootResolver } from "./merchant";
 import { projectIngestionRoot } from "./paths";
 import {
-  resolveEnvSecret,
-  resolveProjectEnv,
-} from "./project-env";
+  FilesystemIngestionRunArchive,
+  type IngestionRunPage,
+} from "./ingestion-runs";
+import { resolveEnvSecret, resolveProjectEnv } from "./project-env";
 
 const VERSION = 2;
-const STATE_VERSION = 1;
-const RUN_LIMIT = 20;
+const STATE_VERSION = 2;
 const SEEN_LIMIT = 10_000;
 
 export interface BrandfetchEnrichmentConfig {
@@ -213,13 +210,11 @@ function buildCategorizers(
 function buildRuleHooks(
   detectionRules: readonly DetectionRule[],
 ): ProposalHook[] {
-  return detectionRules.length > 0
-    ? [new RuleActionsHook(detectionRules)]
-    : [];
+  return detectionRules.length > 0 ? [new RuleActionsHook(detectionRules)] : [];
 }
 
 interface IngestionState {
-  version: 1;
+  version: 1 | 2;
   cursors: Record<string, string | undefined>;
   /** Connector-owned sync bookmarks keyed by target sourceId. */
   syncState: Record<string, ConnectorSyncState>;
@@ -556,10 +551,12 @@ export type FilesystemIngestionStoreOptions = {
 export class FilesystemIngestionStore {
   readonly merchants: FilesystemMerchantStore;
   private readonly resolveProjectRoot: ProjectRootResolver;
+  private readonly runs: FilesystemIngestionRunArchive;
 
   constructor(options: FilesystemIngestionStoreOptions) {
     this.resolveProjectRoot = options.resolveProjectRoot;
     this.merchants = new FilesystemMerchantStore(options.resolveProjectRoot);
+    this.runs = new FilesystemIngestionRunArchive(options.resolveProjectRoot);
   }
 
   async projectRoot(project: string) {
@@ -610,7 +607,7 @@ export class FilesystemIngestionStore {
     });
   }
 
-  async readState(project: string) {
+  private async readPersistedState(project: string) {
     const raw = await readJson(
       await this.path(project, "state.json"),
       stateDefaults(),
@@ -619,7 +616,41 @@ export class FilesystemIngestionStore {
   }
 
   private async writeState(project: string, state: IngestionState) {
-    await this.write(await this.path(project, "state.json"), state);
+    const { runs: _runs, ...operational } = state;
+    await this.write(await this.path(project, "state.json"), {
+      ...operational,
+      version: STATE_VERSION,
+    } satisfies Omit<IngestionState, "runs">);
+  }
+
+  /**
+   * Compatibility view for callers that still need operational checkpoints and
+   * full runs together. Persisted `state.json` deliberately contains only the
+   * checkpoint fields; the run payload is read from the archive.
+   */
+  async readState(project: string) {
+    const state = await this.readPersistedState(project);
+    await this.runs.ensure(project, state.runs);
+    if (state.version !== STATE_VERSION || state.runs.length) {
+      await this.writeState(project, state);
+    }
+    return {
+      ...state,
+      version: STATE_VERSION,
+      runs: await this.runs.readAll(project),
+    } satisfies IngestionState;
+  }
+
+  async listRuns(
+    project: string,
+    options: { limit?: number; offset?: number; sourceId?: string } = {},
+  ): Promise<IngestionRunPage> {
+    const state = await this.readPersistedState(project);
+    await this.runs.ensure(project, state.runs);
+    if (state.version !== STATE_VERSION || state.runs.length) {
+      await this.writeState(project, state);
+    }
+    return this.runs.list(project, options);
   }
 
   async source(project: string, id: string) {
@@ -673,21 +704,20 @@ export class FilesystemIngestionStore {
           ),
         ]),
       ].slice(-SEEN_LIMIT),
-      runs: [run, ...state.runs.filter((item) => item.id !== run.id)].slice(
-        0,
-        RUN_LIMIT,
-      ),
+      runs: state.runs,
     } satisfies IngestionState;
+    await this.runs.write(project, run);
     await this.writeState(project, next);
     return run;
   }
 
   async run(project: string, runId: string) {
-    const run = (await this.readState(project)).runs.find(
-      (item) => item.id === runId,
-    );
-    if (!run) throw new Error(`Unknown ingestion run: ${runId}`);
-    return run;
+    const state = await this.readPersistedState(project);
+    await this.runs.ensure(project, state.runs);
+    if (state.version !== STATE_VERSION || state.runs.length) {
+      await this.writeState(project, state);
+    }
+    return this.runs.read(project, runId);
   }
 
   private async syncJobPath(project: string, jobId: string) {
@@ -800,9 +830,7 @@ export class FilesystemIngestionStore {
       transaction?: NormalizedTransactionPatch;
     },
   ) {
-    const state = await this.readState(project);
-    const run = state.runs.find((item) => item.id === runId);
-    if (!run) throw new Error(`Unknown ingestion run: ${runId}`);
+    const run = await this.run(project, runId);
     const proposals = run.proposals.map((proposal) => {
       if (proposal.id !== proposalId) return proposal;
       if (
@@ -819,7 +847,9 @@ export class FilesystemIngestionStore {
         const tx = patch.transaction;
         if (tx.bookedAt !== undefined) {
           if (!/^\d{4}-\d{2}-\d{2}$/.test(tx.bookedAt)) {
-            throw new Error("bookedAt must be an ISO calendar date (YYYY-MM-DD).");
+            throw new Error(
+              "bookedAt must be an ISO calendar date (YYYY-MM-DD).",
+            );
           }
           next.transaction!.bookedAt = tx.bookedAt;
         }
@@ -895,10 +925,7 @@ export class FilesystemIngestionStore {
         if (patch.status === "ready" && !next.selectedAccount) {
           throw new Error("Select an account before marking a proposal ready.");
         }
-        if (
-          patch.status !== "ready" &&
-          patch.status !== "needs-review"
-        ) {
+        if (patch.status !== "ready" && patch.status !== "needs-review") {
           throw new Error("Unsupported proposal status update.");
         }
         next = { ...next, status: patch.status };
@@ -907,8 +934,7 @@ export class FilesystemIngestionStore {
       return next;
     });
     const updated = { ...run, proposals, summary: summarize(proposals) };
-    state.runs = state.runs.map((item) => (item.id === runId ? updated : item));
-    await this.writeState(project, state);
+    await this.runs.write(project, updated);
     return updated;
   }
 
@@ -924,19 +950,17 @@ export class FilesystemIngestionStore {
     runId: string,
     proposal: ImportProposal,
   ) {
-    const [run] = await this.replaceProposals(project, [
-      { runId, proposal },
-    ]);
+    const [run] = await this.replaceProposals(project, [{ runId, proposal }]);
     return run!;
   }
 
-  /** Replace many proposals across runs in a single state write. */
+  /** Replace many proposals across archived runs in one batch. */
   async replaceProposals(
     project: string,
     updates: readonly { runId: string; proposal: ImportProposal }[],
   ) {
     if (!updates.length) return [] as IngestionRun[];
-    const state = await this.readState(project);
+    const runs = await this.runs.readAll(project);
     const byRun = new Map<string, Map<string, ImportProposal>>();
     for (const update of updates) {
       const map = byRun.get(update.runId) ?? new Map();
@@ -944,44 +968,45 @@ export class FilesystemIngestionStore {
       byRun.set(update.runId, map);
     }
     const touched: IngestionRun[] = [];
-    state.runs = state.runs.map((run) => {
+    for (const run of runs) {
       const map = byRun.get(run.id);
-      if (!map) return run;
+      if (!map) continue;
       for (const proposalId of map.keys()) {
         if (!run.proposals.some((item) => item.id === proposalId)) {
           throw new Error(`Unknown ingestion proposal: ${proposalId}`);
         }
       }
-      const proposals = run.proposals.map(
-        (item) => map.get(item.id) ?? item,
-      );
+      const proposals = run.proposals.map((item) => map.get(item.id) ?? item);
       const complete = {
         ...run,
         proposals,
         summary: summarize(proposals),
       } satisfies IngestionRun;
       touched.push(complete);
-      return complete;
-    });
+    }
     for (const runId of byRun.keys()) {
-      if (!state.runs.some((run) => run.id === runId)) {
+      if (!runs.some((run) => run.id === runId)) {
         throw new Error(`Unknown ingestion run: ${runId}`);
       }
     }
-    await this.writeState(project, state);
+    await this.runs.writeMany(project, touched);
     return touched;
   }
 
   async writeRuns(project: string, runs: readonly IngestionRun[]) {
-    const state = await this.readState(project);
-    const byId = new Map(runs.map((run) => [run.id, run]));
-    state.runs = state.runs.map((run) => {
-      const next = byId.get(run.id);
-      if (!next) return run;
-      return { ...next, summary: summarize(next.proposals) };
-    });
-    await this.writeState(project, state);
-    return state.runs.filter((run) => byId.has(run.id));
+    const existing = await this.runs.readAll(project);
+    const byId = new Map(existing.map((run) => [run.id, run]));
+    for (const run of runs) {
+      if (!byId.has(run.id)) {
+        throw new Error(`Unknown ingestion run: ${run.id}`);
+      }
+    }
+    const complete = runs.map(
+      (run) =>
+        ({ ...run, summary: summarize(run.proposals) }) satisfies IngestionRun,
+    );
+    await this.runs.writeMany(project, complete);
+    return complete;
   }
 
   async markAccepted(
@@ -989,9 +1014,7 @@ export class FilesystemIngestionStore {
     runId: string,
     proposalIds: readonly string[],
   ) {
-    const state = await this.readState(project);
-    const run = state.runs.find((item) => item.id === runId);
-    if (!run) throw new Error(`Unknown ingestion run: ${runId}`);
+    const run = await this.run(project, runId);
     const accepted = new Set(proposalIds);
     const proposals = run.proposals.map((proposal) =>
       accepted.has(proposal.id)
@@ -1004,8 +1027,7 @@ export class FilesystemIngestionStore {
         : proposal,
     );
     const updated = { ...run, proposals, summary: summarize(proposals) };
-    state.runs = state.runs.map((item) => (item.id === runId ? updated : item));
-    await this.writeState(project, state);
+    await this.runs.write(project, updated);
     return updated;
   }
 }
@@ -1595,7 +1617,9 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
       const domain = optionalSchemaString(result.domain)?.toLowerCase();
       const description = optionalSchemaString(result.description);
       const industry = optionalSchemaString(result.industry);
-      const countryCode = optionalSchemaString(result.countryCode)?.toUpperCase();
+      const countryCode = optionalSchemaString(
+        result.countryCode,
+      )?.toUpperCase();
       if (
         !canonicalName ||
         typeof result.rawScore !== "number" ||
@@ -1973,8 +1997,7 @@ async function resolveMerchantWithResolvers(
     ? {
         status: "unresolved",
         rawLabel,
-        explanation:
-          "No confirmed merchant profile matched this transaction.",
+        explanation: "No confirmed merchant profile matched this transaction.",
       }
     : {
         status: "unresolved",
@@ -1991,19 +2014,14 @@ async function resolveMerchantWithResolvers(
     try {
       const next = await resolver.resolve({ transaction, resolution });
       if (!next) continue;
-      if (
-        resolution.status === "suggested" &&
-        next.status === "suggested"
-      ) {
+      if (resolution.status === "suggested" && next.status === "suggested") {
         resolution = {
           ...next,
           candidates: [
             ...next.candidates,
             ...resolution.candidates.filter(
               (candidate) =>
-                !next.candidates.some(
-                  (item) => item.id === candidate.id,
-                ),
+                !next.candidates.some((item) => item.id === candidate.id),
             ),
           ],
         };
@@ -2011,8 +2029,7 @@ async function resolveMerchantWithResolvers(
         resolution = next;
       }
     } catch (error) {
-      const detail =
-        error instanceof Error ? error.message : String(error);
+      const detail = error instanceof Error ? error.message : String(error);
       issues.push(
         resolver.id === "codex-merchant-advisor"
           ? `AI merchant advisor was unavailable: ${detail}`
@@ -2042,7 +2059,9 @@ async function prepareAiEnrichment(
   },
 ): Promise<EnrichPrepared> {
   if (!sourceHasAiEnabled(source)) {
-    throw new Error("Enable AI categorisation or AI merchant enrichment first.");
+    throw new Error(
+      "Enable AI categorisation or AI merchant enrichment first.",
+    );
   }
   const aiCategorize = source.aiEnabled === true;
   const aiMerchant =
@@ -2159,8 +2178,7 @@ async function enrichProposalWithPrepared(
       );
     } catch (error) {
       if (categorizer.isAi) {
-        const message =
-          error instanceof Error ? error.message : String(error);
+        const message = error instanceof Error ? error.message : String(error);
         nextIssues = [
           ...nextIssues,
           `AI categoriser was unavailable: ${message}`,
@@ -2178,10 +2196,7 @@ async function enrichProposalWithPrepared(
     }
   }
   const nextSuggestions = sortSuggestions(
-    [
-      ...suggestions,
-      ...(manualSelection ? [manualSelection] : []),
-    ].filter(
+    [...suggestions, ...(manualSelection ? [manualSelection] : [])].filter(
       (suggestion) =>
         Boolean(suggestion.account) &&
         prepared.availableAccounts.includes(suggestion.account),

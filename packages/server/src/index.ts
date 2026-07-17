@@ -8,11 +8,18 @@ export {
   projectAiSessionsRoot,
   projectBrandfetchCacheRoot,
   projectIngestionRoot,
+  projectIngestionRunsRoot,
   projectRuleRunsPath,
   projectRulesPath,
   projectStudioRoot,
   studioConfigRoot,
 } from "./paths";
+export {
+  FilesystemIngestionRunArchive,
+  type IngestionRunPage,
+  type IngestionRunReviewState,
+  type IngestionRunSummary,
+} from "./ingestion-runs";
 export {
   FilesystemRulesStore,
   type FilesystemRulesStoreOptions,

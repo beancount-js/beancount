@@ -38,7 +38,9 @@ function migrateLunchflowSource(
 ): IngestionSourceDefinition {
   const api = isRecord(source.api) ? source.api : {};
   const connector = getConnector("lunchflow");
-  const defaults = connector?.defaultConfig() as Record<string, unknown> | undefined;
+  const defaults = connector?.defaultConfig() as
+    | Record<string, unknown>
+    | undefined;
   const config = {
     ...(defaults ?? {}),
     secretRef:
@@ -144,7 +146,7 @@ export function migrateIngestionConfig(raw: unknown): IngestionConfig {
 }
 
 export function migrateIngestionState(raw: unknown): {
-  version: 1;
+  version: 1 | 2;
   cursors: Record<string, string | undefined>;
   syncState: Record<string, ConnectorSyncState>;
   seenImportIds: string[];
@@ -153,7 +155,7 @@ export function migrateIngestionState(raw: unknown): {
 } {
   const record = isRecord(raw) ? raw : {};
   return {
-    version: 1,
+    version: record.version === 2 ? 2 : 1,
     cursors: isRecord(record.cursors)
       ? (record.cursors as Record<string, string | undefined>)
       : {},

@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -55,6 +55,83 @@ function config(
 }
 
 describe("FilesystemIngestionStore", () => {
+  test("migrates legacy runs into individual archive files", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-runs-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    await store.writeConfig("project", config());
+    const run = {
+      id: "run:legacy-1",
+      sourceId: "bank",
+      startedAt: "2026-07-16T00:00:00.000Z",
+      completedAt: "2026-07-16T00:00:01.000Z",
+      proposals: [],
+      summary: {
+        total: 0,
+        ready: 0,
+        needsReview: 0,
+        duplicates: 0,
+        invalid: 0,
+        held: 0,
+        excluded: 0,
+      },
+    };
+    const statePath = ingestionPath(directory, "project", "state.json");
+    await writeFile(
+      statePath,
+      JSON.stringify({
+        version: 1,
+        cursors: { bank: "cursor-1" },
+        syncState: {},
+        seenImportIds: [],
+        seenFingerprints: [],
+        runs: [run],
+      }),
+      { encoding: "utf8", mode: 0o600 },
+    );
+
+    await expect(store.readState("project")).resolves.toMatchObject({
+      version: 2,
+      cursors: { bank: "cursor-1" },
+      runs: [expect.objectContaining({ id: "run:legacy-1" })],
+    });
+    await expect(store.run("project", "run:legacy-1")).resolves.toEqual(run);
+    await expect(store.listRuns("project")).resolves.toMatchObject({
+      total: 1,
+      runs: [
+        expect.objectContaining({
+          id: "run:legacy-1",
+          reviewState: "completed",
+        }),
+      ],
+    });
+    const indexPath = ingestionPath(directory, "project", "runs", "index.json");
+    await writeFile(indexPath, "{", { encoding: "utf8", mode: 0o600 });
+    await expect(store.listRuns("project")).resolves.toMatchObject({
+      total: 1,
+      runs: [expect.objectContaining({ id: "run:legacy-1" })],
+    });
+    await expect(readFile(indexPath, "utf8")).resolves.toContain(
+      '"version": 1',
+    );
+
+    const persistedState = JSON.parse(await readFile(statePath, "utf8"));
+    expect(persistedState).toEqual({
+      version: 2,
+      cursors: { bank: "cursor-1" },
+      syncState: {},
+      seenImportIds: [],
+      seenFingerprints: [],
+    });
+    const names = await readdir(ingestionPath(directory, "project", "runs"));
+    expect(names).toContain("index.json");
+    expect(
+      names.filter((name) => /^[a-f0-9]{64}\.json$/.test(name)),
+    ).toHaveLength(1);
+  });
+
   test("removes long merchant identifiers before AI merchant advice", () => {
     expect(merchantAdvisorLabel("TESCO STORES 1234 OXFORD")).toBe(
       "tesco stores # oxford",
@@ -445,6 +522,7 @@ describe("FilesystemIngestionStore", () => {
           narration: "Membership",
           status: "posted",
           fetchedAt: "2026-07-02T00:00:00.000Z",
+          metadata: {},
         },
       },
     );
@@ -485,7 +563,8 @@ describe("FilesystemIngestionStore", () => {
         merchantResolution: {
           status: "unresolved",
           rawLabel: "Pure Gym",
-          explanation: "No confirmed merchant profile matched this transaction.",
+          explanation:
+            "No confirmed merchant profile matched this transaction.",
         },
         transaction: {
           sourceId: "bank",
@@ -497,6 +576,7 @@ describe("FilesystemIngestionStore", () => {
           narration: "Membership",
           status: "posted",
           fetchedAt: "2026-07-02T00:00:00.000Z",
+          metadata: {},
         },
       },
     );
@@ -535,14 +615,18 @@ describe("FilesystemIngestionStore", () => {
       },
     });
 
-    const updated = await store.merchants.update("project", merchant.merchantId, {
-      canonicalName: "Tesco Stores",
-      domain: "www.tesco.com",
-      description: "Updated description.",
-      industry: "Grocery",
-      countryCode: "gb",
-      notes: "Preferred grocery merchant.",
-    });
+    const updated = await store.merchants.update(
+      "project",
+      merchant.merchantId,
+      {
+        canonicalName: "Tesco Stores",
+        domain: "www.tesco.com",
+        description: "Updated description.",
+        industry: "Grocery",
+        countryCode: "gb",
+        notes: "Preferred grocery merchant.",
+      },
+    );
 
     expect(updated).toMatchObject({
       merchantId: merchant.merchantId,
@@ -658,16 +742,18 @@ describe("FilesystemIngestionStore", () => {
       id: job.id,
       status: "running",
     });
-    await expect(store.findActiveSyncJob("project", "bank")).resolves.toMatchObject(
-      { id: job.id },
-    );
+    await expect(
+      store.findActiveSyncJob("project", "bank"),
+    ).resolves.toMatchObject({ id: job.id });
 
     expect(await store.failInterruptedSyncJobs("project")).toBe(1);
     await expect(store.readSyncJob("project", job.id)).resolves.toMatchObject({
       status: "failed",
       error: expect.stringContaining("restarted"),
     });
-    await expect(store.findActiveSyncJob("project", "bank")).resolves.toBeNull();
+    await expect(
+      store.findActiveSyncJob("project", "bank"),
+    ).resolves.toBeNull();
   });
 
   test("sourceForRunSourceId resolves grouped account run ids", async () => {
