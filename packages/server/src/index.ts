@@ -6,7 +6,6 @@ export {
 export {
   PROJECT_STUDIO_DIR,
   projectAiSessionsRoot,
-  projectBrandfetchCacheRoot,
   projectIngestionRoot,
   projectIngestionRunsRoot,
   projectRuleRunsPath,
@@ -80,21 +79,7 @@ export {
 } from "./ingestion";
 export { ensureConnectorsRegistered } from "./connectors";
 export { AsyncEventQueue } from "./event-queue";
-export {
-  BrandfetchProvider,
-  brandfetchLogoUrl,
-  formatBrandfetchRateLimitError,
-  isValidDomain,
-  readBrandfetchRateLimit,
-  type BrandfetchRateLimitInfo,
-  type DownloadedBrandAsset,
-} from "./brandfetch";
-export {
-  createBrandfetchResponseCache,
-  FilesystemBrandfetchResponseCache,
-  type BrandfetchCachedResponse,
-  type BrandfetchResponseCache,
-} from "./brandfetch-cache";
+export { brandfetchLogoUrl, isValidDomain } from "./brandfetch";
 export {
   FilesystemMerchantStore,
   type ConfirmMerchantInput,

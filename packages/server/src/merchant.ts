@@ -11,7 +11,6 @@ import {
   type MerchantProvenance,
   type MerchantResolution,
 } from "@beancount-js/beangulp";
-import type { DownloadedBrandAsset } from "./brandfetch";
 import { projectIngestionRoot } from "./paths";
 
 const PROFILE_VERSION = 1;
@@ -27,12 +26,7 @@ interface MerchantProfile {
 
 interface MerchantEvent {
   version: 1;
-  type:
-    | "confirmed"
-    | "corrected"
-    | "rejected"
-    | "cleared-suppression"
-    | "cached-logo";
+  type: "confirmed" | "corrected" | "rejected" | "cleared-suppression";
   at: string;
   sourceId?: string;
   rawLabel?: string;
@@ -301,7 +295,10 @@ export class FilesystemMerchantStore {
 
   private async readEvents(project: string): Promise<MerchantEvent[]> {
     try {
-      const contents = await fs.readFile(await this.eventsPath(project), "utf8");
+      const contents = await fs.readFile(
+        await this.eventsPath(project),
+        "utf8",
+      );
       return contents
         .split("\n")
         .filter(Boolean)
@@ -647,44 +644,6 @@ export class FilesystemMerchantStore {
         normalizedLabel,
       });
       await this.rebuildIndex(project);
-    });
-  }
-
-  async cacheLogo(
-    project: string,
-    merchantId: string,
-    asset: DownloadedBrandAsset,
-  ) {
-    return this.withLock(project, async () => {
-      const profile = await this.readProfile(project, merchantId);
-      const filename = `logo-${asset.sha256}.${asset.extension}`;
-      await this.write(
-        join(
-          dirname(await this.profilePath(project, merchantId)),
-          filename,
-        ),
-        asset.bytes,
-      );
-      profile.merchant.brand = {
-        provider: "brandfetch",
-        brandId: profile.merchant.brand?.brandId,
-        fetchedAt: now(),
-        expiresAt: asset.expiresAt,
-        asset: {
-          filename,
-          mediaType: asset.mediaType,
-          sha256: asset.sha256,
-          expiresAt: asset.expiresAt,
-        },
-      };
-      await this.writeProfile(project, profile);
-      await this.appendEvent(project, {
-        version: 1,
-        type: "cached-logo",
-        at: now(),
-        merchantId,
-      });
-      return profile.merchant;
     });
   }
 

@@ -58,8 +58,9 @@
       loadedConfig?.brandCredentialAvailable === false
     ) {
       next.push({
-        fieldId: "brandfetch.apiKeySecretRef",
-        message: "Brandfetch credential is not available in this environment",
+        fieldId: "brandfetch.clientId",
+        message:
+          "Brandfetch Logo API client ID is not available in this environment",
         severity: "warning",
       });
     }
@@ -114,7 +115,7 @@
         issue.path?.startsWith("brandfetch"),
       );
       status = hasBrandIssues
-        ? "Resolve the highlighted brand matching validation errors before saving."
+        ? "Resolve the highlighted brand logo validation errors before saving."
         : "Resolve source validation errors under Sources before saving.";
       saveState = "error";
       return;
@@ -177,9 +178,9 @@
     {:else}
       <div class="flex min-w-0 flex-col gap-6">
         <p class="text-sm text-muted-foreground">
-          Brand matching runs globally for every source. Brandfetch settings
-          configured here apply to merchant enrichment across all connections,
-          rather than per source.
+          Brandfetch Logo API adds logos for merchants with a known domain. AI
+          and manual review provide merchant names, descriptions, and other
+          details across all connections.
         </p>
 
         <article

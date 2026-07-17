@@ -337,6 +337,10 @@ describe("FilesystemIngestionStore", () => {
     directories.push(directory);
     const store = storeFor(directory);
     const full = config();
+    full.brandfetch = {
+      enabled: true,
+      clientId: "  test-client  ",
+    };
     full.sources[0] = {
       ...full.sources[0],
       destinationPath: "imports/bank.beancount",
@@ -347,16 +351,6 @@ describe("FilesystemIngestionStore", () => {
         enabled: true,
         aiEnabled: true,
         countryCode: "gb",
-        brandfetch: {
-          enabled: true,
-          apiKeySecretRef: "env:BRANDFETCH_API_KEY",
-          clientId: "  test-client  ",
-          allowNameSearch: true,
-          allowTransactionLookup: true,
-          assetMode: "cache",
-          cacheContentAllowed: true,
-          ttlDays: 14,
-        },
       },
       api: {
         endpoint: "https://api.example.test/transactions",
@@ -398,7 +392,6 @@ describe("FilesystemIngestionStore", () => {
       version: 2,
       brandfetch: expect.objectContaining({
         enabled: true,
-        apiKeySecretRef: "env:BRANDFETCH_API_KEY",
         clientId: "test-client",
       }),
       sources: [
@@ -612,20 +605,6 @@ describe("FilesystemIngestionStore", () => {
       merchant: { merchantId: merchant.merchantId },
     });
 
-    await store.merchants.cacheLogo("project", merchant.merchantId, {
-      bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
-      mediaType: "image/png",
-      extension: "png",
-      sha256: "a".repeat(64),
-      expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
-    });
-    await expect(
-      store.merchants.logo("project", merchant.merchantId),
-    ).resolves.toMatchObject({
-      mediaType: "image/png",
-      sha256: "a".repeat(64),
-    });
-
     await store.merchants.suppress("project", "bank", "UNKNOWN SHOP");
     await expect(
       store.merchants.resolve("project", "bank", "UNKNOWN SHOP"),
@@ -645,6 +624,43 @@ describe("FilesystemIngestionStore", () => {
         "utf8",
       ),
     ).resolves.toContain('"type":"cleared-suppression"');
+  });
+
+  test("drops legacy Brand API configuration when the config is saved", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-test-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    const legacy = {
+      ...config(),
+      brandfetch: {
+        enabled: true,
+        apiKeySecretRef: "env:BRANDFETCH_API_KEY",
+        clientId: "  env:BRANDFETCH_CLIENT_ID  ",
+        allowNameSearch: true,
+        allowTransactionLookup: true,
+        assetMode: "cache",
+        cacheContentAllowed: true,
+        ttlDays: 14,
+      },
+    };
+
+    await store.writeConfig("project", legacy);
+
+    await expect(store.readConfig("project")).resolves.toMatchObject({
+      brandfetch: {
+        enabled: true,
+        clientId: "env:BRANDFETCH_CLIENT_ID",
+      },
+    });
+    const persisted = await readFile(
+      ingestionPath(directory, "project", "sources.json"),
+      "utf8",
+    );
+    expect(persisted).not.toContain("BRANDFETCH_API_KEY");
+    expect(persisted).not.toContain("allowNameSearch");
+    expect(persisted).not.toContain("cacheContentAllowed");
   });
 
   test("auto-persists an enriched suggested merchant on accept", async () => {

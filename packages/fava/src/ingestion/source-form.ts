@@ -439,50 +439,22 @@ function brandfetchIssues(
   });
   const issues: FormValidationIssue[] = [];
   if (brandfetch.enabled) {
-    if (!isSecretConfigured(brandfetch.apiKeySecretRef)) {
+    const clientId = brandfetch.clientId;
+    if (!isSecretConfigured(clientId)) {
       issues.push(
         field(
-          "brandfetch.apiKeySecretRef",
-          "Enter a Brandfetch API key or environment variable name.",
+          "brandfetch.clientId",
+          "Enter a Brandfetch Logo API client ID or environment variable name.",
         ),
       );
-    } else if (!isEnvSecretNameValid(brandfetch.apiKeySecretRef)) {
+    } else if (!isEnvSecretNameValid(clientId!)) {
       issues.push(
         field(
-          "brandfetch.apiKeySecretRef",
+          "brandfetch.clientId",
           "Environment variable names may use letters, numbers, and underscores.",
         ),
       );
     }
-  }
-  if (brandfetch.clientId && !isEnvSecretNameValid(brandfetch.clientId)) {
-    issues.push(
-      field(
-        "brandfetch.clientId",
-        "Environment variable names may use letters, numbers, and underscores.",
-      ),
-    );
-  }
-  if (brandfetch.assetMode === "cache" && !brandfetch.cacheContentAllowed) {
-    issues.push(
-      field(
-        "brandfetch.cacheContentAllowed",
-        "Confirm content caching before using the cache asset mode.",
-      ),
-    );
-  }
-  if (
-    brandfetch.ttlDays !== undefined &&
-    (!Number.isInteger(brandfetch.ttlDays) ||
-      brandfetch.ttlDays < 1 ||
-      brandfetch.ttlDays > 29)
-  ) {
-    issues.push(
-      field(
-        "brandfetch.ttlDays",
-        "Cache TTL must be a whole number from 1 to 29.",
-      ),
-    );
   }
   return issues;
 }

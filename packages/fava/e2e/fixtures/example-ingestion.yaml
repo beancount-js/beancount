@@ -1,4 +1,7 @@
 version: 1
+brandfetch:
+  enabled: false
+  clientId: env:BRANDFETCH_CLIENT_ID
 sources:
   - id: bank
     name: My bank
@@ -14,10 +17,6 @@ sources:
       enabled: true
       aiEnabled: false
       countryCode: GB
-      brandfetch:
-        enabled: false
-        apiKeySecretRef: env:BRANDFETCH_API_KEY
-        assetMode: hotlink
     api:
       endpoint: https://api.example.com/transactions
       allowedHosts:

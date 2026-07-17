@@ -54,12 +54,7 @@ import {
   parseIngestionState,
 } from "./ingestion-migrate";
 import type { Directive } from "@beancount-js/beancount";
-import {
-  BrandfetchProvider,
-  brandfetchLogoUrl,
-  isValidDomain,
-} from "./brandfetch";
-import { createBrandfetchResponseCache } from "./brandfetch-cache";
+import { brandfetchLogoUrl, isValidDomain } from "./brandfetch";
 import { FilesystemMerchantStore, type ProjectRootResolver } from "./merchant";
 import { projectIngestionRoot } from "./paths";
 import {
@@ -74,13 +69,7 @@ const SEEN_LIMIT = 10_000;
 
 export interface BrandfetchEnrichmentConfig {
   enabled: boolean;
-  apiKeySecretRef: string;
   clientId?: string;
-  allowNameSearch?: boolean;
-  allowTransactionLookup?: boolean;
-  assetMode?: "hotlink" | "cache";
-  cacheContentAllowed?: boolean;
-  ttlDays?: number;
 }
 
 export interface MerchantEnrichmentConfig {
@@ -271,34 +260,17 @@ export function validateBrandfetchConfig(
   if (typeof value.enabled !== "boolean")
     throw new Error("brandfetch.enabled must be a boolean.");
   if (
-    value.enabled &&
-    (!value.apiKeySecretRef || !value.apiKeySecretRef.trim())
+    value.clientId?.startsWith("env:") &&
+    !value.clientId.slice("env:".length).trim()
   ) {
-    throw new Error("Brandfetch needs an API key or env: variable reference.");
-  }
-  if (
-    value.apiKeySecretRef?.startsWith("env:") &&
-    !value.apiKeySecretRef.slice("env:".length).trim()
-  ) {
-    throw new Error("Brandfetch env: references need a variable name.");
-  }
-  if (value.assetMode === "cache" && !value.cacheContentAllowed) {
     throw new Error(
-      "Local Brandfetch caching requires cacheContentAllowed: true.",
+      "Brandfetch client ID env: references need a variable name.",
     );
   }
-  if (
-    value.ttlDays !== undefined &&
-    (!Number.isInteger(value.ttlDays) ||
-      value.ttlDays < 1 ||
-      value.ttlDays > 29)
-  ) {
-    throw new Error("Brandfetch ttlDays must be an integer from 1 to 29.");
-  }
-  // Transaction lookups use each source's merchantEnrichment.countryCode at runtime.
+  // Kept for compatibility with callers that still pass a country hint.
   void countryCode;
   return {
-    ...value,
+    enabled: value.enabled,
     clientId: value.clientId?.trim() || undefined,
   } satisfies BrandfetchEnrichmentConfig;
 }
@@ -1203,7 +1175,7 @@ export async function discoverIngestionAccounts(options: {
   });
 }
 
-/** Resolve Brandfetch secrets for runtime use (values stay out of persisted YAML). */
+/** Resolve the Brandfetch Logo API client ID without persisting its value. */
 export async function resolveBrandfetchRuntime(
   brandfetch: BrandfetchEnrichmentConfig | undefined,
   projectRoot?: string,
@@ -1211,7 +1183,6 @@ export async function resolveBrandfetchRuntime(
   if (!brandfetch) return undefined;
   const env = await resolveProjectEnv(projectRoot);
   return {
-    apiKey: resolveEnvSecret(brandfetch.apiKeySecretRef, env),
     clientId: resolveEnvSecret(brandfetch.clientId, env),
     env,
   };
@@ -1712,13 +1683,30 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
   }
 }
 
-class BrandfetchMerchantResolver implements MerchantResolverPlugin {
-  readonly id = "brandfetch";
+export function withBrandfetchLogo(
+  candidate: MerchantCandidate,
+  clientId: string,
+): MerchantCandidate | undefined {
+  if (!isValidDomain(candidate.domain)) return undefined;
+  return {
+    ...candidate,
+    logoUrl: brandfetchLogoUrl(candidate.domain!, clientId),
+    provenance: [
+      ...candidate.provenance,
+      {
+        source: "brandfetch",
+        provider: "logo-api",
+        version: "cdn",
+        observedAt: nowIso(),
+      },
+    ],
+  } satisfies MerchantCandidate;
+}
 
-  constructor(
-    private readonly provider: BrandfetchProvider,
-    private readonly countryCode: string | undefined,
-  ) {}
+class BrandfetchLogoResolver implements MerchantResolverPlugin {
+  readonly id = "brandfetch-logo";
+
+  constructor(private readonly clientId: string) {}
 
   async resolve(context: Parameters<MerchantResolverPlugin["resolve"]>[0]) {
     const rawLabel = transactionMerchantLabel(context.transaction);
@@ -1726,24 +1714,25 @@ class BrandfetchMerchantResolver implements MerchantResolverPlugin {
       return undefined;
     const candidate =
       context.resolution.status === "suggested"
-        ? context.resolution.candidates[0]
+        ? context.resolution.candidates.find((item) =>
+            isValidDomain(item.domain),
+          )
         : ({
             id: `source:${normalizeMerchant(rawLabel)}`,
             canonicalName: rawLabel,
+            domain: domainInMerchantLabel(rawLabel),
             rawScore: 0,
             explanation: "Source merchant label awaiting validation.",
             provenance: [{ source: "source", observedAt: nowIso() }],
           } satisfies MerchantCandidate);
-    const enriched = await this.provider.enrich(candidate, {
-      rawLabel,
-      countryCode: this.countryCode,
-    });
+    if (!candidate) return undefined;
+    const enriched = withBrandfetchLogo(candidate, this.clientId);
     if (!enriched) return undefined;
     return {
       status: "suggested",
       rawLabel,
       candidates: [enriched],
-      explanation: enriched.explanation,
+      explanation: `Brandfetch Logo API attached a logo for ${enriched.domain}.`,
     } satisfies MerchantResolution;
   }
 }
@@ -1810,20 +1799,8 @@ async function merchantResolversFor(
         resolvedEnrichment,
       ),
     );
-  const providerConfig = brandfetch;
-  const apiKey = brandfetchRuntime?.apiKey;
-  if (providerConfig?.enabled && apiKey) {
-    resolvers.push(
-      new BrandfetchMerchantResolver(
-        new BrandfetchProvider({
-          ...providerConfig,
-          apiKey,
-          clientId: brandfetchRuntime?.clientId,
-          responseCache: createBrandfetchResponseCache(projectRoot),
-        }),
-        enrichment.countryCode,
-      ),
-    );
+  if (brandfetch?.enabled && brandfetchRuntime?.clientId) {
+    resolvers.push(new BrandfetchLogoResolver(brandfetchRuntime.clientId));
   }
   return resolvers;
 }
