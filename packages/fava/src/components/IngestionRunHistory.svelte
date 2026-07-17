@@ -82,6 +82,26 @@
     );
   }
 
+  function openAudit(summary: IngestionRunSummary) {
+    router.push(`/import/history/${summary.id}`);
+  }
+
+  function handleAuditLinkClick(
+    event: MouseEvent,
+    summary: IngestionRunSummary,
+  ) {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    openAudit(summary);
+  }
+
   function formatTime(value: string) {
     const date = DateTime.fromISO(value, { zone: "utc" });
     return date.isValid ? date.toFormat("HH:mm 'UTC'") : value;
@@ -159,11 +179,13 @@
         </Empty.Root>
       {:else}
         <div
-          class="hidden grid-cols-[minmax(0,1fr)_minmax(12rem,auto)_auto] items-center gap-3 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid"
+          class="hidden grid-cols-[minmax(0,1fr)_minmax(4rem,auto)_minmax(4rem,auto)_minmax(4rem,auto)_minmax(4rem,auto)] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid"
         >
           <span>Import</span>
-          <span class="text-right">Outcomes</span>
-          <span>Actions</span>
+          <span class="text-right">Proposals</span>
+          <span class="text-right">Accepted</span>
+          <span class="text-right">Review</span>
+          <span class="text-right">Duplicates</span>
         </div>
 
         {#each historyGroups as group (group.key)}
@@ -183,11 +205,20 @@
               class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
             >
               {#each group.runs as run, index (run.id)}
-                <article
+                <div
                   class:rounded-b-xl={index === group.runs.length - 1}
-                  class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-[15px] py-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,auto)_auto]"
+                  class="relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-[15px] py-4 transition-colors last:border-b-0 focus-within:bg-accent focus-within:ring-2 focus-within:ring-ring hover:bg-accent/60 sm:grid-cols-[minmax(0,1fr)_minmax(4rem,auto)_minmax(4rem,auto)_minmax(4rem,auto)_minmax(4rem,auto)] sm:gap-x-4"
                 >
-                  <div class="min-w-0">
+                  <a
+                    href={`/import/history/${run.id}`}
+                    class="absolute inset-0 z-0 rounded-[inherit] outline-none"
+                    aria-label={`View audit for ${run.sourceId}`}
+                    onclick={(event) => handleAuditLinkClick(event, run)}
+                  ></a>
+
+                  <div
+                    class="pointer-events-none relative z-10 col-span-2 min-w-0 sm:col-span-1"
+                  >
                     <div class="flex flex-wrap items-center gap-2">
                       <h3 class="truncate text-sm font-semibold">
                         {run.sourceId}
@@ -207,16 +238,12 @@
                     <p class="mt-1 truncate text-xs text-muted-foreground">
                       {formatTime(run.completedAt)} · Run {run.id}
                     </p>
-                  </div>
-
-                  <div
-                    class="order-2 flex flex-wrap justify-end gap-x-2 gap-y-1 sm:order-3"
-                  >
                     {#if run.reviewState === "pending"}
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
+                        class="pointer-events-auto mt-3"
                         onclick={() => openInReview(run)}
                       >
                         <ExternalLink data-icon="inline-start" />
@@ -224,33 +251,33 @@
                         <span class="lg:hidden">Review</span>
                       </Button>
                     {/if}
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      onclick={() => router.push(`/import/history/${run.id}`)}
-                    >
-                      View audit
-                    </Button>
                   </div>
 
                   <div
-                    class="order-3 col-span-2 flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground sm:order-2 sm:col-span-1 sm:justify-end"
+                    class="pointer-events-none relative z-10 order-3 col-span-2 grid grid-cols-4 gap-3 text-right text-xs text-muted-foreground sm:order-none sm:col-span-1 sm:contents sm:text-sm"
                   >
-                    <span class="font-medium tabular-nums text-foreground"
-                      >{run.summary.total} proposals</span
+                    <span
+                      class="font-medium tabular-nums text-foreground sm:text-right"
+                      aria-label={`${run.summary.total} proposals`}
+                      >{run.summary.total}</span
                     >
-                    <span class="tabular-nums"
-                      >{run.summary.accepted} accepted</span
+                    <span
+                      class="tabular-nums sm:text-right"
+                      aria-label={`${run.summary.accepted} accepted`}
+                      >{run.summary.accepted}</span
                     >
-                    <span class="tabular-nums"
-                      >{run.summary.needsReview} review</span
+                    <span
+                      class="tabular-nums sm:text-right"
+                      aria-label={`${run.summary.needsReview} need review`}
+                      >{run.summary.needsReview}</span
                     >
-                    <span class="tabular-nums"
-                      >{run.summary.duplicates} duplicates</span
+                    <span
+                      class="tabular-nums sm:text-right"
+                      aria-label={`${run.summary.duplicates} duplicates`}
+                      >{run.summary.duplicates}</span
                     >
                   </div>
-                </article>
+                </div>
               {/each}
             </div>
           </section>
