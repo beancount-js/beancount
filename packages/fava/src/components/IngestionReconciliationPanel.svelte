@@ -1,40 +1,33 @@
 <script lang="ts">
+  import {
+    FilterCommandPicker,
+    SearchFilterBar,
+    type FilterCommandOption,
+  } from "@beancount-js/forms";
+  import type { ReconciliationReviewItem } from "@beancount-js/server";
+  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
+  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
+  import { debounceWithDelay } from "../hooks/debounce";
+  import {
+    appendReconciliationReviewSearchParams,
+    cloneReconciliationReviewSearchState,
+    collectReconciliationReviewFacetOptions,
+    filterReconciliationReviewSearch,
+    hasActiveReconciliationReviewSearch,
+    normaliseReconciliationLabel,
+    paginateReconciliationReviewItems,
+    parseReconciliationReviewSearchState,
+    reconciliationKindLabel,
+    type ReconciliationReviewSearchState,
+  } from "../lib/reconciliation-review-search-state";
+  import { useNavigation } from "../router/router";
+  import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
 
-  type Candidate = {
-    id: string;
-    kind: "overlap" | "existing" | "transfer";
-    confidence: "high" | "possible";
-    evidence: { kind: string; summary: string }[];
-    recommendedCanonicalId?: string;
-  };
+  const PAGE_SIZES = [25, 50, 100];
 
-  type Member = {
-    observation: {
-      id: string;
-      origin: "proposal" | "ledger";
-      sourceAccount: string;
-      bookedAt: string;
-      amount: string;
-      currency: string;
-      merchant?: string;
-      payee?: string;
-      narration?: string;
-      sourceId?: string;
-    };
-  };
-
-  type Item = {
-    candidate: Candidate;
-    members: Member[];
-    decision?: {
-      state: "confirmed" | "dismissed";
-      canonicalObservationId?: string;
-    };
-  };
-
-  type Review = { candidates: Item[] };
+  type Review = { candidates: ReconciliationReviewItem[] };
 
   let {
     projectId,
@@ -48,11 +41,66 @@
   } = $props();
 
   let review = $state<Review | undefined>(undefined);
+  let reviewLoaded = $state(false);
   let error = $state("");
   let busyCandidateId = $state("");
   let loadedKey = $state("");
+  let filtersExpanded = $state(false);
+  let searchState = $state<ReconciliationReviewSearchState>(
+    cloneReconciliationReviewSearchState(),
+  );
+  let lastSearchSignature = $state("");
 
-  function memberLabel(member: Member) {
+  const { activeRoute, router } = useNavigation();
+  const candidates = $derived(review?.candidates ?? []);
+  const activeSearch = $derived(
+    hasActiveReconciliationReviewSearch(searchState),
+  );
+  const facetOptions = $derived(
+    collectReconciliationReviewFacetOptions(candidates),
+  );
+  const accountOptions = $derived<FilterCommandOption[]>(
+    facetOptions.accounts.map((value) => ({ value, label: value })),
+  );
+  const sourceOptions = $derived<FilterCommandOption[]>(
+    facetOptions.sources.map((value) => ({ value, label: value })),
+  );
+  const yearOptions = $derived<FilterCommandOption[]>(
+    facetOptions.years.map((value) => ({ value, label: value })),
+  );
+  const currencyOptions = $derived<FilterCommandOption[]>(
+    facetOptions.currencies.map((value) => ({ value, label: value })),
+  );
+  const kindOptions = $derived<FilterCommandOption[]>(
+    facetOptions.kinds.map((value) => ({
+      value,
+      label: reconciliationKindLabel(value),
+    })),
+  );
+  const confidenceOptions = $derived<FilterCommandOption[]>(
+    facetOptions.confidence.map((value) => ({
+      value,
+      label: normaliseReconciliationLabel(value),
+    })),
+  );
+  const matchedCandidates = $derived(
+    filterReconciliationReviewSearch(candidates, searchState),
+  );
+  const pageSize = $derived(
+    PAGE_SIZES.includes(Number($activeRoute?.query?.reconcilePageSize))
+      ? Number($activeRoute?.query?.reconcilePageSize)
+      : 50,
+  );
+  const pages = $derived(
+    paginateReconciliationReviewItems(matchedCandidates, pageSize),
+  );
+  const requestedPage = $derived(
+    Math.max(1, Number($activeRoute?.query?.reconcilePage) || 1),
+  );
+  const page = $derived(Math.min(requestedPage, Math.max(1, pages.length)));
+  const visibleCandidates = $derived(pages[page - 1] ?? []);
+
+  function memberLabel(member: ReconciliationReviewItem["members"][number]) {
     const observation = member.observation;
     return (
       observation.merchant ??
@@ -62,29 +110,103 @@
     );
   }
 
-  function kindLabel(kind: Candidate["kind"]) {
-    if (kind === "overlap") return "Same-account overlap";
-    if (kind === "existing") return "Already in ledger";
-    return "Account transfer";
+  function memberInitial(member: ReconciliationReviewItem["members"][number]) {
+    return memberLabel(member).slice(0, 1).toUpperCase() || "?";
+  }
+
+  function memberDetail(member: ReconciliationReviewItem["members"][number]) {
+    const observation = member.observation;
+    return [
+      observation.origin === "ledger"
+        ? "Existing ledger"
+        : (observation.sourceId ?? "Incoming source"),
+      observation.sourceAccount,
+      observation.bookedAt,
+    ].join(" · ");
+  }
+
+  function updateRoute(values: Record<string, string | undefined>) {
+    const query = new URLSearchParams($activeRoute?.query ?? {});
+    for (const [key, value] of Object.entries(values)) {
+      if (value) query.set(key, value);
+      else query.delete(key);
+    }
+    const next = query.toString();
+    router.updateState(next ? `?${next}` : "?");
+  }
+
+  function searchSignature(query: Record<string, string>) {
+    const params = new URLSearchParams(query);
+    return [
+      params.get("reconcileQ") ?? "",
+      params.get("reconcileAccounts") ?? "",
+      params.get("reconcileSources") ?? "",
+      params.get("reconcileYears") ?? "",
+      params.get("reconcileCurrency") ?? "",
+      params.get("reconcileKinds") ?? "",
+      params.get("reconcileConfidence") ?? "",
+    ].join("\0");
+  }
+
+  function applySearchState(
+    next: ReconciliationReviewSearchState,
+    resetPage = true,
+  ) {
+    searchState = cloneReconciliationReviewSearchState(next);
+    const params = new URLSearchParams($activeRoute?.query ?? {});
+    appendReconciliationReviewSearchParams(params, next);
+    if (resetPage) params.set("reconcilePage", "1");
+    lastSearchSignature = searchSignature(Object.fromEntries(params));
+    const search = params.toString();
+    router.updateState(search ? `?${search}` : "?");
+  }
+
+  const [scheduleSearchSync, delaySearchSync] = debounceWithDelay(
+    (next: ReconciliationReviewSearchState) => applySearchState(next),
+    250,
+  );
+
+  function onSearchQueryInput(value: string) {
+    searchState = { ...searchState, query: value };
+    scheduleSearchSync(searchState);
+    delaySearchSync();
+  }
+
+  function setSearchFacet<K extends keyof ReconciliationReviewSearchState>(
+    key: K,
+    value: ReconciliationReviewSearchState[K],
+  ) {
+    applySearchState({ ...searchState, [key]: value });
+  }
+
+  function clearSearchQuery() {
+    applySearchState({ ...searchState, query: "" });
+  }
+
+  function clearAllSearch() {
+    applySearchState(cloneReconciliationReviewSearchState());
   }
 
   async function load() {
     if (!projectId) {
       review = undefined;
+      reviewLoaded = false;
       return;
     }
+    error = "";
     try {
       review = await ingestionJson<Review>(
         ingestionPath(projectId, "/reconciliation"),
       );
-      error = "";
     } catch (cause) {
       error = cause instanceof Error ? cause.message : String(cause);
+    } finally {
+      reviewLoaded = true;
     }
   }
 
   async function decide(
-    item: Item,
+    item: ReconciliationReviewItem,
     state: "confirmed" | "dismissed",
     canonicalObservationId?: string,
   ) {
@@ -111,7 +233,7 @@
     }
   }
 
-  async function apply(item: Item) {
+  async function apply(item: ReconciliationReviewItem) {
     if (!projectId || busyCandidateId) return;
     busyCandidateId = item.candidate.id;
     try {
@@ -137,115 +259,347 @@
     loadedKey = key;
     void load();
   });
+
+  $effect(() => {
+    const signature = searchSignature($activeRoute?.query ?? {});
+    if (signature === lastSearchSignature) return;
+    lastSearchSignature = signature;
+    searchState = parseReconciliationReviewSearchState(
+      $activeRoute?.query ?? {},
+    );
+  });
 </script>
 
-{#if review?.candidates.length}
-  <section class="rounded-xl border bg-card p-4" data-ingestion-reconciliation>
-    <div class="mb-3 flex items-baseline justify-between gap-3">
-      <div>
-        <h2 class="text-base font-semibold">Reconcile matches</h2>
-        <p class="text-sm text-muted-foreground">
-          Confirm a match before it changes the ledger.
-        </p>
-      </div>
-      <span
-        class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums"
-      >
-        {review.candidates.length}
-      </span>
+{#if candidates.length}
+  <div
+    class="ingestion-page-search"
+    style="--cv-search-filter-justify: stretch; --cv-search-filter-content-justify: stretch; --cv-search-filter-max-width: 100%;"
+  >
+    <SearchFilterBar
+      inputMode="plain"
+      value={searchState.query}
+      placeholder="Search reconciliation matches…"
+      ariaLabel="Search reconciliation matches"
+      clearSearchLabel="Clear search"
+      clearAllLabel="Clear all filters"
+      expandFiltersLabel="Expand filter options"
+      collapseFiltersLabel="Collapse filter options"
+      showActiveQueryChip={true}
+      showFilterToggle={true}
+      showClearAll={activeSearch}
+      clearAllDisabled={!activeSearch}
+      bind:filtersExpanded
+      onValueChange={onSearchQueryInput}
+      onClearSearch={clearSearchQuery}
+      onClearAll={clearAllSearch}
+    >
+      {#snippet filters()}
+        <div class="ingestion-page-search__facet-row">
+          <FilterCommandPicker
+            multiple
+            label="Account"
+            values={searchState.accounts}
+            options={accountOptions}
+            placeholder="Filter by account…"
+            onValuesChange={(accounts) => setSearchFacet("accounts", accounts)}
+          />
+          <FilterCommandPicker
+            multiple
+            label="Source"
+            values={searchState.sources}
+            options={sourceOptions}
+            placeholder="Filter by source…"
+            onValuesChange={(sources) => setSearchFacet("sources", sources)}
+          />
+          <FilterCommandPicker
+            multiple
+            label="Reason"
+            values={searchState.kinds}
+            options={kindOptions}
+            placeholder="Filter by reason…"
+            onValuesChange={(kinds) => setSearchFacet("kinds", kinds)}
+          />
+          <FilterCommandPicker
+            multiple
+            label="Confidence"
+            values={searchState.confidence}
+            options={confidenceOptions}
+            placeholder="Filter by confidence…"
+            onValuesChange={(confidence) =>
+              setSearchFacet("confidence", confidence)}
+          />
+          <FilterCommandPicker
+            multiple
+            label="Year"
+            values={searchState.years}
+            options={yearOptions}
+            placeholder="Filter by year…"
+            onValuesChange={(years) => setSearchFacet("years", years)}
+          />
+          <FilterCommandPicker
+            multiple
+            label="Currency"
+            values={searchState.currencies}
+            options={currencyOptions}
+            placeholder="Filter by currency…"
+            onValuesChange={(currencies) =>
+              setSearchFacet("currencies", currencies)}
+          />
+        </div>
+      {/snippet}
+      {#snippet collapsedFilters()}
+        <div class="ingestion-page-search__facet-row">
+          {#if searchState.accounts.length}
+            <FilterCommandPicker
+              multiple
+              label="Account"
+              values={searchState.accounts}
+              options={accountOptions}
+              onValuesChange={(accounts) =>
+                setSearchFacet("accounts", accounts)}
+            />
+          {/if}
+          {#if searchState.sources.length}
+            <FilterCommandPicker
+              multiple
+              label="Source"
+              values={searchState.sources}
+              options={sourceOptions}
+              onValuesChange={(sources) => setSearchFacet("sources", sources)}
+            />
+          {/if}
+          {#if searchState.kinds.length}
+            <FilterCommandPicker
+              multiple
+              label="Reason"
+              values={searchState.kinds}
+              options={kindOptions}
+              onValuesChange={(kinds) => setSearchFacet("kinds", kinds)}
+            />
+          {/if}
+          {#if searchState.confidence.length}
+            <FilterCommandPicker
+              multiple
+              label="Confidence"
+              values={searchState.confidence}
+              options={confidenceOptions}
+              onValuesChange={(confidence) =>
+                setSearchFacet("confidence", confidence)}
+            />
+          {/if}
+          {#if searchState.years.length}
+            <FilterCommandPicker
+              multiple
+              label="Year"
+              values={searchState.years}
+              options={yearOptions}
+              onValuesChange={(years) => setSearchFacet("years", years)}
+            />
+          {/if}
+          {#if searchState.currencies.length}
+            <FilterCommandPicker
+              multiple
+              label="Currency"
+              values={searchState.currencies}
+              options={currencyOptions}
+              onValuesChange={(currencies) =>
+                setSearchFacet("currencies", currencies)}
+            />
+          {/if}
+        </div>
+      {/snippet}
+    </SearchFilterBar>
+  </div>
+
+  {#if activeSearch && !matchedCandidates.length}
+    <div
+      class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+    >
+      No reconciliation matches this search.
+    </div>
+  {:else if matchedCandidates.length}
+    <div
+      class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+    >
+      <span>Match</span>
+      <span class="text-right">Actions</span>
     </div>
 
-    <div class="grid gap-3">
-      {#each review.candidates as item (item.candidate.id)}
+    <div class="flex flex-col gap-3" data-ingestion-reconciliation>
+      {#each visibleCandidates as item (item.candidate.id)}
         {@const busy = busyCandidateId === item.candidate.id}
         {@const chosen =
           item.decision?.canonicalObservationId ??
           item.candidate.recommendedCanonicalId}
-        <article class="rounded-lg border bg-muted/30 p-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold">
-                {kindLabel(item.candidate.kind)}
-              </span>
-              <span
-                class="rounded-full px-2 py-0.5 text-xs font-medium {item
-                  .candidate.confidence === 'high'
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'}"
-                >{item.candidate.confidence}</span
-              >
+        <section class="overflow-hidden rounded-2xl bg-muted/80">
+          <div
+            class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 px-5 py-4"
+          >
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="text-sm font-semibold tracking-wide text-foreground">
+                  {reconciliationKindLabel(item.candidate.kind)}
+                </h2>
+                <Badge variant="secondary"
+                  >{normaliseReconciliationLabel(
+                    item.candidate.confidence,
+                  )}</Badge
+                >
+              </div>
+              <p class="mt-1 text-xs text-muted-foreground">
+                {item.candidate.evidence
+                  .map((evidence) => evidence.summary)
+                  .join(" · ")}
+              </p>
             </div>
-            <span class="text-xs text-muted-foreground">
-              {item.candidate.evidence
-                .map((evidence) => evidence.summary)
-                .join(" · ")}
-            </span>
+            <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              {#if item.decision?.state === "confirmed"}
+                <Button
+                  size="sm"
+                  disabled={busy}
+                  onclick={() => void apply(item)}>Apply safely</Button
+                >
+              {:else}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onclick={() => void decide(item, "dismissed")}
+                  >Not a match</Button
+                >
+                {#if chosen}
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onclick={() => void decide(item, "confirmed", chosen)}
+                    >Confirm match</Button
+                  >
+                {:else}
+                  {#each item.members as member (member.observation.id)}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onclick={() =>
+                        void decide(item, "confirmed", member.observation.id)}
+                      >Use {member.observation.origin}</Button
+                    >
+                  {/each}
+                {/if}
+              {/if}
+            </div>
           </div>
 
-          <div class="mt-3 grid gap-2">
-            {#each item.members as member (member.observation.id)}
+          <div
+            class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+          >
+            {#each item.members as member, memberIndex (member.observation.id)}
               <div
-                class="flex flex-wrap items-center justify-between gap-2 rounded-md bg-background px-3 py-2 text-sm"
+                class:rounded-b-xl={memberIndex === item.members.length - 1}
+                class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 last:border-b-0"
               >
+                <div
+                  class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                  aria-hidden="true"
+                >
+                  {memberInitial(member)}
+                </div>
                 <div class="min-w-0">
-                  <div class="truncate font-medium">{memberLabel(member)}</div>
-                  <div class="truncate text-xs text-muted-foreground">
-                    {member.observation.origin === "ledger"
-                      ? "Existing ledger"
-                      : (member.observation.sourceId ?? "Incoming source")}
-                    · {member.observation.sourceAccount} · {member.observation
-                      .bookedAt}
+                  <div class="truncate text-sm font-semibold">
+                    {memberLabel(member)}
+                  </div>
+                  <div class="mt-1 truncate text-xs text-muted-foreground">
+                    {memberDetail(member)}
                   </div>
                 </div>
-                <span class="font-semibold tabular-nums">
-                  {member.observation.amount}
-                  {member.observation.currency}
+                <span class="text-sm font-semibold tabular-nums">
+                  {member.observation.amount}&nbsp;{member.observation.currency}
                 </span>
               </div>
             {/each}
           </div>
-
-          <div class="mt-3 flex flex-wrap items-center justify-end gap-2">
-            {#if item.decision?.state === "confirmed"}
-              <span class="mr-auto text-xs text-muted-foreground">
-                Confirmed; ready to apply.
-              </span>
-              <Button size="sm" disabled={busy} onclick={() => void apply(item)}
-                >Apply safely</Button
-              >
-            {:else}
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={busy}
-                onclick={() => void decide(item, "dismissed")}
-                >Not a match</Button
-              >
-              {#if chosen}
-                <Button
-                  size="sm"
-                  disabled={busy}
-                  onclick={() => void decide(item, "confirmed", chosen)}
-                  >Confirm match</Button
-                >
-              {:else}
-                {#each item.members as member (member.observation.id)}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy}
-                    onclick={() =>
-                      void decide(item, "confirmed", member.observation.id)}
-                    >Use {member.observation.origin}</Button
-                  >
-                {/each}
-              {/if}
-            {/if}
-          </div>
-        </article>
+        </section>
       {/each}
     </div>
-  </section>
+
+    {#if pages.length > 1}
+      <nav
+        class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+        aria-label="Reconciliation match pages"
+      >
+        <span class="text-sm text-muted-foreground"
+          >Page {page} of {pages.length}</span
+        >
+        <div class="flex items-center gap-2">
+          <label
+            class="text-sm text-muted-foreground"
+            for="reconciliation-review-page-size">Matches per page</label
+          >
+          <select
+            id="reconciliation-review-page-size"
+            class="h-8 rounded-md border bg-background px-2 text-sm"
+            value={pageSize}
+            onchange={(event) =>
+              updateRoute({
+                reconcilePageSize: (event.currentTarget as HTMLSelectElement)
+                  .value,
+                reconcilePage: "1",
+              })}
+          >
+            {#each PAGE_SIZES as size (size)}
+              <option value={size}>{size}</option>
+            {/each}
+          </select>
+          <Button
+            size="icon"
+            variant="outline"
+            aria-label="Previous reconciliation page"
+            disabled={page <= 1}
+            onclick={() =>
+              updateRoute({ reconcilePage: String(Math.max(1, page - 1)) })}
+          >
+            <ChevronsLeft />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            aria-label="Next reconciliation page"
+            disabled={page >= pages.length}
+            onclick={() => updateRoute({ reconcilePage: String(page + 1) })}
+          >
+            <ChevronsRight />
+          </Button>
+        </div>
+      </nav>
+    {/if}
+  {/if}
+{:else if reviewLoaded && !error}
+  <div
+    class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+  >
+    No reconciliation matches are available.
+  </div>
 {:else if error}
   <p class="text-sm text-destructive" role="status">{error}</p>
 {/if}
+
+<style>
+  .ingestion-page-search :global(.cv-search-filter-bar) {
+    padding: 0;
+  }
+
+  .ingestion-page-search :global(.cv-search-filter-bar__search-pill) {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+  }
+
+  .ingestion-page-search__facet-row {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+</style>

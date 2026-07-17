@@ -56,7 +56,7 @@
   const PAGE_SIZES = [25, 50, 100];
   const ALL_CONNECTIONS = "__all__";
 
-  type ReviewFilter = "pending" | "accepted";
+  type ReviewFilter = "pending" | "accepted" | "reconciliation";
 
   type ProposalRow = {
     key: string;
@@ -102,8 +102,13 @@
   const queryRunId = $derived($activeRoute?.query?.runId ?? "");
   const queryProposalId = $derived($activeRoute?.query?.proposalId ?? "");
   const reviewFilter = $derived<ReviewFilter>(
-    $activeRoute?.query?.review === "accepted" ? "accepted" : "pending",
+    $activeRoute?.query?.review === "accepted"
+      ? "accepted"
+      : $activeRoute?.query?.review === "reconciliation"
+        ? "reconciliation"
+        : "pending",
   );
+  const showingReconciliation = $derived(reviewFilter === "reconciliation");
   const selectedSource = $derived(
     sourceId === ALL_CONNECTIONS
       ? undefined
@@ -149,7 +154,11 @@
   const pending = $derived(proposalRows.filter(isPendingRow));
 
   const reviewTabRows = $derived(
-    reviewFilter === "accepted" ? accepted : pending,
+    reviewFilter === "reconciliation"
+      ? []
+      : reviewFilter === "accepted"
+        ? accepted
+        : pending,
   );
 
   const activeSearch = $derived(hasActiveIngestionReviewSearch(searchState));
@@ -406,10 +415,16 @@
   });
 
   function setReviewFilter(value: string | undefined) {
-    if (value !== "pending" && value !== "accepted") return;
+    if (
+      value !== "pending" &&
+      value !== "accepted" &&
+      value !== "reconciliation"
+    ) {
+      return;
+    }
     if (value === reviewFilter) return;
     updateRoute({
-      review: value === "accepted" ? "accepted" : undefined,
+      review: value === "pending" ? undefined : value,
       page: "1",
     });
   }
@@ -1074,14 +1089,6 @@
 
     {#if status}<p class="text-sm text-muted-foreground">{status}</p>{/if}
 
-    {#if !isWeb && project}
-      <IngestionReconciliationPanel
-        projectId={project.project.id}
-        refreshKey={reconciliationRefreshKey}
-        onApplied={() => void refresh()}
-      />
-    {/if}
-
     {#if loading && !activeRuns.length && !isWeb && project}
       <ReviewImportsSkeleton />
     {:else if activeRuns.length}
@@ -1095,7 +1102,7 @@
         <ToggleGroup.Root
           type="single"
           value={reviewFilter}
-          aria-label="Review status filter"
+          aria-label="Review content filter"
           class="!gap-0 self-start rounded-lg bg-muted p-1"
           data-ingestion-review-filter
           onValueChange={setReviewFilter}
@@ -1122,253 +1129,271 @@
               {accepted.length}
             </span>
           </ToggleGroup.Item>
+          <ToggleGroup.Item
+            value="reconciliation"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-3 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+          >
+            Reconcile matches
+          </ToggleGroup.Item>
         </ToggleGroup.Root>
       </div>
 
-      <div
-        class="ingestion-page-search"
-        style="--cv-search-filter-justify: stretch; --cv-search-filter-content-justify: stretch; --cv-search-filter-max-width: 100%;"
-      >
-        <SearchFilterBar
-          inputMode="plain"
-          value={searchState.query}
-          placeholder="Search proposals…"
-          ariaLabel="Search proposals"
-          clearSearchLabel="Clear search"
-          clearAllLabel="Clear all filters"
-          expandFiltersLabel="Expand filter options"
-          collapseFiltersLabel="Collapse filter options"
-          showActiveQueryChip={true}
-          showFilterToggle={true}
-          showClearAll={activeSearch}
-          clearAllDisabled={!activeSearch}
-          bind:filtersExpanded
-          onValueChange={onSearchQueryInput}
-          onClearSearch={clearSearchQuery}
-          onClearAll={clearAllSearch}
+      {#if !showingReconciliation}
+        <div
+          class="ingestion-page-search"
+          style="--cv-search-filter-justify: stretch; --cv-search-filter-content-justify: stretch; --cv-search-filter-max-width: 100%;"
         >
-          {#snippet filters()}
-            <div class="ingestion-page-search__facet-row">
-              <FilterCommandPicker
-                multiple
-                label="Account"
-                values={searchState.accounts}
-                options={accountOptions}
-                placeholder="Filter by account…"
-                onValuesChange={(accounts) =>
-                  setSearchFacet("accounts", accounts)}
-              />
-              <FilterCommandPicker
-                multiple
-                label="Merchant"
-                values={searchState.merchantStatuses}
-                options={merchantStatusOptions}
-                placeholder="Filter by merchant status…"
-                onValuesChange={(merchantStatuses) =>
-                  setSearchFacet("merchantStatuses", merchantStatuses)}
-              />
-              <FilterCommandPicker
-                multiple
-                label="Year"
-                values={searchState.years}
-                options={yearOptions}
-                placeholder="Filter by year…"
-                onValuesChange={(years) => setSearchFacet("years", years)}
-              />
-              <FilterCommandPicker
-                multiple
-                label="Currency"
-                values={searchState.currencies}
-                options={currencyOptions}
-                placeholder="Filter by currency…"
-                onValuesChange={(currencies) =>
-                  setSearchFacet("currencies", currencies)}
-              />
-            </div>
-          {/snippet}
-          {#snippet collapsedFilters()}
-            <div class="ingestion-page-search__facet-row">
-              {#if searchState.accounts.length > 0}
+          <SearchFilterBar
+            inputMode="plain"
+            value={searchState.query}
+            placeholder="Search proposals…"
+            ariaLabel="Search proposals"
+            clearSearchLabel="Clear search"
+            clearAllLabel="Clear all filters"
+            expandFiltersLabel="Expand filter options"
+            collapseFiltersLabel="Collapse filter options"
+            showActiveQueryChip={true}
+            showFilterToggle={true}
+            showClearAll={activeSearch}
+            clearAllDisabled={!activeSearch}
+            bind:filtersExpanded
+            onValueChange={onSearchQueryInput}
+            onClearSearch={clearSearchQuery}
+            onClearAll={clearAllSearch}
+          >
+            {#snippet filters()}
+              <div class="ingestion-page-search__facet-row">
                 <FilterCommandPicker
                   multiple
                   label="Account"
                   values={searchState.accounts}
                   options={accountOptions}
+                  placeholder="Filter by account…"
                   onValuesChange={(accounts) =>
                     setSearchFacet("accounts", accounts)}
                 />
-              {/if}
-              {#if searchState.merchantStatuses.length > 0}
                 <FilterCommandPicker
                   multiple
                   label="Merchant"
                   values={searchState.merchantStatuses}
                   options={merchantStatusOptions}
+                  placeholder="Filter by merchant status…"
                   onValuesChange={(merchantStatuses) =>
                     setSearchFacet("merchantStatuses", merchantStatuses)}
                 />
-              {/if}
-              {#if searchState.years.length > 0}
                 <FilterCommandPicker
                   multiple
                   label="Year"
                   values={searchState.years}
                   options={yearOptions}
+                  placeholder="Filter by year…"
                   onValuesChange={(years) => setSearchFacet("years", years)}
                 />
-              {/if}
-              {#if searchState.currencies.length > 0}
                 <FilterCommandPicker
                   multiple
                   label="Currency"
                   values={searchState.currencies}
                   options={currencyOptions}
+                  placeholder="Filter by currency…"
                   onValuesChange={(currencies) =>
                     setSearchFacet("currencies", currencies)}
                 />
-              {/if}
-            </div>
-          {/snippet}
-        </SearchFilterBar>
-      </div>
-
-      <div
-        class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-      >
-        <span>Date</span>
-        <span class="text-right">Amount</span>
-      </div>
-
-      {#if !dateGroups.length}
-        <div
-          class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-        >
-          {#if activeSearch}
-            No proposals match this search.
-          {:else if reviewFilter === "accepted"}
-            No accepted proposals yet. Review pending items and set an account
-            first.
-          {:else if pending.length === 0 && accepted.length > 0}
-            All reviewable proposals are accepted.
-          {:else}
-            No proposals pending review in this import run.
-          {/if}
+              </div>
+            {/snippet}
+            {#snippet collapsedFilters()}
+              <div class="ingestion-page-search__facet-row">
+                {#if searchState.accounts.length > 0}
+                  <FilterCommandPicker
+                    multiple
+                    label="Account"
+                    values={searchState.accounts}
+                    options={accountOptions}
+                    onValuesChange={(accounts) =>
+                      setSearchFacet("accounts", accounts)}
+                  />
+                {/if}
+                {#if searchState.merchantStatuses.length > 0}
+                  <FilterCommandPicker
+                    multiple
+                    label="Merchant"
+                    values={searchState.merchantStatuses}
+                    options={merchantStatusOptions}
+                    onValuesChange={(merchantStatuses) =>
+                      setSearchFacet("merchantStatuses", merchantStatuses)}
+                  />
+                {/if}
+                {#if searchState.years.length > 0}
+                  <FilterCommandPicker
+                    multiple
+                    label="Year"
+                    values={searchState.years}
+                    options={yearOptions}
+                    onValuesChange={(years) => setSearchFacet("years", years)}
+                  />
+                {/if}
+                {#if searchState.currencies.length > 0}
+                  <FilterCommandPicker
+                    multiple
+                    label="Currency"
+                    values={searchState.currencies}
+                    options={currencyOptions}
+                    onValuesChange={(currencies) =>
+                      setSearchFacet("currencies", currencies)}
+                  />
+                {/if}
+              </div>
+            {/snippet}
+          </SearchFilterBar>
         </div>
       {/if}
 
-      {#each visibleGroups as group (group.key)}
-        {@const expanded = expandedGroups.has(group.key)}
-        {@const groupId = `ingestion-group-${group.key}`}
-        {@const summaryId = `ingestion-summary-${group.key}`}
-        <section
-          class="overflow-hidden rounded-2xl bg-muted/80"
-          aria-labelledby={groupId}
+      {#if showingReconciliation}
+        <IngestionReconciliationPanel
+          projectId={project?.project.id}
+          refreshKey={reconciliationRefreshKey}
+          onApplied={() => void refresh()}
+        />
+      {:else}
+        <div
+          class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
+          <span>Date</span>
+          <span class="text-right">Amount</span>
+        </div>
+
+        {#if !dateGroups.length}
           <div
-            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-4"
+            class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
           >
-            <button
-              type="button"
-              class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
-              aria-expanded={expanded}
-              aria-controls={summaryId}
-              aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
-              onclick={() => toggleSummary(group.key)}
-            >
-              <span
-                id={groupId}
-                role="heading"
-                aria-level="2"
-                class="truncate text-sm font-semibold tracking-wide text-foreground"
-              >
-                {group.label}
-                <span class="ml-2 text-muted-foreground"
-                  >· {group.rows.length}</span
-                >
-              </span>
-            </button>
-            <button
-              type="button"
-              class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              aria-expanded={expanded}
-              aria-controls={summaryId}
-              aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
-              onclick={() => toggleSummary(group.key)}
-            >
-              {#if expanded}
-                <ChevronUp class="size-4" />
-              {:else}
-                <ChevronDown class="size-4" />
-              {/if}
-            </button>
+            {#if activeSearch}
+              No proposals match this search.
+            {:else if reviewFilter === "accepted"}
+              No accepted proposals yet. Review pending items and set an account
+              first.
+            {:else if pending.length === 0 && accepted.length > 0}
+              All reviewable proposals are accepted.
+            {:else}
+              No proposals pending review in this import run.
+            {/if}
           </div>
-
-          {#if expanded}
-            <div
-              id={summaryId}
-              class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+        {:else}
+          {#each visibleGroups as group (group.key)}
+            {@const expanded = expandedGroups.has(group.key)}
+            {@const groupId = `ingestion-group-${group.key}`}
+            {@const summaryId = `ingestion-summary-${group.key}`}
+            <section
+              class="overflow-hidden rounded-2xl bg-muted/80"
+              aria-labelledby={groupId}
             >
-              {#each group.rows as row, index (row.key)}
-                {@const logo = merchantLogo(row.proposal)}
-                <div
-                  role="button"
-                  tabindex="0"
-                  class:rounded-b-xl={index === group.rows.length - 1}
-                  class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label={`Review ${rowTitle(row.proposal)}`}
-                  onclick={() => openRow(row)}
-                  onkeydown={(event) => handleRowKeydown(event, row)}
+              <div
+                class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-4"
+              >
+                <button
+                  type="button"
+                  class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-expanded={expanded}
+                  aria-controls={summaryId}
+                  aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
+                  onclick={() => toggleSummary(group.key)}
                 >
-                  {#if logo && !failedLogoIds.has(row.proposal.id)}
-                    <img
-                      class="size-10 rounded-full border object-contain"
-                      src={logo}
-                      alt=""
-                      onerror={() => markLogoFailed(row.proposal.id)}
-                    />
-                  {:else}
-                    <div
-                      class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
-                      aria-hidden="true"
+                  <span
+                    id={groupId}
+                    role="heading"
+                    aria-level="2"
+                    class="truncate text-sm font-semibold tracking-wide text-foreground"
+                  >
+                    {group.label}
+                    <span class="ml-2 text-muted-foreground"
+                      >· {group.rows.length}</span
                     >
-                      {rowInitial(row.proposal)}
-                    </div>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  aria-expanded={expanded}
+                  aria-controls={summaryId}
+                  aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
+                  onclick={() => toggleSummary(group.key)}
+                >
+                  {#if expanded}
+                    <ChevronUp class="size-4" />
+                  {:else}
+                    <ChevronDown class="size-4" />
                   {/if}
-                  <div class="min-w-0">
-                    <div class="truncate text-sm font-semibold">
-                      {rowTitle(row.proposal)}
-                    </div>
-                    <div class="mt-1 truncate text-xs text-muted-foreground">
-                      {rowDetail(row.proposal)}
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-1">
-                    {#if reviewFilter === "accepted"}
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        class="size-8 text-muted-foreground"
-                        aria-label={`Move ${rowTitle(row.proposal)} to pending review`}
-                        title="Move to pending review"
-                        disabled={loading || syncing}
-                        onclick={(event) => void unacceptRow(row, event)}
-                      >
-                        <Undo2 class="size-4" />
-                      </Button>
-                    {/if}
-                    <span class="text-sm font-semibold tabular-nums">
-                      {rowAmount(row.proposal)}
-                    </span>
-                  </div>
-                </div>
-              {/each}
-            </div>
-          {/if}
-        </section>
-      {/each}
+                </button>
+              </div>
 
-      {#if pages.length > 1}
+              {#if expanded}
+                <div
+                  id={summaryId}
+                  class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+                >
+                  {#each group.rows as row, index (row.key)}
+                    {@const logo = merchantLogo(row.proposal)}
+                    <div
+                      role="button"
+                      tabindex="0"
+                      class:rounded-b-xl={index === group.rows.length - 1}
+                      class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={`Review ${rowTitle(row.proposal)}`}
+                      onclick={() => openRow(row)}
+                      onkeydown={(event) => handleRowKeydown(event, row)}
+                    >
+                      {#if logo && !failedLogoIds.has(row.proposal.id)}
+                        <img
+                          class="size-10 rounded-full border object-contain"
+                          src={logo}
+                          alt=""
+                          onerror={() => markLogoFailed(row.proposal.id)}
+                        />
+                      {:else}
+                        <div
+                          class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                          aria-hidden="true"
+                        >
+                          {rowInitial(row.proposal)}
+                        </div>
+                      {/if}
+                      <div class="min-w-0">
+                        <div class="truncate text-sm font-semibold">
+                          {rowTitle(row.proposal)}
+                        </div>
+                        <div
+                          class="mt-1 truncate text-xs text-muted-foreground"
+                        >
+                          {rowDetail(row.proposal)}
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        {#if reviewFilter === "accepted"}
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            class="size-8 text-muted-foreground"
+                            aria-label={`Move ${rowTitle(row.proposal)} to pending review`}
+                            title="Move to pending review"
+                            disabled={loading || syncing}
+                            onclick={(event) => void unacceptRow(row, event)}
+                          >
+                            <Undo2 class="size-4" />
+                          </Button>
+                        {/if}
+                        <span class="text-sm font-semibold tabular-nums">
+                          {rowAmount(row.proposal)}
+                        </span>
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </section>
+          {/each}
+        {/if}
+      {/if}
+
+      {#if !showingReconciliation && pages.length > 1}
         <nav
           class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
           aria-label="Review import pages"
