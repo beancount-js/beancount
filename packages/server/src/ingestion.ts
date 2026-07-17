@@ -56,10 +56,6 @@ import {
 } from "./ingestion-migrate";
 import type { Directive } from "@beancount-js/beancount";
 import { isValidDomain } from "./brandfetch";
-import {
-  BrandfetchLogoService,
-  type BrandfetchLogoDelivery,
-} from "./brandfetch-logo";
 import { FilesystemMerchantStore, type ProjectRootResolver } from "./merchant";
 import { projectIngestionRoot } from "./paths";
 import {
@@ -81,10 +77,6 @@ export interface IngestionReconciliationConfig {
 export interface BrandfetchEnrichmentConfig {
   enabled: boolean;
   clientId?: string;
-  /** Store validated logo files beside merchant profiles, or proxy only. */
-  delivery?: BrandfetchLogoDelivery;
-  /** Lazy local-cache refresh interval. */
-  refreshDays?: number;
   /** Request 120px logos instead of the default 40px variant. */
   highResolution?: boolean;
 }
@@ -338,24 +330,9 @@ export function validateBrandfetchConfig(
   }
   // Kept for compatibility with callers that still pass a country hint.
   void countryCode;
-  const legacy = value as BrandfetchEnrichmentConfig & {
-    assetMode?: unknown;
-    ttlDays?: unknown;
-  };
-  const delivery =
-    legacy.delivery === "local-cache" || legacy.delivery === "server-proxy"
-      ? legacy.delivery
-      : legacy.assetMode === "hotlink"
-        ? "server-proxy"
-        : "local-cache";
-  const refreshDays =
-    legacy.refreshDays ??
-    (typeof legacy.ttlDays === "number" ? legacy.ttlDays : 30);
-  if (!Number.isInteger(refreshDays) || refreshDays < 1 || refreshDays > 365) {
-    throw new Error(
-      "brandfetch.refreshDays must be a whole number from 1 to 365.",
-    );
-  }
+  // Discard retired server-fetch settings. Logo API requests now redirect from
+  // an internal URL to the browser, which is required for Brandfetch's
+  // referrer-based delivery model. Matching local assets stay supported.
   if (
     value.highResolution !== undefined &&
     typeof value.highResolution !== "boolean"
@@ -365,8 +342,6 @@ export function validateBrandfetchConfig(
   return {
     enabled: value.enabled,
     clientId: value.clientId?.trim() || undefined,
-    delivery,
-    refreshDays,
     highResolution: value.highResolution === true,
   } satisfies BrandfetchEnrichmentConfig;
 }
@@ -651,14 +626,12 @@ export type FilesystemIngestionStoreOptions = {
 /** Local persistence for configurations and actionable, normalized runs. */
 export class FilesystemIngestionStore {
   readonly merchants: FilesystemMerchantStore;
-  readonly logos: BrandfetchLogoService;
   private readonly resolveProjectRoot: ProjectRootResolver;
   private readonly runs: FilesystemIngestionRunArchive;
 
   constructor(options: FilesystemIngestionStoreOptions) {
     this.resolveProjectRoot = options.resolveProjectRoot;
     this.merchants = new FilesystemMerchantStore(options.resolveProjectRoot);
-    this.logos = new BrandfetchLogoService(this.merchants);
     this.runs = new FilesystemIngestionRunArchive(options.resolveProjectRoot);
   }
 

@@ -13,7 +13,6 @@
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import {
     brandSettingsForm,
-    brandSettingsLocalCacheForm,
     brandSettingsToggleForm,
   } from "../ingestion/brand-form-config";
   import {
@@ -180,8 +179,8 @@
       <div class="flex min-w-0 flex-col gap-6">
         <p class="text-sm text-muted-foreground">
           Brandfetch Logo API adds logos for merchants with a known domain.
-          Local cache keeps validated images in this project; server proxy
-          fetches them through the app without storing a file.
+          Stored project assets are served locally; other logos redirect through
+          the browser so Brandfetch can validate the originating site.
         </p>
 
         <article
@@ -204,16 +203,6 @@
                 embedded
                 onChange={updateConfig}
               />
-              {#if config.brandfetch.delivery !== "server-proxy"}
-                <StructuredForm
-                  value={config}
-                  config={brandSettingsLocalCacheForm}
-                  context={formContext}
-                  {issues}
-                  embedded
-                  onChange={updateConfig}
-                />
-              {/if}
             {/if}
           </div>
           <p class="mt-3 text-sm text-muted-foreground">

@@ -721,15 +721,16 @@ describe("FilesystemIngestionStore", () => {
 
     await store.writeConfig("project", legacy);
 
-    await expect(store.readConfig("project")).resolves.toMatchObject({
+    const normalized = await store.readConfig("project");
+    expect(normalized).toMatchObject({
       brandfetch: {
         enabled: true,
         clientId: "env:BRANDFETCH_CLIENT_ID",
-        delivery: "local-cache",
-        refreshDays: 14,
         highResolution: false,
       },
     });
+    expect(normalized.brandfetch).not.toHaveProperty("delivery");
+    expect(normalized.brandfetch).not.toHaveProperty("refreshDays");
     const persisted = await readFile(
       ingestionPath(directory, "project", "sources.json"),
       "utf8",
@@ -765,10 +766,12 @@ describe("FilesystemIngestionStore", () => {
     expect(brandfetchDomainLogoUrl("project with spaces", "Tesco.COM")).toBe(
       "/api/projects/project%20with%20spaces/ingestion/logos/tesco.com",
     );
-    expect(`${merchantUrl} ${brandfetchDomainLogoUrl("project", "tesco.com")}`)
-      .not.toContain("brandfetch.io");
-    expect(`${merchantUrl} ${brandfetchDomainLogoUrl("project", "tesco.com")}`)
-      .not.toContain("private-client-id");
+    expect(
+      `${merchantUrl} ${brandfetchDomainLogoUrl("project", "tesco.com")}`,
+    ).not.toContain("brandfetch.io");
+    expect(
+      `${merchantUrl} ${brandfetchDomainLogoUrl("project", "tesco.com")}`,
+    ).not.toContain("private-client-id");
   });
 
   test("auto-persists an enriched suggested merchant on accept", async () => {

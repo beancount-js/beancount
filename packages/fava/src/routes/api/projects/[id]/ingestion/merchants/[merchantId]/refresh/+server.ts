@@ -9,6 +9,11 @@ function message(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function reloadUrl(url: string | undefined) {
+  if (!url) return undefined;
+  return `${url}${url.includes("?") ? "&" : "?"}reload=${Date.now()}`;
+}
+
 export async function POST({
   params,
 }: {
@@ -37,29 +42,22 @@ export async function POST({
         { error: "This merchant has no confirmed domain." },
         { status: 400 },
       );
-    await store.logos.merchantLogo({
-      project: params.id,
-      merchantId: merchant.merchantId,
-      domain: merchant.domain,
-      clientId: runtime.clientId,
-      force: true,
-      settings: {
-        delivery: brandfetch.delivery ?? "local-cache",
-        refreshDays: brandfetch.refreshDays ?? 30,
-        highResolution: brandfetch.highResolution === true,
+    const logoUrl = merchantLogoUrlFor(params.id, merchant, {
+      enabled: true,
+      brandfetch: {
+        ...brandfetch,
+        clientId: runtime.clientId,
       },
     });
-    const refreshed = await store.merchants.get(params.id, params.merchantId);
+    if (!logoUrl) {
+      return json(
+        { error: "A browser logo URL could not be created." },
+        { status: 400 },
+      );
+    }
     return json({
-      ...refreshed,
-      logoDelivery: brandfetch.delivery ?? "local-cache",
-      logoUrl: merchantLogoUrlFor(params.id, refreshed, {
-        enabled: true,
-        brandfetch: {
-          ...brandfetch,
-          clientId: runtime.clientId,
-        },
-      }),
+      ...merchant,
+      logoUrl: reloadUrl(logoUrl),
     });
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });

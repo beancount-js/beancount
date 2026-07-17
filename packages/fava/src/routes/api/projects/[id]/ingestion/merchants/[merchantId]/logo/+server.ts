@@ -1,18 +1,9 @@
-import { resolveBrandfetchRuntime } from "@beancount-js/server";
+import {
+  brandfetchLogoUrl,
+  resolveBrandfetchRuntime,
+} from "@beancount-js/server";
 import { serverIngestion } from "$lib/server/ingestion";
 import { logoFallbackResponse } from "$lib/server/logo-fallback";
-
-function settings(brandfetch: {
-  delivery?: "local-cache" | "server-proxy";
-  refreshDays?: number;
-  highResolution?: boolean;
-}) {
-  return {
-    delivery: brandfetch.delivery ?? "local-cache",
-    refreshDays: brandfetch.refreshDays ?? 30,
-    highResolution: brandfetch.highResolution === true,
-  } as const;
-}
 
 function responseBody(bytes: Uint8Array) {
   return bytes.buffer.slice(
@@ -36,6 +27,24 @@ export async function GET({
     if (!merchant.domain) return logoFallbackResponse(fallbackLabel);
     const config = await store.readConfig(params.id);
     const brandfetch = config.brandfetch;
+    const requestedSize = brandfetch?.highResolution ? 120 : 40;
+    const local = await store.merchants.logo(params.id, merchant.merchantId);
+    if (local && local.size === requestedSize) {
+      if (request.headers.get("if-none-match") === `"${local.sha256}"`)
+        return new Response(null, { status: 304 });
+      const refreshIn = Math.max(
+        0,
+        Math.floor((Date.parse(local.expiresAt) - Date.now()) / 1000),
+      );
+      return new Response(responseBody(local.bytes), {
+        headers: {
+          "cache-control": `private, max-age=${Math.min(refreshIn, 86_400)}`,
+          "content-type": local.mediaType,
+          etag: `"${local.sha256}"`,
+          "x-logo-source": "local",
+        },
+      });
+    }
     const runtime =
       brandfetch?.enabled && brandfetch
         ? await resolveBrandfetchRuntime(
@@ -43,26 +52,17 @@ export async function GET({
             await store.projectRoot(params.id),
           )
         : undefined;
-    const logo = await store.logos.merchantLogo({
-      project: params.id,
-      merchantId: merchant.merchantId,
-      domain: merchant.domain,
-      clientId: runtime?.clientId,
-      settings: settings(brandfetch ?? {}),
-    });
-    if (!logo) return new Response(null, { status: 404 });
-    if (request.headers.get("if-none-match") === `"${logo.sha256}"`)
-      return new Response(null, { status: 304 });
-    const refreshIn = Math.max(
-      0,
-      Math.floor((Date.parse(logo.expiresAt) - Date.now()) / 1000),
-    );
-    const maxAge = logo.persisted ? Math.min(refreshIn, 86_400) : 3_600;
-    return new Response(responseBody(logo.bytes), {
+    if (!runtime?.clientId) return logoFallbackResponse(fallbackLabel);
+    return new Response(null, {
+      status: 302,
       headers: {
-        "content-type": logo.mediaType,
-        etag: `"${logo.sha256}"`,
-        "cache-control": `private, max-age=${maxAge}`,
+        "cache-control": "private, no-store",
+        location: brandfetchLogoUrl(
+          merchant.domain,
+          runtime.clientId,
+          requestedSize,
+        ),
+        "x-logo-source": "brandfetch-redirect",
       },
     });
   } catch {

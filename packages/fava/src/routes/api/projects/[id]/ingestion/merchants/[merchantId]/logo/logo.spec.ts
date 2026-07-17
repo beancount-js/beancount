@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
-  merchantLogo: vi.fn(),
+  logo: vi.fn(),
   projectRoot: vi.fn(),
   readConfig: vi.fn(),
   resolveRuntime: vi.fn(),
@@ -10,14 +10,15 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("$lib/server/ingestion", () => ({
   serverIngestion: () => ({
-    merchants: { get: mocks.get },
-    logos: { merchantLogo: mocks.merchantLogo },
+    merchants: { get: mocks.get, logo: mocks.logo },
     projectRoot: mocks.projectRoot,
     readConfig: mocks.readConfig,
   }),
 }));
 
 vi.mock("@beancount-js/server", () => ({
+  brandfetchLogoUrl: (domain: string, clientId: string, size: number) =>
+    `https://cdn.brandfetch.io/${domain}/h/${size}/w/${size}/icon.png?c=${clientId}`,
   resolveBrandfetchRuntime: mocks.resolveRuntime,
 }));
 
@@ -33,14 +34,12 @@ describe("GET /ingestion/merchants/:merchantId/logo", () => {
     mocks.readConfig.mockResolvedValue({
       brandfetch: {
         enabled: true,
-        delivery: "local-cache",
-        refreshDays: 30,
         highResolution: true,
       },
     });
     mocks.projectRoot.mockResolvedValue("/projects/demo");
     mocks.resolveRuntime.mockResolvedValue({ clientId: "private-client-id" });
-    mocks.merchantLogo.mockResolvedValue({
+    mocks.logo.mockResolvedValue({
       bytes: new Uint8Array([1, 2, 3]),
       mediaType: "image/png",
       sha256: "asset-hash",
@@ -50,7 +49,7 @@ describe("GET /ingestion/merchants/:merchantId/logo", () => {
     });
   });
 
-  test("serves the local asset through the app without exposing credentials", async () => {
+  test("serves a persisted local asset through the app", async () => {
     const response = await GET({
       params: { id: "demo", merchantId: "merchant" },
       request: new Request("http://localhost/logo"),
@@ -61,12 +60,7 @@ describe("GET /ingestion/merchants/:merchantId/logo", () => {
     expect(await response.arrayBuffer()).toEqual(
       new Uint8Array([1, 2, 3]).buffer,
     );
-    expect(mocks.merchantLogo).toHaveBeenCalledWith(
-      expect.objectContaining({
-        clientId: "private-client-id",
-        settings: expect.objectContaining({ highResolution: true }),
-      }),
-    );
+    expect(response.headers.get("x-logo-source")).toBe("local");
   });
 
   test("honours the stored ETag after resolving local delivery", async () => {
@@ -80,17 +74,38 @@ describe("GET /ingestion/merchants/:merchantId/logo", () => {
     expect(response.status).toBe(304);
   });
 
-  test("returns an internal fallback image rather than a browser-visible 404", async () => {
-    mocks.merchantLogo.mockRejectedValue(new Error("Logo API unavailable"));
+  test("redirects a missing local asset for the browser to fetch from Brandfetch", async () => {
+    mocks.logo.mockResolvedValue(undefined);
 
     const response = await GET({
       params: { id: "demo", merchantId: "merchant" },
       request: new Request("http://localhost/logo"),
     });
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toContain("image/svg+xml");
-    expect(response.headers.get("x-logo-fallback")).toBe("true");
+    expect(response.status).toBe(302);
+    expect(response.headers.get("x-logo-source")).toBe("brandfetch-redirect");
+    expect(response.headers.get("location")).toBe(
+      "https://cdn.brandfetch.io/starlingbank.com/h/120/w/120/icon.png?c=private-client-id",
+    );
+  });
+
+  test("redirects an incompatible stored resolution to use the selected size", async () => {
+    mocks.logo.mockResolvedValue({
+      bytes: new Uint8Array([1, 2, 3]),
+      mediaType: "image/png",
+      sha256: "asset-hash",
+      size: 40,
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      persisted: true,
+    });
+
+    const response = await GET({
+      params: { id: "demo", merchantId: "merchant" },
+      request: new Request("http://localhost/logo"),
+    });
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toContain("/h/120/w/120/");
   });
 
   test("returns a two-letter SVG avatar without calling Brandfetch when no domain exists", async () => {
@@ -107,6 +122,6 @@ describe("GET /ingestion/merchants/:merchantId/logo", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("x-logo-fallback")).toBe("true");
     await expect(response.text()).resolves.toContain(">LF</text>");
-    expect(mocks.merchantLogo).not.toHaveBeenCalled();
+    expect(mocks.logo).not.toHaveBeenCalled();
   });
 });

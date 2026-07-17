@@ -499,18 +499,6 @@
             {#if isSectionOpen("brand") && (merchant.brand || merchant.domain)}
               <div class="merchant-edit-section-body">
                 <div class="beancount-structured-form">
-                  <FormField
-                    label="Delivery"
-                    as="div"
-                    align="center"
-                    controlId="merchant-brand-delivery"
-                  >
-                    <output id="merchant-brand-delivery"
-                      >{merchant.logoDelivery === "server-proxy"
-                        ? "Server proxy"
-                        : "Local cache"}</output
-                    >
-                  </FormField>
                   {#if merchant.brand}
                     <FormField
                       label="Provider"
@@ -587,7 +575,7 @@
                           data-icon="inline-start"
                           aria-hidden="true"
                         />
-                        Refresh logo
+                        Reload logo
                       </Button>
                     </FormField>
                   {/if}

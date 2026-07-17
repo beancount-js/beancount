@@ -485,12 +485,6 @@ function brandfetchIssues(
       );
     }
   }
-  const refreshDays = brandfetch.refreshDays ?? 30;
-  if (!Number.isInteger(refreshDays) || refreshDays < 1 || refreshDays > 365) {
-    issues.push(
-      field("brandfetch.refreshDays", "Use a whole number from 1 to 365 days."),
-    );
-  }
   return issues;
 }
 
