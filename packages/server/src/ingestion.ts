@@ -1344,11 +1344,15 @@ function safeCodexEnvironment() {
   );
 }
 
-async function runCodex(args: readonly string[], timeoutMs: number) {
+async function runCodex(
+  args: readonly string[],
+  prompt: string,
+  timeoutMs: number,
+) {
   return new Promise<string>((resolve, reject) => {
     const child = spawn("codex", args, {
       env: safeCodexEnvironment(),
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";
     let stderr = "";
@@ -1364,6 +1368,7 @@ async function runCodex(args: readonly string[], timeoutMs: number) {
       if (code === 0) resolve(stdout.trim());
       else reject(new Error(stderr.trim() || "Codex categorizer failed."));
     });
+    child.stdin.end(prompt);
   });
 }
 
@@ -1372,7 +1377,6 @@ function codexExecArgs(options: {
   directory: string;
   schemaPath: string;
   model?: string;
-  prompt: string;
 }) {
   return [
     "exec",
@@ -1395,11 +1399,11 @@ function codexExecArgs(options: {
     "-c",
     "features.multi_agent=false",
     ...(options.model ? ["--model", options.model] : []),
-    options.prompt,
   ];
 }
 
 type CodexResult = {
+  id: string;
   account: string;
   rawScore: number;
   evidenceIds: string[];
@@ -1431,6 +1435,21 @@ type CodexPluginOptions = {
   onDebug?: (call: AiEnrichmentDebugCall) => void;
 };
 
+export type CodexBatchItem<T> = {
+  id: string;
+  context: T;
+};
+
+type CodexBatchResult<T> = {
+  id: string;
+  value: T;
+};
+
+const AI_BATCH_SIZE = 25;
+const AI_BATCH_MAX_BYTES = 128 * 1024;
+const AI_BATCH_CONCURRENCY = 2;
+const AI_BATCH_TIMEOUT_MS = 120_000;
+
 /** Optional, structured Codex categorizer. It receives a bounded transaction and evidence summary only. */
 export class CodexCategorizer implements CategorizerPlugin {
   readonly id = "codex-ai";
@@ -1441,6 +1460,14 @@ export class CodexCategorizer implements CategorizerPlugin {
   async suggest(
     context: CategorizationContext,
   ): Promise<readonly CategorySuggestion[]> {
+    const [result] = await this.suggestBatch([{ id: "single", context }]);
+    return result!.value;
+  }
+
+  async suggestBatch(
+    items: readonly CodexBatchItem<CategorizationContext>[],
+  ): Promise<readonly CodexBatchResult<readonly CategorySuggestion[]>[]> {
+    if (!items.length) return [];
     const directory = await fs.mkdtemp(
       join(tmpdir(), "beancount-js-categorizer-"),
     );
@@ -1448,30 +1475,56 @@ export class CodexCategorizer implements CategorizerPlugin {
     const schema = {
       type: "object",
       properties: {
-        account: { type: "string" },
-        rawScore: { type: "number", minimum: 0, maximum: 1 },
-        evidenceIds: { type: "array", items: { type: "string" } },
+        results: {
+          type: "array",
+          minItems: items.length,
+          maxItems: items.length,
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              account: { type: "string" },
+              rawScore: { type: "number", minimum: 0, maximum: 1 },
+              evidenceIds: { type: "array", items: { type: "string" } },
+            },
+            required: ["id", "account", "rawScore", "evidenceIds"],
+            additionalProperties: false,
+          },
+        },
       },
-      required: ["account", "rawScore", "evidenceIds"],
+      required: ["results"],
       additionalProperties: false,
     };
     let promptPayload: unknown;
     let response: string | undefined;
     let failure: string | undefined;
+    const callId = randomUUID();
+    const startedAt = Date.now();
     try {
       await fs.writeFile(schemaPath, JSON.stringify(schema), { mode: 0o600 });
-      const evidence =
-        context.priorSuggestions?.flatMap(
-          (suggestion) => suggestion.evidence,
-        ) ?? [];
+      const availableAccounts = items[0]!.context.availableAccounts;
+      if (
+        items.some(
+          (item) =>
+            JSON.stringify(item.context.availableAccounts) !==
+            JSON.stringify(availableAccounts),
+        )
+      ) {
+        throw new Error("Codex category batches require matching accounts.");
+      }
       promptPayload = {
-        task: "Categorise one imported Beancount transaction. Choose only from availableAccounts. Use only supplied evidence IDs. Return the JSON schema response and no prose.",
-        transaction: context.transaction,
-        availableAccounts: context.availableAccounts,
-        evidence: evidence.map((item) => ({
-          id: item.id,
-          summary: item.summary,
-          occurrences: item.occurrences,
+        task: "Categorise each imported Beancount transaction independently. Choose only from availableAccounts. Use only the supplied evidence IDs for the matching transaction. Return every input id exactly once and no prose.",
+        availableAccounts,
+        transactions: items.map(({ id, context }) => ({
+          id,
+          transaction: context.transaction,
+          evidence: (context.priorSuggestions?.flatMap(
+            (suggestion) => suggestion.evidence,
+          ) ?? []).map((item) => ({
+            id: item.id,
+            summary: item.summary,
+            occurrences: item.occurrences,
+          })),
         })),
       };
       const prompt = JSON.stringify(promptPayload);
@@ -1480,43 +1533,61 @@ export class CodexCategorizer implements CategorizerPlugin {
           directory,
           schemaPath,
           model: this.options.model,
-          prompt,
         }),
-        this.options.timeoutMs ?? 60_000,
+        prompt,
+        this.options.timeoutMs ?? AI_BATCH_TIMEOUT_MS,
       );
-      const result = JSON.parse(response) as CodexResult;
+      const parsed = JSON.parse(response) as { results?: CodexResult[] };
+      const results = parsed?.results;
       if (
-        !result ||
-        typeof result.account !== "string" ||
-        typeof result.rawScore !== "number" ||
-        !Array.isArray(result.evidenceIds) ||
-        !context.availableAccounts.includes(result.account)
+        !Array.isArray(results) ||
+        results.length !== items.length ||
+        new Set(results.map((result) => result?.id)).size !== items.length ||
+        results.some((result) => !items.some((item) => item.id === result.id))
       ) {
-        throw new Error("Codex returned an invalid category suggestion.");
+        throw new Error("Codex returned invalid category batch identifiers.");
       }
-      const evidenceById = new Map(evidence.map((item) => [item.id, item]));
-      if (result.evidenceIds.some((id) => !evidenceById.has(id))) {
-        throw new Error("Codex referred to evidence that was not provided.");
-      }
-      const matchedEvidence = result.evidenceIds
-        .map((id) => evidenceById.get(id)!)
-        .filter(Boolean) as CategoryEvidence[];
-      return [
-        {
-          account: result.account,
-          rawScore: Math.min(
-            Math.max(result.rawScore, 0),
-            matchedEvidence.length ? 1 : 0.8,
-          ),
-          scoreKind: "ai-advisory",
-          support: matchedEvidence.length,
-          method: "ai",
-          explanation: matchedEvidence.length
-            ? `AI suggested ${result.account}, supported by the displayed ledger evidence.`
-            : `AI suggested ${result.account}; review before accepting.`,
-          evidence: matchedEvidence,
-        },
-      ];
+      return results.map((result) => {
+        const context = items.find((item) => item.id === result.id)!.context;
+        const evidence =
+          context.priorSuggestions?.flatMap(
+            (suggestion) => suggestion.evidence,
+          ) ?? [];
+        if (
+          typeof result.account !== "string" ||
+          typeof result.rawScore !== "number" ||
+          !Array.isArray(result.evidenceIds) ||
+          !context.availableAccounts.includes(result.account)
+        ) {
+          throw new Error("Codex returned an invalid category suggestion.");
+        }
+        const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+        if (result.evidenceIds.some((id) => !evidenceById.has(id))) {
+          throw new Error("Codex referred to evidence that was not provided.");
+        }
+        const matchedEvidence = result.evidenceIds
+          .map((id) => evidenceById.get(id)!)
+          .filter(Boolean) as CategoryEvidence[];
+        return {
+          id: result.id,
+          value: [
+            {
+              account: result.account,
+              rawScore: Math.min(
+                Math.max(result.rawScore, 0),
+                matchedEvidence.length ? 1 : 0.8,
+              ),
+              scoreKind: "ai-advisory" as const,
+              support: matchedEvidence.length,
+              method: "ai" as const,
+              explanation: matchedEvidence.length
+                ? `AI suggested ${result.account}, supported by the displayed ledger evidence.`
+                : `AI suggested ${result.account}; review before accepting.`,
+              evidence: matchedEvidence,
+            },
+          ],
+        } satisfies CodexBatchResult<readonly CategorySuggestion[]>;
+      });
     } catch (error) {
       failure = error instanceof Error ? error.message : String(error);
       throw error;
@@ -1530,6 +1601,15 @@ export class CodexCategorizer implements CategorizerPlugin {
           error: failure,
           ok: !failure,
           at: nowIso(),
+          callId,
+          itemIds: items.map((item) => item.id),
+          batchSize: items.length,
+          durationMs: Date.now() - startedAt,
+          promptBytes:
+            promptPayload === undefined
+              ? undefined
+              : Buffer.byteLength(JSON.stringify(promptPayload)),
+          responseBytes: response === undefined ? undefined : Buffer.byteLength(response),
         });
       }
       await fs.rm(directory, { recursive: true, force: true });
@@ -1658,6 +1738,7 @@ class ExistingDomainMerchantResolver implements MerchantResolverPlugin {
 }
 
 type CodexMerchantResult = {
+  id: string;
   kind: "candidate" | "unknown" | "not-a-merchant";
   canonicalName?: string | null;
   domain?: string | null;
@@ -1686,6 +1767,17 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
   async resolve(context: Parameters<MerchantResolverPlugin["resolve"]>[0]) {
     const rawLabel = transactionMerchantLabel(context.transaction);
     if (!rawLabel) return undefined;
+    const [result] = await this.resolveBatch([{ id: "single", context }]);
+    return result!.value;
+  }
+
+  async resolveBatch(
+    items: readonly CodexBatchItem<Parameters<MerchantResolverPlugin["resolve"]>[0]>[],
+  ): Promise<readonly CodexBatchResult<MerchantResolution>[]> {
+    if (!items.length) return [];
+    if (items.some((item) => !transactionMerchantLabel(item.context.transaction))) {
+      throw new Error("Codex merchant batches require a merchant label.");
+    }
     const directory = await fs.mkdtemp(
       join(tmpdir(), "beancount-js-merchant-"),
     );
@@ -1695,43 +1787,66 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
     const schema = {
       type: "object",
       properties: {
-        kind: {
-          type: "string",
-          enum: ["candidate", "unknown", "not-a-merchant"],
+        results: {
+          type: "array",
+          minItems: items.length,
+          maxItems: items.length,
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              kind: {
+                type: "string",
+                enum: ["candidate", "unknown", "not-a-merchant"],
+              },
+              canonicalName: { type: ["string", "null"] },
+              domain: { type: ["string", "null"] },
+              description: { type: ["string", "null"] },
+              industry: { type: ["string", "null"] },
+              countryCode: { type: ["string", "null"] },
+              rawScore: {
+                type: ["number", "null"],
+                minimum: 0,
+                maximum: 1,
+              },
+              explanation: { type: "string" },
+            },
+            required: [
+              "id",
+              "kind",
+              "canonicalName",
+              "domain",
+              "description",
+              "industry",
+              "countryCode",
+              "rawScore",
+              "explanation",
+            ],
+            additionalProperties: false,
+          },
         },
-        canonicalName: { type: ["string", "null"] },
-        domain: { type: ["string", "null"] },
-        description: { type: ["string", "null"] },
-        industry: { type: ["string", "null"] },
-        countryCode: { type: ["string", "null"] },
-        rawScore: { type: ["number", "null"], minimum: 0, maximum: 1 },
-        explanation: { type: "string" },
       },
-      required: [
-        "kind",
-        "canonicalName",
-        "domain",
-        "description",
-        "industry",
-        "countryCode",
-        "rawScore",
-        "explanation",
-      ],
+      required: ["results"],
       additionalProperties: false,
     };
     let promptPayload: unknown;
     let response: string | undefined;
     let failure: string | undefined;
+    const callId = randomUUID();
+    const startedAt = Date.now();
     try {
       await fs.writeFile(schemaPath, JSON.stringify(schema), { mode: 0o600 });
       promptPayload = {
-        task: "Identify a merchant from a normalized transaction label. Return a candidate only when the supplied label supports it. Do not infer purchases, categories, or account details. Return JSON matching the schema and no prose.",
-        merchant: {
-          normalizedLabel: merchantAdvisorLabel(rawLabel),
+        task: "Identify merchants from normalized transaction labels. Return a candidate only when its supplied label supports it. Do not infer purchases, categories, or account details. Return every input id exactly once and no prose.",
+        merchants: items.map(({ id, context }) => ({
+          id,
+          normalizedLabel: merchantAdvisorLabel(
+            transactionMerchantLabel(context.transaction)!,
+          ),
           sourceId: context.transaction.sourceId,
           currency: context.transaction.currency,
           countryCode: this.options.countryCode,
-        },
+        })),
       };
       const prompt = JSON.stringify(promptPayload);
       response = await runCodex(
@@ -1739,70 +1854,86 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
           directory,
           schemaPath,
           model: this.options.model,
-          prompt,
         }),
-        this.options.timeoutMs ?? 60_000,
+        prompt,
+        this.options.timeoutMs ?? AI_BATCH_TIMEOUT_MS,
       );
-      const result = JSON.parse(response) as CodexMerchantResult;
+      const parsed = JSON.parse(response) as { results?: CodexMerchantResult[] };
+      const results = parsed?.results;
       if (
-        !result ||
-        !["candidate", "unknown", "not-a-merchant"].includes(result.kind) ||
-        typeof result.explanation !== "string" ||
-        result.explanation.length > 500
+        !Array.isArray(results) ||
+        results.length !== items.length ||
+        new Set(results.map((result) => result?.id)).size !== items.length ||
+        results.some((result) => !items.some((item) => item.id === result.id))
       ) {
-        throw new Error("Codex returned an invalid merchant suggestion.");
+        throw new Error("Codex returned invalid merchant batch identifiers.");
       }
-      if (result.kind !== "candidate") {
+      return results.map((result) => {
+        const context = items.find((item) => item.id === result.id)!.context;
+        const rawLabel = transactionMerchantLabel(context.transaction)!;
+        if (
+          !["candidate", "unknown", "not-a-merchant"].includes(result.kind) ||
+          typeof result.explanation !== "string" ||
+          result.explanation.length > 500
+        ) {
+          throw new Error("Codex returned an invalid merchant suggestion.");
+        }
+        if (result.kind !== "candidate") {
+          return {
+            id: result.id,
+            value: {
+              status: "unresolved",
+              rawLabel,
+              explanation:
+                result.kind === "not-a-merchant"
+                  ? "AI did not identify this label as a merchant."
+                  : result.explanation,
+            } satisfies MerchantResolution,
+          } satisfies CodexBatchResult<MerchantResolution>;
+        }
+        const canonicalName = optionalSchemaString(result.canonicalName);
+        const domain = optionalSchemaString(result.domain)?.toLowerCase();
+        const description = optionalSchemaString(result.description);
+        const industry = optionalSchemaString(result.industry);
+        const countryCode = optionalSchemaString(result.countryCode)?.toUpperCase();
+        if (
+          !canonicalName ||
+          typeof result.rawScore !== "number" ||
+          !Number.isFinite(result.rawScore) ||
+          (domain !== undefined && !isValidDomain(domain)) ||
+          (countryCode !== undefined && !/^[A-Z]{2}$/.test(countryCode))
+        ) {
+          throw new Error("Codex returned an invalid merchant candidate.");
+        }
+        const candidate: MerchantCandidate = {
+          id: `ai:${normalizeMerchant(canonicalName)}:${domain ?? ""}`,
+          canonicalName,
+          domain,
+          description,
+          industry,
+          countryCode,
+          rawScore: Math.min(Math.max(result.rawScore, 0), 1),
+          explanation: result.explanation,
+          provenance: [
+            {
+              source: "ai",
+              provider: "codex",
+              model: this.options.model,
+              version: "merchant-advisor-v1",
+              observedAt: nowIso(),
+            },
+          ],
+        };
         return {
-          status: "unresolved",
-          rawLabel,
-          explanation:
-            result.kind === "not-a-merchant"
-              ? "AI did not identify this label as a merchant."
-              : result.explanation,
-        } satisfies MerchantResolution;
-      }
-      const canonicalName = optionalSchemaString(result.canonicalName);
-      const domain = optionalSchemaString(result.domain)?.toLowerCase();
-      const description = optionalSchemaString(result.description);
-      const industry = optionalSchemaString(result.industry);
-      const countryCode = optionalSchemaString(
-        result.countryCode,
-      )?.toUpperCase();
-      if (
-        !canonicalName ||
-        typeof result.rawScore !== "number" ||
-        !Number.isFinite(result.rawScore) ||
-        (domain !== undefined && !isValidDomain(domain)) ||
-        (countryCode !== undefined && !/^[A-Z]{2}$/.test(countryCode))
-      ) {
-        throw new Error("Codex returned an invalid merchant candidate.");
-      }
-      const candidate: MerchantCandidate = {
-        id: `ai:${normalizeMerchant(canonicalName)}:${domain ?? ""}`,
-        canonicalName,
-        domain,
-        description,
-        industry,
-        countryCode,
-        rawScore: Math.min(Math.max(result.rawScore, 0), 1),
-        explanation: result.explanation,
-        provenance: [
-          {
-            source: "ai",
-            provider: "codex",
-            model: this.options.model,
-            version: "merchant-advisor-v1",
-            observedAt: nowIso(),
-          },
-        ],
-      };
-      return {
-        status: "suggested",
-        rawLabel,
-        candidates: [candidate],
-        explanation: candidate.explanation,
-      } satisfies MerchantResolution;
+          id: result.id,
+          value: {
+            status: "suggested",
+            rawLabel,
+            candidates: [candidate],
+            explanation: candidate.explanation,
+          } satisfies MerchantResolution,
+        } satisfies CodexBatchResult<MerchantResolution>;
+      });
     } catch (error) {
       failure = error instanceof Error ? error.message : String(error);
       throw error;
@@ -1816,6 +1947,15 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
           error: failure,
           ok: !failure,
           at: nowIso(),
+          callId,
+          itemIds: items.map((item) => item.id),
+          batchSize: items.length,
+          durationMs: Date.now() - startedAt,
+          promptBytes:
+            promptPayload === undefined
+              ? undefined
+              : Buffer.byteLength(JSON.stringify(promptPayload)),
+          responseBytes: response === undefined ? undefined : Buffer.byteLength(response),
         });
       }
       await fs.rm(directory, { recursive: true, force: true });

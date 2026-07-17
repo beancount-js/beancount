@@ -274,12 +274,23 @@ export type ProposalStatus =
 /** One Codex/AI call captured during enrichment for later review. */
 export interface AiEnrichmentCallRecord {
   id: string;
+  /** Unique per-process identifier. Older persisted calls do not have one. */
+  callId?: string;
   label: string;
   prompt: string;
   response?: string;
   error?: string;
   ok: boolean;
   at: string;
+  /** Proposal or batch-work identifiers included in this model call. */
+  itemIds?: readonly string[];
+  /** Number of items processed by this model call. */
+  batchSize?: number;
+  /** Wall-clock duration of the Codex process. */
+  durationMs?: number;
+  /** Input/output byte counts are cost proxies for the Codex CLI transport. */
+  promptBytes?: number;
+  responseBytes?: number;
 }
 
 /** Latest AI enrichment attempt for a proposal (persisted on the import run). */
