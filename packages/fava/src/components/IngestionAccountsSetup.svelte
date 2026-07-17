@@ -1,19 +1,21 @@
 <script lang="ts">
   import BookOpen from "lucide-svelte/icons/book-open";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
-  import Ellipsis from "lucide-svelte/icons/ellipsis";
   import FileCode2 from "lucide-svelte/icons/file-code-2";
   import Landmark from "lucide-svelte/icons/landmark";
   import Link2 from "lucide-svelte/icons/link-2";
   import MoreVertical from "lucide-svelte/icons/more-vertical";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
   import Settings from "lucide-svelte/icons/settings";
+  import Trash2 from "lucide-svelte/icons/trash-2";
   import type { JsonApiLinkedAccount } from "@beancount-js/beangulp";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import * as Empty from "$lib/components/ui/empty";
   import * as Sheet from "$lib/components/ui/sheet";
+  import { useContext } from "../context";
   import { useNavigation } from "../router/router";
   import {
     beginIngestionSync,
@@ -34,6 +36,7 @@
     type EditableIngestionSource,
   } from "../ingestion/source-form";
   import type { IngestionConfigResponse } from "../ingestion/types";
+  import { useCtx } from "../stores/format";
   import ComboBox from "./ComboBox.svelte";
 
   type DiscoveredAccount = {
@@ -60,7 +63,9 @@
   ] as const;
 
   const { snapshot, activeFile } = useStudioWorkspace();
+  const { ledgerData, conversion } = useContext();
   const { router } = useNavigation();
+  const ctx = useCtx();
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
 
   let config = $state<EditableIngestionConfig | undefined>(undefined);
@@ -76,7 +81,7 @@
   let selectedIds = $state<string[]>([]);
   let sourceAccounts = $state<Record<string, string>>({});
   let connectionExpanded = $state(false);
-  let syncSummaryOpen = $state(true);
+  let syncSummaryOpen = $state(false);
   let setupSheetOpen = $state(false);
   let autoDiscoveredFor = $state("");
   let syncJob = $state<IngestionSyncJob | null>(null);
@@ -274,6 +279,37 @@
     return discoveryById.get(account.id)?.institutionName?.trim() || undefined;
   }
 
+  function latestLedgerBalance(account: JsonApiLinkedAccount) {
+    return (
+      $ledgerData.accountBalance(account.sourceAccount, $conversion).at(-1)
+        ?.balance ?? {}
+    );
+  }
+
+  function balanceText(balance: Record<string, number>) {
+    return Object.entries(balance)
+      .filter(([, amount]) => Number.isFinite(amount))
+      .map(([currency, amount]) => $ctx.money(amount, currency))
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  function accountBalanceText(account: JsonApiLinkedAccount) {
+    return balanceText(latestLedgerBalance(account));
+  }
+
+  function groupBalanceText(group: LinkedGroup) {
+    const total: Record<string, number> = {};
+    for (const account of group.accounts) {
+      for (const [currency, amount] of Object.entries(
+        latestLedgerBalance(account),
+      )) {
+        total[currency] = (total[currency] ?? 0) + amount;
+      }
+    }
+    return balanceText(total);
+  }
+
   async function load() {
     if (!$snapshot || isWeb) return;
     loading = true;
@@ -392,6 +428,13 @@
       !saving &&
       !isConnectionSyncing(source)
     );
+  }
+
+  function syncConnection(source: EditableIngestionSource) {
+    if (source.id !== selectedConnection?.id) {
+      selectConnection(source);
+    }
+    void startSync(source);
   }
 
   function toggleAccount(id: string, checked: boolean) {
@@ -535,6 +578,38 @@
     await saveConfig(next);
   }
 
+  async function removeConnection(source: EditableIngestionSource) {
+    if (!config) return;
+    const sourceName = source.name || source.id;
+    if (
+      !confirm(
+        `Remove ${sourceName}? Its linked accounts and sync configuration will be removed.`,
+      )
+    ) {
+      return;
+    }
+    const next: EditableIngestionConfig = {
+      ...config,
+      sources: config.sources.filter((item) => item.id !== source.id),
+    };
+    const remainingConnections = next.sources.filter((item) =>
+      isGroupedSource(item),
+    );
+    const saved = await saveConfig(next);
+    if (!saved) return;
+    if (selectedSourceId === source.id) {
+      selectedSourceId = remainingConnections[0]?.id ?? "";
+      discovered = [];
+      selectedIds = [];
+      sourceAccounts = {};
+      autoDiscoveredFor = "";
+      setupSheetOpen = false;
+      syncJob = null;
+      connectionExpanded = false;
+    }
+    status = `${sourceName} removed.`;
+  }
+
   $effect(() => {
     const project = $snapshot;
     if (project && !isWeb && loadedProjectId !== project.project.id) {
@@ -636,7 +711,7 @@
             <div class="flex items-center gap-3 px-4 py-3">
               <button
                 type="button"
-                class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left hover:bg-muted/50"
                 aria-expanded={isSelected && connectionExpanded}
                 aria-label={isSelected && connectionExpanded
                   ? "Collapse connection"
@@ -644,62 +719,76 @@
                 onclick={() => toggleConnection(connection)}
               >
                 <ChevronDown
-                  class="size-4 transition-transform {isSelected &&
+                  class="size-4 shrink-0 text-muted-foreground transition-transform {isSelected &&
                   connectionExpanded
                     ? ''
                     : '-rotate-90'}"
                   aria-hidden="true"
                 />
-              </button>
-              <div
-                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
-                aria-hidden="true"
-              >
-                {initialLetter(connection.name || connection.id)}
-              </div>
-              <div class="min-w-0 flex-1">
-                <h2 class="truncate text-sm font-semibold">
-                  {connection.name || connection.id}
-                </h2>
-                <p
-                  class="truncate text-xs text-muted-foreground {isConnectionSyncing(
-                    connection,
-                  )
-                    ? 'animate-pulse'
-                    : ''}"
-                >
-                  {connectionStatusLineFor(connection)}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                class="shrink-0"
-                disabled={!canSyncConnection(connection)}
-                onclick={() => {
-                  if (!isSelected) selectConnection(connection);
-                  void startSync(connection);
-                }}
-              >
-                <RefreshCw
-                  class="size-4 {isConnectionSyncing(connection)
-                    ? 'animate-spin'
-                    : ''}"
+                <span
+                  class="flex size-9 shrink-0 items-center justify-center rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
                   aria-hidden="true"
-                />
-                {isConnectionSyncing(connection) ? "Syncing…" : "Sync"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="shrink-0 text-muted-foreground"
-                aria-label="Connection options"
-                disabled
-              >
-                <Ellipsis class="size-4" aria-hidden="true" />
-              </Button>
+                >
+                  {initialLetter(connection.name || connection.id)}
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-semibold">
+                    {connection.name || connection.id}
+                  </span>
+                  <span
+                    class="block truncate text-xs text-muted-foreground {isConnectionSyncing(
+                      connection,
+                    )
+                      ? 'animate-pulse'
+                      : ''}"
+                  >
+                    {connectionStatusLineFor(connection)}
+                  </span>
+                  {#if isSelected}
+                    <span class="block truncate text-xs text-muted-foreground">
+                      {lastSyncLabel}
+                    </span>
+                  {/if}
+                </span>
+              </button>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                  {#snippet child({ props })}
+                    <Button
+                      {...props}
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      class="shrink-0 text-muted-foreground"
+                      aria-label={`${connection.name || connection.id} actions`}
+                    >
+                      <MoreVertical class="size-4" aria-hidden="true" />
+                    </Button>
+                  {/snippet}
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="end">
+                  <DropdownMenu.Group>
+                    <DropdownMenu.Item
+                      disabled={!canSyncConnection(connection)}
+                      onSelect={() => syncConnection(connection)}
+                    >
+                      <RefreshCw class="size-3.5" aria-hidden="true" />
+                      {isConnectionSyncing(connection) ? "Syncing…" : "Sync"}
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Group>
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Group>
+                    <DropdownMenu.Item
+                      class="text-destructive focus:text-destructive"
+                      disabled={saving}
+                      onSelect={() => void removeConnection(connection)}
+                    >
+                      <Trash2 class="size-3.5" aria-hidden="true" />
+                      Remove connection
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Group>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
             </div>
 
             {#if isSelected && connectionExpanded}
@@ -707,17 +796,32 @@
                 {#if linkedGroups.length}
                   <div class="flex flex-col gap-4">
                     {#each linkedGroups as group (group.label)}
-                      <div class="flex flex-col gap-2">
-                        <p
-                          class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                      {@const groupBalance = groupBalanceText(group)}
+                      <div
+                        class="overflow-hidden rounded-lg border border-border bg-muted/30"
+                      >
+                        <div
+                          class="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-3 py-2"
                         >
-                          {group.label} · {group.accounts.length}
-                        </p>
-                        <ul class="flex flex-col gap-2" role="list">
+                          <p
+                            class="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+                          >
+                            {group.label} · {group.accounts.length}
+                          </p>
+                          {#if groupBalance}
+                            <span
+                              class="shrink-0 text-sm font-semibold tabular-nums"
+                            >
+                              {groupBalance}
+                            </span>
+                          {/if}
+                        </div>
+                        <ul class="divide-y divide-border" role="list">
                           {#each group.accounts as account (account.id)}
                             {@const institution = institutionForLinked(account)}
+                            {@const balance = accountBalanceText(account)}
                             <li
-                              class="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5"
+                              class="flex items-center gap-3 bg-card/70 px-3 py-2.5"
                             >
                               <div
                                 class="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold {accountAvatarClass(
@@ -741,27 +845,54 @@
                                   {accountTypeLabel(account.sourceAccount)}
                                 </p>
                               </div>
-                              {#if account.defaultCurrency}
+                              {#if balance}
+                                <span
+                                  class="shrink-0 text-sm font-semibold tabular-nums"
+                                >
+                                  {balance}
+                                </span>
+                              {:else if account.defaultCurrency}
                                 <span
                                   class="shrink-0 text-xs text-muted-foreground"
                                 >
                                   {account.defaultCurrency}
                                 </span>
                               {/if}
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                class="shrink-0 text-muted-foreground"
-                                aria-label={`Remove ${account.name}`}
-                                disabled={saving}
-                                onclick={() => void unlinkAccount(account.id)}
-                              >
-                                <MoreVertical
-                                  class="size-4"
-                                  aria-hidden="true"
-                                />
-                              </Button>
+                              <DropdownMenu.Root>
+                                <DropdownMenu.Trigger>
+                                  {#snippet child({ props })}
+                                    <Button
+                                      {...props}
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      class="shrink-0 text-muted-foreground"
+                                      aria-label={`${account.name} actions`}
+                                    >
+                                      <MoreVertical
+                                        class="size-4"
+                                        aria-hidden="true"
+                                      />
+                                    </Button>
+                                  {/snippet}
+                                </DropdownMenu.Trigger>
+                                <DropdownMenu.Content align="end">
+                                  <DropdownMenu.Group>
+                                    <DropdownMenu.Item
+                                      class="text-destructive focus:text-destructive"
+                                      disabled={saving}
+                                      onSelect={() =>
+                                        void unlinkAccount(account.id)}
+                                    >
+                                      <Trash2
+                                        class="size-3.5"
+                                        aria-hidden="true"
+                                      />
+                                      Unlink account
+                                    </DropdownMenu.Item>
+                                  </DropdownMenu.Group>
+                                </DropdownMenu.Content>
+                              </DropdownMenu.Root>
                             </li>
                           {/each}
                         </ul>
@@ -778,14 +909,16 @@
                   </p>
                 {/if}
 
-                <div class="mt-4 rounded-lg border border-border">
+                <div
+                  class="mt-4 overflow-hidden rounded-lg border border-border bg-secondary text-secondary-foreground"
+                >
                   <button
                     type="button"
-                    class="flex w-full items-center gap-2 px-3 py-2.5 text-left"
+                    class="flex w-full items-center gap-2 px-3 py-2.5 text-left hover:bg-background/10"
                     aria-expanded={syncSummaryOpen}
                     onclick={() => (syncSummaryOpen = !syncSummaryOpen)}
                   >
-                    <span class="text-sm font-medium">Sync summary</span>
+                    <span class="text-sm font-semibold">Sync summary</span>
                     <span
                       class="min-w-0 flex-1 truncate text-right text-xs text-muted-foreground"
                     >
@@ -804,7 +937,7 @@
                     >
                       <div class="flex flex-col gap-1.5">
                         <p
-                          class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                          class="text-xs font-bold uppercase tracking-wide text-muted-foreground"
                         >
                           Accounts
                         </p>
@@ -831,7 +964,7 @@
                       </div>
                       <div class="flex flex-col gap-1.5">
                         <p
-                          class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                          class="text-xs font-bold uppercase tracking-wide text-muted-foreground"
                         >
                           Transactions
                         </p>
@@ -856,7 +989,7 @@
                       </div>
                       <div class="flex flex-col gap-1.5">
                         <p
-                          class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                          class="text-xs font-bold uppercase tracking-wide text-muted-foreground"
                         >
                           Health
                         </p>
