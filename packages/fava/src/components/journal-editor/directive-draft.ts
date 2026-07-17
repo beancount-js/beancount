@@ -87,6 +87,7 @@ export type DirectiveDraft = {
   booking: BookingMethod | "";
   color: string;
   icon: string;
+  merchantId: string;
   // text bodies
   comment: string;
   path: string;
@@ -137,6 +138,7 @@ export function emptyDraft(kind: DirectiveKind = "unknown"): DirectiveDraft {
     booking: "",
     color: "",
     icon: "",
+    merchantId: "",
     comment: "",
     path: "",
     eventType: "",
@@ -215,7 +217,7 @@ export function hasEditableAst(value: DirectiveBase) {
   return false;
 }
 
-const OPEN_APPEARANCE_METADATA_KEYS = new Set(["color", "icon"]);
+const OPEN_ACCOUNT_METADATA_KEYS = new Set(["color", "icon", "merchant_id"]);
 
 function isHexColor(value: unknown): value is string {
   return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
@@ -297,7 +299,7 @@ export function loadDirectiveDraft(value: DirectiveBase): DirectiveDraft {
   const metadata = value.meta as Record<string, unknown>;
   draft.metadata = publicMetadata(
     metadata,
-    value instanceof Open ? OPEN_APPEARANCE_METADATA_KEYS : undefined,
+    value instanceof Open ? OPEN_ACCOUNT_METADATA_KEYS : undefined,
   );
 
   if (value instanceof Transaction) {
@@ -324,6 +326,8 @@ export function loadDirectiveDraft(value: DirectiveBase): DirectiveDraft {
       ? metadata.color.toUpperCase()
       : "";
     draft.icon = typeof metadata.icon === "string" ? metadata.icon : "";
+    draft.merchantId =
+      typeof metadata.merchant_id === "string" ? metadata.merchant_id : "";
   } else if (value instanceof Close) {
     draft.account = value.account;
   } else if (value instanceof Commodity) {
@@ -379,6 +383,8 @@ function metadataFromDraft(draft: DirectiveDraft, existing: Attributes) {
     }
     const icon = draft.icon.trim();
     if (icon) rows.push({ key: "icon", value: icon });
+    const merchantId = draft.merchantId.trim();
+    if (merchantId) rows.push({ key: "merchant_id", value: merchantId });
   }
 
   const attributes = rows.map((row) => {

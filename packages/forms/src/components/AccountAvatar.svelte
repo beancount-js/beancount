@@ -13,14 +13,27 @@
     account,
     color = "",
     icon = "",
+    merchantLogoUrl = "",
     size = "md",
   }: {
     account: string;
     color?: string;
     icon?: string;
+    merchantLogoUrl?: string;
     size?: "sm" | "md" | "lg";
   } = $props();
 
+  let merchantLogoFailed = $state(false);
+
+  $effect(() => {
+    void merchantLogoUrl;
+    merchantLogoFailed = false;
+  });
+
+  const merchantLogo = $derived(merchantLogoUrl.trim());
+  const showsMerchantLogo = $derived(
+    Boolean(merchantLogo && !merchantLogoFailed),
+  );
   const customizedColor = $derived(normalizeAppearanceColor(color));
   const AvatarIcon = $derived.by(() => {
     if (!customizedColor) return null;
@@ -44,7 +57,14 @@
   style={`--account-avatar-color: ${avatarColor}; --account-avatar-foreground: ${avatarForeground}`}
   aria-hidden="true"
 >
-  {#if AvatarIcon}
+  {#if showsMerchantLogo}
+    <img
+      class="beancount-account-avatar__merchant-logo"
+      src={merchantLogo}
+      alt=""
+      onerror={() => (merchantLogoFailed = true)}
+    />
+  {:else if AvatarIcon}
     <AvatarIcon
       class="beancount-account-avatar__icon"
       strokeWidth={1.8}
@@ -102,5 +122,25 @@
     :global(.beancount-account-avatar__icon) {
     width: 1.35rem;
     height: 1.35rem;
+  }
+
+  .beancount-account-avatar__merchant-logo {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: 0.25rem;
+    border-radius: inherit;
+    background: var(--background);
+    object-fit: contain;
+  }
+
+  .beancount-account-avatar[data-size="sm"]
+    .beancount-account-avatar__merchant-logo {
+    padding: 0.1875rem;
+  }
+
+  .beancount-account-avatar[data-size="lg"]
+    .beancount-account-avatar__merchant-logo {
+    padding: 0.3125rem;
   }
 </style>

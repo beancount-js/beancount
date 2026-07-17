@@ -303,6 +303,13 @@
     };
   }
 
+  function merchantForOpenDirective(open?: Open | null) {
+    const merchantId = open?.meta.merchant_id;
+    return typeof merchantId === "string"
+      ? merchantsById[merchantId]
+      : undefined;
+  }
+
   function linkedGroupLabel(sourceAccount: string) {
     if (sourceAccount.startsWith("Assets:")) return "Cash";
     if (sourceAccount.startsWith("Liabilities:")) return "Credit";
@@ -1089,6 +1096,8 @@
                             )}
                             {@const appearance =
                               accountAppearanceFor(openDirective)}
+                            {@const merchant =
+                              merchantForOpenDirective(openDirective)}
                             <li
                               class:rounded-b-xl={index ===
                                 group.accounts.length - 1}
@@ -1112,6 +1121,7 @@
                                   account={account.sourceAccount}
                                   color={appearance.color}
                                   icon={appearance.icon}
+                                  merchantLogoUrl={merchant?.logoUrl}
                                 />
                                 <span class="min-w-0 flex-1">
                                   <span
@@ -1568,6 +1578,9 @@
                           {@const appearance = accountAppearanceFor(
                             account.open,
                           )}
+                          {@const merchant = merchantForOpenDirective(
+                            account.open,
+                          )}
                           <li
                             class:rounded-b-xl={index ===
                               group.accounts.length - 1}
@@ -1588,6 +1601,7 @@
                                 account={account.name}
                                 color={appearance.color}
                                 icon={appearance.icon}
+                                merchantLogoUrl={merchant?.logoUrl}
                               />
                               <span class="min-w-0 flex-1">
                                 <span

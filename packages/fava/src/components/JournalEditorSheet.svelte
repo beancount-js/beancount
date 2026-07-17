@@ -11,6 +11,7 @@
     FormSectionHeader,
     IconColorPicker,
     TagEditor,
+    type FilterCommandOption,
   } from "@beancount-js/forms";
   import { onDestroy } from "svelte";
   import * as Alert from "$lib/components/ui/alert";
@@ -36,6 +37,7 @@
     type JournalRecordAnchor,
   } from "../lib/journal-record-key";
   import { useStudioWorkspace } from "../studio/workspace";
+  import { ingestionJson, ingestionPath } from "../ingestion/api";
   import {
     bookingOptions,
     buildDirectiveSource,
@@ -57,6 +59,15 @@
     directive: DirectiveBase;
     open?: boolean;
     onRecordKeyChange?: (key: string) => void;
+  };
+
+  type Merchant = {
+    merchantId: string;
+    canonicalName: string;
+    domain?: string;
+    description?: string;
+    aliases?: { normalizedValue: string }[];
+    logoUrl?: string;
   };
 
   let {
@@ -89,6 +100,7 @@
     postings: true,
     metadata: true,
   });
+  let merchants = $state<Merchant[]>([]);
   const kind = $derived(directiveKind(directive));
   const title = $derived(sheetTitleForKind(kind));
   const isYamlOnly = $derived(kind === "unknown");
@@ -102,6 +114,43 @@
   );
 
   const currencySuggestions = $derived([...$currencies]);
+  const merchantProjectId = $derived($snapshot?.project.id ?? "");
+  const merchantOptions = $derived.by((): FilterCommandOption[] => {
+    const listed = merchants.map((merchant) => ({
+      value: merchant.merchantId,
+      label: merchant.canonicalName,
+      description: [merchant.domain, merchant.description]
+        .filter(Boolean)
+        .join("\n"),
+      imageUrl: merchant.logoUrl,
+      keywords: [
+        merchant.canonicalName,
+        ...(merchant.domain ? [merchant.domain] : []),
+        ...(merchant.description ? [merchant.description] : []),
+        ...(merchant.aliases?.map((alias) => alias.normalizedValue) ?? []),
+      ],
+    }));
+    const selected = listed.find(
+      (merchant) => merchant.value === draft.merchantId,
+    );
+    return [
+      {
+        value: "",
+        label: "No merchant selected",
+        description: "Use the account's colour and icon instead.",
+      },
+      ...(selected || !draft.merchantId
+        ? listed
+        : [
+            {
+              value: draft.merchantId,
+              label: draft.merchantId,
+              description: "Saved merchant is unavailable in this project.",
+            },
+            ...listed,
+          ]),
+    ];
+  });
 
   const sectionsCollapsedAll = $derived.by(() => {
     if (!isSectionOpen("details") || !isSectionOpen("metadata")) return true;
@@ -120,6 +169,27 @@
             ? "Save failed"
             : "",
   );
+
+  async function loadMerchants(projectId: string) {
+    try {
+      const listed = await ingestionJson<Merchant[]>(
+        ingestionPath(projectId, "/merchants"),
+      );
+      if (merchantProjectId !== projectId) return;
+      merchants = Array.isArray(listed) ? listed : [];
+    } catch {
+      if (merchantProjectId === projectId) merchants = [];
+    }
+  }
+
+  $effect(() => {
+    const projectId = merchantProjectId;
+    if (!projectId) {
+      merchants = [];
+      return;
+    }
+    void loadMerchants(projectId);
+  });
 
   const codeMirror = (node: HTMLDivElement, source: string) => {
     editor = new EditorView({
@@ -675,6 +745,29 @@
                         onChange={(appearance) => {
                           draft.color = appearance.color;
                           draft.icon = appearance.icon;
+                          scheduleSave();
+                        }}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Merchant"
+                      as="div"
+                      align="center"
+                      controlId="journal-account-merchant"
+                    >
+                      <FilterCommandPicker
+                        fullWidth
+                        label="Merchant"
+                        ariaLabel="Merchant"
+                        placeholder="Search saved merchants..."
+                        emptyLabel={merchants.length
+                          ? "No matching merchants."
+                          : "No saved merchants yet."}
+                        stackedOptions
+                        value={draft.merchantId}
+                        options={merchantOptions}
+                        onChange={(value) => {
+                          draft.merchantId = value;
                           scheduleSave();
                         }}
                       />
