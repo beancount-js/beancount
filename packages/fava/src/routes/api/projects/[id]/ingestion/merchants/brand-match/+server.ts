@@ -58,9 +58,14 @@ export async function POST({
       );
     }
 
-    const sourceId = text(body.sourceId);
+    const account = text(body.account);
+    const sourceId =
+      text(body.sourceId) ?? (account ? `account:${account}` : undefined);
     if (!sourceId) {
-      return json({ error: "sourceId is required." }, { status: 400 });
+      return json(
+        { error: "sourceId or account is required." },
+        { status: 400 },
+      );
     }
 
     const sourceName = text(body.sourceName) ?? merchantNameForDomain(domain);

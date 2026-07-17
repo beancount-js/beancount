@@ -91,6 +91,33 @@ describe("POST /ingestion/merchants/brand-match", () => {
     });
   });
 
+  test("creates an account-linked merchant from an Open directive URL", async () => {
+    const response = await POST({
+      params: { id: "demo" },
+      request: new Request("http://localhost/brand-match", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          url: "example.com/account",
+          account: "Assets:Cash",
+        }),
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.confirm).toHaveBeenCalledWith(
+      "demo",
+      expect.objectContaining({
+        sourceId: "account:Assets:Cash",
+        rawLabel: "Example",
+        candidate: expect.objectContaining({
+          canonicalName: "Example",
+          domain: "example.com",
+        }),
+      }),
+    );
+  });
+
   test("rejects a URL that does not identify a public domain", async () => {
     const response = await POST({
       params: { id: "demo" },

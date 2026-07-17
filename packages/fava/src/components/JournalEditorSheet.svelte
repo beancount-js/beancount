@@ -12,6 +12,7 @@
     IconColorPicker,
     TagEditor,
     type FilterCommandOption,
+    type FilterCommandSearchAction,
   } from "@beancount-js/forms";
   import { onDestroy } from "svelte";
   import * as Alert from "$lib/components/ui/alert";
@@ -101,6 +102,8 @@
     metadata: true,
   });
   let merchants = $state<Merchant[]>([]);
+  let merchantLoadError = $state("");
+  let brandMatchBusy = $state(false);
   const kind = $derived(directiveKind(directive));
   const title = $derived(sheetTitleForKind(kind));
   const isYamlOnly = $derived(kind === "unknown");
@@ -177,8 +180,77 @@
       );
       if (merchantProjectId !== projectId) return;
       merchants = Array.isArray(listed) ? listed : [];
+      merchantLoadError = "";
+    } catch (error) {
+      if (merchantProjectId !== projectId) return;
+      merchants = [];
+      merchantLoadError =
+        error instanceof Error ? error.message : "Failed to load merchants.";
+    }
+  }
+
+  function domainFromUrl(value: string) {
+    const input = value.trim();
+    if (!input) return undefined;
+    try {
+      const url = new URL(
+        /^[a-z][a-z\d+.-]*:\/\//i.test(input) ? input : `https://${input}`,
+      );
+      const domain = url.hostname.toLowerCase().replace(/^(?:www\.|api\.)/, "");
+      return domain.includes(".") ? domain : undefined;
     } catch {
-      if (merchantProjectId === projectId) merchants = [];
+      return undefined;
+    }
+  }
+
+  function brandMatchAction(search: string): FilterCommandSearchAction | null {
+    const domain = domainFromUrl(search);
+    if (
+      !merchantProjectId ||
+      !draft.account.trim() ||
+      !domain ||
+      merchants.some((merchant) => merchant.domain?.toLowerCase() === domain)
+    ) {
+      return null;
+    }
+    return {
+      label: `Fetch ${domain} with Brand Match`,
+      description: "Create and select a merchant with its brand logo.",
+    };
+  }
+
+  async function createMerchantFromBrandMatch(url: string) {
+    const projectId = merchantProjectId;
+    const account = draft.account.trim();
+    if (brandMatchBusy || !projectId || !account) return;
+
+    brandMatchBusy = true;
+    merchantLoadError = "";
+    try {
+      const merchant = await ingestionJson<Merchant>(
+        ingestionPath(projectId, "/merchants/brand-match"),
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ url, account }),
+        },
+      );
+      if (merchantProjectId !== projectId) return;
+      merchants = [
+        merchant,
+        ...merchants.filter((item) => item.merchantId !== merchant.merchantId),
+      ].sort((left, right) =>
+        left.canonicalName.localeCompare(right.canonicalName),
+      );
+      draft.merchantId = merchant.merchantId;
+      scheduleSave();
+    } catch (error) {
+      merchantLoadError =
+        error instanceof Error
+          ? error.message
+          : "Could not create a merchant from that URL.";
+    } finally {
+      brandMatchBusy = false;
     }
   }
 
@@ -186,6 +258,7 @@
     const projectId = merchantProjectId;
     if (!projectId) {
       merchants = [];
+      merchantLoadError = "";
       return;
     }
     void loadMerchants(projectId);
@@ -754,6 +827,7 @@
                       as="div"
                       align="center"
                       controlId="journal-account-merchant"
+                      messages={merchantLoadError ? [merchantLoadError] : []}
                     >
                       <FilterCommandPicker
                         fullWidth
@@ -766,6 +840,9 @@
                         stackedOptions
                         value={draft.merchantId}
                         options={merchantOptions}
+                        searchAction={brandMatchAction}
+                        searchActionGroupLabel="Brand Match"
+                        onSearchAction={createMerchantFromBrandMatch}
                         onChange={(value) => {
                           draft.merchantId = value;
                           scheduleSave();
