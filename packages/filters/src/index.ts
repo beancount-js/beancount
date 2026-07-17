@@ -2,6 +2,7 @@ import { parser } from "./query.grammar";
 import { LRLanguage, LanguageSupport } from "@codemirror/language";
 export { filterHighlighting } from "./highlight";
 export * from "./filters";
+export * from "./fuzzy-search";
 export * from "./parser";
 
 export const beancountFilterLanguage = LRLanguage.define({

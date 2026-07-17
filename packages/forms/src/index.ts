@@ -6,6 +6,8 @@ export { default as EntryActions } from "./components/EntryActions.svelte";
 export { default as CollapsibleItemList } from "./components/CollapsibleItemList.svelte";
 export { default as FormAddButton } from "./components/FormAddButton.svelte";
 export { default as FormToolbar } from "./components/FormToolbar.svelte";
+export { default as ScrollArea } from "./components/ScrollArea.svelte";
+export { default as ScrollAreaScrollbar } from "./components/ScrollAreaScrollbar.svelte";
 export { default as SegmentedControl } from "./components/SegmentedControl.svelte";
 export { default as YamlBackedForm } from "./components/YamlBackedForm.svelte";
 export { default as CodeEditor } from "./components/CodeEditor.svelte";

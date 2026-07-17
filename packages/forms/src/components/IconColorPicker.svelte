@@ -1,7 +1,10 @@
 <script lang="ts">
   import { Popover } from "bits-ui";
   import Pencil from "lucide-svelte/icons/pencil";
+  import Search from "lucide-svelte/icons/search";
+  import { fuzzySearch } from "@beancount-js/filters";
   import { accountAppearanceIconOptions } from "../account-appearance-icons";
+  import ScrollArea from "./ScrollArea.svelte";
   import {
     appearanceIconForeground,
     autoCorrectAppearanceColor,
@@ -40,6 +43,7 @@
 
   let open = $state(false);
   let pendingColor = $state<string | null>(null);
+  let iconSearch = $state("");
 
   const currentColor = $derived(
     pendingColor ?? normalizeAppearanceColor(color) ?? DEFAULT_COLOR,
@@ -54,6 +58,16 @@
     iconOptions.find((option) => option.value === icon) ?? iconOptions[0],
   );
   const SelectedIcon = $derived(selectedIcon.icon);
+  const filteredIconOptions = $derived.by(() =>
+    fuzzySearch(iconOptions, iconSearch, {
+      keys: [
+        { name: "label", weight: 3 },
+        { name: "keywords", weight: 2 },
+        { name: "category", weight: 1 },
+      ],
+      threshold: 0.34,
+    }),
+  );
 
   function chooseColor(nextColor: string) {
     const normalized = normalizeAppearanceColor(nextColor);
@@ -156,30 +170,55 @@
       </div>
 
       <div class="beancount-icon-color-picker__section">
-        <p class="beancount-icon-color-picker__heading">Icon</p>
-        <div class="beancount-icon-color-picker__icons">
-          {#each iconOptions as option (option.value)}
-            {@const Icon = option.icon}
-            <button
-              type="button"
-              class="beancount-icon-color-picker__icon"
-              class:selected={icon === option.value}
-              style={`--appearance-color: ${currentColor}; --appearance-foreground: ${currentForeground}`}
-              aria-label={`Use ${option.label} icon`}
-              aria-pressed={icon === option.value}
-              aria-describedby={needsContrastCorrection
-                ? "beancount-icon-color-picker-contrast-warning"
-                : undefined}
-              disabled={needsContrastCorrection}
-              title={needsContrastCorrection
-                ? "Correct the colour contrast before choosing an icon"
-                : undefined}
-              onclick={() => chooseIcon(option.value)}
-            >
-              <Icon class="size-5" strokeWidth={1.8} aria-hidden="true" />
-            </button>
-          {/each}
+        <div class="beancount-icon-color-picker__heading-row">
+          <p class="beancount-icon-color-picker__heading">Icon</p>
+          <span
+            class="beancount-icon-color-picker__icon-count"
+            aria-live="polite"
+            >{filteredIconOptions.length} of {iconOptions.length}</span
+          >
         </div>
+        <label class="beancount-icon-color-picker__search">
+          <Search class="size-4" aria-hidden="true" />
+          <span class="sr-only">Search icons</span>
+          <input
+            bind:value={iconSearch}
+            type="search"
+            placeholder="Search icons…"
+            autocomplete="off"
+          />
+        </label>
+        <ScrollArea class="beancount-icon-color-picker__icons">
+          {#if filteredIconOptions.length}
+            <div class="beancount-icon-color-picker__icons-grid">
+              {#each filteredIconOptions as option (option.value)}
+                {@const Icon = option.icon}
+                <button
+                  type="button"
+                  class="beancount-icon-color-picker__icon"
+                  class:selected={icon === option.value}
+                  style={`--appearance-color: ${currentColor}; --appearance-foreground: ${currentForeground}`}
+                  aria-label={`Use ${option.label} icon`}
+                  aria-pressed={icon === option.value}
+                  aria-describedby={needsContrastCorrection
+                    ? "beancount-icon-color-picker-contrast-warning"
+                    : undefined}
+                  disabled={needsContrastCorrection}
+                  title={needsContrastCorrection
+                    ? "Correct the colour contrast before choosing an icon"
+                    : `${option.label} · ${option.category}`}
+                  onclick={() => chooseIcon(option.value)}
+                >
+                  <Icon class="size-5" strokeWidth={1.8} aria-hidden="true" />
+                </button>
+              {/each}
+            </div>
+          {:else}
+            <p class="beancount-icon-color-picker__empty-icons">
+              No icons match “{iconSearch}”.
+            </p>
+          {/if}
+        </ScrollArea>
       </div>
     </Popover.Content>
   </Popover.Portal>
@@ -250,6 +289,24 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+  }
+
+  .beancount-icon-color-picker__heading-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .beancount-icon-color-picker__heading-row
+    .beancount-icon-color-picker__heading {
+    margin-bottom: 0.6rem;
+  }
+
+  .beancount-icon-color-picker__icon-count {
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
   }
 
   .beancount-icon-color-picker__colors {
@@ -329,10 +386,56 @@
     padding: 0;
   }
 
-  .beancount-icon-color-picker__icons {
+  :global(.beancount-icon-color-picker__icons) {
+    height: min(15rem, 35dvh);
+    max-height: min(15rem, 35dvh);
+    min-height: 0;
+    border-radius: 0.5rem;
+    padding: 0.2rem;
+  }
+
+  .beancount-icon-color-picker__icons-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 0.35rem;
+    padding: 0.25rem;
+  }
+
+  .beancount-icon-color-picker__search {
+    display: flex;
+    height: 2.25rem;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--background);
+    color: var(--muted-foreground);
+    padding: 0 0.65rem;
+  }
+
+  .beancount-icon-color-picker__search input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--foreground);
+    font: inherit;
+    font-size: 0.8125rem;
+    outline: 0;
+  }
+
+  .beancount-icon-color-picker__search:focus-within {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 1px var(--ring);
+  }
+
+  .beancount-icon-color-picker__empty-icons {
+    margin: 0;
+    padding: 1.5rem 0.5rem;
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+    text-align: center;
   }
 
   .beancount-icon-color-picker__icon {
