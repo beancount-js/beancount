@@ -215,10 +215,7 @@ describe("JsonMappingNormalizer", () => {
 describe("grouped JSON API helpers", () => {
   test("builds account transaction endpoints and ingest ids", () => {
     expect(
-      jsonApiAccountTransactionsEndpoint(
-        "https://lunchflow.app/api/v1/",
-        "42",
-      ),
+      jsonApiAccountTransactionsEndpoint("https://lunchflow.app/api/v1/", "42"),
     ).toBe("https://lunchflow.app/api/v1/accounts/42/transactions");
     expect(jsonApiAccountSourceId("lunchflow", "42")).toBe("lunchflow:42");
   });
@@ -242,6 +239,7 @@ describe("grouped JSON API helpers", () => {
                 currency: "GBP",
                 institution_name: "Barclays",
                 status: "active",
+                closed: true,
               },
               { id: "99", name: "" },
             ],
@@ -263,6 +261,7 @@ describe("grouped JSON API helpers", () => {
         institutionName: "Barclays",
         status: "active",
         iban: undefined,
+        closed: true,
       },
     ]);
   });
@@ -339,6 +338,7 @@ describe("grouped JSON API helpers", () => {
         institutionName: undefined,
         status: undefined,
         iban: undefined,
+        closed: undefined,
       },
     ]);
   });

@@ -31,9 +31,21 @@ describe("MonzoClient", () => {
             accounts: [
               {
                 id: "account-1",
-                description: "Personal",
+                description: "user_00022349ddjdjlsl",
                 created: "2020-01-01T00:00:00Z",
                 type: "uk_retail",
+                owner_type: "personal",
+                is_flex: false,
+                product_type: "standard",
+                sort_code: "040004",
+                account_number: "42979962",
+                payment_details: {
+                  locale_uk: {
+                    sort_code: "040004",
+                    account_number: "42979962",
+                  },
+                },
+                closed: false,
               },
               { description: "Missing id" },
             ],
@@ -46,9 +58,18 @@ describe("MonzoClient", () => {
     await expect(client(fetch).getAccounts()).resolves.toEqual([
       {
         id: "account-1",
-        description: "Personal",
         created: "2020-01-01T00:00:00Z",
         accountType: "uk_retail",
+        ownerType: "personal",
+        isFlex: false,
+        productType: "standard",
+        sortCode: "040004",
+        accountNumber: "42979962",
+        paymentDetails: {
+          sortCode: "040004",
+          accountNumber: "42979962",
+        },
+        closed: false,
       },
     ]);
   });

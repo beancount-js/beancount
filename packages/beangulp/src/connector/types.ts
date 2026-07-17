@@ -52,6 +52,8 @@ export interface DiscoveredConnectorAccount {
   institutionName?: string;
   status?: string;
   iban?: string;
+  /** Whether the provider reports this remote account as closed. */
+  closed?: boolean;
 }
 
 /** Kind-agnostic persisted source shell; provider quirks live in `config`. */

@@ -4,6 +4,7 @@ import type {
   SourcePlugin,
 } from "@beancount-js/beangulp";
 import { MonzoClient, MonzoError } from "./client";
+import { monzoAccountDisplayName } from "./account-label";
 import type { MonzoConfig, MonzoTransaction } from "./types";
 import {
   DEFAULT_MAX_PAGES,
@@ -137,10 +138,10 @@ export async function discoverMonzoAccounts(
     const balance = await client.getBalance(account.id);
     discovered.push({
       id: account.id,
-      name: account.description,
+      name: monzoAccountDisplayName(account),
       currency: balance.currency,
       institutionName: "Monzo Bank",
-      status: account.accountType,
+      closed: account.closed,
     });
   }
   return discovered;

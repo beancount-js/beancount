@@ -207,6 +207,7 @@ export type DiscoveredJsonApiAccount = {
   institutionName?: string;
   status?: string;
   iban?: string;
+  closed?: boolean;
 };
 
 /**
@@ -310,6 +311,7 @@ export async function discoverJsonApiAccounts(options: {
         institutionName: scalar(record.institution_name ?? record.institutionName),
         status: scalar(record.status),
         iban: scalar(record.iban),
+        closed: boolean(record.closed),
       } satisfies DiscoveredJsonApiAccount,
     ];
   });
@@ -348,6 +350,10 @@ function scalar(value: unknown): string | undefined {
   if (typeof value === "number" || typeof value === "boolean")
     return String(value);
   return undefined;
+}
+
+function boolean(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined;
 }
 
 function safeEndpoint(config: JsonApiSourceConfig) {

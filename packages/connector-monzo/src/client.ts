@@ -84,6 +84,16 @@ function scalar(value: unknown): string | undefined {
   return undefined;
 }
 
+function objectRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function boolean(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined;
+}
+
 function errorDetail(body: unknown): string | undefined {
   if (!body || typeof body !== "object") return undefined;
   const record = body as Record<string, unknown>;
@@ -301,12 +311,26 @@ export class MonzoClient {
       const record = item as Record<string, unknown>;
       const id = scalar(record.id);
       if (!id) return [];
+      const paymentDetails = objectRecord(
+        objectRecord(record.payment_details)?.locale_uk,
+      );
       return [
         {
           id,
-          description: scalar(record.description) ?? id,
           created: scalar(record.created),
           accountType: scalar(record.type ?? record.account_type),
+          ownerType: scalar(record.owner_type),
+          isFlex: boolean(record.is_flex),
+          productType: scalar(record.product_type),
+          sortCode: scalar(record.sort_code),
+          accountNumber: scalar(record.account_number),
+          paymentDetails: paymentDetails
+            ? {
+                sortCode: scalar(paymentDetails.sort_code),
+                accountNumber: scalar(paymentDetails.account_number),
+              }
+            : undefined,
+          closed: boolean(record.closed),
         } satisfies MonzoAccount,
       ];
     });

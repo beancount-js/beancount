@@ -137,11 +137,24 @@ describe("MonzoSource", () => {
         return new Response(
           JSON.stringify({
             accounts: [
-              { id: "personal", description: "Personal", type: "uk_retail" },
+              {
+                id: "personal",
+                description: "user_00022349ddjdjlsl",
+                type: "uk_retail",
+                sort_code: "040004",
+                account_number: "42979962",
+              },
               {
                 id: "joint",
-                description: "Joint Account",
+                description: "Joint account between user_1 and user_2",
                 type: "uk_retail_joint",
+                payment_details: {
+                  locale_uk: {
+                    sort_code: "040004",
+                    account_number: "32683320",
+                  },
+                },
+                closed: true,
               },
             ],
           }),
@@ -163,17 +176,17 @@ describe("MonzoSource", () => {
     ).resolves.toEqual([
       {
         id: "personal",
-        name: "Personal",
+        name: "Personal · 04-00-04 · 42979962",
         currency: "GBP",
         institutionName: "Monzo Bank",
-        status: "uk_retail",
+        closed: undefined,
       },
       {
         id: "joint",
-        name: "Joint Account",
+        name: "Joint · 04-00-04 · 32683320",
         currency: "EUR",
         institutionName: "Monzo Bank",
-        status: "uk_retail_joint",
+        closed: true,
       },
     ]);
     expect(requests).toEqual([

@@ -26,9 +26,20 @@ export interface MonzoSyncState {
 
 export interface MonzoAccount {
   id: string;
-  description: string;
   created?: string;
   accountType?: string;
+  ownerType?: string;
+  isFlex?: boolean;
+  productType?: string;
+  sortCode?: string;
+  accountNumber?: string;
+  paymentDetails?: MonzoUkPaymentDetails;
+  closed?: boolean;
+}
+
+export interface MonzoUkPaymentDetails {
+  sortCode?: string;
+  accountNumber?: string;
 }
 
 export interface MonzoBalance {
