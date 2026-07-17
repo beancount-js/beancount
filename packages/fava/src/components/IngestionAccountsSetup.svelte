@@ -75,7 +75,7 @@
   let discovered = $state<DiscoveredAccount[]>([]);
   let selectedIds = $state<string[]>([]);
   let sourceAccounts = $state<Record<string, string>>({});
-  let connectionExpanded = $state(true);
+  let connectionExpanded = $state(false);
   let syncSummaryOpen = $state(true);
   let setupSheetOpen = $state(false);
   let autoDiscoveredFor = $state("");
@@ -197,7 +197,6 @@
   const syncing = $derived(
     syncJob?.status === "queued" || syncJob?.status === "running",
   );
-  const canSync = $derived(linkedCount > 0 && !syncing && !saving && !isWeb);
   const lastSyncLabel = $derived.by(() => {
     if (syncing) {
       return syncJob?.progress.message?.trim() || "Syncing…";
@@ -317,20 +316,24 @@
     router.push(`/records?${parameters.toString()}`);
   }
 
-  async function startSync() {
-    if (!selectedConnection || !$snapshot || !canSync) return;
+  async function startSync(connection = selectedConnection) {
+    if (!connection || !$snapshot || !canSyncConnection(connection)) return;
     error = "";
     status = "";
     try {
       const job = await beginIngestionSync({
         projectId: $snapshot.project.id,
-        sourceId: selectedConnection.id,
-        sourceName: selectedConnection.name || selectedConnection.id,
+        sourceId: connection.id,
+        sourceName: connection.name || connection.id,
         onUpdate: (next) => {
-          syncJob = next;
+          if (selectedSourceId === connection.id) {
+            syncJob = next;
+          }
         },
       });
-      syncJob = job;
+      if (selectedSourceId === connection.id) {
+        syncJob = job;
+      }
       if (job.status === "completed") {
         status = "Sync completed.";
       } else if (job.status === "failed") {
@@ -351,6 +354,44 @@
     syncJob = null;
     error = "";
     status = "";
+  }
+
+  function toggleConnection(source: EditableIngestionSource) {
+    if (source.id === selectedConnection?.id) {
+      connectionExpanded = !connectionExpanded;
+      return;
+    }
+    selectConnection(source);
+    connectionExpanded = true;
+  }
+
+  function connectionStatusLineFor(source: EditableIngestionSource) {
+    if (source.id === selectedConnection?.id) {
+      return connectionStatusLine;
+    }
+    const serverSource = loadedConfig?.sources.find(
+      (item) => item.id === source.id,
+    );
+    if (serverSource?.credentialAvailable) {
+      return "Credential available · Select to manage accounts";
+    }
+    if (isSecretConfigured(sourceSecretRef(source))) {
+      return "Credential saved · Ready to discover";
+    }
+    return "No API key configured";
+  }
+
+  function isConnectionSyncing(source: EditableIngestionSource) {
+    return source.id === selectedConnection?.id && syncing;
+  }
+
+  function canSyncConnection(source: EditableIngestionSource) {
+    return (
+      (source.accounts?.length ?? 0) > 0 &&
+      !isWeb &&
+      !saving &&
+      !isConnectionSyncing(source)
+    );
   }
 
   function toggleAccount(id: string, checked: boolean) {
@@ -587,326 +628,318 @@
       </Empty.Root>
     {:else if selectedConnection}
       <div class="flex min-w-0 flex-col gap-6">
-        {#if connections.length > 1}
-          <div class="flex flex-col gap-2">
-            <p
-              class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-            >
-              Connections
-            </p>
-            <div class="flex flex-wrap gap-2">
-              {#each connections as connection (connection.id)}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={connection.id === selectedConnection.id
-                    ? "default"
-                    : "outline"}
-                  onclick={() => selectConnection(connection)}
-                >
-                  {connection.name || connection.id}
-                </Button>
-              {/each}
-            </div>
-          </div>
-        {/if}
-
-        <article
-          class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
-        >
-          <div class="flex items-center gap-3 px-4 py-3">
-            <button
-              type="button"
-              class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
-              aria-expanded={connectionExpanded}
-              aria-label={connectionExpanded
-                ? "Collapse connection"
-                : "Expand connection"}
-              onclick={() => (connectionExpanded = !connectionExpanded)}
-            >
-              <ChevronDown
-                class="size-4 transition-transform {connectionExpanded
-                  ? ''
-                  : '-rotate-90'}"
-                aria-hidden="true"
-              />
-            </button>
-            <div
-              class="flex size-9 shrink-0 items-center justify-center rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
-              aria-hidden="true"
-            >
-              {initialLetter(selectedConnection.name || selectedConnection.id)}
-            </div>
-            <div class="min-w-0 flex-1">
-              <h2 class="truncate text-sm font-semibold">
-                {selectedConnection.name || selectedConnection.id}
-              </h2>
-              <p
-                class="truncate text-xs text-muted-foreground {syncing
-                  ? 'animate-pulse'
-                  : ''}"
+        {#each connections as connection (connection.id)}
+          {@const isSelected = connection.id === selectedConnection.id}
+          <article
+            class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
+          >
+            <div class="flex items-center gap-3 px-4 py-3">
+              <button
+                type="button"
+                class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                aria-expanded={isSelected && connectionExpanded}
+                aria-label={isSelected && connectionExpanded
+                  ? "Collapse connection"
+                  : "Expand connection"}
+                onclick={() => toggleConnection(connection)}
               >
-                {connectionStatusLine}
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              class="shrink-0"
-              disabled={!canSync}
-              onclick={() => void startSync()}
-            >
-              <RefreshCw
-                class="size-4 {syncing ? 'animate-spin' : ''}"
+                <ChevronDown
+                  class="size-4 transition-transform {isSelected &&
+                  connectionExpanded
+                    ? ''
+                    : '-rotate-90'}"
+                  aria-hidden="true"
+                />
+              </button>
+              <div
+                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
                 aria-hidden="true"
-              />
-              {syncing ? "Syncing…" : "Sync"}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              class="shrink-0 text-muted-foreground"
-              aria-label="Connection options"
-              disabled
-            >
-              <Ellipsis class="size-4" aria-hidden="true" />
-            </Button>
-          </div>
-
-          {#if connectionExpanded}
-            <div class="border-t border-border px-4 pb-4 pt-3">
-              {#if linkedGroups.length}
-                <div class="flex flex-col gap-4">
-                  {#each linkedGroups as group (group.label)}
-                    <div class="flex flex-col gap-2">
-                      <p
-                        class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-                      >
-                        {group.label} · {group.accounts.length}
-                      </p>
-                      <ul class="flex flex-col gap-2" role="list">
-                        {#each group.accounts as account (account.id)}
-                          {@const institution = institutionForLinked(account)}
-                          <li
-                            class="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5"
-                          >
-                            <div
-                              class="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold {accountAvatarClass(
-                                account.id || account.name,
-                              )}"
-                              aria-hidden="true"
-                            >
-                              {initialLetter(account.name)}
-                            </div>
-                            <div class="min-w-0 flex-1">
-                              <p class="truncate text-sm font-medium">
-                                {account.name}{#if institution}<span
-                                    class="font-normal text-muted-foreground"
-                                  >
-                                    • {institution}</span
-                                  >{/if}
-                              </p>
-                              <p class="truncate text-xs text-muted-foreground">
-                                {accountTypeLabel(account.sourceAccount)}
-                              </p>
-                            </div>
-                            {#if account.defaultCurrency}
-                              <span
-                                class="shrink-0 text-xs text-muted-foreground"
-                              >
-                                {account.defaultCurrency}
-                              </span>
-                            {/if}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              class="shrink-0 text-muted-foreground"
-                              aria-label={`Remove ${account.name}`}
-                              disabled={saving}
-                              onclick={() => void unlinkAccount(account.id)}
-                            >
-                              <MoreVertical class="size-4" aria-hidden="true" />
-                            </Button>
-                          </li>
-                        {/each}
-                      </ul>
-                    </div>
-                  {/each}
-                </div>
-              {:else if discovering}
-                <p class="py-2 text-sm text-muted-foreground">
-                  Discovering accounts…
-                </p>
-              {:else}
-                <p class="py-2 text-sm text-muted-foreground">
-                  No linked accounts yet.
-                </p>
-              {/if}
-
-              <div class="mt-4 rounded-lg border border-border">
-                <button
-                  type="button"
-                  class="flex w-full items-center gap-2 px-3 py-2.5 text-left"
-                  aria-expanded={syncSummaryOpen}
-                  onclick={() => (syncSummaryOpen = !syncSummaryOpen)}
+              >
+                {initialLetter(connection.name || connection.id)}
+              </div>
+              <div class="min-w-0 flex-1">
+                <h2 class="truncate text-sm font-semibold">
+                  {connection.name || connection.id}
+                </h2>
+                <p
+                  class="truncate text-xs text-muted-foreground {isConnectionSyncing(
+                    connection,
+                  )
+                    ? 'animate-pulse'
+                    : ''}"
                 >
-                  <span class="text-sm font-medium">Sync summary</span>
-                  <span
-                    class="min-w-0 flex-1 truncate text-right text-xs text-muted-foreground"
-                  >
-                    {lastSyncLabel}
-                  </span>
-                  <ChevronDown
-                    class="size-4 shrink-0 text-muted-foreground transition-transform {syncSummaryOpen
-                      ? ''
-                      : '-rotate-90'}"
-                    aria-hidden="true"
-                  />
-                </button>
-                {#if syncSummaryOpen}
-                  <div
-                    class="grid gap-4 border-t border-border px-3 py-3 sm:grid-cols-3"
-                  >
-                    <div class="flex flex-col gap-1.5">
-                      <p
-                        class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-                      >
-                        Accounts
-                      </p>
-                      <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-                        <div>
-                          <dt class="text-muted-foreground">Total</dt>
-                          <dd class="font-medium">{totalAccountCount}</dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">Linked</dt>
-                          <dd class="font-medium">{linkedCount}</dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">Unlinked</dt>
-                          <dd class="font-medium">
-                            {discoveryKnown ? unlinkedCount : "—"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">Institutions</dt>
-                          <dd class="font-medium">{institutionCount}</dd>
-                        </div>
-                      </dl>
-                    </div>
-                    <div class="flex flex-col gap-1.5">
-                      <p
-                        class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-                      >
-                        Transactions
-                      </p>
-                      <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-                        <div>
-                          <dt class="text-muted-foreground">Seen</dt>
-                          <dd class="font-medium">{syncSeen}</dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">Imported</dt>
-                          <dd class="font-medium">{syncImported}</dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">Updated</dt>
-                          <dd class="font-medium">—</dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">Skipped</dt>
-                          <dd class="font-medium">{syncSkipped}</dd>
-                        </div>
-                      </dl>
-                    </div>
-                    <div class="flex flex-col gap-1.5">
-                      <p
-                        class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-                      >
-                        Health
-                      </p>
-                      <p class="text-sm">
-                        Errors:
-                        <span
-                          class={[
-                            "font-medium",
-                            healthErrors > 0
-                              ? "text-red-600"
-                              : "text-emerald-600",
-                          ]}>{healthErrors}</span
+                  {connectionStatusLineFor(connection)}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                class="shrink-0"
+                disabled={!canSyncConnection(connection)}
+                onclick={() => {
+                  if (!isSelected) selectConnection(connection);
+                  void startSync(connection);
+                }}
+              >
+                <RefreshCw
+                  class="size-4 {isConnectionSyncing(connection)
+                    ? 'animate-spin'
+                    : ''}"
+                  aria-hidden="true"
+                />
+                {isConnectionSyncing(connection) ? "Syncing…" : "Sync"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                class="shrink-0 text-muted-foreground"
+                aria-label="Connection options"
+                disabled
+              >
+                <Ellipsis class="size-4" aria-hidden="true" />
+              </Button>
+            </div>
+
+            {#if isSelected && connectionExpanded}
+              <div class="border-t border-border px-4 pb-4 pt-3">
+                {#if linkedGroups.length}
+                  <div class="flex flex-col gap-4">
+                    {#each linkedGroups as group (group.label)}
+                      <div class="flex flex-col gap-2">
+                        <p
+                          class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
                         >
+                          {group.label} · {group.accounts.length}
+                        </p>
+                        <ul class="flex flex-col gap-2" role="list">
+                          {#each group.accounts as account (account.id)}
+                            {@const institution = institutionForLinked(account)}
+                            <li
+                              class="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5"
+                            >
+                              <div
+                                class="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold {accountAvatarClass(
+                                  account.id || account.name,
+                                )}"
+                                aria-hidden="true"
+                              >
+                                {initialLetter(account.name)}
+                              </div>
+                              <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-medium">
+                                  {account.name}{#if institution}<span
+                                      class="font-normal text-muted-foreground"
+                                    >
+                                      • {institution}</span
+                                    >{/if}
+                                </p>
+                                <p
+                                  class="truncate text-xs text-muted-foreground"
+                                >
+                                  {accountTypeLabel(account.sourceAccount)}
+                                </p>
+                              </div>
+                              {#if account.defaultCurrency}
+                                <span
+                                  class="shrink-0 text-xs text-muted-foreground"
+                                >
+                                  {account.defaultCurrency}
+                                </span>
+                              {/if}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="shrink-0 text-muted-foreground"
+                                aria-label={`Remove ${account.name}`}
+                                disabled={saving}
+                                onclick={() => void unlinkAccount(account.id)}
+                              >
+                                <MoreVertical
+                                  class="size-4"
+                                  aria-hidden="true"
+                                />
+                              </Button>
+                            </li>
+                          {/each}
+                        </ul>
+                      </div>
+                    {/each}
+                  </div>
+                {:else if discovering}
+                  <p class="py-2 text-sm text-muted-foreground">
+                    Discovering accounts…
+                  </p>
+                {:else}
+                  <p class="py-2 text-sm text-muted-foreground">
+                    No linked accounts yet.
+                  </p>
+                {/if}
+
+                <div class="mt-4 rounded-lg border border-border">
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-2 px-3 py-2.5 text-left"
+                    aria-expanded={syncSummaryOpen}
+                    onclick={() => (syncSummaryOpen = !syncSummaryOpen)}
+                  >
+                    <span class="text-sm font-medium">Sync summary</span>
+                    <span
+                      class="min-w-0 flex-1 truncate text-right text-xs text-muted-foreground"
+                    >
+                      {lastSyncLabel}
+                    </span>
+                    <ChevronDown
+                      class="size-4 shrink-0 text-muted-foreground transition-transform {syncSummaryOpen
+                        ? ''
+                        : '-rotate-90'}"
+                      aria-hidden="true"
+                    />
+                  </button>
+                  {#if syncSummaryOpen}
+                    <div
+                      class="grid gap-4 border-t border-border px-3 py-3 sm:grid-cols-3"
+                    >
+                      <div class="flex flex-col gap-1.5">
+                        <p
+                          class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                        >
+                          Accounts
+                        </p>
+                        <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                          <div>
+                            <dt class="text-muted-foreground">Total</dt>
+                            <dd class="font-medium">{totalAccountCount}</dd>
+                          </div>
+                          <div>
+                            <dt class="text-muted-foreground">Linked</dt>
+                            <dd class="font-medium">{linkedCount}</dd>
+                          </div>
+                          <div>
+                            <dt class="text-muted-foreground">Unlinked</dt>
+                            <dd class="font-medium">
+                              {discoveryKnown ? unlinkedCount : "—"}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt class="text-muted-foreground">Institutions</dt>
+                            <dd class="font-medium">{institutionCount}</dd>
+                          </div>
+                        </dl>
+                      </div>
+                      <div class="flex flex-col gap-1.5">
+                        <p
+                          class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                        >
+                          Transactions
+                        </p>
+                        <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                          <div>
+                            <dt class="text-muted-foreground">Seen</dt>
+                            <dd class="font-medium">{syncSeen}</dd>
+                          </div>
+                          <div>
+                            <dt class="text-muted-foreground">Imported</dt>
+                            <dd class="font-medium">{syncImported}</dd>
+                          </div>
+                          <div>
+                            <dt class="text-muted-foreground">Updated</dt>
+                            <dd class="font-medium">—</dd>
+                          </div>
+                          <div>
+                            <dt class="text-muted-foreground">Skipped</dt>
+                            <dd class="font-medium">{syncSkipped}</dd>
+                          </div>
+                        </dl>
+                      </div>
+                      <div class="flex flex-col gap-1.5">
+                        <p
+                          class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                        >
+                          Health
+                        </p>
+                        <p class="text-sm">
+                          Errors:
+                          <span
+                            class={[
+                              "font-medium",
+                              healthErrors > 0
+                                ? "text-red-600"
+                                : "text-emerald-600",
+                            ]}>{healthErrors}</span
+                          >
+                        </p>
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+
+                {#if showReviewCta}
+                  <div
+                    class="mt-4 flex flex-col items-center gap-3 rounded-lg border border-border bg-muted/20 px-4 py-6 text-center"
+                  >
+                    <p class="text-sm font-semibold">
+                      Transactions ready to review
+                    </p>
+                    <Button type="button" onclick={openReviewImports}>
+                      <BookOpen class="size-4" aria-hidden="true" />
+                      Review imports
+                    </Button>
+                  </div>
+                {/if}
+
+                {#if showSetupCta}
+                  <div
+                    class="mt-4 flex flex-col items-center gap-3 rounded-lg border border-dashed border-border bg-muted/20 px-4 py-6 text-center"
+                  >
+                    <div>
+                      <p class="text-sm font-semibold">
+                        New accounts ready to set up
+                      </p>
+                      <p class="mt-1 max-w-md text-sm text-muted-foreground">
+                        {linkedCount} of {totalAccountCount} accounts linked. Choose
+                        Beancount source accounts for newly imported accounts.
                       </p>
                     </div>
+                    <Button
+                      type="button"
+                      class="bg-foreground text-background hover:bg-foreground/90"
+                      disabled={saving || discovering}
+                      onclick={openSetupSheet}
+                    >
+                      <Settings class="size-4" aria-hidden="true" />
+                      Set Up New Accounts
+                    </Button>
                   </div>
                 {/if}
               </div>
+            {/if}
 
-              {#if showReviewCta}
-                <div
-                  class="mt-4 flex flex-col items-center gap-3 rounded-lg border border-border bg-muted/20 px-4 py-6 text-center"
-                >
-                  <p class="text-sm font-semibold">
-                    Transactions ready to review
-                  </p>
-                  <Button type="button" onclick={openReviewImports}>
-                    <BookOpen class="size-4" aria-hidden="true" />
-                    Review imports
-                  </Button>
-                </div>
-              {/if}
-
-              {#if showSetupCta}
-                <div
-                  class="mt-4 flex flex-col items-center gap-3 rounded-lg border border-dashed border-border bg-muted/20 px-4 py-6 text-center"
-                >
-                  <div>
-                    <p class="text-sm font-semibold">
-                      New accounts ready to set up
-                    </p>
-                    <p class="mt-1 max-w-md text-sm text-muted-foreground">
-                      {linkedCount} of {totalAccountCount} accounts linked. Choose
-                      Beancount source accounts for newly imported accounts.
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    class="bg-foreground text-background hover:bg-foreground/90"
-                    disabled={saving || discovering}
-                    onclick={openSetupSheet}
-                  >
-                    <Settings class="size-4" aria-hidden="true" />
-                    Set Up New Accounts
-                  </Button>
-                </div>
-              {/if}
-            </div>
-          {/if}
-
-          {#if error}
-            <div
-              class="bg-destructive/10 px-3 py-2 text-destructive"
-              role="alert"
-            >
-              <p class="text-xs font-medium">Could not load accounts</p>
-              <p
-                class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90"
+            {#if isSelected && error}
+              <div
+                class="bg-destructive/10 px-3 py-2 text-destructive"
+                role="alert"
               >
-                {error}
+                <p class="text-xs font-medium">Could not load accounts</p>
+                <p
+                  class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90"
+                >
+                  {error}
+                </p>
+              </div>
+            {/if}
+            {#if isSelected && status}
+              <p
+                class="border-t border-border px-4 py-3 text-sm text-muted-foreground"
+                role="status"
+              >
+                {status}
               </p>
-            </div>
-          {/if}
-          {#if status}
-            <p
-              class="border-t border-border px-4 py-3 text-sm text-muted-foreground"
-              role="status"
-            >
-              {status}
-            </p>
-          {/if}
-        </article>
+            {/if}
+          </article>
+        {/each}
       </div>
     {:else if error}
       <div
