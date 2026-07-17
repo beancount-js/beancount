@@ -12,6 +12,7 @@
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
   import Settings from "lucide-svelte/icons/settings";
   import Trash2 from "lucide-svelte/icons/trash-2";
+  import { accountOpenClose, type Open } from "@beancount-js/beancount";
   import type { JsonApiLinkedAccount } from "@beancount-js/beangulp";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import { onDestroy } from "svelte";
@@ -231,6 +232,9 @@
   const otherAccountGroups = $derived(
     groupOtherLedgerAccounts($ledgerData.directives, config?.sources ?? []),
   );
+  const openDirectivesByAccount = $derived(
+    accountOpenClose($ledgerData.directives),
+  );
   const otherAccountCount = $derived(
     otherAccountGroups.reduce(
       (count, group) => count + group.accounts.length,
@@ -379,12 +383,29 @@
     return balanceText(total);
   }
 
-  function editOtherAccount(account: OtherLedgerAccount) {
+  function openDirectiveForAccount(accountName: string) {
+    return openDirectivesByAccount[accountName]?.open;
+  }
+
+  function editOpenDirective(open: Open) {
     const route = get(activeRoute);
     const params = new URLSearchParams(route.query);
-    params.set("record", journalRecordKey(account.open));
+    params.set("record", journalRecordKey(open));
     const search = params.toString();
     void router.updateState(search ? `?${search}` : "?");
+  }
+
+  function editLinkedAccount(account: JsonApiLinkedAccount) {
+    const open = openDirectiveForAccount(account.sourceAccount);
+    if (!open) {
+      error = `No open directive was found for ${account.sourceAccount}.`;
+      return;
+    }
+    editOpenDirective(open);
+  }
+
+  function editOtherAccount(account: OtherLedgerAccount) {
+    editOpenDirective(account.open);
   }
 
   function merchantFor(source: EditableIngestionSource) {
@@ -1053,6 +1074,9 @@
                           {#each group.accounts as account, index (account.id)}
                             {@const institution = institutionForLinked(account)}
                             {@const balance = accountBalanceText(account)}
+                            {@const openDirective = openDirectiveForAccount(
+                              account.sourceAccount,
+                            )}
                             <li
                               class:rounded-b-xl={index ===
                                 group.accounts.length - 1}
@@ -1112,6 +1136,20 @@
                                   {/snippet}
                                 </DropdownMenu.Trigger>
                                 <DropdownMenu.Content align="end">
+                                  <DropdownMenu.Group>
+                                    <DropdownMenu.Item
+                                      disabled={!openDirective}
+                                      onSelect={() =>
+                                        editLinkedAccount(account)}
+                                    >
+                                      <Pencil
+                                        class="size-3.5"
+                                        aria-hidden="true"
+                                      />
+                                      Edit
+                                    </DropdownMenu.Item>
+                                  </DropdownMenu.Group>
+                                  <DropdownMenu.Separator />
                                   <DropdownMenu.Group>
                                     <DropdownMenu.Item
                                       class="text-destructive focus:text-destructive"
