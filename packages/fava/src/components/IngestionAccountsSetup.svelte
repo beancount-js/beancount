@@ -937,21 +937,23 @@
                   </p>
                 {/if}
 
-                <div class="mt-4 overflow-hidden rounded-2xl border bg-card">
+                <div
+                  class="mt-4 overflow-hidden rounded-2xl border bg-secondary text-secondary-foreground"
+                >
                   <button
                     type="button"
-                    class="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/60"
+                    class="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-background/10"
                     aria-expanded={syncSummaryOpen}
                     onclick={() => (syncSummaryOpen = !syncSummaryOpen)}
                   >
                     <span
-                      class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                      class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
                     >
-                      <RefreshCw class="size-5" aria-hidden="true" />
+                      <RefreshCw class="size-4" aria-hidden="true" />
                     </span>
                     <span class="min-w-0 flex-1">
                       <span class="flex flex-wrap items-center gap-2">
-                        <span class="text-lg font-semibold">Sync summary</span>
+                        <span class="text-sm font-semibold">Sync summary</span>
                         <Badge
                           variant={healthErrors > 0
                             ? "destructive"
@@ -974,7 +976,7 @@
                       </span>
                     </span>
                     <span
-                      class="hidden min-w-0 truncate text-right text-sm text-muted-foreground sm:block"
+                      class="hidden min-w-0 truncate text-right text-xs text-muted-foreground sm:block"
                     >
                       {syncSummaryTimeLabel}
                     </span>
@@ -997,28 +999,31 @@
                           >
                             <Landmark class="size-5" aria-hidden="true" />
                           </span>
-                          <h3 id="sync-summary-accounts" class="font-semibold">
+                          <h3
+                            id="sync-summary-accounts"
+                            class="text-sm font-semibold"
+                          >
                             Accounts
                           </h3>
                         </div>
                         <div class="flex items-baseline gap-2">
-                          <span class="text-4xl font-semibold tabular-nums">
+                          <span class="text-3xl font-semibold tabular-nums">
                             {linkedCount} / {totalAccountCount}
                           </span>
-                          <span class="text-lg text-muted-foreground"
+                          <span class="text-base text-muted-foreground"
                             >linked</span
                           >
                         </div>
                         <div class="flex items-center gap-3">
                           <Progress value={linkedPercent} class="h-2 flex-1" />
                           <span
-                            class="text-sm font-medium tabular-nums text-muted-foreground"
+                            class="text-xs font-medium tabular-nums text-muted-foreground"
                           >
                             {linkedPercent}%
                           </span>
                         </div>
                         <dl
-                          class="flex flex-col gap-3 text-sm text-muted-foreground"
+                          class="flex flex-col gap-3 text-xs text-muted-foreground"
                         >
                           <div class="flex items-center gap-3">
                             <dt>
@@ -1055,16 +1060,17 @@
                           </span>
                           <h3
                             id="sync-summary-transactions"
-                            class="font-semibold"
+                            class="text-sm font-semibold"
                           >
                             Transactions
                           </h3>
                         </div>
                         <div class="flex items-baseline gap-2">
-                          <span class="text-4xl font-semibold tabular-nums">
+                          <span class="text-3xl font-semibold tabular-nums">
                             {syncSeen}
                           </span>
-                          <span class="text-lg text-muted-foreground">seen</span
+                          <span class="text-base text-muted-foreground"
+                            >seen</span
                           >
                         </div>
                         <Separator />
@@ -1076,7 +1082,7 @@
                           >
                             <RefreshCw class="size-4" aria-hidden="true" />
                           </span>
-                          <span class="text-sm">
+                          <span class="text-xs">
                             <span
                               class="font-medium tabular-nums text-foreground"
                             >
@@ -1097,15 +1103,18 @@
                           >
                             <Download class="size-5" aria-hidden="true" />
                           </span>
-                          <h3 id="sync-summary-import" class="font-semibold">
+                          <h3
+                            id="sync-summary-import"
+                            class="text-sm font-semibold"
+                          >
                             Import
                           </h3>
                         </div>
                         <div class="flex items-baseline gap-2">
-                          <span class="text-4xl font-semibold tabular-nums">
+                          <span class="text-3xl font-semibold tabular-nums">
                             {syncImported}
                           </span>
-                          <span class="text-lg text-muted-foreground"
+                          <span class="text-base text-muted-foreground"
                             >imported</span
                           >
                         </div>
@@ -1118,7 +1127,7 @@
                           >
                             <CircleSlash class="size-4" aria-hidden="true" />
                           </span>
-                          <span class="text-sm">
+                          <span class="text-xs">
                             <span
                               class="font-medium tabular-nums text-foreground"
                             >
