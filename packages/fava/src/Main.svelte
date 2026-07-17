@@ -152,6 +152,7 @@
       (available.includes($activeFile) ? $activeFile : undefined) ??
       next.project.entryFile;
     workspace.activeFile.set(selected);
+    loadLedger(next, selected);
     syncRouteEnv(next, selected);
   }
 
