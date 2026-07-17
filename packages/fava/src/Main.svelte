@@ -58,6 +58,7 @@
   export let onSaveFile: (
     path: string,
     contents: string,
+    expectedRevision?: string,
   ) => Promise<ProjectSnapshot>;
   export let onRefreshProject: () => Promise<void>;
   export let onResourceUrl: (
@@ -188,8 +189,12 @@
     );
   }
 
-  async function saveFile(path: string, contents: string) {
-    const next = await onSaveFile(path, contents);
+  async function saveFile(
+    path: string,
+    contents: string,
+    expectedRevision?: string,
+  ) {
+    const next = await onSaveFile(path, contents, expectedRevision);
     applySnapshot(next);
   }
 

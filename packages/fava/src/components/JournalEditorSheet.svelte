@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { DirectiveBase } from "@beancount-js/beancount";
+  import type { ProjectSnapshot } from "@beancount-js/workspace";
   import {
     autosizeTextarea,
     ChipAutocomplete,
@@ -28,6 +29,12 @@
   import { basicSetup, ledgerSetup } from "../codemirror/beancount/setup";
   import { replaceContents } from "../codemirror/extensions/transactions";
   import { LedgerSource } from "../core/ledger";
+  import {
+    findDirectiveByRecordAnchor,
+    journalRecordAnchor,
+    journalRecordKey,
+    type JournalRecordAnchor,
+  } from "../lib/journal-record-key";
   import { useStudioWorkspace } from "../studio/workspace";
   import {
     bookingOptions,
@@ -49,9 +56,14 @@
   type Props = {
     directive: DirectiveBase;
     open?: boolean;
+    onRecordKeyChange?: (key: string) => void;
   };
 
-  let { directive, open = $bindable(false) }: Props = $props();
+  let {
+    directive,
+    open = $bindable(false),
+    onRecordKeyChange = () => {},
+  }: Props = $props();
 
   const { accounts, currencies, ledgerSource, tags: ledgerTags } = useContext();
   const { snapshot, saveFile } = useStudioWorkspace();
@@ -68,6 +80,7 @@
   let saveState = $state<SaveState>("idle");
   let saveTimer: number | null = null;
   let loadingDraft = $state(false);
+  let recordAnchor = $state<JournalRecordAnchor | undefined>(undefined);
   let editor: EditorView | undefined;
   let replacing = false;
   let sheetTitleEl = $state<HTMLElement | null>(null);
@@ -160,6 +173,7 @@
   function loadFromDirective(value: DirectiveBase) {
     loadingDraft = true;
     formDirective = value;
+    recordAnchor = journalRecordAnchor(value);
     const nextKind = directiveKind(value);
     const ast = hasEditableAst(value);
     rawSource = value.content;
@@ -195,26 +209,66 @@
     return error.message;
   }
 
-  async function persist(source: string) {
-    const entry = directive.source;
-    const currentSnapshot = $snapshot;
-    if (!entry || !currentSnapshot) {
+  function currentRecordAnchor(snapshot: ProjectSnapshot) {
+    const savedAnchor = recordAnchor;
+    if (!savedAnchor) {
       throw new Error(
         "This record is not attached to an editable project file.",
       );
     }
-    const path = String(directive.meta["filename"] ?? "");
-    const file = currentSnapshot.ledgerFiles.find((item) => item.path === path);
+    const file = snapshot.ledgerFiles.find(
+      (item) => item.path === savedAnchor.filename,
+    );
     if (!file)
       throw new Error("The record's source file is no longer available.");
 
-    const original = entry.content;
-    const { from, to } = entry.position;
-    if (file.contents.slice(from, to) !== original) {
+    if (
+      file.contents.slice(savedAnchor.from, savedAnchor.to) ===
+      savedAnchor.content
+    ) {
+      return { anchor: savedAnchor, file };
+    }
+
+    const refreshed = LedgerSource.fromProject(
+      snapshot.project.entryFile,
+      snapshot.ledgerFiles.map((item) => ({
+        path: item.path,
+        contents: item.contents,
+      })),
+      $ledgerSource.props,
+    );
+    const relocated = findDirectiveByRecordAnchor(
+      refreshed.directives,
+      savedAnchor,
+    );
+    const nextAnchor = relocated && journalRecordAnchor(relocated);
+    if (!nextAnchor) {
       throw new Error(
         "This record changed in another editor. Reload it before saving.",
       );
     }
+    const relocatedFile = snapshot.ledgerFiles.find(
+      (item) => item.path === nextAnchor.filename,
+    );
+    if (!relocatedFile)
+      throw new Error("The record's source file is no longer available.");
+
+    recordAnchor = nextAnchor;
+    onRecordKeyChange(journalRecordKey(relocated));
+    return { anchor: nextAnchor, file: relocatedFile };
+  }
+
+  async function persist(source: string) {
+    const currentSnapshot = $snapshot;
+    if (!currentSnapshot) {
+      throw new Error(
+        "This record is not attached to an editable project file.",
+      );
+    }
+    const { anchor, file } = currentRecordAnchor(currentSnapshot);
+    const path = anchor.filename;
+    const { from } = anchor;
+    const { to } = anchor;
     const contents = `${file.contents.slice(0, from)}${source}${file.contents.slice(to)}`;
     const candidate = LedgerSource.fromProject(
       currentSnapshot.project.entryFile,
@@ -231,7 +285,23 @@
     if (introduced.length) {
       throw new Error(introduced.map((error) => error.message).join("\n"));
     }
-    await saveFile(path, contents);
+    const expectedRevision = currentSnapshot.revisions.find(
+      (item) => item.path === path,
+    )?.revision;
+    await saveFile(path, contents, expectedRevision);
+
+    const saved = findDirectiveByRecordAnchor(candidate.directives, {
+      filename: path,
+      content: source,
+      from,
+      to: from + source.length,
+    });
+    const nextAnchor = saved && journalRecordAnchor(saved);
+    if (!nextAnchor) {
+      throw new Error("Could not refresh the saved record's position.");
+    }
+    recordAnchor = nextAnchor;
+    onRecordKeyChange(journalRecordKey(saved));
   }
 
   async function saveNow() {
@@ -239,6 +309,7 @@
       window.clearTimeout(saveTimer);
       saveTimer = null;
     }
+    if (saving) return;
     saving = true;
     saveState = "saving";
     errors = [];
@@ -259,6 +330,7 @@
       saveState = "error";
     } finally {
       saving = false;
+      if (saveState === "dirty") void saveNow();
     }
   }
 

@@ -3,7 +3,12 @@
   import { tick } from "svelte";
   import { useContext } from "../context";
   import { useNavigation } from "../router/router";
-  import { findDirectiveByRecordKey } from "../lib/journal-record-key";
+  import {
+    findDirectiveByRecordAnchor,
+    findDirectiveByRecordKey,
+    journalRecordAnchor,
+    journalRecordKey,
+  } from "../lib/journal-record-key";
   import JournalEditorSheet from "./JournalEditorSheet.svelte";
 
   const { activeRoute, router } = useNavigation();
@@ -12,6 +17,7 @@
   let editorOpen = $state(false);
   let sheetDirective = $state<DirectiveBase | undefined>(undefined);
   let boundKey = $state("");
+  let pendingRecordKey = $state("");
   /** True while we are deferring open past the click gesture. */
   let opening = $state(false);
   let openGeneration = 0;
@@ -28,12 +34,21 @@
     void router.updateState(next ? `?${next}` : "?");
   }
 
+  function updateRecordParam(key: string) {
+    const query = new URLSearchParams($activeRoute.query);
+    if (query.get("record") === key) return;
+    pendingRecordKey = key;
+    query.set("record", key);
+    void router.updateState(`?${query.toString()}`);
+  }
+
   function resetSheet() {
     openGeneration += 1;
     opening = false;
     editorOpen = false;
     sheetDirective = undefined;
     boundKey = "";
+    pendingRecordKey = "";
   }
 
   async function openSheetFor(key: string, directive: DirectiveBase) {
@@ -62,7 +77,20 @@
 
     const found = findDirectiveByRecordKey(allDirectives, key);
     if (!found) {
-      // Keep ?record= while the ledger is still loading.
+      if (pendingRecordKey === key) return;
+      const relocated = findDirectiveByRecordAnchor(
+        allDirectives,
+        sheetDirective ? journalRecordAnchor(sheetDirective) : undefined,
+      );
+      if (relocated) {
+        const nextKey = journalRecordKey(relocated);
+        boundKey = nextKey;
+        sheetDirective = relocated;
+        updateRecordParam(nextKey);
+      }
+      // Keep ?record= while the ledger is still loading or a record was edited
+      // externally. The editor can still re-locate unchanged source content
+      // before it saves.
       return;
     }
 
@@ -71,6 +99,7 @@
       return;
     }
 
+    pendingRecordKey = "";
     sheetDirective = found;
     if (!editorOpen && !opening) {
       // User dismissed the sheet while the URL still has record — clear it.
@@ -80,5 +109,9 @@
 </script>
 
 {#if sheetDirective}
-  <JournalEditorSheet directive={sheetDirective} bind:open={editorOpen} />
+  <JournalEditorSheet
+    directive={sheetDirective}
+    bind:open={editorOpen}
+    onRecordKeyChange={updateRecordParam}
+  />
 {/if}
