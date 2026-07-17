@@ -25,6 +25,7 @@ async function emitProgress(
 export function transactionFingerprint(transaction: NormalizedTransaction) {
   return md5(
     [
+      transaction.sourceId,
       transaction.sourceAccount,
       transaction.bookedAt,
       transaction.amount,

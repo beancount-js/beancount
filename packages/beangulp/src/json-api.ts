@@ -45,6 +45,8 @@ export interface JsonApiLinkedAccount {
   name: string;
   sourceAccount: string;
   defaultCurrency?: string;
+  /** Overrides the connection reconciliation priority for this account. */
+  reconciliationPriority?: number;
 }
 
 export function isGroupedJsonApiSource(source: {

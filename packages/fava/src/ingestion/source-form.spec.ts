@@ -16,7 +16,7 @@ import { availableIngestionSamples, ingestionSamples } from "./samples";
 describe("ingestion source form draft", () => {
   test("removes server-computed source properties without changing editable values", () => {
     const response = {
-      version: 2 as const,
+      version: 3 as const,
       accounts: ["Assets:Bank:Checking"],
       sources: [
         {
@@ -74,8 +74,8 @@ describe("ingestion source form draft", () => {
       "must be an object",
     );
     expect(() =>
-      parseEditableIngestionConfig('{"version":3,"sources":[]}'),
-    ).toThrow("version must be 1 or 2");
+      parseEditableIngestionConfig('{"version":4,"sources":[]}'),
+    ).toThrow("version must be 1, 2, or 3");
     expect(() => parseEditableIngestionConfig('{"version":1}')).toThrow(
       "sources must be an array",
     );
@@ -92,8 +92,8 @@ describe("ingestion source form draft", () => {
     expect(() => parseEditableIngestionYaml("sources: [")).toThrow(
       "Invalid YAML",
     );
-    expect(() => parseEditableIngestionYaml("version: 3\nsources: []")).toThrow(
-      "version must be 1 or 2",
+    expect(() => parseEditableIngestionYaml("version: 4\nsources: []")).toThrow(
+      "version must be 1, 2, or 3",
     );
   });
 

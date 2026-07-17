@@ -1,6 +1,8 @@
 <script lang="ts">
   import {
     FormAddButton,
+    FormField,
+    FormSectionHeader,
     YamlBackedForm,
     type FormValidationIssue,
   } from "@beancount-js/forms";
@@ -9,6 +11,7 @@
   import { onDestroy } from "svelte";
   import * as Alert from "$lib/components/ui/alert";
   import * as Empty from "$lib/components/ui/empty";
+  import { Input } from "$lib/components/ui/input";
   import { useNavigation } from "../router/router";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
@@ -182,6 +185,24 @@
       sources: config.sources.map((source, sourceIndex) =>
         sourceIndex === index ? next : source,
       ),
+    };
+    scheduleSave();
+  }
+
+  function updateReconciliation(
+    field: "duplicateWindowDays" | "transferWindowDays" | "fxRateTolerance",
+    value: string,
+  ) {
+    if (!config) return;
+    const clean = value.trim();
+    const parsed = clean ? Number(clean) : undefined;
+    const reconciliation = { ...config.reconciliation, [field]: parsed };
+    const compact = Object.fromEntries(
+      Object.entries(reconciliation).filter(([, item]) => item !== undefined),
+    );
+    config = {
+      ...config,
+      reconciliation: Object.keys(compact).length ? compact : undefined,
     };
     scheduleSave();
   }
@@ -514,6 +535,90 @@
                 onSave={() => void saveNow()}
               />
             {:else}
+              <section>
+                <FormSectionHeader
+                  title="Reconciliation"
+                  editable={false}
+                  movable={false}
+                  removable={false}
+                />
+                <div class="mt-3 grid gap-3 pl-6">
+                  <div class="beancount-structured-form">
+                    <FormField
+                      label="Duplicate window (days)"
+                      controlId="reconciliation-duplicate-window"
+                      as="div"
+                      align="center"
+                    >
+                      <Input
+                        id="reconciliation-duplicate-window"
+                        type="number"
+                        min="0"
+                        max="31"
+                        step="1"
+                        value={config.reconciliation?.duplicateWindowDays ===
+                        undefined
+                          ? ""
+                          : String(config.reconciliation.duplicateWindowDays)}
+                        placeholder="5"
+                        oninput={(event) =>
+                          updateReconciliation(
+                            "duplicateWindowDays",
+                            event.currentTarget.value,
+                          )}
+                      />
+                    </FormField>
+                    <FormField
+                      label="Transfer window (days)"
+                      controlId="reconciliation-transfer-window"
+                      as="div"
+                      align="center"
+                    >
+                      <Input
+                        id="reconciliation-transfer-window"
+                        type="number"
+                        min="0"
+                        max="31"
+                        step="1"
+                        value={config.reconciliation?.transferWindowDays ===
+                        undefined
+                          ? ""
+                          : String(config.reconciliation.transferWindowDays)}
+                        placeholder="4"
+                        oninput={(event) =>
+                          updateReconciliation(
+                            "transferWindowDays",
+                            event.currentTarget.value,
+                          )}
+                      />
+                    </FormField>
+                    <FormField
+                      label="FX rate tolerance"
+                      controlId="reconciliation-fx-rate-tolerance"
+                      as="div"
+                      align="center"
+                    >
+                      <Input
+                        id="reconciliation-fx-rate-tolerance"
+                        type="number"
+                        min="0"
+                        max="1"
+                        step="0.001"
+                        value={config.reconciliation?.fxRateTolerance ===
+                        undefined
+                          ? ""
+                          : String(config.reconciliation.fxRateTolerance)}
+                        placeholder="0.02"
+                        oninput={(event) =>
+                          updateReconciliation(
+                            "fxRateTolerance",
+                            event.currentTarget.value,
+                          )}
+                      />
+                    </FormField>
+                  </div>
+                </div>
+              </section>
               {#each config.sources as source, index (source.id || index)}
                 {@const serverSource = serverSourceFor(source)}
                 <IngestionSourceForm

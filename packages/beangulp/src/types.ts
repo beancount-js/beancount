@@ -37,6 +37,28 @@ export interface NormalizeContext {
   fetchedAt: string;
 }
 
+/** A provider-reported monetary value used to support transfer reconciliation. */
+export interface TransferAmount {
+  amount: string;
+  currency: string;
+}
+
+/**
+ * Optional provider-neutral evidence that a normalized record is a transfer.
+ * The ingestion pipeline does not infer transfers from this alone; it is used
+ * only to strengthen or validate a candidate produced from both account legs.
+ */
+export interface TransferEvidence {
+  /** Provider counterpart account identifier, when the provider exposes one. */
+  counterpartyAccountId?: string;
+  /** Amount in the other side's/source currency for an FX transfer. */
+  sourceAmount?: TransferAmount;
+  /** Provider-reported rate between the transaction and source amount. */
+  exchangeRate?: string;
+  /** Explicit fee charged as part of the movement. */
+  fee?: TransferAmount;
+}
+
 export interface NormalizedTransaction {
   sourceId: string;
   sourceAccount: string;
@@ -54,6 +76,7 @@ export interface NormalizedTransaction {
   tags?: readonly string[];
   links?: readonly string[];
   metadata: Record<string, string>;
+  transferEvidence?: TransferEvidence;
 }
 
 /** Editable fields for review-import proposal patches. */

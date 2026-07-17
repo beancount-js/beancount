@@ -112,7 +112,7 @@ describe("FilesystemIngestionStore", () => {
 
     await store.saveRun("project", run);
     await expect(store.readState("project")).resolves.toEqual({
-      version: 3,
+      version: 4,
       cursors: { bank: "cursor-2" },
       syncState: {},
       seenImportIds: [],
@@ -140,7 +140,7 @@ describe("FilesystemIngestionStore", () => {
 
     const persistedState = JSON.parse(await readFile(statePath, "utf8"));
     expect(persistedState).toEqual({
-      version: 3,
+      version: 4,
       cursors: { bank: "cursor-2" },
       syncState: {},
       seenImportIds: [],
@@ -327,7 +327,10 @@ describe("FilesystemIngestionStore", () => {
     );
     expect(persisted).toContain("env:BANK_API_TOKEN");
     expect(persisted).not.toContain("top-secret-token");
-    expect(await store.readConfig("project")).toEqual(config());
+    expect(await store.readConfig("project")).toEqual({
+      ...config(),
+      version: 3,
+    });
   });
 
   test("round-trips the full JSON API source configuration", async () => {
@@ -389,7 +392,7 @@ describe("FilesystemIngestionStore", () => {
     await store.writeConfig("project", full);
 
     await expect(store.readConfig("project")).resolves.toEqual({
-      version: 2,
+      version: 3,
       brandfetch: expect.objectContaining({
         enabled: true,
         clientId: "test-client",

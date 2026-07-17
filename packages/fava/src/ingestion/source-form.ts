@@ -2,6 +2,7 @@ import type { FormValidationIssue } from "@beancount-js/forms";
 import type {
   BrandfetchEnrichmentConfig,
   IngestionConfigResponse,
+  IngestionReconciliationConfig,
   IngestionSource,
 } from "./types";
 import { isEnvSecretNameValid, isSecretConfigured } from "./secret-ref";
@@ -18,13 +19,14 @@ export type EditableIngestionSource = Omit<
 >;
 
 export type EditableIngestionConfig = {
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   brandfetch?: BrandfetchEnrichmentConfig;
+  reconciliation?: IngestionReconciliationConfig;
   sources: EditableIngestionSource[];
 };
 
 export const exampleIngestionConfig: EditableIngestionConfig = {
-  version: 2,
+  version: 3,
   sources: [
     {
       id: "bank",
@@ -86,6 +88,7 @@ export function editableIngestionConfig(
   return clone({
     version: response.version,
     brandfetch: response.brandfetch,
+    reconciliation: response.reconciliation,
     sources: response.sources.map(
       ({
         credentialAvailable: _credentialAvailable,
@@ -117,16 +120,19 @@ export function parseEditableIngestionConfig(
   }
 
   const root = asRecord(parsed, "Source configuration");
-  if (root.version !== 1 && root.version !== 2) {
-    throw new Error("Source configuration version must be 1 or 2.");
+  if (root.version !== 1 && root.version !== 2 && root.version !== 3) {
+    throw new Error("Source configuration version must be 1, 2, or 3.");
   }
   if (!Array.isArray(root.sources)) {
     throw new Error("Source configuration sources must be an array.");
   }
 
   return clone({
-    version: root.version as 1 | 2,
+    version: root.version as 1 | 2 | 3,
     brandfetch: root.brandfetch as BrandfetchEnrichmentConfig | undefined,
+    reconciliation: root.reconciliation as
+      | IngestionReconciliationConfig
+      | undefined,
     sources: root.sources.map((source, index) => {
       const item = asRecord(source, `Source ${index + 1}`);
       if (typeof item.kind !== "string" || !item.kind.trim()) {
@@ -314,6 +320,16 @@ function sourceIssues(
   }
   if (!source.name?.trim())
     issues.push(field("name", "A source name is required."));
+  if (
+    source.reconciliationPriority !== undefined &&
+    (!Number.isInteger(source.reconciliationPriority) ||
+      source.reconciliationPriority < -100 ||
+      source.reconciliationPriority > 100)
+  ) {
+    issues.push(
+      field("reconciliationPriority", "Use an integer from -100 to 100."),
+    );
+  }
 
   if (grouped) {
     if (connector) {
@@ -370,6 +386,19 @@ function sourceIssues(
             field(
               `${prefix}.sourceAccount`,
               "A Beancount source account is required.",
+            ),
+          );
+        }
+        if (
+          account.reconciliationPriority !== undefined &&
+          (!Number.isInteger(account.reconciliationPriority) ||
+            account.reconciliationPriority < -100 ||
+            account.reconciliationPriority > 100)
+        ) {
+          issues.push(
+            field(
+              `${prefix}.reconciliationPriority`,
+              "Use an integer from -100 to 100.",
             ),
           );
         }
@@ -459,12 +488,43 @@ function brandfetchIssues(
   return issues;
 }
 
+function reconciliationIssues(
+  reconciliation: IngestionReconciliationConfig | undefined,
+): FormValidationIssue[] {
+  if (!reconciliation) return [];
+  const issue = (fieldId: string, message: string): FormValidationIssue => ({
+    fieldId,
+    path: `reconciliation.${fieldId}`,
+    message,
+    severity: "error",
+  });
+  const issues: FormValidationIssue[] = [];
+  for (const field of ["duplicateWindowDays", "transferWindowDays"] as const) {
+    const value = reconciliation[field];
+    if (
+      value !== undefined &&
+      (!Number.isInteger(value) || value < 0 || value > 31)
+    ) {
+      issues.push(issue(field, "Use a whole number from 0 to 31."));
+    }
+  }
+  const tolerance = reconciliation.fxRateTolerance;
+  if (
+    tolerance !== undefined &&
+    (!Number.isFinite(tolerance) || tolerance < 0 || tolerance > 1)
+  ) {
+    issues.push(issue("fxRateTolerance", "Use a decimal from 0 to 1."));
+  }
+  return issues;
+}
+
 export function validateEditableIngestionConfig(
   config: EditableIngestionConfig,
 ): FormValidationIssue[] {
   const issues = [
     ...config.sources.flatMap(sourceIssues),
     ...brandfetchIssues(config.brandfetch),
+    ...reconciliationIssues(config.reconciliation),
   ];
   const seen = new Set<string>();
   config.sources.forEach((source, index) => {

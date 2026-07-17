@@ -48,9 +48,11 @@
   import { Progress } from "$lib/components/ui/progress";
   import * as ToggleGroup from "$lib/components/ui/toggle-group";
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
+  import IngestionReconciliationPanel from "./IngestionReconciliationPanel.svelte";
   import ReviewImportsSkeleton from "./skeletons/ReviewImportsSkeleton.svelte";
 
   const PAGE_SIZES = [25, 50, 100];
+  const ALL_CONNECTIONS = "__all__";
 
   type ReviewFilter = "pending" | "accepted";
 
@@ -75,7 +77,7 @@
   let runSummaries = $state<IngestionRunSummary[]>([]);
   let runs = $state<IngestionRun[]>([]);
   let activeRuns = $state<IngestionRun[]>([]);
-  let sourceId = $state("");
+  let sourceId = $state(ALL_CONNECTIONS);
   let status = $state("");
   let loading = $state(false);
   let loadedProjectId = $state("");
@@ -100,8 +102,11 @@
     $activeRoute?.query?.review === "accepted" ? "accepted" : "pending",
   );
   const selectedSource = $derived(
-    config?.sources.find((source) => source.id === sourceId),
+    sourceId === ALL_CONNECTIONS
+      ? undefined
+      : config?.sources.find((source) => source.id === sourceId),
   );
+  const allConnections = $derived(sourceId === ALL_CONNECTIONS);
   const syncing = $derived(
     syncJob?.status === "queued" || syncJob?.status === "running",
   );
@@ -193,16 +198,21 @@
       }));
   });
 
-  const sourceOptions = $derived(
-    (config?.sources ?? []).map((source) => ({
+  const sourceOptions = $derived([
+    { value: ALL_CONNECTIONS, label: "All connections" },
+    ...(config?.sources ?? []).map((source) => ({
       value: source.id,
       label: `${source.name}${source.credentialAvailable ? "" : " (credential unavailable)"}`,
     })),
-  );
+  ]);
 
   const canForceRefetch = $derived(
     Boolean(
-      sourceId && !loading && !syncing && selectedSource?.credentialAvailable,
+      !allConnections &&
+        sourceId &&
+        !loading &&
+        !syncing &&
+        selectedSource?.credentialAvailable,
     ),
   );
 
@@ -229,7 +239,8 @@
 
   const canRerunAi = $derived(
     Boolean(
-      sourceId &&
+      !allConnections &&
+        sourceId &&
         sourceAiEnabled &&
         reviewableProposalCount > 0 &&
         !loading &&
@@ -272,6 +283,14 @@
     );
     return `${totals.ready} ready · ${totals.needsReview} need review · ${totals.duplicates} duplicates`;
   });
+  const reconciliationRefreshKey = $derived(
+    activeRuns
+      .map(
+        (run) =>
+          `${run.id}:${run.proposals.map((proposal) => `${proposal.id}:${proposal.status}`).join(",")}`,
+      )
+      .join("|"),
+  );
 
   const pageSize = $derived(
     PAGE_SIZES.includes(Number($activeRoute?.query?.pageSize))
@@ -441,6 +460,7 @@
   });
 
   function runBelongsToSource(item: IngestionRunSummary, id: string) {
+    if (id === ALL_CONNECTIONS) return true;
     return item.sourceId === id || item.sourceId.startsWith(`${id}:`);
   }
 
@@ -450,6 +470,20 @@
     preferredRunId?: string,
     syncRunIds?: readonly string[],
   ) {
+    if (id === ALL_CONNECTIONS) {
+      const selected = new Map<string, IngestionRunSummary>();
+      for (const item of items) {
+        const connectionId = item.sourceId.split(":", 1)[0] ?? item.sourceId;
+        const current = selected.get(connectionId);
+        if (
+          !current ||
+          (current.reviewState !== "pending" && item.reviewState === "pending")
+        ) {
+          selected.set(connectionId, item);
+        }
+      }
+      return [...selected.values()].map((item) => item.id);
+    }
     const belonging = items.filter((item) => runBelongsToSource(item, id));
     if (preferredRunId) return [preferredRunId];
     if (!belonging.length) return [] as string[];
@@ -467,7 +501,8 @@
 
   function runsListPath(projectId: string, nextSourceId?: string) {
     const query = new URLSearchParams({ limit: "100" });
-    if (nextSourceId) query.set("sourceId", nextSourceId);
+    if (nextSourceId && nextSourceId !== ALL_CONNECTIONS)
+      query.set("sourceId", nextSourceId);
     return ingestionPath(projectId, `/runs?${query}`);
   }
 
@@ -580,16 +615,20 @@
       );
       config = configResponse;
       const preferredSource =
-        querySourceId &&
-        config.sources.some((source) => source.id === querySourceId)
+        querySourceId === ALL_CONNECTIONS ||
+        (querySourceId &&
+          config.sources.some((source) => source.id === querySourceId))
           ? querySourceId
           : sourceId;
-      sourceId = config.sources.some((source) => source.id === preferredSource)
-        ? preferredSource
-        : (config.sources[0]?.id ?? "");
+      sourceId =
+        preferredSource === ALL_CONNECTIONS ||
+        config.sources.some((source) => source.id === preferredSource)
+          ? preferredSource
+          : ALL_CONNECTIONS;
+      if (sourceId === ALL_CONNECTIONS) syncJob = null;
       const summaries = await refreshRunSummaries(sourceId);
       let syncRunIds: string[] | undefined;
-      if (sourceId) {
+      if (!allConnections && sourceId) {
         try {
           const latest = await latestIngestionSyncJob(
             project.project.id,
@@ -613,7 +652,8 @@
         applyActiveRuns([]);
       }
       loadedProjectId = project.project.id;
-      if (sourceId) void watchSync(project.project.id, sourceId);
+      if (!allConnections && sourceId)
+        void watchSync(project.project.id, sourceId);
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {
@@ -623,6 +663,7 @@
 
   async function loadRunForSource(nextSourceId: string) {
     sourceId = nextSourceId;
+    if (nextSourceId === ALL_CONNECTIONS) syncJob = null;
     updateRoute({
       sourceId: nextSourceId,
       proposalId: undefined,
@@ -630,7 +671,7 @@
       page: "1",
     });
     let syncRunIds: string[] | undefined;
-    if (project) {
+    if (project && nextSourceId !== ALL_CONNECTIONS) {
       try {
         const latest = await latestIngestionSyncJob(
           project.project.id,
@@ -653,7 +694,8 @@
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     }
-    if (project) void watchSync(project.project.id, nextSourceId);
+    if (project && nextSourceId !== ALL_CONNECTIONS)
+      void watchSync(project.project.id, nextSourceId);
   }
 
   async function fetchTransactions() {
@@ -883,16 +925,7 @@
   }
 
   async function accept() {
-    if (!project || !accepted.length || !selectedSource) return;
-    const destination =
-      selectedSource.destinationPath ?? project.project.entryFile;
-    let expectedRevision = project.revisions.find(
-      (revision) => revision.path === destination,
-    )?.revision;
-    if (!expectedRevision) {
-      status = "The configured destination is not an editable ledger file.";
-      return;
-    }
+    if (!project || !accepted.length || !config) return;
 
     const byRun = new Map<string, string[]>();
     for (const row of accepted) {
@@ -925,7 +958,21 @@
     status = `Accepting ${acceptedCount} transaction${acceptedCount === 1 ? "" : "s"}…`;
     try {
       let lastSnapshot: ProjectSnapshot | undefined;
+      const revisionsByDestination = new Map(
+        project.revisions.map((revision) => [revision.path, revision.revision]),
+      );
       for (const [runId, proposalIds] of byRun) {
+        const run = activeRuns.find((item) => item.id === runId);
+        const connectionId = run?.sourceId.split(":", 1)[0] ?? "";
+        const source = config.sources.find((item) => item.id === connectionId);
+        const destination =
+          source?.destinationPath ?? project.project.entryFile;
+        const expectedRevision = revisionsByDestination.get(destination);
+        if (!expectedRevision) {
+          throw new Error(
+            "The configured destination is not an editable ledger file.",
+          );
+        }
         const response: { snapshot: ProjectSnapshot; run: IngestionRun } =
           await ingestionJson<{
             snapshot: ProjectSnapshot;
@@ -943,10 +990,10 @@
           );
         lastSnapshot = response.snapshot;
         replaceRun(response.run);
-        expectedRevision =
-          response.snapshot.revisions.find(
-            (revision) => revision.path === destination,
-          )?.revision ?? expectedRevision;
+        const nextRevision = response.snapshot.revisions.find(
+          (revision) => revision.path === destination,
+        )?.revision;
+        if (nextRevision) revisionsByDestination.set(destination, nextRevision);
       }
       if (lastSnapshot) snapshot.set(lastSnapshot);
       await refreshRunSummaries(sourceId);
@@ -997,6 +1044,14 @@
     {/if}
 
     {#if status}<p class="text-sm text-muted-foreground">{status}</p>{/if}
+
+    {#if !isWeb && project}
+      <IngestionReconciliationPanel
+        projectId={project.project.id}
+        refreshKey={reconciliationRefreshKey}
+        onApplied={() => void refresh()}
+      />
+    {/if}
 
     {#if loading && !activeRuns.length && !isWeb && project}
       <ReviewImportsSkeleton />

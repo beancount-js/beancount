@@ -7,6 +7,7 @@ import { ensureConnectorsRegistered } from "./connectors";
 import type {
   BrandfetchEnrichmentConfig,
   IngestionConfig,
+  IngestionReconciliationConfig,
   IngestionSourceDefinition,
   MerchantEnrichmentConfig,
 } from "./ingestion";
@@ -55,7 +56,7 @@ function migrateLunchflowSource(
       ? api.allowedHosts
       : (defaults?.allowedHosts ?? ["lunchflow.app", "www.lunchflow.app"]),
   };
-  return {
+  const migrated: IngestionSourceDefinition = {
     id: String(source.id),
     name: String(source.name ?? "Lunch Flow"),
     kind: "lunchflow",
@@ -71,20 +72,26 @@ function migrateLunchflowSource(
       typeof source.defaultCurrency === "string"
         ? source.defaultCurrency
         : undefined,
+    reconciliationPriority:
+      typeof source.reconciliationPriority === "number"
+        ? source.reconciliationPriority
+        : undefined,
     allowedAccountRoots: Array.isArray(source.allowedAccountRoots)
       ? (source.allowedAccountRoots as string[])
       : undefined,
     aiEnabled: source.aiEnabled === true,
     setup: typeof source.setup === "string" ? source.setup : undefined,
-    merchantEnrichment: stripBrandfetch(
-      source.merchantEnrichment as MerchantEnrichmentConfig | undefined,
-    ),
     rules: Array.isArray(source.rules) ? (source.rules as never[]) : [],
     accounts: Array.isArray(source.accounts)
       ? (source.accounts as never[])
       : [],
     config,
   };
+  const merchantEnrichment = stripBrandfetch(
+    source.merchantEnrichment as MerchantEnrichmentConfig | undefined,
+  );
+  if (merchantEnrichment) migrated.merchantEnrichment = merchantEnrichment;
+  return migrated;
 }
 
 /** Promote nested Brandfetch + rewrite Lunchflow json-api templates. */
@@ -94,6 +101,9 @@ export function migrateIngestionConfig(raw: unknown): IngestionConfig {
   const sourcesIn = Array.isArray(record.sources) ? record.sources : [];
   let brandfetch = isRecord(record.brandfetch)
     ? (record.brandfetch as unknown as BrandfetchEnrichmentConfig)
+    : undefined;
+  const reconciliation = isRecord(record.reconciliation)
+    ? (record.reconciliation as IngestionReconciliationConfig)
     : undefined;
 
   const sources: IngestionSourceDefinition[] = [];
@@ -122,35 +132,42 @@ export function migrateIngestionConfig(raw: unknown): IngestionConfig {
     }
 
     if (kind !== "json-api" && hasConnector(kind)) {
-      sources.push({
+      const migrated: IngestionSourceDefinition = {
         ...(item as unknown as IngestionSourceDefinition),
         kind,
-        merchantEnrichment: stripBrandfetch(enrichment),
         config: item.config ?? {},
         rules: Array.isArray(item.rules) ? (item.rules as never[]) : [],
-      });
+      };
+      const nextEnrichment = stripBrandfetch(enrichment);
+      if (nextEnrichment) migrated.merchantEnrichment = nextEnrichment;
+      else delete migrated.merchantEnrichment;
+      sources.push(migrated);
       continue;
     }
 
-    sources.push({
+    const migrated: IngestionSourceDefinition = {
       ...(item as unknown as IngestionSourceDefinition),
       kind: "json-api",
-      merchantEnrichment: stripBrandfetch(enrichment),
       api: (api ?? {}) as never,
       mapping: (isRecord(item.mapping) ? item.mapping : {}) as never,
       rules: Array.isArray(item.rules) ? (item.rules as never[]) : [],
-    });
+    };
+    const nextEnrichment = stripBrandfetch(enrichment);
+    if (nextEnrichment) migrated.merchantEnrichment = nextEnrichment;
+    else delete migrated.merchantEnrichment;
+    sources.push(migrated);
   }
 
   return {
-    version: 2,
-    brandfetch,
+    version: 3,
+    ...(brandfetch ? { brandfetch } : {}),
+    ...(reconciliation ? { reconciliation } : {}),
     sources,
   };
 }
 
 export function parseIngestionState(raw: unknown): {
-  version: 3;
+  version: 4;
   cursors: Record<string, string | undefined>;
   syncState: Record<string, ConnectorSyncState>;
   seenImportIds: string[];
@@ -158,7 +175,7 @@ export function parseIngestionState(raw: unknown): {
 } {
   const record = isRecord(raw) ? raw : {};
   return {
-    version: 3,
+    version: 4,
     cursors: isRecord(record.cursors)
       ? (record.cursors as Record<string, string | undefined>)
       : {},

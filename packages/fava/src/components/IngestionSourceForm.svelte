@@ -27,6 +27,7 @@
   import {
     CollapsibleItemList,
     EntryActions,
+    FilterCommandPicker,
     FormField,
     FormSectionHeader,
     StructuredForm,
@@ -55,7 +56,6 @@
     sourcePaginationForm,
     type SourceFormContext,
   } from "../ingestion/source-form-config";
-  import ComboBox from "./ComboBox.svelte";
 
   type KeyValue = [string, string];
 
@@ -257,6 +257,13 @@
   function updateSourceName(name: string) {
     onChange({ ...source, name });
   }
+
+  function reconciliationPriority(value: string) {
+    const clean = value.trim();
+    if (!clean) return undefined;
+    const parsed = Number(clean);
+    return Number.isInteger(parsed) ? parsed : undefined;
+  }
 </script>
 
 <div class="ingestion-source-sections" data-ingestion-source-form>
@@ -435,6 +442,8 @@
                       <FormField
                         label="Name"
                         controlId={`linked-account-${index}-name`}
+                        as="div"
+                        align="center"
                       >
                         <Input
                           id={`linked-account-${index}-name`}
@@ -449,6 +458,8 @@
                       <FormField
                         label="Id"
                         controlId={`linked-account-${index}-id`}
+                        as="div"
+                        align="center"
                       >
                         <Input
                           id={`linked-account-${index}-id`}
@@ -462,13 +473,40 @@
                         controlId={`linked-account-${index}-source`}
                         as="div"
                       >
-                        <ComboBox
-                          items={accountItems}
+                        <FilterCommandPicker
+                          fullWidth
+                          label="Source account"
                           value={account.sourceAccount ?? ""}
-                          placeholder="Select account"
-                          onValueChange={(value) =>
+                          options={accountItems}
+                          placeholder="Filter accounts…"
+                          onChange={(value) =>
                             updateLinkedAccount(index, {
                               sourceAccount: value,
+                            })}
+                        />
+                      </FormField>
+                      <FormField
+                        label="Reconciliation priority"
+                        controlId={`linked-account-${index}-priority`}
+                        as="div"
+                        align="center"
+                      >
+                        <Input
+                          id={`linked-account-${index}-priority`}
+                          type="number"
+                          step="1"
+                          min="-100"
+                          max="100"
+                          value={account.reconciliationPriority === undefined
+                            ? ""
+                            : String(account.reconciliationPriority)}
+                          placeholder="0"
+                          aria-label={`Linked account ${index + 1} reconciliation priority`}
+                          oninput={(event) =>
+                            updateLinkedAccount(index, {
+                              reconciliationPriority: reconciliationPriority(
+                                event.currentTarget.value,
+                              ),
                             })}
                         />
                       </FormField>

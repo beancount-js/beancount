@@ -46,6 +46,13 @@ function parseList(value: string) {
   return list.length ? list : undefined;
 }
 
+function optionalPriority(value: string) {
+  const clean = value.trim();
+  if (!clean) return undefined;
+  const parsed = Number(clean);
+  return Number.isInteger(parsed) ? parsed : undefined;
+}
+
 export function accountField<TRoot>(config: {
   id: string;
   label: string;
@@ -181,6 +188,20 @@ export const sourceDetailsForm = createFormConfig<
       set: (source, defaultCurrency) => ({
         ...source,
         defaultCurrency: optionalString(defaultCurrency)?.toUpperCase(),
+      }),
+    }),
+    textField({
+      id: "reconciliationPriority",
+      label: "Reconciliation priority",
+      inputType: "number",
+      placeholder: "0",
+      get: (source) =>
+        source.reconciliationPriority === undefined
+          ? ""
+          : String(source.reconciliationPriority),
+      set: (source, value) => ({
+        ...source,
+        reconciliationPriority: optionalPriority(value),
       }),
     }),
     textField({

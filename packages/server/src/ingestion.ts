@@ -63,9 +63,15 @@ import {
 } from "./ingestion-runs";
 import { resolveEnvSecret, resolveProjectEnv } from "./project-env";
 
-const VERSION = 2;
-const STATE_VERSION = 3;
+const VERSION = 3;
+const STATE_VERSION = 4;
 const SEEN_LIMIT = 10_000;
+
+export interface IngestionReconciliationConfig {
+  duplicateWindowDays?: number;
+  transferWindowDays?: number;
+  fxRateTolerance?: number;
+}
 
 export interface BrandfetchEnrichmentConfig {
   enabled: boolean;
@@ -93,6 +99,8 @@ export interface IngestionSourceDefinition {
   sourceAccount?: string;
   destinationPath?: string;
   defaultCurrency?: string;
+  /** Higher-priority connections provide canonical fields for an overlap. */
+  reconciliationPriority?: number;
   allowedAccountRoots?: string[];
   aiEnabled?: boolean;
   /** Markdown shown in the connection preview setup callout. */
@@ -110,9 +118,11 @@ export interface IngestionSourceDefinition {
 }
 
 export interface IngestionConfig {
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   /** Global Brandfetch / brand-match settings. */
   brandfetch?: BrandfetchEnrichmentConfig;
+  /** Project-wide matching windows and FX tolerance. */
+  reconciliation?: IngestionReconciliationConfig;
   sources: IngestionSourceDefinition[];
 }
 
@@ -207,11 +217,12 @@ function buildRuleHooks(
 }
 
 interface IngestionState {
-  version: 3;
+  version: 4;
   cursors: Record<string, string | undefined>;
   /** Connector-owned sync bookmarks keyed by target sourceId. */
   syncState: Record<string, ConnectorSyncState>;
   seenImportIds: string[];
+  /** Version 4 values include the concrete target source id. */
   seenFingerprints: string[];
 }
 
@@ -240,6 +251,50 @@ async function readJson<T>(path: string, fallback: T): Promise<T> {
 
 function configDefaults(): IngestionConfig {
   return { version: VERSION, sources: [] };
+}
+
+export function validateReconciliationConfig(
+  value: IngestionReconciliationConfig | undefined,
+) {
+  if (!value) return undefined;
+  const duplicateWindowDays = value.duplicateWindowDays;
+  const transferWindowDays = value.transferWindowDays;
+  const fxRateTolerance = value.fxRateTolerance;
+  if (
+    duplicateWindowDays !== undefined &&
+    (!Number.isInteger(duplicateWindowDays) ||
+      duplicateWindowDays < 0 ||
+      duplicateWindowDays > 31)
+  ) {
+    throw new Error(
+      "reconciliation.duplicateWindowDays must be an integer from 0 to 31.",
+    );
+  }
+  if (
+    transferWindowDays !== undefined &&
+    (!Number.isInteger(transferWindowDays) ||
+      transferWindowDays < 0 ||
+      transferWindowDays > 31)
+  ) {
+    throw new Error(
+      "reconciliation.transferWindowDays must be an integer from 0 to 31.",
+    );
+  }
+  if (
+    fxRateTolerance !== undefined &&
+    (!Number.isFinite(fxRateTolerance) ||
+      fxRateTolerance < 0 ||
+      fxRateTolerance > 1)
+  ) {
+    throw new Error(
+      "reconciliation.fxRateTolerance must be a number from 0 to 1.",
+    );
+  }
+  return {
+    duplicateWindowDays,
+    transferWindowDays,
+    fxRateTolerance,
+  } satisfies IngestionReconciliationConfig;
 }
 
 function stateDefaults(): IngestionState {
@@ -371,11 +426,22 @@ function validateLinkedAccount(account: JsonApiLinkedAccount, index: number) {
   if (!account.sourceAccount?.trim()) {
     throw new Error(`Linked account ${index + 1} needs a source account.`);
   }
+  if (
+    account.reconciliationPriority !== undefined &&
+    (!Number.isInteger(account.reconciliationPriority) ||
+      account.reconciliationPriority < -100 ||
+      account.reconciliationPriority > 100)
+  ) {
+    throw new Error(
+      `Linked account ${index + 1} reconciliation priority must be an integer from -100 to 100.`,
+    );
+  }
   return {
     id: account.id.trim(),
     name: account.name.trim(),
     sourceAccount: account.sourceAccount.trim(),
     defaultCurrency: account.defaultCurrency?.trim() || undefined,
+    reconciliationPriority: account.reconciliationPriority,
   } satisfies JsonApiLinkedAccount;
 }
 
@@ -410,6 +476,7 @@ function validateConnectorSource(
     accounts,
     destinationPath: source.destinationPath?.trim() || undefined,
     defaultCurrency: source.defaultCurrency?.trim() || undefined,
+    reconciliationPriority: source.reconciliationPriority,
     allowedAccountRoots: source.allowedAccountRoots?.filter(Boolean),
     aiEnabled: source.aiEnabled,
     setup: source.setup?.trim() || connector.setupMarkdown || undefined,
@@ -489,6 +556,7 @@ function validateJsonApiSource(
     ...source,
     kind: "json-api",
     merchantId: source.merchantId?.trim() || undefined,
+    reconciliationPriority: source.reconciliationPriority,
     sourceAccount,
     accounts,
     setup: source.setup?.trim() || undefined,
@@ -514,6 +582,16 @@ function validateSource(
   }
   if (source.setup !== undefined && typeof source.setup !== "string") {
     throw new Error("Source setup must be markdown text.");
+  }
+  if (
+    source.reconciliationPriority !== undefined &&
+    (!Number.isInteger(source.reconciliationPriority) ||
+      source.reconciliationPriority < -100 ||
+      source.reconciliationPriority > 100)
+  ) {
+    throw new Error(
+      "A connection reconciliation priority must be an integer from -100 to 100.",
+    );
   }
   ensureConnectorsRegistered();
   if (source.kind !== "json-api" && hasConnector(source.kind)) {
@@ -582,9 +660,13 @@ export class FilesystemIngestionStore {
       migrated.brandfetch ?? config.brandfetch,
       countryHint,
     );
+    const reconciliation = validateReconciliationConfig(
+      migrated.reconciliation ?? config.reconciliation,
+    );
     await this.write(await this.path(project, "sources.json"), {
       version: VERSION,
       brandfetch,
+      reconciliation,
       sources,
     });
   }

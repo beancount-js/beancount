@@ -130,6 +130,24 @@ export class StarlingNormalizer implements NormalizerPlugin<StarlingFeedItem> {
       metadata.starling_fee_amount = feeMoney.amount;
       metadata.starling_fee_currency = feeMoney.currency;
     }
+    const transferEvidence =
+      sourceMoney || scalar(record.exchangeRate) || feeMoney
+        ? {
+            sourceAmount: sourceMoney
+              ? {
+                  amount: sourceMoney.amount.replace(/^-/, ""),
+                  currency: sourceMoney.currency,
+                }
+              : undefined,
+            exchangeRate: scalar(record.exchangeRate),
+            fee: feeMoney
+              ? {
+                  amount: feeMoney.amount.replace(/^-/, ""),
+                  currency: feeMoney.currency,
+                }
+              : undefined,
+          }
+        : undefined;
 
     return {
       ok: true,
@@ -146,6 +164,7 @@ export class StarlingNormalizer implements NormalizerPlugin<StarlingFeedItem> {
         status: "posted",
         fetchedAt: context.fetchedAt,
         metadata,
+        transferEvidence,
       },
     };
   }

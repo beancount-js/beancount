@@ -41,6 +41,8 @@ export interface ConnectorLinkedAccount {
   name: string;
   sourceAccount: string;
   defaultCurrency?: string;
+  /** Overrides the connection reconciliation priority for this account. */
+  reconciliationPriority?: number;
 }
 
 export interface DiscoveredConnectorAccount {

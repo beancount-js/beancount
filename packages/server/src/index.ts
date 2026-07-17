@@ -59,6 +59,7 @@ export {
   resolveBrandfetchRuntime,
   sourceSecretRef,
   validateBrandfetchConfig,
+  validateReconciliationConfig,
   type AiEnrichmentDebug,
   type AiEnrichmentDebugCall,
   type AiEnrichmentCallRecord,
@@ -67,6 +68,7 @@ export {
   type ExpandedIngestionTarget,
   type IngestSourceResult,
   type IngestionConfig,
+  type IngestionReconciliationConfig,
   type IngestMerchantContext,
   type IngestProgressOptions,
   type IngestionSyncJob,
@@ -78,6 +80,18 @@ export {
   type IngestionSourceDefinition,
 } from "./ingestion";
 export { ensureConnectorsRegistered } from "./connectors";
+export {
+  buildReconciliationReview,
+  FilesystemReconciliationStore,
+  type ReconciliationDecision,
+  type ReconciliationDecisionState,
+  type ReconciliationLedgerRef,
+  type ReconciliationProposalRef,
+  type ReconciliationReview,
+  type ReconciliationReviewItem,
+  type ReconciliationReviewMember,
+} from "./reconciliation";
+export { applyReconciliation } from "./reconciliation-apply";
 export { AsyncEventQueue } from "./event-queue";
 export { brandfetchLogoUrl, isValidDomain } from "./brandfetch";
 export {

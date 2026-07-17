@@ -15,6 +15,7 @@ import type {
   MerchantEnrichmentConfig,
   IngestionRunPage,
   IngestionRunSummary,
+  IngestionReconciliationConfig,
 } from "@beancount-js/server";
 
 export type {
@@ -23,6 +24,7 @@ export type {
   AiEnrichmentDebugCall,
   AiEnrichmentSnapshot,
   BrandfetchEnrichmentConfig,
+  IngestionReconciliationConfig,
 };
 
 export interface IngestionSource {
@@ -38,6 +40,7 @@ export interface IngestionSource {
   sourceAccount?: string;
   destinationPath?: string;
   defaultCurrency?: string;
+  reconciliationPriority?: number;
   allowedAccountRoots?: string[];
   aiEnabled?: boolean;
   /** Markdown shown in the connection preview setup callout. */
@@ -58,8 +61,9 @@ export interface IngestionSource {
 }
 
 export interface IngestionConfigResponse {
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   brandfetch?: BrandfetchEnrichmentConfig;
+  reconciliation?: IngestionReconciliationConfig;
   sources: IngestionSource[];
   accounts: string[];
   brandCredentialAvailable?: boolean;
