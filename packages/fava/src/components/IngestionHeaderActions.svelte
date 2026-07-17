@@ -548,6 +548,40 @@
             {header.saveHint}
           </p>
         {/if}
+        {#if header.configReady && header.previewMode && !header.yamlMode}
+          <Tooltip.Root>
+            <Tooltip.Trigger>
+              {#snippet child({ props })}
+                <Button
+                  {...props}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  aria-label={header.syncAllBusy
+                    ? "Syncing all connections"
+                    : "Sync all connections"}
+                  disabled={!header.canSyncAll || header.syncAllBusy}
+                  onclick={() => {
+                    header.onSyncAll();
+                  }}
+                >
+                  <RefreshCw
+                    data-icon="inline-start"
+                    class={header.syncAllBusy ? "animate-spin" : ""}
+                  />
+                  {header.syncAllBusy ? "Syncing…" : "Sync all"}
+                </Button>
+              {/snippet}
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              {header.syncAllBusy
+                ? "Syncing configured connections…"
+                : header.canSyncAll
+                  ? "Sync all configured connections"
+                  : "Configure a connection before syncing"}
+            </Tooltip.Content>
+          </Tooltip.Root>
+        {/if}
         {#if header.configReady && !header.yamlMode && !header.previewMode}
           <FormToolbar
             collapsedAll={header.sectionsCollapsedAll}

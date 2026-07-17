@@ -14,7 +14,8 @@
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import { ingestionSamples, type IngestionSample } from "../ingestion/samples";
-  import { isGroupedSource } from "../ingestion/connectors";
+  import { isGroupedSource, sourceSecretRef } from "../ingestion/connectors";
+  import { isSecretConfigured } from "../ingestion/secret-ref";
   import {
     duplicateIngestionSource,
     editableIngestionConfig,
@@ -27,6 +28,8 @@
     type EditableIngestionConfig,
     type EditableIngestionSource,
   } from "../ingestion/source-form";
+  import { latestIngestionSyncJob } from "../ingestion/sync";
+  import { beginIngestionSync } from "../studio/sync-status";
   import type { IngestionConfigResponse } from "../ingestion/types";
   import SourcesPageSkeleton from "./skeletons/SourcesPageSkeleton.svelte";
   import IngestionSourceForm, {
@@ -50,8 +53,12 @@
   let previewMode = $state(true);
   let loadedProjectId = $state("");
   let saving = $state(false);
+  let syncAllBusy = $state(false);
   let saveState = $state<SaveState>("idle");
   let saveTimer: number | null = null;
+  let syncJobsBySourceId = $state<
+    Record<string, Awaited<ReturnType<typeof latestIngestionSyncJob>>>
+  >({});
   /** Open section ids keyed by source index. Missing key = fully expanded. */
   let openBySourceIndex = $state<Record<number, string[]>>({});
 
@@ -78,6 +85,37 @@
             ? "Save failed"
             : "",
   );
+  const connectionStatuses = $derived.by(() => {
+    const statuses: Record<
+      string,
+      {
+        connected: boolean;
+        lastSyncedAt?: string;
+        syncing?: boolean;
+        failed?: boolean;
+      }
+    > = {};
+    for (const source of config?.sources ?? []) {
+      const persisted = loadedConfig?.sources.find(
+        (item) => item.id === source.id,
+      );
+      const job = syncJobsBySourceId[source.id];
+      statuses[source.id] = {
+        connected:
+          persisted?.credentialAvailable ??
+          isSecretConfigured(sourceSecretRef(source)),
+        lastSyncedAt: job?.completedAt,
+        syncing: job?.status === "queued" || job?.status === "running",
+        failed: job?.status === "failed",
+      };
+    }
+    return statuses;
+  });
+  const syncableSources = $derived(
+    (config?.sources ?? []).filter(
+      (source) => connectionStatuses[source.id]?.connected,
+    ),
+  );
 
   async function load() {
     if (!$snapshot || isWeb) return;
@@ -93,8 +131,8 @@
       loadedProjectId = $snapshot.project.id;
       yamlError = "";
       saveState = "idle";
-      status =
-        "API keys can be stored inline, or as env:NAME from the process environment or project .env (pick a key in Environment mode).";
+      status = "";
+      void loadSyncJobs($snapshot.project.id, draft.sources);
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
       saveState = "error";
@@ -275,6 +313,68 @@
     router.push("/import/accounts");
   }
 
+  async function loadSyncJobs(
+    projectId: string,
+    sources: readonly { id: string }[],
+  ) {
+    const entries = await Promise.all(
+      sources.map(async (source) => {
+        try {
+          return [
+            source.id,
+            await latestIngestionSyncJob(projectId, source.id),
+          ] as const;
+        } catch {
+          return [source.id, null] as const;
+        }
+      }),
+    );
+    if (loadedProjectId === projectId) {
+      syncJobsBySourceId = Object.fromEntries(entries);
+    }
+  }
+
+  function setSyncJob(
+    sourceId: string,
+    job: NonNullable<Awaited<ReturnType<typeof latestIngestionSyncJob>>>,
+  ) {
+    syncJobsBySourceId = { ...syncJobsBySourceId, [sourceId]: job };
+  }
+
+  async function syncSource(source: EditableIngestionSource) {
+    if (!$snapshot || !connectionStatuses[source.id]?.connected) return;
+    const job = await beginIngestionSync({
+      projectId: $snapshot.project.id,
+      sourceId: source.id,
+      sourceName: source.name || source.id,
+      onUpdate: (next) => setSyncJob(source.id, next),
+    });
+    setSyncJob(source.id, job);
+  }
+
+  function syncSingle(source: EditableIngestionSource) {
+    status = "";
+    void syncSource(source).catch((error) => {
+      status = error instanceof Error ? error.message : String(error);
+    });
+  }
+
+  async function syncAll() {
+    if (syncAllBusy || !syncableSources.length) return;
+    syncAllBusy = true;
+    status = "";
+    try {
+      for (const source of syncableSources) {
+        await syncSource(source);
+      }
+      status = "All configured connections synced.";
+    } catch (error) {
+      status = error instanceof Error ? error.message : String(error);
+    } finally {
+      syncAllBusy = false;
+    }
+  }
+
   function scheduleSave() {
     if (isWeb || !$snapshot || !config) return;
     saveState = "dirty";
@@ -321,6 +421,7 @@
         ingestionPath($snapshot.project.id),
       );
       loadedConfig = response;
+      void loadSyncJobs($snapshot.project.id, response.sources);
       status = "Saved.";
       saveState = "saved";
     } catch (error) {
@@ -347,9 +448,12 @@
       sectionsCollapsedAll,
       yamlMode: mode === "yaml",
       previewMode,
+      canSyncAll: syncableSources.length > 0,
+      syncAllBusy,
       onToggleCollapse: toggleAllSections,
       onYamlMode: setYamlMode,
       onTogglePreview: togglePreviewMode,
+      onSyncAll: () => void syncAll(),
       onReviewImports: openReviewImports,
     });
   });
@@ -367,7 +471,7 @@
     : "h-full overflow-y-auto p-6 sm:p-8 lg:p-10"}
   data-ingestion-sources-editor
 >
-  <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
+  <div class="mx-auto flex w-full max-w-3xl flex-col gap-5">
     {#if isWeb}
       <Alert.Root>
         <FileCode2 />
@@ -401,10 +505,12 @@
                 sources={config.sources}
                 samples={ingestionSamples}
                 envKeys={$snapshot?.envKeys ?? []}
+                {connectionStatuses}
                 {saving}
                 onChange={(index, next) => updateSource(index, next)}
                 onConnectSample={connectSampleDirect}
                 onManageAccounts={openManageAccounts}
+                onSync={syncSingle}
                 onSave={() => void saveNow()}
               />
             {:else}

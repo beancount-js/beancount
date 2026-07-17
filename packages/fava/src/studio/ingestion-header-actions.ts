@@ -8,9 +8,12 @@ export type IngestionEditorHeaderActions = {
   yamlMode: boolean;
   /** True = connection preview, false = full editor */
   previewMode: boolean;
+  canSyncAll: boolean;
+  syncAllBusy: boolean;
   onToggleCollapse: () => void;
   onYamlMode: (pressed: boolean) => void;
   onTogglePreview: () => void;
+  onSyncAll: () => void;
   onReviewImports: () => void;
 };
 

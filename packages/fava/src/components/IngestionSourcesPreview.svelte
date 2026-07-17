@@ -1,7 +1,9 @@
 <script lang="ts">
   import ArrowRight from "lucide-svelte/icons/arrow-right";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
+  import RefreshCw from "lucide-svelte/icons/refresh-cw";
   import { FilterCommandPicker, SegmentedControl } from "@beancount-js/forms";
+  import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import {
@@ -31,19 +33,31 @@
     sources,
     samples = [],
     envKeys = [],
+    connectionStatuses = {},
     onChange,
     onSave,
     onConnectSample,
     onManageAccounts,
+    onSync,
     saving = false,
   }: {
     sources: EditableIngestionSource[];
     samples?: IngestionSample[];
     envKeys?: string[];
+    connectionStatuses?: Record<
+      string,
+      {
+        connected: boolean;
+        lastSyncedAt?: string;
+        syncing?: boolean;
+        failed?: boolean;
+      }
+    >;
     onChange: (index: number, next: EditableIngestionSource) => void;
     onSave: () => void | Promise<void>;
     onConnectSample?: (sample: IngestionSample) => void;
     onManageAccounts?: (source: EditableIngestionSource) => void;
+    onSync?: (source: EditableIngestionSource) => void;
     saving?: boolean;
   } = $props();
 
@@ -62,7 +76,7 @@
 
   function isOpen(source: EditableIngestionSource, index: number) {
     const key = sourceKey(source, index);
-    return openById[key] ?? true;
+    return openById[key] ?? false;
   }
 
   function toggle(source: EditableIngestionSource, index: number) {
@@ -135,6 +149,32 @@
   function previewUrl(source: EditableIngestionSource) {
     return sourceBaseUrl(source) || source.api?.endpoint || "";
   }
+
+  function sourceStatus(source: EditableIngestionSource) {
+    return connectionStatuses[source.id] ?? { connected: false };
+  }
+
+  function relativeSyncTime(iso?: string) {
+    if (!iso) return "Not synced yet";
+    const then = new Date(iso).getTime();
+    if (Number.isNaN(then)) return "Not synced yet";
+    const minutes = Math.floor((Date.now() - then) / 60_000);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) {
+      return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+    }
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+    return new Date(iso).toLocaleDateString();
+  }
+
+  function syncLabel(status: ReturnType<typeof sourceStatus>) {
+    if (status.syncing) return "Syncing…";
+    if (status.lastSyncedAt) {
+      return `Synced ${relativeSyncTime(status.lastSyncedAt)}`;
+    }
+    return "Not synced yet";
+  }
 </script>
 
 <div class="flex min-w-0 flex-col gap-8" data-ingestion-sources-preview>
@@ -154,26 +194,69 @@
       {@const secretRef = sourceSecretRef(source)}
       {@const mode = secretMode(secretRef)}
       {@const grouped = isGroupedSource(source)}
+      {@const status = sourceStatus(source)}
       <article
         class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
         data-ingestion-connection-card
       >
-        <button
-          type="button"
-          class="flex w-full items-center gap-2 px-4 py-3 text-left"
-          aria-expanded={open}
-          onclick={() => toggle(source, index)}
+        <div
+          class="group flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
         >
-          <ChevronDown
-            class="size-4 shrink-0 text-muted-foreground transition-transform {open
-              ? ''
-              : '-rotate-90'}"
-            aria-hidden="true"
-          />
-          <span class="min-w-0 truncate text-sm font-semibold">
-            {source.name || "Untitled source"}
-          </span>
-        </button>
+          <button
+            type="button"
+            class="flex min-w-0 flex-1 items-center gap-3 text-left"
+            aria-expanded={open}
+            onclick={() => toggle(source, index)}
+          >
+            <ChevronDown
+              class="size-4 shrink-0 text-muted-foreground transition-transform {open
+                ? ''
+                : '-rotate-90'}"
+              aria-hidden="true"
+            />
+            <span class="min-w-0 truncate text-sm font-semibold">
+              {source.name || "Untitled source"}
+            </span>
+          </button>
+
+          <div class="flex shrink-0 items-center gap-3">
+            <span class="hidden text-sm text-muted-foreground sm:block">
+              {syncLabel(status)}
+            </span>
+            {#if status.failed}
+              <Badge variant="destructive">Sync failed</Badge>
+            {:else if status.connected}
+              <Badge
+                variant="outline"
+                class="gap-1 border-primary/30 bg-primary/10 text-primary"
+              >
+                <span
+                  class="size-1.5 rounded-full bg-primary"
+                  aria-hidden="true"
+                ></span>
+                Connected
+              </Badge>
+            {:else}
+              <Badge variant="secondary">Needs setup</Badge>
+            {/if}
+            {#if onSync && status.connected}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                class="size-8"
+                aria-label={`Sync ${source.name || "source"}`}
+                disabled={status.syncing}
+                onclick={() => onSync(source)}
+              >
+                <RefreshCw
+                  data-icon
+                  class={status.syncing ? "animate-spin" : ""}
+                />
+              </Button>
+            {/if}
+          </div>
+        </div>
 
         {#if open}
           <div
