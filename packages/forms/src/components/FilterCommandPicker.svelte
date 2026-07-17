@@ -42,6 +42,7 @@
 
   let open = $state(false);
   let search = $state("");
+  let failedImageUrls = $state(new Set<string>());
 
   const selectedValues = $derived(multiple ? (values ?? []) : []);
   const effectiveSelectedValues = $derived(
@@ -96,7 +97,12 @@
     const needle = search.trim().toLowerCase();
     return options.filter((option) => {
       if (!needle) return true;
-      const haystack = [option.value, option.label, ...(option.keywords ?? [])]
+      const haystack = [
+        option.value,
+        option.label,
+        option.description ?? "",
+        ...(option.keywords ?? []),
+      ]
         .join(" ")
         .toLowerCase();
       return haystack.includes(needle);
@@ -134,6 +140,14 @@
     if (!trimmedSearch) return;
     selectOption(trimmedSearch);
   }
+
+  function markImageFailed(imageUrl: string) {
+    failedImageUrls = new Set([...failedImageUrls, imageUrl]);
+  }
+
+  function canShowImage(option: FilterCommandOption) {
+    return Boolean(option.imageUrl && !failedImageUrls.has(option.imageUrl));
+  }
 </script>
 
 <Popover.Root bind:open>
@@ -148,7 +162,14 @@
         data-active={active}
         data-full-width={fullWidth}
       >
-        {#if currentOption?.accent}
+        {#if currentOption && canShowImage(currentOption)}
+          <img
+            class="bj-filter-command-picker__image"
+            src={currentOption.imageUrl}
+            alt=""
+            onerror={() => markImageFailed(currentOption!.imageUrl!)}
+          />
+        {:else if currentOption?.accent}
           <span
             class="bj-filter-command-picker__swatch"
             style={`--filter-accent: ${currentOption.accent}`}
@@ -203,21 +224,36 @@
                     keywords={[
                       option.value,
                       option.label,
+                      option.description ?? "",
                       ...(option.keywords ?? []),
                     ]}
                     data-checked={isOptionChecked(option.value)}
                     onSelect={() => selectOption(option.value)}
                   >
-                    {#if option.accent}
+                    {#if canShowImage(option)}
+                      <img
+                        class="bj-filter-command-picker__image"
+                        src={option.imageUrl}
+                        alt=""
+                        onerror={() => markImageFailed(option.imageUrl!)}
+                      />
+                    {:else if option.accent}
                       <span
                         class="bj-filter-command-picker__swatch"
                         style={`--filter-accent: ${option.accent}`}
                         aria-hidden="true"
                       ></span>
                     {/if}
-                    <span class="bj-filter-command-picker__item-label"
-                      >{option.label}</span
-                    >
+                    <span class="bj-filter-command-picker__item-content">
+                      <span class="bj-filter-command-picker__item-label"
+                        >{option.label}</span
+                      >
+                      {#if option.description}
+                        <span class="bj-filter-command-picker__item-description"
+                          >{option.description}</span
+                        >
+                      {/if}
+                    </span>
                     <CheckIcon
                       size={12}
                       strokeWidth={1.75}

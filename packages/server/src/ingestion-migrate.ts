@@ -59,6 +59,10 @@ function migrateLunchflowSource(
     id: String(source.id),
     name: String(source.name ?? "Lunch Flow"),
     kind: "lunchflow",
+    merchantId:
+      typeof source.merchantId === "string"
+        ? source.merchantId.trim() || undefined
+        : undefined,
     destinationPath:
       typeof source.destinationPath === "string"
         ? source.destinationPath

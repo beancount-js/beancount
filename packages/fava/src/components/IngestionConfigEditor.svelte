@@ -523,6 +523,7 @@
                   credentialAvailable={serverSource?.credentialAvailable}
                   merchantCredentialAvailable={serverSource?.merchantCredentialAvailable}
                   envKeys={$snapshot?.envKeys ?? []}
+                  projectId={$snapshot?.project.id}
                   openSections={openSectionsFor(index, isGroupedSource(source))}
                   onOpenSectionsChange={(sections) =>
                     setOpenSectionsFor(index, sections)}

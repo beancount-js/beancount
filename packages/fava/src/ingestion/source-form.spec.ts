@@ -49,11 +49,24 @@ describe("ingestion source form draft", () => {
 
     const parsed = parseEditableIngestionConfig(raw);
     expect(parsed.sources[0].destinationPath).toBe("imports.bean");
+    expect(parsed.sources[0].merchantId).toBe("");
     expect("credentialAvailable" in parsed.sources[0]).toBe(false);
     expect("allowedAccounts" in parsed.sources[0]).toBe(false);
     expect(
       parseEditableIngestionConfig(serializeEditableIngestionConfig(parsed)),
     ).toEqual(parsed);
+  });
+
+  test("keeps the optional connection merchant id in source and YAML modes", () => {
+    const config = structuredClone(exampleIngestionConfig);
+    config.sources[0].merchantId = "merchant:example-bank";
+
+    expect(
+      parseEditableIngestionConfig(serializeEditableIngestionConfig(config)),
+    ).toEqual(config);
+    expect(
+      parseEditableIngestionYaml(serializeEditableIngestionYaml(config)),
+    ).toEqual(config);
   });
 
   test("rejects JSON that is not an ingestion configuration root", () => {

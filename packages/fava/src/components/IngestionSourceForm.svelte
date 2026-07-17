@@ -66,6 +66,7 @@
     credentialAvailable,
     merchantCredentialAvailable,
     envKeys = [],
+    projectId,
     openSections = [...sourceFormSections],
     onOpenSectionsChange = () => {},
     onChange,
@@ -78,6 +79,7 @@
     credentialAvailable?: boolean;
     merchantCredentialAvailable?: boolean;
     envKeys?: string[];
+    projectId?: string;
     openSections?: string[];
     onOpenSectionsChange?: (sections: string[]) => void;
     onChange: (source: EditableIngestionSource) => void;
@@ -115,6 +117,7 @@
   );
   const formContext = $derived({
     accounts,
+    projectId,
     envKeys,
     credentialAvailable,
     merchantCredentialAvailable,

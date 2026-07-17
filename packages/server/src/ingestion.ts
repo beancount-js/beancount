@@ -95,6 +95,8 @@ export interface IngestionSourceDefinition {
   id: string;
   name: string;
   kind: string;
+  /** Optional project merchant used to present this connection in the UI. */
+  merchantId?: string;
   /**
    * Beancount asset account for standalone sources.
    * Grouped connections set this per nested `accounts[]` entry instead.
@@ -431,6 +433,7 @@ function validateConnectorSource(
     id: source.id,
     name: source.name.trim(),
     kind: source.kind,
+    merchantId: source.merchantId?.trim() || undefined,
     sourceAccount,
     accounts,
     destinationPath: source.destinationPath?.trim() || undefined,
@@ -513,6 +516,7 @@ function validateJsonApiSource(
   return {
     ...source,
     kind: "json-api",
+    merchantId: source.merchantId?.trim() || undefined,
     sourceAccount,
     accounts,
     setup: source.setup?.trim() || undefined,
@@ -530,6 +534,12 @@ function validateSource(
 ): IngestionSourceDefinition {
   sourceId(source.id);
   if (!source.name.trim()) throw new Error("An ingestion source needs a name.");
+  if (
+    source.merchantId !== undefined &&
+    typeof source.merchantId !== "string"
+  ) {
+    throw new Error("A connection merchant id must be text.");
+  }
   if (source.setup !== undefined && typeof source.setup !== "string") {
     throw new Error("Source setup must be markdown text.");
   }

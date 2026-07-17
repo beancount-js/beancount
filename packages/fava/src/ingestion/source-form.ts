@@ -30,6 +30,7 @@ export const exampleIngestionConfig: EditableIngestionConfig = {
       id: "bank",
       name: "My bank",
       kind: "json-api",
+      merchantId: "",
       sourceAccount: "Assets:Bank:Checking",
       defaultCurrency: "GBP",
       aiEnabled: false,
@@ -135,6 +136,12 @@ export function parseEditableIngestionConfig(
         if (typeof item[key] !== "string") {
           throw new Error(`Source ${index + 1} ${key} must be a string.`);
         }
+      }
+      if (
+        item.merchantId !== undefined &&
+        typeof item.merchantId !== "string"
+      ) {
+        throw new Error(`Source ${index + 1} merchantId must be a string.`);
       }
       const connector = item.kind !== "json-api";
       const grouped = Array.isArray(item.accounts);
@@ -521,6 +528,7 @@ export function newIngestionSource(
     id: sourceIdForNewSource(sources),
     name: "New source",
     kind: "json-api",
+    merchantId: "",
     sourceAccount: "",
     api: { endpoint: "", secretRef: "" },
     mapping: { date: "", amount: "" },

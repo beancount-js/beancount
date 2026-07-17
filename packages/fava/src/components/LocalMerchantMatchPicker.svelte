@@ -87,7 +87,11 @@
 
   const options = $derived.by((): FilterCommandOption[] => {
     const items: FilterCommandOption[] = [
-      { value: "", label: "Create new merchant" },
+      {
+        value: "",
+        label: "Create new merchant",
+        description: "Save the merchant details from this transaction.",
+      },
     ];
     for (const merchant of rankedMerchants) {
       const name = merchant.canonicalName;
@@ -95,8 +99,13 @@
       items.push({
         value: merchant.merchantId,
         label: merchantDomain ? `${name} · ${merchantDomain}` : name,
+        description: [merchant.description, merchantDomain]
+          .filter(Boolean)
+          .join(" · "),
+        imageUrl: merchant.logoUrl,
         keywords: [
           name,
+          ...(merchant.description ? [merchant.description] : []),
           ...(merchantDomain ? [merchantDomain] : []),
           ...(merchant.aliases?.map((alias) => alias.normalizedValue) ?? []),
         ],

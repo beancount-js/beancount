@@ -62,6 +62,14 @@
     color-mix(in srgb, var(--filter-accent) 35%, transparent);
 }
 
+.bj-filter-command-picker__image {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  border-radius: 0.25rem;
+  object-fit: contain;
+}
+
 .bj-filter-command-picker__popover {
   z-index: 80;
   width: min(18rem, 80vw);
@@ -166,8 +174,24 @@
 
 .bj-filter-command-picker__item-label {
   min-width: 0;
-  flex: 1 1 auto;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bj-filter-command-picker__item-content {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.0625rem;
+}
+
+.bj-filter-command-picker__item-description {
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+  font-weight: 400;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

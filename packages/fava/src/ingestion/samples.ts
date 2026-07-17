@@ -66,6 +66,7 @@ function connectorSamples(): IngestionSample[] {
         id: connector.kind,
         name: connector.name,
         kind: connector.kind,
+        merchantId: "",
         aiEnabled: false,
         setup: connector.setupMarkdown,
         merchantEnrichment: {

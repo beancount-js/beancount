@@ -56,6 +56,22 @@ function config(
 }
 
 describe("FilesystemIngestionStore", () => {
+  test("persists an optional merchant id for each connection", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-connection-merchant-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    const next = config();
+    next.sources[0]!.merchantId = "merchant:example-bank";
+
+    await store.writeConfig("project", next);
+
+    await expect(store.readConfig("project")).resolves.toMatchObject({
+      sources: [{ merchantId: "merchant:example-bank" }],
+    });
+  });
+
   test("persists runs separately from operational state", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-runs-"),

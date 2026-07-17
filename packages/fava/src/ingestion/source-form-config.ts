@@ -8,11 +8,13 @@ import {
 } from "@beancount-js/forms";
 import type { EditableIngestionSource } from "./source-form";
 import AccountComboField from "../components/form/AccountComboField.svelte";
+import MerchantComboField from "../components/form/MerchantComboField.svelte";
 import SecretField from "../components/form/SecretField.svelte";
 import SwitchField from "../components/form/SwitchField.svelte";
 
 export type SourceFormContext = {
   accounts: string[];
+  projectId?: string;
   /** Key names from the project-root `.env` (values never included). */
   envKeys?: string[];
   credentialAvailable?: boolean;
@@ -63,6 +65,26 @@ export function accountField<TRoot>(config: {
     as: "div",
     align: "center",
     placeholder: config.placeholder ?? "Select account",
+  });
+}
+
+function merchantField<TRoot>(config: {
+  id: string;
+  label: string;
+  get: (root: TRoot, context: SourceFormContext) => string;
+  set: (root: TRoot, value: string, context: SourceFormContext) => TRoot;
+}) {
+  return customViewField<TRoot, SourceFormContext, string>({
+    ...config,
+    component: MerchantComboField as FormCustomRenderer<
+      TRoot,
+      SourceFormContext,
+      string
+    >,
+    view: "edit",
+    wrapper: "field",
+    as: "div",
+    align: "center",
   });
 }
 
@@ -125,6 +147,15 @@ export const sourceDetailsForm = createFormConfig<
       path: "id",
       get: (source) => source.id,
       set: (source, id) => ({ ...source, id }),
+    }),
+    merchantField({
+      id: "merchantId",
+      label: "Merchant",
+      get: (source) => source.merchantId ?? "",
+      set: (source, merchantId) => ({
+        ...source,
+        merchantId: optionalString(merchantId),
+      }),
     }),
     accountField({
       id: "sourceAccount",

@@ -29,6 +29,8 @@ export interface IngestionSource {
   id: string;
   name: string;
   kind: string;
+  /** Optional project merchant used to present this connection in the UI. */
+  merchantId?: string;
   /**
    * Beancount asset account for standalone sources. Grouped connections use
    * nested `accounts[]` instead.
