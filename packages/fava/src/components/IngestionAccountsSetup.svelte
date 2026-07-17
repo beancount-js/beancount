@@ -4,6 +4,7 @@
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import Download from "lucide-svelte/icons/download";
   import FileCode2 from "lucide-svelte/icons/file-code-2";
+  import ImageUp from "lucide-svelte/icons/image-up";
   import Landmark from "lucide-svelte/icons/landmark";
   import Link2 from "lucide-svelte/icons/link-2";
   import MoreVertical from "lucide-svelte/icons/more-vertical";
@@ -60,6 +61,14 @@
     accounts: JsonApiLinkedAccount[];
   };
 
+  type ConnectionMerchant = {
+    merchantId: string;
+    canonicalName: string;
+    domain?: string;
+    description?: string;
+    logoUrl?: string;
+  };
+
   const ACCOUNT_AVATAR_COLORS = [
     "bg-rose-200 text-rose-800",
     "bg-orange-200 text-orange-800",
@@ -93,6 +102,9 @@
   let autoDiscoveredFor = $state("");
   let syncJob = $state<IngestionSyncJob | null>(null);
   let syncAllBusy = $state(false);
+  let merchantsById = $state<Record<string, ConnectionMerchant>>({});
+  let failedMerchantLogoIds = $state(new Set<string>());
+  let updatingLogoFor = $state("");
 
   const connections = $derived(
     (config?.sources ?? []).filter((source) => isGroupedSource(source)),
@@ -333,6 +345,28 @@
     return balanceText(total);
   }
 
+  function merchantFor(source: EditableIngestionSource) {
+    return source.merchantId ? merchantsById[source.merchantId] : undefined;
+  }
+
+  function markMerchantLogoFailed(merchantId: string) {
+    failedMerchantLogoIds = new Set([...failedMerchantLogoIds, merchantId]);
+  }
+
+  async function loadMerchants(projectId: string) {
+    try {
+      const merchants = await ingestionJson<ConnectionMerchant[]>(
+        ingestionPath(projectId, "/merchants"),
+      );
+      if ($snapshot?.project.id !== projectId) return;
+      merchantsById = Object.fromEntries(
+        merchants.map((merchant) => [merchant.merchantId, merchant]),
+      );
+    } catch {
+      if ($snapshot?.project.id === projectId) merchantsById = {};
+    }
+  }
+
   async function load() {
     if (!$snapshot || isWeb) return;
     loading = true;
@@ -346,6 +380,7 @@
       loadedConfig = response;
       config = draft;
       loadedProjectId = $snapshot.project.id;
+      void loadMerchants($snapshot.project.id);
       const grouped = draft.sources.filter((source) => isGroupedSource(source));
       if (
         !selectedSourceId ||
@@ -461,6 +496,61 @@
       selectConnection(source);
     }
     void startSync(source);
+  }
+
+  function canUpdateConnectionLogo(source: EditableIngestionSource) {
+    return Boolean(sourceBaseUrl(source)?.trim()) && !isWeb && !saving;
+  }
+
+  async function updateConnectionLogo(source: EditableIngestionSource) {
+    if (!$snapshot || updatingLogoFor) return;
+    updatingLogoFor = source.id;
+    error = "";
+    status = "";
+    try {
+      const response = await ingestionJson<{
+        source: { id: string; merchantId?: string };
+        merchant: ConnectionMerchant;
+      }>(
+        ingestionPath(
+          $snapshot.project.id,
+          `/sources/${encodeURIComponent(source.id)}/merchant`,
+        ),
+        { method: "POST" },
+      );
+      config = config
+        ? {
+            ...config,
+            sources: config.sources.map((item) =>
+              item.id === source.id
+                ? { ...item, merchantId: response.source.merchantId }
+                : item,
+            ),
+          }
+        : config;
+      loadedConfig = loadedConfig
+        ? {
+            ...loadedConfig,
+            sources: loadedConfig.sources.map((item) =>
+              item.id === source.id
+                ? { ...item, merchantId: response.source.merchantId }
+                : item,
+            ),
+          }
+        : loadedConfig;
+      merchantsById = {
+        ...merchantsById,
+        [response.merchant.merchantId]: response.merchant,
+      };
+      const nextFailed = new Set(failedMerchantLogoIds);
+      nextFailed.delete(response.merchant.merchantId);
+      failedMerchantLogoIds = nextFailed;
+      status = `Updated logo for ${source.name || source.id}.`;
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+    } finally {
+      updatingLogoFor = "";
+    }
   }
 
   async function syncAllConnections() {
@@ -769,6 +859,7 @@
       <div class="flex min-w-0 flex-col gap-6">
         {#each connections as connection (connection.id)}
           {@const isSelected = connection.id === selectedConnection.id}
+          {@const merchant = merchantFor(connection)}
           <article
             class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
           >
@@ -792,10 +883,20 @@
                   aria-hidden="true"
                 />
                 <span
-                  class="flex size-9 shrink-0 items-center justify-center rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
+                  class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
                   aria-hidden="true"
                 >
-                  {initialLetter(connection.name || connection.id)}
+                  {#if merchant?.logoUrl && !failedMerchantLogoIds.has(merchant.merchantId)}
+                    <img
+                      class="size-full object-contain p-1"
+                      src={merchant.logoUrl}
+                      alt=""
+                      onerror={() =>
+                        markMerchantLogoFailed(merchant.merchantId)}
+                    />
+                  {:else}
+                    {initialLetter(connection.name || connection.id)}
+                  {/if}
                 </span>
                 <span class="min-w-0 flex-1">
                   <span class="block truncate text-sm font-semibold">
@@ -834,6 +935,16 @@
                 </DropdownMenu.Trigger>
                 <DropdownMenu.Content align="end">
                   <DropdownMenu.Group>
+                    <DropdownMenu.Item
+                      disabled={!canUpdateConnectionLogo(connection) ||
+                        updatingLogoFor === connection.id}
+                      onSelect={() => void updateConnectionLogo(connection)}
+                    >
+                      <ImageUp class="size-3.5" aria-hidden="true" />
+                      {updatingLogoFor === connection.id
+                        ? "Updating logo…"
+                        : "Update logo"}
+                    </DropdownMenu.Item>
                     <DropdownMenu.Item
                       disabled={!canSyncConnection(connection)}
                       onSelect={() => syncConnection(connection)}
