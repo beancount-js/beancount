@@ -102,31 +102,37 @@
     if (!parsed) return false;
     // Stem-only URLs default to dashboard — redirect so the URL includes /dashboard
     const last = segments.at(-1);
+    const hasHistoryRun =
+      segments.length >= 3 &&
+      segments.at(-3) === "settings" &&
+      segments.at(-2) === "history" &&
+      Boolean(last);
     return Boolean(
-      last &&
-        (last === "accounts" ||
-          last === "merchants" ||
-          last === "manage-merchants" ||
-          last === "brands" ||
-          last === "history" ||
-          last === "rules" ||
-          segments.includes("account") ||
-          [
-            "journal",
-            "dashboard",
-            "editor",
-            "income-statement",
-            "balance-sheet",
-            "trial-balance",
-            "holdings",
-            "statistics",
-            "query",
-            "errors",
-            "records",
-            "resource",
-            "directives",
-            "settings",
-          ].includes(last)),
+      hasHistoryRun ||
+        (last &&
+          (last === "accounts" ||
+            last === "merchants" ||
+            last === "manage-merchants" ||
+            last === "brands" ||
+            last === "history" ||
+            last === "rules" ||
+            segments.includes("account") ||
+            [
+              "journal",
+              "dashboard",
+              "editor",
+              "income-statement",
+              "balance-sheet",
+              "trial-balance",
+              "holdings",
+              "statistics",
+              "query",
+              "errors",
+              "records",
+              "resource",
+              "directives",
+              "settings",
+            ].includes(last))),
     );
   }
 

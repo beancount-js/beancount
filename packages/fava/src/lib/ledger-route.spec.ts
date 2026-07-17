@@ -69,6 +69,14 @@ describe("ledger-route", () => {
       viewSegment: "settings/history",
       params: {},
     });
+    expect(
+      parseLedgerAndView(["sample", "settings", "history", "run:2026-07-17"]),
+    ).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/history/run:2026-07-17",
+      viewSegment: "settings/history/run:2026-07-17",
+      params: { runId: "run:2026-07-17" },
+    });
     expect(parseLedgerAndView(["sample", "settings", "rules"])).toEqual({
       ledgerStem: "sample",
       viewPath: "/import/rules",
@@ -108,6 +116,11 @@ describe("ledger-route", () => {
       "settings",
       "history",
     ]);
+    expect(viewPathToSegments("/import/history/run:2026-07-17")).toEqual([
+      "settings",
+      "history",
+      "run:2026-07-17",
+    ]);
     expect(viewPathToSegments("/import/rules")).toEqual(["settings", "rules"]);
     expect(buildLedgerHref("bean-budget", "a/b/sample", "/dashboard")).toBe(
       "/bean-budget/ledger/a/b/sample/dashboard/",
@@ -118,6 +131,13 @@ describe("ledger-route", () => {
     expect(buildLedgerHref("bean-budget", "sample", "/import/history")).toBe(
       "/bean-budget/ledger/sample/settings/history/",
     );
+    expect(
+      buildLedgerHref(
+        "bean-budget",
+        "sample",
+        "/import/history/run:2026-07-17",
+      ),
+    ).toBe("/bean-budget/ledger/sample/settings/history/run%3A2026-07-17/");
     expect(buildLedgerHref("bean-budget", "sample", "/import/rules")).toBe(
       "/bean-budget/ledger/sample/settings/rules/",
     );

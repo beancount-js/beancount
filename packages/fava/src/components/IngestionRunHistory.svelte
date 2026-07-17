@@ -8,7 +8,6 @@
   import * as Empty from "$lib/components/ui/empty";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type {
-    IngestionRun,
     IngestionRunPage,
     IngestionRunSummary,
   } from "../ingestion/types";
@@ -28,9 +27,7 @@
     offset: 0,
     limit: DEFAULT_PAGE_SIZE,
   });
-  let selectedRun = $state<IngestionRun | undefined>(undefined);
   let loading = $state(false);
-  let detailLoading = $state(false);
   let status = $state("");
   let loadedProjectId = $state("");
   let pageSize = $state(DEFAULT_PAGE_SIZE);
@@ -76,24 +73,6 @@
     void loadHistory(0, next);
   }
 
-  async function openAudit(summary: IngestionRunSummary) {
-    if (!project || detailLoading) return;
-    detailLoading = true;
-    try {
-      selectedRun = await ingestionJson<IngestionRun>(
-        ingestionPath(
-          project.project.id,
-          `/runs/${encodeURIComponent(summary.id)}`,
-        ),
-      );
-      status = "";
-    } catch (error) {
-      status = error instanceof Error ? error.message : String(error);
-    } finally {
-      detailLoading = false;
-    }
-  }
-
   function openInReview(summary: IngestionRunSummary) {
     router.push(
       `/records?${new URLSearchParams({
@@ -101,11 +80,6 @@
         runId: summary.id,
       })}`,
     );
-  }
-
-  function formatDate(value: string) {
-    const date = DateTime.fromISO(value, { zone: "utc" });
-    return date.isValid ? date.toFormat("dd LLL yyyy, HH:mm 'UTC'") : value;
   }
 
   function formatTime(value: string) {
@@ -133,34 +107,10 @@
       : group.key;
   }
 
-  function proposalTitle(run: IngestionRun, index: number) {
-    const proposal = run.proposals[index]!;
-    const transaction = proposal.transaction;
-    if (proposal.merchantResolution?.status === "confirmed") {
-      return proposal.merchantResolution.merchant.canonicalName;
-    }
-    if (proposal.merchantResolution?.status === "suggested") {
-      return (
-        proposal.merchantResolution.candidates[0]?.canonicalName ??
-        transaction?.merchant ??
-        transaction?.payee ??
-        transaction?.narration ??
-        proposal.importId
-      );
-    }
-    return (
-      transaction?.merchant ??
-      transaction?.payee ??
-      transaction?.narration ??
-      proposal.importId
-    );
-  }
-
   $effect(() => {
     const next = project;
     if (!next || isWeb || next.project.id === loadedProjectId) return;
     loadedProjectId = next.project.id;
-    selectedRun = undefined;
     void loadHistory();
   });
 
@@ -278,12 +228,9 @@
                       type="button"
                       size="sm"
                       variant="secondary"
-                      disabled={detailLoading && selectedRun?.id !== run.id}
-                      onclick={() => void openAudit(run)}
+                      onclick={() => router.push(`/import/history/${run.id}`)}
                     >
-                      {selectedRun?.id === run.id
-                        ? "Viewing audit"
-                        : "View audit"}
+                      View audit
                     </Button>
                   </div>
 
@@ -357,87 +304,6 @@
             </div>
           </nav>
         {/if}
-      {/if}
-
-      {#if selectedRun}
-        <section
-          class="rounded-xl border bg-card p-4 shadow-sm"
-          aria-live="polite"
-        >
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 class="font-medium">Run audit</h3>
-              <p class="mt-1 text-sm text-muted-foreground">
-                {selectedRun.sourceId} · {formatDate(selectedRun.completedAt)}
-              </p>
-            </div>
-            <span class="text-sm tabular-nums text-muted-foreground">
-              {selectedRun.proposals.length} proposal{selectedRun.proposals
-                .length === 1
-                ? ""
-                : "s"}
-            </span>
-          </div>
-
-          {#if selectedRun.audit?.ai.length}
-            <details class="mt-4 rounded-lg border bg-muted/30 p-3">
-              <summary class="cursor-pointer text-sm font-medium">
-                Initial AI audit ({selectedRun.audit.ai.length} call{selectedRun
-                  .audit.ai.length === 1
-                  ? ""
-                  : "s"})
-              </summary>
-              <pre
-                class="mt-3 max-h-80 overflow-auto rounded-md bg-background p-3 text-xs leading-relaxed">{JSON.stringify(
-                  selectedRun.audit.ai,
-                  null,
-                  2,
-                )}</pre>
-            </details>
-          {/if}
-
-          <div class="mt-4 flex flex-col gap-3">
-            {#each selectedRun.proposals as proposal, index (proposal.id)}
-              <article class="rounded-lg border p-3">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <p class="font-medium">
-                      {proposalTitle(selectedRun, index)}
-                    </p>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                      {proposal.transaction
-                        ? `${proposal.transaction.bookedAt} · ${proposal.transaction.amount} ${proposal.transaction.currency}`
-                        : "No normalized transaction"}
-                    </p>
-                  </div>
-                  <span
-                    class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-                  >
-                    {proposal.status}
-                  </span>
-                </div>
-                {#if proposal.acceptance}
-                  <p class="mt-2 text-sm text-muted-foreground">
-                    Accepted into {proposal.acceptance.destinationPath} at {formatDate(
-                      proposal.acceptance.acceptedAt,
-                    )}
-                  </p>
-                {/if}
-                <details class="mt-3">
-                  <summary class="cursor-pointer text-sm text-muted-foreground">
-                    Full proposal audit
-                  </summary>
-                  <pre
-                    class="mt-3 max-h-80 overflow-auto rounded-md bg-muted p-3 text-xs leading-relaxed">{JSON.stringify(
-                      proposal,
-                      null,
-                      2,
-                    )}</pre>
-                </details>
-              </article>
-            {/each}
-          </div>
-        </section>
       {/if}
     </div>
   {/if}

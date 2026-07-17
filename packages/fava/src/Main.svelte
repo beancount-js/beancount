@@ -26,6 +26,7 @@
   import IngestionMerchantManage from "./components/IngestionMerchantManage.svelte";
   import IngestionBrandSettings from "./components/IngestionBrandSettings.svelte";
   import IngestionRunHistory from "./components/IngestionRunHistory.svelte";
+  import IngestionRunAudit from "./components/IngestionRunAudit.svelte";
   import RulesSettings from "./components/RulesSettings.svelte";
   import FavaNavigation from "./components/FavaNavigation.svelte";
   import Search from "./components/Search.svelte";
@@ -87,6 +88,7 @@
       { path: "/import/merchants", element: IngestionMerchantReview },
       { path: "/import/manage-merchants", element: IngestionMerchantManage },
       { path: "/import/brands", element: IngestionBrandSettings },
+      { path: "/import/history/:runId", element: IngestionRunAudit },
       { path: "/import/history", element: IngestionRunHistory },
       { path: "/import/rules", element: RulesSettings },
       { path: "/directives", element: Editor },
@@ -212,6 +214,7 @@
     if (path.startsWith("/account/")) {
       return params.account ? `Account: ${params.account}` : "Account";
     }
+    if (path.startsWith("/import/history/")) return "Import run";
 
     return utilityPageTitles[path] ?? "Beancount Studio";
   }

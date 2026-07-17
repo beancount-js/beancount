@@ -63,6 +63,7 @@
     projectId: string;
     allowedAccounts?: readonly string[];
     aiEnabled?: boolean;
+    readOnly?: boolean;
     onClosed?: () => void;
     onUpdated?: (run: IngestionRun) => void;
     onStatus?: (message: string) => void;
@@ -75,6 +76,7 @@
     projectId,
     allowedAccounts = [],
     aiEnabled = false,
+    readOnly = false,
     onClosed,
     onUpdated,
     onStatus,
@@ -265,12 +267,14 @@
   );
 
   const editable = $derived(
-    Boolean(proposal.transaction) &&
+    !readOnly &&
+      Boolean(proposal.transaction) &&
       (proposal.status === "ready" || proposal.status === "needs-review"),
   );
 
   const canEnrichAi = $derived(
-    aiEnabled &&
+    !readOnly &&
+      aiEnabled &&
       Boolean(proposal.transaction) &&
       (proposal.status === "ready" ||
         proposal.status === "needs-review" ||
@@ -627,10 +631,12 @@
         tabindex={-1}
         class="proposal-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
       >
-        Review Proposal
+        {readOnly ? "Import proposal audit" : "Review Proposal"}
       </Sheet.Title>
       <Sheet.Description class="sr-only">
-        Review and edit this import proposal.
+        {readOnly
+          ? "Read-only context retained for this import proposal."
+          : "Review and edit this import proposal."}
       </Sheet.Description>
       <div class="ml-auto flex shrink-0 items-center gap-1">
         {#if saveHint}
@@ -960,7 +966,7 @@
                       · {proposal.merchantResolution.explanation}
                     {/if}
                   </p>
-                  {#if merchantStatus === "suggested" && candidate}
+                  {#if !readOnly && merchantStatus === "suggested" && candidate}
                     <div class="flex flex-wrap gap-2">
                       <Button
                         size="sm"
@@ -985,7 +991,7 @@
                         onclick={() => updateMerchant("reject")}>Dismiss</Button
                       >
                     </div>
-                  {:else if merchantStatus === "suppressed"}
+                  {:else if !readOnly && merchantStatus === "suppressed"}
                     <div>
                       <Button
                         size="sm"
@@ -995,7 +1001,7 @@
                         >Try again</Button
                       >
                     </div>
-                  {:else}
+                  {:else if !readOnly}
                     <div>
                       <Button
                         size="sm"
@@ -1010,7 +1016,7 @@
                   {/if}
                 </div>
               </div>
-              {#if merchantStatus !== "suppressed" || correcting}
+              {#if !readOnly && (merchantStatus !== "suppressed" || correcting)}
                 <div class="beancount-structured-form">
                   {#if merchantStatus !== "suppressed"}
                     <LocalMerchantMatchPicker
@@ -1120,7 +1126,8 @@
                     id="ingestion-booked-at"
                     type="date"
                     bind:value={draft.bookedAt}
-                    disabled={!editable}
+                    disabled={!editable && !readOnly}
+                    readonly={readOnly}
                     oninput={() => scheduleSave()}
                   />
                 </FormField>
@@ -1129,7 +1136,8 @@
                     id="ingestion-amount"
                     inputmode="decimal"
                     bind:value={draft.amount}
-                    disabled={!editable}
+                    disabled={!editable && !readOnly}
+                    readonly={readOnly}
                     oninput={() => scheduleSave()}
                   />
                 </FormField>
@@ -1137,7 +1145,8 @@
                   <Input
                     id="ingestion-currency"
                     bind:value={draft.currency}
-                    disabled={!editable}
+                    disabled={!editable && !readOnly}
+                    readonly={readOnly}
                     oninput={() => scheduleSave()}
                   />
                 </FormField>
@@ -1145,7 +1154,8 @@
                   <Input
                     id="ingestion-payee"
                     bind:value={draft.payee}
-                    disabled={!editable}
+                    disabled={!editable && !readOnly}
+                    readonly={readOnly}
                     oninput={() => scheduleSave()}
                   />
                 </FormField>
@@ -1153,7 +1163,8 @@
                   <Input
                     id="ingestion-narration"
                     bind:value={draft.narration}
-                    disabled={!editable}
+                    disabled={!editable && !readOnly}
+                    readonly={readOnly}
                     oninput={() => scheduleSave()}
                   />
                 </FormField>
@@ -1188,34 +1199,39 @@
                   align="center"
                   controlId="ingestion-tags"
                 >
-                  <div
-                    class={!editable
-                      ? "pointer-events-none opacity-60"
-                      : undefined}
-                  >
-                    <TagEditor
-                      id="ingestion-tags"
-                      value={draft.tags}
-                      suggestions={$ledgerTags}
-                      label="Tags"
-                      showLabel={false}
-                      embedded
-                      uppercase={false}
-                      placeholder="Add tag..."
-                      onChange={(tags) => {
-                        if (!editable) return;
-                        draft.tags = normalizeTags(tags);
-                        scheduleSave();
-                      }}
-                    />
-                  </div>
+                  {#if readOnly}
+                    <output id="ingestion-tags">{draft.tags.join(", ")}</output>
+                  {:else}
+                    <div
+                      class={!editable
+                        ? "pointer-events-none opacity-60"
+                        : undefined}
+                    >
+                      <TagEditor
+                        id="ingestion-tags"
+                        value={draft.tags}
+                        suggestions={$ledgerTags}
+                        label="Tags"
+                        showLabel={false}
+                        embedded
+                        uppercase={false}
+                        placeholder="Add tag..."
+                        onChange={(tags) => {
+                          if (!editable) return;
+                          draft.tags = normalizeTags(tags);
+                          scheduleSave();
+                        }}
+                      />
+                    </div>
+                  {/if}
                 </FormField>
                 <FormField label="Links" controlId="ingestion-links">
                   <Input
                     id="ingestion-links"
                     placeholder="receipt-123"
                     bind:value={draft.links}
-                    disabled={!editable}
+                    disabled={!editable && !readOnly}
+                    readonly={readOnly}
                     oninput={() => scheduleSave()}
                   />
                 </FormField>
@@ -1224,49 +1240,78 @@
           {/if}
         </section>
 
-        <CollapsibleItemList
-          title="Metadata"
-          addLabel="field"
-          count={draft.metadata.length}
-          open={isSectionOpen("metadata")}
-          onToggle={() => toggleSection("metadata")}
-          onAdd={() => {
-            if (editable) addMetadataRow();
-          }}
-        >
-          {#each draft.metadata as row, index (index)}
-            <EntryActions
-              {index}
-              total={draft.metadata.length}
-              removeLabel={`Remove metadata ${index + 1}`}
-              onMove={(direction) => moveMetadata(index, direction)}
-              onRemove={() => {
-                if (editable) removeMetadataRow(index);
-              }}
-            >
-              <div class="beancount-structured-form">
-                <FormField label="Key" controlId={`meta-${index}-key`}>
-                  <Input
-                    id={`meta-${index}-key`}
-                    bind:value={row.key}
-                    disabled={!editable}
-                    placeholder="Add key"
-                    oninput={() => scheduleSave()}
-                  />
-                </FormField>
-                <FormField label="Value" controlId={`meta-${index}-value`}>
-                  <Input
-                    id={`meta-${index}-value`}
-                    bind:value={row.value}
-                    disabled={!editable}
-                    placeholder="Add value"
-                    oninput={() => scheduleSave()}
-                  />
-                </FormField>
+        {#if readOnly}
+          <section class="flex flex-col gap-2" aria-label="Metadata">
+            <FormSectionHeader
+              title={`Metadata · ${draft.metadata.length}`}
+              titleClass={sectionTitleClass}
+              editable={false}
+              movable={false}
+              removable={false}
+              titleToggleable={true}
+              open={isSectionOpen("metadata")}
+              onToggle={() => toggleSection("metadata")}
+            />
+            {#if isSectionOpen("metadata")}
+              <div class="proposal-section-body">
+                {#each draft.metadata as row, index (index)}
+                  <div class="beancount-structured-form">
+                    <FormField label="Key" controlId={`meta-${index}-key`}>
+                      <output id={`meta-${index}-key`}>{row.key}</output>
+                    </FormField>
+                    <FormField label="Value" controlId={`meta-${index}-value`}>
+                      <output id={`meta-${index}-value`}>{row.value}</output>
+                    </FormField>
+                  </div>
+                {/each}
               </div>
-            </EntryActions>
-          {/each}
-        </CollapsibleItemList>
+            {/if}
+          </section>
+        {:else}
+          <CollapsibleItemList
+            title="Metadata"
+            addLabel="field"
+            count={draft.metadata.length}
+            open={isSectionOpen("metadata")}
+            onToggle={() => toggleSection("metadata")}
+            onAdd={() => {
+              if (editable) addMetadataRow();
+            }}
+          >
+            {#each draft.metadata as row, index (index)}
+              <EntryActions
+                {index}
+                total={draft.metadata.length}
+                removeLabel={`Remove metadata ${index + 1}`}
+                onMove={(direction) => moveMetadata(index, direction)}
+                onRemove={() => {
+                  if (editable) removeMetadataRow(index);
+                }}
+              >
+                <div class="beancount-structured-form">
+                  <FormField label="Key" controlId={`meta-${index}-key`}>
+                    <Input
+                      id={`meta-${index}-key`}
+                      bind:value={row.key}
+                      disabled={!editable}
+                      placeholder="Add key"
+                      oninput={() => scheduleSave()}
+                    />
+                  </FormField>
+                  <FormField label="Value" controlId={`meta-${index}-value`}>
+                    <Input
+                      id={`meta-${index}-value`}
+                      bind:value={row.value}
+                      disabled={!editable}
+                      placeholder="Add value"
+                      oninput={() => scheduleSave()}
+                    />
+                  </FormField>
+                </div>
+              </EntryActions>
+            {/each}
+          </CollapsibleItemList>
+        {/if}
       </div>
     </div>
   </Sheet.Content>

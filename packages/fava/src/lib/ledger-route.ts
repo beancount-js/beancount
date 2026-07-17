@@ -145,6 +145,24 @@ export function parseLedgerAndView(
     .filter(Boolean);
   if (!parts.length) return null;
 
+  // settings/history/<runId>
+  if (
+    parts.length >= 3 &&
+    parts.at(-3) === "settings" &&
+    parts.at(-2) === "history" &&
+    parts.at(-1)
+  ) {
+    const runId = parts.at(-1)!;
+    const ledgerParts = parts.slice(0, -3);
+    if (!ledgerParts.length) return null;
+    return {
+      ledgerStem: ledgerParts.join("/"),
+      viewPath: `/import/history/${runId}`,
+      viewSegment: `settings/history/${runId}`,
+      params: { runId },
+    };
+  }
+
   // settings/accounts | settings/merchants | settings/manage-merchants | …
   const settingsSubpages: Record<string, string> = {
     accounts: "/import/accounts",
@@ -213,6 +231,11 @@ export function parseLedgerAndView(
 export function viewPathToSegments(viewPath: string): string[] {
   const normalized = viewPath.split("?")[0] ?? viewPath;
   const clean = normalized.replace(/\/+$/, "") || "/";
+
+  if (clean.startsWith("/import/history/")) {
+    const runId = clean.slice("/import/history/".length);
+    return ["settings", "history", runId];
+  }
 
   if (clean.startsWith("/account/")) {
     const account = clean.slice("/account/".length).replace(/\/+$/, "");
