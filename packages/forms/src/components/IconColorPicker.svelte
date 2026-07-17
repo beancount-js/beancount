@@ -84,6 +84,8 @@
     onChange?: (value: { color: string; icon: string }) => void;
   } = $props();
 
+  let open = $state(false);
+
   const currentColor = $derived(
     isHexColor(color) ? color.toUpperCase() : DEFAULT_COLOR,
   );
@@ -106,7 +108,7 @@
   }
 </script>
 
-<Popover.Root>
+<Popover.Root bind:open>
   <Popover.Trigger>
     {#snippet child({ props })}
       <button
@@ -231,7 +233,7 @@
     font-weight: 500;
   }
 
-  .beancount-icon-color-picker__content {
+  :global(.beancount-icon-color-picker__content) {
     z-index: 60;
     width: min(22rem, calc(100vw - 2rem));
     border: 1px solid var(--border);
