@@ -4,6 +4,10 @@
   import CheckIcon from "lucide-svelte/icons/check";
   import ChevronDownIcon from "lucide-svelte/icons/chevron-down";
   import SearchIcon from "lucide-svelte/icons/search";
+  import {
+    filterCommandOptions,
+    hasExactFilterCommandOption,
+  } from "../picker-search";
   import type {
     FilterCommandOption,
     FilterCommandSearchAction,
@@ -97,12 +101,7 @@
 
   const trimmedSearch = $derived(search.trim());
   const exactMatch = $derived(
-    trimmedSearch.length > 0 &&
-      options.some(
-        (option) =>
-          option.value.toLowerCase() === trimmedSearch.toLowerCase() ||
-          option.label.toLowerCase() === trimmedSearch.toLowerCase(),
-      ),
+    hasExactFilterCommandOption(options, trimmedSearch),
   );
   const canCreateCustom = $derived(
     allowCustom && !multiple && trimmedSearch.length > 0 && !exactMatch,
@@ -114,19 +113,7 @@
   );
 
   const filteredOptions = $derived.by(() => {
-    const needle = search.trim().toLowerCase();
-    return options.filter((option) => {
-      if (!needle) return true;
-      const haystack = [
-        option.value,
-        option.label,
-        option.description ?? "",
-        ...(option.keywords ?? []),
-      ]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(needle);
-    });
+    return filterCommandOptions(options, search);
   });
 
   $effect(() => {

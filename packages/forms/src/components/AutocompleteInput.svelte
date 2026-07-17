@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Portal } from "bits-ui";
+  import { autocompleteSuggestions } from "../picker-search";
 
   let {
     id = undefined,
@@ -45,18 +46,7 @@
   const LIST_ITEM_HEIGHT_PX = 36;
 
   const normalizedSuggestions = $derived.by(() => {
-    const seen = new Set<string>();
-    const needle = value.trim().toLowerCase();
-    return suggestions
-      .map((suggestion) => suggestion.trim())
-      .filter(Boolean)
-      .filter((suggestion) => {
-        const key = suggestion.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return !needle || key.includes(needle);
-      })
-      .slice(0, 8);
+    return autocompleteSuggestions(suggestions, value);
   });
 
   const showList = $derived(open && normalizedSuggestions.length > 0);
@@ -71,8 +61,7 @@
     );
     const spaceBelow = window.innerHeight - rect.bottom - LIST_GAP_PX;
     const spaceAbove = rect.top - LIST_GAP_PX;
-    const placeAbove =
-      spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const placeAbove = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
 
     listPosition = {
       top: placeAbove ? rect.top - LIST_GAP_PX : rect.bottom + LIST_GAP_PX,
@@ -249,13 +238,11 @@
     max-height: 14rem;
     overflow: auto;
     border: 1px solid
-      var(
-        --cv-form-border,
-        var(--beancount-form-border, var(--border))
-      );
+      var(--cv-form-border, var(--beancount-form-border, var(--border)));
     border-radius: 0.45rem;
     background: var(--popover, var(--card, var(--background)));
-    box-shadow: 0 14px 30px color-mix(in srgb, var(--foreground) 12%, transparent);
+    box-shadow: 0 14px 30px
+      color-mix(in srgb, var(--foreground) 12%, transparent);
     padding: 0.25rem;
   }
 
