@@ -297,17 +297,39 @@
   }
 
   .beancount-icon-color-picker__custom-color {
-    overflow: hidden;
+    border: 2px solid var(--popover, var(--card));
+    background: conic-gradient(
+      from 0deg,
+      #ef4444,
+      #f59e0b,
+      #facc15,
+      #22c55e,
+      #06b6d4,
+      #3b82f6,
+      #8b5cf6,
+      #ec4899,
+      #ef4444
+    );
+  }
+
+  .beancount-icon-color-picker__custom-color.selected::after {
+    inset: -0.3rem;
+    border-color: var(--appearance-color);
+    border-width: 3px;
   }
 
   .beancount-icon-color-picker__custom-color input {
-    display: block;
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     border: 0;
+    border-radius: inherit;
     background: transparent;
+    clip-path: circle(50%);
     cursor: pointer;
     opacity: 0;
+    padding: 0;
   }
 
   .beancount-icon-color-picker__icons {
