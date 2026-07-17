@@ -322,6 +322,9 @@ importers:
       '@beancount-js/connector-lunchflow':
         specifier: workspace:*
         version: link:../connector-lunchflow
+      '@beancount-js/connector-starling':
+        specifier: workspace:*
+        version: link:../connector-starling
       '@beancount-js/filters':
         specifier: workspace:*
         version: link:../filters
@@ -826,6 +829,9 @@ importers:
       '@beancount-js/connector-lunchflow':
         specifier: workspace:*
         version: link:../connector-lunchflow
+      '@beancount-js/connector-starling':
+        specifier: workspace:*
+        version: link:../connector-starling
       '@beancount-js/parser':
         specifier: workspace:*
         version: link:../parser

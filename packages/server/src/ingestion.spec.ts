@@ -1020,6 +1020,77 @@ describe("FilesystemIngestionStore", () => {
     ]);
   });
 
+  test("discovers Starling accounts with the project access token", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-starling-discovery-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    await store.writeConfig("project", {
+      version: 2,
+      sources: [
+        {
+          id: "starling",
+          name: "Starling Bank",
+          kind: "starling",
+          config: {
+            baseUrl: "https://api.starlingbank.com",
+            allowedHosts: [
+              "api.starlingbank.com",
+              "api-sandbox.starlingbank.com",
+            ],
+            secretRef: "env:STARLING_ACCESS_TOKEN",
+            lookbackDays: 7,
+          },
+          rules: [],
+          accounts: [],
+        },
+      ],
+    });
+    await writeFile(
+      join(directory, "project", ".env"),
+      "STARLING_ACCESS_TOKEN=starling-token\n",
+    );
+
+    const fetchMock = (async (
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      expect(String(input)).toBe(
+        "https://api.starlingbank.com/api/v2/accounts",
+      );
+      expect(new Headers(init?.headers).get("authorization")).toBe(
+        "Bearer starling-token",
+      );
+      return new Response(
+        JSON.stringify({
+          accounts: [
+            {
+              accountUid: "account-1",
+              defaultCategory: "category-1",
+              name: "Personal",
+              currency: "GBP",
+              accountType: "PRIMARY",
+            },
+          ],
+        }),
+        { status: 200 },
+      );
+    }) as typeof fetch;
+
+    await expect(
+      store.discoverAccounts("project", "starling", { fetch: fetchMock }),
+    ).resolves.toEqual([
+      {
+        id: "account-1",
+        name: "Personal",
+        currency: "GBP",
+        institutionName: "Starling Bank",
+        status: "PRIMARY",
+      },
+    ]);
+  });
+
   test("patchProposal updates transaction fields tags and metadata", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-patch-"),

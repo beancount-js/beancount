@@ -149,4 +149,47 @@ describe("ingestion sync state", () => {
       },
     ]);
   });
+
+  test("expands Starling account targets without json-api endpoints", async () => {
+    ensureConnectorsRegistered();
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-starling-expand-"),
+    );
+    directories.push(directory);
+    const store = new FilesystemIngestionStore({
+      resolveProjectRoot: (project) => join(directory, project),
+    });
+    await store.writeConfig("project", {
+      version: 2,
+      sources: [
+        {
+          id: "starling",
+          name: "Starling Bank",
+          kind: "starling",
+          config: {
+            secretRef: "env:STARLING_ACCESS_TOKEN",
+            baseUrl: "https://api.starlingbank.com",
+          },
+          accounts: [
+            {
+              id: "account-1",
+              name: "Personal",
+              sourceAccount: "Assets:Bank:Starling",
+              defaultCurrency: "GBP",
+            },
+          ],
+          rules: [],
+        },
+      ],
+    });
+    const source = await store.source("project", "starling");
+    expect(expandIngestionSource(source)).toEqual([
+      {
+        sourceId: "starling:account-1",
+        sourceAccount: "Assets:Bank:Starling",
+        defaultCurrency: "GBP",
+        accountId: "account-1",
+      },
+    ]);
+  });
 });

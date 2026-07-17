@@ -124,6 +124,31 @@ describe("ingestion source form draft", () => {
     expect(conflict.id).toBe("source");
   });
 
+  test("provides a secure Starling connection template", () => {
+    const starling = ingestionSamples.find(
+      (sample) => sample.id === "starling",
+    );
+    expect(starling).toMatchObject({
+      name: "Starling Bank",
+      initials: "ST",
+      accentClass: "bg-violet-700",
+      region: "United Kingdom",
+      category: "Bank",
+      badge: "Beta",
+    });
+    expect(starling?.template).toMatchObject({
+      id: "starling",
+      kind: "starling",
+      accounts: [],
+      config: {
+        secretRef: "env:STARLING_ACCESS_TOKEN",
+        baseUrl: "https://api.starlingbank.com",
+        allowedHosts: ["api.starlingbank.com", "api-sandbox.starlingbank.com"],
+        lookbackDays: 7,
+      },
+    });
+  });
+
   test("validates grouped connections separately from standalone sources", () => {
     const lunchflow = ingestionSamples.find(
       (sample) => sample.id === "lunchflow",
