@@ -1,8 +1,7 @@
 import { json } from "@sveltejs/kit";
 import type { MerchantCandidate } from "@beancount-js/beangulp";
 import {
-  BrandfetchProvider,
-  createBrandfetchResponseCache,
+  brandfetchLogoUrl,
   isValidDomain,
   merchantLogoUrlFor,
   resolveBrandfetchRuntime,
@@ -61,17 +60,20 @@ export async function POST({
     }
 
     const brandfetch = config.brandfetch;
-    if (!brandfetch?.enabled || !brandfetch.apiKeySecretRef.trim()) {
+    if (!brandfetch?.enabled) {
       return json(
-        { error: "Enable Brandfetch before updating a connection logo." },
+        {
+          error:
+            "Enable Brandfetch Logo API before updating a connection logo.",
+        },
         { status: 400 },
       );
     }
     const projectRoot = await store.projectRoot(params.id);
     const runtime = await resolveBrandfetchRuntime(brandfetch, projectRoot);
-    if (!runtime?.apiKey) {
+    if (!runtime?.clientId) {
       return json(
-        { error: "Brandfetch credential is unavailable." },
+        { error: "Brandfetch Logo API client ID is unavailable." },
         { status: 400 },
       );
     }
@@ -89,21 +91,8 @@ export async function POST({
           observedAt: new Date().toISOString(),
         },
       ],
+      logoUrl: brandfetchLogoUrl(domain, runtime.clientId),
     };
-    const provider = new BrandfetchProvider({
-      apiKey: runtime.apiKey,
-      clientId: runtime.clientId,
-      ttlDays: brandfetch.ttlDays,
-      responseCache: createBrandfetchResponseCache(projectRoot),
-      bypassCache: true,
-    });
-    const enriched = await provider.enrich(candidate);
-    if (!enriched) {
-      return json(
-        { error: "Brandfetch did not return a merchant for this connection." },
-        { status: 404 },
-      );
-    }
 
     let existing = source.merchantId
       ? await store.merchants
@@ -111,27 +100,12 @@ export async function POST({
           .catch(() => undefined)
       : undefined;
     existing ??= await store.merchants.findByDomain(params.id, domain);
-    let merchant = await store.merchants.confirm(params.id, {
+    const merchant = await store.merchants.confirm(params.id, {
       sourceId: source.id,
       rawLabel: source.name,
-      candidate: enriched,
+      candidate,
       targetMerchantId: existing?.merchantId,
     });
-    if (
-      brandfetch.assetMode === "cache" &&
-      brandfetch.cacheContentAllowed &&
-      enriched.logoUrl
-    ) {
-      try {
-        merchant = await store.merchants.cacheLogo(
-          params.id,
-          merchant.merchantId,
-          await provider.downloadLogo(enriched.logoUrl),
-        );
-      } catch {
-        // Do not discard confirmed metadata when the optional logo asset fails.
-      }
-    }
 
     await store.writeConfig(params.id, {
       ...config,

@@ -31,7 +31,7 @@ export async function GET({ params }: { params: { id: string } }) {
     ...config,
     brandCredentialAvailable:
       config.brandfetch?.enabled === true
-        ? envSecretAvailable(config.brandfetch.apiKeySecretRef, env)
+        ? envSecretAvailable(config.brandfetch.clientId, env)
         : undefined,
     sources: config.sources.map((source) => {
       const secretRef = sourceSecretRef(source);

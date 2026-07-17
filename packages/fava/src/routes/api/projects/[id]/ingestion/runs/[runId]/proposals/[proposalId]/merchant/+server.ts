@@ -1,15 +1,12 @@
 import { json } from "@sveltejs/kit";
 import {
-  BrandfetchProvider,
   applyMerchantResolutionToPendingProposals,
   merchantLogoUrlFor,
   resolveBrandfetchRuntime,
-  type IngestionSourceDefinition,
 } from "@beancount-js/server";
 import {
   normalizeMerchant,
   type MerchantCandidate,
-  type MerchantIdentity,
   type MerchantResolution,
 } from "@beancount-js/beangulp";
 import { serverIngestion } from "$lib/server/ingestion";
@@ -69,44 +66,6 @@ function withOptionalDomain(
   const domain = parseDomain(details.domain);
   if (!domain || candidate.domain) return candidate;
   return { ...candidate, domain };
-}
-
-async function cacheLogoIfConfigured(
-  projectId: string,
-  merchant: MerchantIdentity,
-  candidate: MerchantCandidate,
-  _source: IngestionSourceDefinition,
-) {
-  const store = serverIngestion();
-  const brandfetch = (await store.readConfig(projectId)).brandfetch;
-  if (
-    brandfetch?.enabled !== true ||
-    brandfetch.assetMode !== "cache" ||
-    !brandfetch.cacheContentAllowed ||
-    !candidate.logoUrl ||
-    !brandfetch.apiKeySecretRef.trim()
-  ) {
-    return merchant;
-  }
-  const runtime = await resolveBrandfetchRuntime(
-    brandfetch,
-    await store.projectRoot(projectId),
-  );
-  if (!runtime?.apiKey) return merchant;
-  try {
-    const asset = await new BrandfetchProvider({
-      apiKey: runtime.apiKey,
-      clientId: runtime.clientId,
-      ttlDays: brandfetch.ttlDays,
-    }).downloadLogo(candidate.logoUrl);
-    return await store.merchants.cacheLogo(
-      projectId,
-      merchant.merchantId,
-      asset,
-    );
-  } catch {
-    return merchant;
-  }
 }
 
 function labelsForFanOut(body: Record<string, unknown>, primaryLabel: string) {
@@ -187,19 +146,13 @@ export async function PATCH({
           { error: "Choose a merchant suggestion or provide a merchant name." },
           { status: 400 },
         );
-      let merchant = await store.merchants.confirm(params.id, {
+      const merchant = await store.merchants.confirm(params.id, {
         sourceId: source.id,
         rawLabel: label,
         candidate,
         targetMerchantId: text(body.targetMerchantId),
         overwriteDetails: action === "correct",
       });
-      merchant = await cacheLogoIfConfigured(
-        params.id,
-        merchant,
-        candidate,
-        source,
-      );
       const enrichment = source.merchantEnrichment ?? { enabled: false };
       const brandfetch = (await store.readConfig(params.id)).brandfetch;
       const runtime = brandfetch
