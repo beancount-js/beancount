@@ -946,11 +946,11 @@
                 />
                 {#if merchant?.logoUrl && !failedMerchantLogoIds.has(merchant.merchantId)}
                   <span
-                    class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-background p-1 shadow-sm"
+                    class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted shadow-sm"
                     aria-hidden="true"
                   >
                     <img
-                      class="size-full object-contain"
+                      class="size-full object-cover"
                       src={merchant.logoUrl}
                       alt=""
                       onerror={() =>
