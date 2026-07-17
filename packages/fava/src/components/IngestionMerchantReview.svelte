@@ -394,26 +394,16 @@
     detectBusy = true;
     status = "Detecting merchants…";
     try {
-      for (const cluster of clusters) {
-        await ingestionJson(
-          ingestionPath(
-            project.project.id,
-            `/runs/${encodeURIComponent(cluster.primary.runId)}/proposals/${encodeURIComponent(cluster.primary.proposalId)}/enrich`,
-          ),
-          {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              merchantOnly: true,
-              normalizedLabels: cluster.members.map(
-                (member) => member.normalizedLabel,
-              ),
-            }),
-          },
-        );
-      }
+      const result = await ingestionJson<{ clusters: number; calls: number }>(
+        ingestionPath(project.project.id, "/merchant-review/detect"),
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ sourceId }),
+        },
+      );
       await refreshClusters();
-      status = "Merchant detection finished.";
+      status = `Merchant detection finished for ${result.clusters} cluster${result.clusters === 1 ? "" : "s"} in ${result.calls} AI call${result.calls === 1 ? "" : "s"}.`;
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {

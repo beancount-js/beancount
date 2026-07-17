@@ -330,11 +330,11 @@
           <section class="overflow-hidden rounded-2xl border bg-card shadow-sm">
             <div class="flex items-center justify-between gap-3 px-5 py-4">
               <div>
-                <h2 class="text-sm font-semibold">Initial AI audit</h2>
+                <h2 class="text-sm font-semibold">AI call audit</h2>
                 <p class="mt-1 text-xs text-muted-foreground">
                   {run.audit.ai.length} call{run.audit.ai.length === 1
                     ? ""
-                    : "s"} captured while this run was ingested.
+                    : "s"} captured for this run.
                 </p>
               </div>
             </div>
@@ -357,6 +357,14 @@
                         class="ml-2 text-xs font-normal text-muted-foreground"
                       >
                         {formatDateTime(call.at)}
+                        {#if call.batchSize}
+                          · {call.batchSize} item{call.batchSize === 1
+                            ? ""
+                            : "s"}
+                        {/if}
+                        {#if call.durationMs !== undefined}
+                          · {(call.durationMs / 1000).toFixed(1)}s
+                        {/if}
                       </span>
                     </summary>
                     <div class="mt-3 flex flex-col gap-3">

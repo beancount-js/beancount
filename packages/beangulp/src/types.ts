@@ -277,7 +277,8 @@ export interface AiEnrichmentCallRecord {
   /** Unique per-process identifier. Older persisted calls do not have one. */
   callId?: string;
   label: string;
-  prompt: string;
+  /** Omitted from per-proposal batch references; retained once on the run audit. */
+  prompt?: string;
   response?: string;
   error?: string;
   ok: boolean;

@@ -49,6 +49,7 @@ export {
   discoverIngestionAccounts,
   enrichExistingSourceRuns,
   enrichProposal,
+  enrichProposals,
   expandIngestionSource,
   ingestSource,
   isConnectorIngestionSource,

@@ -16,6 +16,7 @@ import {
   runIngestion,
   normalizeMerchant,
   sortSuggestions,
+  suggestionScore,
   transactionFingerprint,
   providerImportIdentity,
   discoverJsonApiAccounts,
@@ -1429,10 +1430,16 @@ function prettyJson(value: unknown) {
   }
 }
 
-type CodexPluginOptions = {
+export type CodexPluginOptions = {
   model?: string;
   timeoutMs?: number;
   onDebug?: (call: AiEnrichmentDebugCall) => void;
+  /** Injectable executor used by adapter tests; production defaults to Codex CLI. */
+  execute?: (
+    args: readonly string[],
+    prompt: string,
+    timeoutMs: number,
+  ) => Promise<string>;
 };
 
 export type CodexBatchItem<T> = {
@@ -1528,12 +1535,13 @@ export class CodexCategorizer implements CategorizerPlugin {
         })),
       };
       const prompt = JSON.stringify(promptPayload);
-      response = await runCodex(
-        codexExecArgs({
+      const args = codexExecArgs({
           directory,
           schemaPath,
           model: this.options.model,
-        }),
+        });
+      response = await (this.options.execute ?? runCodex)(
+        args,
         prompt,
         this.options.timeoutMs ?? AI_BATCH_TIMEOUT_MS,
       );
@@ -1849,12 +1857,13 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
         })),
       };
       const prompt = JSON.stringify(promptPayload);
-      response = await runCodex(
-        codexExecArgs({
+      const args = codexExecArgs({
           directory,
           schemaPath,
           model: this.options.model,
-        }),
+        });
+      response = await (this.options.execute ?? runCodex)(
+        args,
         prompt,
         this.options.timeoutMs ?? AI_BATCH_TIMEOUT_MS,
       );
@@ -2033,6 +2042,7 @@ async function merchantResolversFor(
   options?: {
     onAiDebug?: (call: AiEnrichmentDebugCall) => void;
     brandfetch?: BrandfetchEnrichmentConfig;
+    includeAi?: boolean;
   },
 ) {
   const enrichment = source.merchantEnrichment;
@@ -2061,7 +2071,8 @@ async function merchantResolversFor(
       resolvedEnrichment,
     ),
   ];
-  if (enrichment.aiEnabled)
+  const aiEnabled = enrichment.aiEnabled && options?.includeAi !== false;
+  if (aiEnabled)
     resolvers.push(
       new CodexMerchantAdvisor({
         model,
@@ -2071,7 +2082,7 @@ async function merchantResolversFor(
     );
   // An AI candidate can name a domain that belongs to an existing profile.
   // This remains an exact domain match, never a name-similarity merge.
-  if (enrichment.aiEnabled)
+  if (aiEnabled)
     resolvers.push(
       new ExistingDomainMerchantResolver(
         context.store.merchants,
@@ -2114,6 +2125,10 @@ export async function ingestSource(
   let seenFingerprints = [...state.seenFingerprints];
   let seenProviderImportIds = [...state.seenProviderImportIds];
   const accountTotal = targets.length;
+  // Fetches remain account-by-account so cursors and repeat suppression stay
+  // deterministic. AI enrichment runs after all fetched accounts are collected,
+  // allowing a single bounded batch to span the whole sync.
+  const deferAi = Boolean(merchantContext && sourceHasAiEnabled(source));
   const connector = isConnectorIngestionSource(source)
     ? requireConnector(source.kind)
     : undefined;
@@ -2153,7 +2168,7 @@ export async function ingestSource(
     const detectionRules = resolveDetectionRules(source, options);
     const aiCalls: AiEnrichmentCallRecord[] = [];
     const categorizers = buildCategorizers(detectionRules, {
-      aiEnabled: source.aiEnabled === true,
+      aiEnabled: source.aiEnabled === true && !deferAi,
       model,
       onAiDebug: (call) => aiCalls.push(call),
     });
@@ -2181,7 +2196,7 @@ export async function ingestSource(
               : state.cursors[target.sourceId],
         };
 
-    const run = connector
+    const ingestedRun = connector
       ? await runIngestion({
           source: connector.createSource(source.config),
           sourceConfig: source.config,
@@ -2197,6 +2212,7 @@ export async function ingestSource(
             {
               brandfetch,
               onAiDebug: (call) => aiCalls.push(call),
+              includeAi: !deferAi,
             },
           ),
           history: historySamplesFromEntries(entries),
@@ -2236,6 +2252,7 @@ export async function ingestSource(
             {
               brandfetch,
               onAiDebug: (call) => aiCalls.push(call),
+              includeAi: !deferAi,
             },
           ),
           history: historySamplesFromEntries(entries),
@@ -2257,6 +2274,8 @@ export async function ingestSource(
             });
           },
         });
+
+    const run = ingestedRun;
 
     const archivedRun = aiCalls.length
       ? { ...run, audit: { ai: aiCalls } }
@@ -2300,7 +2319,30 @@ export async function ingestSource(
     }
   }
 
-  return { runs, syncStatePatches };
+  const hasReviewableProposals = runs.some((run) =>
+    run.proposals.some(
+      (proposal) =>
+        Boolean(proposal.transaction) &&
+        (proposal.status === "ready" ||
+          proposal.status === "needs-review" ||
+          proposal.status === "held"),
+    ),
+  );
+  const enrichedRuns = deferAi && hasReviewableProposals
+    ? await enrichExistingSourceRuns(
+        source,
+        runs,
+        entries,
+        model,
+        merchantContext!,
+        {
+          detectionRules: resolveDetectionRules(source, options),
+          source: "ingest",
+          forceAi: false,
+        },
+      )
+    : runs;
+  return { runs: enrichedRuns, syncStatePatches };
 }
 
 function sourceHasAiEnabled(source: IngestionSourceDefinition) {
@@ -2416,130 +2458,391 @@ async function prepareAiEnrichment(
   };
 }
 
-async function enrichProposalWithPrepared(
-  proposal: ImportProposal,
-  prepared: EnrichPrepared,
-  options?: {
-    source?: AiEnrichmentSnapshot["source"];
-    jobId?: string;
-    calls?: AiEnrichmentCallRecord[];
-    merchantOnly?: boolean;
-  },
-): Promise<ImportProposal> {
-  if (!proposal.transaction) {
-    throw new Error("This proposal has no transaction to enrich.");
-  }
-  if (
-    proposal.status !== "ready" &&
-    proposal.status !== "needs-review" &&
-    proposal.status !== "held"
-  ) {
-    throw new Error("This proposal cannot be enriched.");
-  }
-  const transaction = proposal.transaction;
-  let merchantResolution = proposal.merchantResolution;
-  let nextIssues = (proposal.issues ?? []).filter(
-    (issue) =>
-      !issue.startsWith("Merchant resolver ") &&
-      !issue.startsWith("AI merchant advisor ") &&
-      !(options?.merchantOnly ? false : issue.startsWith("AI categoriser ")),
-  );
-  if (
-    prepared.aiMerchant &&
-    merchantResolution?.status !== "confirmed" &&
-    merchantResolution?.status !== "suppressed"
-  ) {
-    const resolved = await resolveMerchantWithResolvers(
-      transaction,
-      prepared.merchantResolvers,
-    );
-    merchantResolution = resolved.resolution;
-    nextIssues = [...nextIssues, ...resolved.issues];
-  }
+type BatchOutcome<T> = { value?: T; error?: string };
 
-  const calls = options?.calls ?? [];
-  const lastAiEnrichment: AiEnrichmentSnapshot | undefined = calls.length
-    ? {
-        at: nowIso(),
-        source: options?.source ?? "enrich",
-        jobId: options?.jobId,
-        ok: calls.every((call) => call.ok),
-        calls,
+function shouldAskAi(suggestions: readonly CategorySuggestion[]) {
+  const ordered = sortSuggestions(suggestions);
+  if (ordered.some((suggestion) => suggestion.hard)) return false;
+  const top = ordered[0];
+  const next = ordered[1];
+  if (!top) return true;
+  if (suggestionScore(top) < 0.85) return true;
+  return Boolean(
+    next &&
+      top.account !== next.account &&
+      suggestionScore(top) - suggestionScore(next) < 0.1,
+  );
+}
+
+function batchChunks<T extends { id: string; context: unknown }>(
+  items: readonly T[],
+) {
+  const chunks: T[][] = [];
+  let current: T[] = [];
+  let currentBytes = 0;
+  for (const item of items) {
+    const bytes = Buffer.byteLength(JSON.stringify(item.context));
+    if (
+      current.length &&
+      (current.length >= AI_BATCH_SIZE ||
+        currentBytes + bytes > AI_BATCH_MAX_BYTES)
+    ) {
+      chunks.push(current);
+      current = [];
+      currentBytes = 0;
+    }
+    current.push(item);
+    currentBytes += bytes;
+  }
+  if (current.length) chunks.push(current);
+  return chunks;
+}
+
+async function runBatchedCodex<T, R>(
+  items: readonly CodexBatchItem<T>[],
+  run: (
+    batch: readonly CodexBatchItem<T>[],
+  ) => Promise<readonly CodexBatchResult<R>[]>,
+) {
+  const outcomes = new Map<string, BatchOutcome<R>>();
+  const recover = async (
+    batch: readonly CodexBatchItem<T>[],
+    budget: { calls: number },
+  ): Promise<void> => {
+    let failure: unknown;
+    for (let attempt = 0; attempt < 2 && budget.calls < 16; attempt += 1) {
+      try {
+        budget.calls += 1;
+        for (const result of await run(batch)) {
+          outcomes.set(result.id, { value: result.value });
+        }
+        return;
+      } catch (error) {
+        failure = error;
       }
-    : proposal.lastAiEnrichment;
-
-  if (options?.merchantOnly) {
-    return {
-      ...proposal,
-      merchantResolution,
-      issues: nextIssues,
-      lastAiEnrichment,
-    };
-  }
-
-  const manualSelection = proposal.suggestions.find(
-    (suggestion) =>
-      suggestion.method === "manual" &&
-      suggestion.account === proposal.selectedAccount,
-  );
-  const suggestions: CategorySuggestion[] = [];
-  const context: CategorizationContext = {
-    transaction,
-    merchant:
-      merchantResolution?.status === "confirmed"
-        ? merchantResolution.merchant
-        : undefined,
-    history: prepared.history,
-    availableAccounts: prepared.availableAccounts,
+    }
+    const message = failure instanceof Error ? failure.message : String(failure);
+    if (batch.length === 1 || budget.calls >= 16) {
+      for (const item of batch) outcomes.set(item.id, { error: message });
+      return;
+    }
+    const middle = Math.ceil(batch.length / 2);
+    await Promise.all([
+      recover(batch.slice(0, middle), budget),
+      recover(batch.slice(middle), budget),
+    ]);
   };
-  for (const categorizer of prepared.categorizers) {
-    try {
-      suggestions.push(
-        ...(await categorizer.suggest({
-          ...context,
-          priorSuggestions: sortSuggestions(suggestions),
+
+  const chunks = batchChunks(items);
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.min(AI_BATCH_CONCURRENCY, chunks.length) },
+    async () => {
+      while (cursor < chunks.length) {
+        const index = cursor;
+        cursor += 1;
+        await recover(chunks[index]!, { calls: 0 });
+      }
+    },
+  );
+  await Promise.all(workers);
+  return outcomes;
+}
+
+function initialMerchantResolution(
+  transaction: NonNullable<ImportProposal["transaction"]>,
+): MerchantResolution {
+  const rawLabel = transactionMerchantLabel(transaction);
+  return rawLabel
+    ? {
+        status: "unresolved",
+        rawLabel,
+        explanation: "No confirmed merchant profile matched this transaction.",
+      }
+    : { status: "unresolved", explanation: "No merchant label was supplied." };
+}
+
+function mergeMerchantResolution(
+  current: MerchantResolution,
+  next: MerchantResolution,
+): MerchantResolution {
+  if (current.status !== "suggested" || next.status !== "suggested")
+    return next;
+  return {
+    ...next,
+    candidates: [
+      ...next.candidates,
+      ...current.candidates.filter(
+        (candidate) =>
+          !next.candidates.some((nextCandidate) => nextCandidate.id === candidate.id),
+      ),
+    ],
+  };
+}
+
+type MerchantBatchState = {
+  id: string;
+  transaction: NonNullable<ImportProposal["transaction"]>;
+  resolution: MerchantResolution;
+  issues: string[];
+};
+
+async function resolveMerchantBatches(
+  states: readonly MerchantBatchState[],
+  resolvers: readonly MerchantResolverPlugin[],
+) {
+  for (const resolver of resolvers) {
+    const active = states.filter(
+      (state) =>
+        state.resolution.status !== "confirmed" &&
+        state.resolution.status !== "suppressed",
+    );
+    if (!active.length) break;
+    if (resolver instanceof CodexMerchantAdvisor) {
+      const outcomes = await runBatchedCodex(
+        active.map((state) => ({
+          id: state.id,
+          context: { transaction: state.transaction, resolution: state.resolution },
         })),
+        (batch) => resolver.resolveBatch(batch),
       );
-    } catch (error) {
-      if (categorizer.isAi) {
-        const message = error instanceof Error ? error.message : String(error);
-        nextIssues = [
-          ...nextIssues,
-          `AI categoriser was unavailable: ${message}`,
-        ];
-        suggestions.push({
-          account: "",
-          rawScore: 0,
-          scoreKind: "ai-advisory",
-          method: "ai",
-          explanation:
-            "An optional categorizer was unavailable; review this transaction manually.",
-          evidence: [],
+      for (const state of active) {
+        const outcome = outcomes.get(state.id);
+        if (outcome?.value) {
+          state.resolution = mergeMerchantResolution(
+            state.resolution,
+            outcome.value,
+          );
+        } else if (outcome?.error) {
+          state.issues.push(`AI merchant advisor was unavailable: ${outcome.error}`);
+        }
+      }
+      continue;
+    }
+    for (const state of active) {
+      try {
+        const next = await resolver.resolve({
+          transaction: state.transaction,
+          resolution: state.resolution,
         });
+        if (next)
+          state.resolution = mergeMerchantResolution(state.resolution, next);
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        state.issues.push(
+          `Merchant resolver ${resolver.id} was unavailable: ${detail}`,
+        );
       }
     }
   }
-  const nextSuggestions = sortSuggestions(
-    [...suggestions, ...(manualSelection ? [manualSelection] : [])].filter(
-      (suggestion) =>
-        Boolean(suggestion.account) &&
-        prepared.availableAccounts.includes(suggestion.account),
-    ),
-  );
-  return {
-    ...proposal,
-    merchantResolution,
-    suggestions: nextSuggestions,
-    selectedAccount: manualSelection?.account ?? nextSuggestions[0]?.account,
-    status:
-      transaction.status === "pending"
-        ? "held"
-        : nextSuggestions.length
-          ? "ready"
-          : "needs-review",
-    issues: nextIssues,
-    lastAiEnrichment,
+}
+
+type EnrichPreparedOptions = {
+  source?: AiEnrichmentSnapshot["source"];
+  jobId?: string;
+  calls?: AiEnrichmentCallRecord[];
+  merchantOnly?: boolean;
+  /** Initial ingestion preserves its weak-evidence gate; explicit re-runs force AI. */
+  forceAi?: boolean;
+};
+
+async function enrichProposalsWithPrepared(
+  proposals: readonly ImportProposal[],
+  prepared: EnrichPrepared,
+  options?: EnrichPreparedOptions,
+): Promise<ImportProposal[]> {
+  const calls = options?.calls ?? [];
+  const work = proposals.map((proposal, index) => {
+    if (!proposal.transaction) throw new Error("This proposal has no transaction to enrich.");
+    if (
+      proposal.status !== "ready" &&
+      proposal.status !== "needs-review" &&
+      proposal.status !== "held"
+    ) {
+      throw new Error("This proposal cannot be enriched.");
+    }
+    return {
+      index,
+      proposal,
+      transaction: proposal.transaction,
+      merchantResolution: proposal.merchantResolution,
+      issues: (proposal.issues ?? []).filter(
+        (issue) =>
+          !issue.startsWith("Merchant resolver ") &&
+          !issue.startsWith("AI merchant advisor ") &&
+          !(options?.merchantOnly ? false : issue.startsWith("AI categoriser ")),
+      ),
+      debugIds: new Set<string>(),
+      suggestions: [] as CategorySuggestion[],
+      manualSelection: proposal.suggestions.find(
+        (suggestion) =>
+          suggestion.method === "manual" &&
+          suggestion.account === proposal.selectedAccount,
+      ),
+    };
+  });
+
+  if (prepared.aiMerchant) {
+    const groups = new Map<string, { state: MerchantBatchState; work: typeof work }>();
+    for (const item of work) {
+      if (
+        item.merchantResolution?.status === "confirmed" ||
+        item.merchantResolution?.status === "suppressed"
+      ) {
+        continue;
+      }
+      const key = [
+        item.transaction.sourceId,
+        normalizeMerchant(transactionMerchantLabel(item.transaction)),
+      ].join("\u0000");
+      const existing = groups.get(key);
+      if (existing) {
+        existing.work.push(item);
+        continue;
+      }
+      const id = `merchant:${key}`;
+      groups.set(key, {
+        state: {
+          id,
+          transaction: item.transaction,
+          resolution: initialMerchantResolution(item.transaction),
+          issues: [],
+        },
+        work: [item],
+      });
+    }
+    await resolveMerchantBatches(
+      [...groups.values()].map((group) => group.state),
+      prepared.merchantResolvers,
+    );
+    for (const group of groups.values()) {
+      for (const item of group.work) {
+        item.merchantResolution = group.state.resolution;
+        item.issues.push(...group.state.issues);
+        item.debugIds.add(group.state.id);
+      }
+    }
+  }
+
+  const snapshotFor = (item: (typeof work)[number]) => {
+    const scopedCalls = calls.filter((call) =>
+      call.itemIds?.some((id) => item.debugIds.has(id)),
+    );
+    const snapshotCalls = scopedCalls.map((call) => {
+      if (!call.batchSize || call.batchSize === 1) return call;
+      const { prompt: _prompt, response: _response, ...summary } = call;
+      return summary;
+    });
+    return snapshotCalls.length
+      ? {
+          at: nowIso(),
+          source: options?.source ?? "enrich",
+          jobId: options?.jobId,
+          ok: snapshotCalls.every((call) => call.ok),
+          calls: snapshotCalls,
+        }
+      : item.proposal.lastAiEnrichment;
   };
+
+  if (options?.merchantOnly) {
+    return work.map((item) => ({
+      ...item.proposal,
+      merchantResolution: item.merchantResolution,
+      issues: item.issues,
+      lastAiEnrichment: snapshotFor(item),
+    }));
+  }
+
+  for (const item of work) {
+    const context: CategorizationContext = {
+      transaction: item.transaction,
+      merchant:
+        item.merchantResolution?.status === "confirmed"
+          ? item.merchantResolution.merchant
+          : undefined,
+      history: prepared.history,
+      availableAccounts: prepared.availableAccounts,
+    };
+    for (const categorizer of prepared.categorizers) {
+      if (categorizer.isAi) continue;
+      try {
+        item.suggestions.push(
+          ...(await categorizer.suggest({
+            ...context,
+            priorSuggestions: sortSuggestions(item.suggestions),
+          })),
+        );
+      } catch {
+        // Deterministic evidence is optional; retain a reviewable proposal.
+      }
+    }
+  }
+
+  const aiCategorizer = prepared.categorizers.find(
+    (categorizer): categorizer is CodexCategorizer =>
+      categorizer instanceof CodexCategorizer,
+  );
+  if (aiCategorizer) {
+    const eligible = work.filter(
+      (item) => options?.forceAi !== false || shouldAskAi(item.suggestions),
+    );
+    const outcomes = await runBatchedCodex(
+      eligible.map((item) => ({
+        id: `category:${item.proposal.id}`,
+        context: {
+          transaction: item.transaction,
+          merchant:
+            item.merchantResolution?.status === "confirmed"
+              ? item.merchantResolution.merchant
+              : undefined,
+          history: prepared.history,
+          availableAccounts: prepared.availableAccounts,
+          priorSuggestions: sortSuggestions(item.suggestions),
+        } satisfies CategorizationContext,
+      })),
+      (batch) => aiCategorizer.suggestBatch(batch),
+    );
+    for (const item of eligible) {
+      const id = `category:${item.proposal.id}`;
+      item.debugIds.add(id);
+      const outcome = outcomes.get(id);
+      if (outcome?.value) item.suggestions.push(...outcome.value);
+      else if (outcome?.error)
+        item.issues.push(`AI categoriser was unavailable: ${outcome.error}`);
+    }
+  }
+
+  return work.map((item) => {
+    const nextSuggestions = sortSuggestions(
+      [...item.suggestions, ...(item.manualSelection ? [item.manualSelection] : [])].filter(
+        (suggestion) =>
+          Boolean(suggestion.account) &&
+          prepared.availableAccounts.includes(suggestion.account),
+      ),
+    );
+    return {
+      ...item.proposal,
+      merchantResolution: item.merchantResolution,
+      suggestions: nextSuggestions,
+      selectedAccount: item.manualSelection?.account ?? nextSuggestions[0]?.account,
+      status:
+        item.transaction.status === "pending"
+          ? "held"
+          : nextSuggestions.length
+            ? "ready"
+            : "needs-review",
+      issues: item.issues,
+      lastAiEnrichment: snapshotFor(item),
+    } satisfies ImportProposal;
+  });
+}
+
+async function enrichProposalWithPrepared(
+  proposal: ImportProposal,
+  prepared: EnrichPrepared,
+  options?: EnrichPreparedOptions,
+) {
+  return (await enrichProposalsWithPrepared([proposal], prepared, options))[0]!;
 }
 
 /**
@@ -2559,6 +2862,33 @@ export async function enrichProposal(
     detectionRules?: readonly DetectionRule[];
   },
 ): Promise<{ proposal: ImportProposal; debug: AiEnrichmentDebug }> {
+  const result = await enrichProposals(
+    source,
+    [proposal],
+    entries,
+    model,
+    merchantContext,
+    options,
+  );
+  return { proposal: result.proposals[0]!, debug: result.debug };
+}
+
+/** Batch-capable counterpart to `enrichProposal` for local bulk actions. */
+export async function enrichProposals(
+  source: IngestionSourceDefinition,
+  proposals: readonly ImportProposal[],
+  entries: readonly Directive[],
+  model: string | undefined,
+  merchantContext: IngestMerchantContext,
+  options?: {
+    collectDebug?: boolean;
+    jobId?: string;
+    merchantOnly?: boolean;
+    detectionRules?: readonly DetectionRule[];
+    source?: AiEnrichmentSnapshot["source"];
+    forceAi?: boolean;
+  },
+): Promise<{ proposals: ImportProposal[]; debug: AiEnrichmentDebug }> {
   const calls: AiEnrichmentCallRecord[] = [];
   const prepared = await prepareAiEnrichment(
     source,
@@ -2572,14 +2902,15 @@ export async function enrichProposal(
       detectionRules: options?.detectionRules,
     },
   );
-  const next = await enrichProposalWithPrepared(proposal, prepared, {
-    source: "enrich",
+  const next = await enrichProposalsWithPrepared(proposals, prepared, {
+    source: options?.source ?? "enrich",
     jobId: options?.jobId,
     calls,
     merchantOnly: options?.merchantOnly,
+    forceAi: options?.forceAi,
   });
   return {
-    proposal: next,
+    proposals: next,
     debug: { calls },
   };
 }
@@ -2596,6 +2927,8 @@ export async function enrichExistingSourceRuns(
   merchantContext: IngestMerchantContext,
   options?: {
     jobId?: string;
+    source?: AiEnrichmentSnapshot["source"];
+    forceAi?: boolean;
     detectionRules?: readonly DetectionRule[];
     onProgress?: (progress: {
       index: number;
@@ -2604,7 +2937,7 @@ export async function enrichExistingSourceRuns(
     }) => void | Promise<void>;
   },
 ) {
-  let currentCalls: AiEnrichmentCallRecord[] | undefined;
+  const calls: AiEnrichmentCallRecord[] = [];
   const prepared = await prepareAiEnrichment(
     source,
     entries,
@@ -2612,7 +2945,7 @@ export async function enrichExistingSourceRuns(
     merchantContext,
     {
       onAiDebug: (call) => {
-        currentCalls?.push(call);
+        calls.push(call);
       },
       detectionRules: options?.detectionRules,
     },
@@ -2642,30 +2975,51 @@ export async function enrichExistingSourceRuns(
     );
   }
 
-  let index = 0;
-  for (const { runId, proposal } of work) {
-    index += 1;
-    await options?.onProgress?.({
-      index,
-      total,
-      message: `AI enriching ${index} of ${total}…`,
-    });
-    currentCalls = [];
-    const next = await enrichProposalWithPrepared(proposal, prepared, {
-      source: "ai-rerun",
+  await options?.onProgress?.({
+    index: 0,
+    total,
+    message: `AI enriching ${total} proposal${total === 1 ? "" : "s"} in batches…`,
+  });
+  const enriched = await enrichProposalsWithPrepared(
+    work.map((item) => item.proposal),
+    prepared,
+    {
+      source: options?.source ?? "ai-rerun",
       jobId: options?.jobId,
-      calls: currentCalls,
-    });
+      calls,
+      forceAi: options?.forceAi ?? true,
+    },
+  );
+  for (const [index, { runId, proposal }] of work.entries()) {
+    const next = enriched[index]!;
     const list = updatedByRun.get(runId)!;
     const proposalIndex = list.findIndex((item) => item.id === proposal.id);
     if (proposalIndex >= 0) list[proposalIndex] = next;
   }
+  await options?.onProgress?.({
+    index: total,
+    total,
+    message: `AI enriched ${total} proposal${total === 1 ? "" : "s"} in ${calls.length} call${calls.length === 1 ? "" : "s"}.`,
+  });
 
   return runs.map((run) => {
     const proposals = updatedByRun.get(run.id) ?? run.proposals;
+    const runCallKeys = new Set(
+      proposals.flatMap((proposal) =>
+        proposal.lastAiEnrichment?.calls.map(
+          (call) => call.callId ?? `${call.id}:${call.at}`,
+        ) ?? [],
+      ),
+    );
+    const auditCalls = calls.filter((call) =>
+      runCallKeys.has(call.callId ?? `${call.id}:${call.at}`),
+    );
     return {
       ...run,
       proposals,
+      audit: auditCalls.length
+        ? { ai: [...(run.audit?.ai ?? []), ...auditCalls] }
+        : run.audit,
       summary: summarize(proposals),
     } satisfies IngestionRun;
   });
