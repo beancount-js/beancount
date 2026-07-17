@@ -8,12 +8,14 @@
   import Landmark from "lucide-svelte/icons/landmark";
   import Link2 from "lucide-svelte/icons/link-2";
   import MoreVertical from "lucide-svelte/icons/more-vertical";
+  import Pencil from "lucide-svelte/icons/pencil";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
   import Settings from "lucide-svelte/icons/settings";
   import Trash2 from "lucide-svelte/icons/trash-2";
   import type { JsonApiLinkedAccount } from "@beancount-js/beangulp";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import { onDestroy } from "svelte";
+  import { get } from "svelte/store";
   import * as Alert from "$lib/components/ui/alert";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
@@ -31,7 +33,13 @@
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
+  import {
+    groupOtherLedgerAccounts,
+    type OtherLedgerAccount,
+    type OtherLedgerAccountGroup,
+  } from "../ingestion/other-accounts";
   import { isSecretConfigured } from "../ingestion/secret-ref";
+  import { journalRecordKey } from "../lib/journal-record-key";
   import AccountsPageSkeleton from "./skeletons/AccountsPageSkeleton.svelte";
   import {
     isGroupedSource,
@@ -78,9 +86,9 @@
     "bg-teal-200 text-teal-800",
   ] as const;
 
-  const { snapshot, activeFile } = useStudioWorkspace();
+  const { snapshot } = useStudioWorkspace();
   const { ledgerData, conversion } = useContext();
-  const { router } = useNavigation();
+  const { router, activeRoute } = useNavigation();
   const ctx = useCtx();
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
 
@@ -218,6 +226,15 @@
       }))
       .filter((group) => group.accounts.length > 0);
   });
+  const otherAccountGroups = $derived(
+    groupOtherLedgerAccounts($ledgerData.directives, config?.sources ?? []),
+  );
+  const otherAccountCount = $derived(
+    otherAccountGroups.reduce(
+      (count, group) => count + group.accounts.length,
+      0,
+    ),
+  );
   const showSetupCta = $derived(unlinkedCount > 0);
   const syncing = $derived(
     syncJob?.status === "queued" || syncJob?.status === "running",
@@ -314,10 +331,9 @@
     return discoveryById.get(account.id)?.institutionName?.trim() || undefined;
   }
 
-  function latestLedgerBalance(account: JsonApiLinkedAccount) {
+  function latestLedgerBalance(account: string) {
     return (
-      $ledgerData.accountBalance(account.sourceAccount, $conversion).at(-1)
-        ?.balance ?? {}
+      $ledgerData.accountBalance(account, $conversion).at(-1)?.balance ?? {}
     );
   }
 
@@ -330,19 +346,43 @@
   }
 
   function accountBalanceText(account: JsonApiLinkedAccount) {
-    return balanceText(latestLedgerBalance(account));
+    return balanceText(latestLedgerBalance(account.sourceAccount));
   }
 
   function groupBalanceText(group: LinkedGroup) {
     const total: Record<string, number> = {};
     for (const account of group.accounts) {
       for (const [currency, amount] of Object.entries(
-        latestLedgerBalance(account),
+        latestLedgerBalance(account.sourceAccount),
       )) {
         total[currency] = (total[currency] ?? 0) + amount;
       }
     }
     return balanceText(total);
+  }
+
+  function otherAccountBalanceText(account: OtherLedgerAccount) {
+    return balanceText(latestLedgerBalance(account.name));
+  }
+
+  function otherGroupBalanceText(group: OtherLedgerAccountGroup) {
+    const total: Record<string, number> = {};
+    for (const account of group.accounts) {
+      for (const [currency, amount] of Object.entries(
+        latestLedgerBalance(account.name),
+      )) {
+        total[currency] = (total[currency] ?? 0) + amount;
+      }
+    }
+    return balanceText(total);
+  }
+
+  function editOtherAccount(account: OtherLedgerAccount) {
+    const route = get(activeRoute);
+    const params = new URLSearchParams(route.query);
+    params.set("record", journalRecordKey(account.open));
+    const search = params.toString();
+    void router.updateState(search ? `?${search}` : "?");
   }
 
   function merchantFor(source: EditableIngestionSource) {
@@ -1360,6 +1400,136 @@
             {/if}
           </article>
         {/each}
+
+        <section
+          class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
+          aria-labelledby="other-ledger-accounts"
+        >
+          <div class="flex items-center gap-3 px-4 py-3">
+            <span
+              class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+            >
+              <Landmark class="size-4" aria-hidden="true" />
+            </span>
+            <span class="min-w-0 flex-1">
+              <span
+                id="other-ledger-accounts"
+                class="block text-sm font-semibold"
+              >
+                Other Accounts
+              </span>
+              <span class="block text-xs text-muted-foreground">
+                Ledger accounts not assigned to a sync configuration
+              </span>
+            </span>
+            <Badge variant="secondary" class="shrink-0 tabular-nums">
+              {otherAccountCount}
+            </Badge>
+          </div>
+
+          {#if otherAccountGroups.length}
+            <div class="border-t border-border px-4 pb-4 pt-3">
+              <div class="flex flex-col gap-4">
+                {#each otherAccountGroups as group (group.label)}
+                  {@const groupBalance = otherGroupBalanceText(group)}
+                  <section class="overflow-hidden rounded-2xl bg-muted/80">
+                    <div
+                      class="flex items-center justify-between gap-3 px-5 py-4"
+                    >
+                      <p
+                        class="text-sm font-semibold tracking-wide text-foreground"
+                      >
+                        {group.label}
+                        <span class="ml-2 text-muted-foreground"
+                          >· {group.accounts.length}</span
+                        >
+                      </p>
+                      {#if groupBalance}
+                        <span
+                          class="shrink-0 text-sm font-semibold tabular-nums"
+                        >
+                          {groupBalance}
+                        </span>
+                      {/if}
+                    </div>
+                    <ul
+                      class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+                      role="list"
+                    >
+                      {#each group.accounts as account, index (account.name)}
+                        {@const balance = otherAccountBalanceText(account)}
+                        <li
+                          class:rounded-b-xl={index ===
+                            group.accounts.length - 1}
+                          class="flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
+                        >
+                          <div
+                            class="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold {accountAvatarClass(
+                              account.name,
+                            )}"
+                            aria-hidden="true"
+                          >
+                            {initialLetter(account.name)}
+                          </div>
+                          <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-medium">
+                              {account.name}
+                            </p>
+                            <p class="truncate text-xs text-muted-foreground">
+                              Open directive
+                            </p>
+                          </div>
+                          {#if balance}
+                            <span
+                              class="shrink-0 text-sm font-semibold tabular-nums"
+                            >
+                              {balance}
+                            </span>
+                          {/if}
+                          <DropdownMenu.Root>
+                            <DropdownMenu.Trigger>
+                              {#snippet child({ props })}
+                                <Button
+                                  {...props}
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  class="shrink-0 text-muted-foreground"
+                                  aria-label={`${account.name} actions`}
+                                >
+                                  <MoreVertical
+                                    class="size-4"
+                                    aria-hidden="true"
+                                  />
+                                </Button>
+                              {/snippet}
+                            </DropdownMenu.Trigger>
+                            <DropdownMenu.Content align="end">
+                              <DropdownMenu.Group>
+                                <DropdownMenu.Item
+                                  onSelect={() => editOtherAccount(account)}
+                                >
+                                  <Pencil class="size-3.5" aria-hidden="true" />
+                                  Edit
+                                </DropdownMenu.Item>
+                              </DropdownMenu.Group>
+                            </DropdownMenu.Content>
+                          </DropdownMenu.Root>
+                        </li>
+                      {/each}
+                    </ul>
+                  </section>
+                {/each}
+              </div>
+            </div>
+          {:else}
+            <p
+              class="border-t border-border px-4 py-3 text-sm text-muted-foreground"
+            >
+              All open ledger accounts are assigned to a sync configuration.
+            </p>
+          {/if}
+        </section>
       </div>
     {:else if error}
       <div
