@@ -25,8 +25,8 @@
   import {
     appendIngestionMerchantSearchParams,
     cloneIngestionMerchantSearchState,
+    filterIngestionMerchantSearch,
     hasActiveIngestionMerchantSearch,
-    matchesIngestionMerchantSearch,
     MERCHANT_CLUSTER_STATUS_OPTIONS,
     MERCHANT_DOMAIN_OPTIONS,
     parseIngestionMerchantSearchState,
@@ -98,10 +98,11 @@
   const domainOptions = $derived<FilterCommandOption[]>(
     MERCHANT_DOMAIN_OPTIONS.map((option) => ({ ...option })),
   );
+  const matchingClusters = $derived(
+    new Set(filterIngestionMerchantSearch(clusters, searchState)),
+  );
   const matchedClusters = $derived(
-    clusters.filter((item) =>
-      matchesIngestionMerchantSearch(item, searchState),
-    ),
+    clusters.filter((item) => matchingClusters.has(item)),
   );
   const sortedClusters = $derived.by(() => {
     const keys = sortPriority.filter((key) => sortOrders[key] !== "none");

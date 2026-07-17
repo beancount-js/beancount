@@ -1,4 +1,5 @@
 import type { ImportProposal } from "../ingestion/types";
+import { fuzzySearch } from "@beancount-js/filters";
 
 export const INGESTION_REVIEW_SEARCH_PARAM_KEYS = [
   "reviewQ",
@@ -100,35 +101,37 @@ export function appendIngestionReviewSearchParams(
   if (currencies) params.set("reviewCurrency", currencies);
 }
 
-function proposalSearchText(proposal: ImportProposal): string {
-  const parts: string[] = [
-    proposal.status,
-    proposal.selectedAccount ?? "",
-    ...proposal.suggestions.map((item) => item.account),
-    ...proposal.issues,
+function proposalSearchDocument(proposal: ImportProposal) {
+  const accounts = proposalAccounts(proposal);
+  const merchants = [
     proposal.transaction?.merchant ?? "",
     proposal.transaction?.payee ?? "",
     proposal.transaction?.narration ?? "",
+  ];
+  const details = [
+    proposal.status,
+    ...proposal.issues,
     proposal.transaction?.amount ?? "",
     proposal.transaction?.currency ?? "",
   ];
   const resolution = proposal.merchantResolution;
   if (resolution) {
-    parts.push(resolution.status);
+    details.push(resolution.status);
     if ("rawLabel" in resolution && resolution.rawLabel) {
-      parts.push(resolution.rawLabel);
+      merchants.push(resolution.rawLabel);
     }
     if (resolution.status === "confirmed") {
-      parts.push(resolution.merchant.canonicalName);
-      if (resolution.merchant.domain) parts.push(resolution.merchant.domain);
+      merchants.push(resolution.merchant.canonicalName);
+      if (resolution.merchant.domain)
+        merchants.push(resolution.merchant.domain);
     } else if (resolution.status === "suggested") {
       for (const candidate of resolution.candidates) {
-        parts.push(candidate.canonicalName);
-        if (candidate.domain) parts.push(candidate.domain);
+        merchants.push(candidate.canonicalName);
+        if (candidate.domain) merchants.push(candidate.domain);
       }
     }
   }
-  return parts.join(" ").toLowerCase();
+  return { proposal, accounts, merchants, details };
 }
 
 function proposalAccounts(proposal: ImportProposal): string[] {
@@ -174,13 +177,10 @@ export function collectIngestionReviewFacetOptions(
   };
 }
 
-export function matchesIngestionReviewSearch(
+function matchesIngestionReviewFacets(
   proposal: ImportProposal,
   state: IngestionReviewSearchState,
 ): boolean {
-  const query = state.query.trim().toLowerCase();
-  if (query && !proposalSearchText(proposal).includes(query)) return false;
-
   if (state.accounts.length) {
     const accounts = proposalAccounts(proposal);
     if (!state.accounts.some((account) => accounts.includes(account))) {
@@ -206,4 +206,33 @@ export function matchesIngestionReviewSearch(
   }
 
   return true;
+}
+
+/**
+ * Filters exact facets first, then uses Fuse for free-text matching. Callers
+ * may retain their own table sorting by consuming the result as a match set.
+ */
+export function filterIngestionReviewSearch(
+  proposals: readonly ImportProposal[],
+  state: IngestionReviewSearchState,
+): ImportProposal[] {
+  const faceted = proposals.filter((proposal) =>
+    matchesIngestionReviewFacets(proposal, state),
+  );
+  if (!state.query.trim()) return faceted;
+
+  return fuzzySearch(faceted.map(proposalSearchDocument), state.query, {
+    keys: [
+      { name: "merchants", weight: 3 },
+      { name: "accounts", weight: 2 },
+      "details",
+    ],
+  }).map((document) => document.proposal);
+}
+
+export function matchesIngestionReviewSearch(
+  proposal: ImportProposal,
+  state: IngestionReviewSearchState,
+): boolean {
+  return filterIngestionReviewSearch([proposal], state).length > 0;
 }

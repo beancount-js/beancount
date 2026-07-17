@@ -36,8 +36,8 @@
     appendIngestionReviewSearchParams,
     cloneIngestionReviewSearchState,
     collectIngestionReviewFacetOptions,
+    filterIngestionReviewSearch,
     hasActiveIngestionReviewSearch,
-    matchesIngestionReviewSearch,
     MERCHANT_RESOLUTION_STATUS_OPTIONS,
     parseIngestionReviewSearchState,
     type IngestionReviewSearchState,
@@ -151,10 +151,16 @@
 
   const activeSearch = $derived(hasActiveIngestionReviewSearch(searchState));
 
-  const filteredRows = $derived(
-    reviewTabRows.filter((row) =>
-      matchesIngestionReviewSearch(row.proposal, searchState),
+  const matchingProposals = $derived(
+    new Set(
+      filterIngestionReviewSearch(
+        reviewTabRows.map((row) => row.proposal),
+        searchState,
+      ),
     ),
+  );
+  const filteredRows = $derived(
+    reviewTabRows.filter((row) => matchingProposals.has(row.proposal)),
   );
 
   const facetOptions = $derived(

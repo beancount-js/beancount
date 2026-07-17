@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { MerchantReviewCluster } from "@beancount-js/server";
 import {
   appendIngestionMerchantSearchParams,
+  filterIngestionMerchantSearch,
   hasActiveIngestionMerchantSearch,
   matchesIngestionMerchantSearch,
   parseIngestionMerchantSearchState,
@@ -97,5 +98,26 @@ describe("ingestion-merchant-search-state", () => {
         domain: "missing",
       }),
     ).toBe(false);
+  });
+
+  it("fuzzy-matches merchant text after applying exact facets", () => {
+    const tesco = cluster({
+      displayName: "Tesco",
+      domain: "tesco.com",
+      statuses: ["suggested"],
+    });
+    const cafe = cluster({
+      id: "cluster-2",
+      displayName: "Unknown Cafe",
+      statuses: ["suggested"],
+    });
+
+    expect(
+      filterIngestionMerchantSearch([tesco, cafe], {
+        query: "teso",
+        statuses: ["suggested"],
+        domain: "has",
+      }),
+    ).toEqual([tesco]);
   });
 });

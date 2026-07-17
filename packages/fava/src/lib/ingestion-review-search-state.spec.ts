@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ImportProposal } from "../ingestion/types";
 import {
   appendIngestionReviewSearchParams,
+  filterIngestionReviewSearch,
   hasActiveIngestionReviewSearch,
   matchesIngestionReviewSearch,
   parseIngestionReviewSearchState,
@@ -100,5 +101,39 @@ describe("ingestion-review-search-state", () => {
         currencies: [],
       }),
     ).toBe(false);
+  });
+
+  it("fuzzy-matches free text after applying exact facets", () => {
+    const groceries = proposal({
+      id: "groceries",
+      selectedAccount: "Expenses:Groceries",
+      transaction: {
+        sourceId: "bank",
+        sourceAccount: "Assets:Bank",
+        bookedAt: "2026-07-01",
+        amount: "-12.34",
+        currency: "GBP",
+        merchant: "TESCO",
+        payee: "Tesco",
+        narration: "Groceries",
+        status: "posted",
+        fetchedAt: "2026-07-01T12:00:00.000Z",
+        metadata: {},
+      },
+    });
+    const travel = proposal({
+      id: "travel",
+      selectedAccount: "Expenses:Travel",
+    });
+
+    expect(
+      filterIngestionReviewSearch([groceries, travel], {
+        query: "teso",
+        accounts: ["Expenses:Groceries"],
+        merchantStatuses: [],
+        years: [],
+        currencies: [],
+      }),
+    ).toEqual([groceries]);
   });
 });

@@ -1,4 +1,5 @@
 import { json } from "@sveltejs/kit";
+import { fuzzySearchPaths } from "$lib/fuzzy-search";
 import { serverWorkspace } from "$lib/server/workspace";
 
 export async function GET({
@@ -9,14 +10,11 @@ export async function GET({
   url: URL;
 }) {
   try {
-    const query = (url.searchParams.get("query") ?? "")
-      .trim()
-      .toLocaleLowerCase();
+    const query = url.searchParams.get("query") ?? "";
     const snapshot = await (await serverWorkspace()).readProject(params.id);
-    const files = snapshot.ledgerFiles
-      .filter((file) => !query || file.path.toLocaleLowerCase().includes(query))
-      .slice(0, 20)
-      .map((file) => ({ path: file.path }));
+    const files = fuzzySearchPaths(snapshot.ledgerFiles, query, 20).map(
+      (file) => ({ path: file.path }),
+    );
     return json({ files });
   } catch (error) {
     return json(

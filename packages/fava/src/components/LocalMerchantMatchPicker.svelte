@@ -5,6 +5,7 @@
     type FilterCommandOption,
   } from "@beancount-js/forms";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
+  import { rankLocalMerchantMatches } from "../lib/fuzzy-search";
 
   type Merchant = {
     merchantId: string;
@@ -43,47 +44,10 @@
   let lastAutoAttachedId = $state<string | null>(null);
 
   const normalizedDomain = $derived(domain.trim().toLowerCase());
-  const rankTokens = $derived(
-    searchText
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter(Boolean),
-  );
 
-  const rankedMerchants = $derived.by(() => {
-    const scored = merchants.map((merchant) => {
-      let score = 0;
-      const merchantDomain = merchant.domain?.toLowerCase() ?? "";
-      if (normalizedDomain && merchantDomain === normalizedDomain) {
-        score += 100;
-      } else if (
-        normalizedDomain &&
-        merchantDomain.includes(normalizedDomain)
-      ) {
-        score += 40;
-      }
-      const haystack = [
-        merchant.canonicalName,
-        merchant.domain ?? "",
-        ...(merchant.aliases?.map((alias) => alias.normalizedValue) ?? []),
-      ]
-        .join(" ")
-        .toLowerCase();
-      for (const token of rankTokens) {
-        if (haystack.includes(token)) score += 10;
-      }
-      return { merchant, score };
-    });
-    scored.sort((left, right) => {
-      if (right.score !== left.score) return right.score - left.score;
-      return left.merchant.canonicalName.localeCompare(
-        right.merchant.canonicalName,
-        undefined,
-        { sensitivity: "base" },
-      );
-    });
-    return scored.map((item) => item.merchant);
-  });
+  const rankedMerchants = $derived(
+    rankLocalMerchantMatches(merchants, searchText, domain),
+  );
 
   const options = $derived.by((): FilterCommandOption[] => {
     const items: FilterCommandOption[] = [

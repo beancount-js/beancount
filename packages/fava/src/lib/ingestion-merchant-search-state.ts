@@ -1,4 +1,5 @@
 import type { MerchantReviewCluster } from "@beancount-js/server";
+import { fuzzySearch } from "@beancount-js/filters";
 
 export const INGESTION_MERCHANT_SEARCH_PARAM_KEYS = [
   "merchantQ",
@@ -96,28 +97,26 @@ export function appendIngestionMerchantSearchParams(
   if (state.domain) params.set("merchantDomain", state.domain);
 }
 
-function clusterSearchText(cluster: MerchantReviewCluster): string {
-  const parts: string[] = [
-    cluster.displayName,
-    cluster.domain ?? "",
-    cluster.explanation ?? "",
-    ...cluster.statuses,
-    ...cluster.members.map((member) => member.rawLabel),
-    ...cluster.candidates.map((candidate) => candidate.canonicalName),
-    ...cluster.candidates.flatMap((candidate) =>
-      candidate.domain ? [candidate.domain] : [],
-    ),
-  ];
-  return parts.join(" ").toLowerCase();
+function clusterSearchDocument(cluster: MerchantReviewCluster) {
+  return {
+    cluster,
+    merchant: [
+      cluster.displayName,
+      cluster.domain ?? "",
+      ...cluster.members.map((member) => member.rawLabel),
+      ...cluster.candidates.map((candidate) => candidate.canonicalName),
+      ...cluster.candidates.flatMap((candidate) =>
+        candidate.domain ? [candidate.domain] : [],
+      ),
+    ],
+    details: [cluster.explanation ?? "", ...cluster.statuses],
+  };
 }
 
-export function matchesIngestionMerchantSearch(
+function matchesIngestionMerchantFacets(
   cluster: MerchantReviewCluster,
   state: IngestionMerchantSearchState,
 ): boolean {
-  const query = state.query.trim().toLowerCase();
-  if (query && !clusterSearchText(cluster).includes(query)) return false;
-
   if (state.statuses.length) {
     const statuses = cluster.statuses as readonly string[];
     if (!state.statuses.some((status) => statuses.includes(status))) {
@@ -129,4 +128,26 @@ export function matchesIngestionMerchantSearch(
   if (state.domain === "missing" && cluster.domain) return false;
 
   return true;
+}
+
+/** Exact status/domain facets narrow the candidates before fuzzy text search. */
+export function filterIngestionMerchantSearch(
+  clusters: readonly MerchantReviewCluster[],
+  state: IngestionMerchantSearchState,
+): MerchantReviewCluster[] {
+  const faceted = clusters.filter((cluster) =>
+    matchesIngestionMerchantFacets(cluster, state),
+  );
+  if (!state.query.trim()) return faceted;
+
+  return fuzzySearch(faceted.map(clusterSearchDocument), state.query, {
+    keys: [{ name: "merchant", weight: 3 }, "details"],
+  }).map((document) => document.cluster);
+}
+
+export function matchesIngestionMerchantSearch(
+  cluster: MerchantReviewCluster,
+  state: IngestionMerchantSearchState,
+): boolean {
+  return filterIngestionMerchantSearch([cluster], state).length > 0;
 }

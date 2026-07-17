@@ -7,6 +7,7 @@ import {
   createLedgerTagTree,
   filterLedgerFiles,
   filterLedgerFolderTree,
+  filterLedgerTagsByPathMatch,
   ledgerFileLabel,
 } from "./ledger-sidebar";
 
@@ -87,5 +88,23 @@ describe("ledger sidebar helpers", () => {
       files[1],
     ]);
     expect(filterLedgerFiles(files, "", ["tax"])).toEqual([files[1], files[2]]);
+  });
+
+  it("fuzzy-matches ledger files, folders, and tags", () => {
+    const receipt = {
+      path: "receipts/2026.beancount",
+      contents: "2026-01-01 open Assets:Receipts #household",
+    } satisfies ProjectFile;
+    const fuzzyFiles = filterLedgerFiles([receipt, ...files], "recipts");
+    const fuzzyFolders = filterLedgerFolderTree(
+      createLedgerFolderTree([receipt, ...files]),
+      "recipts",
+    );
+
+    expect(fuzzyFiles).toEqual([receipt]);
+    expect(fuzzyFolders?.children[0]?.path).toBe("receipts");
+    expect(
+      filterLedgerTagsByPathMatch(createLedgerTagSummaries(files), "houshold"),
+    ).toEqual([{ tag: "household", fileCount: 2 }]);
   });
 });

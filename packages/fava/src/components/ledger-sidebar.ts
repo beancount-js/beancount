@@ -1,4 +1,5 @@
 import type { ProjectFile } from "@beancount-js/workspace";
+import { fuzzySearch } from "@beancount-js/filters";
 
 export const LEDGER_ROOT_ID = "__ledger-root__";
 
@@ -94,7 +95,7 @@ export function filterLedgerTagsByPathMatch(
   const needle = normalizeLedgerTag(query).toLowerCase();
   if (!needle) return tags;
 
-  return tags.filter(({ tag }) => {
+  const pathMatches = tags.filter(({ tag }) => {
     const path = normalizeLedgerTag(tag).toLowerCase();
     return (
       path === needle ||
@@ -104,6 +105,12 @@ export function filterLedgerTagsByPathMatch(
       path.includes(needle)
     );
   });
+  if (pathMatches.length) return pathMatches;
+
+  const fuzzyMatches = fuzzySearch(tags, needle, {
+    keys: [{ name: "tag", weight: 3 }],
+  });
+  return fuzzyMatches;
 }
 
 export function createLedgerTagTree(tags: LedgerTagSummary[]) {
@@ -172,16 +179,31 @@ export function filterLedgerFiles(
     .map((tag) => normalizeLedgerTag(tag).toLowerCase())
     .filter(Boolean);
 
-  return files.filter((file) => {
-    const matchesQuery =
-      !needle || normalizedPath(file.path).toLowerCase().includes(needle);
-    if (!matchesQuery) return false;
+  const taggedFiles = files.filter((file) => {
     if (!requiredTags.length) return true;
     const tags = ledgerFileTags(file).map((tag) => tag.toLowerCase());
     return requiredTags.every((filter) =>
       tags.some((tag) => tag === filter || tag.startsWith(`${filter}/`)),
     );
   });
+  if (!needle) return taggedFiles;
+
+  const documents = taggedFiles.map((file) => ({
+    file,
+    label: ledgerFileName(file.path),
+    path: normalizedPath(file.path),
+  }));
+  const directMatches = documents.filter(({ label, path }) =>
+    [label, path].some((value) => value.toLowerCase().includes(needle)),
+  );
+  if (directMatches.length) return directMatches.map((result) => result.file);
+
+  return fuzzySearch(documents, needle, {
+    keys: [
+      { name: "label", weight: 3 },
+      { name: "path", weight: 2 },
+    ],
+  }).map((result) => result.file);
 }
 
 function ensureChild(parent: LedgerFolderNode, path: string, label: string) {
@@ -243,21 +265,47 @@ function cloneFolder(node: LedgerFolderNode): LedgerFolderNode {
   };
 }
 
+type FolderSearchDocument = {
+  kind: "folder";
+  path: string;
+  label: string;
+};
+
+type FileSearchDocument = {
+  kind: "file";
+  path: string;
+  label: string;
+};
+
+function collectFolderSearchDocuments(
+  node: LedgerFolderNode,
+): Array<FolderSearchDocument | FileSearchDocument> {
+  const documents: Array<FolderSearchDocument | FileSearchDocument> = [
+    { kind: "folder", path: node.path, label: node.label },
+    ...node.files.map((file) => ({
+      kind: "file" as const,
+      path: normalizedPath(file.path),
+      label: ledgerFileName(file.path),
+    })),
+  ];
+  for (const child of node.children) {
+    documents.push(...collectFolderSearchDocuments(child));
+  }
+  return documents;
+}
+
 function filterFolder(
   node: LedgerFolderNode,
-  query: string,
+  matchingFolders: ReadonlySet<string>,
+  matchingFiles: ReadonlySet<string>,
 ): LedgerFolderNode | null {
-  const folderMatches = [node.label, node.path || "Ledgers"]
-    .join(" ")
-    .toLowerCase()
-    .includes(query);
-  if (folderMatches) return finalizeFolder(cloneFolder(node));
+  if (matchingFolders.has(node.path)) return finalizeFolder(cloneFolder(node));
 
   const files = node.files.filter((file) =>
-    normalizedPath(file.path).toLowerCase().includes(query),
+    matchingFiles.has(normalizedPath(file.path)),
   );
   const children = node.children
-    .map((child) => filterFolder(child, query))
+    .map((child) => filterFolder(child, matchingFolders, matchingFiles))
     .filter((child): child is LedgerFolderNode => child !== null);
   if (!files.length && !children.length) return null;
 
@@ -267,7 +315,29 @@ function filterFolder(
 export function filterLedgerFolderTree(tree: LedgerFolderNode, query: string) {
   const needle = normalizedQuery(query);
   if (!needle) return finalizeFolder(cloneFolder(tree));
-  return filterFolder(tree, needle);
+  const documents = collectFolderSearchDocuments(tree);
+  const directMatches = documents.filter(({ label, path }) =>
+    [label, path].some((value) => value.toLowerCase().includes(needle)),
+  );
+  const matches = directMatches.length
+    ? directMatches
+    : fuzzySearch(documents, needle, {
+        keys: [
+          { name: "label", weight: 3 },
+          { name: "path", weight: 2 },
+        ],
+      });
+  const matchingFolders = new Set(
+    matches
+      .filter((match): match is FolderSearchDocument => match.kind === "folder")
+      .map((match) => match.path),
+  );
+  const matchingFiles = new Set(
+    matches
+      .filter((match): match is FileSearchDocument => match.kind === "file")
+      .map((match) => match.path),
+  );
+  return filterFolder(tree, matchingFolders, matchingFiles);
 }
 
 export function collectExpandableLedgerFolderIds(
