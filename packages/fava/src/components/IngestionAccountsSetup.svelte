@@ -12,6 +12,7 @@
   import Trash2 from "lucide-svelte/icons/trash-2";
   import type { JsonApiLinkedAccount } from "@beancount-js/beangulp";
   import type { IngestionSyncJob } from "@beancount-js/server";
+  import { onDestroy } from "svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
@@ -26,6 +27,7 @@
     beginIngestionSync,
     restoreIngestionSyncWatch,
   } from "../studio/sync-status";
+  import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import { isSecretConfigured } from "../ingestion/secret-ref";
@@ -90,6 +92,7 @@
   let setupSheetOpen = $state(false);
   let autoDiscoveredFor = $state("");
   let syncJob = $state<IngestionSyncJob | null>(null);
+  let syncAllBusy = $state(false);
 
   const connections = $derived(
     (config?.sources ?? []).filter((source) => isGroupedSource(source)),
@@ -373,7 +376,9 @@
   }
 
   async function startSync(connection = selectedConnection) {
-    if (!connection || !$snapshot || !canSyncConnection(connection)) return;
+    if (!connection || !$snapshot || !canSyncConnection(connection)) {
+      return false;
+    }
     error = "";
     status = "";
     try {
@@ -392,12 +397,13 @@
       }
       if (job.status === "completed") {
         status = "Sync completed.";
-      } else if (job.status === "failed") {
-        error = job.error?.trim() || "Sync failed.";
+        return true;
       }
+      error = job.error?.trim() || "Sync failed.";
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
     }
+    return false;
   }
 
   function selectConnection(source: EditableIngestionSource) {
@@ -455,6 +461,30 @@
       selectConnection(source);
     }
     void startSync(source);
+  }
+
+  async function syncAllConnections() {
+    if (syncAllBusy) return;
+    const syncableConnections = connections.filter((connection) =>
+      canSyncConnection(connection),
+    );
+    if (syncableConnections.length === 0) return;
+
+    syncAllBusy = true;
+    error = "";
+    status = "";
+    let completed = 0;
+    try {
+      for (const connection of syncableConnections) {
+        if (await startSync(connection)) completed += 1;
+      }
+      status =
+        completed === syncableConnections.length
+          ? "All configured connections synced."
+          : `Synced ${completed} of ${syncableConnections.length} configured connections.`;
+    } finally {
+      syncAllBusy = false;
+    }
   }
 
   function toggleAccount(id: string, checked: boolean) {
@@ -638,6 +668,18 @@
   });
 
   $effect(() => {
+    if (isWeb) return;
+    ingestionHeaderActions.set({
+      kind: "accounts",
+      canSyncAll: connections.some((connection) =>
+        canSyncConnection(connection),
+      ),
+      syncAllBusy,
+      onSyncAll: () => void syncAllConnections(),
+    });
+  });
+
+  $effect(() => {
     const project = $snapshot;
     const connection = selectedConnection;
     if (isWeb || !project || !connection || !config) {
@@ -687,6 +729,8 @@
     }
     void discoverAccounts({ quiet: true });
   });
+
+  onDestroy(() => ingestionHeaderActions.set(null));
 </script>
 
 <section

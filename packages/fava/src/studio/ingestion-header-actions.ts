@@ -79,6 +79,14 @@ export type IngestionHistoryHeaderActions = {
   runCount: number;
 };
 
+/** Account-linking actions in the workspace header. */
+export type IngestionAccountsHeaderActions = {
+  kind: "accounts";
+  canSyncAll: boolean;
+  syncAllBusy: boolean;
+  onSyncAll: () => void;
+};
+
 /** Beancount ledger editor File/Edit menubar and Save in the workspace header. */
 export type LedgerEditorHeaderActions = {
   kind: "ledger";
@@ -113,6 +121,7 @@ export type IngestionHeaderActions =
   | IngestionMerchantsHeaderActions
   | IngestionManageMerchantsHeaderActions
   | IngestionHistoryHeaderActions
+  | IngestionAccountsHeaderActions
   | IngestionRulesHeaderActions
   | LedgerEditorHeaderActions
   | AccountActivityHeaderActions;

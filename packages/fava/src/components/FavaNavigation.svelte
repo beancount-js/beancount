@@ -1,5 +1,6 @@
 <script lang="ts">
   import ArrowLeft from "lucide-svelte/icons/arrow-left";
+  import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronRight from "lucide-svelte/icons/chevron-right";
   import ClipboardList from "lucide-svelte/icons/clipboard-list";
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
@@ -85,6 +86,7 @@
   let selectedTags: string[] = [];
   /** Non-settings view to restore when leaving the settings sidebar. */
   let settingsReturnPath: string | undefined;
+  let importSettingsOpen = true;
   /**
    * Prevents auto-open from fighting an intentional leave while the URL catches
    * up.
@@ -502,86 +504,150 @@
           size="sm"
           class={cn(
             "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/import/editor", activeViewPath)
-              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-          )}
-          aria-current={isLedgerSettingActive("/import/editor", activeViewPath)
-            ? "page"
-            : undefined}
-          disabled={files.length === 0}
-          onclick={() => openLedgerSetting("/import/editor")}
-        >
-          <ImportIcon data-icon="inline-start" />
-          <span class="min-w-0 flex-1 truncate text-xs font-medium">Import</span
-          >
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          class={cn(
-            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/import/history", activeViewPath)
-              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-          )}
-          aria-current={isLedgerSettingActive("/import/history", activeViewPath)
-            ? "page"
-            : undefined}
-          disabled={files.length === 0}
-          onclick={() => openLedgerSetting("/import/history")}
-        >
-          <History data-icon="inline-start" />
-          <span class="min-w-0 flex-1 truncate text-xs font-medium"
-            >Import history</span
-          >
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          class={cn(
-            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/records", activeViewPath)
-              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-          )}
-          aria-current={isLedgerSettingActive("/records", activeViewPath)
-            ? "page"
-            : undefined}
-          disabled={files.length === 0}
-          onclick={() => openLedgerSetting("/records")}
-        >
-          <ClipboardList data-icon="inline-start" />
-          <span class="min-w-0 flex-1 truncate text-xs font-medium"
-            >Review imports</span
-          >
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          class={cn(
-            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/import/merchants", activeViewPath)
+            isLedgerSettingActive("/import/accounts", activeViewPath)
               ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
               : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
           )}
           aria-current={isLedgerSettingActive(
-            "/import/merchants",
+            "/import/accounts",
             activeViewPath,
           )
             ? "page"
             : undefined}
           disabled={files.length === 0}
-          onclick={() => openLedgerSetting("/import/merchants")}
+          onclick={() => openLedgerSetting("/import/accounts")}
         >
-          <Store data-icon="inline-start" />
+          <Landmark data-icon="inline-start" />
           <span class="min-w-0 flex-1 truncate text-xs font-medium"
-            >Review merchants</span
+            >Accounts</span
           >
         </Button>
+
+        <div class="flex flex-col gap-1">
+          <div
+            class={cn(
+              "flex items-center rounded-md",
+              isLedgerSettingActive("/import/editor", activeViewPath)
+                ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm"
+                : "text-muted-foreground",
+            )}
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="ml-1 size-6 shrink-0"
+              aria-label={importSettingsOpen
+                ? "Collapse import navigation"
+                : "Expand import navigation"}
+              aria-expanded={importSettingsOpen}
+              onclick={() => (importSettingsOpen = !importSettingsOpen)}
+            >
+              <ChevronDown
+                class={cn(
+                  "transition-transform",
+                  importSettingsOpen ? "" : "-rotate-90",
+                )}
+              />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              class="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent"
+              aria-current={isLedgerSettingActive(
+                "/import/editor",
+                activeViewPath,
+              )
+                ? "page"
+                : undefined}
+              disabled={files.length === 0}
+              onclick={() => openLedgerSetting("/import/editor")}
+            >
+              <ImportIcon data-icon="inline-start" />
+              <span class="min-w-0 flex-1 truncate text-xs font-medium"
+                >Import</span
+              >
+            </Button>
+          </div>
+
+          {#if importSettingsOpen}
+            <div
+              class="ml-3 flex flex-col gap-1 border-l border-sidebar-border pl-2"
+            >
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class={cn(
+                  "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+                  isLedgerSettingActive("/import/history", activeViewPath)
+                    ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                    : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+                )}
+                aria-current={isLedgerSettingActive(
+                  "/import/history",
+                  activeViewPath,
+                )
+                  ? "page"
+                  : undefined}
+                disabled={files.length === 0}
+                onclick={() => openLedgerSetting("/import/history")}
+              >
+                <History data-icon="inline-start" />
+                <span class="min-w-0 flex-1 truncate text-xs font-medium"
+                  >History</span
+                >
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class={cn(
+                  "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+                  isLedgerSettingActive("/records", activeViewPath)
+                    ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                    : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+                )}
+                aria-current={isLedgerSettingActive("/records", activeViewPath)
+                  ? "page"
+                  : undefined}
+                disabled={files.length === 0}
+                onclick={() => openLedgerSetting("/records")}
+              >
+                <ClipboardList data-icon="inline-start" />
+                <span class="min-w-0 flex-1 truncate text-xs font-medium"
+                  >Review Transactions</span
+                >
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class={cn(
+                  "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+                  isLedgerSettingActive("/import/merchants", activeViewPath)
+                    ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                    : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+                )}
+                aria-current={isLedgerSettingActive(
+                  "/import/merchants",
+                  activeViewPath,
+                )
+                  ? "page"
+                  : undefined}
+                disabled={files.length === 0}
+                onclick={() => openLedgerSetting("/import/merchants")}
+              >
+                <Store data-icon="inline-start" />
+                <span class="min-w-0 flex-1 truncate text-xs font-medium"
+                  >Review Merchants</span
+                >
+              </Button>
+            </div>
+          {/if}
+        </div>
+
         <Button
           type="button"
           variant="ghost"
@@ -603,7 +669,7 @@
         >
           <BookUser data-icon="inline-start" />
           <span class="min-w-0 flex-1 truncate text-xs font-medium"
-            >Manage merchants</span
+            >Merchants</span
           >
         </Button>
         <Button
@@ -645,30 +711,6 @@
         >
           <Wand2 data-icon="inline-start" />
           <span class="min-w-0 flex-1 truncate text-xs font-medium">Rules</span>
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          class={cn(
-            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/import/accounts", activeViewPath)
-              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-          )}
-          aria-current={isLedgerSettingActive(
-            "/import/accounts",
-            activeViewPath,
-          )
-            ? "page"
-            : undefined}
-          disabled={files.length === 0}
-          onclick={() => openLedgerSetting("/import/accounts")}
-        >
-          <Landmark data-icon="inline-start" />
-          <span class="min-w-0 flex-1 truncate text-xs font-medium"
-            >Accounts</span
-          >
         </Button>
       </div>
     </div>
