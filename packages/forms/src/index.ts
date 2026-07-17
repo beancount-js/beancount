@@ -15,9 +15,14 @@ export { default as SearchableChoicePicker } from "./components/SearchableChoice
 export { default as FilterCommandPicker } from "./components/FilterCommandPicker.svelte";
 export { default as AutocompleteInput } from "./components/AutocompleteInput.svelte";
 export { default as ChipAutocomplete } from "./components/ChipAutocomplete.svelte";
+export { default as AccountAvatar } from "./components/AccountAvatar.svelte";
 export { default as IconColorPicker } from "./components/IconColorPicker.svelte";
 export { default as TagEditor } from "./components/TagEditor.svelte";
 export { autosizeTextarea } from "./autosize-textarea";
+export {
+  accountAvatarFallbackColor,
+  accountAvatarInitial,
+} from "./account-avatar";
 export {
   appearanceIconContrast,
   appearanceIconForeground,

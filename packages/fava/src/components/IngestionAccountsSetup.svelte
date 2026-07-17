@@ -14,6 +14,7 @@
   import Trash2 from "lucide-svelte/icons/trash-2";
   import { accountOpenClose, type Open } from "@beancount-js/beancount";
   import type { JsonApiLinkedAccount } from "@beancount-js/beangulp";
+  import { AccountAvatar, accountAvatarInitial } from "@beancount-js/forms";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import { onDestroy } from "svelte";
   import { get } from "svelte/store";
@@ -54,6 +55,7 @@
   } from "../ingestion/source-form";
   import type { IngestionConfigResponse } from "../ingestion/types";
   import { useCtx } from "../stores/format";
+  import { urlForAccount } from "../helpers";
   import ComboBox from "./ComboBox.svelte";
 
   type DiscoveredAccount = {
@@ -77,15 +79,6 @@
     description?: string;
     logoUrl?: string;
   };
-
-  const ACCOUNT_AVATAR_COLORS = [
-    "bg-rose-200 text-rose-800",
-    "bg-orange-200 text-orange-800",
-    "bg-amber-200 text-amber-900",
-    "bg-sky-200 text-sky-800",
-    "bg-violet-200 text-violet-800",
-    "bg-teal-200 text-teal-800",
-  ] as const;
 
   const { snapshot } = useStudioWorkspace();
   const { ledgerData, conversion } = useContext();
@@ -301,17 +294,13 @@
     return new Date(iso).toLocaleDateString();
   }
 
-  function initialLetter(value: string) {
-    return (value.trim().charAt(0) || "?").toUpperCase();
-  }
-
-  function accountAvatarClass(seed: string) {
-    let hash = 0;
-    for (let i = 0; i < seed.length; i += 1) {
-      hash =
-        (hash + seed.charCodeAt(i) * (i + 1)) % ACCOUNT_AVATAR_COLORS.length;
-    }
-    return ACCOUNT_AVATAR_COLORS[hash] ?? ACCOUNT_AVATAR_COLORS[0];
+  function accountAppearanceFor(open?: Open | null) {
+    const color = open?.meta.color;
+    const icon = open?.meta.icon;
+    return {
+      color: typeof color === "string" ? color : "",
+      icon: typeof icon === "string" ? icon : "",
+    };
   }
 
   function linkedGroupLabel(sourceAccount: string) {
@@ -968,7 +957,7 @@
                         markMerchantLogoFailed(merchant.merchantId)}
                     />
                   {:else}
-                    {initialLetter(connection.name || connection.id)}
+                    {accountAvatarInitial(connection.name || connection.id)}
                   {/if}
                 </span>
                 <span class="min-w-0 flex-1">
@@ -1077,46 +1066,52 @@
                             {@const openDirective = openDirectiveForAccount(
                               account.sourceAccount,
                             )}
+                            {@const appearance =
+                              accountAppearanceFor(openDirective)}
                             <li
                               class:rounded-b-xl={index ===
                                 group.accounts.length - 1}
                               class="flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
                             >
-                              <div
-                                class="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold {accountAvatarClass(
-                                  account.id || account.name,
-                                )}"
-                                aria-hidden="true"
+                              <a
+                                href={urlForAccount(account.sourceAccount)}
+                                class="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-foreground no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               >
-                                {initialLetter(account.name)}
-                              </div>
-                              <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-medium">
-                                  {account.name}{#if institution}<span
-                                      class="font-normal text-muted-foreground"
-                                    >
-                                      • {institution}</span
-                                    >{/if}
-                                </p>
-                                <p
-                                  class="truncate text-xs text-muted-foreground"
-                                >
-                                  {accountTypeLabel(account.sourceAccount)}
-                                </p>
-                              </div>
-                              {#if balance}
-                                <span
-                                  class="shrink-0 text-sm font-semibold tabular-nums"
-                                >
-                                  {balance}
+                                <AccountAvatar
+                                  account={account.sourceAccount}
+                                  color={appearance.color}
+                                  icon={appearance.icon}
+                                />
+                                <span class="min-w-0 flex-1">
+                                  <span
+                                    class="block truncate text-sm font-medium"
+                                  >
+                                    {account.name}{#if institution}<span
+                                        class="font-normal text-muted-foreground"
+                                      >
+                                        • {institution}</span
+                                      >{/if}
+                                  </span>
+                                  <span
+                                    class="block truncate text-xs text-muted-foreground"
+                                  >
+                                    {accountTypeLabel(account.sourceAccount)}
+                                  </span>
                                 </span>
-                              {:else if account.defaultCurrency}
-                                <span
-                                  class="shrink-0 text-xs text-muted-foreground"
-                                >
-                                  {account.defaultCurrency}
-                                </span>
-                              {/if}
+                                {#if balance}
+                                  <span
+                                    class="shrink-0 text-sm font-semibold tabular-nums"
+                                  >
+                                    {balance}
+                                  </span>
+                                {:else if account.defaultCurrency}
+                                  <span
+                                    class="shrink-0 text-xs text-muted-foreground"
+                                  >
+                                    {account.defaultCurrency}
+                                  </span>
+                                {/if}
+                              </a>
                               <DropdownMenu.Root>
                                 <DropdownMenu.Trigger>
                                   {#snippet child({ props })}
@@ -1537,34 +1532,43 @@
                       >
                         {#each group.accounts as account, index (account.name)}
                           {@const balance = otherAccountBalanceText(account)}
+                          {@const appearance = accountAppearanceFor(
+                            account.open,
+                          )}
                           <li
                             class:rounded-b-xl={index ===
                               group.accounts.length - 1}
                             class="flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
                           >
-                            <div
-                              class="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold {accountAvatarClass(
-                                account.name,
-                              )}"
-                              aria-hidden="true"
+                            <a
+                              href={urlForAccount(account.name)}
+                              class="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-foreground no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
-                              {initialLetter(account.name)}
-                            </div>
-                            <div class="min-w-0 flex-1">
-                              <p class="truncate text-sm font-medium">
-                                {account.name}
-                              </p>
-                              <p class="truncate text-xs text-muted-foreground">
-                                Open directive
-                              </p>
-                            </div>
-                            {#if balance}
-                              <span
-                                class="shrink-0 text-sm font-semibold tabular-nums"
-                              >
-                                {balance}
+                              <AccountAvatar
+                                account={account.name}
+                                color={appearance.color}
+                                icon={appearance.icon}
+                              />
+                              <span class="min-w-0 flex-1">
+                                <span
+                                  class="block truncate text-sm font-medium"
+                                >
+                                  {account.name}
+                                </span>
+                                <span
+                                  class="block truncate text-xs text-muted-foreground"
+                                >
+                                  Open directive
+                                </span>
                               </span>
-                            {/if}
+                              {#if balance}
+                                <span
+                                  class="shrink-0 text-sm font-semibold tabular-nums"
+                                >
+                                  {balance}
+                                </span>
+                              {/if}
+                            </a>
                             <DropdownMenu.Root>
                               <DropdownMenu.Trigger>
                                 {#snippet child({ props })}
