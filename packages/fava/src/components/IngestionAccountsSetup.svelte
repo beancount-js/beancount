@@ -708,10 +708,12 @@
           <article
             class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
           >
-            <div class="flex items-center gap-3 px-4 py-3">
+            <div
+              class="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+            >
               <button
                 type="button"
-                class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left hover:bg-muted/50"
+                class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left"
                 aria-expanded={isSelected && connectionExpanded}
                 aria-label={isSelected && connectionExpanded
                   ? "Collapse connection"

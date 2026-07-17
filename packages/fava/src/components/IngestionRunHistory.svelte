@@ -263,7 +263,7 @@
       {:else}
         <div
           role="row"
-          class="hidden grid-cols-[minmax(0,1fr)_minmax(4rem,auto)_minmax(4rem,auto)_minmax(4rem,auto)_minmax(4rem,auto)] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid"
+          class="hidden grid-cols-[minmax(0,1fr)_repeat(4,4rem)] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid"
         >
           <div
             role="columnheader"
@@ -391,7 +391,7 @@
               {#each group.runs as run, index (run.id)}
                 <div
                   class:rounded-b-xl={index === group.runs.length - 1}
-                  class="relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-[15px] py-4 transition-colors last:border-b-0 focus-within:bg-accent focus-within:ring-2 focus-within:ring-ring hover:bg-accent/60 sm:grid-cols-[minmax(0,1fr)_minmax(4rem,auto)_minmax(4rem,auto)_minmax(4rem,auto)_minmax(4rem,auto)] sm:gap-x-4"
+                  class="relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-4 py-4 transition-colors last:border-b-0 focus-within:bg-accent focus-within:ring-2 focus-within:ring-ring hover:bg-accent/60 sm:grid-cols-[minmax(0,1fr)_repeat(4,4rem)] sm:gap-x-4"
                 >
                   <a
                     href={`/import/history/${run.id}`}
