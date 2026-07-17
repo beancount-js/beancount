@@ -583,7 +583,6 @@
                       controlId="journal-account-appearance"
                     >
                       <IconColorPicker
-                        id="journal-account-appearance"
                         color={draft.color}
                         icon={draft.icon}
                         onChange={(appearance) => {

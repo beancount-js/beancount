@@ -75,12 +75,10 @@
   let {
     color = "",
     icon = "",
-    id = "icon-color-picker",
     onChange = () => {},
   }: {
     color?: string;
     icon?: string;
-    id?: string;
     onChange?: (value: { color: string; icon: string }) => void;
   } = $props();
 
@@ -114,7 +112,6 @@
       <button
         {...props}
         type="button"
-        {id}
         class="beancount-icon-color-picker__trigger"
         aria-label="Choose account colour and icon"
       >
