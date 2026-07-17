@@ -24,7 +24,6 @@
   import { isSecretConfigured } from "../ingestion/secret-ref";
   import AccountsPageSkeleton from "./skeletons/AccountsPageSkeleton.svelte";
   import {
-    isConnectorSource,
     isGroupedSource,
     sourceBaseUrl,
     sourceSecretRef,
@@ -276,29 +275,6 @@
     return discoveryById.get(account.id)?.institutionName?.trim() || undefined;
   }
 
-  /**
-   * Discovery scheme for connector sources; the generic /discover endpoint
-   * needs an auth header hint and connectors don't expose one directly.
-   */
-  function sourceAuthScheme(
-    source: EditableIngestionSource,
-  ): "bearer" | "x-api-key" | undefined {
-    if (isConnectorSource(source)) return "x-api-key";
-    return source.api?.authScheme;
-  }
-
-  function sourceAllowedHosts(
-    source: EditableIngestionSource,
-  ): string[] | undefined {
-    if (isConnectorSource(source)) {
-      const config = source.config as { allowedHosts?: unknown } | undefined;
-      return Array.isArray(config?.allowedHosts)
-        ? (config.allowedHosts as string[])
-        : undefined;
-    }
-    return source.api?.allowedHosts;
-  }
-
   async function load() {
     if (!$snapshot || isWeb) return;
     loading = true;
@@ -422,10 +398,7 @@
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            baseUrl: sourceBaseUrl(selectedConnection),
-            secretRef: sourceSecretRef(selectedConnection),
-            authScheme: sourceAuthScheme(selectedConnection),
-            allowedHosts: sourceAllowedHosts(selectedConnection),
+            sourceId: selectedConnection.id,
           }),
         },
       );
@@ -601,8 +574,8 @@
           <Empty.Media variant="icon"><Landmark /></Empty.Media>
           <Empty.Title>No connected providers</Empty.Title>
           <Empty.Description
-            >Connect Lunch Flow under Sources first, then return here to load
-            and link bank accounts.</Empty.Description
+            >Connect a bank provider under Sources first, then return here to
+            load and link bank accounts.</Empty.Description
           >
         </Empty.Header>
         <Empty.Content>

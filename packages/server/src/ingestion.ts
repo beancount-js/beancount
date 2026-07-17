@@ -644,6 +644,53 @@ export class FilesystemIngestionStore {
     return source;
   }
 
+  /** Discover accounts through a persisted connector or grouped JSON source. */
+  async discoverAccounts(
+    project: string,
+    sourceId: string,
+    options?: { fetch?: typeof globalThis.fetch; signal?: AbortSignal },
+  ): Promise<DiscoveredJsonApiAccount[]> {
+    const source = await this.source(project, sourceId);
+    const projectRoot = await this.projectRoot(project);
+    const env = await resolveProjectEnv(projectRoot);
+    const resolveSecret = async (reference: string) =>
+      resolveEnvSecret(reference, env);
+
+    if (isConnectorIngestionSource(source)) {
+      const connector = requireConnector(source.kind);
+      if (
+        !connector.capabilities.discoverAccounts ||
+        !connector.discoverAccounts
+      ) {
+        throw new Error(
+          `${connector.name} does not support account discovery.`,
+        );
+      }
+      const config = connector.validateConfig(source.config ?? {});
+      return connector.discoverAccounts(config, {
+        sourceId: source.id,
+        resolveSecret,
+        fetch: options?.fetch,
+        signal: options?.signal,
+      });
+    }
+
+    if (!isGroupedJsonApiSource(source) || !source.api?.baseUrl) {
+      throw new Error(
+        `Source ${source.id} does not support account discovery.`,
+      );
+    }
+    return discoverJsonApiAccounts({
+      baseUrl: source.api.baseUrl,
+      secretRef: source.api.secretRef,
+      authScheme: source.api.authScheme,
+      allowedHosts: source.api.allowedHosts,
+      resolveSecret,
+      fetch: options?.fetch,
+      signal: options?.signal,
+    });
+  }
+
   /** Resolve a connection id from a run's sourceId (`connection` or `connection:account`). */
   async sourceForRunSourceId(project: string, runSourceId: string) {
     const config = await this.readConfig(project);

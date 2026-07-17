@@ -955,6 +955,71 @@ describe("FilesystemIngestionStore", () => {
     );
   });
 
+  test("discovers accounts through the persisted connector", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-discovery-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    await store.writeConfig("project", {
+      version: 2,
+      sources: [
+        {
+          id: "lunchflow",
+          name: "Lunch Flow",
+          kind: "lunchflow",
+          config: {
+            baseUrl: "https://www.lunchflow.app/api/v1",
+            allowedHosts: ["www.lunchflow.app", "lunchflow.app"],
+            secretRef: "env:LUNCHFLOW_API_KEY",
+          },
+          rules: [],
+          accounts: [],
+        },
+      ],
+    });
+    await writeFile(
+      join(directory, "project", ".env"),
+      "LUNCHFLOW_API_KEY=discovery-token\n",
+    );
+
+    const fetchMock = (async (
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      expect(String(input)).toBe("https://www.lunchflow.app/api/v1/accounts");
+      expect(new Headers(init?.headers).get("x-api-key")).toBe(
+        "discovery-token",
+      );
+      return new Response(
+        JSON.stringify({
+          accounts: [
+            {
+              id: "account-1",
+              name: "Current",
+              currency: "GBP",
+              institutionName: "Example Bank",
+            },
+          ],
+        }),
+        { status: 200 },
+      );
+    }) as typeof fetch;
+
+    await expect(
+      store.discoverAccounts("project", "lunchflow", { fetch: fetchMock }),
+    ).resolves.toEqual([
+      {
+        id: "account-1",
+        name: "Current",
+        currency: "GBP",
+        institutionName: "Example Bank",
+        status: undefined,
+        iban: undefined,
+      },
+    ]);
+  });
+
   test("patchProposal updates transaction fields tags and metadata", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-patch-"),
