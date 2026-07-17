@@ -179,10 +179,18 @@
     }
   }
 
-  async function saveFile(path: string, contents: string) {
+  async function saveFile(
+    path: string,
+    contents: string,
+    expectedRevision?: string,
+  ) {
     if (!snapshot) throw new Error("No project is selected.");
     if (isWeb && webWorkspace) {
-      await webWorkspace.writeFile(snapshot.project.id, { path, contents });
+      await webWorkspace.writeFile(
+        snapshot.project.id,
+        { path, contents },
+        expectedRevision ? { expectedRevision } : undefined,
+      );
       const next = await webWorkspace.readProject(snapshot.project.id);
       snapshot = next;
       await refreshProjects();
@@ -194,7 +202,7 @@
         {
           method: "PUT",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ contents }),
+          body: JSON.stringify({ contents, expectedRevision }),
         },
       ),
     );
