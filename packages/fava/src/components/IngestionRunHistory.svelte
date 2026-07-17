@@ -1,11 +1,15 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
+  import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
+  import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
+  import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
   import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
   import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import ExternalLink from "lucide-svelte/icons/external-link";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
+  import type { SortOrder } from "../grid/sort";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type {
     IngestionRunPage,
@@ -17,6 +21,11 @@
 
   const PAGE_SIZES = [25, 50, 100];
   const DEFAULT_PAGE_SIZE = 25;
+  const SORT_CYCLE: Record<SortOrder, SortOrder> = {
+    none: "asc",
+    asc: "desc",
+    desc: "none",
+  };
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
   const { snapshot } = useStudioWorkspace();
   const { router } = useNavigation();
@@ -31,12 +40,24 @@
   let status = $state("");
   let loadedProjectId = $state("");
   let pageSize = $state(DEFAULT_PAGE_SIZE);
+  let sortOrders = $state<Record<SortKey, SortOrder>>({
+    date: "none",
+    proposals: "none",
+    accepted: "none",
+    review: "none",
+    duplicates: "none",
+  });
+  /** Order sorts were added; earlier entries are primary. */
+  let sortPriority = $state<SortKey[]>([]);
 
   const project = $derived($snapshot);
   const pageNumber = $derived(Math.floor(page.offset / page.limit) + 1);
   const pageCount = $derived(Math.max(1, Math.ceil(page.total / page.limit)));
-  const historyGroups = $derived.by(() => groupRunsByDate(page.runs));
+  const historyGroups = $derived.by(() =>
+    groupRunsByDate(page.runs, sortPriority, sortOrders),
+  );
 
+  type SortKey = "date" | "proposals" | "accepted" | "review" | "duplicates";
   type HistoryDateGroup = {
     key: string;
     date: DateTime;
@@ -107,8 +128,26 @@
     return date.isValid ? date.toFormat("HH:mm 'UTC'") : value;
   }
 
+  function cycleSort(key: SortKey) {
+    const next = SORT_CYCLE[sortOrders[key]];
+    sortOrders = { ...sortOrders, [key]: next };
+    if (next === "none") {
+      sortPriority = sortPriority.filter((item) => item !== key);
+    } else if (!sortPriority.includes(key)) {
+      sortPriority = [...sortPriority, key];
+    }
+  }
+
+  function ariaSortFor(key: SortKey): "ascending" | "descending" | "none" {
+    const order = sortOrders[key];
+    if (order === "none") return "none";
+    return order === "asc" ? "ascending" : "descending";
+  }
+
   function groupRunsByDate(
     runs: readonly IngestionRunSummary[],
+    priority: readonly SortKey[],
+    orders: Readonly<Record<SortKey, SortOrder>>,
   ): HistoryDateGroup[] {
     const groups = new Map<string, HistoryDateGroup>();
     for (const run of runs) {
@@ -118,7 +157,51 @@
       if (group) group.runs.push(run);
       else groups.set(key, { key, date, runs: [run] });
     }
-    return [...groups.values()];
+
+    const activeSorts = priority.filter((key) => orders[key] !== "none");
+    const runSorts = activeSorts.filter((key) => key !== "date");
+    const sortedGroups = [...groups.values()];
+
+    for (const group of sortedGroups) {
+      if (!runSorts.length) continue;
+      group.runs.sort((left, right) =>
+        compareRuns(left, right, runSorts, orders),
+      );
+    }
+
+    const dateOrder = orders.date;
+    if (dateOrder !== "none") {
+      const direction = dateOrder === "asc" ? 1 : -1;
+      sortedGroups.sort(
+        (left, right) =>
+          direction * (left.date.toMillis() - right.date.toMillis()),
+      );
+    }
+
+    return sortedGroups;
+  }
+
+  function compareRuns(
+    left: IngestionRunSummary,
+    right: IngestionRunSummary,
+    keys: readonly SortKey[],
+    orders: Readonly<Record<SortKey, SortOrder>>,
+  ) {
+    for (const key of keys) {
+      const direction = orders[key] === "asc" ? 1 : -1;
+      const result =
+        key === "proposals"
+          ? left.summary.total - right.summary.total
+          : key === "accepted"
+            ? left.summary.accepted - right.summary.accepted
+            : key === "review"
+              ? left.summary.needsReview - right.summary.needsReview
+              : key === "duplicates"
+                ? left.summary.duplicates - right.summary.duplicates
+                : 0;
+      if (result !== 0) return direction * result;
+    }
+    return 0;
   }
 
   function groupDate(group: HistoryDateGroup) {
@@ -179,13 +262,114 @@
         </Empty.Root>
       {:else}
         <div
+          role="row"
           class="hidden grid-cols-[minmax(0,1fr)_minmax(4rem,auto)_minmax(4rem,auto)_minmax(4rem,auto)_minmax(4rem,auto)] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid"
         >
-          <span>Import</span>
-          <span class="text-right">Proposals</span>
-          <span class="text-right">Accepted</span>
-          <span class="text-right">Review</span>
-          <span class="text-right">Duplicates</span>
+          <div
+            role="columnheader"
+            aria-sort={ariaSortFor("date")}
+            class="justify-self-start"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by date"
+              onclick={() => cycleSort("date")}
+            >
+              Date
+              {#if sortOrders.date === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.date === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
+          <div
+            role="columnheader"
+            aria-sort={ariaSortFor("proposals")}
+            class="justify-self-end"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by proposal count"
+              onclick={() => cycleSort("proposals")}
+            >
+              Proposals
+              {#if sortOrders.proposals === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.proposals === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
+          <div
+            role="columnheader"
+            aria-sort={ariaSortFor("accepted")}
+            class="justify-self-end"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by accepted count"
+              onclick={() => cycleSort("accepted")}
+            >
+              Accepted
+              {#if sortOrders.accepted === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.accepted === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
+          <div
+            role="columnheader"
+            aria-sort={ariaSortFor("review")}
+            class="justify-self-end"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by review count"
+              onclick={() => cycleSort("review")}
+            >
+              Review
+              {#if sortOrders.review === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.review === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
+          <div
+            role="columnheader"
+            aria-sort={ariaSortFor("duplicates")}
+            class="justify-self-end"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by duplicate count"
+              onclick={() => cycleSort("duplicates")}
+            >
+              Duplicates
+              {#if sortOrders.duplicates === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.duplicates === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
         </div>
 
         {#each historyGroups as group (group.key)}
