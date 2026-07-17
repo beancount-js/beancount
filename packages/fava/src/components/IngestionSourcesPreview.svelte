@@ -2,7 +2,11 @@
   import ArrowRight from "lucide-svelte/icons/arrow-right";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
-  import { FilterCommandPicker, SegmentedControl } from "@beancount-js/forms";
+  import {
+    accountAvatarInitial,
+    FilterCommandPicker,
+    SegmentedControl,
+  } from "@beancount-js/forms";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
@@ -34,6 +38,7 @@
     samples = [],
     envKeys = [],
     connectionStatuses = {},
+    merchantsById = {},
     onChange,
     onSave,
     onConnectSample,
@@ -53,6 +58,14 @@
         failed?: boolean;
       }
     >;
+    merchantsById?: Record<
+      string,
+      {
+        merchantId: string;
+        canonicalName: string;
+        logoUrl?: string;
+      }
+    >;
     onChange: (index: number, next: EditableIngestionSource) => void;
     onSave: () => void | Promise<void>;
     onConnectSample?: (sample: IngestionSample) => void;
@@ -69,6 +82,7 @@
   );
 
   let openById = $state<Record<string, boolean>>({});
+  let failedMerchantLogoIds = $state(new Set<string>());
 
   function sourceKey(source: EditableIngestionSource, index: number) {
     return source.id || `source-${index}`;
@@ -154,6 +168,14 @@
     return connectionStatuses[source.id] ?? { connected: false };
   }
 
+  function merchantFor(source: EditableIngestionSource) {
+    return source.merchantId ? merchantsById[source.merchantId] : undefined;
+  }
+
+  function markMerchantLogoFailed(merchantId: string) {
+    failedMerchantLogoIds = new Set([...failedMerchantLogoIds, merchantId]);
+  }
+
   function relativeSyncTime(iso?: string) {
     if (!iso) return "Not synced yet";
     const then = new Date(iso).getTime();
@@ -195,6 +217,7 @@
       {@const mode = secretMode(secretRef)}
       {@const grouped = isGroupedSource(source)}
       {@const status = sourceStatus(source)}
+      {@const merchant = merchantFor(source)}
       <article
         class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
         data-ingestion-connection-card
@@ -214,6 +237,26 @@
                 : '-rotate-90'}"
               aria-hidden="true"
             />
+            {#if merchant?.logoUrl && !failedMerchantLogoIds.has(merchant.merchantId)}
+              <span
+                class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted shadow-sm"
+                aria-hidden="true"
+              >
+                <img
+                  class="size-full object-cover"
+                  src={merchant.logoUrl}
+                  alt=""
+                  onerror={() => markMerchantLogoFailed(merchant.merchantId)}
+                />
+              </span>
+            {:else}
+              <span
+                class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
+                aria-hidden="true"
+              >
+                {accountAvatarInitial(source.name || source.id)}
+              </span>
+            {/if}
             <span class="min-w-0 truncate text-sm font-semibold">
               {source.name || "Untitled source"}
             </span>

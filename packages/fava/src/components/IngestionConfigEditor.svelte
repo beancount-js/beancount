@@ -46,6 +46,11 @@
 
   type EditorMode = "form" | "yaml";
   type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
+  type ConnectionMerchant = {
+    merchantId: string;
+    canonicalName: string;
+    logoUrl?: string;
+  };
 
   let config = $state<EditableIngestionConfig | undefined>(undefined);
   let loadedConfig = $state<IngestionConfigResponse | undefined>(undefined);
@@ -62,6 +67,7 @@
   let syncJobsBySourceId = $state<
     Record<string, Awaited<ReturnType<typeof latestIngestionSyncJob>>>
   >({});
+  let merchantsById = $state<Record<string, ConnectionMerchant>>({});
   /** Open section ids keyed by source index. Missing key = fully expanded. */
   let openBySourceIndex = $state<Record<number, string[]>>({});
 
@@ -136,9 +142,24 @@
       saveState = "idle";
       status = "";
       void loadSyncJobs($snapshot.project.id, draft.sources);
+      void loadMerchants($snapshot.project.id);
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
       saveState = "error";
+    }
+  }
+
+  async function loadMerchants(projectId: string) {
+    try {
+      const merchants = await ingestionJson<ConnectionMerchant[]>(
+        ingestionPath(projectId, "/merchants"),
+      );
+      if ($snapshot?.project.id !== projectId) return;
+      merchantsById = Object.fromEntries(
+        merchants.map((merchant) => [merchant.merchantId, merchant]),
+      );
+    } catch {
+      if ($snapshot?.project.id === projectId) merchantsById = {};
     }
   }
 
@@ -524,6 +545,7 @@
             {#if previewMode}
               <IngestionSourcesPreview
                 sources={config.sources}
+                {merchantsById}
                 samples={ingestionSamples}
                 envKeys={$snapshot?.envKeys ?? []}
                 {connectionStatuses}
