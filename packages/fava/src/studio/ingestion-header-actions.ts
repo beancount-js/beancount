@@ -70,6 +70,12 @@ export type IngestionManageMerchantsHeaderActions = {
   onBackfill: () => void;
 };
 
+/** Import history count in the workspace header. */
+export type IngestionHistoryHeaderActions = {
+  kind: "history";
+  runCount: number;
+};
+
 /** Beancount ledger editor File/Edit menubar and Save in the workspace header. */
 export type LedgerEditorHeaderActions = {
   kind: "ledger";
@@ -103,6 +109,7 @@ export type IngestionHeaderActions =
   | IngestionReviewHeaderActions
   | IngestionMerchantsHeaderActions
   | IngestionManageMerchantsHeaderActions
+  | IngestionHistoryHeaderActions
   | IngestionRulesHeaderActions
   | LedgerEditorHeaderActions
   | AccountActivityHeaderActions;

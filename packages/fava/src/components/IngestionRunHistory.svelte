@@ -1,8 +1,8 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
-  import Clock3 from "lucide-svelte/icons/clock-3";
-  import ChevronLeft from "lucide-svelte/icons/chevron-left";
-  import ChevronRight from "lucide-svelte/icons/chevron-right";
+  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
+  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import ExternalLink from "lucide-svelte/icons/external-link";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
@@ -13,9 +13,11 @@
     IngestionRunSummary,
   } from "../ingestion/types";
   import { useNavigation } from "../router/router";
+  import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
 
-  const PAGE_SIZE = 25;
+  const PAGE_SIZES = [25, 50, 100];
+  const DEFAULT_PAGE_SIZE = 25;
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
   const { snapshot } = useStudioWorkspace();
   const { router } = useNavigation();
@@ -24,32 +26,40 @@
     runs: [],
     total: 0,
     offset: 0,
-    limit: PAGE_SIZE,
+    limit: DEFAULT_PAGE_SIZE,
   });
   let selectedRun = $state<IngestionRun | undefined>(undefined);
   let loading = $state(false);
   let detailLoading = $state(false);
   let status = $state("");
   let loadedProjectId = $state("");
+  let pageSize = $state(DEFAULT_PAGE_SIZE);
 
   const project = $derived($snapshot);
-  const hasNewer = $derived(page.offset > 0);
-  const hasOlder = $derived(page.offset + page.runs.length < page.total);
+  const pageNumber = $derived(Math.floor(page.offset / page.limit) + 1);
+  const pageCount = $derived(Math.max(1, Math.ceil(page.total / page.limit)));
+  const historyGroups = $derived.by(() => groupRunsByDate(page.runs));
 
-  function historyPath(projectId: string, offset = 0) {
+  type HistoryDateGroup = {
+    key: string;
+    date: DateTime;
+    runs: IngestionRunSummary[];
+  };
+
+  function historyPath(projectId: string, offset: number, limit: number) {
     const query = new URLSearchParams({
       offset: String(offset),
-      limit: String(PAGE_SIZE),
+      limit: String(limit),
     });
     return ingestionPath(projectId, `/runs?${query}`);
   }
 
-  async function loadHistory(offset = 0) {
+  async function loadHistory(offset = 0, limit = pageSize) {
     if (!project || isWeb) return;
     loading = true;
     try {
       page = await ingestionJson<IngestionRunPage>(
-        historyPath(project.project.id, offset),
+        historyPath(project.project.id, offset, limit),
       );
       status = "";
     } catch (error) {
@@ -57,6 +67,13 @@
     } finally {
       loading = false;
     }
+  }
+
+  function changePageSize(value: string) {
+    const next = Number(value);
+    if (!PAGE_SIZES.includes(next) || next === pageSize) return;
+    pageSize = next;
+    void loadHistory(0, next);
   }
 
   async function openAudit(summary: IngestionRunSummary) {
@@ -91,6 +108,31 @@
     return date.isValid ? date.toFormat("dd LLL yyyy, HH:mm 'UTC'") : value;
   }
 
+  function formatTime(value: string) {
+    const date = DateTime.fromISO(value, { zone: "utc" });
+    return date.isValid ? date.toFormat("HH:mm 'UTC'") : value;
+  }
+
+  function groupRunsByDate(
+    runs: readonly IngestionRunSummary[],
+  ): HistoryDateGroup[] {
+    const groups = new Map<string, HistoryDateGroup>();
+    for (const run of runs) {
+      const date = DateTime.fromISO(run.completedAt, { zone: "utc" });
+      const key = date.isValid ? date.toISODate()! : run.completedAt;
+      const group = groups.get(key);
+      if (group) group.runs.push(run);
+      else groups.set(key, { key, date, runs: [run] });
+    }
+    return [...groups.values()];
+  }
+
+  function groupDate(group: HistoryDateGroup) {
+    return group.date.isValid
+      ? group.date.toFormat("LLLL dd, yyyy").toUpperCase()
+      : group.key;
+  }
+
   function proposalTitle(run: IngestionRun, index: number) {
     const proposal = run.proposals[index]!;
     const transaction = proposal.transaction;
@@ -121,6 +163,16 @@
     selectedRun = undefined;
     void loadHistory();
   });
+
+  $effect(() => {
+    if (isWeb || !project) {
+      ingestionHeaderActions.set(null);
+      return;
+    }
+    ingestionHeaderActions.set({ kind: "history", runCount: page.total });
+  });
+
+  onDestroy(() => ingestionHeaderActions.set(null));
 </script>
 
 <div class="h-full overflow-auto p-3 sm:p-5" data-ingestion-history>
@@ -133,25 +185,7 @@
       Import history is available when Studio has access to the project folder.
     </div>
   {:else}
-    <div class="mx-auto flex w-full max-w-5xl flex-col gap-5">
-      <header class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div class="flex items-center gap-2">
-            <Clock3 class="size-5 text-muted-foreground" />
-            <h2 class="text-lg font-semibold">Import history</h2>
-          </div>
-          <p class="mt-1 text-sm text-muted-foreground">
-            Archived runs are read-only. Open a pending run in Review imports to
-            continue working on it.
-          </p>
-        </div>
-        <span
-          class="rounded-full bg-muted px-3 py-1 text-sm tabular-nums text-muted-foreground"
-        >
-          {page.total} run{page.total === 1 ? "" : "s"}
-        </span>
-      </header>
-
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
       {#if status}
         <p
           class="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
@@ -174,106 +208,155 @@
           </Empty.Header>
         </Empty.Root>
       {:else}
-        <div class="flex flex-col gap-3">
-          {#each page.runs as run (run.id)}
-            <article class="rounded-xl border bg-card p-4 shadow-sm">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <h3 class="font-medium">{run.sourceId}</h3>
-                    <span
-                      class={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        run.reviewState === "pending"
-                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {run.reviewState === "pending"
-                        ? "Pending review"
-                        : "Completed"}
-                    </span>
+        <div
+          class="hidden grid-cols-[minmax(0,1fr)_minmax(12rem,auto)_auto] items-center gap-3 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid"
+        >
+          <span>Import</span>
+          <span class="text-right">Outcomes</span>
+          <span>Actions</span>
+        </div>
+
+        {#each historyGroups as group (group.key)}
+          <section
+            class="overflow-hidden rounded-2xl bg-muted/80"
+            aria-label={`Import runs from ${groupDate(group)}`}
+          >
+            <div class="px-5 py-4">
+              <h2 class="text-sm font-semibold tracking-wide text-foreground">
+                {groupDate(group)}
+                <span class="ml-2 text-muted-foreground"
+                  >· {group.runs.length}</span
+                >
+              </h2>
+            </div>
+            <div
+              class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+            >
+              {#each group.runs as run, index (run.id)}
+                <article
+                  class:rounded-b-xl={index === group.runs.length - 1}
+                  class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-[15px] py-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,auto)_auto]"
+                >
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h3 class="truncate text-sm font-semibold">
+                        {run.sourceId}
+                      </h3>
+                      <span
+                        class={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          run.reviewState === "pending"
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {run.reviewState === "pending"
+                          ? "Pending review"
+                          : "Completed"}
+                      </span>
+                    </div>
+                    <p class="mt-1 truncate text-xs text-muted-foreground">
+                      {formatTime(run.completedAt)} · Run {run.id}
+                    </p>
                   </div>
-                  <p class="mt-1 text-sm text-muted-foreground">
-                    Completed {formatDate(run.completedAt)} · Run {run.id}
-                  </p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  {#if run.reviewState === "pending"}
+
+                  <div
+                    class="order-2 flex flex-wrap justify-end gap-x-2 gap-y-1 sm:order-3"
+                  >
+                    {#if run.reviewState === "pending"}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onclick={() => openInReview(run)}
+                      >
+                        <ExternalLink data-icon="inline-start" />
+                        <span class="hidden lg:inline">Open in Review</span>
+                        <span class="lg:hidden">Review</span>
+                      </Button>
+                    {/if}
                     <Button
                       type="button"
                       size="sm"
-                      variant="outline"
-                      onclick={() => openInReview(run)}
+                      variant="secondary"
+                      disabled={detailLoading && selectedRun?.id !== run.id}
+                      onclick={() => void openAudit(run)}
                     >
-                      <ExternalLink data-icon="inline-start" />
-                      Open in Review
+                      {selectedRun?.id === run.id
+                        ? "Viewing audit"
+                        : "View audit"}
                     </Button>
-                  {/if}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    disabled={detailLoading && selectedRun?.id !== run.id}
-                    onclick={() => void openAudit(run)}
-                  >
-                    {selectedRun?.id === run.id
-                      ? "Viewing audit"
-                      : "View audit"}
-                  </Button>
-                </div>
-              </div>
-              <dl class="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                <div>
-                  <dt class="text-muted-foreground">Proposals</dt>
-                  <dd class="font-medium tabular-nums">{run.summary.total}</dd>
-                </div>
-                <div>
-                  <dt class="text-muted-foreground">Accepted</dt>
-                  <dd class="font-medium tabular-nums">
-                    {run.summary.accepted}
-                  </dd>
-                </div>
-                <div>
-                  <dt class="text-muted-foreground">Need review</dt>
-                  <dd class="font-medium tabular-nums">
-                    {run.summary.needsReview}
-                  </dd>
-                </div>
-                <div>
-                  <dt class="text-muted-foreground">Duplicates</dt>
-                  <dd class="font-medium tabular-nums">
-                    {run.summary.duplicates}
-                  </dd>
-                </div>
-              </dl>
-            </article>
-          {/each}
-        </div>
+                  </div>
 
-        <div class="flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!hasNewer || loading}
-            onclick={() =>
-              void loadHistory(Math.max(0, page.offset - page.limit))}
+                  <div
+                    class="order-3 col-span-2 flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground sm:order-2 sm:col-span-1 sm:justify-end"
+                  >
+                    <span class="font-medium tabular-nums text-foreground"
+                      >{run.summary.total} proposals</span
+                    >
+                    <span class="tabular-nums"
+                      >{run.summary.accepted} accepted</span
+                    >
+                    <span class="tabular-nums"
+                      >{run.summary.needsReview} review</span
+                    >
+                    <span class="tabular-nums"
+                      >{run.summary.duplicates} duplicates</span
+                    >
+                  </div>
+                </article>
+              {/each}
+            </div>
+          </section>
+        {/each}
+
+        {#if pageCount > 1}
+          <nav
+            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+            aria-label="Import history pages"
           >
-            <ChevronLeft data-icon="inline-start" />
-            Newer
-          </Button>
-          <span class="text-sm text-muted-foreground">
-            {page.offset + 1}–{page.offset + page.runs.length} of {page.total}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!hasOlder || loading}
-            onclick={() => void loadHistory(page.offset + page.limit)}
-          >
-            Older
-            <ChevronRight data-icon="inline-end" />
-          </Button>
-        </div>
+            <span class="text-sm text-muted-foreground"
+              >Page {pageNumber} of {pageCount}</span
+            >
+            <div class="flex items-center gap-2">
+              <label
+                class="text-sm text-muted-foreground"
+                for="history-page-size">Records per page</label
+              >
+              <select
+                id="history-page-size"
+                class="h-8 rounded-md border bg-background px-2 text-sm"
+                value={pageSize}
+                onchange={(event) =>
+                  changePageSize(
+                    (event.currentTarget as HTMLSelectElement).value,
+                  )}
+              >
+                {#each PAGE_SIZES as size (size)}
+                  <option value={size}>{size}</option>
+                {/each}
+              </select>
+              <Button
+                size="icon"
+                variant="outline"
+                aria-label="Previous import history page"
+                disabled={pageNumber <= 1 || loading}
+                onclick={() =>
+                  void loadHistory(Math.max(0, page.offset - page.limit))}
+              >
+                <ChevronsLeft />
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                aria-label="Next import history page"
+                disabled={pageNumber >= pageCount || loading}
+                onclick={() => void loadHistory(page.offset + page.limit)}
+              >
+                <ChevronsRight />
+              </Button>
+            </div>
+          </nav>
+        {/if}
       {/if}
 
       {#if selectedRun}
