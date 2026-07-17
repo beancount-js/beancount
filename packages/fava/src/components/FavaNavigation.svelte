@@ -320,6 +320,14 @@
   $: if ($ledgerSidebarMode === "settings") {
     rememberSettingsReturnPath(activeViewPath);
   }
+  // Opening settings from the shell only changes the sidebar state. Select the
+  // first settings view so it always has a corresponding page.
+  $: if (
+    $ledgerSidebarMode === "settings" &&
+    !isSettingsViewPath(activeViewPath)
+  ) {
+    router.push("/import/editor");
+  }
   $: if (
     isSettingsViewPath(activeViewPath) &&
     $ledgerSidebarMode !== "settings" &&
@@ -475,24 +483,17 @@
       class="flex min-h-0 flex-1 flex-col gap-3"
       data-ledger-settings-sidebar
     >
-      <div class="flex items-center gap-2 px-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          class="size-7 shrink-0"
-          aria-label="Back to ledger navigation"
-          title="Back to ledger navigation"
-          onclick={closeLedgerSettings}
-        >
-          <ArrowLeft />
-        </Button>
-        <div class="min-w-0">
-          <p class="text-xs font-medium uppercase text-muted-foreground">
-            Settings
-          </p>
-        </div>
-      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        class="h-8 w-full justify-start gap-2 px-2 text-left text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
+        aria-label="Back to ledger navigation"
+        onclick={closeLedgerSettings}
+      >
+        <ArrowLeft data-icon="inline-start" />
+        <span class="text-xs font-medium">Back</span>
+      </Button>
 
       <div class="flex min-h-0 flex-1 flex-col gap-1">
         <Button
@@ -512,12 +513,8 @@
           onclick={() => openLedgerSetting("/import/editor")}
         >
           <ImportIcon data-icon="inline-start" />
-          <span class="min-w-0 flex-1">
-            <span class="block text-xs font-medium">Import</span>
-            <span class="block truncate text-[11px] text-muted-foreground"
-              >Configure ingestion sources</span
-            >
-          </span>
+          <span class="min-w-0 flex-1 truncate text-xs font-medium">Import</span
+          >
         </Button>
         <Button
           type="button"
@@ -536,12 +533,9 @@
           onclick={() => openLedgerSetting("/import/history")}
         >
           <History data-icon="inline-start" />
-          <span class="min-w-0 flex-1">
-            <span class="block text-xs font-medium">Import history</span>
-            <span class="block truncate text-[11px] text-muted-foreground"
-              >Browse completed and pending ingestion runs</span
-            >
-          </span>
+          <span class="min-w-0 flex-1 truncate text-xs font-medium"
+            >Import history</span
+          >
         </Button>
         <Button
           type="button"
@@ -560,12 +554,9 @@
           onclick={() => openLedgerSetting("/records")}
         >
           <ClipboardList data-icon="inline-start" />
-          <span class="min-w-0 flex-1">
-            <span class="block text-xs font-medium">Review imports</span>
-            <span class="block truncate text-[11px] text-muted-foreground"
-              >Sync, review, and accept proposals</span
-            >
-          </span>
+          <span class="min-w-0 flex-1 truncate text-xs font-medium"
+            >Review imports</span
+          >
         </Button>
         <Button
           type="button"
@@ -587,12 +578,9 @@
           onclick={() => openLedgerSetting("/import/merchants")}
         >
           <Store data-icon="inline-start" />
-          <span class="min-w-0 flex-1">
-            <span class="block text-xs font-medium">Review merchants</span>
-            <span class="block truncate text-[11px] text-muted-foreground"
-              >Confirm merchants across pending imports</span
-            >
-          </span>
+          <span class="min-w-0 flex-1 truncate text-xs font-medium"
+            >Review merchants</span
+          >
         </Button>
         <Button
           type="button"
@@ -614,12 +602,9 @@
           onclick={() => openLedgerSetting("/import/manage-merchants")}
         >
           <BookUser data-icon="inline-start" />
-          <span class="min-w-0 flex-1">
-            <span class="block text-xs font-medium">Manage merchants</span>
-            <span class="block truncate text-[11px] text-muted-foreground"
-              >Edit saved merchant profiles and aliases</span
-            >
-          </span>
+          <span class="min-w-0 flex-1 truncate text-xs font-medium"
+            >Manage merchants</span
+          >
         </Button>
         <Button
           type="button"
@@ -638,12 +623,9 @@
           onclick={() => openLedgerSetting("/import/brands")}
         >
           <Palette data-icon="inline-start" />
-          <span class="min-w-0 flex-1">
-            <span class="block text-xs font-medium">Brand match</span>
-            <span class="block truncate text-[11px] text-muted-foreground"
-              >Configure Brandfetch matching for all sources</span
-            >
-          </span>
+          <span class="min-w-0 flex-1 truncate text-xs font-medium"
+            >Brand match</span
+          >
         </Button>
         <Button
           type="button"
@@ -662,12 +644,7 @@
           onclick={() => openLedgerSetting("/import/rules")}
         >
           <Wand2 data-icon="inline-start" />
-          <span class="min-w-0 flex-1">
-            <span class="block text-xs font-medium">Rules</span>
-            <span class="block truncate text-[11px] text-muted-foreground"
-              >Detection rules for imports and ledger</span
-            >
-          </span>
+          <span class="min-w-0 flex-1 truncate text-xs font-medium">Rules</span>
         </Button>
         <Button
           type="button"
@@ -689,12 +666,9 @@
           onclick={() => openLedgerSetting("/import/accounts")}
         >
           <Landmark data-icon="inline-start" />
-          <span class="min-w-0 flex-1">
-            <span class="block text-xs font-medium">Accounts</span>
-            <span class="block truncate text-[11px] text-muted-foreground"
-              >Link bank accounts from connected providers</span
-            >
-          </span>
+          <span class="min-w-0 flex-1 truncate text-xs font-medium"
+            >Accounts</span
+          >
         </Button>
       </div>
     </div>

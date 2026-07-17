@@ -28,6 +28,7 @@
   import { activeSyncTracks } from "../studio/sync-status";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
+  import { useStudioWorkspace } from "../studio/workspace";
 
   export let projects: ProjectSummary[] = [];
   export let snapshot: ProjectSnapshot | undefined;
@@ -57,6 +58,7 @@
   let resizeStartWidth = DEFAULT_SIDEBAR_WIDTH;
   let previousBodyCursor = "";
   let previousBodyUserSelect = "";
+  const { ledgerSidebarMode } = useStudioWorkspace();
 
   $: sidebarWidthStyle = `--sidebar-width: ${sidebarWidth}px;`;
   $: if (typeof localStorage !== "undefined") {
@@ -239,40 +241,42 @@
             projectName={snapshot?.project.name ?? "Loading project"}
             onOpenLedgerSettings={() => (tab = "workspace")}
           />
-          <div
-            class="grid w-full grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
-          >
-            <Button
-              variant="ghost"
-              size="icon"
-              class={tab === "projects"
-                ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
-              aria-label="Projects"
-              title="Projects"
-              onclick={() => (tab = "projects")}><FolderOpen /></Button
+          {#if $ledgerSidebarMode !== "settings"}
+            <div
+              class="grid w-full grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
             >
-            <Button
-              variant="ghost"
-              size="icon"
-              class={tab === "workspace"
-                ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
-              aria-label="Workspace"
-              title="Workspace"
-              onclick={() => (tab = "workspace")}><LayoutPanelLeft /></Button
-            >
-            <Button
-              variant="ghost"
-              size="icon"
-              class={tab === "search"
-                ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
-              aria-label="Search"
-              title="Search"
-              onclick={() => (tab = "search")}><SearchIcon /></Button
-            >
-          </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                class={tab === "projects"
+                  ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                  : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
+                aria-label="Projects"
+                title="Projects"
+                onclick={() => (tab = "projects")}><FolderOpen /></Button
+              >
+              <Button
+                variant="ghost"
+                size="icon"
+                class={tab === "workspace"
+                  ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                  : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
+                aria-label="Workspace"
+                title="Workspace"
+                onclick={() => (tab = "workspace")}><LayoutPanelLeft /></Button
+              >
+              <Button
+                variant="ghost"
+                size="icon"
+                class={tab === "search"
+                  ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                  : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
+                aria-label="Search"
+                title="Search"
+                onclick={() => (tab = "search")}><SearchIcon /></Button
+              >
+            </div>
+          {/if}
         </Sidebar.Header>
         <Sidebar.Content class="px-2 pb-3">
           {#if tab === "projects"}
