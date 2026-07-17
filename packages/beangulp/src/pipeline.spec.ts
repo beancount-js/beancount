@@ -2,7 +2,9 @@ import { describe, expect, test } from "vitest";
 import {
   HistoricalCategorizer,
   MerchantRuleCategorizer,
+  proposalIsReadyForAcceptance,
   RecurringCategorizer,
+  suggestionsMeetAutoReadyThreshold,
 } from "./categorize";
 import { ArraySource } from "./json-api";
 import {
@@ -21,6 +23,102 @@ const history = ["2026-04-01", "2026-05-01", "2026-06-01"].map((bookedAt) => ({
 }));
 
 describe("runIngestion", () => {
+  test("requires strong separated evidence before skipping review", () => {
+    const suggestion = (account: string, rawScore: number, hard = false) => ({
+      account,
+      rawScore,
+      hard,
+      method: "ai" as const,
+      explanation: "AI suggestion",
+      evidence: [],
+    });
+
+    expect(
+      suggestionsMeetAutoReadyThreshold([suggestion("Expenses:A", 0.8)]),
+    ).toBe(false);
+    expect(
+      suggestionsMeetAutoReadyThreshold([
+        suggestion("Expenses:A", 0.9),
+        suggestion("Expenses:B", 0.85),
+      ]),
+    ).toBe(false);
+    expect(
+      suggestionsMeetAutoReadyThreshold([suggestion("Expenses:A", 0.9)]),
+    ).toBe(true);
+    expect(
+      suggestionsMeetAutoReadyThreshold([suggestion("Expenses:A", 0.2, true)]),
+    ).toBe(true);
+    expect(
+      proposalIsReadyForAcceptance({
+        status: "ready",
+        selectedAccount: "Expenses:A",
+        suggestions: [suggestion("Expenses:A", 0.8)],
+      }),
+    ).toBe(false);
+    expect(
+      proposalIsReadyForAcceptance({
+        status: "ready",
+        selectedAccount: "Expenses:A",
+        suggestions: [suggestion("Expenses:A", 0.2, true)],
+      }),
+    ).toBe(true);
+  });
+
+  test("keeps low-scoring AI categorisation in review", async () => {
+    const run = await runIngestion({
+      source: new ArraySource<{ id: string }>(),
+      sourceConfig: [{ id: "txn-low-score" }],
+      sourceId: "bank",
+      sourceAccount,
+      fetchedAt: "2026-07-02T00:00:00.000Z",
+      availableAccounts: ["Expenses:Food:Dining"],
+      normalizer: {
+        kind: "test",
+        normalize(record, context) {
+          return {
+            ok: true,
+            transaction: {
+              sourceId: context.sourceId,
+              sourceAccount: context.sourceAccount,
+              externalId: record.id,
+              bookedAt: "2026-07-01",
+              amount: "-12.00",
+              currency: "GBP",
+              narration: "Cafe",
+              status: "posted",
+              fetchedAt: context.fetchedAt,
+              metadata: {},
+            },
+          };
+        },
+      },
+      categorizers: [
+        {
+          id: "ai-test",
+          isAi: true,
+          async suggest() {
+            return [
+              {
+                account: "Expenses:Food:Dining",
+                rawScore: 0.8,
+                scoreKind: "ai-advisory" as const,
+                method: "ai" as const,
+                explanation: "AI suggestion",
+                evidence: [],
+              },
+            ];
+          },
+        },
+      ],
+    });
+
+    expect(run.proposals[0]).toMatchObject({
+      status: "needs-review",
+      selectedAccount: "Expenses:Food:Dining",
+    });
+    expect(run.summary).toMatchObject({ ready: 0, needsReview: 1 });
+  });
+
   test("normalizes, deduplicates, explains suggestions, and renders reviewed entries", async () => {
     const run = await runIngestion({
       source: new ArraySource<{

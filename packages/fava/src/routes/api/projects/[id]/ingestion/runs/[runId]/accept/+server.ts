@@ -1,6 +1,9 @@
 import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
-import { proposalTransaction } from "@beancount-js/beangulp";
+import {
+  proposalIsReadyForAcceptance,
+  proposalTransaction,
+} from "@beancount-js/beangulp";
 import {
   buildReconciliationReview,
   ensureProposalsMerchantsPersisted,
@@ -71,7 +74,7 @@ export async function POST({
         { status: 400 },
       );
     for (const proposal of selected) {
-      if (proposal.status !== "ready" || !proposal.selectedAccount) {
+      if (!proposalIsReadyForAcceptance(proposal)) {
         throw new Error("Only reviewed, ready proposals can be accepted.");
       }
     }

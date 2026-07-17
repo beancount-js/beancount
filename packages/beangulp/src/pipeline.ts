@@ -2,7 +2,7 @@ import { md5 } from "@beancount-js/parser";
 import {
   normalizeMerchant,
   sortSuggestions,
-  suggestionScore,
+  suggestionsMeetAutoReadyThreshold,
 } from "./categorize";
 import type {
   CategorySuggestion,
@@ -96,17 +96,7 @@ function proposalForInvalid(
 }
 
 function shouldAskAi(suggestions: readonly CategorySuggestion[]) {
-  const ordered = sortSuggestions(suggestions);
-  if (ordered.some((suggestion) => suggestion.hard)) return false;
-  const top = ordered[0];
-  const next = ordered[1];
-  if (!top) return true;
-  if (suggestionScore(top) < 0.85) return true;
-  return Boolean(
-    next &&
-      top.account !== next.account &&
-      suggestionScore(top) - suggestionScore(next) < 0.1,
-  );
+  return !suggestionsMeetAutoReadyThreshold(suggestions);
 }
 
 function merchantLabel(transaction: NormalizedTransaction) {
@@ -318,7 +308,7 @@ export async function runIngestion<Config, Record>(
         status:
           transaction.status === "pending"
             ? "held"
-            : validSuggestions.length
+            : suggestionsMeetAutoReadyThreshold(validSuggestions)
               ? "ready"
               : "needs-review",
         issues: merchantIssues,

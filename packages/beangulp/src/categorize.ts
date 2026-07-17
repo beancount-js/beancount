@@ -4,6 +4,7 @@ import type {
   CategorizerPlugin,
   CategorySuggestion,
   HistoricalSample,
+  ImportProposal,
 } from "./types";
 
 export interface MerchantRule {
@@ -15,6 +16,9 @@ export interface MerchantRule {
 }
 
 const precedence = { rule: 4, history: 3, recurring: 2, ai: 1, manual: 5 };
+
+export const AUTO_READY_SCORE_THRESHOLD = 0.85;
+export const AUTO_READY_SCORE_MARGIN = 0.1;
 
 export function normalizeMerchant(input: string | undefined) {
   return (input ?? "")
@@ -42,6 +46,39 @@ export function sortSuggestions(suggestions: readonly CategorySuggestion[]) {
 /** A compatibility bridge while callers migrate away from `confidence`. */
 export function suggestionScore(suggestion: CategorySuggestion) {
   return suggestion.rawScore ?? suggestion.confidence ?? 0;
+}
+
+/** Whether categorisation evidence is strong enough to skip manual review. */
+export function suggestionsMeetAutoReadyThreshold(
+  suggestions: readonly CategorySuggestion[],
+) {
+  const ordered = sortSuggestions(suggestions);
+  if (ordered.some((suggestion) => suggestion.hard)) return true;
+  const top = ordered[0];
+  const next = ordered[1];
+  if (!top || suggestionScore(top) < AUTO_READY_SCORE_THRESHOLD) return false;
+  return !(
+    next &&
+    top.account !== next.account &&
+    suggestionScore(top) - suggestionScore(next) < AUTO_READY_SCORE_MARGIN
+  );
+}
+
+/** Whether a persisted proposal may be written without another review step. */
+export function proposalIsReadyForAcceptance(
+  proposal: Pick<ImportProposal, "selectedAccount" | "status" | "suggestions">,
+) {
+  if (proposal.status !== "ready" || !proposal.selectedAccount) return false;
+  const selected = proposal.suggestions.filter(
+    (suggestion) => suggestion.account === proposal.selectedAccount,
+  );
+  if (!selected.length) return false;
+  if (selected.some((suggestion) => suggestion.hard)) return true;
+  const ordered = sortSuggestions(proposal.suggestions);
+  return (
+    ordered[0]?.account === proposal.selectedAccount &&
+    suggestionsMeetAutoReadyThreshold(ordered)
+  );
 }
 
 function merchantLabel(context: CategorizationContext) {

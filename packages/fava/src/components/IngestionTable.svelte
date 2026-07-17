@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
+  import { proposalIsReadyForAcceptance } from "@beancount-js/beangulp";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import type { ProjectSnapshot } from "@beancount-js/workspace";
   import {
@@ -134,15 +135,13 @@
     ),
   );
 
-  function isAcceptedRow(row: ProposalRow) {
-    return (
-      row.proposal.status === "ready" && Boolean(row.proposal.selectedAccount)
-    );
+  function isReadyRow(row: ProposalRow) {
+    return proposalIsReadyForAcceptance(row.proposal);
   }
 
   function isPendingRow(row: ProposalRow) {
     if (!row.proposal.transaction) return false;
-    if (isAcceptedRow(row)) return false;
+    if (isReadyRow(row)) return false;
     return (
       row.proposal.status === "needs-review" ||
       row.proposal.status === "held" ||
@@ -150,7 +149,7 @@
     );
   }
 
-  const accepted = $derived(proposalRows.filter(isAcceptedRow));
+  const accepted = $derived(proposalRows.filter(isReadyRow));
   const pending = $derived(proposalRows.filter(isPendingRow));
 
   const reviewTabRows = $derived(

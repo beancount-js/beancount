@@ -16,7 +16,7 @@ import {
   runIngestion,
   normalizeMerchant,
   sortSuggestions,
-  suggestionScore,
+  suggestionsMeetAutoReadyThreshold,
   transactionFingerprint,
   providerImportIdentity,
   discoverJsonApiAccounts,
@@ -2461,17 +2461,7 @@ async function prepareAiEnrichment(
 type BatchOutcome<T> = { value?: T; error?: string };
 
 function shouldAskAi(suggestions: readonly CategorySuggestion[]) {
-  const ordered = sortSuggestions(suggestions);
-  if (ordered.some((suggestion) => suggestion.hard)) return false;
-  const top = ordered[0];
-  const next = ordered[1];
-  if (!top) return true;
-  if (suggestionScore(top) < 0.85) return true;
-  return Boolean(
-    next &&
-      top.account !== next.account &&
-      suggestionScore(top) - suggestionScore(next) < 0.1,
-  );
+  return !suggestionsMeetAutoReadyThreshold(suggestions);
 }
 
 function batchChunks<T extends { id: string; context: unknown }>(
@@ -2828,7 +2818,7 @@ async function enrichProposalsWithPrepared(
       status:
         item.transaction.status === "pending"
           ? "held"
-          : nextSuggestions.length
+          : suggestionsMeetAutoReadyThreshold(nextSuggestions)
             ? "ready"
             : "needs-review",
       issues: item.issues,
@@ -3087,7 +3077,7 @@ export async function recategorizeProposal(
     status:
       proposal.transaction.status === "pending"
         ? "held"
-        : nextSuggestions.length
+        : suggestionsMeetAutoReadyThreshold(nextSuggestions)
           ? "ready"
           : "needs-review",
   } satisfies ImportProposal;
