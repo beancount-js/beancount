@@ -593,12 +593,14 @@
                         : undefined}
                     >
                       {#if linkAccounts}
-                        <AccountLink
-                          account={posting.account}
-                          avatarSize="sm"
-                          on:click={stopRowClick}
-                          on:keydown={stopRowKeydown}
-                        />
+                        <span class="text-xs">
+                          <AccountLink
+                            account={posting.account}
+                            avatarSize="sm"
+                            on:click={stopRowClick}
+                            on:keydown={stopRowKeydown}
+                          />
+                        </span>
                       {:else}
                         <span
                           class="truncate text-left text-xs text-muted-foreground"
