@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test-storybook": "vitest run --project storybook",
+    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "fmt": "prettier . --write",
+    "fmt:check": "prettier . --check"
+  },
   "peerDependencies": {
     "svelte": "^5.0.0"
   },
@@ -11,8 +19,28 @@
     "@fontsource/source-code-pro": "^5.1.0"
   },
   "devDependencies": {
+    "@beancount-js/forms": "workspace:*",
+    "@storybook/addon-a11y": "^10.5.2",
+    "@storybook/addon-svelte-csf": "^5.1.2",
+    "@storybook/addon-vitest": "^10.5.2",
+    "@storybook/svelte-vite": "^10.5.2",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@types/node": "^20.17.7",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
+    "autoprefixer": "^10.4.20",
+    "playwright": "^1.52.0",
+    "prettier": "3.3.3",
+    "prettier-plugin-svelte": "^3.3.2",
+    "prettier-plugin-tailwindcss": "^0.6.9",
+    "storybook": "^10.5.2",
+    "svelte": "^5.2.7",
+    "svelte-check": "^4.6.0",
     "tailwindcss": "^3.4.15",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.7.2",
+    "vite": "^6.2.2",
+    "vitest": "^4.1.10"
   },
   "exports": {
     "./styles.css": "./src/styles.css",

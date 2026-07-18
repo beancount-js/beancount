@@ -1,0 +1,26 @@
+@import "./styles.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html,
+  body,
+  #storybook-root {
+    @apply min-h-full;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground;
+  }
+}
+
+#storybook-root {
+  min-height: 100vh;
+  padding: 1.5rem;
+}

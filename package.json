@@ -6,6 +6,9 @@
     "build": "turbo run build",
     "checks": "turbo run checks",
     "dev": "turbo run dev --filter=@beancount-js/fava",
+    "storybook": "pnpm --filter @beancount-js/ui storybook",
+    "build-storybook": "pnpm --filter @beancount-js/ui build-storybook",
+    "test-storybook": "pnpm --filter @beancount-js/ui test-storybook",
     "test": "turbo run test:run",
     "test:e2e": "turbo run test:e2e --filter=@beancount-js/fava",
     "check": "turbo run check",
@@ -15,7 +18,10 @@
   },
   "packageManager": "pnpm@10.12.4",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "@parcel/watcher"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@parcel/watcher"
+    ]
   },
   "devDependencies": {
     "turbo": "^2.2.3"

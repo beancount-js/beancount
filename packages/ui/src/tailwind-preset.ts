@@ -2,6 +2,8 @@ import { fontFamily } from "tailwindcss/defaultTheme";
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 
+type TailwindPreset = Omit<Config, "content">;
+
 const cssColor = (variable: string) =>
   `color-mix(in srgb, var(${variable}) calc(<alpha-value> * 100%), transparent)`;
 
@@ -96,6 +98,6 @@ const uiTailwindPreset = {
     },
   },
   plugins: [tailwindcssAnimate],
-} satisfies Config;
+} satisfies TailwindPreset;
 
 export default uiTailwindPreset;
