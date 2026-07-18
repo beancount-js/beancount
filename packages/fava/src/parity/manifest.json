@@ -26,17 +26,16 @@
       "upstreamModule": "fava.core.conversion",
       "upstreamBehavior": "get_market_value / AT_VALUE",
       "localBehavior": "TreeNode.toRecord(AT_VALUE) with PriceMap context",
-      "status": "pending",
-      "tests": ["parity/market-value", "parity/account-report-off-by-one"],
-      "reason": "Tree.toRecord does not pass prices/as-of date yet"
+      "status": "matched",
+      "tests": ["parity/at-value.spec.ts"]
     },
     {
       "upstreamModule": "fava.json_api.account_report",
       "upstreamBehavior": "account_report balances at_value (off-by-one)",
       "localBehavior": "LedgerData.balanceTrees + Tree.toRecord",
-      "status": "pending",
-      "tests": ["parity/account-report-off-by-one"],
-      "reason": "Blocked on AT_VALUE context + interval bounds"
+      "status": "adapted",
+      "tests": ["parity/at-value.spec.ts"],
+      "reason": "Balances match Fava oracle; interval begin-set still adapted until half-open dateRanges land"
     },
     {
       "upstreamModule": "fava.core.filters.AccountFilter",

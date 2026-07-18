@@ -32,12 +32,28 @@
     | undefined = undefined;
 
   $: ledgerData = useLedger(account ? AccountFilter.of(account) : undefined);
+  $: conversionContext = (asOf = $ledgerData.dateLast) => ({
+    prices: $ledgerData.prices,
+    date: asOf ?? undefined,
+  });
   $: balanceTrees = $ledgerData
     .balanceTrees($interval)
-    .filter((it) => it.tree.currencies($conversion).length);
+    .filter(
+      (it) =>
+        it.tree.currencies(
+          $conversion,
+          conversionContext(it.range.endInclusive),
+        ).length,
+    );
   $: changeTrees = $ledgerData
     .changeTrees($interval)
-    .filter((it) => it.tree.currencies($conversion).length);
+    .filter(
+      (it) =>
+        it.tree.currencies(
+          $conversion,
+          conversionContext(it.range.endInclusive),
+        ).length,
+    );
   $: budgets = $ledgerData.intervalBudgets(account, $interval);
   $: charts = () => {
     const charts = [
@@ -52,7 +68,9 @@
       ),
       hierarchyFromParsedData(
         account,
-        $ledgerData.tree.get(account).toRecord($conversion),
+        $ledgerData.tree
+          .get(account)
+          .toRecord($conversion, conversionContext()),
       ),
       ...changeTrees
         .slice(-3)
@@ -60,14 +78,20 @@
         .map((it) =>
           hierarchyFromParsedData(
             `${formatDate(it.range.from, "MMM yyyy")}`,
-            it.tree.get(account).toRecord($conversion),
+            it.tree
+              .get(account)
+              .toRecord(
+                $conversion,
+                conversionContext(it.range.endInclusive),
+              ),
           ),
         ),
     ];
 
     return charts;
   };
-  $: createNode = (tree: Tree) => {
+  $: createNode = (tree: Tree, asOf = $ledgerData.dateLast) => {
+    const context = conversionContext(asOf);
     return stratify(
       tree.get(account).accounts,
       (id) => id,
@@ -76,8 +100,8 @@
         const entity: AccountTreeNode = {
           children: [],
           account: name,
-          balance: node.balance.toRecord($conversion),
-          balanceChildren: node.balanceChildren.toRecord($conversion),
+          balance: node.balance.toRecord($conversion, context),
+          balanceChildren: node.balanceChildren.toRecord($conversion, context),
           cost: {},
           costChildren: {},
           hasTxns: node.hasTxns,
@@ -87,8 +111,12 @@
     ).children[0];
   };
 
-  $: balanceTreeNodes = balanceTrees.map((it) => createNode(it.tree)).reverse();
-  $: changeTreeNodes = changeTrees.map((it) => createNode(it.tree)).reverse();
+  $: balanceTreeNodes = balanceTrees
+    .map((it) => createNode(it.tree, it.range.endInclusive))
+    .reverse();
+  $: changeTreeNodes = changeTrees
+    .map((it) => createNode(it.tree, it.range.endInclusive))
+    .reverse();
 
   $: balanceDates = balanceTrees.map((it) => it.range).reverse();
   $: changeDates = changeTrees.map((it) => it.range).reverse();

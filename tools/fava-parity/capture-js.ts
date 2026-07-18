@@ -247,7 +247,13 @@ function captureLedger(ledger: {
                 end: formatDate(tree.range.to),
               })),
               interval_balances: reversed.map((tree) => {
-                const node = tree.tree.get(account).toRecord(conversion) as {
+                const context = {
+                  prices: source.prices,
+                  date: tree.range.endInclusive,
+                };
+                const node = tree.tree
+                  .get(account)
+                  .toRecord(conversion, context) as {
                   account: string;
                   balance: Record<string, number>;
                   balanceChildren: Record<string, number>;

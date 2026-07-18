@@ -292,26 +292,30 @@ export class LedgerData {
               inventory.add(posting.units, posting.cost);
             }
           });
+        const context = {
+          prices: this.prices,
+          date: range.endInclusive,
+        };
         if (invert) {
           return {
             dateRange: range,
             date: range.endInclusive.toJSDate(),
-            balance: inventory.neg().toRecord(conversion),
+            balance: inventory.neg().toRecord(conversion, context),
             budgets: {},
             accountBalances: accountInventories.map(([k, v]) => [
               k,
-              v.neg().toRecord(conversion),
+              v.neg().toRecord(conversion, context),
             ]),
           };
         }
         return {
           date: range.endInclusive.toJSDate(),
           dateRange: range,
-          balance: inventory.toRecord(conversion),
+          balance: inventory.toRecord(conversion, context),
           budgets: {},
           accountBalances: accountInventories.map(([k, v]) => [
             k,
-            v.toRecord(conversion),
+            v.toRecord(conversion, context),
           ]),
         };
       })
@@ -365,7 +369,10 @@ export class LedgerData {
         index++;
         txn = transactions[index];
       }
-      balances[formatDate(date)] = inventory.toRecord(conversion);
+      balances[formatDate(date)] = inventory.toRecord(conversion, {
+        prices: this.prices,
+        date,
+      });
     });
 
     this.#accountBalanceByDate[key] = cloneDeep(balances);
@@ -407,7 +414,10 @@ export class LedgerData {
           : {};
 
       const dayKey = formatDate(range.to);
-      const changes = inventory.toRecord(conversion);
+      const changes = inventory.toRecord(conversion, {
+        prices: this.prices,
+        date: range.endInclusive,
+      });
       const delta: Record<string, number> = {};
 
       Object.keys(changes).forEach((k) => {
@@ -484,7 +494,10 @@ export class LedgerData {
       }
       balances.push({
         date: range.endInclusive.toJSDate(),
-        balance: inventory.toRecord(conversion),
+        balance: inventory.toRecord(conversion, {
+          prices: this.prices,
+          date: range.endInclusive,
+        }),
       });
     });
 

@@ -9,6 +9,7 @@ import {
   Open,
   Transaction,
   type BeancountOptions,
+  type ConversionContext,
   type Directives,
 } from "@beancount-js/beancount";
 import { Decimal } from "@beancount-js/parser";
@@ -53,12 +54,15 @@ export class TreeNode {
     return reducer(this);
   }
 
-  toRecord(conversion: Conversion = Conversion.AT_COST): BalanceRecord {
+  toRecord(
+    conversion: Conversion = Conversion.AT_COST,
+    context: Partial<ConversionContext> = {},
+  ): BalanceRecord {
     return {
       account: this.account,
-      balance: this.balance.toRecord(conversion),
-      balanceChildren: this.balanceChildren.toRecord(conversion),
-      children: this.children.map((it) => it.toRecord(conversion)),
+      balance: this.balance.toRecord(conversion, context),
+      balanceChildren: this.balanceChildren.toRecord(conversion, context),
+      children: this.children.map((it) => it.toRecord(conversion, context)),
     };
   }
 
@@ -136,8 +140,11 @@ export class Tree extends DefaultMap<string, TreeNode> {
     return this.get("");
   }
 
-  currencies(conversion?: Conversion) {
-    return extractCurrencies(this.root.toRecord(conversion));
+  currencies(
+    conversion?: Conversion,
+    context: Partial<ConversionContext> = {},
+  ) {
+    return extractCurrencies(this.root.toRecord(conversion, context));
   }
 
   copy() {
