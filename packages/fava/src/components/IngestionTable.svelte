@@ -1744,7 +1744,7 @@
                       {/if}
                       <div class="min-w-0">
                         <div
-                          class="break-words text-sm font-semibold sm:truncate"
+                          class="break-words pl-9 text-sm font-semibold sm:truncate"
                         >
                           {rowTitle(row.proposal)}
                         </div>
