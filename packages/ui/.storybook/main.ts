@@ -6,6 +6,7 @@ const config: StorybookConfig = {
     "../../forms/src/**/*.stories.@(js|jsx|ts|tsx|svelte)",
   ],
   addons: [
+    "@storybook/addon-docs",
     "@storybook/addon-a11y",
     "@storybook/addon-svelte-csf",
     "@storybook/addon-vitest",
