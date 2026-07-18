@@ -2,7 +2,7 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import type { IngestionRun } from "@beancount-js/beangulp";
+import type { ImportProposal, IngestionRun } from "@beancount-js/beangulp";
 import {
   categoryAccountsForSource,
   expandIngestionSource,
@@ -10,7 +10,9 @@ import {
   brandfetchDomainLogoUrl,
   merchantAdvisorLabel,
   merchantLogoUrlFor,
+  recategorizeProposal,
   type IngestionConfig,
+  type IngestionSourceDefinition,
 } from "./ingestion";
 import { ensureProposalMerchantPersisted } from "./merchant-persist";
 
@@ -400,6 +402,161 @@ describe("FilesystemIngestionStore", () => {
     expect(await store.readConfig("project")).toEqual({
       ...config(),
       version: 3,
+    });
+  });
+
+  test("persists Monzo provider category mappings", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-provider-categories-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+
+    await store.writeConfig("project", {
+      version: 3,
+      sources: [
+        {
+          id: "monzo",
+          name: "Monzo Bank",
+          kind: "monzo",
+          config: { secretRef: "env:MONZO_ACCESS_TOKEN" },
+          accounts: [],
+          rules: [],
+          providerCategoryMappings: [
+            { code: " shopping ", account: " Expenses:Shopping " },
+          ],
+        },
+      ],
+    });
+
+    await expect(store.readConfig("project")).resolves.toMatchObject({
+      version: 3,
+      sources: [
+        {
+          id: "monzo",
+          providerCategoryMappings: [
+            { code: "shopping", account: "Expenses:Shopping" },
+          ],
+        },
+      ],
+    });
+  });
+
+  test("validates provider category mapping configuration", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "beancount-js-ingestion-provider-categories-"),
+    );
+    directories.push(directory);
+    const store = storeFor(directory);
+    const source = {
+      id: "monzo",
+      name: "Monzo Bank",
+      kind: "monzo",
+      config: { secretRef: "env:MONZO_ACCESS_TOKEN" },
+      accounts: [],
+      rules: [],
+    } satisfies IngestionSourceDefinition;
+
+    await expect(
+      store.writeConfig("project", {
+        version: 3,
+        sources: [
+          {
+            ...source,
+            providerCategoryMappings: [
+              { code: "shopping", account: "Expenses:Shopping" },
+              { code: "shopping", account: "Expenses:Food" },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toThrow("mapping codes must be unique");
+    await expect(
+      store.writeConfig("project", {
+        version: 3,
+        sources: [
+          {
+            ...source,
+            providerCategoryMappings: [
+              { code: "shopping", account: "not a ledger account" },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toThrow("valid Beancount account");
+    await expect(
+      store.writeConfig("project", {
+        version: 3,
+        sources: [
+          {
+            ...config().sources[0]!,
+            providerCategoryMappings: [],
+          },
+        ],
+      }),
+    ).rejects.toThrow("only available for connectors");
+  });
+
+  test("uses a Monzo provider category mapping during deterministic recategorization", async () => {
+    const source = {
+      id: "monzo",
+      name: "Monzo Bank",
+      kind: "monzo",
+      config: { secretRef: "env:MONZO_ACCESS_TOKEN" },
+      accounts: [
+        {
+          id: "account-1",
+          name: "Personal",
+          sourceAccount: "Assets:Bank:Monzo",
+        },
+      ],
+      rules: [],
+      providerCategoryMappings: [
+        { code: "shopping", account: "Expenses:Shopping" },
+      ],
+    } satisfies IngestionSourceDefinition;
+    const proposal = {
+      id: "proposal:monzo-shopping",
+      importId: "monzo:transaction-1",
+      status: "needs-review",
+      suggestions: [],
+      issues: [],
+      transaction: {
+        sourceId: "monzo:account-1",
+        sourceAccount: "Assets:Bank:Monzo",
+        externalId: "transaction-1",
+        bookedAt: "2026-07-18",
+        amount: "-12.34",
+        currency: "GBP",
+        narration: "Shop",
+        status: "posted",
+        fetchedAt: "2026-07-18T12:00:00.000Z",
+        providerCategory: {
+          provider: "monzo",
+          code: "shopping",
+          label: "Shopping",
+        },
+        metadata: {},
+      },
+    } satisfies ImportProposal;
+
+    const result = await recategorizeProposal(source, proposal, [
+      {
+        accounts: ["Assets:Bank:Monzo", "Expenses:Shopping"],
+      },
+    ] as never);
+
+    expect(result).toMatchObject({
+      selectedAccount: "Expenses:Shopping",
+      status: "ready",
+      suggestions: [
+        expect.objectContaining({
+          account: "Expenses:Shopping",
+          method: "provider",
+          scoreKind: "provider-mapping",
+          hard: true,
+        }),
+      ],
     });
   });
 

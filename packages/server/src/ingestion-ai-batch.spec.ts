@@ -68,13 +68,36 @@ describe("batched Codex enrichment adapters", () => {
       },
       onDebug: (call) => calls.push(call),
     });
+    const first = categoryContext("first");
+    first.transaction.providerCategory = {
+      provider: "monzo",
+      code: "groceries",
+      label: "Groceries",
+    };
 
     const results = await categorizer.suggestBatch([
-      { id: "first", context: categoryContext("first") },
+      { id: "first", context: first },
       { id: "second", context: categoryContext("second") },
     ]);
 
     expect(prompts).toHaveLength(1);
+    const input = JSON.parse(prompts[0]!) as {
+      task: string;
+      transactions: unknown[];
+    };
+    expect(input.task).toContain("non-authoritative bank evidence");
+    expect(input.transactions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "first",
+          providerCategory: {
+            provider: "monzo",
+            code: "groceries",
+            label: "Groceries",
+          },
+        }),
+      ]),
+    );
     expect(results).toEqual([
       expect.objectContaining({
         id: "second",
@@ -136,7 +159,9 @@ describe("batched Codex enrichment adapters", () => {
       id: "merchant:one",
       value: {
         status: "suggested",
-        candidates: [expect.objectContaining({ canonicalName: "Merchant One" })],
+        candidates: [
+          expect.objectContaining({ canonicalName: "Merchant One" }),
+        ],
       },
     });
     expect(prompt).toContain('"normalizedLabel":"merchant one #"');

@@ -8,6 +8,7 @@ import {
   JsonMappingNormalizer,
   RuleActionsHook,
   RuleCategorizer,
+  ProviderCategoryCategorizer,
   HistoricalCategorizer,
   RecurringCategorizer,
   historySamplesFromEntries,
@@ -49,13 +50,14 @@ import {
   type MerchantResolution,
   type MerchantResolverPlugin,
   type ProposalHook,
+  type ProviderCategoryMapping,
 } from "@beancount-js/beangulp";
 import { ensureConnectorsRegistered } from "./connectors";
 import {
   migrateIngestionConfig,
   parseIngestionState,
 } from "./ingestion-migrate";
-import type { Directive } from "@beancount-js/beancount";
+import { isValidAccount, type Directive } from "@beancount-js/beancount";
 import { isValidDomain } from "./brandfetch";
 import { FilesystemMerchantStore, type ProjectRootResolver } from "./merchant";
 import { projectIngestionRoot } from "./paths";
@@ -119,6 +121,8 @@ export interface IngestionSourceDefinition {
   /** Connector-owned config for registered kinds (e.g. lunchflow). */
   config?: unknown;
   rules: MerchantRule[];
+  /** Explicit mappings from provider category codes to ledger accounts. */
+  providerCategoryMappings?: ProviderCategoryMapping[];
   /** Nested bank accounts for multi-account providers (e.g. Lunch Flow). */
   accounts?: JsonApiLinkedAccount[];
 }
@@ -198,13 +202,22 @@ function buildCategorizers(
     aiEnabled?: boolean;
     model?: string;
     onAiDebug?: (call: AiEnrichmentDebugCall) => void;
+    provider?: string;
+    providerCategoryMappings?: readonly ProviderCategoryMapping[];
   },
 ): CategorizerPlugin[] {
   const categorizers: CategorizerPlugin[] = [
     new RuleCategorizer(detectionRules),
-    new HistoricalCategorizer(),
-    new RecurringCategorizer(),
   ];
+  if (options?.provider && options.providerCategoryMappings?.length) {
+    categorizers.push(
+      new ProviderCategoryCategorizer(
+        options.provider,
+        options.providerCategoryMappings,
+      ),
+    );
+  }
+  categorizers.push(new HistoricalCategorizer(), new RecurringCategorizer());
   if (options?.aiEnabled) {
     categorizers.push(
       new CodexCategorizer({
@@ -410,6 +423,14 @@ export function sourceSecretRef(
   return source.api?.secretRef;
 }
 
+function providerCategoryOptions(source: IngestionSourceDefinition) {
+  if (!isConnectorIngestionSource(source)) return {};
+  return {
+    provider: source.kind,
+    providerCategoryMappings: source.providerCategoryMappings,
+  };
+}
+
 function validateHttpsUrl(
   value: string,
   allowedHosts: readonly string[] | undefined,
@@ -474,12 +495,58 @@ function validateLinkedAccount(account: JsonApiLinkedAccount, index: number) {
   } satisfies JsonApiLinkedAccount;
 }
 
+function validateProviderCategoryMappings(
+  value: unknown,
+): ProviderCategoryMapping[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) {
+    throw new Error("Provider category mappings must be an array.");
+  }
+  const codes = new Set<string>();
+  const mappings = value.map((item, index) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      throw new Error(
+        `Provider category mapping ${index + 1} must be an object.`,
+      );
+    }
+    const { code, account } = item as Record<string, unknown>;
+    if (typeof code !== "string" || !code.trim()) {
+      throw new Error(
+        `Provider category mapping ${index + 1} needs a category code.`,
+      );
+    }
+    if (typeof account !== "string" || !isValidAccount(account.trim())) {
+      throw new Error(
+        `Provider category mapping ${index + 1} needs a valid Beancount account.`,
+      );
+    }
+    const normalizedCode = code.trim();
+    if (codes.has(normalizedCode)) {
+      throw new Error("Provider category mapping codes must be unique.");
+    }
+    codes.add(normalizedCode);
+    return { code: normalizedCode, account: account.trim() };
+  });
+  return mappings.length ? mappings : undefined;
+}
+
 function validateConnectorSource(
   source: IngestionSourceDefinition,
 ): IngestionSourceDefinition {
   ensureConnectorsRegistered();
   const connector = requireConnector(source.kind);
   const config = connector.validateConfig(source.config ?? {});
+  const providerCategoryMappings = validateProviderCategoryMappings(
+    source.providerCategoryMappings,
+  );
+  if (
+    providerCategoryMappings?.length &&
+    !connector.providerCategories?.length
+  ) {
+    throw new Error(
+      `${connector.name} does not expose provider categories for mapping.`,
+    );
+  }
   let accounts: JsonApiLinkedAccount[] | undefined;
   let sourceAccount: string | undefined;
   if (connector.capabilities.groupedAccounts) {
@@ -512,12 +579,18 @@ function validateConnectorSource(
     merchantEnrichment: validateMerchantEnrichment(source.merchantEnrichment),
     config,
     rules: source.rules ?? [],
+    providerCategoryMappings,
   };
 }
 
 function validateJsonApiSource(
   source: IngestionSourceDefinition,
 ): IngestionSourceDefinition {
+  if (source.providerCategoryMappings !== undefined) {
+    throw new Error(
+      "Provider category mappings are only available for connectors that expose provider categories.",
+    );
+  }
   if (!source.api?.secretRef?.trim()) {
     throw new Error("JSON API sources need an API key (or env: reference).");
   }
@@ -1520,14 +1593,17 @@ export class CodexCategorizer implements CategorizerPlugin {
         throw new Error("Codex category batches require matching accounts.");
       }
       promptPayload = {
-        task: "Categorise each imported Beancount transaction independently. Choose only from availableAccounts. Use only the supplied evidence IDs for the matching transaction. Return every input id exactly once and no prose.",
+        task: "Categorise each imported Beancount transaction independently. Choose only from availableAccounts. A providerCategory is non-authoritative bank evidence, not a ledger account. Use only the supplied evidence IDs for the matching transaction. Return every input id exactly once and no prose.",
         availableAccounts,
         transactions: items.map(({ id, context }) => ({
           id,
           transaction: context.transaction,
-          evidence: (context.priorSuggestions?.flatMap(
-            (suggestion) => suggestion.evidence,
-          ) ?? []).map((item) => ({
+          providerCategory: context.transaction.providerCategory,
+          evidence: (
+            context.priorSuggestions?.flatMap(
+              (suggestion) => suggestion.evidence,
+            ) ?? []
+          ).map((item) => ({
             id: item.id,
             summary: item.summary,
             occurrences: item.occurrences,
@@ -1536,10 +1612,10 @@ export class CodexCategorizer implements CategorizerPlugin {
       };
       const prompt = JSON.stringify(promptPayload);
       const args = codexExecArgs({
-          directory,
-          schemaPath,
-          model: this.options.model,
-        });
+        directory,
+        schemaPath,
+        model: this.options.model,
+      });
       response = await (this.options.execute ?? runCodex)(
         args,
         prompt,
@@ -1617,7 +1693,8 @@ export class CodexCategorizer implements CategorizerPlugin {
             promptPayload === undefined
               ? undefined
               : Buffer.byteLength(JSON.stringify(promptPayload)),
-          responseBytes: response === undefined ? undefined : Buffer.byteLength(response),
+          responseBytes:
+            response === undefined ? undefined : Buffer.byteLength(response),
         });
       }
       await fs.rm(directory, { recursive: true, force: true });
@@ -1780,10 +1857,14 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
   }
 
   async resolveBatch(
-    items: readonly CodexBatchItem<Parameters<MerchantResolverPlugin["resolve"]>[0]>[],
+    items: readonly CodexBatchItem<
+      Parameters<MerchantResolverPlugin["resolve"]>[0]
+    >[],
   ): Promise<readonly CodexBatchResult<MerchantResolution>[]> {
     if (!items.length) return [];
-    if (items.some((item) => !transactionMerchantLabel(item.context.transaction))) {
+    if (
+      items.some((item) => !transactionMerchantLabel(item.context.transaction))
+    ) {
       throw new Error("Codex merchant batches require a merchant label.");
     }
     const directory = await fs.mkdtemp(
@@ -1858,16 +1939,18 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
       };
       const prompt = JSON.stringify(promptPayload);
       const args = codexExecArgs({
-          directory,
-          schemaPath,
-          model: this.options.model,
-        });
+        directory,
+        schemaPath,
+        model: this.options.model,
+      });
       response = await (this.options.execute ?? runCodex)(
         args,
         prompt,
         this.options.timeoutMs ?? AI_BATCH_TIMEOUT_MS,
       );
-      const parsed = JSON.parse(response) as { results?: CodexMerchantResult[] };
+      const parsed = JSON.parse(response) as {
+        results?: CodexMerchantResult[];
+      };
       const results = parsed?.results;
       if (
         !Array.isArray(results) ||
@@ -1904,7 +1987,9 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
         const domain = optionalSchemaString(result.domain)?.toLowerCase();
         const description = optionalSchemaString(result.description);
         const industry = optionalSchemaString(result.industry);
-        const countryCode = optionalSchemaString(result.countryCode)?.toUpperCase();
+        const countryCode = optionalSchemaString(
+          result.countryCode,
+        )?.toUpperCase();
         if (
           !canonicalName ||
           typeof result.rawScore !== "number" ||
@@ -1964,7 +2049,8 @@ export class CodexMerchantAdvisor implements MerchantResolverPlugin {
             promptPayload === undefined
               ? undefined
               : Buffer.byteLength(JSON.stringify(promptPayload)),
-          responseBytes: response === undefined ? undefined : Buffer.byteLength(response),
+          responseBytes:
+            response === undefined ? undefined : Buffer.byteLength(response),
         });
       }
       await fs.rm(directory, { recursive: true, force: true });
@@ -2168,6 +2254,7 @@ export async function ingestSource(
     const detectionRules = resolveDetectionRules(source, options);
     const aiCalls: AiEnrichmentCallRecord[] = [];
     const categorizers = buildCategorizers(detectionRules, {
+      ...providerCategoryOptions(source),
       aiEnabled: source.aiEnabled === true && !deferAi,
       model,
       onAiDebug: (call) => aiCalls.push(call),
@@ -2328,20 +2415,21 @@ export async function ingestSource(
           proposal.status === "held"),
     ),
   );
-  const enrichedRuns = deferAi && hasReviewableProposals
-    ? await enrichExistingSourceRuns(
-        source,
-        runs,
-        entries,
-        model,
-        merchantContext!,
-        {
-          detectionRules: resolveDetectionRules(source, options),
-          source: "ingest",
-          forceAi: false,
-        },
-      )
-    : runs;
+  const enrichedRuns =
+    deferAi && hasReviewableProposals
+      ? await enrichExistingSourceRuns(
+          source,
+          runs,
+          entries,
+          model,
+          merchantContext!,
+          {
+            detectionRules: resolveDetectionRules(source, options),
+            source: "ingest",
+            forceAi: false,
+          },
+        )
+      : runs;
   return { runs: enrichedRuns, syncStatePatches };
 }
 
@@ -2440,6 +2528,7 @@ async function prepareAiEnrichment(
   const history = historySamplesFromEntries(entries);
   const detectionRules = resolveDetectionRules(source, options);
   const categorizers = buildCategorizers(detectionRules, {
+    ...providerCategoryOptions(source),
     aiEnabled: aiCategorize,
     model,
     onAiDebug: options?.onAiDebug,
@@ -2511,7 +2600,8 @@ async function runBatchedCodex<T, R>(
         failure = error;
       }
     }
-    const message = failure instanceof Error ? failure.message : String(failure);
+    const message =
+      failure instanceof Error ? failure.message : String(failure);
     if (batch.length === 1 || budget.calls >= 16) {
       for (const item of batch) outcomes.set(item.id, { error: message });
       return;
@@ -2564,7 +2654,9 @@ function mergeMerchantResolution(
       ...next.candidates,
       ...current.candidates.filter(
         (candidate) =>
-          !next.candidates.some((nextCandidate) => nextCandidate.id === candidate.id),
+          !next.candidates.some(
+            (nextCandidate) => nextCandidate.id === candidate.id,
+          ),
       ),
     ],
   };
@@ -2592,7 +2684,10 @@ async function resolveMerchantBatches(
       const outcomes = await runBatchedCodex(
         active.map((state) => ({
           id: state.id,
-          context: { transaction: state.transaction, resolution: state.resolution },
+          context: {
+            transaction: state.transaction,
+            resolution: state.resolution,
+          },
         })),
         (batch) => resolver.resolveBatch(batch),
       );
@@ -2604,7 +2699,9 @@ async function resolveMerchantBatches(
             outcome.value,
           );
         } else if (outcome?.error) {
-          state.issues.push(`AI merchant advisor was unavailable: ${outcome.error}`);
+          state.issues.push(
+            `AI merchant advisor was unavailable: ${outcome.error}`,
+          );
         }
       }
       continue;
@@ -2643,7 +2740,8 @@ async function enrichProposalsWithPrepared(
 ): Promise<ImportProposal[]> {
   const calls = options?.calls ?? [];
   const work = proposals.map((proposal, index) => {
-    if (!proposal.transaction) throw new Error("This proposal has no transaction to enrich.");
+    if (!proposal.transaction)
+      throw new Error("This proposal has no transaction to enrich.");
     if (
       proposal.status !== "ready" &&
       proposal.status !== "needs-review" &&
@@ -2660,7 +2758,9 @@ async function enrichProposalsWithPrepared(
         (issue) =>
           !issue.startsWith("Merchant resolver ") &&
           !issue.startsWith("AI merchant advisor ") &&
-          !(options?.merchantOnly ? false : issue.startsWith("AI categoriser ")),
+          !(options?.merchantOnly
+            ? false
+            : issue.startsWith("AI categoriser ")),
       ),
       debugIds: new Set<string>(),
       suggestions: [] as CategorySuggestion[],
@@ -2673,7 +2773,10 @@ async function enrichProposalsWithPrepared(
   });
 
   if (prepared.aiMerchant) {
-    const groups = new Map<string, { state: MerchantBatchState; work: typeof work }>();
+    const groups = new Map<
+      string,
+      { state: MerchantBatchState; work: typeof work }
+    >();
     for (const item of work) {
       if (
         item.merchantResolution?.status === "confirmed" ||
@@ -2804,7 +2907,10 @@ async function enrichProposalsWithPrepared(
 
   return work.map((item) => {
     const nextSuggestions = sortSuggestions(
-      [...item.suggestions, ...(item.manualSelection ? [item.manualSelection] : [])].filter(
+      [
+        ...item.suggestions,
+        ...(item.manualSelection ? [item.manualSelection] : []),
+      ].filter(
         (suggestion) =>
           Boolean(suggestion.account) &&
           prepared.availableAccounts.includes(suggestion.account),
@@ -2814,7 +2920,8 @@ async function enrichProposalsWithPrepared(
       ...item.proposal,
       merchantResolution: item.merchantResolution,
       suggestions: nextSuggestions,
-      selectedAccount: item.manualSelection?.account ?? nextSuggestions[0]?.account,
+      selectedAccount:
+        item.manualSelection?.account ?? nextSuggestions[0]?.account,
       status:
         item.transaction.status === "pending"
           ? "held"
@@ -2995,10 +3102,11 @@ export async function enrichExistingSourceRuns(
   return runs.map((run) => {
     const proposals = updatedByRun.get(run.id) ?? run.proposals;
     const runCallKeys = new Set(
-      proposals.flatMap((proposal) =>
-        proposal.lastAiEnrichment?.calls.map(
-          (call) => call.callId ?? `${call.id}:${call.at}`,
-        ) ?? [],
+      proposals.flatMap(
+        (proposal) =>
+          proposal.lastAiEnrichment?.calls.map(
+            (call) => call.callId ?? `${call.id}:${call.at}`,
+          ) ?? [],
       ),
     );
     const auditCalls = calls.filter((call) =>
@@ -3034,7 +3142,9 @@ export async function recategorizeProposal(
     entries.flatMap((entry) => entry.accounts),
   );
   const detectionRules = resolveDetectionRules(source, options);
-  const categorizers = buildCategorizers(detectionRules);
+  const categorizers = buildCategorizers(detectionRules, {
+    ...providerCategoryOptions(source),
+  });
   const suggestions: CategorySuggestion[] = [];
   const context: CategorizationContext = {
     transaction: proposal.transaction,
