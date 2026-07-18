@@ -22,6 +22,7 @@
     createFormConfig,
     textField,
   } from "@beancount-js/forms";
+  import AppShell from "@beancount-js/ui/app-shell";
   import StudioShellHeader from "./StudioShellHeader.svelte";
   import IngestionHeaderActions from "./IngestionHeaderActions.svelte";
   import RouteLoadingSkeleton from "./skeletons/RouteLoadingSkeleton.svelte";
@@ -227,316 +228,308 @@
   onDestroy(stopSidebarResize);
 </script>
 
-<Sidebar.Provider
-  class="h-screen overflow-hidden bg-sidebar text-foreground"
-  style={sidebarWidthStyle}
->
-  <Sidebar.Root collapsible="icon" showBorder={false}>
-    <div class="relative flex h-full min-h-0 flex-col">
-      <div
-        class="flex min-h-0 flex-1 flex-col group-data-[collapsible=icon]:hidden"
-      >
-        <Sidebar.Header class="gap-3">
-          <StudioShellHeader
-            projectName={snapshot?.project.name ?? "Loading project"}
-            onOpenLedgerSettings={() => (tab = "workspace")}
-          />
-          {#if $ledgerSidebarMode !== "settings"}
-            <div
-              class="grid w-full grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                class={tab === "projects"
-                  ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                  : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
-                aria-label="Projects"
-                title="Projects"
-                onclick={() => (tab = "projects")}><FolderOpen /></Button
-              >
-              <Button
-                variant="ghost"
-                size="icon"
-                class={tab === "workspace"
-                  ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                  : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
-                aria-label="Workspace"
-                title="Workspace"
-                onclick={() => (tab = "workspace")}><LayoutPanelLeft /></Button
-              >
-              <Button
-                variant="ghost"
-                size="icon"
-                class={tab === "search"
-                  ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                  : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
-                aria-label="Search"
-                title="Search"
-                onclick={() => (tab = "search")}><SearchIcon /></Button
-              >
-            </div>
-          {/if}
-        </Sidebar.Header>
-        <Sidebar.Content class="px-2 pb-3">
-          {#if tab === "projects"}
-            <Sidebar.Group>
-              <Sidebar.GroupLabel>Current project</Sidebar.GroupLabel>
-              <Sidebar.GroupContent class="flex flex-col gap-1">
-                {#if snapshot}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="h-auto w-full justify-start border border-sidebar-border bg-background py-2 text-sidebar-accent-foreground shadow-sm hover:bg-background hover:text-sidebar-accent-foreground"
-                    title={snapshot.project.name}
-                    aria-current="page"
-                    onclick={() => void onSelectProject(snapshot!.project.id)}
-                  >
-                    <FolderOpen data-icon="inline-start" />
-                    <span class="min-w-0 text-left"
-                      ><span class="block truncate"
-                        >{snapshot.project.name}</span
-                      ><span
-                        class="block truncate text-xs text-muted-foreground"
-                        >{snapshot.project.entryFile}</span
-                      ></span
-                    >
-                  </Button>
-                {:else}
-                  <p class="px-2 text-sm text-muted-foreground">
-                    Opening project…
-                  </p>
-                {/if}
-                {#each projects.filter((project) => project.id !== snapshot?.project.id) as project (project.id)}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="h-auto w-full justify-start py-2"
-                    title={project.name}
-                    onclick={() => void onSelectProject(project.id)}
-                  >
-                    <FolderOpen data-icon="inline-start" />
-                    <span class="min-w-0 text-left"
-                      ><span class="block truncate">{project.name}</span><span
-                        class="block truncate text-xs text-muted-foreground"
-                        >{project.entryFile}</span
-                      ></span
-                    >
-                  </Button>
-                {/each}
-              </Sidebar.GroupContent>
-            </Sidebar.Group>
-            <Separator class="my-2" />
-            <div class="px-2">
-              {#if projectActionError}
-                <p
-                  class="mb-2 px-1 text-xs text-destructive"
-                  role="alert"
-                  data-project-action-error
+<Sidebar.Provider class="h-screen overflow-hidden" style={sidebarWidthStyle}>
+  <AppShell {pageTitle}>
+    <svelte:fragment slot="sidebar">
+      <Sidebar.Root collapsible="icon" showBorder={false}>
+        <div class="relative flex h-full min-h-0 flex-col">
+          <div
+            class="flex min-h-0 flex-1 flex-col group-data-[collapsible=icon]:hidden"
+          >
+            <Sidebar.Header class="gap-3">
+              <StudioShellHeader
+                projectName={snapshot?.project.name ?? "Loading project"}
+                onOpenLedgerSettings={() => (tab = "workspace")}
+              />
+              {#if $ledgerSidebarMode !== "settings"}
+                <div
+                  class="grid w-full grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
                 >
-                  {projectActionError}
-                </p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class={tab === "projects"
+                      ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                      : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
+                    aria-label="Projects"
+                    title="Projects"
+                    onclick={() => (tab = "projects")}><FolderOpen /></Button
+                  >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class={tab === "workspace"
+                      ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                      : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
+                    aria-label="Workspace"
+                    title="Workspace"
+                    onclick={() => (tab = "workspace")}
+                    ><LayoutPanelLeft /></Button
+                  >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class={tab === "search"
+                      ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                      : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
+                    aria-label="Search"
+                    title="Search"
+                    onclick={() => (tab = "search")}><SearchIcon /></Button
+                  >
+                </div>
               {/if}
-              {#if enteringPath}
-                <form
-                  class="flex flex-col gap-2"
-                  onsubmit={(event) => {
-                    event.preventDefault();
-                    void submitPath();
-                  }}
-                >
-                  <StructuredForm
-                    config={projectPathForm}
-                    value={{ path }}
-                    context={undefined}
-                    onChange={(value) => {
-                      path = value.path;
-                    }}
-                  />
-                  <div class="flex gap-2">
+            </Sidebar.Header>
+            <Sidebar.Content class="px-2 pb-3">
+              {#if tab === "projects"}
+                <Sidebar.Group>
+                  <Sidebar.GroupLabel>Current project</Sidebar.GroupLabel>
+                  <Sidebar.GroupContent class="flex flex-col gap-1">
+                    {#if snapshot}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-auto w-full justify-start border border-sidebar-border bg-background py-2 text-sidebar-accent-foreground shadow-sm hover:bg-background hover:text-sidebar-accent-foreground"
+                        title={snapshot.project.name}
+                        aria-current="page"
+                        onclick={() =>
+                          void onSelectProject(snapshot!.project.id)}
+                      >
+                        <FolderOpen data-icon="inline-start" />
+                        <span class="min-w-0 text-left"
+                          ><span class="block truncate"
+                            >{snapshot.project.name}</span
+                          ><span
+                            class="block truncate text-xs text-muted-foreground"
+                            >{snapshot.project.entryFile}</span
+                          ></span
+                        >
+                      </Button>
+                    {:else}
+                      <p class="px-2 text-sm text-muted-foreground">
+                        Opening project…
+                      </p>
+                    {/if}
+                    {#each projects.filter((project) => project.id !== snapshot?.project.id) as project (project.id)}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-auto w-full justify-start py-2"
+                        title={project.name}
+                        onclick={() => void onSelectProject(project.id)}
+                      >
+                        <FolderOpen data-icon="inline-start" />
+                        <span class="min-w-0 text-left"
+                          ><span class="block truncate">{project.name}</span
+                          ><span
+                            class="block truncate text-xs text-muted-foreground"
+                            >{project.entryFile}</span
+                          ></span
+                        >
+                      </Button>
+                    {/each}
+                  </Sidebar.GroupContent>
+                </Sidebar.Group>
+                <Separator class="my-2" />
+                <div class="px-2">
+                  {#if projectActionError}
+                    <p
+                      class="mb-2 px-1 text-xs text-destructive"
+                      role="alert"
+                      data-project-action-error
+                    >
+                      {projectActionError}
+                    </p>
+                  {/if}
+                  {#if enteringPath}
+                    <form
+                      class="flex flex-col gap-2"
+                      onsubmit={(event) => {
+                        event.preventDefault();
+                        void submitPath();
+                      }}
+                    >
+                      <StructuredForm
+                        config={projectPathForm}
+                        value={{ path }}
+                        context={undefined}
+                        onChange={(value) => {
+                          path = value.path;
+                        }}
+                      />
+                      <div class="flex gap-2">
+                        <Button
+                          type="submit"
+                          size="sm"
+                          class="flex-1"
+                          disabled={addingProject || !path.trim()}>Add</Button
+                        ><Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={addingProject}
+                          onclick={cancelPathEntry}>Cancel</Button
+                        >
+                      </div>
+                    </form>
+                  {:else}
                     <Button
-                      type="submit"
+                      variant="outline"
                       size="sm"
-                      class="flex-1"
-                      disabled={addingProject || !path.trim()}>Add</Button
-                    ><Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
+                      class="w-full justify-start"
                       disabled={addingProject}
-                      onclick={cancelPathEntry}>Cancel</Button
+                      onclick={() => void openProject()}
                     >
-                  </div>
-                </form>
-              {:else}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="w-full justify-start"
-                  disabled={addingProject}
-                  onclick={() => void openProject()}
+                      <Plus data-icon="inline-start" /><span
+                        >{addingProject
+                          ? "Opening folder…"
+                          : "Open another project"}</span
+                      >
+                    </Button>
+                  {/if}
+                </div>
+              {:else if tab === "search"}
+                <div
+                  data-slot="search-tab"
+                  class="flex min-h-0 flex-1 flex-col"
                 >
-                  <Plus data-icon="inline-start" /><span
-                    >{addingProject
-                      ? "Opening folder…"
-                      : "Open another project"}</span
-                  >
-                </Button>
+                  <slot name="search"></slot>
+                </div>
+              {:else}
+                <slot name="workspace"></slot>
               {/if}
-            </div>
-          {:else if tab === "search"}
-            <div data-slot="search-tab" class="flex min-h-0 flex-1 flex-col">
-              <slot name="search"></slot>
-            </div>
-          {:else}
-            <slot name="workspace"></slot>
-          {/if}
-        </Sidebar.Content>
-      </div>
-
-      <div
-        class="hidden h-full min-h-0 flex-col items-center gap-2 px-1.5 py-2 group-data-[collapsible=icon]:flex"
-      >
-        <Sidebar.Trigger
-          class="size-8"
-          aria-label="Expand sidebar"
-          title="Expand sidebar"
-        >
-          <ChevronRight />
-          <span class="sr-only">Expand sidebar</span>
-        </Sidebar.Trigger>
-        <Sidebar.Trigger
-          class="flex min-h-0 flex-1 items-center justify-center rounded-md border border-transparent px-1 py-2 text-sidebar-foreground hover:border-sidebar-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          aria-label="Expand project rail"
-          title={snapshot?.project.name ?? "Beancount Studio"}
-        >
-          <span
-            class="max-h-full truncate text-[12px] font-semibold [writing-mode:vertical-rl]"
-          >
-            {snapshot?.project.name ?? "Beancount Studio"}
-          </span>
-        </Sidebar.Trigger>
-      </div>
-
-      <div
-        role="slider"
-        tabindex="0"
-        class="absolute -right-1.5 bottom-4 top-4 z-20 hidden w-3 cursor-col-resize items-stretch justify-center rounded-full bg-transparent outline-none group-data-[collapsible=icon]:hidden md:flex"
-        aria-label="Resize sidebar"
-        aria-orientation="vertical"
-        aria-valuemin={MIN_SIDEBAR_WIDTH}
-        aria-valuemax={MAX_SIDEBAR_WIDTH}
-        aria-valuenow={sidebarWidth}
-        title="Resize sidebar"
-        onpointerdown={startSidebarResize}
-        onkeydown={handleSidebarResizeKeydown}
-        onpointerenter={() => (hoveringResizer = true)}
-        onpointerleave={() => (hoveringResizer = false)}
-        onfocus={() => (hoveringResizer = true)}
-        onblur={() => (hoveringResizer = false)}
-      >
-        <span
-          class={cn(
-            "my-2.5 w-px bg-transparent transition-colors",
-            (resizing || hoveringResizer) && "bg-primary/60",
-          )}
-          aria-hidden="true"
-        ></span>
-      </div>
-    </div>
-  </Sidebar.Root>
-  <div
-    data-slot="studio-workspace-shell"
-    class="flex min-w-0 flex-1 gap-2 p-2 md:pl-0"
-  >
-    <main
-      class="flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm dark:shadow-[0_2px_8px_oklch(0_0_0/0.5)]"
-    >
-      <div
-        data-slot="studio-workspace-header"
-        class="flex h-11 shrink-0 items-center border-b border-border px-3"
-      >
-        <Sidebar.Trigger
-          class="md:hidden"
-          aria-label="Show navigation"
-          title="Show navigation"
-        />
-        <Sidebar.Trigger
-          class="hidden size-8 md:inline-flex"
-          aria-label="Collapse sidebar to project rail"
-          title="Collapse sidebar"
-        />
-        <span
-          data-workspace-page-title
-          class="ml-1 min-w-0 truncate text-sm font-semibold"
-          title={$ingestionHeaderActions?.kind === "ledger"
-            ? $ingestionHeaderActions.activePath
-            : undefined}
-        >
-          {pageTitle}
-        </span>
-        {#if $ingestionHeaderActions?.kind === "rules"}
-          <span
-            class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-            >{$ingestionHeaderActions.ruleCount}</span
-          >
-        {/if}
-        {#if $ingestionHeaderActions?.kind === "manage-merchants"}
-          <span
-            class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-            >{$ingestionHeaderActions.merchantCount}</span
-          >
-        {/if}
-        {#if $ingestionHeaderActions?.kind === "history"}
-          <span
-            class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-            >{$ingestionHeaderActions.runCount}</span
-          >
-        {/if}
-        {#if $ingestionHeaderActions?.kind === "review"}
-          <span
-            class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-            aria-label={`${$ingestionHeaderActions.recordCount} total records`}
-            title={`${$ingestionHeaderActions.recordCount} total records`}
-            >{$ingestionHeaderActions.recordCount}</span
-          >
-        {/if}
-        {#if $ingestionHeaderActions?.kind === "ledger"}
-          <div
-            data-slot="studio-workspace-header-leading"
-            class="ml-1.5 flex min-w-0 shrink-0 items-center"
-          >
-            <IngestionHeaderActions region="leading" />
+            </Sidebar.Content>
           </div>
-        {/if}
-        <div
-          class="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden sm:flex-none"
-        >
+
           <div
-            data-slot="studio-workspace-header-actions"
-            class="flex min-w-0 flex-1 touch-pan-x items-center gap-2 overflow-x-auto [scrollbar-width:none] sm:flex-none sm:overflow-visible [&::-webkit-scrollbar]:hidden"
+            class="hidden h-full min-h-0 flex-col items-center gap-2 px-1.5 py-2 group-data-[collapsible=icon]:flex"
           >
-            <IngestionHeaderActions region="actions" />
+            <Sidebar.Trigger
+              class="size-8"
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              <ChevronRight />
+              <span class="sr-only">Expand sidebar</span>
+            </Sidebar.Trigger>
+            <Sidebar.Trigger
+              class="flex min-h-0 flex-1 items-center justify-center rounded-md border border-transparent px-1 py-2 text-sidebar-foreground hover:border-sidebar-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              aria-label="Expand project rail"
+              title={snapshot?.project.name ?? "Beancount Studio"}
+            >
+              <span
+                class="max-h-full truncate text-[12px] font-semibold [writing-mode:vertical-rl]"
+              >
+                {snapshot?.project.name ?? "Beancount Studio"}
+              </span>
+            </Sidebar.Trigger>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            class="size-8"
-            aria-label="Toggle theme"
-            title="Toggle theme"
-            onclick={toggleMode}
+
+          <div
+            role="slider"
+            tabindex="0"
+            class="absolute -right-1.5 bottom-4 top-4 z-20 hidden w-3 cursor-col-resize items-stretch justify-center rounded-full bg-transparent outline-none group-data-[collapsible=icon]:hidden md:flex"
+            aria-label="Resize sidebar"
+            aria-orientation="vertical"
+            aria-valuemin={MIN_SIDEBAR_WIDTH}
+            aria-valuemax={MAX_SIDEBAR_WIDTH}
+            aria-valuenow={sidebarWidth}
+            title="Resize sidebar"
+            onpointerdown={startSidebarResize}
+            onkeydown={handleSidebarResizeKeydown}
+            onpointerenter={() => (hoveringResizer = true)}
+            onpointerleave={() => (hoveringResizer = false)}
+            onfocus={() => (hoveringResizer = true)}
+            onblur={() => (hoveringResizer = false)}
           >
-            <span class="relative grid place-items-center">
-              <Sun
-                class="transition-[transform,opacity] motion-reduce:transition-none dark:-rotate-90 dark:opacity-0"
-              />
-              <Moon
-                class="absolute rotate-90 opacity-0 transition-[transform,opacity] motion-reduce:transition-none dark:rotate-0 dark:opacity-100"
-              />
-            </span>
-          </Button>
+            <span
+              class={cn(
+                "my-2.5 w-px bg-transparent transition-colors",
+                (resizing || hoveringResizer) && "bg-primary/60",
+              )}
+              aria-hidden="true"
+            ></span>
+          </div>
         </div>
+      </Sidebar.Root>
+    </svelte:fragment>
+    <svelte:fragment slot="mobile-navigation-trigger">
+      <Sidebar.Trigger
+        class="md:hidden"
+        aria-label="Show navigation"
+        title="Show navigation"
+      />
+    </svelte:fragment>
+    <svelte:fragment slot="desktop-sidebar-trigger">
+      <Sidebar.Trigger
+        class="hidden size-8 md:inline-flex"
+        aria-label="Collapse sidebar to project rail"
+        title="Collapse sidebar"
+      />
+    </svelte:fragment>
+    <svelte:fragment slot="title-trailing">
+      {#if $ingestionHeaderActions?.kind === "rules"}
+        <span
+          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          >{$ingestionHeaderActions.ruleCount}</span
+        >
+      {/if}
+      {#if $ingestionHeaderActions?.kind === "manage-merchants"}
+        <span
+          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          >{$ingestionHeaderActions.merchantCount}</span
+        >
+      {/if}
+      {#if $ingestionHeaderActions?.kind === "history"}
+        <span
+          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          >{$ingestionHeaderActions.runCount}</span
+        >
+      {/if}
+      {#if $ingestionHeaderActions?.kind === "review"}
+        <span
+          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          aria-label={`${$ingestionHeaderActions.recordCount} total records`}
+          title={`${$ingestionHeaderActions.recordCount} total records`}
+          >{$ingestionHeaderActions.recordCount}</span
+        >
+      {/if}
+    </svelte:fragment>
+    <svelte:fragment slot="header-leading">
+      {#if $ingestionHeaderActions?.kind === "ledger"}
+        <div
+          data-slot="studio-workspace-header-leading"
+          class="ml-1.5 flex min-w-0 shrink-0 items-center"
+        >
+          <IngestionHeaderActions region="leading" />
+        </div>
+      {/if}
+    </svelte:fragment>
+    <svelte:fragment slot="header-actions">
+      <div
+        data-slot="studio-workspace-header-actions"
+        class="flex min-w-0 flex-1 touch-pan-x items-center gap-2 overflow-x-auto [scrollbar-width:none] sm:flex-none sm:overflow-visible [&::-webkit-scrollbar]:hidden"
+      >
+        <IngestionHeaderActions region="actions" />
       </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        class="size-8"
+        aria-label="Toggle theme"
+        title="Toggle theme"
+        onclick={toggleMode}
+      >
+        <span class="relative grid place-items-center">
+          <Sun
+            class="transition-[transform,opacity] motion-reduce:transition-none dark:-rotate-90 dark:opacity-0"
+          />
+          <Moon
+            class="absolute rotate-90 opacity-0 transition-[transform,opacity] motion-reduce:transition-none dark:rotate-0 dark:opacity-100"
+          />
+        </span>
+      </Button>
+    </svelte:fragment>
+    <svelte:fragment slot="status">
       {#if $activeSyncTracks.some((track) => track.job.status === "queued" || track.job.status === "running")}
         {@const track = $activeSyncTracks.find(
           (item) =>
@@ -558,36 +551,34 @@
           </div>
         {/if}
       {/if}
-      <div class="min-h-0 min-w-0 flex-1 overflow-hidden">
-        {#if snapshot}
-          <slot></slot>
-        {:else if status.startsWith("Loading")}
-          <RouteLoadingSkeleton />
-        {:else}
-          <Empty.Root>
-            <Empty.Header>
-              <Empty.Media variant="icon"><FolderOpen /></Empty.Media>
-              <Empty.Title>Open a ledger project</Empty.Title>
-              <Empty.Description>
-                Choose the folder that contains your Beancount entry file to
-                start working.
-              </Empty.Description>
-            </Empty.Header>
-            <Empty.Content>
-              <Button onclick={() => void openProject()}>
-                <FolderOpen data-icon="inline-start" />
-                Open project
-              </Button>
-              {#if status && !status.startsWith("Add a local")}
-                <Empty.Description role="alert" class="text-destructive">
-                  {status}
-                </Empty.Description>
-              {/if}
-            </Empty.Content>
-          </Empty.Root>
-        {/if}
-      </div>
-    </main>
-    <slot name="ai"></slot>
-  </div>
+    </svelte:fragment>
+    {#if snapshot}
+      <slot></slot>
+    {:else if status.startsWith("Loading")}
+      <RouteLoadingSkeleton />
+    {:else}
+      <Empty.Root>
+        <Empty.Header>
+          <Empty.Media variant="icon"><FolderOpen /></Empty.Media>
+          <Empty.Title>Open a ledger project</Empty.Title>
+          <Empty.Description>
+            Choose the folder that contains your Beancount entry file to start
+            working.
+          </Empty.Description>
+        </Empty.Header>
+        <Empty.Content>
+          <Button onclick={() => void openProject()}>
+            <FolderOpen data-icon="inline-start" />
+            Open project
+          </Button>
+          {#if status && !status.startsWith("Add a local")}
+            <Empty.Description role="alert" class="text-destructive">
+              {status}
+            </Empty.Description>
+          {/if}
+        </Empty.Content>
+      </Empty.Root>
+    {/if}
+    <svelte:fragment slot="ai"><slot name="ai"></slot></svelte:fragment>
+  </AppShell>
 </Sidebar.Provider>

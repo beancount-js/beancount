@@ -3,7 +3,10 @@ import uiTailwindPreset from "@beancount-js/ui/tailwind";
 
 const config: Config = {
   darkMode: ["class"],
-  content: ["./src/**/*.{html,js,svelte,ts}"],
+  content: [
+    "./src/**/*.{html,js,svelte,ts}",
+    "../ui/src/**/*.{html,js,svelte,ts}",
+  ],
   presets: [uiTailwindPreset],
   safelist: [
     "dark",
