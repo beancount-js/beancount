@@ -3,7 +3,6 @@
   import {
     drawSelection,
     EditorView,
-    lineNumbers,
     keymap,
     placeholder,
   } from "@codemirror/view";
@@ -13,7 +12,7 @@
     syntaxHighlighting,
     bracketMatching,
   } from "@codemirror/language";
-  import Button from "$lib/components/ui/button/button.svelte";
+  import { Button } from "$lib/components/ui/button";
   import { useNavigation } from "../router/router";
   import {
     autocompletion,
@@ -30,8 +29,8 @@
     indentMore,
     indentLess,
   } from "@codemirror/commands";
-  import { TriangleAlert } from "lucide-svelte";
-  import { lintGutter } from "@codemirror/lint";
+  import TriangleAlert from "lucide-svelte/icons/triangle-alert";
+  import Search from "lucide-svelte/icons/search";
   import { useLedger } from "./helpers";
   import { bql } from "@beancount-js/beanquery";
   import { replaceContents } from "../codemirror/extensions/transactions";
@@ -66,9 +65,7 @@
           autocompletion(),
           closeBrackets(),
           bracketMatching(),
-          lineNumbers(),
           editorHistory(),
-          lintGutter(),
           drawSelection(),
           syntaxHighlighting(classHighlighter),
           placeholder(
@@ -153,20 +150,30 @@
 </script>
 
 <ContentScrollArea contentClass="scroll-container p-4">
-  <div class="beancount-editor relative">
+  <div class="beancount-editor">
     <div
-      use:codeMirror={query}
       data-error={!!error}
-      class="cm-code-editor flex w-full rounded-md border px-3 py-1 pb-0 pl-0 pt-0 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-within:outline-ring focus-within:ring-2 focus-within:ring-ring data-[error=true]:bg-destructive/20"
-    ></div>
-    <Button
-      onclick={handleSearch}
-      size="sm"
-      variant="default"
-      class="absolute right-2 top-[50%] translate-y-[-50%]"
+      class="query-search-field flex w-full items-center rounded-md border bg-muted/35 shadow-sm transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring data-[error=true]:border-destructive data-[error=true]:bg-destructive/10"
+      data-query-editor
     >
-      Search
-    </Button>
+      <Search
+        class="ml-3 size-4 shrink-0 text-muted-foreground"
+        aria-hidden="true"
+      />
+      <div
+        use:codeMirror={query}
+        class="cm-code-editor min-w-0 flex-1 py-1 text-sm"
+      ></div>
+      <Button
+        onclick={handleSearch}
+        size="sm"
+        variant="default"
+        class="mr-1 shrink-0"
+      >
+        <Search data-icon="inline-start" />
+        Search
+      </Button>
+    </div>
   </div>
   {#if error}
     <Alert.Root variant="destructive" class="mt-4 font-mono text-xs">
@@ -177,3 +184,14 @@
   {/if}
   <QueryBox queries={$queryHistory} {onDelete} {selected} />
 </ContentScrollArea>
+
+<style>
+  .query-search-field :global(.cm-editor),
+  .query-search-field :global(.cm-scroller) {
+    min-width: 0;
+  }
+
+  .query-search-field :global(.cm-content) {
+    padding-block: 0.25rem;
+  }
+</style>

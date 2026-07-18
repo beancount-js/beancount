@@ -48,7 +48,7 @@ test("Holdings renders a sortable, paginated table", async ({ page }) => {
   await expect(table.locator("[data-query-page-size]")).toHaveText("10");
 });
 
-test("Query tables omit pagination for ten or fewer results", async ({
+test("Query tables use a compact search field and expandable saved queries", async ({
   page,
 }) => {
   await seedLedger(page, minimalLedger);
@@ -58,4 +58,23 @@ test("Query tables omit pagination for ten or fewer results", async ({
   await expect(table).toBeVisible();
   await expect(table.locator("tbody tr")).toHaveCount(2);
   await expect(table.locator("[data-query-pagination]")).toHaveCount(0);
+
+  const queryEditor = page.locator("[data-query-editor]");
+  await expect(queryEditor).toBeVisible();
+  await expect(
+    queryEditor.getByRole("button", { name: "Search" }),
+  ).toBeVisible();
+  await expect(queryEditor.locator(".cm-gutters")).toHaveCount(0);
+
+  const savedQuery = page
+    .locator("[data-query-history-item]")
+    .filter({ hasText: "SELECT account FROM postings" });
+  await expect(savedQuery).toBeVisible();
+  await expect(savedQuery.locator("[data-query-history-header]")).toBeVisible();
+  await expect(
+    savedQuery.getByRole("button", { name: /^Copy query:/ }),
+  ).toBeVisible();
+  await expect(
+    savedQuery.getByRole("button", { name: /^Delete query:/ }),
+  ).toBeVisible();
 });
