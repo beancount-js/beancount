@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as Alert from "$lib/components/ui/alert";
   import * as Select from "$lib/components/ui/select";
   import * as Table from "$lib/components/ui/table";
 
@@ -248,15 +247,6 @@
 </script>
 
 <div class="query-table" data-query-table>
-  {#if $queryResult.error}
-    <Alert.Root variant="destructive" class="mt-4 font-mono text-xs">
-      <TriangleAlert class="h-4 w-4" />
-      <Alert.Title>Error</Alert.Title>
-      <Alert.Description class="whitespace-pre-wrap"
-        >{$queryResult.error}</Alert.Description
-      >
-    </Alert.Root>
-  {/if}
   {#if chart}
     <div class="mt-4 rounded-xl border bg-card p-3 text-xs shadow-sm">
       <Chart {chart} hideButtons />
@@ -387,6 +377,34 @@
           </Table.Row>
         {/each}
       </Table.Body>
+      {#if $queryResult.error}
+        <Table.Footer
+          class="bg-destructive/10 text-destructive"
+          data-query-error-footer
+        >
+          <Table.Row class="hover:bg-transparent">
+            <Table.Cell
+              colspan={Math.max(columns.values.length, 1)}
+              class="px-4 py-3"
+            >
+              <div class="flex items-start gap-2" role="alert">
+                <TriangleAlert
+                  class="mt-0.5 size-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <div class="min-w-0">
+                  <p class="text-xs font-medium">Could not run query</p>
+                  <p
+                    class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90"
+                  >
+                    {$queryResult.error}
+                  </p>
+                </div>
+              </div>
+            </Table.Cell>
+          </Table.Row>
+        </Table.Footer>
+      {/if}
     </Table.Root>
   </div>
   {#if $data.length > PAGE_SIZES[0]}

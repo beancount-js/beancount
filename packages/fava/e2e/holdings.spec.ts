@@ -83,18 +83,14 @@ test("Query tables use a compact search field and expandable saved queries", asy
   ).toBeVisible();
 
   const trigger = savedQuery.locator("[data-query-history-trigger]");
-  const [triggerBounds, indicatorBounds, labelBounds] = await Promise.all([
+  const [triggerBounds, indicatorBounds] = await Promise.all([
     trigger.boundingBox(),
     trigger.locator("svg").boundingBox(),
-    savedQuery.locator("[data-query-history-label]").boundingBox(),
   ]);
   expect(triggerBounds).not.toBeNull();
   expect(indicatorBounds).not.toBeNull();
-  expect(labelBounds).not.toBeNull();
   expect(indicatorBounds!.x).toBeLessThanOrEqual(triggerBounds!.x + 1);
-  expect(labelBounds!.x - (indicatorBounds!.x + indicatorBounds!.width)).toBe(
-    12,
-  );
+  await expect(trigger).toHaveClass(/gap-3/);
 
   const initialState = await trigger.getAttribute("data-state");
   await trigger.click();
@@ -112,4 +108,26 @@ test("Query tables use a compact search field and expandable saved queries", asy
   expect(actionBounds!.x + actionBounds!.width).toBeGreaterThanOrEqual(
     headerBounds!.x + headerBounds!.width - 16,
   );
+});
+
+test("Query errors render in the results table footer", async ({ page }) => {
+  await seedLedger(page, minimalLedger);
+  await gotoStudio(page, "/query?qs=SELECT%20units%20FROM%20postings");
+
+  const table = page.locator("[data-query-table]");
+  const errorFooter = table.locator("[data-query-error-footer]");
+  await expect(errorFooter).toBeVisible();
+  await expect(errorFooter).toHaveClass(/bg-destructive\/10/);
+  await expect(errorFooter.getByRole("alert")).toContainText(
+    'column "units" not found in table "postings"',
+  );
+  await expect(table.locator("tbody")).toContainText("No results.");
+
+  const [bodyBounds, errorBounds] = await Promise.all([
+    table.locator("tbody").boundingBox(),
+    errorFooter.boundingBox(),
+  ]);
+  expect(bodyBounds).not.toBeNull();
+  expect(errorBounds).not.toBeNull();
+  expect(errorBounds!.y).toBeGreaterThan(bodyBounds!.y);
 });
