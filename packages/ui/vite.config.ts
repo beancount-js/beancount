@@ -14,6 +14,8 @@ export default defineConfig({
       "lucide-svelte/icons/chevron-left",
       "lucide-svelte/icons/chevron-right",
       "lucide-svelte/icons/chevron-up",
+      "lucide-svelte/icons/circle",
+      "lucide-svelte/icons/minus",
     ],
   },
   resolve: {
