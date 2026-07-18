@@ -73,6 +73,10 @@ export const parser = grammarParser.configure({
             }
           : null;
       },
+      Metadata: (node: SyntaxNode) => {
+        const first = node.firstChild;
+        return first?.nextSibling ? { from: first.to, to: node.to } : null;
+      },
     }),
   ],
 });

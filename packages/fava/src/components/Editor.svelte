@@ -11,6 +11,7 @@
   import { basicSetup, ledgerSetup } from "../codemirror/beancount/setup";
   import { replaceContents } from "../codemirror/extensions/transactions";
   import { formatLedger } from "../codemirror/beancount/format";
+  import { foldMetadata } from "../codemirror/beancount/foldMetadata";
   import { foldAll } from "../codemirror/extensions/foldAll";
   import { goToLine, showGotoLine } from "../codemirror/extensions/gotoline";
   import { useContext } from "../context";
@@ -89,6 +90,7 @@
     loadedPath = source.path;
     dirty = false;
     formatReviewContents(view, source.readOnly);
+    foldMetadata(view);
 
     if (line) {
       goToLine(editor, line);
@@ -119,6 +121,7 @@
         if (next.readOnly && (contentsChanged || readOnlyChanged)) {
           formatReviewContents(view, next.readOnly);
         }
+        if (contentsChanged) foldMetadata(view);
         source = next;
       },
       destroy() {},

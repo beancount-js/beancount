@@ -10,6 +10,7 @@
   import { beanCountLinter } from "../codemirror/beancount/linter";
   import type { Directive, ScalarType } from "@beancount-js/beancount";
   import { formatLedger } from "../codemirror/beancount/format";
+  import { foldMetadata } from "../codemirror/beancount/foldMetadata";
   import { Button } from "$lib/components/ui/button";
   import { LedgerSource } from "../lib/ledger-data";
   import type { LedgerError } from "@beancount-js/beancount";
@@ -83,11 +84,13 @@
       parent: contentContainer,
     });
     formatLedger(editor);
+    foldMetadata(editor);
     return {
       update(directive: Directive) {
         if (directive) {
           editor.dispatch(replaceContents(editor.state, directive.toString()));
           formatLedger(editor);
+          foldMetadata(editor);
         }
       },
     };

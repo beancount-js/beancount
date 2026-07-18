@@ -29,6 +29,7 @@
   import { EditorState } from "@codemirror/state";
   import { useContext } from "../context";
   import { basicSetup, ledgerSetup } from "../codemirror/beancount/setup";
+  import { foldMetadata } from "../codemirror/beancount/foldMetadata";
   import { replaceContents } from "../codemirror/extensions/transactions";
   import { LedgerSource } from "../core/ledger";
   import {
@@ -281,6 +282,7 @@
       }),
       parent: node,
     });
+    foldMetadata(editor);
 
     return {
       update(next: string) {
@@ -288,6 +290,7 @@
           replacing = true;
           editor.dispatch({ ...replaceContents(editor.state, next) });
           replacing = false;
+          foldMetadata(editor);
         }
       },
       destroy() {
@@ -502,6 +505,7 @@
           replacing = true;
           editor.dispatch({ ...replaceContents(editor.state, nextSource) });
           replacing = false;
+          foldMetadata(editor);
         }
       } catch {
         // keep existing rawSource if the form is incomplete
