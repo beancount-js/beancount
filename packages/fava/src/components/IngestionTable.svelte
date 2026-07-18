@@ -1516,6 +1516,7 @@
       {#if showingReconciliation}
         <IngestionReconciliationPanel
           projectId={project?.project.id}
+          sources={config?.sources ?? []}
           refreshKey={reconciliationRefreshKey}
           onApplied={() => {
             void refresh();

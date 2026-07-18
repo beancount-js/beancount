@@ -1,8 +1,11 @@
 <script lang="ts">
+  import { accountOpenClose } from "@beancount-js/beancount";
   import { onDestroy } from "svelte";
   import {
+    AccountAvatar,
     FilterCommandPicker,
     SearchFilterBar,
+    accountAvatarInitial,
     type FilterCommandOption,
   } from "@beancount-js/forms";
   import type {
@@ -12,6 +15,8 @@
   import Check from "lucide-svelte/icons/check";
   import X from "lucide-svelte/icons/x";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
+  import type { IngestionSource } from "../ingestion/types";
+  import { useContext } from "../context";
   import type { IngestionBulkReviewAction } from "../studio/ingestion-header-actions";
   import { debounceWithDelay } from "../hooks/debounce";
   import {
@@ -40,14 +45,20 @@
   import ReconciliationReviewSkeleton from "./skeletons/ReconciliationReviewSkeleton.svelte";
 
   type Review = ReconciliationReviewResponse;
+  type ConnectionMerchant = {
+    merchantId: string;
+    logoUrl?: string;
+  };
 
   let {
     projectId,
+    sources = [],
     refreshKey = "",
     onApplied = () => {},
     onBulkActionChange = () => {},
   }: {
     projectId?: string;
+    sources?: readonly IngestionSource[];
     /** Changes after sync, edits, and ordinary acceptance to reload candidates. */
     refreshKey?: string;
     onApplied?: () => void;
@@ -63,6 +74,9 @@
   let busyCandidateId = $state("");
   let bulkConfirming = $state(false);
   let selectedCandidateIds = $state(new Set<string>());
+  let merchantsById = $state<Record<string, ConnectionMerchant>>({});
+  let failedMerchantLogoIds = $state(new Set<string>());
+  let loadedMerchantsProjectId = $state("");
   let loadedKey = $state("");
   let filtersExpanded = $state(false);
   let searchState = $state<ReconciliationReviewSearchState>(
@@ -71,7 +85,14 @@
   let lastSearchSignature = $state("");
 
   const { activeRoute, router } = useNavigation();
+  const { ledgerData } = useContext();
   const candidates = $derived(review?.candidates ?? []);
+  const openDirectivesByAccount = $derived.by(() =>
+    accountOpenClose($ledgerData.directives),
+  );
+  const sourcesById = $derived(
+    new Map(sources.map((source) => [source.id, source])),
+  );
   const activeSearch = $derived(
     hasActiveReconciliationReviewSearch(searchState),
   );
@@ -212,12 +233,6 @@
     );
   }
 
-  function memberInitial(
-    member: ReconciliationReviewDisplayItem["members"][number],
-  ) {
-    return memberLabel(member).slice(0, 1).toUpperCase() || "?";
-  }
-
   function memberDetail(
     member: ReconciliationReviewDisplayItem["members"][number],
   ) {
@@ -225,11 +240,51 @@
     return [observation.sourceAccount, observation.bookedAt].join(" · ");
   }
 
+  function connectionForMember(
+    member: ReconciliationReviewDisplayItem["members"][number],
+  ) {
+    const connectionId = member.observation.sourceId?.split(":", 1)[0];
+    return connectionId ? sourcesById.get(connectionId) : undefined;
+  }
+
+  function merchantFor(merchantId?: string) {
+    return merchantId ? merchantsById[merchantId] : undefined;
+  }
+
+  function accountAppearanceFor(
+    member: ReconciliationReviewDisplayItem["members"][number],
+  ) {
+    const sourceAccount = member.observation.sourceAccount;
+    const open = sourceAccount
+      ? openDirectivesByAccount[sourceAccount]?.open
+      : undefined;
+    return {
+      color: typeof open?.meta.color === "string" ? open.meta.color : "",
+      icon: typeof open?.meta.icon === "string" ? open.meta.icon : "",
+      merchantId:
+        typeof open?.meta.merchant_id === "string"
+          ? open.meta.merchant_id
+          : undefined,
+    };
+  }
+
+  function sourceMerchantFor(
+    member: ReconciliationReviewDisplayItem["members"][number],
+  ) {
+    return merchantFor(connectionForMember(member)?.merchantId);
+  }
+
+  function markMerchantLogoFailed(merchantId: string) {
+    failedMerchantLogoIds = new Set([...failedMerchantLogoIds, merchantId]);
+  }
+
   function memberSourceLabel(
     member: ReconciliationReviewDisplayItem["members"][number],
   ) {
     const observation = member.observation;
     if (observation.origin === "ledger") return "Ledger";
+    const connection = connectionForMember(member);
+    if (connection) return connection.name;
     return normaliseReconciliationLabel(
       observation.sourceId?.split(":", 1)[0] ?? "Incoming",
     );
@@ -321,6 +376,20 @@
     } finally {
       reviewLoaded = true;
       loading = false;
+    }
+  }
+
+  async function loadMerchants(nextProjectId: string) {
+    try {
+      const merchants = await ingestionJson<ConnectionMerchant[]>(
+        ingestionPath(nextProjectId, "/merchants"),
+      );
+      if (projectId !== nextProjectId) return;
+      merchantsById = Object.fromEntries(
+        merchants.map((merchant) => [merchant.merchantId, merchant]),
+      );
+    } catch {
+      if (projectId === nextProjectId) merchantsById = {};
     }
   }
 
@@ -418,6 +487,18 @@
     if (key === loadedKey) return;
     loadedKey = key;
     void load();
+  });
+
+  $effect(() => {
+    const nextProjectId = projectId;
+    if (!nextProjectId) {
+      loadedMerchantsProjectId = "";
+      merchantsById = {};
+      return;
+    }
+    if (nextProjectId === loadedMerchantsProjectId) return;
+    loadedMerchantsProjectId = nextProjectId;
+    void loadMerchants(nextProjectId);
   });
 
   $effect(() => {
@@ -767,17 +848,26 @@
             class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
           >
             {#each item.members as member, memberIndex (member.observation.id)}
+              {@const appearance = accountAppearanceFor(member)}
+              {@const accountMerchant = merchantFor(appearance.merchantId)}
+              {@const sourceMerchant = sourceMerchantFor(member)}
               <div
                 class:rounded-b-xl={memberIndex === item.members.length - 1}
                 class="grid grid-cols-[2.5rem_minmax(0,1fr)_7rem] items-center gap-x-3 gap-y-1 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60 sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem_7rem]"
                 data-reconciliation-member-row
               >
                 <div
-                  class="col-start-1 row-span-2 row-start-1 flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground sm:row-span-1"
+                  class="col-start-1 row-span-2 row-start-1 sm:row-span-1"
                   aria-hidden="true"
                   data-reconciliation-member-avatar
                 >
-                  {memberInitial(member)}
+                  <AccountAvatar
+                    account={member.observation.sourceAccount ??
+                      memberLabel(member)}
+                    color={appearance.color}
+                    icon={appearance.icon}
+                    merchantLogoUrl={accountMerchant?.logoUrl}
+                  />
                 </div>
                 <div
                   class="col-start-2 row-span-2 row-start-1 min-w-0 self-center sm:row-span-1"
@@ -798,6 +888,22 @@
                   aria-label={`Source ${memberSourceLabel(member)}`}
                   data-reconciliation-member-source
                 >
+                  {#if sourceMerchant?.logoUrl && !failedMerchantLogoIds.has(sourceMerchant.merchantId)}
+                    <img
+                      class="size-3.5 rounded-full object-cover"
+                      src={sourceMerchant.logoUrl}
+                      alt=""
+                      onerror={() =>
+                        markMerchantLogoFailed(sourceMerchant.merchantId)}
+                    />
+                  {:else}
+                    <span
+                      class="grid size-3.5 shrink-0 place-items-center rounded-full bg-rose-200 text-[0.5rem] font-semibold text-rose-800"
+                      aria-hidden="true"
+                    >
+                      {accountAvatarInitial(memberSourceLabel(member))}
+                    </span>
+                  {/if}
                   {memberSourceLabel(member)}
                 </Badge>
                 <span
