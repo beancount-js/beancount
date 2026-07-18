@@ -637,16 +637,26 @@
           <p class="text-sm font-medium">Apply to</p>
           <ToggleGroup.Root
             type="single"
-            variant="outline"
-            class="grid w-full grid-cols-3"
+            aria-label="Rule run target"
+            class="grid w-full grid-cols-3 !gap-0 rounded-lg bg-muted p-1"
             bind:value={applyTarget}
             disabled={applyBusy}
           >
-            <ToggleGroup.Item value="live-ledger">Live ledger</ToggleGroup.Item>
-            <ToggleGroup.Item value="pending-imports"
+            <ToggleGroup.Item
+              value="live-ledger"
+              class="!h-8 !min-w-0 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+              >Live ledger</ToggleGroup.Item
+            >
+            <ToggleGroup.Item
+              value="pending-imports"
+              class="!h-8 !min-w-0 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
               >Pending imports</ToggleGroup.Item
             >
-            <ToggleGroup.Item value="both">Both</ToggleGroup.Item>
+            <ToggleGroup.Item
+              value="both"
+              class="!h-8 !min-w-0 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+              >Both</ToggleGroup.Item
+            >
           </ToggleGroup.Root>
           <p class="text-xs text-muted-foreground">
             Live ledger is selected by default. Both updates two separate stores

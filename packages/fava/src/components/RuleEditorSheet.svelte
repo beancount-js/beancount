@@ -1,5 +1,12 @@
 <script lang="ts">
+  import type { ComponentType } from "svelte";
+  import FolderTree from "lucide-svelte/icons/folder-tree";
   import Plus from "lucide-svelte/icons/plus";
+  import Pencil from "lucide-svelte/icons/pencil";
+  import ScanSearch from "lucide-svelte/icons/scan-search";
+  import Sparkles from "lucide-svelte/icons/sparkles";
+  import Store from "lucide-svelte/icons/store";
+  import Tag from "lucide-svelte/icons/tag";
   import Trash2 from "lucide-svelte/icons/trash-2";
   import X from "lucide-svelte/icons/x";
   import { onMount } from "svelte";
@@ -46,6 +53,15 @@
 
   const sectionTitleClass =
     "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+  const actionIcons: Record<RuleActionType, ComponentType> = {
+    set_transaction_category: FolderTree,
+    set_transaction_tags: Tag,
+    set_transaction_merchant: Store,
+    set_transaction_name: Pencil,
+    exclude_transaction: Trash2,
+    auto_categorise_with_ai: Sparkles,
+    auto_detect_merchant_with_ai: ScanSearch,
+  };
   const isCreate = $derived(rule === null);
 
   let name = $state("");
@@ -164,6 +180,10 @@
 
   function actionMeta(actionType: RuleActionType) {
     return registry.executors.find((executor) => executor.key === actionType);
+  }
+
+  function actionIcon(actionType: RuleActionType) {
+    return actionIcons[actionType];
   }
 
   function actionValueOptions(
@@ -330,11 +350,14 @@
             <div class="flex min-w-0 flex-col gap-2">
               {#each actions as action, index (action.id)}
                 {@const meta = actionMeta(action.actionType)}
+                {@const ActionIcon = actionIcon(action.actionType)}
                 <div
                   class="flex min-w-0 flex-nowrap items-center gap-2 rounded-md border border-border bg-background p-2"
                   data-rule-action-row
                 >
-                  <div class="min-w-0 flex-[1_1_13rem]">
+                  <div
+                    class={`min-w-0 ${meta?.type === "function" ? "flex-[1_1_23rem]" : "flex-[1_1_13rem]"}`}
+                  >
                     <Select.Root
                       type="single"
                       value={action.actionType}
@@ -347,19 +370,38 @@
                         class="h-9 text-sm"
                         aria-label="Action type"
                       >
-                        {meta?.label ?? action.actionType}
+                        <div class="flex min-w-0 flex-1 items-center gap-2">
+                          <ActionIcon
+                            class="size-4 shrink-0 text-muted-foreground"
+                            aria-hidden="true"
+                          />
+                          <span class="min-w-0 truncate"
+                            >{meta?.label ?? action.actionType}</span
+                          >
+                        </div>
                       </Select.Trigger>
                       <Select.Content>
-                        {#each registry.executors as executor (executor.key)}
-                          <Select.Item value={executor.key}
-                            >{executor.label}</Select.Item
-                          >
-                        {/each}
+                        <Select.Group>
+                          {#each registry.executors as executor (executor.key)}
+                            {@const ExecutorIcon = actionIcon(executor.key)}
+                            <Select.Item value={executor.key}>
+                              <div class="flex min-w-0 items-center gap-2">
+                                <ExecutorIcon
+                                  class="size-4 shrink-0 text-muted-foreground"
+                                  aria-hidden="true"
+                                />
+                                <span class="truncate">{executor.label}</span>
+                              </div>
+                            </Select.Item>
+                          {/each}
+                        </Select.Group>
                       </Select.Content>
                     </Select.Root>
                   </div>
 
-                  <div class="min-w-0 flex-[2_1_14rem]">
+                  <div
+                    class={`min-w-0 ${meta?.type === "function" ? "flex-[1_1_10rem]" : "flex-[2_1_14rem]"}`}
+                  >
                     {#if meta?.type === "function"}
                       <p class="px-1 text-sm text-muted-foreground">
                         No value required

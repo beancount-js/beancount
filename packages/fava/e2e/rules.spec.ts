@@ -35,6 +35,11 @@ const coffeeRule = {
       actionType: "set_transaction_category",
       value: "Expenses:Food",
     },
+    {
+      id: "coffee-ai-category",
+      actionType: "auto_categorise_with_ai",
+      value: null,
+    },
   ],
 };
 
@@ -77,9 +82,56 @@ test.describe("rule runs", () => {
     const dialog = page.getByRole("dialog", { name: "Run rules" });
     await expect(dialog).toBeVisible();
     await expect(
+      dialog.locator('[aria-label="Rule run target"]'),
+    ).toBeVisible();
+    await expect(
+      dialog.locator('[aria-label="Rule run target"]').getByRole("radio"),
+    ).toHaveCount(3);
+    await expect(
       dialog.getByRole("radio", { name: "Live ledger", exact: true }),
     ).toBeChecked();
     await expect(dialog).toContainText("1 unique matching entry");
     await expect(dialog).toContainText("1 live ledger entry");
+  });
+
+  test("keeps long AI actions contained and labels every action choice with an icon", async ({
+    page,
+  }) => {
+    await gotoStudio(page, "/settings/rules");
+    await page
+      .getByRole("button", { name: "Edit rule Categorise coffee" })
+      .click();
+
+    const sheet = page.locator("[data-rule-editor-sheet]");
+    const aiAction = sheet
+      .locator("[data-rule-action-row]")
+      .filter({ hasText: "Auto-categorise transactions with AI" });
+    const actionType = aiAction.getByRole("button", { name: "Action type" });
+
+    await expect(sheet).toBeVisible();
+    await expect(actionType).toBeVisible();
+    expect(
+      await actionType.evaluate(
+        (element) => element.scrollWidth <= element.clientWidth,
+      ),
+    ).toBe(true);
+
+    await actionType.click();
+    for (const actionLabel of [
+      "Set transaction category",
+      "Set transaction tags",
+      "Set transaction merchant",
+      "Set transaction name",
+      "Exclude transaction",
+      "Auto-categorise transactions with AI",
+      "Auto-detect merchants with AI",
+    ]) {
+      await expect(
+        page
+          .getByRole("option", { name: actionLabel, exact: true })
+          .locator("svg")
+          .first(),
+      ).toBeVisible();
+    }
   });
 });
