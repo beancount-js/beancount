@@ -5,6 +5,14 @@
   const { Story } = defineMeta({
     title: "Forms/YAML Backed Form",
     component: YamlBackedForm,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            "The shared editor for authoritative YAML drafts and validation errors. Do not use a plain textarea for YAML. Read the [Form guidance](?path=/docs/ui-forms-guidance--docs) for the YAML editing contract.",
+        },
+      },
+    },
   });
 
   const yaml = `version: 1

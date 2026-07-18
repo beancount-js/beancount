@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            'The shared shadcn-style control for a boolean setting. Place it in `FormField as="div" align="center"`; use Segmented Control when the user is selecting between named non-boolean modes.',
+            'The shared shadcn-style control for a boolean setting. Place it in `FormField as="div" align="center"`; use Segmented Control when the user is selecting between named non-boolean modes. See the [Form guidance](?path=/docs/ui-forms-guidance--docs) for the required form treatment.',
         },
       },
     },

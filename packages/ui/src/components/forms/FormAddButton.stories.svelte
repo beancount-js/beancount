@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "The shared footer affordance for adding a new repeatable item. Place it at the end of a section and give it a domain-specific label, such as Add source.",
+            "The shared footer affordance for adding a new repeatable item. Place it at the end of a section and give it a domain-specific label, such as Add source. The [Form guidance](?path=/docs/ui-forms-guidance--docs) defines its required footer placement.",
         },
       },
     },

@@ -1,0 +1,49 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="UI Forms/Guidance" />
+
+# Form guidance
+
+Use the shared form primitives before creating a Fava-local form layout. This page is the decision guide; each component’s generated Docs page supplies its props and interactive examples.
+
+## Start with the form shape
+
+- Use one `beancount-structured-form` label/value grid for each form scope. Every labelled row belongs in that grid so labels align.
+- Prefer `StructuredForm` for schema-shaped data. Otherwise compose `FormSectionHeader`, `FormField`, `FormToolbar`, and the repeatable-item primitives.
+- Keep the form container `min-width: 0`, with visible single row separators and no initial desktop horizontal overflow.
+
+## Choose the right control
+
+### Boolean setting
+
+Use <a href="?path=/docs/ui-forms-switch--docs">Switch</a>. Put it in `FormField as="div" align="center"` and give the switch an accessible name that describes the setting.
+
+### Two or three named modes
+
+Use <a href="?path=/docs/ui-forms-segmented-control--docs">Segmented Control</a> for mutually exclusive non-boolean modes. Provide a specific `ariaLabel` and centre the field row.
+
+### Searchable choice
+
+Use <a href="?path=/docs/forms-filter-command-picker--docs">Filter Command Picker</a> for accounts, queries, facets, enums, and environment names. Use `FormField as="div" align="center"` and `fullWidth` in forms and sidebars. Enable `allowCustom` only for values outside the supplied list.
+
+### Text, output, and YAML
+
+Use <a href="?path=/docs/ui-forms-form-field--docs">Form Field</a> for plain text or read-only output. Use the default row treatment for borderless text inputs and output; use centred alignment when mixed with pill controls. Use `YamlBackedForm` for YAML source editing—never a plain textarea YAML editor.
+
+Do not use the legacy `SearchableChoicePicker` for new work.
+
+## Sections and repeated data
+
+- Use <a href="?path=/docs/ui-forms-form-section-header--docs">Form Section Header</a> for editable sections and repeated entries with their own editable title and disclosure. Its left rail owns the chevron and hover move/remove actions.
+- Use <a href="?path=/docs/ui-forms-collapsible-item-list--docs">Collapsible Item List</a> when one header owns a simple repeated group and item count. Use <a href="?path=/docs/ui-forms-entry-actions--docs">Entry Actions</a> only when custom entry content needs move/remove controls without its own section header.
+- Keep disclosure titles title-only. Fixed titles are title-toggleable; editable titles preserve direct editing and use the left-rail chevron to collapse.
+- Put a domain-specific <a href="?path=/docs/ui-forms-form-add-button--docs">Form Add Button</a> in the section footer, aligned bottom-right. Blank rows use field-specific placeholders; empty arrays need no filler copy.
+- <a href="?path=/docs/ui-forms-form-toolbar--docs">Form Toolbar</a> owns
+  collapse/expand-all. It must include all nested disclosures, and newly added
+  entries inherit the current collapse state.
+
+## Build and verify the whole form
+
+Use the <a href="?path=/story/ui-forms-form-workspace--editable-ledger-settings">Form Workspace</a> story as the integration reference. It combines the shared shell, fixed and editable headers, picker, switch, modes, validation, nested repeatable content, and toolbar behavior.
+
+Every reusable control needs meaningful interactive stories. Verify visible state changes—not callbacks alone—and cover empty, validation, collapsed, and error states where they alter behavior. Storybook accessibility checks run as errors: fix violations instead of disabling axe rules.

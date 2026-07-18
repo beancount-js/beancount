@@ -9,7 +9,7 @@
       docs: {
         description: {
           component:
-            "The canonical searchable picker for accounts, enum-like values, and filter choices. In forms, place it in `FormField as=\"div\" align=\"center\"` and use `fullWidth`; enable `allowCustom` only when users may supply a value outside the option list.",
+            'The canonical searchable picker for accounts, enum-like values, and filter choices. In forms, place it in `FormField as="div" align="center"` and use `fullWidth`; enable `allowCustom` only when users may supply a value outside the option list. See the [Form guidance](?path=/docs/ui-forms-guidance--docs) for the control-choice rules.',
         },
       },
     },

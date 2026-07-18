@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "The shared header for form sections and repeatable entries. It owns the left-rail disclosure and hover move/delete actions; default titles are editable, while fixed titles should use `titleToggleable` so the whole title row collapses the section.",
+            "The shared header for form sections and repeatable entries. It owns the left-rail disclosure and hover move/delete actions; default titles are editable, while fixed titles should use `titleToggleable` so the whole title row collapses the section. See the [Form guidance](?path=/docs/ui-forms-guidance--docs) for section rules.",
         },
       },
     },

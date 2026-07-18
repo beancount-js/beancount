@@ -5,6 +5,14 @@
   const { Story } = defineMeta({
     title: "Forms/Form Field",
     component: FormField,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            'One labelled row in a shared `beancount-structured-form` grid. Use `as="div" align="center"` for pickers, switches, and segmented controls. Read the [Form guidance](?path=/docs/ui-forms-guidance--docs) before composing a form.',
+        },
+      },
+    },
   });
 </script>
 

@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            'One labelled row in a `beancount-structured-form` grid. Use `as="div"` and `align="center"` for pickers, switches, segmented controls, and other interactive pills; use the default text-row alignment for borderless inputs and output.',
+            'One labelled row in a `beancount-structured-form` grid. Use `as="div"` and `align="center"` for pickers, switches, segmented controls, and other interactive pills; use the default text-row alignment for borderless inputs and output. Read the [Form guidance](?path=/docs/ui-forms-guidance--docs) before composing a new form.',
         },
       },
     },

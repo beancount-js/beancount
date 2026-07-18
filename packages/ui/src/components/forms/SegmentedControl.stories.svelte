@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "A compact choice control for two or three mutually exclusive options. Keep it inside a centered Form Field row and provide a specific `ariaLabel` that identifies the decision being made.",
+            "A compact choice control for two or three mutually exclusive options. Keep it inside a centered Form Field row and provide a specific `ariaLabel` that identifies the decision being made. Use Switch for booleans; see the [Form guidance](?path=/docs/ui-forms-guidance--docs) for the control-choice rules.",
         },
       },
     },

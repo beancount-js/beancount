@@ -28,7 +28,8 @@
 - Keep every labelled field inside one `beancount-structured-form` scope per section. Do not place a `FormField` outside that grid next to sibling stacks — label columns will drift.
 - For `FilterCommandPicker`, date pickers, switches, and other pill/button controls: always `FormField as="div" align="center"`. Default `align="start"` is for borderless text inputs/`output` only; pills otherwise sit flush on the row separator and labels look vertically off.
 - When a form mixes text inputs with pill controls, use `align="center"` on the text rows too so vertical rhythm matches.
-- Do not add explanatory text to form section headers. Keep labels and values on the same row at desktop widths. Use existing shadcn-Svelte `Switch` controls for boolean configuration and YAML mode.
+- Do not add explanatory text to form section headers. Keep labels and values on the same row at desktop widths. Use a shadcn-Svelte `Switch` for every boolean configuration and YAML mode; in catalog/migrated forms use `@beancount-js/ui/forms/Switch.svelte` inside `FormField as="div" align="center"`, never an `aria-pressed` Enabled/Disabled button. Fava's existing local Switch remains supported during the migration.
+- Use `SegmentedControl` only for two or three named, mutually exclusive non-boolean choices. A boolean is always a Switch.
 - A form toolbar owns collapse/expand-all. Verify title-click collapse, collapsible content indentation, nested collapse state where applicable, no duplicate borders, and no initial desktop horizontal overflow in browser coverage.
 
 ## Searchable pickers
@@ -41,6 +42,7 @@
 ## UI catalog and Storybook
 
 - `@beancount-js/ui` owns the shared visual foundation and Storybook catalog. Keep stories next to the component they document. During the forms migration, Stories in `packages/forms/src` are intentionally discovered by the UI catalog.
+- `UI Forms/Guidance` is the canonical high-level form decision guide. Generated Docs pages retain props and examples; every reusable form component must link back to the guide and update it whenever its usage rules change.
 - Every reusable component must have stories covering its meaningful visual states, variants, and error/empty states. Treat the stories as the canonical visual contract for agents and application code.
 - Interactive controls must be interactive in their stories. Keep the story's state locally, pass it back through callbacks such as `onChange` or `onValuesChange`, and render the selected or changed value in the preview. Do not use static args for a control whose primary behavior is user interaction.
 - Storybook accessibility checks are required: `@beancount-js/ui` runs axe with `a11y.test = "error"`, so any accessibility violation fails the browser test. Fix violations; do not disable or waive axe rules to make a story pass.

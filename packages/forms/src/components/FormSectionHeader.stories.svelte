@@ -5,6 +5,14 @@
   const { Story } = defineMeta({
     title: "Forms/Form Section Header",
     component: FormSectionHeader,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            "The shared section and editable repeated-entry header. It owns the left-rail disclosure and hover move/remove actions. See the [Form guidance](?path=/docs/ui-forms-guidance--docs) for composition rules.",
+        },
+      },
+    },
   });
 </script>
 

@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "The form-level toolbar. It owns the collapse-all control and optional summary/actions; its callback must collapse or expand every descendant disclosure, including nested repeatable entries.",
+            "The form-level toolbar. It owns the collapse-all control and optional summary/actions; its callback must collapse or expand every descendant disclosure, including nested repeatable entries. See the [Form guidance](?path=/docs/ui-forms-guidance--docs) for the full collapse behavior.",
         },
       },
     },

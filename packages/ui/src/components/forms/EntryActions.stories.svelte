@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "Hover and keyboard-focus actions for moving or removing one repeated entry. Pair it with custom entry content; use Form Section Header instead when the entry needs its own title and disclosure.",
+            "Hover and keyboard-focus actions for moving or removing one repeated entry. Pair it with custom entry content; use Form Section Header instead when the entry needs its own title and disclosure. See the [Form guidance](?path=/docs/ui-forms-guidance--docs) for the composition rules.",
         },
       },
     },

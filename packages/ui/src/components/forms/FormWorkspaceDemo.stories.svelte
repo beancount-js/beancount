@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "An integrated reference form inside the shared app shell. It demonstrates a toolbar, fixed and editable section headers, nested repeatable rules, add/reorder/remove flows, validation, segmented controls, and searchable account pickers in their intended layout.",
+            "An integrated reference form inside the shared app shell. It demonstrates a toolbar, fixed and editable section headers, nested repeatable rules, add/reorder/remove flows, validation, switches, segmented controls, and searchable account pickers in their intended layout. Use the [Form guidance](?path=/docs/ui-forms-guidance--docs) to choose the primitives.",
         },
       },
     },

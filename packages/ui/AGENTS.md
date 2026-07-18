@@ -4,9 +4,10 @@ When working on UI components, use the `storybook-mcp-server` MCP tools to consu
 
 ## Component documentation
 
-- `@storybook/addon-docs` is enabled and the shared preview applies the `autodocs` tag. Stories are therefore the living documentation: each component automatically receives a Docs page from its metadata, props, args, and examples.
+- `@storybook/addon-docs` is enabled and the shared preview applies the `autodocs` tag. Stories are therefore the living documentation: each component automatically receives a Docs page from its metadata, props, args, and examples. `UI Forms/Guidance` is the catalog's high-level form decision guide; retain generated Docs pages and link every reusable form primitive back to it.
 - Add or update a colocated `ComponentName.stories.svelte` in the same change as every component. Point `defineMeta` at the actual component, give the story group a clear catalog title, and give each story a human-readable scenario name.
 - Type every public prop and add short JSDoc to non-obvious props, events, and state. Use a Docs description when that source-level information and the story names would not explain the component's intent or constraints.
+- Update the Form guidance page whenever form composition, control choice, disclosure, repeated-item, or verification rules change. The guide owns high-level rules; component Docs descriptions state the component-specific constraints and link to the guide.
 - Document the meaningful behaviour, not only the default: collectively cover distinct variants, validation/error and empty/loading states, permissions or feature states, themes, and responsive layouts when they alter behaviour. Do not duplicate equivalent visuals.
 - Interactive examples must be genuinely interactive. Their play functions must exercise the real control flow and assert a visible or accessible result as well as any callback; a callback assertion alone is insufficient.
 

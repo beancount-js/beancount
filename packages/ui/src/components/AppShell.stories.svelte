@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "The application frame for Studio and Fava. Use `hasSidebar` when a persistent navigation rail is present; sidebar-free pages retain equal workspace gutters on both sides.",
+            "The application frame for Studio and Fava. Use `hasSidebar` when a persistent navigation rail is present; sidebar-free pages retain equal workspace gutters on both sides. For form composition, start with the [Form guidance](?path=/docs/ui-forms-guidance--docs).",
         },
       },
     },
