@@ -70,9 +70,7 @@ function countsForTarget(
   const pendingImports = targetIncludesPendingImports(target)
     ? counts.pendingImports
     : 0;
-  const liveLedger = targetIncludesLiveLedger(target)
-    ? counts.liveLedger
-    : 0;
+  const liveLedger = targetIncludesLiveLedger(target) ? counts.liveLedger : 0;
   return { pendingImports, liveLedger, total: pendingImports + liveLedger };
 }
 
@@ -80,7 +78,9 @@ function errorMessages(errors: readonly { message: string }[]) {
   return new Set(errors.map((error) => error.message));
 }
 
-function proposalContext(proposal: ImportProposal): RuleEvaluationContext | undefined {
+function proposalContext(
+  proposal: ImportProposal,
+): RuleEvaluationContext | undefined {
   if (!proposal.transaction) return undefined;
   return {
     transaction: proposal.transaction,
@@ -313,7 +313,10 @@ export async function applyDetectionRules(options: {
   rulesStore: FilesystemRulesStore;
   ingestionStore: FilesystemIngestionStore;
   workspace: FilesystemWorkspaceAdapter;
-}): Promise<{ results: RuleApplyResult[]; snapshot: Awaited<ReturnType<FilesystemWorkspaceAdapter["readProject"]>> }> {
+}): Promise<{
+  results: RuleApplyResult[];
+  snapshot: Awaited<ReturnType<FilesystemWorkspaceAdapter["readProject"]>>;
+}> {
   const file = await options.rulesStore.readRules(options.projectId);
   const selected = options.ruleIds?.length
     ? file.rules.filter((rule) => options.ruleIds!.includes(rule.id))
@@ -418,7 +421,9 @@ export async function applyDetectionRules(options: {
 
         const contentsByPath = new Map<string, string>();
         for (const [path, edits] of editsByPath) {
-          const fileEntry = snapshot.ledgerFiles.find((item) => item.path === path);
+          const fileEntry = snapshot.ledgerFiles.find(
+            (item) => item.path === path,
+          );
           const revision = snapshot.revisions.find(
             (item) => item.path === path,
           )?.revision;
@@ -443,7 +448,10 @@ export async function applyDetectionRules(options: {
         }));
         const [, nextErrors] = loadProjectSources(
           snapshot.project.entryFile,
-          sourceFiles.map((item) => ({ path: item.path, contents: item.contents })),
+          sourceFiles.map((item) => ({
+            path: item.path,
+            contents: item.contents,
+          })),
         );
         const known = errorMessages(previousErrors);
         const introduced = nextErrors.filter(
@@ -463,14 +471,17 @@ export async function applyDetectionRules(options: {
             (item) => item.path === fileEntry.path,
           )?.revision;
           if (!revision) {
-            throw new Error(`Missing ledger file revision for ${fileEntry.path}.`);
+            throw new Error(
+              `Missing ledger file revision for ${fileEntry.path}.`,
+            );
           }
           await options.workspace.writeFile(
             options.projectId,
             { path: fileEntry.path, contents: fileEntry.contents },
             { expectedRevision: revision },
           );
-          modifiedByTarget.liveLedger += editsByPath.get(fileEntry.path)?.length ?? 0;
+          modifiedByTarget.liveLedger +=
+            editsByPath.get(fileEntry.path)?.length ?? 0;
         }
       }
 

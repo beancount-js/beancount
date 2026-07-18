@@ -170,9 +170,9 @@ describe("manual rule application targets", () => {
         modified: { pendingImports: 0, liveLedger: 1 },
       },
     });
-    await expect(readFile(join(root, "main.beancount"), "utf8")).resolves.toContain(
-      "Expenses:Debt:Repayment 42.00 GBP",
-    );
+    await expect(
+      readFile(join(root, "main.beancount"), "utf8"),
+    ).resolves.toContain("Expenses:Debt:Repayment 42.00 GBP");
     const [run] = await ingestionStore.readRuns(project.id);
     expect(run?.proposals[0]?.selectedAccount).toBe("Expenses:Uncategorized");
   });
@@ -198,12 +198,38 @@ describe("manual rule application targets", () => {
         modified: { pendingImports: 1, liveLedger: 0 },
       },
     });
-    await expect(readFile(join(root, "main.beancount"), "utf8")).resolves.toContain(
-      "Expenses:Uncategorized  42.00 GBP",
-    );
+    await expect(
+      readFile(join(root, "main.beancount"), "utf8"),
+    ).resolves.toContain("Expenses:Uncategorized  42.00 GBP");
     const [run] = await ingestionStore.readRuns(project.id);
-    expect(run?.proposals[0]?.selectedAccount).toBe(
-      "Expenses:Debt:Repayment",
-    );
+    expect(run?.proposals[0]?.selectedAccount).toBe("Expenses:Debt:Repayment");
+  });
+
+  test("updates both targets only when explicitly selected", async () => {
+    const { root, project, workspace, ingestionStore, rulesStore } =
+      await fixture();
+
+    const result = await applyDetectionRules({
+      projectId: project.id,
+      target: "both",
+      workspace,
+      ingestionStore,
+      rulesStore,
+    });
+
+    expect(result.results[0]).toMatchObject({
+      target: "both",
+      processed: 2,
+      modified: 2,
+      targetCounts: {
+        queued: { pendingImports: 1, liveLedger: 1 },
+        modified: { pendingImports: 1, liveLedger: 1 },
+      },
+    });
+    await expect(
+      readFile(join(root, "main.beancount"), "utf8"),
+    ).resolves.toContain("Expenses:Debt:Repayment 42.00 GBP");
+    const [run] = await ingestionStore.readRuns(project.id);
+    expect(run?.proposals[0]?.selectedAccount).toBe("Expenses:Debt:Repayment");
   });
 });

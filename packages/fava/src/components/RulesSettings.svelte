@@ -540,13 +540,14 @@
           <p class="text-sm text-muted-foreground">No rule runs yet.</p>
         {:else}
           <div class="overflow-x-auto rounded-xl border bg-card shadow-sm">
-            <table class="w-full min-w-[42rem] text-left text-sm">
+            <table class="w-full min-w-[48rem] text-left text-sm">
               <thead>
                 <tr
                   class="border-b bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 >
                   <th class="px-4 py-2.5 font-semibold">Date/Time</th>
                   <th class="px-4 py-2.5 font-semibold">Type</th>
+                  <th class="px-4 py-2.5 font-semibold">Target</th>
                   <th class="px-4 py-2.5 font-semibold">Status</th>
                   <th class="px-4 py-2.5 font-semibold">Rule</th>
                   <th class="px-4 py-2.5 text-right font-semibold">Queued</th>
@@ -565,6 +566,9 @@
                     >
                     <td class="px-4 py-2.5 capitalize text-muted-foreground"
                       >{run.executionType}</td
+                    >
+                    <td class="px-4 py-2.5 capitalize text-muted-foreground"
+                      >{run.target ? targetLabel(run.target) : "legacy"}</td
                     >
                     <td class="px-4 py-2.5">
                       <span
@@ -649,8 +653,8 @@
             <ToggleGroup.Item value="both">Both</ToggleGroup.Item>
           </ToggleGroup.Root>
           <p class="text-xs text-muted-foreground">
-            Live ledger is selected by default. Both updates two separate
-            stores and is never selected automatically.
+            Live ledger is selected by default. Both updates two separate stores
+            and is never selected automatically.
           </p>
         </div>
 
@@ -660,7 +664,9 @@
           {:else}
             {@const totals = previewTotals(applyPreview)}
             <p>
-              {totals.total} matching rule {totals.total === 1 ? "entry" : "entries"}
+              {totals.total} matching rule {totals.total === 1
+                ? "entry"
+                : "entries"}
               across {totals.pendingImports} pending
               {totals.pendingImports === 1 ? "import" : "imports"} and
               {totals.liveLedger} live ledger

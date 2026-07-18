@@ -84,7 +84,10 @@ export class FilesystemRulesStore {
     return file.rules.filter((rule) => rule.active);
   }
 
-  async writeRules(project: string, file: RulesFile | { rules: DetectionRule[] }) {
+  async writeRules(
+    project: string,
+    file: RulesFile | { rules: DetectionRule[] },
+  ) {
     const rules = (file.rules ?? [])
       .map((rule) => parseDetectionRule(rule) ?? rule)
       .filter((rule): rule is DetectionRule => Boolean(rule));
@@ -147,14 +150,12 @@ export class FilesystemRulesStore {
     const current = file.runs[index];
     const processed =
       patch.transactionsProcessed ?? current.transactionsProcessed;
-    const modified =
-      patch.transactionsModified ?? current.transactionsModified;
+    const modified = patch.transactionsModified ?? current.transactionsModified;
     const updated: RuleRun = {
       ...current,
       ...patch,
       transactionsBlocked:
-        patch.transactionsBlocked ??
-        ruleBlockedCount(processed, modified),
+        patch.transactionsBlocked ?? ruleBlockedCount(processed, modified),
     };
     const runs = [...file.runs];
     runs[index] = updated;

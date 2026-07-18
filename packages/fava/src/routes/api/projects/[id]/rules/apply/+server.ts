@@ -31,7 +31,10 @@ export async function POST({
       body.target !== "both"
     ) {
       return json(
-        { error: "Choose whether to run rules on pending imports, the live ledger, or both." },
+        {
+          error:
+            "Choose whether to run rules on pending imports, the live ledger, or both.",
+        },
         { status: 400 },
       );
     }
