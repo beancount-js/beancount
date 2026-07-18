@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { accountOpenClose } from "@beancount-js/beancount";
+  import { AccountAvatar } from "@beancount-js/forms";
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
   import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
@@ -10,9 +12,12 @@
   import type { SortOrder } from "../grid/sort";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type {
+    IngestionConfigResponse,
     IngestionRunPage,
     IngestionRunSummary,
   } from "../ingestion/types";
+  import { useContext } from "../context";
+  import { ingestionRunSourceDisplay } from "../ingestion/history";
   import { useNavigation } from "../router/router";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
@@ -27,6 +32,7 @@
   };
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
   const { snapshot } = useStudioWorkspace();
+  const { ledgerData } = useContext();
   const { router } = useNavigation();
 
   let page = $state<IngestionRunPage>({
@@ -38,6 +44,7 @@
   let loading = $state(false);
   let status = $state("");
   let loadedProjectId = $state("");
+  let sourceConfig = $state<IngestionConfigResponse | undefined>(undefined);
   let pageSize = $state(DEFAULT_PAGE_SIZE);
   let sortOrders = $state<Record<SortKey, SortOrder>>({
     date: "none",
@@ -54,6 +61,9 @@
   const pageCount = $derived(Math.max(1, Math.ceil(page.total / page.limit)));
   const historyGroups = $derived.by(() =>
     groupRunsByDate(page.runs, sortPriority, sortOrders),
+  );
+  const openDirectivesByAccount = $derived.by(() =>
+    accountOpenClose($ledgerData.directives),
   );
 
   type SortKey = "date" | "proposals" | "accepted" | "review" | "duplicates";
@@ -84,6 +94,27 @@
     } finally {
       loading = false;
     }
+  }
+
+  async function loadSourceConfig(projectId: string) {
+    try {
+      const next = await ingestionJson<IngestionConfigResponse>(
+        ingestionPath(projectId),
+      );
+      if ($snapshot?.project.id === projectId) sourceConfig = next;
+    } catch {
+      if ($snapshot?.project.id === projectId) sourceConfig = undefined;
+    }
+  }
+
+  function accountAppearanceFor(sourceAccount?: string) {
+    const open = sourceAccount
+      ? openDirectivesByAccount[sourceAccount]?.open
+      : undefined;
+    return {
+      color: typeof open?.meta.color === "string" ? open.meta.color : "",
+      icon: typeof open?.meta.icon === "string" ? open.meta.icon : "",
+    };
   }
 
   function changePageSize(value: string) {
@@ -214,6 +245,7 @@
     if (!next || isWeb || next.project.id === loadedProjectId) return;
     loadedProjectId = next.project.id;
     void loadHistory();
+    void loadSourceConfig(next.project.id);
   });
 
   $effect(() => {
@@ -262,7 +294,7 @@
       {:else}
         <div
           role="row"
-          class="hidden grid-cols-[minmax(0,1fr)_repeat(4,4rem)] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid"
+          class="hidden grid-cols-[minmax(0,1fr)_repeat(4,5rem)] items-center gap-x-6 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid"
         >
           <div
             role="columnheader"
@@ -288,11 +320,11 @@
           <div
             role="columnheader"
             aria-sort={ariaSortFor("proposals")}
-            class="justify-self-end"
+            class="justify-self-center"
           >
             <button
               type="button"
-              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              class="inline-flex items-center justify-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Sort by proposal count"
               onclick={() => cycleSort("proposals")}
             >
@@ -309,11 +341,11 @@
           <div
             role="columnheader"
             aria-sort={ariaSortFor("accepted")}
-            class="justify-self-end"
+            class="justify-self-center"
           >
             <button
               type="button"
-              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              class="inline-flex items-center justify-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Sort by accepted count"
               onclick={() => cycleSort("accepted")}
             >
@@ -330,11 +362,11 @@
           <div
             role="columnheader"
             aria-sort={ariaSortFor("review")}
-            class="justify-self-end"
+            class="justify-self-center"
           >
             <button
               type="button"
-              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              class="inline-flex items-center justify-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Sort by review count"
               onclick={() => cycleSort("review")}
             >
@@ -351,11 +383,11 @@
           <div
             role="columnheader"
             aria-sort={ariaSortFor("duplicates")}
-            class="justify-self-end"
+            class="justify-self-center"
           >
             <button
               type="button"
-              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              class="inline-flex items-center justify-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Sort by duplicate count"
               onclick={() => cycleSort("duplicates")}
             >
@@ -388,74 +420,88 @@
               class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
             >
               {#each group.runs as run, index (run.id)}
+                {@const source = ingestionRunSourceDisplay(
+                  run.sourceId,
+                  sourceConfig?.sources ?? [],
+                )}
+                {@const appearance = accountAppearanceFor(source.sourceAccount)}
                 <div
                   class:rounded-b-xl={index === group.runs.length - 1}
-                  class="relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-4 py-4 transition-colors last:border-b-0 focus-within:bg-accent focus-within:ring-2 focus-within:ring-ring hover:bg-accent/60 sm:grid-cols-[minmax(0,1fr)_repeat(4,4rem)] sm:gap-x-4"
+                  class="relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-4 py-4 transition-colors last:border-b-0 focus-within:bg-accent focus-within:ring-2 focus-within:ring-ring hover:bg-accent/60 sm:grid-cols-[minmax(0,1fr)_repeat(4,5rem)] sm:gap-x-6"
                 >
                   <a
                     href={`/import/history/${run.id}`}
                     class="absolute inset-0 z-0 rounded-[inherit] outline-none"
-                    aria-label={`View audit for ${run.sourceId}`}
+                    aria-label={`View audit for ${source.title}`}
                     onclick={(event) => handleAuditLinkClick(event, run)}
                   ></a>
 
                   <div
                     class="pointer-events-none relative z-10 col-span-2 min-w-0 sm:col-span-1"
                   >
-                    <div class="flex flex-wrap items-center gap-2">
-                      <h3 class="truncate text-sm font-semibold">
-                        {run.sourceId}
-                      </h3>
-                      <span
-                        class={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          run.reviewState === "pending"
-                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {run.reviewState === "pending"
-                          ? "Pending review"
-                          : "Completed"}
-                      </span>
+                    <div class="flex min-w-0 items-start gap-3">
+                      <AccountAvatar
+                        account={source.sourceAccount ?? source.title}
+                        color={appearance.color}
+                        icon={appearance.icon}
+                      />
+                      <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <h3 class="truncate text-sm font-semibold">
+                            {source.title}
+                          </h3>
+                          <span
+                            class={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                              run.reviewState === "pending"
+                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {run.reviewState === "pending"
+                              ? "Pending review"
+                              : "Completed"}
+                          </span>
+                        </div>
+                        <p class="mt-1 truncate text-xs text-muted-foreground">
+                          {formatTime(run.completedAt)} · Run {run.id}
+                        </p>
+                        {#if run.reviewState === "pending"}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            class="pointer-events-auto mt-3"
+                            onclick={() => openInReview(run)}
+                          >
+                            <ExternalLink data-icon="inline-start" />
+                            <span class="hidden lg:inline">Open in Review</span>
+                            <span class="lg:hidden">Review</span>
+                          </Button>
+                        {/if}
+                      </div>
                     </div>
-                    <p class="mt-1 truncate text-xs text-muted-foreground">
-                      {formatTime(run.completedAt)} · Run {run.id}
-                    </p>
-                    {#if run.reviewState === "pending"}
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        class="pointer-events-auto mt-3"
-                        onclick={() => openInReview(run)}
-                      >
-                        <ExternalLink data-icon="inline-start" />
-                        <span class="hidden lg:inline">Open in Review</span>
-                        <span class="lg:hidden">Review</span>
-                      </Button>
-                    {/if}
                   </div>
 
                   <div
-                    class="pointer-events-none relative z-10 order-3 col-span-2 grid grid-cols-4 gap-3 text-right text-xs text-muted-foreground sm:order-none sm:col-span-1 sm:contents sm:text-sm"
+                    class="pointer-events-none relative z-10 order-3 col-span-2 grid grid-cols-4 gap-3 text-center text-xs text-muted-foreground sm:order-none sm:col-span-1 sm:contents sm:text-sm"
                   >
                     <span
-                      class="font-medium tabular-nums text-foreground sm:text-right"
+                      class="font-medium tabular-nums text-foreground sm:text-center"
                       aria-label={`${run.summary.total} proposals`}
                       >{run.summary.total}</span
                     >
                     <span
-                      class="tabular-nums sm:text-right"
+                      class="tabular-nums sm:text-center"
                       aria-label={`${run.summary.accepted} accepted`}
                       >{run.summary.accepted}</span
                     >
                     <span
-                      class="tabular-nums sm:text-right"
+                      class="tabular-nums sm:text-center"
                       aria-label={`${run.summary.needsReview} need review`}
                       >{run.summary.needsReview}</span
                     >
                     <span
-                      class="tabular-nums sm:text-right"
+                      class="tabular-nums sm:text-center"
                       aria-label={`${run.summary.duplicates} duplicates`}
                       >{run.summary.duplicates}</span
                     >
