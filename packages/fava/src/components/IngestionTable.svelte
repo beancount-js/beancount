@@ -101,6 +101,9 @@
   let expandedSignature = $state("");
   let selectedRow = $state<ProposalRow | undefined>(undefined);
   let selectedProposalKeys = $state(new Set<string>());
+  let reconciliationBulkAction = $state<IngestionBulkReviewAction | undefined>(
+    undefined,
+  );
   let sheetOpen = $state(false);
   let failedLogoIds = $state(new Set<string>());
   let filtersExpanded = $state(false);
@@ -428,6 +431,12 @@
     selectedProposalKeys = new Set();
   }
 
+  function setReconciliationBulkAction(
+    action: IngestionBulkReviewAction | undefined,
+  ) {
+    reconciliationBulkAction = action;
+  }
+
   function updateRoute(values: Record<string, string | undefined>) {
     const query = new URLSearchParams($activeRoute.query);
     for (const [key, value] of Object.entries(values)) {
@@ -561,7 +570,9 @@
         ready.length > 0 && !loading && !accepting && !bulkUpdating && !syncing,
       acceptCount: ready.length,
       acceptBusy: accepting,
-      bulkAction: showingReconciliation ? undefined : transactionBulkAction,
+      bulkAction: showingReconciliation
+        ? reconciliationBulkAction
+        : transactionBulkAction,
       canOpenLedger: Boolean($reviewLedger),
       onSourceChange: (nextSourceId) => void loadRunForSource(nextSourceId),
       onToggleCollapseGroups: toggleAllGroups,
@@ -1403,6 +1414,7 @@
           projectId={project?.project.id}
           refreshKey={reconciliationRefreshKey}
           onApplied={() => void refresh()}
+          onBulkActionChange={setReconciliationBulkAction}
         />
       {:else}
         <div

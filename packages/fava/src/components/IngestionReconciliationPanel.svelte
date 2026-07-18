@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import {
     FilterCommandPicker,
     SearchFilterBar,
@@ -13,6 +14,7 @@
   import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import X from "lucide-svelte/icons/x";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
+  import type { IngestionBulkReviewAction } from "../studio/ingestion-header-actions";
   import { debounceWithDelay } from "../hooks/debounce";
   import {
     appendReconciliationReviewSearchParams,
@@ -28,6 +30,11 @@
     RECONCILIATION_REVIEW_PAGE_SIZES,
     type ReconciliationReviewSearchState,
   } from "../lib/reconciliation-review-search-state";
+  import {
+    checkboxSelectionState,
+    pruneReviewSelection,
+    updateReviewSelection,
+  } from "../lib/review-selection";
   import { useNavigation } from "../router/router";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
@@ -39,11 +46,15 @@
     projectId,
     refreshKey = "",
     onApplied = () => {},
+    onBulkActionChange = () => {},
   }: {
     projectId?: string;
     /** Changes after sync, edits, and ordinary acceptance to reload candidates. */
     refreshKey?: string;
     onApplied?: () => void;
+    onBulkActionChange?: (
+      action: IngestionBulkReviewAction | undefined,
+    ) => void;
   } = $props();
 
   let review = $state<Review | undefined>(undefined);
@@ -51,6 +62,8 @@
   let loading = $state(false);
   let error = $state("");
   let busyCandidateId = $state("");
+  let bulkConfirming = $state(false);
+  let selectedCandidateIds = $state(new Set<string>());
   let loadedKey = $state("");
   let filtersExpanded = $state(false);
   let searchState = $state<ReconciliationReviewSearchState>(
@@ -108,6 +121,85 @@
   );
   const page = $derived(Math.min(requestedPage, Math.max(1, pages.length)));
   const visibleCandidates = $derived(pages[page - 1] ?? []);
+  const actionableCandidates = $derived(
+    matchedCandidates.filter(canBulkConfirm),
+  );
+  const actionableCandidateIds = $derived(
+    new Set(actionableCandidates.map((item) => item.candidate.id)),
+  );
+  const selectedCandidates = $derived(
+    actionableCandidates.filter((item) =>
+      selectedCandidateIds.has(item.candidate.id),
+    ),
+  );
+  const visibleActionableCandidateIds = $derived(
+    visibleCandidates
+      .filter((item) => actionableCandidateIds.has(item.candidate.id))
+      .map((item) => item.candidate.id),
+  );
+  const masterSelection = $derived(
+    checkboxSelectionState(selectedCandidateIds, visibleActionableCandidateIds),
+  );
+  const allMatchingSelected = $derived(
+    actionableCandidates.length > 0 &&
+      selectedCandidateIds.size === actionableCandidates.length,
+  );
+  const showSelectionBanner = $derived(
+    actionableCandidates.length > visibleActionableCandidateIds.length &&
+      visibleActionableCandidateIds.length > 0 &&
+      (masterSelection.checked || allMatchingSelected),
+  );
+  const bulkAction = $derived.by((): IngestionBulkReviewAction | undefined => {
+    if (!selectedCandidates.length) return;
+    return {
+      label: "Confirm",
+      selectedCount: selectedCandidates.length,
+      canRun:
+        !loading && !bulkConfirming && !busyCandidateId && Boolean(projectId),
+      busy: bulkConfirming,
+      onRun: () => void confirmSelectedCandidates(),
+    };
+  });
+
+  function setIndeterminate(node: HTMLInputElement, value: boolean) {
+    node.indeterminate = value;
+    return {
+      update(next: boolean) {
+        node.indeterminate = next;
+      },
+    };
+  }
+
+  function canBulkConfirm(item: ReconciliationReviewDisplayItem) {
+    return (
+      item.decision?.state !== "confirmed" &&
+      Boolean(
+        item.decision?.canonicalObservationId ??
+          item.candidate.recommendedCanonicalId,
+      )
+    );
+  }
+
+  function setSelectedCandidates(
+    candidateIds: readonly string[],
+    selected: boolean,
+  ) {
+    selectedCandidateIds = updateReviewSelection(
+      selectedCandidateIds,
+      candidateIds,
+      selected,
+    );
+  }
+
+  function selectAllMatchingCandidates() {
+    selectedCandidateIds = new Set(
+      actionableCandidates.map((item) => item.candidate.id),
+    );
+  }
+
+  function clearSelectedCandidates() {
+    selectedCandidateIds = new Set();
+  }
 
   function memberLabel(
     member: ReconciliationReviewDisplayItem["members"][number],
@@ -228,7 +320,7 @@
     state: "confirmed" | "dismissed",
     canonicalObservationId?: string,
   ) {
-    if (!projectId || busyCandidateId) return;
+    if (!projectId || busyCandidateId || bulkConfirming) return;
     busyCandidateId = item.candidate.id;
     try {
       review = await ingestionJson<Review>(
@@ -252,7 +344,7 @@
   }
 
   async function apply(item: ReconciliationReviewDisplayItem) {
-    if (!projectId || busyCandidateId) return;
+    if (!projectId || busyCandidateId || bulkConfirming) return;
     busyCandidateId = item.candidate.id;
     try {
       await ingestionJson(
@@ -271,6 +363,47 @@
     }
   }
 
+  async function confirmSelectedCandidates() {
+    if (!projectId || bulkConfirming || !selectedCandidates.length) return;
+    const items = [...selectedCandidates];
+    bulkConfirming = true;
+    error = "";
+    let confirmedCount = 0;
+    try {
+      for (const item of items) {
+        const canonicalObservationId =
+          item.decision?.canonicalObservationId ??
+          item.candidate.recommendedCanonicalId;
+        if (!canonicalObservationId) continue;
+        review = await ingestionJson<Review>(
+          ingestionPath(projectId, "/reconciliation"),
+          {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              candidateId: item.candidate.id,
+              state: "confirmed",
+              canonicalObservationId,
+            }),
+          },
+        );
+        selectedCandidateIds = updateReviewSelection(
+          selectedCandidateIds,
+          [item.candidate.id],
+          false,
+        );
+        confirmedCount += 1;
+      }
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      error = confirmedCount
+        ? `Confirmed ${confirmedCount} match${confirmedCount === 1 ? "" : "es"}; ${message}`
+        : message;
+    } finally {
+      bulkConfirming = false;
+    }
+  }
+
   $effect(() => {
     const key = `${projectId ?? ""}\0${refreshKey}`;
     if (key === loadedKey) return;
@@ -285,6 +418,27 @@
     searchState = parseReconciliationReviewSearchState(
       $activeRoute?.query ?? {},
     );
+  });
+
+  $effect(() => {
+    const next = pruneReviewSelection(
+      selectedCandidateIds,
+      actionableCandidateIds,
+    );
+    if (
+      next.size !== selectedCandidateIds.size ||
+      [...next].some((key) => !selectedCandidateIds.has(key))
+    ) {
+      selectedCandidateIds = next;
+    }
+  });
+
+  $effect(() => {
+    onBulkActionChange(bulkAction);
+  });
+
+  onDestroy(() => {
+    onBulkActionChange(undefined);
   });
 </script>
 
@@ -439,22 +593,82 @@
     </div>
   {:else if matchedCandidates.length}
     <div
-      class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+      class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
     >
+      <input
+        use:setIndeterminate={masterSelection.indeterminate}
+        type="checkbox"
+        class="size-4 rounded border-input text-primary focus:ring-ring"
+        aria-label="Select visible reconciliation matches"
+        checked={masterSelection.checked}
+        disabled={!visibleActionableCandidateIds.length || bulkConfirming}
+        onchange={(event) =>
+          setSelectedCandidates(
+            visibleActionableCandidateIds,
+            (event.currentTarget as HTMLInputElement).checked,
+          )}
+      />
       <span>Match</span>
       <span class="text-right">Actions</span>
     </div>
 
+    {#if showSelectionBanner}
+      <div
+        data-reconciliation-selection-banner
+        role="status"
+        class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+      >
+        {#if allMatchingSelected}
+          All {actionableCandidates.length} matching reconciliation items selected.
+          <button
+            type="button"
+            class="font-medium text-primary underline-offset-2 hover:underline"
+            onclick={clearSelectedCandidates}
+          >
+            Clear selection
+          </button>
+        {:else}
+          All {visibleActionableCandidateIds.length} actionable matches on this page
+          are selected.
+          <button
+            type="button"
+            class="font-medium text-primary underline-offset-2 hover:underline"
+            onclick={selectAllMatchingCandidates}
+          >
+            Select all {actionableCandidates.length} matching items
+          </button>
+        {/if}
+      </div>
+    {/if}
+
     <div class="flex flex-col gap-3" data-ingestion-reconciliation>
       {#each visibleCandidates as item (item.candidate.id)}
         {@const busy = busyCandidateId === item.candidate.id}
+        {@const selectable = actionableCandidateIds.has(item.candidate.id)}
         {@const chosen =
           item.decision?.canonicalObservationId ??
           item.candidate.recommendedCanonicalId}
         <section class="overflow-hidden rounded-2xl bg-muted/80">
           <div
-            class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 px-4 py-4 sm:px-5"
+            class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 px-4 py-4 sm:px-5"
           >
+            <input
+              type="checkbox"
+              class="mt-0.5 size-4 rounded border-input text-primary focus:ring-ring"
+              aria-label={`Select ${reconciliationKindLabel(item.candidate.kind)}`}
+              title={selectable
+                ? undefined
+                : item.decision?.state === "confirmed"
+                  ? "This match is already confirmed"
+                  : "Choose a canonical record before confirming this match"}
+              checked={selectedCandidateIds.has(item.candidate.id)}
+              disabled={!selectable || bulkConfirming}
+              onchange={(event) =>
+                setSelectedCandidates(
+                  [item.candidate.id],
+                  (event.currentTarget as HTMLInputElement).checked,
+                )}
+            />
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <h2 class="text-sm font-semibold tracking-wide text-foreground">
@@ -473,7 +687,7 @@
                   size="icon"
                   aria-label="Apply confirmed match"
                   title="Apply confirmed match"
-                  disabled={busy}
+                  disabled={busy || bulkConfirming}
                   onclick={() => void apply(item)}
                 >
                   <Check data-icon />
@@ -484,7 +698,7 @@
                   variant="outline"
                   aria-label="Not a match"
                   title="Not a match"
-                  disabled={busy}
+                  disabled={busy || bulkConfirming}
                   onclick={() => void decide(item, "dismissed")}
                 >
                   <X data-icon />
@@ -494,7 +708,7 @@
                     size="icon"
                     aria-label="Confirm match"
                     title="Confirm match"
-                    disabled={busy}
+                    disabled={busy || bulkConfirming}
                     onclick={() => void decide(item, "confirmed", chosen)}
                   >
                     <Check data-icon />
@@ -506,7 +720,7 @@
                       variant="outline"
                       aria-label={`Use ${memberLabel(member)} as the canonical record`}
                       title={`Use ${memberLabel(member)} as the canonical record`}
-                      disabled={busy}
+                      disabled={busy || bulkConfirming}
                       onclick={() =>
                         void decide(item, "confirmed", member.observation.id)}
                     >
