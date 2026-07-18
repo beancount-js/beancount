@@ -19,7 +19,10 @@
   import { useStudioWorkspace } from "../studio/workspace";
   import { ledgerStemForPath } from "../lib/ledger-route";
   import { setStudioRouteEnv } from "../lib/studio-route-env";
-  import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
+  import {
+    ingestionHeaderActions,
+    type IngestionBulkReviewAction,
+  } from "../studio/ingestion-header-actions";
   import { useNavigation } from "../router/router";
   import { debounceWithDelay } from "../hooks/debounce";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
@@ -45,6 +48,11 @@
     parseIngestionReviewSearchState,
     type IngestionReviewSearchState,
   } from "../lib/ingestion-review-search-state";
+  import {
+    checkboxSelectionState,
+    pruneReviewSelection,
+    updateReviewSelection,
+  } from "../lib/review-selection";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
@@ -85,12 +93,14 @@
   let status = $state("");
   let loading = $state(false);
   let accepting = $state(false);
+  let bulkUpdating = $state(false);
   let loadedProjectId = $state("");
   let syncJob = $state<IngestionSyncJob | null>(null);
   let syncAbort = $state<AbortController | null>(null);
   let expandedGroups = $state(new Set<string>());
   let expandedSignature = $state("");
   let selectedRow = $state<ProposalRow | undefined>(undefined);
+  let selectedProposalKeys = $state(new Set<string>());
   let sheetOpen = $state(false);
   let failedLogoIds = $state(new Set<string>());
   let filtersExpanded = $state(false);
@@ -319,6 +329,53 @@
   const groupsCollapsedAll = $derived(
     dateGroups.every((group) => !expandedGroups.has(group.key)),
   );
+  const actionableRows = $derived(
+    reviewFilter === "accepted"
+      ? filteredRows
+      : reviewFilter === "pending"
+        ? filteredRows.filter(canBulkApproveRow)
+        : [],
+  );
+  const actionableKeySet = $derived(
+    new Set(actionableRows.map((row) => row.key)),
+  );
+  const selectedProposalRows = $derived(
+    actionableRows.filter((row) => selectedProposalKeys.has(row.key)),
+  );
+  const visibleActionableKeys = $derived(
+    visibleGroups.flatMap((group) =>
+      group.rows
+        .filter((row) => actionableKeySet.has(row.key))
+        .map((row) => row.key),
+    ),
+  );
+  const masterSelection = $derived(
+    checkboxSelectionState(selectedProposalKeys, visibleActionableKeys),
+  );
+  const allMatchingSelected = $derived(
+    actionableRows.length > 0 &&
+      selectedProposalKeys.size === actionableRows.length,
+  );
+  const showSelectionBanner = $derived(
+    actionableRows.length > visibleActionableKeys.length &&
+      visibleActionableKeys.length > 0 &&
+      (masterSelection.checked || allMatchingSelected),
+  );
+  const transactionBulkAction = $derived.by(
+    (): IngestionBulkReviewAction | undefined => {
+      if (!selectedProposalRows.length || showingReconciliation) return;
+      const approving = reviewFilter === "pending";
+      return {
+        label: approving ? "Approve" : "Accept",
+        selectedCount: selectedProposalRows.length,
+        canRun: !loading && !syncing && !accepting && !bulkUpdating,
+        busy: approving ? bulkUpdating : accepting,
+        onRun: approving
+          ? () => void approveSelectedProposals()
+          : () => void accept(selectedProposalRows),
+      };
+    },
+  );
 
   function paginateProposalGroups(
     groups: readonly DateGroup[],
@@ -338,6 +395,37 @@
     }
     if (current.length) result.push(current);
     return result;
+  }
+
+  function setIndeterminate(node: HTMLInputElement, value: boolean) {
+    node.indeterminate = value;
+    return {
+      update(next: boolean) {
+        node.indeterminate = next;
+      },
+    };
+  }
+
+  function canBulkApproveRow(row: ProposalRow) {
+    return (
+      row.proposal.status !== "held" && Boolean(row.proposal.selectedAccount)
+    );
+  }
+
+  function setSelectedRows(rowKeys: readonly string[], selected: boolean) {
+    selectedProposalKeys = updateReviewSelection(
+      selectedProposalKeys,
+      rowKeys,
+      selected,
+    );
+  }
+
+  function selectAllMatchingRows() {
+    selectedProposalKeys = new Set(actionableRows.map((row) => row.key));
+  }
+
+  function clearSelectedRows() {
+    selectedProposalKeys = new Set();
   }
 
   function updateRoute(values: Record<string, string | undefined>) {
@@ -409,6 +497,16 @@
     searchState = parseIngestionReviewSearchState($activeRoute.query);
   });
 
+  $effect(() => {
+    const next = pruneReviewSelection(selectedProposalKeys, actionableKeySet);
+    if (
+      next.size !== selectedProposalKeys.size ||
+      [...next].some((key) => !selectedProposalKeys.has(key))
+    ) {
+      selectedProposalKeys = next;
+    }
+  });
+
   function setReviewFilter(value: string | undefined) {
     if (
       value !== "pending" &&
@@ -459,9 +557,11 @@
       canRerunAi,
       aiRerunBusy,
       groupsCollapsedAll,
-      canAccept: ready.length > 0 && !loading && !accepting && !syncing,
+      canAccept:
+        ready.length > 0 && !loading && !accepting && !bulkUpdating && !syncing,
       acceptCount: ready.length,
       acceptBusy: accepting,
+      bulkAction: showingReconciliation ? undefined : transactionBulkAction,
       canOpenLedger: Boolean($reviewLedger),
       onSourceChange: (nextSourceId) => void loadRunForSource(nextSourceId),
       onToggleCollapseGroups: toggleAllGroups,
@@ -932,6 +1032,51 @@
     }
   }
 
+  async function approveSelectedProposals() {
+    if (!project || bulkUpdating || !selectedProposalRows.length) return;
+    const rows = [...selectedProposalRows];
+    bulkUpdating = true;
+    status = `Approving ${rows.length} transaction${rows.length === 1 ? "" : "s"}…`;
+    let approvedCount = 0;
+    try {
+      for (const row of rows) {
+        const account = row.proposal.selectedAccount;
+        if (!account) {
+          throw new Error("Choose an account before approving this proposal.");
+        }
+        const run = await ingestionJson<IngestionRun>(
+          ingestionPath(
+            project.project.id,
+            `/runs/${encodeURIComponent(row.runId)}`,
+          ),
+          {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              proposalId: row.proposal.id,
+              account,
+            }),
+          },
+        );
+        replaceRun(run);
+        selectedProposalKeys = updateReviewSelection(
+          selectedProposalKeys,
+          [row.key],
+          false,
+        );
+        approvedCount += 1;
+      }
+      status = `Approved ${approvedCount} transaction${approvedCount === 1 ? "" : "s"}.`;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      status = approvedCount
+        ? `Approved ${approvedCount} transaction${approvedCount === 1 ? "" : "s"}; ${message}`
+        : message;
+    } finally {
+      bulkUpdating = false;
+    }
+  }
+
   function markProposalsAcceptedLocally(
     run: IngestionRun,
     proposalIds: ReadonlySet<string>,
@@ -963,18 +1108,20 @@
     };
   }
 
-  async function accept() {
-    if (!project || !ready.length || !config || accepting) return;
+  async function accept(rowsToAccept: readonly ProposalRow[] = ready) {
+    if (!project || !rowsToAccept.length || !config || accepting) return;
 
     const byRun = new Map<string, string[]>();
-    for (const row of ready) {
+    for (const row of rowsToAccept) {
       const list = byRun.get(row.runId) ?? [];
       list.push(row.proposal.id);
       byRun.set(row.runId, list);
     }
-    const acceptedCount = ready.length;
+    const acceptedCount = rowsToAccept.length;
+    const acceptedAllReady = acceptedCount === ready.length;
     const previousActiveRuns = activeRuns;
     const previousRuns = runs;
+    const previousSelection = selectedProposalKeys;
 
     // Drop the Accept count and Ready list immediately; reconcile from the
     // server response (or roll back) once the ledger write finishes.
@@ -989,7 +1136,8 @@
     closeProposalSheet();
     sheetOpen = false;
     selectedRow = undefined;
-    if (reviewFilter === "accepted") {
+    clearSelectedRows();
+    if (reviewFilter === "accepted" && acceptedAllReady) {
       updateRoute({ review: undefined, page: "1" });
     }
 
@@ -1041,6 +1189,7 @@
     } catch (error) {
       activeRuns = previousActiveRuns;
       runs = previousRuns;
+      selectedProposalKeys = previousSelection;
       status = error instanceof Error ? error.message : String(error);
     } finally {
       accepting = false;
@@ -1257,11 +1406,53 @@
         />
       {:else}
         <div
-          class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
+          <input
+            use:setIndeterminate={masterSelection.indeterminate}
+            type="checkbox"
+            class="size-4 rounded border-input text-primary focus:ring-ring"
+            aria-label="Select visible review items"
+            checked={masterSelection.checked}
+            disabled={!visibleActionableKeys.length}
+            onchange={(event) =>
+              setSelectedRows(
+                visibleActionableKeys,
+                (event.currentTarget as HTMLInputElement).checked,
+              )}
+          />
           <span>Date</span>
           <span class="text-right">Amount</span>
         </div>
+
+        {#if showSelectionBanner}
+          <div
+            data-review-selection-banner
+            role="status"
+            class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+          >
+            {#if allMatchingSelected}
+              All {actionableRows.length} matching review items selected.
+              <button
+                type="button"
+                class="font-medium text-primary underline-offset-2 hover:underline"
+                onclick={clearSelectedRows}
+              >
+                Clear selection
+              </button>
+            {:else}
+              All {visibleActionableKeys.length} actionable items on this page are
+              selected.
+              <button
+                type="button"
+                class="font-medium text-primary underline-offset-2 hover:underline"
+                onclick={selectAllMatchingRows}
+              >
+                Select all {actionableRows.length} matching items
+              </button>
+            {/if}
+          </div>
+        {/if}
 
         {#if !dateGroups.length}
           <div
@@ -1279,6 +1470,13 @@
           </div>
         {:else}
           {#each visibleGroups as group (group.key)}
+            {@const groupActionableKeys = group.rows
+              .filter((row) => actionableKeySet.has(row.key))
+              .map((row) => row.key)}
+            {@const groupSelection = checkboxSelectionState(
+              selectedProposalKeys,
+              groupActionableKeys,
+            )}
             {@const expanded = expandedGroups.has(group.key)}
             {@const groupId = `ingestion-group-${group.key}`}
             {@const summaryId = `ingestion-summary-${group.key}`}
@@ -1287,8 +1485,21 @@
               aria-labelledby={groupId}
             >
               <div
-                class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-4"
+                class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-5 py-4"
               >
+                <input
+                  use:setIndeterminate={groupSelection.indeterminate}
+                  type="checkbox"
+                  class="size-4 rounded border-input text-primary focus:ring-ring"
+                  aria-label={`Select actionable items from ${group.label}`}
+                  checked={groupSelection.checked}
+                  disabled={!groupActionableKeys.length}
+                  onchange={(event) =>
+                    setSelectedRows(
+                      groupActionableKeys,
+                      (event.currentTarget as HTMLInputElement).checked,
+                    )}
+                />
                 <button
                   type="button"
                   class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
@@ -1336,11 +1547,27 @@
                       role="button"
                       tabindex="0"
                       class:rounded-b-xl={index === group.rows.length - 1}
-                      class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+                      class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_auto_minmax(0,1fr)_auto]"
                       aria-label={`Review ${rowTitle(row.proposal)}`}
                       onclick={() => openRow(row)}
                       onkeydown={(event) => handleRowKeydown(event, row)}
                     >
+                      <input
+                        type="checkbox"
+                        class="size-4 rounded border-input text-primary focus:ring-ring"
+                        aria-label={`Select ${rowTitle(row.proposal)}`}
+                        title={actionableKeySet.has(row.key)
+                          ? undefined
+                          : "Choose an account in the review sheet before approving this item"}
+                        checked={selectedProposalKeys.has(row.key)}
+                        disabled={!actionableKeySet.has(row.key)}
+                        onclick={(event) => event.stopPropagation()}
+                        onchange={(event) =>
+                          setSelectedRows(
+                            [row.key],
+                            (event.currentTarget as HTMLInputElement).checked,
+                          )}
+                      />
                       {#if logo && !failedLogoIds.has(row.proposal.id)}
                         <img
                           class="size-10 rounded-full border object-contain"
@@ -1367,7 +1594,7 @@
                         </div>
                       </div>
                       <div
-                        class="col-start-2 flex flex-wrap items-center justify-between gap-1 sm:col-start-auto sm:row-start-1 sm:justify-end"
+                        class="col-start-3 flex flex-wrap items-center justify-between gap-1 sm:col-start-4 sm:row-start-1 sm:justify-end"
                       >
                         {#if reviewFilter === "accepted"}
                           <Button
@@ -1377,7 +1604,7 @@
                             class="size-8 text-muted-foreground"
                             aria-label={`Move ${rowTitle(row.proposal)} to review`}
                             title="Move to review"
-                            disabled={loading || syncing}
+                            disabled={loading || bulkUpdating || syncing}
                             onclick={(event) => void unacceptRow(row, event)}
                           >
                             <Undo2 data-icon />

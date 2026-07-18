@@ -28,6 +28,7 @@ export type IngestionReviewHeaderActions = {
   canAccept: boolean;
   acceptCount: number;
   acceptBusy: boolean;
+  bulkAction?: IngestionBulkReviewAction;
   canOpenLedger: boolean;
   onSourceChange: (sourceId: string) => void;
   onToggleCollapseGroups: () => void;
@@ -39,6 +40,14 @@ export type IngestionReviewHeaderActions = {
   onAccept: () => void;
   onOpenLedger: () => void;
   onReviewMerchants: () => void;
+};
+
+export type IngestionBulkReviewAction = {
+  label: string;
+  selectedCount: number;
+  canRun: boolean;
+  busy: boolean;
+  onRun: () => void;
 };
 
 export type IngestionMerchantsHeaderActions = {

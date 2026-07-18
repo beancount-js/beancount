@@ -5,6 +5,7 @@
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import ClipboardList from "lucide-svelte/icons/clipboard-list";
+  import Check from "lucide-svelte/icons/check";
   import FoldVertical from "lucide-svelte/icons/fold-vertical";
   import Landmark from "lucide-svelte/icons/landmark";
   import Pencil from "lucide-svelte/icons/pencil";
@@ -137,40 +138,65 @@
           </Tooltip.Trigger>
           <Tooltip.Content>Open active review ledger</Tooltip.Content>
         </Tooltip.Root>
-        <Tooltip.Root>
-          <Tooltip.Trigger>
-            {#snippet child({ props })}
-              <Button
-                {...props}
-                type="button"
-                size="sm"
-                class="h-8"
-                aria-label={header.acceptBusy
-                  ? "Accepting ready transactions"
-                  : header.acceptCount
-                    ? `Accept ${header.acceptCount} ready transaction${header.acceptCount === 1 ? "" : "s"}`
-                    : "Accept ready transactions"}
-                disabled={!header.canAccept || header.acceptBusy}
-                onclick={(event) => {
-                  header.onAccept();
-                }}
-              >
-                {#if header.acceptBusy}
-                  Accepting…
-                {:else}
-                  Accept{header.acceptCount ? ` ${header.acceptCount}` : ""}
-                {/if}
-              </Button>
-            {/snippet}
-          </Tooltip.Trigger>
-          <Tooltip.Content>
-            {header.acceptBusy
-              ? "Accepting…"
-              : header.acceptCount
-                ? `Write ${header.acceptCount} ready transaction${header.acceptCount === 1 ? "" : "s"} to the ledger`
-                : "No transactions ready to accept"}
-          </Tooltip.Content>
-        </Tooltip.Root>
+        {#if header.bulkAction}
+          {@const bulkAction = header.bulkAction}
+          <Tooltip.Root>
+            <Tooltip.Trigger>
+              {#snippet child({ props })}
+                <Button
+                  {...props}
+                  type="button"
+                  size="sm"
+                  class="h-8 gap-1.5"
+                  aria-label={`${bulkAction.label} ${bulkAction.selectedCount} selected item${bulkAction.selectedCount === 1 ? "" : "s"}`}
+                  disabled={!bulkAction.canRun || bulkAction.busy}
+                  onclick={() => bulkAction.onRun()}
+                >
+                  <Check data-icon="inline-start" />
+                  {bulkAction.busy
+                    ? `${bulkAction.label}…`
+                    : `${bulkAction.label} ${bulkAction.selectedCount}`}
+                </Button>
+              {/snippet}
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              {bulkAction.label} selected items
+            </Tooltip.Content>
+          </Tooltip.Root>
+        {:else}
+          <Tooltip.Root>
+            <Tooltip.Trigger>
+              {#snippet child({ props })}
+                <Button
+                  {...props}
+                  type="button"
+                  size="sm"
+                  class="h-8"
+                  aria-label={header.acceptBusy
+                    ? "Accepting ready transactions"
+                    : header.acceptCount
+                      ? `Accept ${header.acceptCount} ready transaction${header.acceptCount === 1 ? "" : "s"}`
+                      : "Accept ready transactions"}
+                  disabled={!header.canAccept || header.acceptBusy}
+                  onclick={() => header.onAccept()}
+                >
+                  {#if header.acceptBusy}
+                    Accepting…
+                  {:else}
+                    Accept{header.acceptCount ? ` ${header.acceptCount}` : ""}
+                  {/if}
+                </Button>
+              {/snippet}
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              {header.acceptBusy
+                ? "Accepting…"
+                : header.acceptCount
+                  ? `Write ${header.acceptCount} ready transaction${header.acceptCount === 1 ? "" : "s"} to the ledger`
+                  : "No transactions ready to accept"}
+            </Tooltip.Content>
+          </Tooltip.Root>
+        {/if}
         <CycleSelect
           value={header.sourceId}
           options={header.sourceOptions}
