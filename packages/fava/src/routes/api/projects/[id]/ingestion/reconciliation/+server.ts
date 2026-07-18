@@ -28,9 +28,19 @@ async function review(projectId: string) {
   return buildReconciliationReview({ config, runs, entries, decisions });
 }
 
-export async function GET({ params }: { params: { id: string } }) {
+export async function GET({
+  params,
+  url,
+}: {
+  params: { id: string };
+  url: URL;
+}) {
   try {
-    return json(compactReconciliationReview(await review(params.id)));
+    const result = await review(params.id);
+    if (url.searchParams.get("summary") === "count") {
+      return json({ count: result.candidates.length });
+    }
+    return json(compactReconciliationReview(result));
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });
   }

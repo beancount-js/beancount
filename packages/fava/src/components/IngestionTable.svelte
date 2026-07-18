@@ -128,6 +128,8 @@
     date: "none",
     amount: "none",
   });
+  let reconciliationCount = $state(0);
+  let reconciliationCountKey = $state("");
 
   const project = $derived($snapshot);
   const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
@@ -445,6 +447,19 @@
     reconciliationBulkAction = action;
   }
 
+  async function loadReconciliationCount(projectId: string) {
+    try {
+      const summary = await ingestionJson<{ count: number }>(
+        ingestionPath(projectId, "/reconciliation?summary=count"),
+      );
+      if (project?.project.id === projectId) {
+        reconciliationCount = summary.count;
+      }
+    } catch {
+      if (project?.project.id === projectId) reconciliationCount = 0;
+    }
+  }
+
   function updateRoute(values: Record<string, string | undefined>) {
     const query = new URLSearchParams($activeRoute.query);
     for (const [key, value] of Object.entries(values)) {
@@ -598,6 +613,18 @@
     if (next && !isWeb && next.project.id !== loadedProjectId) {
       void refresh();
     }
+  });
+
+  $effect(() => {
+    if (!project || isWeb) {
+      reconciliationCount = 0;
+      reconciliationCountKey = "";
+      return;
+    }
+    const nextKey = `${project.project.id}\0${reconciliationRefreshKey}`;
+    if (nextKey === reconciliationCountKey) return;
+    reconciliationCountKey = nextKey;
+    void loadReconciliationCount(project.project.id);
   });
 
   $effect(() => {
@@ -1368,6 +1395,11 @@
             class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:!px-3"
           >
             Reconcile
+            <span
+              class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
+            >
+              {reconciliationCount}
+            </span>
           </ToggleGroup.Item>
         </ToggleGroup.Root>
       </div>
@@ -1485,7 +1517,10 @@
         <IngestionReconciliationPanel
           projectId={project?.project.id}
           refreshKey={reconciliationRefreshKey}
-          onApplied={() => void refresh()}
+          onApplied={() => {
+            void refresh();
+            if (project) void loadReconciliationCount(project.project.id);
+          }}
           onBulkActionChange={setReconciliationBulkAction}
         />
       {:else}
