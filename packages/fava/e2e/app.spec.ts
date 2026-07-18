@@ -130,6 +130,26 @@ test.describe("ported styles", () => {
       expect(parseFloat(dataRowStyles.minHeight)).toBeGreaterThanOrEqual(48);
       await expect(firstRow).toHaveClass(/hover:bg-muted/);
 
+      if (path === "/trial_balance") {
+        const configuredAccount = statementTable.getByRole("link", {
+          name: "Monzo",
+          exact: true,
+        });
+        await expect(configuredAccount).toBeVisible();
+        await expect(
+          configuredAccount.locator(".beancount-account-avatar"),
+        ).toBeVisible();
+
+        const hierarchyAccount = statementTable.getByRole("link", {
+          name: "Assets",
+          exact: true,
+        });
+        await expect(hierarchyAccount).toBeVisible();
+        await expect(
+          hierarchyAccount.locator(".beancount-account-avatar"),
+        ).toHaveCount(0);
+      }
+
       const numericCell = firstRow.locator(".font-mono").last();
       const numericFont = await numericCell.evaluate(
         (el) => getComputedStyle(el).fontFamily,

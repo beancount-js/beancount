@@ -77,12 +77,14 @@
   data-account-link
   data-merchant-id={appearance?.merchantId}
 >
-  <AccountAvatar
-    {account}
-    color={appearance?.color}
-    icon={appearance?.icon}
-    {merchantLogoUrl}
-    size={avatarSize}
-  />
+  {#if appearance}
+    <AccountAvatar
+      {account}
+      color={appearance.color}
+      icon={appearance.icon}
+      {merchantLogoUrl}
+      size={avatarSize}
+    />
+  {/if}
   <span class="min-w-0 truncate">{label ?? account}</span>
 </a>
