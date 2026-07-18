@@ -3,6 +3,7 @@
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
   import {
+    AccountAvatar,
     accountAvatarInitial,
     FilterCommandPicker,
     SegmentedControl,
@@ -32,6 +33,8 @@
     setupHost,
     setupHref,
   } from "../ingestion/setup-markdown";
+  import { useContext } from "../context";
+  import { accountAppearanceStore } from "../lib/account-appearance";
 
   let {
     sources,
@@ -80,6 +83,8 @@
   const availableSamples = $derived(
     availableIngestionSamples(sources, samples),
   );
+  const { ledgerData } = useContext();
+  const accountAppearances = accountAppearanceStore(ledgerData);
 
   let openById = $state<Record<string, boolean>>({});
   let failedMerchantLogoIds = $state(new Set<string>());
@@ -170,6 +175,15 @@
 
   function merchantFor(source: EditableIngestionSource) {
     return source.merchantId ? merchantsById[source.merchantId] : undefined;
+  }
+
+  function accountAppearanceFor(account: string) {
+    return $accountAppearances.get(account);
+  }
+
+  function merchantForAccount(account: string) {
+    const merchantId = accountAppearanceFor(account)?.merchantId;
+    return merchantId ? merchantsById[merchantId] : undefined;
   }
 
   function markMerchantLogoFailed(merchantId: string) {
@@ -430,15 +444,34 @@
                     >
                     <ul class="flex flex-col gap-2" role="list">
                       {#each source.accounts as account (account.id)}
+                        {@const appearance = accountAppearanceFor(
+                          account.sourceAccount,
+                        )}
+                        {@const accountMerchant = merchantForAccount(
+                          account.sourceAccount,
+                        )}
                         <li
-                          class="rounded-lg border border-border px-3 py-2 text-sm"
+                          class="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm transition-colors even:bg-muted/40 hover:bg-accent/60"
                         >
-                          <p class="font-medium">{account.name}</p>
-                          <p class="text-xs text-muted-foreground">
-                            {[account.sourceAccount, account.defaultCurrency]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </p>
+                          <AccountAvatar
+                            account={account.sourceAccount}
+                            color={appearance?.color}
+                            icon={appearance?.icon}
+                            merchantLogoUrl={accountMerchant?.logoUrl}
+                            size="sm"
+                          />
+                          <span class="min-w-0">
+                            <span class="block truncate font-medium"
+                              >{account.name}</span
+                            >
+                            <span
+                              class="block truncate text-xs text-muted-foreground"
+                            >
+                              {[account.sourceAccount, account.defaultCurrency]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                          </span>
                         </li>
                       {/each}
                     </ul>
