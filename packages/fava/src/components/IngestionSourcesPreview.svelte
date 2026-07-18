@@ -49,6 +49,7 @@
     onManageAccounts,
     onSync,
     saving = false,
+    activeLedgerPath,
   }: {
     sources: EditableIngestionSource[];
     samples?: IngestionSample[];
@@ -76,6 +77,8 @@
     onManageAccounts?: (source: EditableIngestionSource) => void;
     onSync?: (source: EditableIngestionSource) => void;
     saving?: boolean;
+    /** Ledger selected in the workspace when this source preview was opened. */
+    activeLedgerPath?: string;
   } = $props();
 
   const envOptions = $derived(
@@ -455,7 +458,11 @@
                           class="relative rounded-lg border border-border px-3 py-2 text-sm transition-colors even:bg-muted/40 hover:bg-accent/60"
                         >
                           <a
-                            href={urlForAccount(account.sourceAccount)}
+                            href={urlForAccount(
+                              account.sourceAccount,
+                              undefined,
+                              activeLedgerPath,
+                            )}
                             class="absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             aria-label={`Open ${account.sourceAccount}`}
                           ></a>

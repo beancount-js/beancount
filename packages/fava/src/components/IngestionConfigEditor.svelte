@@ -550,6 +550,7 @@
                 envKeys={$snapshot?.envKeys ?? []}
                 {connectionStatuses}
                 {saving}
+                activeLedgerPath={$activeFile}
                 onChange={(index, next) => updateSource(index, next)}
                 onConnectSample={connectSampleDirect}
                 onManageAccounts={openManageAccounts}
