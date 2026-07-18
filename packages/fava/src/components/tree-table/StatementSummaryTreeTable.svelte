@@ -24,7 +24,9 @@
   const getNotShown = useGetNotShown();
   const collapsed = writable(getCollapsed(tree, $collapseAccount));
   const hiddenAccounts = writable(new Set<string>());
-  const weightColumn = "10rem";
+  const accountColumn = "16rem";
+  const weightMeterColumn = "4.5rem";
+  const weightColumn = "5.5rem";
   let roots: AccountTreeNode[] = [];
   let collapsibleAccounts = new Set<string>();
   let total = 0;
@@ -50,7 +52,7 @@
     collapsibleAccounts.size > 0 &&
     [...collapsibleAccounts].every((account) => $collapsed.has(account));
   $: currencies = $operatingCurrency;
-  $: gridTemplate = `minmax(0, 1fr) ${weightColumn} ${
+  $: gridTemplate = `${accountColumn} ${weightMeterColumn} ${weightColumn} ${
     currencies.length ? `repeat(${currencies.length}, minmax(8rem, 1fr))` : ""
   } minmax(11rem, 1fr)`;
   $: primaryCurrency =
@@ -195,7 +197,7 @@
     class="mt-4 w-full min-w-0 max-w-full rounded-xl"
   >
     <ol
-      class="min-w-[42rem] overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
+      class="min-w-[45rem] overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
       data-statement-summary-tree-table
     >
       <li
@@ -219,6 +221,7 @@
           </button>
           Account
         </span>
+        <span aria-hidden="true"></span>
         <span class="px-4 py-2 text-right">Weight</span>
         {#each currencies as currency}
           <span class="px-4 py-2 text-right" title={$currencyName(currency)}

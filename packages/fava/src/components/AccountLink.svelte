@@ -73,7 +73,7 @@
 
 <a
   href={urlForAccount(account)}
-  class="inline-flex min-w-0 items-center gap-2 text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+  class="inline-flex shrink-0 items-center gap-2 text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
   data-account-link
   data-merchant-id={appearance?.merchantId}
 >
@@ -86,5 +86,5 @@
       size={avatarSize}
     />
   {/if}
-  <span class="min-w-0 truncate">{label ?? account}</span>
+  <span class="whitespace-nowrap">{label ?? account}</span>
 </a>

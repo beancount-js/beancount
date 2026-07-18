@@ -66,12 +66,12 @@
       <AccountLink account={node.account} label={name} avatarSize="sm" />
     </div>
     <span
-      class:dimmed={!displayAmount}
-      class="grid grid-cols-[3.75rem_minmax(0,1fr)] items-center gap-3 px-4 text-right font-mono text-[13px] tabular-nums"
+      class="grid place-items-center py-2 pl-4 pr-2"
+      data-statement-weight-meter-column
     >
       <span
         class:invisible={!displayAmount}
-        class="weight-meter justify-self-start"
+        class="weight-meter"
         style={`--meter-color: ${branchColor}`}
         data-statement-weight-meter
         aria-hidden="true"
@@ -80,10 +80,13 @@
           <span style={`opacity: ${0.48 + bar * 0.11}`}></span>
         {/each}
       </span>
-      <span class="justify-self-end" data-statement-weight
-        >{displayAmount ? `${weight.toFixed(1)}%` : "—"}</span
-      >
     </span>
+    <span
+      class:dimmed={!displayAmount}
+      class="px-4 text-right font-mono text-[13px] tabular-nums"
+      data-statement-weight
+      >{displayAmount ? `${weight.toFixed(1)}%` : "—"}</span
+    >
     {#each currencies as currency}
       {@const value = (shownBalance[currency] ?? 0) * multiplier * invert}
       <span
