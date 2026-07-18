@@ -69,6 +69,26 @@ describe("ingestion source form draft", () => {
     ).toEqual(config);
   });
 
+  test("round-trips provider category mappings for bank connectors", () => {
+    const monzo = ingestionSamples.find((sample) => sample.id === "monzo")!;
+    const config = {
+      version: 3 as const,
+      sources: [
+        {
+          ...structuredClone(monzo.template),
+          providerCategoryMappings: [
+            { code: "shopping", account: "Expenses:Shopping" },
+          ],
+        },
+      ],
+    };
+
+    expect(validateEditableIngestionConfig(config)).toEqual([]);
+    expect(
+      parseEditableIngestionYaml(serializeEditableIngestionYaml(config)),
+    ).toEqual(config);
+  });
+
   test("rejects JSON that is not an ingestion configuration root", () => {
     expect(() => parseEditableIngestionConfig("[]")).toThrow(
       "must be an object",
@@ -237,5 +257,33 @@ describe("ingestion source form draft", () => {
       expect.arrayContaining(["id", "api.endpoint", "api.secretRef"]),
     );
     expect(issues.some((issue) => issue.message.includes("unique"))).toBe(true);
+  });
+
+  test("validates incomplete and duplicate provider category mappings", () => {
+    const monzo = ingestionSamples.find((sample) => sample.id === "monzo")!;
+    const invalid = {
+      version: 3 as const,
+      sources: [
+        {
+          ...structuredClone(monzo.template),
+          providerCategoryMappings: [
+            { code: "shopping", account: "Expenses:Shopping" },
+            { code: "shopping", account: "not a ledger account" },
+            { code: "", account: "" },
+          ],
+        },
+      ],
+    };
+
+    expect(
+      validateEditableIngestionConfig(invalid).map((issue) => issue.path),
+    ).toEqual(
+      expect.arrayContaining([
+        "sources.0.providerCategoryMappings.1.code",
+        "sources.0.providerCategoryMappings.1.account",
+        "sources.0.providerCategoryMappings.2.code",
+        "sources.0.providerCategoryMappings.2.account",
+      ]),
+    );
   });
 });

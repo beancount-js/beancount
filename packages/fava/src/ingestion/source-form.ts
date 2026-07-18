@@ -1,4 +1,5 @@
 import type { FormValidationIssue } from "@beancount-js/forms";
+import { isValidAccount } from "@beancount-js/beancount";
 import type {
   BrandfetchEnrichmentConfig,
   IngestionConfigResponse,
@@ -185,6 +186,28 @@ export function parseEditableIngestionConfig(
       }
       if (!Array.isArray(item.rules)) {
         throw new Error(`Source ${index + 1} rules must be an array.`);
+      }
+      if (item.providerCategoryMappings !== undefined) {
+        if (!Array.isArray(item.providerCategoryMappings)) {
+          throw new Error(
+            `Source ${index + 1} providerCategoryMappings must be an array.`,
+          );
+        }
+        for (const [mappingIndex, mapping] of (
+          item.providerCategoryMappings as unknown[]
+        ).entries()) {
+          const row = asRecord(
+            mapping,
+            `Source ${index + 1} provider category mapping ${mappingIndex + 1}`,
+          );
+          for (const key of ["code", "account"]) {
+            if (typeof row[key] !== "string") {
+              throw new Error(
+                `Source ${index + 1} provider category mapping ${mappingIndex + 1} ${key} must be a string.`,
+              );
+            }
+          }
+        }
       }
       if (grouped) {
         for (const [accountIndex, account] of (
@@ -442,6 +465,29 @@ function sourceIssues(
     if (!source.mapping?.amount?.trim()) {
       issues.push(field("mapping.amount", "An amount mapping is required."));
     }
+  }
+
+  const mappings = source.providerCategoryMappings;
+  if (mappings !== undefined) {
+    const codes = new Set<string>();
+    mappings.forEach((mapping, mappingIndex) => {
+      const prefix = `providerCategoryMappings.${mappingIndex}`;
+      const code = mapping.code?.trim();
+      if (!code) {
+        issues.push(field(`${prefix}.code`, "Choose a bank category."));
+      } else if (codes.has(code)) {
+        issues.push(
+          field(`${prefix}.code`, "Bank category mappings must be unique."),
+        );
+      } else {
+        codes.add(code);
+      }
+      if (!mapping.account?.trim() || !isValidAccount(mapping.account.trim())) {
+        issues.push(
+          field(`${prefix}.account`, "Choose a valid Beancount account."),
+        );
+      }
+    });
   }
 
   const enrichment = source.merchantEnrichment;

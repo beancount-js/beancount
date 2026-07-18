@@ -7,6 +7,7 @@ import type {
   JsonApiSourceConfig,
   JsonMappingConfig,
   MerchantRule,
+  ProviderCategoryMapping,
 } from "@beancount-js/beangulp";
 import type {
   AiEnrichmentDebug,
@@ -55,6 +56,8 @@ export interface IngestionSource {
   /** Connector-owned config for registered kinds. */
   config?: unknown;
   rules: MerchantRule[];
+  /** Connection-level mappings from provider category codes to ledger accounts. */
+  providerCategoryMappings?: ProviderCategoryMapping[];
   /** Nested bank accounts for multi-account providers (e.g. Lunch Flow). */
   accounts?: JsonApiLinkedAccount[];
   credentialAvailable?: boolean;

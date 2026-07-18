@@ -5,6 +5,7 @@
     "query-parameters",
     "mapping",
     "enrichment",
+    "provider-category-mappings",
   ] as const;
 
   export const groupedSourceFormSections = [
@@ -14,6 +15,7 @@
     "query-parameters",
     "mapping",
     "enrichment",
+    "provider-category-mappings",
   ] as const;
 
   export function sourceFormSectionIds(grouped = false) {
@@ -33,7 +35,10 @@
     StructuredForm,
     type FormValidationIssue,
   } from "@beancount-js/forms";
-  import { type JsonApiLinkedAccount } from "@beancount-js/beangulp";
+  import {
+    type JsonApiLinkedAccount,
+    type ProviderCategoryMapping,
+  } from "@beancount-js/beangulp";
   import { untrack } from "svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
@@ -62,6 +67,7 @@
   let {
     source,
     accounts = [],
+    categoryAccounts = [],
     issues = [],
     credentialAvailable,
     merchantCredentialAvailable,
@@ -75,6 +81,7 @@
   }: {
     source: EditableIngestionSource;
     accounts?: string[];
+    categoryAccounts?: string[];
     issues?: FormValidationIssue[];
     credentialAvailable?: boolean;
     merchantCredentialAvailable?: boolean;
@@ -125,6 +132,10 @@
   const accountItems = $derived(
     accounts.map((account) => ({ label: account, value: account })),
   );
+  const categoryAccountItems = $derived(
+    categoryAccounts.map((account) => ({ label: account, value: account })),
+  );
+  const providerCategories = $derived(connector?.providerCategories ?? []);
 
   const detailsIssues = $derived(augmentCredentialIssues(issues));
 
@@ -218,6 +229,68 @@
     const next = queryDraft.filter((_, itemIndex) => itemIndex !== index);
     queryDraft = next;
     commitQueryObject(next);
+  }
+
+  function providerCategoryMappings() {
+    return source.providerCategoryMappings ?? [];
+  }
+
+  function providerCategoryItems(index: number) {
+    const current = providerCategoryMappings()[index]?.code;
+    const selectedByOtherRows = new Set(
+      providerCategoryMappings()
+        .map((mapping) => mapping.code)
+        .filter((code) => Boolean(code) && code !== current),
+    );
+    return providerCategories
+      .filter((category) => !selectedByOtherRows.has(category.code))
+      .map((category) => ({
+        value: category.code,
+        label: `${category.label} · ${category.code}`,
+        keywords: [category.label, category.code],
+      }));
+  }
+
+  function addProviderCategoryMapping() {
+    onChange({
+      ...source,
+      providerCategoryMappings: [
+        ...providerCategoryMappings(),
+        { code: "", account: "" },
+      ],
+    });
+  }
+
+  function updateProviderCategoryMapping(
+    index: number,
+    patch: Partial<ProviderCategoryMapping>,
+  ) {
+    onChange({
+      ...source,
+      providerCategoryMappings: providerCategoryMappings().map(
+        (mapping, itemIndex) =>
+          itemIndex === index ? { ...mapping, ...patch } : mapping,
+      ),
+    });
+  }
+
+  function removeProviderCategoryMapping(index: number) {
+    onChange({
+      ...source,
+      providerCategoryMappings: providerCategoryMappings().filter(
+        (_, itemIndex) => itemIndex !== index,
+      ),
+    });
+  }
+
+  function moveProviderCategoryMapping(index: number, direction: -1 | 1) {
+    const current = providerCategoryMappings();
+    const target = index + direction;
+    if (target < 0 || target >= current.length) return;
+    const next = [...current];
+    const [item] = next.splice(index, 1);
+    next.splice(target, 0, item!);
+    onChange({ ...source, providerCategoryMappings: next });
   }
 
   function linkedAccounts() {
@@ -575,6 +648,68 @@
                   />
                 {/if}
               </div>
+              {#if providerCategories.length}
+                <CollapsibleItemList
+                  title="Bank category mappings"
+                  addLabel="mapping"
+                  count={providerCategoryMappings().length}
+                  open={isSectionOpen("provider-category-mappings")}
+                  onToggle={() => toggleSection("provider-category-mappings")}
+                  onAdd={addProviderCategoryMapping}
+                >
+                  {#each providerCategoryMappings() as mapping, index (`${mapping.code}:${index}`)}
+                    <EntryActions
+                      {index}
+                      total={providerCategoryMappings().length}
+                      removeLabel={`Remove bank category mapping ${index + 1}`}
+                      onMove={(direction) =>
+                        moveProviderCategoryMapping(index, direction)}
+                      onRemove={() => removeProviderCategoryMapping(index)}
+                    >
+                      <div
+                        class="beancount-structured-form"
+                        data-provider-category-mapping
+                      >
+                        <FormField
+                          label="Bank category"
+                          controlId={`provider-category-${index}`}
+                          as="div"
+                          align="center"
+                        >
+                          <FilterCommandPicker
+                            fullWidth
+                            allowCustom={true}
+                            label="Bank category"
+                            ariaLabel={`Bank category mapping ${index + 1}`}
+                            value={mapping.code}
+                            options={providerCategoryItems(index)}
+                            placeholder="Filter bank categories…"
+                            onChange={(code) =>
+                              updateProviderCategoryMapping(index, { code })}
+                          />
+                        </FormField>
+                        <FormField
+                          label="Ledger account"
+                          controlId={`provider-category-account-${index}`}
+                          as="div"
+                          align="center"
+                        >
+                          <FilterCommandPicker
+                            fullWidth
+                            label="Ledger account"
+                            ariaLabel={`Ledger account for bank category mapping ${index + 1}`}
+                            value={mapping.account}
+                            options={categoryAccountItems}
+                            placeholder="Filter accounts…"
+                            onChange={(account) =>
+                              updateProviderCategoryMapping(index, { account })}
+                          />
+                        </FormField>
+                      </div>
+                    </EntryActions>
+                  {/each}
+                </CollapsibleItemList>
+              {/if}
               <Button
                 type="button"
                 variant="link"

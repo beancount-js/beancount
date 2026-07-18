@@ -26,6 +26,29 @@ async function resetIngestionConfig(page: Page) {
   expect(response.ok()).toBeTruthy();
 }
 
+async function seedMonzoSource(page: Page) {
+  const projectId = await resolveProjectId(page);
+  const response = await page.request.put(
+    `/api/projects/${encodeURIComponent(projectId)}/ingestion`,
+    {
+      data: {
+        version: 3,
+        sources: [
+          {
+            id: "monzo",
+            name: "Monzo Bank",
+            kind: "monzo",
+            config: { secretRef: "env:MONZO_ACCESS_TOKEN" },
+            accounts: [],
+            rules: [],
+          },
+        ],
+      },
+    },
+  );
+  expect(response.ok()).toBeTruthy();
+}
+
 async function seedExampleSources(page: Page) {
   const header = page.locator("[data-slot=studio-workspace-header]");
   await header.getByRole("switch", { name: "YAML mode" }).click();
@@ -224,5 +247,51 @@ test.describe("ingestion sources editor", () => {
     await expect(
       editor.getByRole("button", { name: "Use example" }),
     ).toHaveCount(0);
+  });
+
+  test("maps a Monzo bank category to a scoped ledger account", async ({
+    page,
+  }) => {
+    await seedMonzoSource(page);
+    await gotoStudio(page, "/import/editor");
+    await switchToEdit(page);
+
+    const editor = page.locator("[data-ingestion-sources-editor]");
+    await expect(editor.getByText("Bank category mappings")).toBeVisible();
+    await editor.getByRole("button", { name: "Add mapping" }).click();
+
+    const categoryPicker = editor.getByRole("button", {
+      name: "Bank category mapping 1",
+      exact: true,
+    });
+    await categoryPicker.click();
+    await page.getByText("Shopping · shopping", { exact: true }).click();
+    await expect(categoryPicker).toContainText("Shopping · shopping");
+
+    const accountPicker = editor.getByRole("button", {
+      name: "Ledger account for bank category mapping 1",
+      exact: true,
+    });
+    await accountPicker.click();
+    await page.getByText("Expenses:Food:Coffee", { exact: true }).click();
+    await expect(accountPicker).toContainText("Expenses:Food:Coffee");
+
+    const projectId = await resolveProjectId(page);
+    await expect
+      .poll(async () => {
+        const response = await page.request.get(
+          `/api/projects/${encodeURIComponent(projectId)}/ingestion`,
+        );
+        const config = (await response.json()) as {
+          sources: Array<{
+            providerCategoryMappings?: Array<{
+              code: string;
+              account: string;
+            }>;
+          }>;
+        };
+        return config.sources[0]?.providerCategoryMappings;
+      })
+      .toEqual([{ code: "shopping", account: "Expenses:Food:Coffee" }]);
   });
 });

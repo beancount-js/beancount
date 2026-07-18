@@ -1168,6 +1168,20 @@
                     oninput={() => scheduleSave()}
                   />
                 </FormField>
+                {#if proposal.transaction?.providerCategory}
+                  {@const providerCategory =
+                    proposal.transaction.providerCategory}
+                  <FormField
+                    label="Bank category"
+                    as="div"
+                    align="center"
+                    controlId="ingestion-provider-category"
+                  >
+                    <output id="ingestion-provider-category"
+                      >{providerCategory.label} · {providerCategory.code}</output
+                    >
+                  </FormField>
+                {/if}
                 <FormField
                   label="Account"
                   as="div"

@@ -646,6 +646,9 @@
                 <IngestionSourceForm
                   {source}
                   accounts={loadedConfig?.accounts ?? []}
+                  categoryAccounts={serverSource?.allowedAccounts ??
+                    loadedConfig?.accounts ??
+                    []}
                   issues={issuesForSource(index)}
                   credentialAvailable={serverSource?.credentialAvailable}
                   merchantCredentialAvailable={serverSource?.merchantCredentialAvailable}
