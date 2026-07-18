@@ -35,8 +35,14 @@ const uiTailwindPreset = {
           DEFAULT: cssColor("--destructive"),
           foreground: cssColor("--destructive-foreground"),
         },
-        success: cssColor("--success"),
-        warning: cssColor("--warning"),
+        success: {
+          DEFAULT: cssColor("--success"),
+          foreground: cssColor("--success-foreground"),
+        },
+        warning: {
+          DEFAULT: cssColor("--warning"),
+          foreground: cssColor("--warning-foreground"),
+        },
         muted: {
           DEFAULT: cssColor("--muted"),
           foreground: cssColor("--muted-foreground"),
