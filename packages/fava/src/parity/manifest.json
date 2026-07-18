@@ -1,0 +1,58 @@
+{
+  "upstreamCommit": "a80d04dc344c7142a53482dd67d54a9ba9f92e35",
+  "inScopeUpstreamModules": [
+    "fava.util.date",
+    "fava.core.conversion",
+    "fava.json_api.account_report",
+    "fava.core.filters.AccountFilter",
+    "fava.core.ledger_data.accounts"
+  ],
+  "inScopeUpstreamTestModules": [
+    "tests/test_util_date.py",
+    "tests/test_core_conversion.py",
+    "tests/test_json_api.py",
+    "tests/test_core_filters.py"
+  ],
+  "records": [
+    {
+      "upstreamModule": "fava.util.date",
+      "upstreamBehavior": "interval_ends half-open ranges",
+      "localBehavior": "LedgerData.intervalEnds / dateRanges",
+      "status": "pending",
+      "tests": ["parity/interval-ends"],
+      "reason": "JS currently emits inclusive ranges and an extra trailing period"
+    },
+    {
+      "upstreamModule": "fava.core.conversion",
+      "upstreamBehavior": "get_market_value / AT_VALUE",
+      "localBehavior": "TreeNode.toRecord(AT_VALUE) with PriceMap context",
+      "status": "pending",
+      "tests": ["parity/market-value", "parity/account-report-off-by-one"],
+      "reason": "Tree.toRecord does not pass prices/as-of date yet"
+    },
+    {
+      "upstreamModule": "fava.json_api.account_report",
+      "upstreamBehavior": "account_report balances at_value (off-by-one)",
+      "localBehavior": "LedgerData.balanceTrees + Tree.toRecord",
+      "status": "pending",
+      "tests": ["parity/account-report-off-by-one"],
+      "reason": "Blocked on AT_VALUE context + interval bounds"
+    },
+    {
+      "upstreamModule": "fava.core.filters.AccountFilter",
+      "upstreamBehavior": "account filter membership",
+      "localBehavior": "AccountFilter / filterLedger",
+      "status": "pending",
+      "tests": ["parity/account-filter"],
+      "reason": "Journal membership still drifts vs Fava /api/journal"
+    },
+    {
+      "upstreamModule": "fava.core.ledger_data.accounts",
+      "upstreamBehavior": "ledger_data.accounts leaf/open set",
+      "localBehavior": "LedgerData.accounts",
+      "status": "pending",
+      "tests": ["parity/ledger-accounts"],
+      "reason": "JS includes intermediate parent scaffolding accounts"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "upstream": {
+    "commit": "a80d04dc344c7142a53482dd67d54a9ba9f92e35",
+    "source": "tools/fava-parity holdings-style query vs Fava /api/query",
+    "license": "MIT"
+  },
+  "scenario": {
+    "query": "SELECT account, units(sum(position)), cost_number, cost_currency, cost_date GROUP BY 1, cost_number, cost_currency, cost_date",
+    "ledger": "contrib/examples/example.beancount"
+  },
+  "oracle": {
+    "exampleRowCount": 167,
+    "queryExampleRowCount": 79
+  }
+}

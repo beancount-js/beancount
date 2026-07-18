@@ -1,0 +1,14 @@
+{
+  "upstream": {
+    "commit": "a80d04dc344c7142a53482dd67d54a9ba9f92e35",
+    "source": "tests/test_core_filters.py::test_account_filter",
+    "license": "MIT"
+  },
+  "scenario": {
+    "ledger": "contrib/examples/example.beancount",
+    "cases": [
+      { "account": "Assets", "expectedCount": 541 },
+      { "account": ".*US:State", "expectedCount": 67 }
+    ]
+  }
+}

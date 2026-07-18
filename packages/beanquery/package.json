@@ -12,6 +12,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
+    "parity:check": "tsx ./scripts/parity-check.ts",
     "fmt": "prettier ./src --write",
     "check:fmt": "prettier ./src --check",
     "check:eslint": "eslint ./src --max-warnings 0",

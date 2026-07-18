@@ -1,0 +1,47 @@
+{
+  "upstream": {
+    "commit": "a80d04dc344c7142a53482dd67d54a9ba9f92e35",
+    "source": "tests/test_json_api.py::test_api_query_result[balances]",
+    "license": "MIT"
+  },
+  "scenario": {
+    "query": "balances",
+    "note": "Oracle rows from Fava long-example snapshot; local expansion tested against query-example/example once shell works"
+  },
+  "oracle": {
+    "t": "table",
+    "rowCount": 40,
+    "sampleRows": [
+      [
+        "Assets:US:BayBook:Vacation",
+        {
+          "VACHR": 130
+        }
+      ],
+      [
+        "Assets:US:BofA:Checking",
+        {
+          "USD": 5086.65
+        }
+      ],
+      [
+        "Assets:US:ETrade:Cash",
+        {
+          "USD": 342.85
+        }
+      ],
+      [
+        "Assets:US:ETrade:GLD",
+        {
+          "GLD": 18
+        }
+      ],
+      [
+        "Assets:US:ETrade:ITOT",
+        {
+          "ITOT": 25
+        }
+      ]
+    ]
+  }
+}

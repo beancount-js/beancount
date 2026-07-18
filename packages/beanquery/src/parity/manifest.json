@@ -1,0 +1,38 @@
+{
+  "upstreamCommit": "a80d04dc344c7142a53482dd67d54a9ba9f92e35",
+  "inScopeUpstreamModules": [
+    "fava.core.query_shell",
+    "beanquery.shell.balances",
+    "beanquery.groupby.holdings"
+  ],
+  "inScopeUpstreamTestModules": [
+    "tests/test_json_api.py",
+    "tests/test_core_query_shell.py"
+  ],
+  "records": [
+    {
+      "upstreamModule": "beanquery.shell.balances",
+      "upstreamBehavior": "balances shell command",
+      "localBehavior": "runBql('balances')",
+      "status": "pending",
+      "tests": ["parity/balances-shell"],
+      "reason": "Bare balances currently fails with Invalid query stack(0)"
+    },
+    {
+      "upstreamModule": "fava.core.query_shell",
+      "upstreamBehavior": "query API table shapes",
+      "localBehavior": "runBql SELECT results",
+      "status": "adapted",
+      "tests": ["parity/balances-shell"],
+      "reason": "SELECT-style queries already match after normalization; shell still pending"
+    },
+    {
+      "upstreamModule": "beanquery.groupby.holdings",
+      "upstreamBehavior": "holdings-style GROUP BY cost lots",
+      "localBehavior": "compileGroupBy / units(sum(position))",
+      "status": "pending",
+      "tests": ["parity/holdings-groupby"],
+      "reason": "Row counts drift vs Fava on cost lot grouping"
+    }
+  ]
+}
