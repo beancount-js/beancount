@@ -174,17 +174,20 @@ test("styles reconciliation cards with aligned rows and compact actions", async 
   const dismiss = cards.first().getByRole("button", { name: "Not a match" });
   for (const action of [confirm, dismiss]) {
     await expect(action).toHaveClass(/size-8/);
-    await expect(action).toHaveClass(/hover:bg-accent/);
+    await expect(action).toHaveClass(/hover:bg-background/);
+    await expect(action).toHaveClass(/hover:shadow-sm/);
     const box = await action.boundingBox();
     expect(box?.width).toBeLessThanOrEqual(32);
     expect(box?.height).toBeLessThanOrEqual(32);
   }
-  await confirm.hover();
-  await expect
-    .poll(() =>
-      confirm.evaluate((node) => getComputedStyle(node).backgroundColor),
-    )
-    .not.toBe("rgba(0, 0, 0, 0)");
+  for (const action of [confirm, dismiss]) {
+    await action.hover();
+    await expect
+      .poll(() =>
+        action.evaluate((node) => getComputedStyle(node).backgroundColor),
+      )
+      .not.toBe("rgba(0, 0, 0, 0)");
+  }
 
   await expect(page.getByText("monzo:acc_00009Oi2dGmNEEumb2r1PN")).toHaveCount(
     0,

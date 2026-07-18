@@ -703,7 +703,7 @@
               {#if item.decision?.state === "confirmed"}
                 <Button
                   size="icon-sm"
-                  variant="ghost"
+                  variant="ghost-raised"
                   aria-label="Apply confirmed match"
                   title="Apply confirmed match"
                   data-reconciliation-action="apply"
@@ -715,7 +715,7 @@
               {:else}
                 <Button
                   size="icon-sm"
-                  variant="ghost"
+                  variant="ghost-raised"
                   aria-label="Not a match"
                   title="Not a match"
                   data-reconciliation-action="dismiss"
@@ -727,7 +727,7 @@
                 {#if chosen}
                   <Button
                     size="icon-sm"
-                    variant="ghost"
+                    variant="ghost-raised"
                     aria-label="Confirm match"
                     title="Confirm match"
                     data-reconciliation-action="confirm"
@@ -740,7 +740,7 @@
                   {#each item.members as member (member.observation.id)}
                     <Button
                       size="icon-sm"
-                      variant="ghost"
+                      variant="ghost-raised"
                       aria-label={`Use ${memberLabel(member)} as the canonical record`}
                       title={`Use ${memberLabel(member)} as the canonical record`}
                       data-reconciliation-action="confirm"
