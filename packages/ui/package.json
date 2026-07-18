@@ -9,7 +9,8 @@
     "test-storybook": "vitest run --project storybook",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "fmt": "prettier . --write",
-    "fmt:check": "prettier . --check"
+    "fmt:check": "prettier . --check",
+    "checks": "pnpm fmt:check && pnpm check && pnpm test-storybook && pnpm build-storybook"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"

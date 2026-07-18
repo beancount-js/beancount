@@ -14,3 +14,4 @@ coverage
 packages/fava/.svelte-kit/
 packages/fava/build-server/
 packages/fava/build-web/
+packages/ui/storybook-static/

@@ -37,3 +37,11 @@
 - In forms, wrap every `FilterCommandPicker` with `FormField as="div" align="center"` (see Shared forms). Never nest the picker in a label-only `FormField`.
 - For values the user may type that are not in the option list (e.g. Environment credential names from project `.env`), set `allowCustom={true}` on `FilterCommandPicker`. Do not use `SearchableChoicePicker` for new work — it is the legacy picker.
 - Multi-select: `multiple` + `values` + `onValuesChange`. Single-select: `value` + `onChange`.
+
+## UI catalog and Storybook
+
+- `@beancount-js/ui` owns the shared visual foundation and Storybook catalog. Keep stories next to the component they document. During the forms migration, Stories in `packages/forms/src` are intentionally discovered by the UI catalog.
+- Every reusable component must have stories covering its meaningful visual states, variants, and error/empty states. Treat the stories as the canonical visual contract for agents and application code.
+- Interactive controls must be interactive in their stories. Keep the story's state locally, pass it back through callbacks such as `onChange` or `onValuesChange`, and render the selected or changed value in the preview. Do not use static args for a control whose primary behavior is user interaction.
+- Storybook accessibility checks are required: `@beancount-js/ui` runs axe with `a11y.test = "error"`, so any accessibility violation fails the browser test. Fix violations; do not disable or waive axe rules to make a story pass.
+- For every change to `packages/ui`, a colocated story, or a component exposed in Storybook, run `pnpm --filter @beancount-js/ui checks`. This runs formatting, Svelte diagnostics with warnings treated as errors, Storybook Chromium/a11y tests, and the static Storybook build.
