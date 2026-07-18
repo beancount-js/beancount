@@ -28,8 +28,18 @@ export interface RuleApplyPreviewEntry {
   total: number;
 }
 
+export interface RuleApplySummary {
+  target: RuleApplyTarget;
+  matched: { pendingImports: number; liveLedger: number };
+  unique: { pendingImports: number; liveLedger: number };
+  modified: { pendingImports: number; liveLedger: number };
+  overlaps: { pendingImports: number; liveLedger: number };
+  conflicts: { pendingImports: number; liveLedger: number };
+}
+
 export interface RuleApplyPreviewResponse {
   preview: RuleApplyPreviewEntry[];
+  summary: RuleApplySummary;
 }
 
 export interface RuleApplyResultEntry {
@@ -52,6 +62,7 @@ export interface RuleApplyResultEntry {
 
 export interface RuleApplyResponse {
   results: RuleApplyResultEntry[];
+  summary: RuleApplySummary;
 }
 
 export type { DetectionRule, RuleApplyTarget, RuleRegistryMeta, RuleRun };

@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import type {
   DetectionRule,
   IngestionRun,
@@ -58,7 +58,57 @@ const categoryRule: DetectionRule = {
   ],
 };
 
-async function fixture() {
+const renameRule: DetectionRule = {
+  id: "rename-plata",
+  name: "Rename Plata",
+  resourceType: "transaction",
+  active: true,
+  effectiveDate: null,
+  conditions: [
+    {
+      id: "plata",
+      conditionType: "transaction_name",
+      operator: "like",
+      value: "Plata",
+    },
+  ],
+  actions: [
+    {
+      id: "set-name",
+      actionType: "set_transaction_name",
+      value: "Debt repayment",
+    },
+  ],
+};
+
+const renamedCategoryRule: DetectionRule = {
+  ...categoryRule,
+  id: "categorise-renamed-plata",
+  name: "Categorise renamed Plata",
+  conditions: [
+    {
+      id: "renamed-plata",
+      conditionType: "transaction_name",
+      operator: "=",
+      value: "Debt repayment",
+    },
+  ],
+};
+
+const foodCategoryRule: DetectionRule = {
+  ...categoryRule,
+  id: "categorise-plata-as-food",
+  name: "Categorise Plata as food",
+  actions: [
+    {
+      id: "set-category",
+      actionType: "set_transaction_category",
+      value: "Expenses:Food",
+    },
+  ],
+};
+
+async function fixture(rules: DetectionRule[] = [categoryRule]) {
   const root = await mkdtemp(join(tmpdir(), "beancount-js-rule-apply-"));
   const config = await mkdtemp(join(tmpdir(), "beancount-js-rule-config-"));
   directories.push(root, config);
@@ -67,6 +117,7 @@ async function fixture() {
     `2026-01-01 open Assets:Bank:Current
 2026-01-01 open Expenses:Uncategorized
 2026-01-01 open Expenses:Debt:Repayment
+2026-01-01 open Expenses:Food
 
 2026-07-01 * "Plata" "Plata payment"
   Assets:Bank:Current  -42.00 GBP
@@ -81,7 +132,7 @@ async function fixture() {
     resolveProjectRoot,
     ingestionStore,
   });
-  await rulesStore.writeRules(project.id, { rules: [categoryRule] });
+  await rulesStore.writeRules(project.id, { rules });
   const run: IngestionRun = {
     id: "import-run",
     sourceId: "bank",
@@ -125,13 +176,18 @@ describe("manual rule application targets", () => {
         ingestionStore,
         rulesStore,
       }),
-    ).resolves.toEqual([
-      expect.objectContaining({
-        pendingImports: 0,
-        liveLedger: 1,
-        total: 1,
-      }),
-    ]);
+    ).resolves.toMatchObject({
+      preview: [
+        {
+          pendingImports: 0,
+          liveLedger: 1,
+          total: 1,
+        },
+      ],
+      summary: {
+        unique: { pendingImports: 0, liveLedger: 1 },
+      },
+    });
     await expect(
       previewRuleApply({
         projectId: project.id,
@@ -140,13 +196,18 @@ describe("manual rule application targets", () => {
         ingestionStore,
         rulesStore,
       }),
-    ).resolves.toEqual([
-      expect.objectContaining({
-        pendingImports: 1,
-        liveLedger: 0,
-        total: 1,
-      }),
-    ]);
+    ).resolves.toMatchObject({
+      preview: [
+        {
+          pendingImports: 1,
+          liveLedger: 0,
+          total: 1,
+        },
+      ],
+      summary: {
+        unique: { pendingImports: 1, liveLedger: 0 },
+      },
+    });
   });
 
   test("updates only the live ledger when selected", async () => {
@@ -231,5 +292,74 @@ describe("manual rule application targets", () => {
     ).resolves.toContain("Expenses:Debt:Repayment 42.00 GBP");
     const [run] = await ingestionStore.readRuns(project.id);
     expect(run?.proposals[0]?.selectedAccount).toBe("Expenses:Debt:Repayment");
+  });
+
+  test("plans overlapping rules once while preserving stored rule order", async () => {
+    const { root, project, workspace, ingestionStore, rulesStore } =
+      await fixture([renameRule, renamedCategoryRule]);
+    const preview = await previewRuleApply({
+      projectId: project.id,
+      target: "live-ledger",
+      workspace,
+      ingestionStore,
+      rulesStore,
+    });
+
+    expect(preview).toMatchObject({
+      preview: [
+        { ruleId: renameRule.id, liveLedger: 1 },
+        { ruleId: renamedCategoryRule.id, liveLedger: 1 },
+      ],
+      summary: {
+        matched: { pendingImports: 0, liveLedger: 2 },
+        unique: { pendingImports: 0, liveLedger: 1 },
+        overlaps: { pendingImports: 0, liveLedger: 1 },
+        conflicts: { pendingImports: 0, liveLedger: 0 },
+      },
+    });
+
+    const writeFile = vi.spyOn(workspace, "writeFile");
+    const result = await applyDetectionRules({
+      projectId: project.id,
+      target: "live-ledger",
+      workspace,
+      ingestionStore,
+      rulesStore,
+    });
+
+    expect(writeFile).toHaveBeenCalledTimes(1);
+    expect(result.summary).toMatchObject({
+      unique: { pendingImports: 0, liveLedger: 1 },
+      overlaps: { pendingImports: 0, liveLedger: 1 },
+    });
+    await expect(
+      readFile(join(root, "main.beancount"), "utf8"),
+    ).resolves.toContain('"Plata" "Debt repayment"');
+    await expect(
+      readFile(join(root, "main.beancount"), "utf8"),
+    ).resolves.toContain("Expenses:Debt:Repayment 42.00 GBP");
+  });
+
+  test("reports conflicting field writes and lets the later stored rule win", async () => {
+    const { root, project, workspace, ingestionStore, rulesStore } =
+      await fixture([categoryRule, foodCategoryRule]);
+
+    const result = await applyDetectionRules({
+      projectId: project.id,
+      target: "live-ledger",
+      workspace,
+      ingestionStore,
+      rulesStore,
+    });
+
+    expect(result.summary).toMatchObject({
+      matched: { pendingImports: 0, liveLedger: 2 },
+      unique: { pendingImports: 0, liveLedger: 1 },
+      overlaps: { pendingImports: 0, liveLedger: 1 },
+      conflicts: { pendingImports: 0, liveLedger: 1 },
+    });
+    await expect(
+      readFile(join(root, "main.beancount"), "utf8"),
+    ).resolves.toContain("Expenses:Food 42.00 GBP");
   });
 });

@@ -69,7 +69,7 @@
   let applyRuleIds = $state<string[] | undefined>(undefined);
   let applyLabel = $state("");
   let applyTarget = $state<RuleApplyTarget>("live-ledger");
-  let applyPreview = $state<RuleApplyPreviewResponse["preview"]>([]);
+  let applyPreview = $state<RuleApplyPreviewResponse | null>(null);
 
   const project = $derived($snapshot);
   const sortedRules = $derived.by(() => {
@@ -245,15 +245,11 @@
     return "pending imports and the live ledger";
   }
 
-  function previewTotals(entries: RuleApplyPreviewResponse["preview"]) {
-    return entries.reduce(
-      (totals, entry) => ({
-        pendingImports: totals.pendingImports + entry.pendingImports,
-        liveLedger: totals.liveLedger + entry.liveLedger,
-        total: totals.total + entry.total,
-      }),
-      { pendingImports: 0, liveLedger: 0, total: 0 },
-    );
+  function totalTargetCount(counts: {
+    pendingImports: number;
+    liveLedger: number;
+  }) {
+    return counts.pendingImports + counts.liveLedger;
   }
 
   async function loadApplyPreview() {
@@ -272,10 +268,10 @@
           }),
         },
       );
-      applyPreview = response.preview;
+      applyPreview = response;
     } catch (error) {
       status = message(error);
-      applyPreview = [];
+      applyPreview = null;
     } finally {
       applyPreviewLoading = false;
     }
@@ -289,7 +285,7 @@
     applyRuleIds = rule ? [rule.id] : undefined;
     applyLabel = rule ? `"${ruleName(rule)}"` : "all active rules";
     applyTarget = "live-ledger";
-    applyPreview = [];
+    applyPreview = null;
     applyOpen = true;
   }
 
@@ -661,23 +657,36 @@
         <div class="rounded-lg border bg-muted/30 px-3 py-2.5 text-sm">
           {#if applyPreviewLoading}
             Checking matching transactions…
-          {:else}
-            {@const totals = previewTotals(applyPreview)}
+          {:else if applyPreview}
+            {@const summary = applyPreview.summary}
+            {@const uniqueTotal = totalTargetCount(summary.unique)}
+            {@const overlapTotal = totalTargetCount(summary.overlaps)}
+            {@const conflictTotal = totalTargetCount(summary.conflicts)}
             <p>
-              {totals.total} matching rule {totals.total === 1
+              {uniqueTotal} unique matching {uniqueTotal === 1
                 ? "entry"
                 : "entries"}
-              across {totals.pendingImports} pending
-              {totals.pendingImports === 1 ? "import" : "imports"} and
-              {totals.liveLedger} live ledger
-              {totals.liveLedger === 1 ? "entry" : "entries"}.
+              across {summary.unique.pendingImports} pending
+              {summary.unique.pendingImports === 1 ? "import" : "imports"}
+              and {summary.unique.liveLedger} live ledger
+              {summary.unique.liveLedger === 1 ? "entry" : "entries"}.
             </p>
-            {#if applyPreview.length > 1}
+            {#if overlapTotal > 0}
               <p class="mt-1 text-xs text-muted-foreground">
-                A transaction matched by more than one rule is counted once per
-                matching rule.
+                {overlapTotal} additional {overlapTotal === 1
+                  ? "rule match"
+                  : "rule matches"} overlap. Rules run in their stored order.
               </p>
             {/if}
+            {#if conflictTotal > 0}
+              <p class="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                {conflictTotal} conflicting field {conflictTotal === 1
+                  ? "write was"
+                  : "writes were"} found; the later stored rule wins.
+              </p>
+            {/if}
+          {:else}
+            No matching transactions found.
           {/if}
         </div>
       </div>
