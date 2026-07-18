@@ -144,6 +144,55 @@ describe("active ingestion review ledger", () => {
     expect(errors).toEqual([]);
   });
 
+  test("renders review transactions from oldest to newest with blank lines between entries", () => {
+    const [directives, , options] = source();
+    const newest = proposal("newest", "ready", "Expenses:Food");
+    newest.transaction!.bookedAt = "2026-07-18";
+    newest.transaction!.narration = "Newest transaction";
+    const oldest = proposal("oldest", "ready", "Expenses:Food");
+    oldest.transaction!.bookedAt = "2026-07-14";
+    oldest.transaction!.narration = "Oldest transaction";
+    const middle = proposal("middle", "ready", "Expenses:Food");
+    middle.transaction!.bookedAt = "2026-07-16";
+    middle.transaction!.narration = "Middle transaction";
+
+    const ledger = buildIngestionReviewLedger({
+      directives,
+      beancountOptions: options,
+      runs: [
+        run("run:newest", "newest:checking", "2026-07-18T00:00:00.000Z", [
+          newest,
+        ]),
+        run("run:older", "older:checking", "2026-07-16T00:00:00.000Z", [
+          middle,
+          oldest,
+        ]),
+      ],
+    });
+
+    const contents = ledger!.contents;
+    const oldestIndex = contents.indexOf(
+      '2026-07-14 * "Oldest transaction"',
+    );
+    const middleIndex = contents.indexOf(
+      '2026-07-16 * "Middle transaction"',
+    );
+    const newestIndex = contents.indexOf(
+      '2026-07-18 * "Newest transaction"',
+    );
+
+    expect(oldestIndex).toBeGreaterThan(-1);
+    expect(middleIndex).toBeGreaterThan(oldestIndex);
+    expect(newestIndex).toBeGreaterThan(middleIndex);
+    expect(contents.slice(oldestIndex, middleIndex).endsWith("\n\n")).toBe(
+      true,
+    );
+    expect(contents.slice(middleIndex, newestIndex).endsWith("\n\n")).toBe(
+      true,
+    );
+    expect(contents.endsWith("\n\n")).toBe(true);
+  });
+
   test("is absent without reviewable proposals and has a stable revision", () => {
     const [directives, , options] = source();
     const runs = [

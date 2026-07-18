@@ -98,10 +98,23 @@ export function pickActiveReviewRuns(runs: readonly IngestionRun[]) {
 }
 
 function reviewableProposals(runs: readonly IngestionRun[]) {
-  return runs.flatMap((run) =>
-    run.proposals
-      .filter(isReviewLedgerProposal)
-      .map((proposal) => ({ run, proposal })),
+  return runs
+    .flatMap((run) =>
+      run.proposals
+        .filter(isReviewLedgerProposal)
+        .map((proposal) => ({ run, proposal })),
+    )
+    .sort(oldestFirst);
+}
+
+function oldestFirst(left: ReviewableProposal, right: ReviewableProposal) {
+  const leftTransaction = left.proposal.transaction!;
+  const rightTransaction = right.proposal.transaction!;
+  return (
+    leftTransaction.bookedAt.localeCompare(rightTransaction.bookedAt) ||
+    leftTransaction.fetchedAt.localeCompare(rightTransaction.fetchedAt) ||
+    left.run.id.localeCompare(right.run.id) ||
+    left.proposal.id.localeCompare(right.proposal.id)
   );
 }
 
@@ -235,18 +248,16 @@ export function buildIngestionReviewLedger(options: {
     }
   }
 
-  const contents = [
-    ";; Generated from the active ingestion review. Read-only.",
-    ...projectionOptions(options.beancountOptions),
-    "",
-    ...copied.map(contextLine),
-    ...missingOpens,
-    "",
-    ...transactions,
-    "",
-  ]
-    .filter((line, index, lines) => line || index === 0 || lines[index - 1])
-    .join("\n");
+  const contents =
+    [
+      [
+        ";; Generated from the active ingestion review. Read-only.",
+        ...projectionOptions(options.beancountOptions),
+      ].join("\n"),
+      ...copied.map(contextLine),
+      ...missingOpens,
+      ...transactions,
+    ].join("\n\n") + "\n\n";
 
   return {
     kind: "ingestion-review",
