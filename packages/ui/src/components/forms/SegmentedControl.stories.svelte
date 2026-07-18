@@ -1,0 +1,39 @@
+<script module lang="ts">
+  import { defineMeta } from "@storybook/addon-svelte-csf";
+  import { expect, userEvent } from "storybook/test";
+  import SegmentedControl from "./SegmentedControl.svelte";
+
+  const { Story } = defineMeta({
+    title: "UI Forms/Segmented Control",
+    component: SegmentedControl,
+  });
+</script>
+
+<script lang="ts">
+  let sort = $state("date");
+</script>
+
+<Story
+  name="Changes the selected option"
+  play={async ({ canvas }) => {
+    await userEvent.click(canvas.getByRole("button", { name: "Amount" }));
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "Sorted by amount",
+    );
+  }}
+>
+  {#snippet template()}
+    <div class="space-y-2">
+      <SegmentedControl
+        value={sort}
+        options={["date", "description", "amount"]}
+        labels={{ date: "Date", description: "Description", amount: "Amount" }}
+        ariaLabel="Sort transactions by"
+        onChange={(value) => (sort = value)}
+      />
+      <output class="block text-sm text-muted-foreground">
+        Sorted by {sort}
+      </output>
+    </div>
+  {/snippet}
+</Story>

@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.2.8",
-    "@fontsource/source-code-pro": "^5.1.0"
+    "@fontsource/source-code-pro": "^5.1.0",
+    "lucide-svelte": "^0.460.1"
   },
   "devDependencies": {
     "@beancount-js/forms": "workspace:*",
@@ -47,6 +48,11 @@
   },
   "exports": {
     "./app-shell": "./src/components/AppShell.svelte",
+    "./forms/CollapsibleItemList.svelte": "./src/components/forms/CollapsibleItemList.svelte",
+    "./forms/EntryActions.svelte": "./src/components/forms/EntryActions.svelte",
+    "./forms/FormAddButton.svelte": "./src/components/forms/FormAddButton.svelte",
+    "./forms/FormToolbar.svelte": "./src/components/forms/FormToolbar.svelte",
+    "./forms/SegmentedControl.svelte": "./src/components/forms/SegmentedControl.svelte",
     "./styles.css": "./src/styles.css",
     "./tailwind": "./src/tailwind-preset.ts"
   }
