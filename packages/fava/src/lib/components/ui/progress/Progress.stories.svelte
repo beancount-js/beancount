@@ -25,7 +25,9 @@
 <Story
   name="Updates an import's completion"
   play={async ({ canvas }) => {
-    await userEvent.click(canvas.getByRole("button", { name: "Advance import" }));
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Advance import" }),
+    );
     await expect(canvas.getByRole("progressbar")).toHaveAttribute(
       "aria-valuenow",
       "80",
@@ -43,7 +45,8 @@
       <Button size="sm" variant="outline" onclick={() => (progress = 80)}>
         Advance import
       </Button>
-      <output class="text-sm text-muted-foreground">{progress}% complete</output>
+      <output class="text-sm text-muted-foreground">{progress}% complete</output
+      >
     </div>
   {/snippet}
 </Story>
