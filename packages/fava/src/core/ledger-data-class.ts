@@ -1,5 +1,6 @@
 import {
   accountOpenClose,
+  BudgetModule,
   CounterInventory,
   filterLedger,
   filterTransactions,
@@ -110,6 +111,8 @@ export class LedgerData {
       balance: Record<string, number>;
     }>
   > = {};
+  #budgetModule: BudgetModule | undefined;
+  #intervalBudgets: Record<string, Record<string, Array<AccountBudget>>> = {};
 
   constructor(
     directives: Directives,
@@ -300,11 +303,57 @@ export class LedgerData {
     return value;
   }
 
+  private get budgetModule(): BudgetModule {
+    if (!this.#budgetModule) {
+      this.#budgetModule = new BudgetModule({
+        errors: this.errors,
+        directives: this.directives,
+      });
+    }
+    return this.#budgetModule;
+  }
+
+  /**
+   * Per-account budget rows for interval tree tables, matching Fava
+   * `account_report` budgets (newest interval first). When `accumulate` is
+   * true (balances), each interval budgets from the first interval begin
+   * through that interval's end; otherwise (changes) from the interval begin.
+   */
   intervalBudgets(
-    _account: string,
-    _interval: Interval = DEFAULT_INTERVAL,
+    account: string,
+    interval: Interval = DEFAULT_INTERVAL,
+    accumulate: boolean = true,
   ): Record<string, Array<AccountBudget>> {
-    return {};
+    const key = `${account}:${interval}:${accumulate}`;
+    if (this.#intervalBudgets[key]) {
+      return cloneDeep(this.#intervalBudgets[key]);
+    }
+    const ranges = this.dateRanges(interval);
+    if (!ranges.length) {
+      this.#intervalBudgets[key] = {};
+      return {};
+    }
+    const firstBegin = ranges[0]!.from;
+    // Fava emits newest-first arrays aligned with reversed interval_balances.
+    const ordered = [...ranges].reverse();
+    const budgetAccounts = this.tree
+      .get(account)
+      .accounts.filter(
+        (name) => name === account || name.startsWith(`${account}:`),
+      );
+    const value: Record<string, Array<AccountBudget>> = {};
+    for (const name of budgetAccounts) {
+      value[name] = ordered.map((range) => {
+        const begin = accumulate ? firstBegin : range.from;
+        const window = new DateRange(begin, range.to, "[)");
+        return {
+          budget: this.budgetModule.calculate(name, window),
+          budgetChildren: this.budgetModule.calculateChildren(name, window),
+        };
+      });
+    }
+    this.#intervalBudgets[key] = cloneDeep(value);
+    return value;
   }
 
   intervalTotals(
@@ -343,12 +392,22 @@ export class LedgerData {
           prices: this.prices,
           date: range.endInclusive,
         };
+        const budgets: Record<string, number> = {};
+        for (const account of accounts) {
+          const calculated = this.budgetModule.calculateChildren(
+            account,
+            range,
+          );
+          for (const [currency, amount] of Object.entries(calculated)) {
+            budgets[currency] = (budgets[currency] ?? 0) + amount;
+          }
+        }
         if (invert) {
           return {
             dateRange: range,
             date: range.endInclusive.toJSDate(),
             balance: inventory.neg().toRecord(conversion, context),
-            budgets: {},
+            budgets,
             accountBalances: accountInventories.map(([k, v]) => [
               k,
               v.neg().toRecord(conversion, context),
@@ -359,7 +418,7 @@ export class LedgerData {
           date: range.endInclusive.toJSDate(),
           dateRange: range,
           balance: inventory.toRecord(conversion, context),
-          budgets: {},
+          budgets,
           accountBalances: accountInventories.map(([k, v]) => [
             k,
             v.toRecord(conversion, context),

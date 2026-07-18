@@ -195,10 +195,11 @@ export class Tree extends DefaultMap<string, TreeNode> {
       }
       return new Amount(value, key.currency);
     });
+    // Match Fava Tree.cap: AT_COST units are negated into Conversions:Current.
     for (const [currency, amount] of costings.entries()) {
       entries.push([
         new InventoryKey(currency),
-        new Decimal(amount.units.toString()),
+        new Decimal(amount.units.toString()).neg(),
       ]);
     }
 
