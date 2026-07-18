@@ -6,9 +6,12 @@
   import { urlForAccount } from "../helpers";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
+  import type { MerchantReviewCluster } from "@beancount-js/server";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
+  import type { IngestionConfigResponse } from "../ingestion/types";
   import {
     buildJournalMerchantLogoMaps,
+    journalMerchantLogoFromReviewCluster,
     resolveJournalMerchantLogo,
     type JournalMerchantLogo,
     type JournalMerchantLogoMaps,
@@ -70,6 +73,10 @@
   };
   let failedLogoKeys = new Set<string>();
   let loadedMerchantProjectId = "";
+
+  type MerchantReviewResponse = {
+    clusters: MerchantReviewCluster[];
+  };
 
   function setIndeterminate(node: HTMLInputElement, value: boolean) {
     node.indeterminate = value;
@@ -213,21 +220,57 @@
     failedLogoKeys = new Set(failedLogoKeys).add(key);
   }
 
+  async function suggestedMerchantLogos(projectId: string) {
+    try {
+      const config = await ingestionJson<IngestionConfigResponse>(
+        ingestionPath(projectId),
+      );
+      const clusters = await Promise.all(
+        config.sources.map(async (source) => {
+          try {
+            const response = await ingestionJson<MerchantReviewResponse>(
+              ingestionPath(
+                projectId,
+                `/merchant-review?sourceId=${encodeURIComponent(source.id)}`,
+              ),
+            );
+            return response.clusters;
+          } catch {
+            return [];
+          }
+        }),
+      );
+      return clusters
+        .flat()
+        .map(journalMerchantLogoFromReviewCluster)
+        .filter((merchant): merchant is JournalMerchantLogo =>
+          Boolean(merchant),
+        );
+    } catch {
+      return [];
+    }
+  }
+
+  async function loadMerchantLogos(projectId: string) {
+    const [merchants, suggested] = await Promise.all([
+      ingestionJson<JournalMerchantLogo[]>(
+        ingestionPath(projectId, "/merchants"),
+      ).catch(() => []),
+      suggestedMerchantLogos(projectId),
+    ]);
+    if (projectId !== $snapshot?.project.id) return;
+
+    merchantLogoMaps = buildJournalMerchantLogoMaps([
+      ...(Array.isArray(merchants) ? merchants : []),
+      ...suggested,
+    ]);
+    failedLogoKeys = new Set();
+  }
+
   $: projectId = $snapshot?.project.id ?? "";
   $: if (!isWeb && projectId && projectId !== loadedMerchantProjectId) {
     loadedMerchantProjectId = projectId;
-    void (async () => {
-      try {
-        const merchants = await ingestionJson<JournalMerchantLogo[]>(
-          ingestionPath(projectId, "/merchants"),
-        );
-        merchantLogoMaps = buildJournalMerchantLogoMaps(
-          Array.isArray(merchants) ? merchants : [],
-        );
-      } catch {
-        merchantLogoMaps = { byId: new Map(), byNormalizedName: new Map() };
-      }
-    })();
+    void loadMerchantLogos(projectId);
   }
 
   $: timeframe =

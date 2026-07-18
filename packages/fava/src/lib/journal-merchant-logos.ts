@@ -14,6 +14,33 @@ export type JournalMerchantLogoMaps = {
   byNormalizedName: Map<string, string>;
 };
 
+/**
+ * The subset of merchant-review data Journal needs to resolve a suggested
+ * merchant's logo before it has been confirmed as a merchant identity.
+ */
+export type JournalMerchantReviewCluster = {
+  id: string;
+  displayName: string;
+  logoUrl?: string;
+  members: { normalizedLabel: string }[];
+};
+
+export function journalMerchantLogoFromReviewCluster(
+  cluster: JournalMerchantReviewCluster,
+): JournalMerchantLogo | undefined {
+  const logoUrl = cluster.logoUrl?.trim();
+  if (!logoUrl) return undefined;
+
+  return {
+    merchantId: `review:${cluster.id}`,
+    canonicalName: cluster.displayName,
+    logoUrl,
+    aliases: cluster.members.map((member) => ({
+      normalizedValue: member.normalizedLabel,
+    })),
+  };
+}
+
 export function buildJournalMerchantLogoMaps(
   merchants: readonly JournalMerchantLogo[],
 ): JournalMerchantLogoMaps {

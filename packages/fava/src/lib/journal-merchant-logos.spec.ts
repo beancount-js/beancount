@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import {
   buildJournalMerchantLogoMaps,
+  journalMerchantLogoFromReviewCluster,
   resolveJournalMerchantLogo,
 } from "./journal-merchant-logos";
 
@@ -40,5 +41,32 @@ describe("journal-merchant-logos", () => {
       {},
     );
     expect(resolveJournalMerchantLogo(byAlias, maps)).toBe("/logo/tesco");
+  });
+
+  it("resolves suggested merchant-review labels", () => {
+    const suggestedLogo = journalMerchantLogoFromReviewCluster({
+      id: "tesco-cluster",
+      displayName: "Tesco",
+      logoUrl: "/logo/tesco",
+      members: [
+        { normalizedLabel: "tesco" },
+        { normalizedLabel: "tesco stores 2039" },
+      ],
+    });
+    expect(suggestedLogo).toBeDefined();
+
+    const maps = buildJournalMerchantLogoMaps([suggestedLogo!]);
+    const transaction = new Transaction(
+      DateTime.fromISO("2026-07-01"),
+      "*",
+      "TESCO STORES 2039",
+      "Groceries",
+      [],
+      [],
+      [],
+      {},
+    );
+
+    expect(resolveJournalMerchantLogo(transaction, maps)).toBe("/logo/tesco");
   });
 });
