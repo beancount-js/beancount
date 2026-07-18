@@ -53,6 +53,8 @@ function optionalPriority(value: string) {
   return Number.isInteger(parsed) ? parsed : undefined;
 }
 
+const defaultReviewDateFormat = "YYYY-MM";
+
 export function accountField<TRoot>(config: {
   id: string;
   label: string;
@@ -188,6 +190,19 @@ export const sourceDetailsForm = createFormConfig<
       set: (source, defaultCurrency) => ({
         ...source,
         defaultCurrency: optionalString(defaultCurrency)?.toUpperCase(),
+      }),
+    }),
+    textField({
+      id: "reviewDateFormat",
+      label: "Review date format",
+      placeholder: defaultReviewDateFormat,
+      get: (source) => source.reviewDateFormat ?? defaultReviewDateFormat,
+      set: (source, reviewDateFormat) => ({
+        ...source,
+        reviewDateFormat:
+          optionalString(reviewDateFormat) === defaultReviewDateFormat
+            ? undefined
+            : optionalString(reviewDateFormat),
       }),
     }),
     textField({

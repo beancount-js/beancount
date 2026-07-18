@@ -114,6 +114,8 @@ export interface IngestionSourceDefinition {
   aiEnabled?: boolean;
   /** Markdown shown in the connection preview setup callout. */
   setup?: string;
+  /** Date pattern used to group this connection's active-review transactions. */
+  reviewDateFormat?: string;
   merchantEnrichment?: MerchantEnrichmentConfig;
   /** Legacy json-api transport config. */
   api?: JsonApiSourceConfig;

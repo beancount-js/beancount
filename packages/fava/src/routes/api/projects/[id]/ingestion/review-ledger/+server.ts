@@ -19,12 +19,17 @@ export async function GET({ params }: { params: { id: string } }) {
         contents: file.contents,
       })),
     );
-    const runs = await serverIngestion().readRuns(params.id);
+    const ingestion = serverIngestion();
+    const [runs, config] = await Promise.all([
+      ingestion.readRuns(params.id),
+      ingestion.readConfig(params.id),
+    ]);
     return json({
       ledger: buildIngestionReviewLedger({
         runs,
         directives,
         beancountOptions: options,
+        sources: config.sources,
       }),
     });
   } catch (error) {

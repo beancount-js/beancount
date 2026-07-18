@@ -12,12 +12,13 @@ import {
   type Directive,
   type Directives,
 } from "@beancount-js/beancount";
-import { writeString } from "@beancount-js/parser";
+import { formatDate, parseDate, writeString } from "@beancount-js/parser";
 import {
   proposalTransaction,
   type ImportProposal,
   type IngestionRun,
 } from "@beancount-js/beangulp";
+import type { IngestionSourceDefinition } from "./ingestion";
 
 /** A routing identity only; this file is never created on disk. */
 export const ACTIVE_REVIEW_LEDGER_PATH =
@@ -28,6 +29,7 @@ export const REVIEW_PROPOSAL_META = "studio_review_proposal_id";
 export const REVIEW_CONNECTION_META = "studio_review_connection_id";
 export const REVIEW_STATUS_META = "studio_review_status";
 export const REVIEW_UNCATEGORISED_ACCOUNT = "Review:Uncategorised";
+export const DEFAULT_REVIEW_DATE_FORMAT = "YYYY-MM";
 
 export type ReviewLedgerProjectionIssue = {
   runId: string;
@@ -205,6 +207,58 @@ function proposalLine(
   return transaction.toString().trimEnd();
 }
 
+function sourceReviewDateFormat(source: IngestionSourceDefinition | undefined) {
+  return source?.reviewDateFormat?.trim() || DEFAULT_REVIEW_DATE_FORMAT;
+}
+
+/** Accept the familiar Moment-style tokens used by the source settings form. */
+function luxonDateFormat(format: string) {
+  return format
+    .replaceAll("YYYY", "yyyy")
+    .replaceAll("YY", "yy")
+    .replaceAll("DD", "dd")
+    .replaceAll("D", "d");
+}
+
+function reviewDateHeading(date: string, format: string) {
+  const parsed = parseDate(date);
+  if (!parsed.isValid) return date;
+  return formatDate(parsed, luxonDateFormat(format));
+}
+
+function reviewTransactionGroups(
+  entries: readonly ReviewableProposal[],
+  sources: readonly IngestionSourceDefinition[] | undefined,
+  offsetAccount: string,
+  projectionIssues: ReviewLedgerProjectionIssue[],
+) {
+  const sourceById = new Map(sources?.map((source) => [source.id, source]));
+  const groups = new Map<string, string[]>();
+
+  for (const { run, proposal } of entries) {
+    try {
+      const source = sourceById.get(connectionId(run.sourceId));
+      const heading = reviewDateHeading(
+        proposal.transaction!.bookedAt,
+        sourceReviewDateFormat(source),
+      );
+      const group = groups.get(heading) ?? [];
+      group.push(proposalLine(run, proposal, offsetAccount));
+      groups.set(heading, group);
+    } catch (error) {
+      projectionIssues.push({
+        runId: run.id,
+        proposalId: proposal.id,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  return [...groups].map(
+    ([heading, transactions]) => `## ${heading}\n\n${transactions.join("\n\n")}`,
+  );
+}
+
 function revision(contents: string) {
   return createHash("sha256").update(contents).digest("hex");
 }
@@ -218,6 +272,8 @@ export function buildIngestionReviewLedger(options: {
   runs: readonly IngestionRun[];
   directives: Directives;
   beancountOptions: BeancountOptions;
+  /** Source settings control each connection's review date heading. */
+  sources?: readonly IngestionSourceDefinition[];
 }): IngestionReviewLedgerSnapshot | null {
   const runs = pickActiveReviewRuns(options.runs);
   const reviewable = reviewableProposals(runs);
@@ -234,19 +290,13 @@ export function buildIngestionReviewLedger(options: {
     .sort()
     .map((account) => syntheticOpen(account, earliestDate));
   const projectionIssues: ReviewLedgerProjectionIssue[] = [];
-  const transactions: string[] = [];
-
-  for (const { run, proposal } of reviewable) {
-    try {
-      transactions.push(proposalLine(run, proposal, offsetAccount));
-    } catch (error) {
-      projectionIssues.push({
-        runId: run.id,
-        proposalId: proposal.id,
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
+  const groups = reviewTransactionGroups(
+    reviewable,
+    options.sources,
+    offsetAccount,
+    projectionIssues,
+  );
+  const transactionCount = reviewable.length - projectionIssues.length;
 
   const contents =
     [
@@ -256,7 +306,7 @@ export function buildIngestionReviewLedger(options: {
       ].join("\n"),
       ...copied.map(contextLine),
       ...missingOpens,
-      ...transactions,
+      ...groups,
     ].join("\n\n") + "\n\n";
 
   return {
@@ -265,7 +315,7 @@ export function buildIngestionReviewLedger(options: {
     label: "Review transactions",
     contents,
     revision: revision(contents),
-    proposalCount: transactions.length,
+    proposalCount: transactionCount,
     reviewableCount: reviewable.length,
     runIds: runs.map((run) => run.id),
     readOnly: true,

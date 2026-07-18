@@ -128,6 +128,7 @@ describe("active ingestion review ledger", () => {
     });
     expect(ledger?.contents).toContain('2026-07-16 * "Lunch"');
     expect(ledger?.contents).toContain('2026-07-16 ! "Lunch"');
+    expect(ledger?.contents).toContain("## 2026-07\n\n");
     expect(ledger?.contents).toContain("Equity:Review:Uncategorised");
     expect(ledger?.contents).toContain(`${REVIEW_RUN_META}: "run:bank"`);
     expect(ledger?.contents).toContain(`${REVIEW_PROPOSAL_META}: "pending"`);
@@ -191,6 +192,43 @@ describe("active ingestion review ledger", () => {
       true,
     );
     expect(contents.endsWith("\n\n")).toBe(true);
+  });
+
+  test("groups review transactions under configurable source date headings", () => {
+    const [directives, , options] = source();
+    const first = proposal("first", "ready", "Expenses:Food");
+    first.transaction!.bookedAt = "2026-01-08";
+    first.transaction!.narration = "First transaction";
+    const second = proposal("second", "ready", "Expenses:Food");
+    second.transaction!.bookedAt = "2026-02-12";
+    second.transaction!.narration = "Second transaction";
+
+    const ledger = buildIngestionReviewLedger({
+      directives,
+      beancountOptions: options,
+      sources: [
+        {
+          id: "bank",
+          name: "Bank",
+          kind: "json-api",
+          reviewDateFormat: "YYYY-MM-DD",
+          rules: [],
+        },
+      ],
+      runs: [
+        run("run:bank", "bank:checking", "2026-02-12T00:00:00.000Z", [
+          first,
+          second,
+        ]),
+      ],
+    });
+
+    expect(ledger?.contents).toContain("## 2026-01-08\n\n");
+    expect(ledger?.contents).toContain("## 2026-02-12\n\n");
+    expect(ledger?.contents.indexOf("## 2026-01-08")).toBeLessThan(
+      ledger!.contents.indexOf("## 2026-02-12"),
+    );
+    expect(loadString(ledger!.contents)[1]).toEqual([]);
   });
 
   test("is absent without reviewable proposals and has a stable revision", () => {

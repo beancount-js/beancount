@@ -150,6 +150,14 @@ export function parseEditableIngestionConfig(
       ) {
         throw new Error(`Source ${index + 1} merchantId must be a string.`);
       }
+      if (
+        item.reviewDateFormat !== undefined &&
+        typeof item.reviewDateFormat !== "string"
+      ) {
+        throw new Error(
+          `Source ${index + 1} reviewDateFormat must be a string.`,
+        );
+      }
       const connector = item.kind !== "json-api";
       const grouped = Array.isArray(item.accounts);
       if (!connector && !grouped && typeof item.sourceAccount !== "string") {
