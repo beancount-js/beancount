@@ -16,7 +16,8 @@
   }
 
   body {
-    @apply bg-background font-sans text-foreground;
+    /* Match Fava's application canvas; AppShell supplies the workspace surface. */
+    @apply bg-sidebar font-sans text-foreground;
   }
 }
 

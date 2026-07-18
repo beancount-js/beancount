@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "storybook": "storybook dev -p 6006",
+    "storybook": "WATCHPACK_POLLING=250 storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test-storybook": "vitest run --project storybook",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",

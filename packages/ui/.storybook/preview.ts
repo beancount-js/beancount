@@ -30,6 +30,11 @@ const preview: Preview = {
     a11y: {
       test: "error",
     },
+    // The background addon owns a second, independent canvas colour. Keeping it
+    // enabled lets a stale `backgrounds` global override the app theme.
+    backgrounds: {
+      disable: true,
+    },
     layout: "fullscreen",
   },
 };
