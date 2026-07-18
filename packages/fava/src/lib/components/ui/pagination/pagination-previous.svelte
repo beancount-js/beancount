@@ -17,6 +17,5 @@
   class={cn(buttonVariants({ variant: "ghost" }), className)}
   {...restProps}
 >
-  <ChevronLeft data-icon="inline-start" />
-  <span class="hidden sm:block">Previous</span>
+  <ChevronLeft />
 </PaginationPrimitive.PrevButton>

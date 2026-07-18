@@ -635,13 +635,13 @@
         data-activity-pagination
       >
         <span class="text-sm text-muted-foreground"
-          >Page {page} of {pages.length}</span
+          >{page} of {pages.length}</span
         >
         <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
           <div class="hidden items-center gap-2 sm:flex">
             <span
               class="text-sm text-muted-foreground"
-              id={`${tableId}-page-size-label`}>Records per page</span
+              id={`${tableId}-page-size-label`}>Page size</span
             >
             <Select.Root
               type="single"

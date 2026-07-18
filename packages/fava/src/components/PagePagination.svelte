@@ -34,10 +34,7 @@
   {#snippet children({ pages, currentPage })}
     <Pagination.Content class="gap-0.5">
       <Pagination.Item>
-        <Pagination.Previous
-          {disabled}
-          class="size-8 px-0 sm:h-9 sm:w-auto sm:px-4"
-        />
+        <Pagination.Previous {disabled} class="size-8 px-0" />
       </Pagination.Item>
       {#each pages as pageItem (pageItem.key)}
         {#if pageItem.type === "ellipsis"}
@@ -58,10 +55,7 @@
         {/if}
       {/each}
       <Pagination.Item>
-        <Pagination.Next
-          {disabled}
-          class="size-8 px-0 sm:h-9 sm:w-auto sm:px-4"
-        />
+        <Pagination.Next {disabled} class="size-8 px-0" />
       </Pagination.Item>
     </Pagination.Content>
   {/snippet}
