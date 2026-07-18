@@ -110,6 +110,26 @@ test("Query tables use a compact search field and expandable saved queries", asy
   );
 });
 
+test("Query amount cells reserve space for sortable headers", async ({
+  page,
+}) => {
+  await seedLedger(page, sampleLedger);
+  await gotoStudio(
+    page,
+    "/query?qs=SELECT%20account%2C%20number%2C%20currency%20FROM%20postings%20LIMIT%203",
+  );
+
+  const table = page.locator("[data-query-table]");
+  const amountHeader = table.getByRole("columnheader", {
+    name: "Sort by number",
+  });
+  const amountCell = table.locator("tbody tr").first().locator("td").nth(1);
+
+  await expect(amountHeader).toBeVisible();
+  await expect(amountCell).toHaveClass(/pr-8/);
+  await expect(amountCell).toHaveCSS("padding-right", "32px");
+});
+
 test("Query errors render in the results table footer", async ({ page }) => {
   await seedLedger(page, minimalLedger);
   await gotoStudio(page, "/query?qs=SELECT%20units%20FROM%20postings");

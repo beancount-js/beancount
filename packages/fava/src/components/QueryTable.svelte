@@ -8,6 +8,7 @@
   import TriangleAlert from "lucide-svelte/icons/triangle-alert";
   import { AccountAvatar } from "@beancount-js/forms";
   import { derived, writable } from "svelte/store";
+  import { cn } from "$lib/utils";
   import { stringify, useDataset, useLedger, type Columns } from "./helpers";
   import { Inventory } from "@beancount-js/beancount";
   import { useCtx } from "../stores/format";
@@ -290,7 +291,11 @@
               {@const value = row[col.id]}
               <Table.Cell
                 style={col.style}
-                class={"font-mono text-xs " + col.class.join(" ")}
+                class={cn(
+                  "font-mono text-xs",
+                  col.class,
+                  col.class.includes("text-right") && "pr-8",
+                )}
               >
                 {#if col.type === "account" && !Array.isArray(value) && value}
                   {@const account = String(value)}
