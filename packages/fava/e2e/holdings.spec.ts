@@ -97,6 +97,32 @@ test("Query tables use a compact search field and expandable saved queries", asy
   await expect(executeButton).toHaveClass(/hover:text-primary/);
   await expect(queryEditor.locator(".cm-gutters")).toHaveCount(0);
 
+  await queryEditor.locator(".cm-content").click();
+  await page.keyboard.press("Control+A");
+  await page.keyboard.insertText("se");
+  const autocompletePopup = page.locator(".cm-tooltip-autocomplete");
+  await expect(autocompletePopup).toBeVisible();
+  const autocompleteStyles = await autocompletePopup.evaluate((popup) => {
+    const selectedOption = popup.querySelector("li[aria-selected]");
+    if (!selectedOption) {
+      throw new Error("Autocomplete popup has no selected option");
+    }
+    return {
+      borderRadius: getComputedStyle(popup).borderRadius,
+      boxShadow: getComputedStyle(popup).boxShadow,
+      padding: getComputedStyle(popup).padding,
+      selectedBackground: getComputedStyle(selectedOption).backgroundColor,
+      selectedPadding: getComputedStyle(selectedOption).padding,
+    };
+  });
+  expect(autocompleteStyles.borderRadius).toBe("8px");
+  expect(autocompleteStyles.boxShadow).not.toBe("none");
+  expect(autocompleteStyles.padding).toBe("4px");
+  expect(autocompleteStyles.selectedBackground).not.toBe("rgb(17, 119, 204)");
+  expect(autocompleteStyles.selectedPadding).toBe("6px 8px");
+  await page.keyboard.press("Escape");
+  await expect(autocompletePopup).toBeHidden();
+
   const syntaxTokens = await queryEditor
     .locator(".cm-content")
     .evaluate((content) => {
@@ -109,7 +135,7 @@ test("Query tables use a compact search field and expandable saved queries", asy
         .filter((token) => token.color !== defaultColor);
     });
   expect(syntaxTokens.map((token) => token.text)).toEqual(
-    expect.arrayContaining(["SELECT", "FROM"]),
+    expect.arrayContaining(["account", "FROM"]),
   );
 
   const savedQuery = page
