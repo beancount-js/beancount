@@ -469,21 +469,23 @@
                               merchantLogoUrl={accountMerchant?.logoUrl}
                               size="sm"
                             />
-                            <span class="min-w-0">
+                            <span class="min-w-0 flex-1">
                               <span class="block truncate font-medium"
                                 >{account.name}</span
                               >
                               <span
                                 class="block truncate text-xs text-muted-foreground"
                               >
-                                {[
-                                  account.sourceAccount,
-                                  account.defaultCurrency,
-                                ]
-                                  .filter(Boolean)
-                                  .join(" · ")}
+                                {account.sourceAccount}
                               </span>
                             </span>
+                            {#if account.defaultCurrency ?? source.defaultCurrency}
+                              <span
+                                class="shrink-0 self-center text-xs text-muted-foreground"
+                                >{account.defaultCurrency ??
+                                  source.defaultCurrency}</span
+                              >
+                            {/if}
                           </div>
                         </li>
                       {/each}
