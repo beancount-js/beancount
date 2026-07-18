@@ -1706,7 +1706,7 @@
                       role="button"
                       tabindex="0"
                       class:rounded-b-xl={index === group.rows.length - 1}
-                      class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_auto_minmax(0,1fr)_7.5rem]"
+                      class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_7.5rem]"
                       aria-label={`Review ${rowTitle(row.proposal)}`}
                       onclick={() => openRow(row)}
                       onkeydown={(event) => handleRowKeydown(event, row)}
@@ -1727,26 +1727,28 @@
                             (event.currentTarget as HTMLInputElement).checked,
                           )}
                       />
-                      {#if logo && !failedLogoIds.has(row.proposal.id)}
-                        <img
-                          class="size-10 rounded-full border object-contain"
-                          src={logo}
-                          alt=""
-                          onerror={() => markLogoFailed(row.proposal.id)}
-                        />
-                      {:else}
-                        <div
-                          class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
-                          aria-hidden="true"
-                        >
-                          {rowInitial(row.proposal)}
-                        </div>
-                      {/if}
                       <div class="min-w-0">
-                        <div
-                          class="break-words pl-9 text-sm font-semibold sm:truncate"
-                        >
-                          {rowTitle(row.proposal)}
+                        <div class="flex min-w-0 items-center gap-2">
+                          {#if logo && !failedLogoIds.has(row.proposal.id)}
+                            <img
+                              class="size-7 shrink-0 rounded-full border object-contain"
+                              src={logo}
+                              alt=""
+                              onerror={() => markLogoFailed(row.proposal.id)}
+                            />
+                          {:else}
+                            <div
+                              class="flex size-7 shrink-0 items-center justify-center rounded-full border bg-muted text-xs font-semibold text-muted-foreground"
+                              aria-hidden="true"
+                            >
+                              {rowInitial(row.proposal)}
+                            </div>
+                          {/if}
+                          <div
+                            class="break-words text-sm font-semibold sm:truncate"
+                          >
+                            {rowTitle(row.proposal)}
+                          </div>
                         </div>
                         <div class="mt-1 text-xs text-muted-foreground">
                           {#if account}
@@ -1765,7 +1767,7 @@
                         </div>
                       </div>
                       <div
-                        class="col-start-3 flex flex-col items-end gap-1.5 sm:col-start-4 sm:row-start-1"
+                        class="col-start-2 flex flex-col items-end gap-1.5 sm:col-start-3 sm:row-start-1"
                       >
                         <div class="flex items-center justify-end gap-1">
                           {#if reviewFilter === "accepted"}
