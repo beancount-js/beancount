@@ -124,6 +124,13 @@ export type LedgerEditorHeaderActions = {
   onSave: () => void;
 };
 
+/** Collapse controls for grouped virtual active-review ledger sections. */
+export type ReviewLedgerHeaderActions = {
+  kind: "review-ledger";
+  headersCollapsedAll: boolean;
+  onToggleHeaders: () => void;
+};
+
 /** Per-account activity table bulk actions in the workspace header. */
 export type AccountActivityHeaderActions = {
   kind: "account-activity";
@@ -140,6 +147,7 @@ export type IngestionHeaderActions =
   | IngestionAccountsHeaderActions
   | IngestionRulesHeaderActions
   | LedgerEditorHeaderActions
+  | ReviewLedgerHeaderActions
   | AccountActivityHeaderActions;
 
 /** Ingestion controls rendered in `studio-workspace-header`. */

@@ -655,6 +655,35 @@
           </Tooltip.Trigger>
           <Tooltip.Content>Save ledger</Tooltip.Content>
         </Tooltip.Root>
+      {:else if header.kind === "review-ledger"}
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            {#snippet child({ props })}
+              <Button
+                {...props}
+                type="button"
+                size="icon"
+                variant="ghost"
+                class="size-8"
+                aria-label={header.headersCollapsedAll
+                  ? "Expand all date groups"
+                  : "Collapse all date groups"}
+                onclick={() => header.onToggleHeaders()}
+              >
+                {#if header.headersCollapsedAll}
+                  <ChevronsUpDown />
+                {:else}
+                  <ChevronsDownUp />
+                {/if}
+              </Button>
+            {/snippet}
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            {header.headersCollapsedAll
+              ? "Expand all date groups"
+              : "Collapse all date groups"}
+          </Tooltip.Content>
+        </Tooltip.Root>
       {:else if header.kind === "editor"}
         {#if header.saveHint}
           <p class="text-xs text-muted-foreground" role="status">

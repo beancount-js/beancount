@@ -11,6 +11,12 @@
   import { basicSetup, ledgerSetup } from "../codemirror/beancount/setup";
   import { replaceContents } from "../codemirror/extensions/transactions";
   import { formatLedger } from "../codemirror/beancount/format";
+  import {
+    areAllHeadersCollapsed,
+    collapseHeaders,
+    collapseHeadersExceptLast,
+    expandHeaders,
+  } from "../codemirror/beancount/foldHeaders";
   import { foldMetadata } from "../codemirror/beancount/foldMetadata";
   import { foldAll } from "../codemirror/extensions/foldAll";
   import { goToLine, showGotoLine } from "../codemirror/extensions/gotoline";
@@ -37,6 +43,7 @@
   let dirty = false;
   let replacingContents = false;
   let loadedPath = "";
+  let reviewHeadersCollapsedAll = false;
 
   function editorMode(readOnly: boolean) {
     return readOnly
@@ -91,6 +98,7 @@
     dirty = false;
     formatReviewContents(view, source.readOnly);
     foldMetadata(view);
+    if (source.readOnly) collapseHeadersExceptLast(view);
 
     if (line) {
       goToLine(editor, line);
@@ -121,7 +129,13 @@
         if (next.readOnly && (contentsChanged || readOnlyChanged)) {
           formatReviewContents(view, next.readOnly);
         }
-        if (contentsChanged) foldMetadata(view);
+        if (contentsChanged) {
+          foldMetadata(view);
+          if (next.readOnly) {
+            collapseHeadersExceptLast(view);
+            reviewHeadersCollapsedAll = false;
+          }
+        }
         source = next;
       },
       destroy() {},
@@ -193,7 +207,20 @@
 
   $: {
     if (readOnly) {
-      ingestionHeaderActions.set(null);
+      ingestionHeaderActions.set({
+        kind: "review-ledger",
+        headersCollapsedAll: reviewHeadersCollapsedAll,
+        onToggleHeaders: () => {
+          if (!editor) return;
+          if (areAllHeadersCollapsed(editor.state)) {
+            expandHeaders(editor);
+            reviewHeadersCollapsedAll = false;
+          } else {
+            collapseHeaders(editor);
+            reviewHeadersCollapsedAll = true;
+          }
+        },
+      });
     } else {
       ingestionHeaderActions.set({
         kind: "ledger",
