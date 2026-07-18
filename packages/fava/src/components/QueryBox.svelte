@@ -27,6 +27,14 @@
     isOpen = nextOpenQueryState(isOpen, items);
   }
 
+  function handleHeaderClick(event: MouseEvent, query: QueryHistory) {
+    if (event.target instanceof Element && event.target.closest("button")) {
+      return;
+    }
+
+    isOpen = { ...isOpen, [query.hash]: !isOpen[query.hash] };
+  }
+
   function handleCopy(evt: MouseEvent, query: QueryHistory) {
     evt.preventDefault();
     evt.stopImmediatePropagation();
@@ -52,7 +60,7 @@
     <Accordion.Item
       value={query.hash}
       class={cn(
-        "overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm",
+        "overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm data-[state=open]:bg-muted/50",
         { "ring-1 ring-primary/30": selected === query.hash },
       )}
       data-query-history-item
@@ -60,6 +68,7 @@
       <div
         class="group flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
         data-query-history-header
+        onclick={(event) => handleHeaderClick(event, query)}
       >
         <div class="min-w-0 flex-1">
           <Accordion.Trigger

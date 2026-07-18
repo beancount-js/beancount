@@ -99,6 +99,11 @@ test("Query tables use a compact search field and expandable saved queries", asy
     "data-state",
     initialState === "open" ? "closed" : "open",
   );
+  await expect(savedQuery).toHaveClass(/data-\[state=open\]:bg-muted\/50/);
+
+  const header = savedQuery.locator("[data-query-history-header]");
+  await header.click({ position: { x: 8, y: 2 } });
+  await expect(trigger).toHaveAttribute("data-state", initialState ?? "closed");
 
   const [headerBounds, actionBounds] = await Promise.all([
     savedQuery.locator("[data-query-history-header]").boundingBox(),
