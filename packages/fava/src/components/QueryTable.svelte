@@ -6,7 +6,6 @@
   import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
   import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
   import TriangleAlert from "lucide-svelte/icons/triangle-alert";
-  import { AccountAvatar } from "@beancount-js/forms";
   import { derived, writable } from "svelte/store";
   import { cn } from "$lib/utils";
   import { stringify, useDataset, useLedger, type Columns } from "./helpers";
@@ -14,7 +13,6 @@
   import { useCtx } from "../stores/format";
   import { Decimal, formatDate } from "@beancount-js/parser";
   import { DateTime } from "luxon";
-  import { urlForAccount } from "../helpers";
   import { Tree } from "../core/tree";
   import {
     CounterInventory,
@@ -30,33 +28,14 @@
   import { Position } from "@beancount-js/beancount";
   import { runBql } from "@beancount-js/beanquery";
   import PagePagination from "./PagePagination.svelte";
-  import { useStudioWorkspace } from "../studio/workspace";
-  import { ingestionJson, ingestionPath } from "../ingestion/api";
-  import { Open } from "@beancount-js/beancount";
+  import AccountLink from "./AccountLink.svelte";
 
   export let query: string = "";
 
   const PAGE_SIZES = [10, 25, 50, 100];
-  const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
 
   const ctx = useCtx();
   const ledgerData = useLedger();
-  const { snapshot } = useStudioWorkspace();
-
-  type AccountAppearance = {
-    color?: string;
-    icon?: string;
-    merchantId?: string;
-  };
-
-  type MerchantIdentity = {
-    merchantId: string;
-    logoUrl?: string;
-  };
-
-  let accountAppearances = new Map<string, AccountAppearance>();
-  let merchantLogos = new Map<string, string>();
-  let loadedMerchantProjectId = "";
 
   function countLines(content: any) {
     if (typeof content === "string") {
@@ -187,64 +166,6 @@
     pageSize = next;
     page = 1;
   }
-
-  function accountAppearance(account: string) {
-    return accountAppearances.get(account);
-  }
-
-  function merchantLogo(merchantId?: string) {
-    return merchantId ? merchantLogos.get(merchantId) : undefined;
-  }
-
-  async function loadMerchantLogos(projectId: string) {
-    try {
-      const merchants = await ingestionJson<MerchantIdentity[]>(
-        ingestionPath(projectId, "/merchants"),
-      );
-      if (projectId !== $snapshot?.project.id) return;
-      merchantLogos = new Map(
-        merchants.flatMap((merchant) =>
-          merchant.logoUrl ? [[merchant.merchantId, merchant.logoUrl]] : [],
-        ),
-      );
-    } catch {
-      if (projectId === $snapshot?.project.id) merchantLogos = new Map();
-    }
-  }
-
-  $: accountAppearances = new Map(
-    $ledgerData.directives.flatMap((directive) => {
-      if (!(directive instanceof Open)) return [];
-      const merchantId = directive.meta.merchant_id;
-      return [
-        [
-          directive.account,
-          {
-            color:
-              typeof directive.meta.color === "string"
-                ? directive.meta.color
-                : undefined,
-            icon:
-              typeof directive.meta.icon === "string"
-                ? directive.meta.icon
-                : undefined,
-            merchantId: typeof merchantId === "string" ? merchantId : undefined,
-          },
-        ],
-      ];
-    }),
-  );
-  $: accountMerchantIds = [...accountAppearances.values()]
-    .map((appearance) => appearance.merchantId)
-    .filter((merchantId): merchantId is string => Boolean(merchantId));
-  $: projectId = $snapshot?.project.id ?? "";
-  $: if (isWeb || !projectId || !accountMerchantIds.length) {
-    loadedMerchantProjectId = "";
-    merchantLogos = new Map();
-  } else if (projectId !== loadedMerchantProjectId) {
-    loadedMerchantProjectId = projectId;
-    void loadMerchantLogos(projectId);
-  }
 </script>
 
 <div class="query-table" data-query-table>
@@ -299,21 +220,7 @@
               >
                 {#if col.type === "account" && !Array.isArray(value) && value}
                   {@const account = String(value)}
-                  {@const appearance = accountAppearance(account)}
-                  <a
-                    href={urlForAccount(account)}
-                    class="inline-flex items-center gap-1.5"
-                    data-merchant-id={appearance?.merchantId}
-                  >
-                    <AccountAvatar
-                      {account}
-                      color={appearance?.color}
-                      icon={appearance?.icon}
-                      merchantLogoUrl={merchantLogo(appearance?.merchantId)}
-                      size="sm"
-                    />
-                    <span>{account}</span>
-                  </a>
+                  <AccountLink {account} avatarSize="sm" />
                 {:else if value instanceof Inventory}
                   {#each [...value.values()] as position}
                     <span class="block text-right"
@@ -326,23 +233,7 @@
                     {@const lines = countLines(rowval)}
                     <div class:border-t={i > 0}>
                       {#if col.type === "account"}
-                        {@const appearance = accountAppearance(rowval)}
-                        <a
-                          href={urlForAccount(rowval)}
-                          class="inline-flex items-center gap-1.5"
-                          data-merchant-id={appearance?.merchantId}
-                        >
-                          <AccountAvatar
-                            account={rowval}
-                            color={appearance?.color}
-                            icon={appearance?.icon}
-                            merchantLogoUrl={merchantLogo(
-                              appearance?.merchantId,
-                            )}
-                            size="sm"
-                          />
-                          <span>{rowval}</span>
-                        </a>
+                        <AccountLink account={rowval} avatarSize="sm" />
                       {:else if item instanceof Amount || item instanceof Decimal}
                         {$ctx.money(item)}
                       {:else if item instanceof Date || item instanceof DateTime}
