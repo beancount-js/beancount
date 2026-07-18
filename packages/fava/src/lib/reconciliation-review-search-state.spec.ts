@@ -3,12 +3,14 @@ import type { ReconciliationReviewDisplayItem } from "./reconciliation-review-re
 import {
   appendReconciliationReviewSearchParams,
   collectReconciliationReviewFacetOptions,
+  DEFAULT_RECONCILIATION_REVIEW_PAGE_SIZE,
   filterReconciliationReviewSearch,
   hasActiveReconciliationReviewSearch,
   normaliseReconciliationLabel,
   paginateReconciliationReviewItems,
   parseReconciliationReviewSearchState,
   reconciliationKindLabel,
+  RECONCILIATION_REVIEW_PAGE_SIZES,
   type ReconciliationReviewSearchState,
 } from "./reconciliation-review-search-state";
 
@@ -163,5 +165,28 @@ describe("reconciliation-review-search-state", () => {
     expect(
       paginateReconciliationReviewItems([first, second, third], 2),
     ).toEqual([[first, second], [third]]);
+  });
+
+  it("defaults reconciliation review pagination to ten matches", () => {
+    expect(DEFAULT_RECONCILIATION_REVIEW_PAGE_SIZE).toBe(10);
+    expect(RECONCILIATION_REVIEW_PAGE_SIZES).toContain(
+      DEFAULT_RECONCILIATION_REVIEW_PAGE_SIZE,
+    );
+    expect(
+      paginateReconciliationReviewItems(
+        Array.from({ length: 11 }, (_, index) =>
+          candidate({
+            candidate: {
+              id: `candidate-${index}`,
+              kind: "overlap",
+              memberIds: [`proposal:${index}`, `ledger:${index}`],
+              confidence: "high",
+              evidence: [],
+            },
+          }),
+        ),
+        DEFAULT_RECONCILIATION_REVIEW_PAGE_SIZE,
+      ).map((page) => page.length),
+    ).toEqual([10, 1]);
   });
 });

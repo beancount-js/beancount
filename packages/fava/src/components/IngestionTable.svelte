@@ -1049,7 +1049,10 @@
   }
 </script>
 
-<div class="h-full overflow-auto p-3 sm:p-5" data-ingestion-review>
+<div
+  class="h-full overflow-auto p-3 pb-[calc(60px+env(safe-area-inset-bottom))] sm:p-5"
+  data-ingestion-review
+>
   <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
     {#if isWeb}
       <div

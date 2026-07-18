@@ -114,7 +114,7 @@
     {/if}
   {:else}
     <div
-      class="flex flex-wrap items-center justify-end gap-2"
+      class="flex w-max flex-nowrap items-center justify-end gap-2 sm:w-auto sm:flex-wrap"
       data-slot="ingestion-header-actions"
     >
       {#if header.kind === "review"}

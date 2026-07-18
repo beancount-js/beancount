@@ -11,6 +11,9 @@ export const RECONCILIATION_REVIEW_SEARCH_PARAM_KEYS = [
   "reconcileConfidence",
 ] as const;
 
+export const RECONCILIATION_REVIEW_PAGE_SIZES = [10, 25, 50, 100] as const;
+export const DEFAULT_RECONCILIATION_REVIEW_PAGE_SIZE = 10;
+
 export type ReconciliationReviewSearchState = {
   query: string;
   accounts: string[];

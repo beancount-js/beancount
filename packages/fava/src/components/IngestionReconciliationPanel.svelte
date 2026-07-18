@@ -18,20 +18,20 @@
     appendReconciliationReviewSearchParams,
     cloneReconciliationReviewSearchState,
     collectReconciliationReviewFacetOptions,
+    DEFAULT_RECONCILIATION_REVIEW_PAGE_SIZE,
     filterReconciliationReviewSearch,
     hasActiveReconciliationReviewSearch,
     normaliseReconciliationLabel,
     paginateReconciliationReviewItems,
     parseReconciliationReviewSearchState,
     reconciliationKindLabel,
+    RECONCILIATION_REVIEW_PAGE_SIZES,
     type ReconciliationReviewSearchState,
   } from "../lib/reconciliation-review-search-state";
   import { useNavigation } from "../router/router";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import ReconciliationReviewSkeleton from "./skeletons/ReconciliationReviewSkeleton.svelte";
-
-  const PAGE_SIZES = [25, 50, 100];
 
   type Review = ReconciliationReviewResponse;
 
@@ -94,9 +94,11 @@
     filterReconciliationReviewSearch(candidates, searchState),
   );
   const pageSize = $derived(
-    PAGE_SIZES.includes(Number($activeRoute?.query?.reconcilePageSize))
+    RECONCILIATION_REVIEW_PAGE_SIZES.includes(
+      Number($activeRoute?.query?.reconcilePageSize) as 10 | 25 | 50 | 100,
+    )
       ? Number($activeRoute?.query?.reconcilePageSize)
-      : 50,
+      : DEFAULT_RECONCILIATION_REVIEW_PAGE_SIZE,
   );
   const pages = $derived(
     paginateReconciliationReviewItems(matchedCandidates, pageSize),
@@ -585,7 +587,7 @@
                 reconcilePage: "1",
               })}
           >
-            {#each PAGE_SIZES as size (size)}
+            {#each RECONCILIATION_REVIEW_PAGE_SIZES as size (size)}
               <option value={size}>{size}</option>
             {/each}
           </select>

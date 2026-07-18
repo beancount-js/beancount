@@ -501,10 +501,12 @@
             <IngestionHeaderActions region="leading" />
           </div>
         {/if}
-        <div class="ml-auto flex shrink-0 items-center gap-2">
+        <div
+          class="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden sm:flex-none"
+        >
           <div
             data-slot="studio-workspace-header-actions"
-            class="flex min-w-0 items-center gap-2"
+            class="flex min-w-0 flex-1 touch-pan-x items-center gap-2 overflow-x-auto [scrollbar-width:none] sm:flex-none sm:overflow-visible [&::-webkit-scrollbar]:hidden"
           >
             <IngestionHeaderActions region="actions" />
           </div>
