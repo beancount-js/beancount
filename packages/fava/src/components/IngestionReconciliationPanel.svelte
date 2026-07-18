@@ -769,7 +769,7 @@
             {#each item.members as member, memberIndex (member.observation.id)}
               <div
                 class:rounded-b-xl={memberIndex === item.members.length - 1}
-                class="relative grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-1 border-b px-[15px] py-4 last:border-b-0 sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem]"
+                class="grid grid-cols-[2.5rem_minmax(0,1fr)_7rem] items-center gap-x-3 gap-y-1 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60 sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem_7rem]"
                 data-reconciliation-member-row
               >
                 <div
@@ -780,7 +780,7 @@
                   {memberInitial(member)}
                 </div>
                 <div
-                  class="col-start-2 row-start-1 min-w-0 pr-24"
+                  class="col-start-2 row-span-2 row-start-1 min-w-0 self-center sm:row-span-1"
                   data-reconciliation-member-details
                 >
                   <div class="break-words text-sm font-semibold sm:truncate">
@@ -792,20 +792,20 @@
                     {memberDetail(member)}
                   </div>
                 </div>
-                <span
-                  class="col-start-2 row-start-2 text-sm font-semibold tabular-nums sm:col-start-3 sm:justify-self-end"
-                  data-reconciliation-member-amount
-                >
-                  {member.observation.amount}&nbsp;{member.observation.currency}
-                </span>
                 <Badge
                   variant="outline"
-                  class="pointer-events-none absolute right-3 top-2 rounded-full bg-card text-[10px] uppercase tracking-wide text-muted-foreground"
+                  class="pointer-events-none col-start-3 row-start-1 max-w-full justify-self-center truncate rounded-full bg-card text-[10px] uppercase tracking-wide text-muted-foreground"
                   aria-label={`Source ${memberSourceLabel(member)}`}
                   data-reconciliation-member-source
                 >
                   {memberSourceLabel(member)}
                 </Badge>
+                <span
+                  class="col-start-3 row-start-2 justify-self-end text-sm font-semibold tabular-nums sm:col-start-4 sm:row-start-1"
+                  data-reconciliation-member-amount
+                >
+                  {member.observation.amount}&nbsp;{member.observation.currency}
+                </span>
               </div>
             {/each}
           </div>

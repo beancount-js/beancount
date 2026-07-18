@@ -201,7 +201,21 @@ test("styles reconciliation cards with aligned rows and compact actions", async 
       .locator("[data-reconciliation-member-source]")
       .first()
       .evaluate((node) => getComputedStyle(node).position),
-  ).toBe("absolute");
+  ).not.toBe("absolute");
+
+  const firstRow = cards
+    .first()
+    .locator("[data-reconciliation-member-row]")
+    .first();
+  const restingBackground = await firstRow.evaluate(
+    (node) => getComputedStyle(node).backgroundColor,
+  );
+  await firstRow.hover();
+  await expect
+    .poll(() =>
+      firstRow.evaluate((node) => getComputedStyle(node).backgroundColor),
+    )
+    .not.toBe(restingBackground);
 
   const rowMetrics = await cards
     .first()
@@ -217,11 +231,19 @@ test("styles reconciliation cards with aligned rows and compact actions", async 
         const details = row.querySelector<HTMLElement>(
           "[data-reconciliation-member-details]",
         );
+        const source = row.querySelector<HTMLElement>(
+          "[data-reconciliation-member-source]",
+        );
+        const sourceBox = source?.getBoundingClientRect();
+        const rowBox = row.getBoundingClientRect();
         return {
           columns: getComputedStyle(row).gridTemplateColumns,
           amountX: amount?.getBoundingClientRect().x,
           avatarX: avatar?.getBoundingClientRect().x,
           detailsX: details?.getBoundingClientRect().x,
+          sourceCenterX: sourceBox ? sourceBox.x + sourceBox.width / 2 : 0,
+          sourceCenterY: sourceBox ? sourceBox.y + sourceBox.height / 2 : 0,
+          rowCenterY: rowBox.y + rowBox.height / 2,
         };
       }),
     );
@@ -229,8 +251,22 @@ test("styles reconciliation cards with aligned rows and compact actions", async 
   expect(rowMetrics[0]?.amountX).toBe(rowMetrics[1]?.amountX);
   expect(rowMetrics[0]?.avatarX).toBe(rowMetrics[1]?.avatarX);
   expect(rowMetrics[0]?.detailsX).toBe(rowMetrics[1]?.detailsX);
+  expect(rowMetrics[0]?.sourceCenterX).toBeCloseTo(
+    rowMetrics[1]?.sourceCenterX ?? 0,
+    1,
+  );
+  expect(
+    Math.abs(
+      (rowMetrics[0]?.sourceCenterY ?? 0) - (rowMetrics[0]?.rowCenterY ?? 0),
+    ),
+  ).toBeLessThanOrEqual(1);
   expect(rowMetrics[0]?.avatarX).toBeLessThan(rowMetrics[0]?.detailsX ?? 0);
-  expect(rowMetrics[0]?.detailsX).toBeLessThan(rowMetrics[0]?.amountX ?? 0);
+  expect(rowMetrics[0]?.detailsX).toBeLessThan(
+    rowMetrics[0]?.sourceCenterX ?? 0,
+  );
+  expect(rowMetrics[0]?.sourceCenterX).toBeLessThan(
+    rowMetrics[0]?.amountX ?? 0,
+  );
 });
 
 test("keeps reconciliation card rows contained on mobile", async ({ page }) => {
