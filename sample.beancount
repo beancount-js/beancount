@@ -51,7 +51,7 @@ plugin "beancount.plugins.forecast"
 
 ## Credit Cards
 
-2023-08-01 open     Assets:Checking:Starling                   GBP
+2023-08-01 open     Liabilities:CreditCard:Amex                GBP
 2024-10-26 pad      Liabilities:CreditCard:Amex       Equity:Opening-Balances
 2024-10-27 balance  Liabilities:CreditCard:Amex       -1,022.1 GBP
 
@@ -78,7 +78,7 @@ plugin "beancount.plugins.forecast"
 
 2024-10-19 open     Liabilities:Loan:Novuna                    GBP
 
-2024-10-19 open     Liabilities:Loan:Plata:Principal           GBP  
+2024-10-19 open     Liabilities:Loan:Plata:Principal           GBP   
 2024-10-19 open     Liabilities:Loan:Plata:Interest            GBP
 
 2024-10-19 pad      Liabilities:Loan:Plata:Principal  Equity:Opening-Balances
