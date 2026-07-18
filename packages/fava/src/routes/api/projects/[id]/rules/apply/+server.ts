@@ -1,5 +1,9 @@
 import { json } from "@sveltejs/kit";
-import { applyDetectionRules, previewRuleApply } from "@beancount-js/server";
+import {
+  applyDetectionRules,
+  createCodexRuleAiExecutor,
+  previewRuleApply,
+} from "@beancount-js/server";
 import { serverIngestion } from "$lib/server/ingestion";
 import { serverRules } from "$lib/server/rules";
 import { serverWorkspace } from "$lib/server/workspace";
@@ -62,6 +66,7 @@ export async function POST({
       rulesStore,
       ingestionStore,
       workspace,
+      ai: createCodexRuleAiExecutor(),
     });
     return json(result);
   } catch (error) {

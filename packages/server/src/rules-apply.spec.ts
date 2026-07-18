@@ -8,7 +8,11 @@ import type {
   NormalizedTransaction,
 } from "@beancount-js/beangulp";
 import { FilesystemIngestionStore } from "./ingestion";
-import { applyDetectionRules, previewRuleApply } from "./rules-apply";
+import {
+  applyDetectionRules,
+  previewRuleApply,
+  type RuleAiBatchInput,
+} from "./rules-apply";
 import { FilesystemRulesStore } from "./rules";
 import { FilesystemWorkspaceAdapter } from "./workspace-adapter";
 
@@ -104,6 +108,34 @@ const foodCategoryRule: DetectionRule = {
       id: "set-category",
       actionType: "set_transaction_category",
       value: "Expenses:Food",
+    },
+  ],
+};
+
+const aiEnrichmentRule: DetectionRule = {
+  id: "enrich-plata-with-ai",
+  name: "Enrich Plata with AI",
+  resourceType: "transaction",
+  active: true,
+  effectiveDate: null,
+  conditions: [
+    {
+      id: "plata",
+      conditionType: "transaction_name",
+      operator: "like",
+      value: "Plata",
+    },
+  ],
+  actions: [
+    {
+      id: "categorise-with-ai",
+      actionType: "auto_categorise_with_ai",
+      value: null,
+    },
+    {
+      id: "detect-merchant-with-ai",
+      actionType: "auto_detect_merchant_with_ai",
+      value: null,
     },
   ],
 };
@@ -361,5 +393,63 @@ describe("manual rule application targets", () => {
     await expect(
       readFile(join(root, "main.beancount"), "utf8"),
     ).resolves.toContain("Expenses:Food 42.00 GBP");
+  });
+
+  test("stages matching AI actions into target-wide batches", async () => {
+    const { root, project, workspace, ingestionStore, rulesStore } =
+      await fixture([aiEnrichmentRule]);
+    const categorise = vi.fn(async (inputs: readonly RuleAiBatchInput[]) =>
+      inputs.map((input) => ({
+        id: input.id,
+        selectedAccount: "Expenses:Food",
+      })),
+    );
+    const detectMerchants = vi.fn(async (inputs: readonly RuleAiBatchInput[]) =>
+      inputs.map((input) => ({ id: input.id, merchant: "Plata Card" })),
+    );
+
+    const preview = await previewRuleApply({
+      projectId: project.id,
+      target: "both",
+      workspace,
+      ingestionStore,
+      rulesStore,
+    });
+    expect(preview.summary).toMatchObject({
+      unique: { pendingImports: 1, liveLedger: 1 },
+      modified: { pendingImports: 0, liveLedger: 0 },
+    });
+    expect(categorise).not.toHaveBeenCalled();
+    expect(detectMerchants).not.toHaveBeenCalled();
+
+    const result = await applyDetectionRules({
+      projectId: project.id,
+      target: "both",
+      workspace,
+      ingestionStore,
+      rulesStore,
+      ai: { categorise, detectMerchants },
+    });
+
+    expect(categorise).toHaveBeenCalledTimes(1);
+    expect(detectMerchants).toHaveBeenCalledTimes(1);
+    expect(categorise.mock.calls[0]?.[0]).toHaveLength(2);
+    expect(detectMerchants.mock.calls[0]?.[0]).toHaveLength(2);
+    expect(result.results[0]).toMatchObject({
+      targetCounts: {
+        modified: { pendingImports: 1, liveLedger: 1 },
+      },
+    });
+    await expect(
+      readFile(join(root, "main.beancount"), "utf8"),
+    ).resolves.toContain('"Plata Card" "Plata payment"');
+    await expect(
+      readFile(join(root, "main.beancount"), "utf8"),
+    ).resolves.toContain("Expenses:Food 42.00 GBP");
+    const [run] = await ingestionStore.readRuns(project.id);
+    expect(run?.proposals[0]).toMatchObject({
+      selectedAccount: "Expenses:Food",
+      transaction: { merchant: "Plata Card" },
+    });
   });
 });

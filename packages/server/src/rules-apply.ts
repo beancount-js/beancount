@@ -65,6 +65,28 @@ export type RuleApplySummary = {
   conflicts: RuleRunTargetCounts;
 };
 
+export type RuleAiBatchInput = {
+  id: string;
+  transaction: NormalizedTransaction;
+  merchant?: RuleEvaluationContext["merchant"];
+  availableAccounts: readonly string[];
+};
+
+export type RuleAiBatchOutcome = {
+  id: string;
+  selectedAccount?: string;
+  merchant?: string;
+};
+
+export interface RuleAiExecutor {
+  categorise(
+    inputs: readonly RuleAiBatchInput[],
+  ): Promise<readonly RuleAiBatchOutcome[]>;
+  detectMerchants(
+    inputs: readonly RuleAiBatchInput[],
+  ): Promise<readonly RuleAiBatchOutcome[]>;
+}
+
 function emptyTargetCounts(): RuleRunTargetCounts {
   return { pendingImports: 0, liveLedger: 0 };
 }
@@ -420,6 +442,169 @@ function postingAccountsChanged(left: Transaction, right: Transaction) {
   );
 }
 
+function applyPendingPatch(
+  record: PlannedPendingRecord,
+  patch: RulePatch,
+  rulePlan: RulePlan,
+  rule: DetectionRule,
+  summary: RuleApplySummary,
+  modifiedRecords: Set<PlannedPendingRecord>,
+) {
+  const next = applyPatchToProposal(record.current, patch);
+  if (!next) return false;
+  if (
+    patch.selectedAccount !== undefined &&
+    next.selectedAccount !== record.current.selectedAccount
+  ) {
+    noteFieldWrite(
+      record.fields,
+      "category",
+      next.selectedAccount ?? "",
+      rule,
+      "pendingImports",
+      summary,
+    );
+  }
+  if (
+    patch.merchant !== undefined &&
+    next.transaction?.merchant !== record.current.transaction?.merchant
+  ) {
+    noteFieldWrite(
+      record.fields,
+      "merchant",
+      next.transaction?.merchant ?? "",
+      rule,
+      "pendingImports",
+      summary,
+    );
+  }
+  if (
+    patch.narration !== undefined &&
+    next.transaction?.narration !== record.current.transaction?.narration
+  ) {
+    noteFieldWrite(
+      record.fields,
+      "narration",
+      next.transaction?.narration ?? "",
+      rule,
+      "pendingImports",
+      summary,
+    );
+  }
+  record.current = next;
+  record.changed = true;
+  if (!modifiedRecords.has(record)) {
+    modifiedRecords.add(record);
+    rulePlan.modified.pendingImports += 1;
+  }
+  return true;
+}
+
+function applyLedgerPatch(
+  record: PlannedLedgerRecord,
+  patch: RulePatch,
+  rulePlan: RulePlan,
+  rule: DetectionRule,
+  summary: RuleApplySummary,
+  modifiedRecords: Set<PlannedLedgerRecord>,
+) {
+  const context = ledgerContext(record.current);
+  if (!context) return false;
+  const next = applyPatchToLedger(record.current, patch, context);
+  if (!next) return false;
+  if (
+    patch.selectedAccount !== undefined &&
+    postingAccountsChanged(record.current, next)
+  ) {
+    noteFieldWrite(
+      record.fields,
+      "category",
+      patch.selectedAccount,
+      rule,
+      "liveLedger",
+      summary,
+    );
+  }
+  if (patch.merchant !== undefined && next.payee !== record.current.payee) {
+    noteFieldWrite(
+      record.fields,
+      "merchant",
+      next.payee ?? "",
+      rule,
+      "liveLedger",
+      summary,
+    );
+  }
+  if (
+    patch.narration !== undefined &&
+    next.narration !== record.current.narration
+  ) {
+    noteFieldWrite(
+      record.fields,
+      "narration",
+      next.narration ?? "",
+      rule,
+      "liveLedger",
+      summary,
+    );
+  }
+  record.current = next;
+  record.changed = true;
+  if (!modifiedRecords.has(record)) {
+    modifiedRecords.add(record);
+    rulePlan.modified.liveLedger += 1;
+  }
+  return true;
+}
+
+function aiActionType(actionType: string) {
+  return (
+    actionType === "auto_categorise_with_ai" ||
+    actionType === "auto_detect_merchant_with_ai"
+  );
+}
+
+function merchantLabel(transaction: NormalizedTransaction) {
+  return transaction.merchant ?? transaction.payee ?? transaction.narration;
+}
+
+function batchOutcomeMap(
+  inputs: readonly RuleAiBatchInput[],
+  outcomes: readonly RuleAiBatchOutcome[],
+) {
+  const inputIds = new Set(inputs.map((input) => input.id));
+  const byId = new Map<string, RuleAiBatchOutcome>();
+  for (const outcome of outcomes) {
+    if (!inputIds.has(outcome.id) || byId.has(outcome.id)) {
+      throw new Error("AI rule action returned invalid batch identifiers.");
+    }
+    byId.set(outcome.id, outcome);
+  }
+  if (byId.size !== inputs.length) {
+    throw new Error("AI rule action did not return every batch result.");
+  }
+  return byId;
+}
+
+function patchFromAiOutcome(
+  actionType: string,
+  outcome: RuleAiBatchOutcome,
+  availableAccounts: readonly string[],
+): RulePatch | undefined {
+  if (actionType === "auto_categorise_with_ai") {
+    const selectedAccount = outcome.selectedAccount?.trim();
+    if (!selectedAccount) return undefined;
+    if (!availableAccounts.includes(selectedAccount)) {
+      throw new Error(
+        "AI categorisation selected an unavailable ledger account.",
+      );
+    }
+    return { selectedAccount };
+  }
+  const merchant = outcome.merchant?.trim();
+  return merchant ? { merchant } : undefined;
+}
+
 function targetCountFromRecords<
   T extends { matches: number; changed: boolean },
 >(records: readonly T[]) {
@@ -436,6 +621,8 @@ async function planRuleApply(options: {
   rulesStore: FilesystemRulesStore;
   ingestionStore: FilesystemIngestionStore;
   workspace: FilesystemWorkspaceAdapter;
+  ai?: RuleAiExecutor;
+  executeAi?: boolean;
 }): Promise<RuleApplyPlan> {
   const file = await options.rulesStore.readRules(options.projectId);
   const selected = selectableRules(file.rules, options.ruleIds);
@@ -448,6 +635,11 @@ async function planRuleApply(options: {
       contents: file.contents,
     })),
   );
+  const availableAccounts = [
+    ...new Set(entries.flatMap((entry) => entry.accounts)),
+  ]
+    .filter(Boolean)
+    .sort();
 
   const summary = emptySummary(options.target);
   const rulePlans = selected.map((rule) => ({
@@ -497,58 +689,29 @@ async function planRuleApply(options: {
 
   for (const rulePlan of rulePlans) {
     const { rule } = rulePlan;
+    const matchedPending: PlannedPendingRecord[] = [];
+    const matchedLedger: PlannedLedgerRecord[] = [];
+    const modifiedPending = new Set<PlannedPendingRecord>();
+    const modifiedLedger = new Set<PlannedLedgerRecord>();
+
     for (const record of pendingRecords) {
       if (!pendingProposalIsApplicable(record.current)) continue;
       const context = proposalContext(record.current);
       if (!context || !ruleMatches(rule, context)) continue;
       incrementMatch(rulePlan, "pendingImports");
       record.matches += 1;
+      matchedPending.push(record);
       const patch = applyRuleActions(rule, context);
-      if (!patch) continue;
-      const next = applyPatchToProposal(record.current, patch);
-      if (!next) continue;
-      if (
-        patch.selectedAccount !== undefined &&
-        next.selectedAccount !== record.current.selectedAccount
-      ) {
-        noteFieldWrite(
-          record.fields,
-          "category",
-          next.selectedAccount ?? "",
+      if (patch) {
+        applyPendingPatch(
+          record,
+          patch,
+          rulePlan,
           rule,
-          "pendingImports",
           summary,
+          modifiedPending,
         );
       }
-      if (
-        patch.merchant !== undefined &&
-        next.transaction?.merchant !== record.current.transaction?.merchant
-      ) {
-        noteFieldWrite(
-          record.fields,
-          "merchant",
-          next.transaction?.merchant ?? "",
-          rule,
-          "pendingImports",
-          summary,
-        );
-      }
-      if (
-        patch.narration !== undefined &&
-        next.transaction?.narration !== record.current.transaction?.narration
-      ) {
-        noteFieldWrite(
-          record.fields,
-          "narration",
-          next.transaction?.narration ?? "",
-          rule,
-          "pendingImports",
-          summary,
-        );
-      }
-      record.current = next;
-      record.changed = true;
-      rulePlan.modified.pendingImports += 1;
     }
 
     for (const record of ledgerRecords) {
@@ -556,49 +719,127 @@ async function planRuleApply(options: {
       if (!context || !ruleMatches(rule, context)) continue;
       incrementMatch(rulePlan, "liveLedger");
       record.matches += 1;
+      matchedLedger.push(record);
       const patch = applyRuleActions(rule, context);
-      if (!patch) continue;
-      const next = applyPatchToLedger(record.current, patch, context);
-      if (!next) continue;
+      if (patch) {
+        applyLedgerPatch(
+          record,
+          patch,
+          rulePlan,
+          rule,
+          summary,
+          modifiedLedger,
+        );
+      }
+    }
+
+    if (!options.executeAi) continue;
+    const aiActions = rule.actions.filter((action) =>
+      aiActionType(action.actionType),
+    );
+    if (!aiActions.length) continue;
+    if (!options.ai) {
+      throw new Error(
+        "AI rule actions require an available Codex AI executor.",
+      );
+    }
+    for (const action of aiActions) {
+      const pendingInputs = matchedPending.flatMap((record) => {
+        const context = proposalContext(record.current);
+        if (!context) return [];
+        if (
+          action.actionType === "auto_detect_merchant_with_ai" &&
+          !merchantLabel(context.transaction)
+        ) {
+          return [];
+        }
+        return [
+          {
+            id: `${action.id}:pending:${record.runIndex}:${record.proposalIndex}`,
+            record,
+            input: {
+              id: `${action.id}:pending:${record.runIndex}:${record.proposalIndex}`,
+              transaction: context.transaction,
+              merchant: context.merchant,
+              availableAccounts,
+            } satisfies RuleAiBatchInput,
+          },
+        ];
+      });
+      const ledgerInputs = matchedLedger.flatMap((record) => {
+        const context = ledgerContext(record.current);
+        if (!context) return [];
+        if (
+          action.actionType === "auto_detect_merchant_with_ai" &&
+          !merchantLabel(context.transaction)
+        ) {
+          return [];
+        }
+        return [
+          {
+            id: `${action.id}:ledger:${record.path}:${record.original.source?.position.from ?? 0}`,
+            record,
+            input: {
+              id: `${action.id}:ledger:${record.path}:${record.original.source?.position.from ?? 0}`,
+              transaction: context.transaction,
+              merchant: context.merchant,
+              availableAccounts,
+            } satisfies RuleAiBatchInput,
+          },
+        ];
+      });
+      const inputs = [...pendingInputs, ...ledgerInputs].map(
+        (item) => item.input,
+      );
+      if (!inputs.length) continue;
       if (
-        patch.selectedAccount !== undefined &&
-        postingAccountsChanged(record.current, next)
+        action.actionType === "auto_categorise_with_ai" &&
+        !availableAccounts.length
       ) {
-        noteFieldWrite(
-          record.fields,
-          "category",
-          patch.selectedAccount,
-          rule,
-          "liveLedger",
-          summary,
-        );
+        throw new Error("AI categorisation requires ledger accounts.");
       }
-      if (patch.merchant !== undefined && next.payee !== record.current.payee) {
-        noteFieldWrite(
-          record.fields,
-          "merchant",
-          next.payee ?? "",
-          rule,
-          "liveLedger",
-          summary,
+      const outcomes = batchOutcomeMap(
+        inputs,
+        action.actionType === "auto_categorise_with_ai"
+          ? await options.ai.categorise(inputs)
+          : await options.ai.detectMerchants(inputs),
+      );
+      for (const item of pendingInputs) {
+        const outcome = outcomes.get(item.id)!;
+        const patch = patchFromAiOutcome(
+          action.actionType,
+          outcome,
+          availableAccounts,
         );
+        if (patch) {
+          applyPendingPatch(
+            item.record,
+            patch,
+            rulePlan,
+            rule,
+            summary,
+            modifiedPending,
+          );
+        }
       }
-      if (
-        patch.narration !== undefined &&
-        next.narration !== record.current.narration
-      ) {
-        noteFieldWrite(
-          record.fields,
-          "narration",
-          next.narration ?? "",
-          rule,
-          "liveLedger",
-          summary,
+      for (const item of ledgerInputs) {
+        const outcome = outcomes.get(item.id)!;
+        const patch = patchFromAiOutcome(
+          action.actionType,
+          outcome,
+          availableAccounts,
         );
+        if (patch) {
+          applyLedgerPatch(
+            item.record,
+            patch,
+            rulePlan,
+            rule,
+            summary,
+            modifiedLedger,
+          );
+        }
       }
-      record.current = next;
-      record.changed = true;
-      rulePlan.modified.liveLedger += 1;
     }
   }
 
@@ -645,7 +886,7 @@ export async function previewRuleApply(options: {
   ingestionStore: FilesystemIngestionStore;
   workspace: FilesystemWorkspaceAdapter;
 }): Promise<RuleApplyPreviewResult> {
-  const plan = await planRuleApply(options);
+  const plan = await planRuleApply({ ...options, executeAi: false });
   return {
     preview: plan.rulePlans.map((rulePlan) => {
       const counts = {
@@ -820,12 +1061,13 @@ export async function applyDetectionRules(options: {
   rulesStore: FilesystemRulesStore;
   ingestionStore: FilesystemIngestionStore;
   workspace: FilesystemWorkspaceAdapter;
+  ai?: RuleAiExecutor;
 }): Promise<{
   results: RuleApplyResult[];
   snapshot: Awaited<ReturnType<FilesystemWorkspaceAdapter["readProject"]>>;
   summary: RuleApplySummary;
 }> {
-  const plan = await planRuleApply(options);
+  const plan = await planRuleApply({ ...options, executeAi: true });
   const started: StartedRulePlan[] = [];
   for (const rulePlan of plan.rulePlans) {
     const queued = totalTargetCounts(rulePlan.queued);

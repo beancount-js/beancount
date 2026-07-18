@@ -41,8 +41,13 @@ export {
   previewRuleApply,
   countRuleMatches,
   type RuleApplyMatchCounts,
+  type RuleApplySummary,
   type RuleApplyResult,
+  type RuleAiBatchInput,
+  type RuleAiBatchOutcome,
+  type RuleAiExecutor,
 } from "./rules-apply";
+export { createCodexRuleAiExecutor } from "./rules-ai";
 export { pickProjectDirectoryFromSystemDialog } from "./pick-directory";
 export { CodexAgentSession, CodexProvider, codexAppServerArgs } from "./codex";
 export type {
