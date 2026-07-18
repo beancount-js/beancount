@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
-  import { proposalIsReadyForAcceptance } from "@beancount-js/beangulp";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import type { ProjectSnapshot } from "@beancount-js/workspace";
   import {
@@ -29,6 +28,10 @@
     startIngestionSync,
     subscribeIngestionSyncEvents,
   } from "../ingestion/sync";
+  import {
+    ingestionProposalReviewBucket,
+    ingestionProposalReviewLabel,
+  } from "../ingestion/review-classification";
   import type {
     IngestionConfigResponse,
     IngestionRun,
@@ -149,17 +152,11 @@
   );
 
   function isReadyRow(row: ProposalRow) {
-    return proposalIsReadyForAcceptance(row.proposal);
+    return ingestionProposalReviewBucket(row.proposal) === "ready";
   }
 
   function isPendingRow(row: ProposalRow) {
-    if (!row.proposal.transaction) return false;
-    if (isReadyRow(row)) return false;
-    return (
-      row.proposal.status === "needs-review" ||
-      row.proposal.status === "held" ||
-      row.proposal.status === "ready"
-    );
+    return ingestionProposalReviewBucket(row.proposal) === "review";
   }
 
   const ready = $derived(proposalRows.filter(isReadyRow));
@@ -930,7 +927,7 @@
       "Uncategorized";
     const aiError =
       proposal.lastAiEnrichment?.ok === false ? " · AI error" : "";
-    return `${proposal.status} · ${category}${aiError}`;
+    return `${ingestionProposalReviewLabel(proposal)} · ${category}${aiError}`;
   }
 
   function rowAmount(proposal: ImportProposal) {
