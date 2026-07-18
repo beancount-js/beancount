@@ -8,6 +8,7 @@ import type {
 } from "@beancount-js/beangulp";
 import { connectorAccountSourceId } from "@beancount-js/beangulp";
 import { MonzoNormalizer } from "./normalize";
+import { MONZO_PROVIDER_CATEGORIES } from "./categories";
 import { discoverMonzoAccounts, MonzoSource } from "./source";
 import { commitMonzoSyncState, prepareMonzoFetch } from "./sync";
 import type { MonzoConfig, MonzoSyncState } from "./types";
@@ -129,6 +130,7 @@ export const monzoConnector: ConnectorDefinition<MonzoConfig, MonzoSyncState> =
       groupedAccounts: true,
       discoverAccounts: true,
     },
+    providerCategories: MONZO_PROVIDER_CATEGORIES,
     setupMarkdown: [
       "1. In the [Monzo Developer API Playground](https://developers.monzo.com/), create an access token for your own account and approve access in the Monzo app. The Developer API is for personal use or a small explicitly allowed user set, and access tokens expire after several hours.",
       "2. Store the token as `MONZO_ACCESS_TOKEN` in the project `.env` (recommended), or paste it below, then save the connection.",

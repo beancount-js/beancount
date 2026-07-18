@@ -1,6 +1,8 @@
 import type {
   IngestionRun,
   NormalizerPlugin,
+  ProviderCategoryDefinition,
+  ProviderCategoryMapping,
   SourceContext,
   SourcePlugin,
 } from "../types";
@@ -73,6 +75,8 @@ export interface ConnectorSourceDefinition<TConfig = unknown> {
     countryCode?: string;
   };
   rules: MerchantRule[];
+  /** Explicit mappings from this connector's provider category codes. */
+  providerCategoryMappings?: readonly ProviderCategoryMapping[];
   accounts?: ConnectorLinkedAccount[];
   sourceAccount?: string;
   config: TConfig;
@@ -106,6 +110,8 @@ export interface ConnectorDefinition<
     groupedAccounts: boolean;
     discoverAccounts: boolean;
   };
+  /** Static provider categories available for this connector, if any. */
+  providerCategories?: readonly ProviderCategoryDefinition[];
   setupMarkdown: string;
   connectionFields: readonly ConnectorFieldSpec[];
   advancedFields: readonly ConnectorFieldSpec[];

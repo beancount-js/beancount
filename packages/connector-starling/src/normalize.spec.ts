@@ -48,6 +48,11 @@ describe("StarlingNormalizer", () => {
         payee: undefined,
         narration: "Card purchase",
         status: "posted",
+        providerCategory: {
+          provider: "starling",
+          code: "GROCERIES",
+          label: "Groceries",
+        },
         metadata: expect.objectContaining({
           starling_source: "MASTER_CARD",
           starling_source_subtype: "CONTACTLESS",
@@ -106,5 +111,45 @@ describe("StarlingNormalizer", () => {
     expect(
       normalizer.normalize(settled({ direction: "SIDEWAYS" }), context),
     ).toEqual({ ok: false, message: "Transaction has an invalid direction." });
+  });
+
+  test("canonicalizes categories and retains unknown provider values", () => {
+    const normalizer = new StarlingNormalizer();
+    expect(
+      normalizer.normalize(
+        settled({ spendingCategory: " groceries " }),
+        context,
+      ),
+    ).toEqual({
+      ok: true,
+      transaction: expect.objectContaining({
+        providerCategory: {
+          provider: "starling",
+          code: "GROCERIES",
+          label: "Groceries",
+        },
+      }),
+    });
+    expect(
+      normalizer.normalize(
+        settled({ spendingCategory: "future_bucket" }),
+        context,
+      ),
+    ).toEqual({
+      ok: true,
+      transaction: expect.objectContaining({
+        providerCategory: {
+          provider: "starling",
+          code: "FUTURE_BUCKET",
+          label: "Future Bucket",
+        },
+      }),
+    });
+    expect(
+      normalizer.normalize(settled({ spendingCategory: "" }), context),
+    ).toEqual({
+      ok: true,
+      transaction: expect.objectContaining({ providerCategory: undefined }),
+    });
   });
 });

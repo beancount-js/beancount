@@ -37,6 +37,28 @@ export interface NormalizeContext {
   fetchedAt: string;
 }
 
+/** A transaction category supplied by its upstream financial provider. */
+export interface ProviderCategory {
+  /** Stable connector/provider namespace, for example `monzo`. */
+  provider: string;
+  /** Provider-defined category code, retained without ledger interpretation. */
+  code: string;
+  /** Customer-readable label for the provider category. */
+  label: string;
+}
+
+/** A provider category advertised by a connector for configuration UI. */
+export interface ProviderCategoryDefinition {
+  code: string;
+  label: string;
+}
+
+/** A connection-level mapping from a provider category to a ledger account. */
+export interface ProviderCategoryMapping {
+  code: string;
+  account: string;
+}
+
 /** A provider-reported monetary value used to support transfer reconciliation. */
 export interface TransferAmount {
   amount: string;
@@ -73,6 +95,8 @@ export interface NormalizedTransaction {
   narration: string;
   status: "posted" | "pending";
   fetchedAt: string;
+  /** Optional, first-class provider category for categorization evidence. */
+  providerCategory?: ProviderCategory;
   tags?: readonly string[];
   links?: readonly string[];
   metadata: Record<string, string>;
@@ -104,10 +128,17 @@ export interface NormalizerPlugin<Record> {
   normalize(record: Record, context: NormalizeContext): NormalizeResult;
 }
 
-export type CategoryMethod = "rule" | "history" | "recurring" | "ai" | "manual";
+export type CategoryMethod =
+  | "rule"
+  | "provider"
+  | "history"
+  | "recurring"
+  | "ai"
+  | "manual";
 
 export type CategoryScoreKind =
   | "rule-certainty"
+  | "provider-mapping"
   | "history-frequency"
   | "recurrence-strength"
   | "ai-advisory"

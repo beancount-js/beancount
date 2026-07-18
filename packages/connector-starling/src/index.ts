@@ -1,4 +1,8 @@
 export { starlingConnector, validateStarlingConfig } from "./connector";
+export {
+  STARLING_PROVIDER_CATEGORIES,
+  starlingProviderCategory,
+} from "./categories";
 export { StarlingClient, StarlingError } from "./client";
 export { StarlingNormalizer } from "./normalize";
 export { discoverStarlingAccounts, StarlingSource } from "./source";

@@ -39,6 +39,11 @@ describe("MonzoNormalizer", () => {
         payee: undefined,
         narration: "Card purchase",
         status: "posted",
+        providerCategory: {
+          provider: "monzo",
+          code: "shopping",
+          label: "Shopping",
+        },
         metadata: {
           monzo_category: "shopping",
           monzo_description: "EXAMPLE SHOP",
@@ -95,6 +100,38 @@ describe("MonzoNormalizer", () => {
     expect(normalizer.normalize(settled({ settled: "" }), context)).toEqual({
       ok: false,
       message: "Transaction is missing a valid settlement time.",
+    });
+  });
+
+  test("canonicalizes known categories and retains unknown provider values", () => {
+    const normalizer = new MonzoNormalizer();
+    expect(
+      normalizer.normalize(settled({ category: " GROCERIES " }), context),
+    ).toEqual({
+      ok: true,
+      transaction: expect.objectContaining({
+        providerCategory: {
+          provider: "monzo",
+          code: "groceries",
+          label: "Groceries",
+        },
+      }),
+    });
+    expect(
+      normalizer.normalize(settled({ category: "future_bucket" }), context),
+    ).toEqual({
+      ok: true,
+      transaction: expect.objectContaining({
+        providerCategory: {
+          provider: "monzo",
+          code: "future_bucket",
+          label: "Future Bucket",
+        },
+      }),
+    });
+    expect(normalizer.normalize(settled({ category: "" }), context)).toEqual({
+      ok: true,
+      transaction: expect.objectContaining({ providerCategory: undefined }),
     });
   });
 });

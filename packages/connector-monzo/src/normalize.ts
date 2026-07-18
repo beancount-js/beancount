@@ -5,6 +5,7 @@ import type {
   NormalizerPlugin,
 } from "@beancount-js/beangulp";
 import type { MonzoTransaction } from "./types";
+import { monzoProviderCategory } from "./categories";
 
 function scalar(value: unknown): string | undefined {
   if (typeof value === "string") return value.trim() || undefined;
@@ -134,6 +135,7 @@ export class MonzoNormalizer implements NormalizerPlugin<MonzoTransaction> {
         status: "posted",
         fetchedAt: context.fetchedAt,
         metadata,
+        providerCategory: monzoProviderCategory(record.category),
       },
     };
   }

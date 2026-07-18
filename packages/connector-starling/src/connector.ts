@@ -8,6 +8,7 @@ import type {
 } from "@beancount-js/beangulp";
 import { connectorAccountSourceId } from "@beancount-js/beangulp";
 import { StarlingNormalizer } from "./normalize";
+import { STARLING_PROVIDER_CATEGORIES } from "./categories";
 import { discoverStarlingAccounts, StarlingSource } from "./source";
 import { commitStarlingSyncState, prepareStarlingFetch } from "./sync";
 import type { StarlingConfig, StarlingSyncState } from "./types";
@@ -131,6 +132,7 @@ export const starlingConnector: ConnectorDefinition<
     groupedAccounts: true,
     discoverAccounts: true,
   },
+  providerCategories: STARLING_PROVIDER_CATEGORIES,
   setupMarkdown: [
     "1. In the [Starling Developer Portal](https://developer.starlingbank.com/), link your account and create a personal access token with `account:read`, `account-list:read`, and `transaction:read`.",
     "2. Paste the token below, or store it as `STARLING_ACCESS_TOKEN` in the project `.env`, then save the connection.",

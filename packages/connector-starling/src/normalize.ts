@@ -5,6 +5,7 @@ import type {
   NormalizerPlugin,
 } from "@beancount-js/beangulp";
 import type { StarlingCurrencyAndAmount, StarlingFeedItem } from "./types";
+import { starlingProviderCategory } from "./categories";
 
 function scalar(value: unknown): string | undefined {
   if (typeof value === "string") return value.trim() || undefined;
@@ -164,6 +165,7 @@ export class StarlingNormalizer implements NormalizerPlugin<StarlingFeedItem> {
         status: "posted",
         fetchedAt: context.fetchedAt,
         metadata,
+        providerCategory: starlingProviderCategory(record.spendingCategory),
         transferEvidence,
       },
     };

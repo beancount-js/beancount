@@ -5,6 +5,7 @@ import type {
   CategorySuggestion,
   HistoricalSample,
   ImportProposal,
+  ProviderCategoryMapping,
 } from "./types";
 
 export interface MerchantRule {
@@ -15,7 +16,14 @@ export interface MerchantRule {
   direction?: "debit" | "credit";
 }
 
-const precedence = { rule: 4, history: 3, recurring: 2, ai: 1, manual: 5 };
+const precedence = {
+  rule: 5,
+  provider: 4,
+  history: 3,
+  recurring: 2,
+  ai: 1,
+  manual: 6,
+};
 
 export const AUTO_READY_SCORE_THRESHOLD = 0.85;
 export const AUTO_READY_SCORE_MARGIN = 0.1;
@@ -128,6 +136,57 @@ export class MerchantRuleCategorizer implements CategorizerPlugin {
             summary: match.merchantId
               ? `Merchant rule for confirmed merchant ${match.merchantId}`
               : `Merchant rule for ${match.merchant}`,
+          },
+        ],
+      },
+    ];
+  }
+}
+
+/** Applies an explicit connection mapping for a provider-reported category. */
+export class ProviderCategoryCategorizer implements CategorizerPlugin {
+  readonly id = "provider-category-mappings";
+
+  constructor(
+    readonly provider: string,
+    readonly mappings: readonly ProviderCategoryMapping[],
+  ) {}
+
+  async suggest(
+    context: CategorizationContext,
+  ): Promise<readonly CategorySuggestion[]> {
+    // Merchant rules intentionally remain the more specific deterministic rule.
+    if (
+      context.priorSuggestions?.some(
+        (suggestion) => suggestion.method === "rule" && suggestion.hard,
+      )
+    ) {
+      return [];
+    }
+    const category = context.transaction.providerCategory;
+    if (!category || category.provider !== this.provider) return [];
+    const mapping = this.mappings.find((item) => item.code === category.code);
+    if (!mapping?.account) return [];
+    if (
+      context.availableAccounts.length > 0 &&
+      !context.availableAccounts.includes(mapping.account)
+    ) {
+      return [];
+    }
+    return [
+      {
+        account: mapping.account,
+        rawScore: 1,
+        scoreKind: "provider-mapping",
+        support: 1,
+        hard: true,
+        method: "provider",
+        explanation: `Categorised as ${mapping.account} by the ${category.label} provider category mapping.`,
+        evidence: [
+          {
+            id: `provider:${category.provider}:${category.code}:${mapping.account}`,
+            kind: "provider",
+            summary: `${category.label} (${category.code}) from ${category.provider}`,
           },
         ],
       },
