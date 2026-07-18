@@ -3,7 +3,7 @@
   "rules": [
     {
       "id": "b6bbce18-d175-42c4-83b6-436343787f22",
-      "name": null,
+      "name": "Test Rule",
       "resourceType": "transaction",
       "active": true,
       "effectiveDate": "2027-03-16",

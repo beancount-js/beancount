@@ -45,6 +45,7 @@
     "vitest": "^4.1.10"
   },
   "exports": {
+    "./app-shell": "./src/components/AppShell.svelte",
     "./styles.css": "./src/styles.css",
     "./tailwind": "./src/tailwind-preset.ts"
   }
