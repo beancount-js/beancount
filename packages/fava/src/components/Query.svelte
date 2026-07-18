@@ -13,6 +13,8 @@
     bracketMatching,
   } from "@codemirror/language";
   import { Button } from "$lib/components/ui/button";
+  import * as ButtonGroup from "$lib/components/ui/button-group";
+  import * as Tooltip from "$lib/components/ui/tooltip";
   import { useNavigation } from "../router/router";
   import {
     autocompletion,
@@ -179,27 +181,45 @@
         use:codeMirror={query}
         class="cm-code-editor min-w-0 flex-1 py-1 text-sm"
       ></div>
-      <Button
-        onclick={formatQuery}
-        size="icon-sm"
-        variant="ghost"
-        class="mr-1 size-7 shrink-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
-        aria-label="Format query"
-        title="Format query"
-        data-query-format
-      >
-        <LetterText />
-      </Button>
-      <Button
-        onclick={handleSearch}
-        size="xs"
-        variant="secondary"
-        class="mr-1 h-7 shrink-0 px-2 hover:bg-primary/15 hover:text-primary"
-        data-query-execute
-      >
-        Execute
-        <Play data-icon="inline-end" />
-      </Button>
+      <Tooltip.Provider>
+        <ButtonGroup.Root
+          aria-label="Query actions"
+          class="mr-1 shrink-0"
+          data-query-actions
+        >
+          <Tooltip.Root>
+            <Tooltip.Trigger>
+              {#snippet child({ props })}
+                <Button
+                  {...props}
+                  onclick={formatQuery}
+                  size="icon-sm"
+                  variant="secondary"
+                  class="size-7"
+                  aria-label="Format query"
+                  data-query-format
+                >
+                  <LetterText data-icon />
+                </Button>
+              {/snippet}
+            </Tooltip.Trigger>
+            <Tooltip.Content>
+              <p>Format query</p>
+            </Tooltip.Content>
+          </Tooltip.Root>
+          <ButtonGroup.Separator />
+          <Button
+            onclick={handleSearch}
+            size="xs"
+            variant="secondary"
+            class="h-7 px-2 hover:bg-primary/15 hover:text-primary"
+            data-query-execute
+          >
+            Execute
+            <Play data-icon="inline-end" />
+          </Button>
+        </ButtonGroup.Root>
+      </Tooltip.Provider>
     </div>
   </div>
   {#if error}

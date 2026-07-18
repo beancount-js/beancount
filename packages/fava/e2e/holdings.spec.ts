@@ -102,6 +102,15 @@ test("Query tables use a compact search field and expandable saved queries", asy
   });
   await expect(formatButton).toBeVisible();
   await expect(formatButton.locator("svg")).toHaveCount(1);
+  const queryActions = queryEditor.locator("[data-query-actions]");
+  await expect(queryActions).toHaveAttribute("role", "group");
+  await expect(queryActions).toHaveAttribute("aria-label", "Query actions");
+  await expect(
+    queryActions.locator("[data-slot=button-group-separator]"),
+  ).toBeVisible();
+  await formatButton.hover();
+  await expect(page.getByText("Format query", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
   await queryEditor.locator(".cm-content").click();
   await page.keyboard.press("ControlOrMeta+A");
   await page.keyboard.insertText(
