@@ -191,8 +191,13 @@ export class LedgerData {
     return this.taxonomy.payees;
   }
 
+  /**
+   * Accounts named on open/close/postings (and other directives), matching
+   * Fava `ledger_data.accounts`. Does not include synthetic intermediate
+   * parents materialised only for tree rollup (`Assets`, `Assets:US`, …).
+   */
   get accounts(): Array<string> {
-    return [...new Set([...this.taxonomy.accounts, ...this.tree.accounts])];
+    return [...this.taxonomy.accounts].filter((account) => account !== "");
   }
 
   get years(): Array<string> {

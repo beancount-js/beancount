@@ -46,10 +46,9 @@
     {
       "upstreamModule": "fava.core.ledger_data.accounts",
       "upstreamBehavior": "ledger_data.accounts leaf/open set",
-      "localBehavior": "LedgerData.accounts",
-      "status": "pending",
-      "tests": ["parity/ledger-accounts"],
-      "reason": "JS includes intermediate parent scaffolding accounts"
+      "localBehavior": "LedgerData.accounts (taxonomy only; tree parents separate)",
+      "status": "matched",
+      "tests": ["parity/ledger-accounts.spec.ts"]
     }
   ]
 }
