@@ -178,6 +178,10 @@
     return {
       color: typeof open?.meta.color === "string" ? open.meta.color : "",
       icon: typeof open?.meta.icon === "string" ? open.meta.icon : "",
+      merchantId:
+        typeof open?.meta.merchant_id === "string"
+          ? open.meta.merchant_id
+          : undefined,
     };
   }
 
@@ -494,7 +498,8 @@
                   sourceConfig?.sources ?? [],
                 )}
                 {@const appearance = accountAppearanceFor(source.sourceAccount)}
-                {@const merchant = merchantFor(source.sourceMerchantId)}
+                {@const accountMerchant = merchantFor(appearance.merchantId)}
+                {@const sourceMerchant = merchantFor(source.sourceMerchantId)}
                 <div
                   class:rounded-b-xl={index === group.runs.length - 1}
                   class="relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-4 py-4 transition-colors last:border-b-0 focus-within:bg-accent focus-within:ring-2 focus-within:ring-ring hover:bg-accent/60 sm:grid-cols-[minmax(0,1fr)_repeat(4,5rem)] sm:gap-x-6"
@@ -518,6 +523,7 @@
                         account={source.sourceAccount ?? source.title}
                         color={appearance.color}
                         icon={appearance.icon}
+                        merchantLogoUrl={accountMerchant?.logoUrl}
                       />
                       <div class="min-w-0 flex-1">
                         <div class="flex min-w-0 items-center gap-2">
@@ -556,13 +562,13 @@
                       aria-label={`Source: ${source.sourceName}`}
                       title={`Source: ${source.sourceName}`}
                     >
-                      {#if merchant?.logoUrl && !failedMerchantLogoIds.has(merchant.merchantId)}
+                      {#if sourceMerchant?.logoUrl && !failedMerchantLogoIds.has(sourceMerchant.merchantId)}
                         <img
                           class="size-full object-cover sm:size-3.5 sm:rounded-full"
-                          src={merchant.logoUrl}
+                          src={sourceMerchant.logoUrl}
                           alt=""
                           onerror={() =>
-                            markMerchantLogoFailed(merchant.merchantId)}
+                            markMerchantLogoFailed(sourceMerchant.merchantId)}
                         />
                       {:else}
                         <span
