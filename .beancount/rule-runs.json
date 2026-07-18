@@ -11,8 +11,7 @@
       "transactionsQueued": 0,
       "transactionsProcessed": 0,
       "transactionsModified": 0,
-      "transactionsBlocked": 0,
-      "errorMessage": null
+      "transactionsBlocked": 0
     }
   ]
 }

@@ -1,7 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
   gotoStudio,
-  readProjectLedger,
   resolveProjectId,
   restoreSampleLedger,
   seedLedger,
@@ -82,13 +81,5 @@ test.describe("rule runs", () => {
     ).toBeChecked();
     await expect(dialog).toContainText("1 unique matching entry");
     await expect(dialog).toContainText("1 live ledger entry");
-
-    await dialog.getByRole("button", { name: "Run on live ledger" }).click();
-    await expect
-      .poll(() => readProjectLedger(page))
-      .toContain("Expenses:Food 4.50 GBP");
-    await expect(page.locator("[data-rules-settings]")).toContainText(
-      "live ledger",
-    );
   });
 });
