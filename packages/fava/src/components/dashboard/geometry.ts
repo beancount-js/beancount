@@ -26,9 +26,9 @@ export interface DashboardFlowLayout {
 }
 
 /**
- * Balance the flow topology so its streams conserve value on both sides of
- * Cash flow. Positive cash flow becomes a Surplus leaf; a shortfall is shown
- * as a Deficit source.
+ * Balance the flow topology so its streams conserve value on both sides of Cash
+ * flow. Positive cash flow becomes a Surplus leaf; a shortfall is shown as a
+ * Deficit source.
  */
 export function dashboardFlowBalance(
   inflows: DashboardCategory[],

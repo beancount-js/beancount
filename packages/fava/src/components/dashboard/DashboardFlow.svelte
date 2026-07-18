@@ -30,13 +30,25 @@
   let tooltipY = 0;
 
   $: flow = dashboardFlowBalance(inflows, outflows);
-  $: layout = dashboardFlowLayout(flow.sources, flow.targets, chartHeight, 16, 32);
+  $: layout = dashboardFlowLayout(
+    flow.sources,
+    flow.targets,
+    chartHeight,
+    16,
+    32,
+  );
   $: cashFlowColor =
     flow.cashFlow > 0
       ? "#059669"
       : flow.cashFlow < 0
         ? "#dc2626"
         : "var(--primary)";
+  $: flowAriaLabel =
+    flow.cashFlow > 0
+      ? "Cash flow from income and refunds to outflows and surplus"
+      : flow.cashFlow < 0
+        ? "Cash flow from income, refunds, and deficit to outflows"
+        : "Cash flow from income and refunds to outflows";
   $: isEmpty = !layout.sources.length && !layout.targets.length;
   $: activeTotal = active?.side === "in" ? layout.totalIn : layout.totalOut;
   $: tooltipTitle = active
@@ -137,7 +149,7 @@
         class="w-full text-foreground"
         viewBox={`0 0 ${width} ${chartHeight}`}
         role="img"
-        aria-label="Cash flow from income and refunds to outflows"
+        aria-label={flowAriaLabel}
         data-dashboard-flow
         on:pointerleave={clearActive}
       >
@@ -145,11 +157,7 @@
           {#each layout.sources as source (source.account)}
             <linearGradient id={gradientId("in", source.account)} x1="0" x2="1">
               <stop offset="0" stop-color={source.color} stop-opacity="0.5" />
-              <stop
-                offset="1"
-                stop-color={cashFlowColor}
-                stop-opacity="0.48"
-              />
+              <stop offset="1" stop-color={cashFlowColor} stop-opacity="0.48" />
             </linearGradient>
           {/each}
           {#each layout.targets as target (target.account)}
@@ -158,11 +166,7 @@
               x1="0"
               x2="1"
             >
-              <stop
-                offset="0"
-                stop-color={cashFlowColor}
-                stop-opacity="0.48"
-              />
+              <stop offset="0" stop-color={cashFlowColor} stop-opacity="0.48" />
               <stop offset="1" stop-color={target.color} stop-opacity="0.72" />
             </linearGradient>
           {/each}
@@ -227,7 +231,9 @@
 
         {#each layout.sources as source (source.account)}
           <a
-            href={isAccountLink(source) ? urlForAccount(source.account) : undefined}
+            href={isAccountLink(source)
+              ? urlForAccount(source.account)
+              : undefined}
             class:dimmed={isDimmed(source, "in")}
             class="flow-node"
           >
@@ -279,7 +285,9 @@
 
         {#each layout.targets as target (target.account)}
           <a
-            href={isAccountLink(target) ? urlForAccount(target.account) : undefined}
+            href={isAccountLink(target)
+              ? urlForAccount(target.account)
+              : undefined}
             class:dimmed={isDimmed(target, "out")}
             class="flow-node"
           >
