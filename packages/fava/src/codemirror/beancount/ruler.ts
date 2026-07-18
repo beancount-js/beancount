@@ -1,4 +1,4 @@
-import { syntaxTree } from "@codemirror/language";
+import { ensureSyntaxTree, syntaxTree } from "@codemirror/language";
 import type { SyntaxNode } from "@lezer/common";
 import type { EditorView, ViewUpdate } from "@codemirror/view";
 import { ViewPlugin } from "@codemirror/view";
@@ -15,26 +15,26 @@ function isPostingCurrency(node: SyntaxNode) {
 export function determineCurrencyColumn(view: EditorView): number {
   let max = 0;
   const state = view.state;
-  syntaxTree(state)
-    .cursor()
-    .iterate((node) => {
-      // if (node.node.parent?.parent?.parent?.name !== "Journal") {
+  const tree =
+    ensureSyntaxTree(state, state.doc.length, 1_000) ?? syntaxTree(state);
+  tree.cursor().iterate((node) => {
+    // if (node.node.parent?.parent?.parent?.name !== "Journal") {
 
-      //   console.log("Node", node.node.parent?.parent?.parent?.name)
-      //   return;
-      // }
-      const line = state.doc.lineAt(node.from);
-      if (
-        node.name === "Currency" &&
-        isPostingCurrency(node.node) &&
-        node.node.prevSibling?.name !== "Currency"
-      ) {
-        const diff = node.from - line.from;
-        if (diff > max) {
-          max = diff;
-        }
+    //   console.log("Node", node.node.parent?.parent?.parent?.name)
+    //   return;
+    // }
+    const line = state.doc.lineAt(node.from);
+    if (
+      node.name === "Currency" &&
+      isPostingCurrency(node.node) &&
+      node.node.prevSibling?.name !== "Currency"
+    ) {
+      const diff = node.from - line.from;
+      if (diff > max) {
+        max = diff;
       }
-    });
+    }
+  });
   return max;
 }
 
