@@ -144,6 +144,35 @@ describe("active ingestion review ledger", () => {
     expect(errors).toEqual([]);
   });
 
+  test("formats projected review content for read-only display", () => {
+    const [directives, , options] = source();
+    const shortAccount = proposal("short", "ready", "Expenses:Food");
+    const longAccount = proposal("long", "ready", "Expenses:Food");
+    longAccount.transaction!.sourceAccount = "Assets:Bank:LongName";
+
+    const ledger = buildIngestionReviewLedger({
+      directives,
+      beancountOptions: options,
+      runs: [
+        run("run:bank", "bank:checking", "2026-07-16T12:00:00.000Z", [
+          shortAccount,
+          longAccount,
+        ]),
+      ],
+    });
+    const amountLines = ledger!.contents
+      .split("\n")
+      .filter(
+        (line) => line.includes("Assets:Bank") && line.includes("-12.50 GBP"),
+      );
+
+    expect(
+      new Set(amountLines.map((line) => line.indexOf("-12.50 GBP"))),
+    ).toHaveLength(1);
+    expect(ledger!.contents).not.toMatch(/[ \t]+$/gmu);
+    expect(ledger!.contents.endsWith("\n")).toBe(true);
+  });
+
   test("is absent without reviewable proposals and has a stable revision", () => {
     const [directives, , options] = source();
     const runs = [
