@@ -3,7 +3,6 @@
   import { DateTime } from "luxon";
   import { useContext } from "../context";
   import { useCtx } from "../stores/format";
-  import { urlForAccount } from "../helpers";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
   import type { MerchantReviewCluster } from "@beancount-js/server";
@@ -35,6 +34,7 @@
     type JournalTimeframe,
   } from "./journal-table/model";
   import PagePagination from "./PagePagination.svelte";
+  import AccountLink from "./AccountLink.svelte";
 
   const PAGE_SIZES = [25, 50, 100];
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
@@ -593,13 +593,12 @@
                         : undefined}
                     >
                       {#if linkAccounts}
-                        <a
-                          class="truncate text-left text-xs text-muted-foreground hover:text-primary hover:underline"
-                          href={urlForAccount(posting.account)}
-                          onclick={stopRowClick}
-                          onkeydown={stopRowKeydown}
-                          title={posting.account}>{posting.account}</a
-                        >
+                        <AccountLink
+                          account={posting.account}
+                          avatarSize="sm"
+                          on:click={stopRowClick}
+                          on:keydown={stopRowKeydown}
+                        />
                       {:else}
                         <span
                           class="truncate text-left text-xs text-muted-foreground"

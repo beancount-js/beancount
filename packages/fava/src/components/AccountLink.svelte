@@ -76,6 +76,8 @@
   class="inline-flex shrink-0 items-center gap-2 text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
   data-account-link
   data-merchant-id={appearance?.merchantId}
+  on:click
+  on:keydown
 >
   {#if appearance}
     <AccountAvatar
