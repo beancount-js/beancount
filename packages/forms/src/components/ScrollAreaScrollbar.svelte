@@ -1,4 +1,5 @@
 <script lang="ts">
+  import "./ScrollAreaScrollbar.css";
   import {
     ScrollArea as ScrollAreaPrimitive,
     type WithoutChild,
@@ -22,35 +23,3 @@
   {@render children?.()}
   <ScrollAreaPrimitive.Thumb class="beancount-scroll-area__thumb" />
 </ScrollAreaPrimitive.Scrollbar>
-
-<style>
-  :global(.beancount-scroll-area__scrollbar) {
-    display: flex;
-    touch-action: none;
-    user-select: none;
-    transition:
-      color 150ms ease,
-      background-color 150ms ease;
-  }
-
-  :global(.beancount-scroll-area__scrollbar--vertical) {
-    width: 0.625rem;
-    height: 100%;
-    border-left: 1px solid transparent;
-    padding: 1px;
-  }
-
-  :global(.beancount-scroll-area__scrollbar--horizontal) {
-    width: 100%;
-    height: 0.625rem;
-    border-top: 1px solid transparent;
-    padding: 1px;
-  }
-
-  :global(.beancount-scroll-area__thumb) {
-    position: relative;
-    flex: 1;
-    border-radius: 999px;
-    background: var(--border);
-  }
-</style>
