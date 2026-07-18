@@ -102,15 +102,31 @@ test("Query tables use a compact search field and expandable saved queries", asy
   });
   await expect(formatButton).toBeVisible();
   await expect(formatButton.locator("svg")).toHaveCount(1);
+  await expect(formatButton).toHaveClass(/hover:bg-primary\/15/);
+  await expect(formatButton).toHaveClass(/hover:text-primary/);
+  const clearButton = queryEditor.getByRole("button", {
+    name: "Clear query",
+  });
+  await expect(clearButton).toBeVisible();
+  await expect(clearButton.locator("svg")).toHaveCount(1);
+  await expect(clearButton).toHaveClass(/hover:bg-primary\/15/);
+  await expect(clearButton).toHaveClass(/hover:text-primary/);
   const queryActions = queryEditor.locator("[data-query-actions]");
   await expect(queryActions).toHaveAttribute("role", "group");
   await expect(queryActions).toHaveAttribute("aria-label", "Query actions");
+  await expect(queryActions).toHaveClass(/self-end/);
   await expect(
     queryActions.locator("[data-slot=button-group-separator]"),
   ).toBeVisible();
   await formatButton.hover();
   await expect(page.getByText("Format query", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
+  await clearButton.hover();
+  await expect(page.getByText("Clear query", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await clearButton.click();
+  await expect(queryEditor.locator(".cm-content")).toHaveText("");
+  await expect(clearButton).toHaveCount(0);
   await queryEditor.locator(".cm-content").click();
   await page.keyboard.press("ControlOrMeta+A");
   await page.keyboard.insertText(
@@ -128,6 +144,10 @@ test("Query tables use a compact search field and expandable saved queries", asy
       "LIMIT",
       "  3",
     ]);
+
+  await executeButton.click();
+  await expect(queryEditor.locator(".cm-content")).toHaveText("");
+  await expect(clearButton).toHaveCount(0);
 
   await queryEditor.locator(".cm-content").click();
   await page.keyboard.press("ControlOrMeta+A");

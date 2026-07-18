@@ -47,8 +47,9 @@
   } from "../stores/query";
   import { useContext } from "../context";
   import { classHighlighter } from "../codemirror/extensions/classHighlighter";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import ContentScrollArea from "./ContentScrollArea.svelte";
+  import X from "lucide-svelte/icons/x";
   const { history } = useNavigation();
   const ledgerData = useLedger();
 
@@ -59,6 +60,7 @@
 
   let error: unknown;
   let init: string = "";
+  let editorContents = "";
 
   function formatQueryText(query: string): string {
     if (!query) {
@@ -68,6 +70,7 @@
   }
 
   const codeMirror = (node: HTMLDivElement, query: string) => {
+    editorContents = query;
     editor = new EditorView({
       state: EditorState.create({
         doc: query,
@@ -80,6 +83,11 @@
           editorHistory(),
           drawSelection(),
           syntaxHighlighting(classHighlighter),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              editorContents = update.state.doc.toString();
+            }
+          }),
           placeholder(
             "...enter a BQL query. 'help' to list available commands",
           ),
@@ -93,7 +101,7 @@
               key: "Control-Enter",
               mac: "Meta-Enter",
               run: () => {
-                handleSearch();
+                void executeQuery();
                 return true;
               },
             },
@@ -113,7 +121,7 @@
     });
 
     if (query?.trim()?.length) {
-      handleSearch();
+      submitQuery();
     }
     return {
       update(query: string) {
@@ -129,12 +137,12 @@
   const { bqlQuery } = useContext();
   $: queryHistory = useQueryHistory($ledgerData.filename.toLowerCase());
 
-  $: handleSearch = () => {
-    query = editor.state.doc.toString().trim();
-    if (!query) {
+  function submitQuery() {
+    const submittedQuery = editor.state.doc.toString().trim();
+    if (!submittedQuery) {
       return;
     }
-    if (query.toUpperCase() === "CLEAR") {
+    if (submittedQuery.toUpperCase() === "CLEAR") {
       queryHistory.clear();
       bqlQuery.set("");
       history.updateState({ params: { qs: "" } });
@@ -142,11 +150,22 @@
       selected = "";
       return;
     }
-    selected = queryHash(query);
-    bqlQuery.set(query);
-    history.updateState({ params: { qs: query, selected } });
-    queryHistory.add(query);
-  };
+    selected = queryHash(submittedQuery);
+    bqlQuery.set(submittedQuery);
+    history.updateState({ params: { qs: submittedQuery, selected } });
+    queryHistory.add(submittedQuery);
+  }
+
+  function clearEditor() {
+    editor.dispatch(replaceContents(editor.state, ""));
+    editor.focus();
+  }
+
+  async function executeQuery() {
+    submitQuery();
+    await tick();
+    clearEditor();
+  }
 
   $: onDelete = (query: QueryHistory) => {
     queryHistory.remove(query.hash);
@@ -161,7 +180,7 @@
     const value = qs || $bqlQuery;
     if (value && editor) {
       editor.dispatch(replaceContents(editor.state, value));
-      handleSearch();
+      submitQuery();
     }
   });
 </script>
@@ -184,7 +203,7 @@
       <Tooltip.Provider>
         <ButtonGroup.Root
           aria-label="Query actions"
-          class="mr-1 shrink-0"
+          class="mb-1 mr-1 shrink-0 self-end"
           data-query-actions
         >
           <Tooltip.Root>
@@ -195,7 +214,7 @@
                   onclick={formatQuery}
                   size="icon-sm"
                   variant="secondary"
-                  class="size-7"
+                  class="size-7 hover:bg-primary/15 hover:text-primary"
                   aria-label="Format query"
                   data-query-format
                 >
@@ -208,8 +227,31 @@
             </Tooltip.Content>
           </Tooltip.Root>
           <ButtonGroup.Separator />
+          {#if editorContents.trim()}
+            <Tooltip.Root>
+              <Tooltip.Trigger>
+                {#snippet child({ props })}
+                  <Button
+                    {...props}
+                    onclick={clearEditor}
+                    size="icon-sm"
+                    variant="secondary"
+                    class="size-7 hover:bg-primary/15 hover:text-primary"
+                    aria-label="Clear query"
+                    data-query-clear
+                  >
+                    <X data-icon />
+                  </Button>
+                {/snippet}
+              </Tooltip.Trigger>
+              <Tooltip.Content>
+                <p>Clear query</p>
+              </Tooltip.Content>
+            </Tooltip.Root>
+            <ButtonGroup.Separator />
+          {/if}
           <Button
-            onclick={handleSearch}
+            onclick={executeQuery}
             size="xs"
             variant="secondary"
             class="h-7 px-2 hover:bg-primary/15 hover:text-primary"
