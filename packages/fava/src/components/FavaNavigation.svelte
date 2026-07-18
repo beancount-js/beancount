@@ -88,6 +88,7 @@
   /** Non-settings view to restore when leaving the settings sidebar. */
   let settingsReturnPath: string | undefined;
   let importSettingsOpen = true;
+  let reviewSettingsOpen = true;
   /**
    * Prevents auto-open from fighting an intentional leave while the URL catches
    * up.
@@ -96,6 +97,7 @@
 
   $: files = $snapshot?.ledgerFiles ?? [];
   $: review = $reviewLedger;
+  $: hasActiveReview = Boolean(review?.reviewableCount);
   $: allLedgerPaths = [
     ...files.map((file) => file.path),
     ...(review ? [review.path] : []),
@@ -605,51 +607,100 @@
                   >History</span
                 >
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                class={cn(
-                  "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-                  isLedgerSettingActive("/records", activeViewPath)
-                    ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                    : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-                )}
-                aria-current={isLedgerSettingActive("/records", activeViewPath)
-                  ? "page"
-                  : undefined}
-                disabled={files.length === 0}
-                onclick={() => openLedgerSetting("/records")}
-              >
-                <ClipboardList data-icon="inline-start" />
-                <span class="min-w-0 flex-1 truncate text-xs font-medium"
-                  >Review Transactions</span
-                >
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                class={cn(
-                  "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-                  isLedgerSettingActive("/import/merchants", activeViewPath)
-                    ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                    : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-                )}
-                aria-current={isLedgerSettingActive(
-                  "/import/merchants",
-                  activeViewPath,
-                )
-                  ? "page"
-                  : undefined}
-                disabled={files.length === 0}
-                onclick={() => openLedgerSetting("/import/merchants")}
-              >
-                <Store data-icon="inline-start" />
-                <span class="min-w-0 flex-1 truncate text-xs font-medium"
-                  >Review Merchants</span
-                >
-              </Button>
+              {#if hasActiveReview}
+                <div class="flex flex-col gap-1">
+                  <div
+                    class={cn(
+                      "flex items-center rounded-md",
+                      isLedgerSettingActive("/records", activeViewPath) ||
+                        isLedgerSettingActive(
+                          "/import/merchants",
+                          activeViewPath,
+                        )
+                        ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      class="ml-1 size-6 shrink-0"
+                      aria-label={reviewSettingsOpen
+                        ? "Collapse review navigation"
+                        : "Expand review navigation"}
+                      aria-expanded={reviewSettingsOpen}
+                      onclick={() => (reviewSettingsOpen = !reviewSettingsOpen)}
+                    >
+                      <ChevronDown
+                        class={cn(
+                          "transition-transform",
+                          reviewSettingsOpen ? "" : "-rotate-90",
+                        )}
+                      />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      class="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent"
+                      aria-current={isLedgerSettingActive(
+                        "/records",
+                        activeViewPath,
+                      )
+                        ? "page"
+                        : undefined}
+                      disabled={files.length === 0}
+                      onclick={() => openLedgerSetting("/records")}
+                    >
+                      <ClipboardList data-icon="inline-start" />
+                      <span class="min-w-0 flex-1 truncate text-xs font-medium"
+                        >Review</span
+                      >
+                      <span
+                        class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-accent px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+                        title={`${review!.reviewableCount} items in active review`}
+                        >{review!.reviewableCount}</span
+                      >
+                    </Button>
+                  </div>
+
+                  {#if reviewSettingsOpen}
+                    <div
+                      class="ml-4 flex flex-col gap-1 border-l border-sidebar-border pl-2"
+                    >
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        class={cn(
+                          "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+                          isLedgerSettingActive(
+                            "/import/merchants",
+                            activeViewPath,
+                          )
+                            ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                            : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+                        )}
+                        aria-current={isLedgerSettingActive(
+                          "/import/merchants",
+                          activeViewPath,
+                        )
+                          ? "page"
+                          : undefined}
+                        disabled={files.length === 0}
+                        onclick={() => openLedgerSetting("/import/merchants")}
+                      >
+                        <Store data-icon="inline-start" />
+                        <span
+                          class="min-w-0 flex-1 truncate text-xs font-medium"
+                          >Merchants</span
+                        >
+                      </Button>
+                    </div>
+                  {/if}
+                </div>
+              {/if}
             </div>
           {/if}
         </div>
