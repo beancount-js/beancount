@@ -68,6 +68,7 @@
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
   import IngestionReconciliationPanel from "./IngestionReconciliationPanel.svelte";
   import ReviewImportsSkeleton from "./skeletons/ReviewImportsSkeleton.svelte";
+  import AccountLink from "./AccountLink.svelte";
 
   const PAGE_SIZES = [25, 50, 100];
   const ALL_CONNECTIONS = "__all__";
@@ -998,12 +999,13 @@
     );
   }
 
+  function rowAccount(proposal: ImportProposal) {
+    return proposal.selectedAccount ?? proposal.suggestions[0]?.account;
+  }
+
   function rowDetail(proposal: ImportProposal) {
     const category =
-      proposal.selectedAccount ??
-      proposal.suggestions[0]?.account ??
-      proposal.issues[0] ??
-      "Uncategorized";
+      rowAccount(proposal) ?? proposal.issues[0] ?? "Uncategorized";
     const aiError =
       proposal.lastAiEnrichment?.ok === false ? " · AI error" : "";
     return `${category}${aiError}`;
@@ -1699,6 +1701,7 @@
                 >
                   {#each group.rows as row, index (row.key)}
                     {@const logo = merchantLogo(row.proposal)}
+                    {@const account = rowAccount(row.proposal)}
                     <div
                       role="button"
                       tabindex="0"
@@ -1746,7 +1749,19 @@
                           {rowTitle(row.proposal)}
                         </div>
                         <div class="mt-1 text-xs text-muted-foreground">
-                          {rowDetail(row.proposal)}
+                          {#if account}
+                            <AccountLink
+                              {account}
+                              avatarSize="sm"
+                              on:click={(event) => event.stopPropagation()}
+                              on:keydown={(event) => event.stopPropagation()}
+                            />
+                            {#if row.proposal.lastAiEnrichment?.ok === false}
+                              <span> · AI error</span>
+                            {/if}
+                          {:else}
+                            {rowDetail(row.proposal)}
+                          {/if}
                         </div>
                       </div>
                       <div
