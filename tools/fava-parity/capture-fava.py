@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import os
 import signal
 import subprocess
 import sys
@@ -15,6 +14,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+REPO_ROOT = ROOT.parent.parent
 CONFIG = json.loads((ROOT / "config.json").read_text())
 OUT = ROOT / "out" / "fava"
 
@@ -44,9 +44,7 @@ def discover_slug(base: str, preferred: str | None) -> str:
         except Exception:
             pass
     with urllib.request.urlopen(base + "/", timeout=5) as response:
-        # urllib follows redirects by default for http.client? Actually urlopen follows.
         final = response.geturl()
-    # /slug/income_statement/
     parts = [p for p in urllib.parse.urlparse(final).path.split("/") if p]
     if not parts:
         raise RuntimeError(f"Could not discover ledger slug from {final}")
@@ -58,7 +56,24 @@ def write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
-def capture_ledger(base: str, ledger: dict, fava_root: Path) -> None:
+def resolve_ledger_path(ledger: dict, fava_root: Path) -> Path:
+    if ledger.get("root") == "repo":
+        return (REPO_ROOT / ledger["path"]).resolve()
+    return (fava_root / ledger["path"]).resolve()
+
+
+def get_or_error(url: str) -> object:
+    try:
+        return http_get(url)
+    except urllib.error.HTTPError as exc:
+        return {
+            "error": f"HTTP {exc.code}",
+            "url": url,
+            "body": exc.read().decode("utf-8", errors="replace"),
+        }
+
+
+def capture_ledger(base: str, ledger: dict, ledger_path: Path) -> None:
     slug = discover_slug(base, ledger.get("slug"))
     ledger_id = ledger["id"]
     ledger_out = OUT / ledger_id
@@ -69,12 +84,19 @@ def capture_ledger(base: str, ledger: dict, fava_root: Path) -> None:
         "path": ledger["path"],
         "slug": slug,
         "favaCommit": CONFIG["favaCommit"],
-        "absolutePath": str((fava_root / ledger["path"]).resolve()),
+        "absolutePath": str(ledger_path),
+        "root": ledger.get("root", "fava"),
     }
     write_json(ledger_out / "meta.json", meta)
 
     ledger_data = http_get(f"{base}/{slug}/api/ledger_data")
     write_json(ledger_out / "ledger_data.json", ledger_data)
+
+    for api in CONFIG.get("reportApis", []):
+        write_json(
+            ledger_out / "reports" / f"{api}.json",
+            get_or_error(f"{base}/{slug}/api/{api}"),
+        )
 
     accounts = CONFIG["accounts"]
     for account in accounts:
@@ -90,14 +112,7 @@ def capture_ledger(base: str, ledger: dict, fava_root: Path) -> None:
                         }
                     )
                     url = f"{base}/{slug}/api/account_report?{params}"
-                    try:
-                        payload = http_get(url)
-                    except urllib.error.HTTPError as exc:
-                        payload = {
-                            "error": f"HTTP {exc.code}",
-                            "url": url,
-                            "body": exc.read().decode("utf-8", errors="replace"),
-                        }
+                    payload = get_or_error(url)
                     name = (
                         f"account_report__{account.replace(':', '_')}__"
                         f"{report}__{interval}__{conversion}.json"
@@ -106,16 +121,8 @@ def capture_ledger(base: str, ledger: dict, fava_root: Path) -> None:
 
         params = urllib.parse.urlencode({"account": account})
         url = f"{base}/{slug}/api/journal?{params}"
-        try:
-            payload = http_get(url)
-        except urllib.error.HTTPError as exc:
-            payload = {
-                "error": f"HTTP {exc.code}",
-                "url": url,
-                "body": exc.read().decode("utf-8", errors="replace"),
-            }
         name = f"journal__{account.replace(':', '_')}.json"
-        write_json(ledger_out / "journals" / name, payload)
+        write_json(ledger_out / "journals" / name, get_or_error(url))
 
     queries = list(CONFIG["queries"])
     for item in ledger_data.get("data", {}).get("user_queries", []) or []:
@@ -127,15 +134,7 @@ def capture_ledger(base: str, ledger: dict, fava_root: Path) -> None:
     for item in queries:
         params = urllib.parse.urlencode({"query_string": item["query"]})
         url = f"{base}/{slug}/api/query?{params}"
-        try:
-            payload = http_get(url)
-        except urllib.error.HTTPError as exc:
-            payload = {
-                "error": f"HTTP {exc.code}",
-                "url": url,
-                "body": exc.read().decode("utf-8", errors="replace"),
-            }
-        write_json(ledger_out / "queries" / f"{item['id']}.json", payload)
+        write_json(ledger_out / "queries" / f"{item['id']}.json", get_or_error(url))
 
 
 def main() -> int:
@@ -149,9 +148,8 @@ def main() -> int:
     base = f"http://{host}:{port}"
     OUT.mkdir(parents=True, exist_ok=True)
 
-    # Capture each ledger in its own Fava process so slug routing is unambiguous.
     for ledger in CONFIG["ledgers"]:
-        ledger_path = fava_root / ledger["path"]
+        ledger_path = resolve_ledger_path(ledger, fava_root)
         if not ledger_path.exists():
             print(f"Missing ledger {ledger_path}", file=sys.stderr)
             return 1
@@ -173,7 +171,7 @@ def main() -> int:
         try:
             wait_ready(base)
             print(f"Capturing Fava oracle for {ledger['id']}…")
-            capture_ledger(base, ledger, fava_root)
+            capture_ledger(base, ledger, ledger_path)
         finally:
             proc.send_signal(signal.SIGTERM)
             try:

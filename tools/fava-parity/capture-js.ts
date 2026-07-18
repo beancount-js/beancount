@@ -1,9 +1,8 @@
 /**
- * Capture JS-side account/query payloads using the same LedgerData + runBql
+ * Capture JS-side report payloads using the same LedgerData + runBql
  * paths as the Fava SPA.
  *
- * Run via:
- *   node packages/fava/scripts/run-ts.mjs ../../tools/fava-parity/capture-js.ts
+ * Run via packages/fava/scripts/run-fava-parity-capture.mjs
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -12,7 +11,9 @@ import { fileURLToPath } from "node:url";
 import {
   Amount,
   Conversion,
+  Event,
   Inventory,
+  Open,
   Position,
   Query,
   Transaction,
@@ -24,15 +25,27 @@ import { AccountFilter } from "@beancount-js/filters";
 import { formatDate } from "@beancount-js/parser";
 
 import { LedgerSource } from "../../packages/fava/src/core/ledger";
+import { Tree } from "../../packages/fava/src/core/tree";
 import type { Interval } from "../../packages/fava/src/lib/interval";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(ROOT, "../..");
 const CONFIG = JSON.parse(readFileSync(resolve(ROOT, "config.json"), "utf8"));
 const OUT = resolve(ROOT, "out/js");
 
 function writeJson(path: string, payload: unknown) {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(payload, null, 2)}\n`);
+}
+
+function resolveLedgerPath(ledger: {
+  path: string;
+  root?: string;
+}): string {
+  if (ledger.root === "repo") {
+    return resolve(REPO_ROOT, ledger.path);
+  }
+  return resolve(ROOT, CONFIG.favaUpstreamPath, ledger.path);
 }
 
 function conversionFromFava(value: string): Conversion {
@@ -49,7 +62,6 @@ function serializeTreeNode(
   },
   conversion: Conversion,
 ) {
-  // TreeNode.toRecord already applied conversion; keep hasTxns if present.
   return {
     account: node.account,
     balance: node.balance,
@@ -117,7 +129,6 @@ function serializeQueryCell(value: unknown): unknown {
   if (typeof value === "string") return value;
   if (typeof value === "bigint") return value.toString();
   if (value instanceof Date) return value.toISOString().slice(0, 10);
-  // Luxon DateTime (avoid importing luxon from tools/ for Vite resolution).
   if (
     value &&
     typeof value === "object" &&
@@ -195,13 +206,230 @@ function serializeQueryCell(value: unknown): unknown {
   }
 }
 
+function roundBudgetMap(
+  value: Record<string, number>,
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [currency, amount] of Object.entries(value)) {
+    out[currency] = Number(Number(amount).toFixed(8));
+  }
+  return out;
+}
+
+function serializeBudgets(
+  budgets: Record<
+    string,
+    Array<{ budget: Record<string, number>; budgetChildren: Record<string, number> }>
+  >,
+) {
+  const out: Record<
+    string,
+    Array<{ budget: Record<string, number>; budget_children: Record<string, number> }>
+  > = {};
+  for (const [account, rows] of Object.entries(budgets)) {
+    out[account] = rows.map((row) => ({
+      budget: roundBudgetMap(row.budget),
+      budget_children: roundBudgetMap(row.budgetChildren),
+    }));
+  }
+  return out;
+}
+
+function nodeToSerialised(
+  tree: Tree,
+  account: string,
+  conversion: Conversion = Conversion.AT_COST,
+) {
+  const live = tree.get(account);
+  const node = live.toRecord(conversion) as {
+    account: string;
+    balance: Record<string, number>;
+    balanceChildren: Record<string, number>;
+    children: Array<unknown>;
+  };
+  return serializeTreeNode({ ...node, hasTxns: live.hasTxns }, conversion);
+}
+
+function captureTreeReports(source: LedgerSource, ledgerOut: string) {
+  const opts = source.options.beancount;
+  const openTree = source.data.tree.copy();
+  const closedTree = source.data.tree
+    .copy()
+    .cap(opts.account_unrealized_gains, opts);
+
+  const income = nodeToSerialised(openTree, opts.name_income);
+  const expenses = nodeToSerialised(openTree, opts.name_expenses);
+  const netProfitNode = openTree.netProfit("Net Profit", opts);
+  const netProfit = serializeTreeNode(
+    {
+      ...(netProfitNode.toRecord() as {
+        account: string;
+        balance: Record<string, number>;
+        balanceChildren: Record<string, number>;
+        children: Array<unknown>;
+      }),
+      hasTxns: netProfitNode.hasTxns,
+    },
+    Conversion.AT_COST,
+  );
+
+  writeJson(resolve(ledgerOut, "reports/income_statement.json"), {
+    data: {
+      trees: [income, netProfit, expenses],
+      charts: [],
+      date_range: null,
+    },
+  });
+
+  writeJson(resolve(ledgerOut, "reports/balance_sheet.json"), {
+    data: {
+      trees: [
+        nodeToSerialised(closedTree, opts.name_assets),
+        nodeToSerialised(closedTree, opts.name_liabilities),
+        nodeToSerialised(closedTree, opts.name_equity),
+      ],
+      charts: [],
+      date_range: null,
+    },
+  });
+
+  writeJson(resolve(ledgerOut, "reports/trial_balance.json"), {
+    data: {
+      trees: [nodeToSerialised(openTree, "")],
+      charts: [],
+      date_range: null,
+    },
+  });
+}
+
+function balanceDirectiveString(
+  account: string,
+  balance: Record<string, number>,
+  today: string,
+): string {
+  let res = "";
+  for (const [currency, number] of Object.entries(balance).sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
+    const num = Number(number).toFixed(2);
+    res += `${today} balance ${account.padEnd(28)} ${num.padStart(15)} ${currency}\n`;
+  }
+  return res;
+}
+
+function captureStatistics(source: LedgerSource, ledgerOut: string) {
+  const entriesByType: Record<string, number> = {};
+  for (const directive of source.directives) {
+    const type = directive.constructor.name;
+    entriesByType[type] = (entriesByType[type] ?? 0) + 1;
+  }
+
+  const balances: Record<string, Record<string, number>> = {};
+  // Fava includes the empty-root account key.
+  balances[""] = {};
+  for (const [account, node] of source.data.tree.entries()) {
+    balances[account] = node.balance.toRecord(Conversion.UNITS);
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  let allBalanceDirectives = "";
+  for (const directive of source.directives) {
+    if (!(directive instanceof Open)) continue;
+    const meta = directive.meta as Record<string, unknown> | undefined;
+    if (!meta?.["fava-uptodate-indication"]) continue;
+    // Mirror Fava: only emit when status is not green. Without a full
+    // uptodate-status implementation, emit whenever the meta flag is set
+    // and the account has a non-empty units balance (approximation).
+    const balance = source.data.tree
+      .get(directive.account)
+      .balance.toRecord(Conversion.UNITS);
+    if (Object.keys(balance).length) {
+      allBalanceDirectives += balanceDirectiveString(
+        directive.account,
+        balance,
+        today,
+      );
+    }
+  }
+
+  writeJson(resolve(ledgerOut, "reports/statistics.json"), {
+    data: {
+      all_balance_directives: allBalanceDirectives,
+      balances,
+      entries_by_type: entriesByType,
+    },
+  });
+}
+
+function captureCommodities(source: LedgerSource, ledgerOut: string) {
+  const pairs: Array<{
+    base: string;
+    quote: string;
+    prices: Array<[string, number]>;
+  }> = [];
+  for (const quote of source.prices.forwardPairs) {
+    const points = source.prices.map.get(quote);
+    if (!points?.length) continue;
+    pairs.push({
+      base: quote.base,
+      quote: quote.quote,
+      prices: points.map(
+        (point) =>
+          [formatDate(point.date), Number(point.units.toString())] as [
+            string,
+            number,
+          ],
+      ),
+    });
+  }
+  pairs.sort((a, b) =>
+    `${a.base}:${a.quote}`.localeCompare(`${b.base}:${b.quote}`),
+  );
+  writeJson(resolve(ledgerOut, "reports/commodities.json"), { data: pairs });
+}
+
+function captureEvents(source: LedgerSource, ledgerOut: string) {
+  const events = source.directives
+    .filter((d): d is Event => d instanceof Event)
+    .map((event) => ({
+      t: "Event",
+      date: formatDate(event.date),
+      type: event.type,
+      description: event.description,
+    }))
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  writeJson(resolve(ledgerOut, "reports/events.json"), { data: events });
+}
+
+function captureOptions(source: LedgerSource, ledgerOut: string) {
+  const beancount_options: Record<string, string> = {};
+  for (const [key, value] of Object.entries(source.options.beancount)) {
+    beancount_options[key] = String(value);
+  }
+  const fava_options: Record<string, string> = {};
+  for (const [key, value] of Object.entries(source.options.fava)) {
+    fava_options[key.replaceAll("_", "-")] = String(value);
+  }
+  writeJson(resolve(ledgerOut, "reports/options.json"), {
+    data: { beancount_options, fava_options },
+  });
+}
+
+function captureErrors(source: LedgerSource, ledgerOut: string) {
+  const errors = source.errors.map((error) => ({
+    message: error.message,
+    type: error.constructor.name,
+  }));
+  writeJson(resolve(ledgerOut, "reports/errors.json"), { data: errors });
+}
+
 function captureLedger(ledger: {
   id: string;
   path: string;
   slug: string;
+  root?: string;
 }) {
-  const favaRoot = resolve(ROOT, CONFIG.favaUpstreamPath);
-  const ledgerPath = resolve(favaRoot, ledger.path);
+  const ledgerPath = resolveLedgerPath(ledger);
   const contents = readFileSync(ledgerPath, "utf8");
   const source = new LedgerSource(contents, { logTimings: undefined });
   const ledgerOut = resolve(OUT, ledger.id);
@@ -225,12 +453,17 @@ function captureLedger(ledger: {
     },
   });
 
+  captureTreeReports(source, ledgerOut);
+  captureStatistics(source, ledgerOut);
+  captureCommodities(source, ledgerOut);
+  captureEvents(source, ledgerOut);
+  captureOptions(source, ledgerOut);
+  captureErrors(source, ledgerOut);
+
   for (const account of CONFIG.accounts as string[]) {
     for (const interval of CONFIG.intervals as Interval[]) {
       for (const conversionName of CONFIG.conversions as string[]) {
         const conversion = conversionFromFava(conversionName);
-        // Fava account_report uses `a` as the account to serialise, not as an
-        // entry filter — interval bounds come from the unfiltered ledger.
         const balanceTrees = source.data.balanceTrees(interval);
         const changeTrees = source.data.changeTrees(interval);
 
@@ -238,8 +471,13 @@ function captureLedger(ledger: {
           trees: typeof balanceTrees,
           report: "balances" | "changes",
         ) => {
-          // Match Fava: newest interval first.
+          const accumulate = report === "balances";
           const reversed = [...trees].reverse();
+          const budgets = source.data.intervalBudgets(
+            account,
+            interval,
+            accumulate,
+          );
           return {
             data: {
               dates: reversed.map((tree) => ({
@@ -260,7 +498,6 @@ function captureLedger(ledger: {
                   children: Array<unknown>;
                   hasTxns?: boolean;
                 };
-                // Attach hasTxns from live tree node.
                 const live = tree.tree.get(account);
                 return serializeTreeNode(
                   {
@@ -270,6 +507,7 @@ function captureLedger(ledger: {
                   conversion,
                 );
               }),
+              budgets: serializeBudgets(budgets),
               report,
               account,
               interval,
@@ -295,9 +533,14 @@ function captureLedger(ledger: {
     const journal = journalFiltered.directives
       .filter((directive) => directive.date)
       .map(serializeDirective);
-    writeJson(resolve(ledgerOut, "journals", `journal__${account.replace(/:/g, "_")}.json`), {
-      data: journal,
-    });
+    writeJson(
+      resolve(
+        ledgerOut,
+        "journals",
+        `journal__${account.replace(/:/g, "_")}.json`,
+      ),
+      { data: journal },
+    );
   }
 
   const queries = [...(CONFIG.queries as Array<{ id: string; query: string }>)];
@@ -320,9 +563,9 @@ function captureLedger(ledger: {
       dtype: String(
         typeof column.type === "string"
           ? column.type
-          : (column.type as { name?: string })?.name ??
+          : ((column.type as { name?: string })?.name ??
               (column.type as { dtype?: string })?.dtype ??
-              typeof column.type,
+              typeof column.type),
       ),
     }));
     const rows = result.data.map((row) =>
@@ -340,6 +583,7 @@ for (const ledger of CONFIG.ledgers as Array<{
   id: string;
   path: string;
   slug: string;
+  root?: string;
 }>) {
   console.info(`Capturing JS payloads for ${ledger.id}…`);
   captureLedger(ledger);

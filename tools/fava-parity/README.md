@@ -1,6 +1,6 @@
 # Fava report output parity harness
 
-Compares **upstream Fava JSON API** report payloads with the JS Studio computation path (`LedgerData` + `runBql`) on the same shared ledgers.
+Compares **upstream Fava JSON API** report payloads with the JS Studio computation path (`LedgerData` + `runBql` / Tree) on the same shared ledgers.
 
 ## Prerequisites
 
@@ -10,8 +10,16 @@ Compares **upstream Fava JSON API** report payloads with the JS Studio computati
 
 ## Run
 
+From repo root:
+
 ```bash
-./run.sh
+pnpm fava-parity
+```
+
+Or:
+
+```bash
+cd tools/fava-parity && ./run.sh
 ```
 
 Outputs:
@@ -24,4 +32,22 @@ Outputs:
 
 ## Scope
 
-Accounts (balances/changes trees + structured journals) and BQL queries. HTML journal markup and visual chrome are intentionally excluded.
+API-comparable report payloads:
+
+| Kind | Source |
+|---|---|
+| `account_report` | trees + **budgets** (`balances` / `changes`) |
+| `journal` | structured journal JSON |
+| `query` | BQL including holdings + statistics tabs |
+| `ledger_data` | accounts list |
+| `income_statement` / `balance_sheet` / `trial_balance` | trees only (charts omitted) |
+| `statistics` | balances, entries_by_type, balance directives |
+| `commodities` / `events` / `options` / `errors` | report JSON |
+
+Ledgers: upstream `example.beancount`, `query-example.beancount`, and repo-root `sample-budgets.beancount` (budget coverage).
+
+## Non-goals
+
+- HTML journals, chart aesthetics, editor/documents FS, Import/Help
+- Studio-only routes (`/dashboard`, `/import/*`, `/records`)
+- Merging this **fava-parity** workspace tip into **studio** unless explicitly requested

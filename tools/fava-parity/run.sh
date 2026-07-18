@@ -6,6 +6,9 @@ REPO_ROOT="$(cd "$ROOT/../.." && pwd)"
 
 cd "$ROOT"
 
+echo "==> Clearing previous captures"
+rm -rf "$ROOT/out"
+
 echo "==> Capturing upstream Fava JSON"
 python3 "$ROOT/capture-fava.py"
 

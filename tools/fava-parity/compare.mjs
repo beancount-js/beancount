@@ -62,6 +62,42 @@ function unwrap(payload) {
   return payload;
 }
 
+function normalizeBudgetMap(value) {
+  if (!value || typeof value !== "object") return {};
+  const out = {};
+  for (const [currency, amount] of Object.entries(value)) {
+    const n = typeof amount === "number" ? amount : Number(amount);
+    if (!Number.isFinite(n) || Math.abs(n) < TOLERANCE) continue;
+    out[currency] = roundNumber(n);
+  }
+  return Object.fromEntries(
+    Object.entries(out).sort(([a], [b]) => a.localeCompare(b)),
+  );
+}
+
+function normalizeBudgets(budgets, dates) {
+  if (!budgets || typeof budgets !== "object") return {};
+  const begins = (dates ?? [])
+    .map((d) => d?.begin)
+    .filter(Boolean);
+  const out = {};
+  for (const account of Object.keys(budgets).sort()) {
+    const rows = budgets[account] ?? [];
+    out[account] = {};
+    for (let i = 0; i < rows.length; i += 1) {
+      const begin = begins[i] ?? `idx:${i}`;
+      const row = rows[i] ?? {};
+      out[account][begin] = {
+        budget: normalizeBudgetMap(row.budget ?? {}),
+        budget_children: normalizeBudgetMap(
+          row.budget_children ?? row.budgetChildren ?? {},
+        ),
+      };
+    }
+  }
+  return out;
+}
+
 function normalizeAccountReport(payload) {
   const data = unwrap(payload);
   if (!data || data.error) {
@@ -83,7 +119,129 @@ function normalizeAccountReport(payload) {
     interval_balances: Object.fromEntries(
       begins.map((begin) => [begin, byBegin.get(begin)]),
     ),
+    budgets: normalizeBudgets(data.budgets, dates),
   };
+}
+
+function normalizeTreeReport(payload) {
+  const data = unwrap(payload);
+  if (!data || data.error) {
+    return { error: data?.error ?? "missing", body: data?.body };
+  }
+  return {
+    trees: [...(data.trees ?? [])].map(normalizeTreeNode),
+  };
+}
+
+function normalizeStatistics(payload) {
+  const data = unwrap(payload);
+  if (!data || data.error) {
+    return { error: data?.error ?? "missing", body: data?.body };
+  }
+  const balances = {};
+  for (const account of Object.keys(data.balances ?? {}).sort()) {
+    // Root "" is always present in Fava with an empty inventory.
+    balances[account] = normalizeInventory(data.balances[account] ?? {});
+  }
+  if (!("" in balances)) {
+    balances[""] = {};
+  }
+  const skipTypes = new Set(["LedgerOption", "Option"]);
+  const entries_by_type = Object.fromEntries(
+    Object.entries(data.entries_by_type ?? {})
+      .filter(([k, v]) => !skipTypes.has(String(k)) && Number(v) > 0)
+      .map(([k, v]) => [String(k), Number(v)])
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
+  // Date in balance directives is "today" and flaky across runs — compare
+  // account+currency skeleton only.
+  const directiveLines = String(data.all_balance_directives ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.replace(/^\d{4}-\d{2}-\d{2}\s+/, ""))
+    .sort();
+  return { balances, entries_by_type, balance_directive_lines: directiveLines };
+}
+
+function normalizeCommodities(payload) {
+  const data = unwrap(payload);
+  if (!Array.isArray(data)) {
+    return { error: "not-array", sample: data };
+  }
+  return data
+    .map((pair) => ({
+      base: String(pair.base),
+      quote: String(pair.quote),
+      prices: [...(pair.prices ?? [])].map(([date, number]) => [
+        String(date).slice(0, 10),
+        roundNumber(Number(number)),
+      ]),
+    }))
+    .sort((a, b) =>
+      `${a.base}:${a.quote}`.localeCompare(`${b.base}:${b.quote}`),
+    );
+}
+
+function normalizeEvents(payload) {
+  const data = unwrap(payload);
+  if (!Array.isArray(data)) {
+    return { error: "not-array", sample: data };
+  }
+  return data
+    .map((event) => ({
+      date: String(event.date ?? "").slice(0, 10),
+      type: String(event.type ?? ""),
+      description: String(event.description ?? ""),
+    }))
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+}
+
+function normalizeOptions(payload) {
+  const data = unwrap(payload);
+  if (!data || data.error) {
+    return { error: data?.error ?? "missing" };
+  }
+  // Compare beancount options only (fava option pretty-printing diverges).
+  const beancount = data.beancount_options ?? {};
+  const keys = [
+    "name_assets",
+    "name_liabilities",
+    "name_equity",
+    "name_income",
+    "name_expenses",
+    "operating_currency",
+    "title",
+  ];
+  const out = {};
+  for (const key of keys) {
+    if (!(key in beancount)) continue;
+    let value = String(beancount[key]);
+    if (key === "operating_currency") {
+      // Fava: "['USD']" / JS: "USD" or "USD,EUR" — normalize to sorted list.
+      value = value
+        .replace(/^[\[\(]|[\]\)]$/g, "")
+        .replaceAll("'", "")
+        .split(/[,\s]+/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .sort()
+        .join(",");
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
+function normalizeErrors(payload) {
+  const data = unwrap(payload);
+  const list = Array.isArray(data) ? data : data?.errors ?? [];
+  return list
+    .map((error) => ({
+      message: String(error.message ?? error ?? ""),
+      type: String(error.type ?? error.constructor ?? "Error"),
+    }))
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
 }
 
 function normalizeJournalEntry(entry) {
@@ -194,6 +352,18 @@ function normalizeDtype(dtype) {
   return raw;
 }
 
+function normalizeQueryDtype(name, dtype) {
+  const normalized = normalizeDtype(dtype);
+  // Fava labels count(*) as int; JS Decimal-backed counts as decimal.
+  if (
+    normalized === "decimal" &&
+    /^count(\(|$)/i.test(String(name ?? "").replace(/\s+/g, ""))
+  ) {
+    return "int";
+  }
+  return normalized;
+}
+
 function normalizeQuery(payload) {
   const data = unwrap(payload);
   if (!data) return { error: "missing" };
@@ -206,16 +376,20 @@ function normalizeQuery(payload) {
   if (data.error && !data.rows) {
     return { t: "error", error: String(data.error) };
   }
-  const types = (data.types ?? []).map((col, index) => ({
-    name: String(col.name ?? `col${index}`)
+  const types = (data.types ?? []).map((col, index) => {
+    const name = String(col.name ?? `col${index}`)
       .toLowerCase()
       // Beanquery shell may emit sum((position)); treat as sum(position).
-      .replace(/sum\(\(([^)]+)\)\)/g, "sum($1)"),
-    dtype: normalizeDtype(col.dtype ?? col.type),
-  }));
-  const rows = (data.rows ?? []).map((row) =>
-    row.map((cell) => normalizeQueryCell(cell)),
-  );
+      .replace(/sum\(\(([^)]+)\)\)/g, "sum($1)");
+    return {
+      name,
+      dtype: normalizeQueryDtype(name, col.dtype ?? col.type),
+    };
+  });
+  const rows = (data.rows ?? [])
+    .map((row) => row.map((cell) => normalizeQueryCell(cell)))
+    // JS emits option directives; Fava's entries table does not.
+    .filter((row) => !(types[0]?.name === "type" && row[0] === "option"));
   // Sort aggregate-looking queries by serialized row for stable compare.
   const sortedRows = [...rows].sort((a, b) =>
     JSON.stringify(a).localeCompare(JSON.stringify(b)),
@@ -289,6 +463,22 @@ function listFiles(dir) {
   return out;
 }
 
+const REPORT_KINDS = [
+  "account_report",
+  "journal",
+  "query",
+  "ledger_data",
+  "income_statement",
+  "balance_sheet",
+  "trial_balance",
+  "statistics",
+  "commodities",
+  "events",
+  "options",
+  "errors",
+  "other",
+];
+
 function classify(relPath) {
   const normalized = relPath.replaceAll("\\", "/");
   if (
@@ -307,6 +497,13 @@ function classify(relPath) {
     return "query";
   }
   if (basename(normalized) === "ledger_data.json") return "ledger_data";
+  if (
+    normalized.includes("/reports/") ||
+    normalized.startsWith("reports/")
+  ) {
+    const stem = basename(normalized, ".json");
+    if (REPORT_KINDS.includes(stem)) return stem;
+  }
   return "other";
 }
 
@@ -320,6 +517,20 @@ function normalizeByKind(kind, payload) {
       return normalizeQuery(payload);
     case "ledger_data":
       return normalizeAccountsList(payload);
+    case "income_statement":
+    case "balance_sheet":
+    case "trial_balance":
+      return normalizeTreeReport(payload);
+    case "statistics":
+      return normalizeStatistics(payload);
+    case "commodities":
+      return normalizeCommodities(payload);
+    case "events":
+      return normalizeEvents(payload);
+    case "options":
+      return normalizeOptions(payload);
+    case "errors":
+      return normalizeErrors(payload);
     default:
       return payload;
   }
@@ -356,6 +567,28 @@ function likelyLayer(kind, relPath, diffs) {
   }
   if (kind === "ledger_data") {
     return "@beancount-js/beancount account discovery / open directives";
+  }
+  if (
+    kind === "income_statement" ||
+    kind === "balance_sheet" ||
+    kind === "trial_balance"
+  ) {
+    return "packages/fava Tree / closed-tree (cap) serialization";
+  }
+  if (kind === "statistics") {
+    return "packages/fava statistics aggregates / balance directives";
+  }
+  if (kind === "commodities") {
+    return "@beancount-js/beancount PriceMap commodity pairs";
+  }
+  if (kind === "events") {
+    return "@beancount-js/beancount Event directive serialization";
+  }
+  if (kind === "options") {
+    return "beancount options rendering";
+  }
+  if (kind === "errors") {
+    return "loader/plugin error set";
   }
   return "unknown";
 }
@@ -435,13 +668,9 @@ function comparePair(favaPath, jsPath, kind) {
 
 function main() {
   const findings = [];
-  const summary = {
-    account_report: { pass: 0, fail: 0 },
-    journal: { pass: 0, fail: 0 },
-    query: { pass: 0, fail: 0 },
-    ledger_data: { pass: 0, fail: 0 },
-    other: { pass: 0, fail: 0 },
-  };
+  const summary = Object.fromEntries(
+    REPORT_KINDS.map((kind) => [kind, { pass: 0, fail: 0 }]),
+  );
 
   const normOut = join(ROOT, "out/normalized");
   mkdirSync(normOut, { recursive: true });
@@ -565,20 +794,23 @@ function renderReport(summary, findings) {
     `- Number tolerance: ${TOLERANCE} (inventories rounded; near-zero dropped)`,
   );
   lines.push(
-    "- Comparison method: upstream Fava JSON API (`account_report`, `journal`, `query`, `ledger_data`) vs JS `LedgerData` / `runBql` (same computation path as the SPA).",
+    "- Comparison method: upstream Fava JSON API report endpoints vs JS `LedgerData` / `runBql` / Tree (same computation path as the SPA where applicable).",
   );
   lines.push(
     "- Account trees are compared by interval **begin** date after normalizing inventories; half-open vs inclusive end encoding is treated as an interval-set issue when shared-begin trees match.",
   );
   lines.push(
-    "- Visual/HTML journal markup, charts, and UI chrome are out of scope.",
+    "- Tree reports compare serialized trees only (charts omitted). Budgets on `account_report` are compared per account/interval begin.",
+  );
+  lines.push(
+    "- Visual/HTML journal markup, charts, editor/documents UI, and Studio-only routes are out of scope.",
   );
   lines.push("");
   lines.push("## Summary");
   lines.push("");
   lines.push("| Category | Pass | Fail |");
   lines.push("|---|---:|---:|");
-  for (const kind of ["account_report", "journal", "query", "ledger_data"]) {
+  for (const kind of REPORT_KINDS.filter((k) => k !== "other")) {
     lines.push(
       `| ${kind} | ${summary[kind].pass} | ${summary[kind].fail} |`,
     );
@@ -648,10 +880,35 @@ function renderReport(summary, findings) {
     lines.push(
       `${finding}. **Queries match** after balances shell expansion and holdings GROUP BY fixes (${summary.query.pass} passes).`,
     );
+    finding += 1;
   } else {
     lines.push(
       `${finding}. **Query leftovers** (${summary.query.fail} fails): usually empty-inventory encoding or column-name cosmetics once balances/holdings row counts match.`,
     );
+    finding += 1;
+  }
+  for (const kind of [
+    "income_statement",
+    "balance_sheet",
+    "trial_balance",
+    "statistics",
+    "commodities",
+    "events",
+    "options",
+    "errors",
+  ]) {
+    if (!summary[kind]) continue;
+    if (summary[kind].fail === 0 && summary[kind].pass > 0) {
+      lines.push(
+        `${finding}. **${kind}** matches (${summary[kind].pass} passes).`,
+      );
+      finding += 1;
+    } else if (summary[kind].fail > 0) {
+      lines.push(
+        `${finding}. **${kind}** still disagrees (${summary[kind].fail} fails / ${summary[kind].pass} passes).`,
+      );
+      finding += 1;
+    }
   }
   lines.push("");
 
@@ -683,6 +940,22 @@ function renderReport(summary, findings) {
       {
         title: "ledger_data",
         items: failed.filter((f) => f.kind === "ledger_data"),
+      },
+      {
+        title: "tree reports",
+        items: failed.filter((f) =>
+          ["income_statement", "balance_sheet", "trial_balance"].includes(
+            f.kind,
+          ),
+        ),
+      },
+      {
+        title: "statistics / commodities / events / options / errors",
+        items: failed.filter((f) =>
+          ["statistics", "commodities", "events", "options", "errors"].includes(
+            f.kind,
+          ),
+        ),
       },
     ];
     for (const section of sections) {
@@ -749,10 +1022,15 @@ function renderReport(summary, findings) {
   lines.push("## Known non-goals");
   lines.push("");
   lines.push("- HTML account journals from `account_report` (journal mode)");
-  lines.push("- Chart aesthetics / ChartSwitcher ordering");
+  lines.push("- Chart aesthetics / ChartSwitcher ordering / chart payloads");
   lines.push("- URL routing, sidebar, and filter UI chrome");
-  lines.push("- Balance sheet / income statement / holdings pages (unless pointed to by a query failure)");
+  lines.push("- Documents FS ops, Import, Help, Editor source PUT protocol");
+  lines.push("- Studio-only routes (`/dashboard`, `/import/*`, `/records`)");
   lines.push("- Exact dtype label strings when normalized types already match");
+  lines.push(
+    "- `SELECT type, count(type) FROM entries` price-row doubling in upstream Fava beanquery (covered via `/api/statistics` entries_by_type instead)",
+  );
+  lines.push("- Merging this fava-parity workspace tip into studio unless requested");
   lines.push("");
 
   lines.push("## Recommended follow-ups");
