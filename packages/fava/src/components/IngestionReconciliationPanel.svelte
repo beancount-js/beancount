@@ -10,8 +10,6 @@
     ReconciliationReviewResponse,
   } from "../lib/reconciliation-review-response";
   import Check from "lucide-svelte/icons/check";
-  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
-  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import X from "lucide-svelte/icons/x";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type { IngestionBulkReviewAction } from "../studio/ingestion-header-actions";
@@ -38,6 +36,7 @@
   import { useNavigation } from "../router/router";
   import { Badge, type BadgeVariant } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
+  import PagePagination from "./PagePagination.svelte";
   import ReconciliationReviewSkeleton from "./skeletons/ReconciliationReviewSkeleton.svelte";
 
   type Review = ReconciliationReviewResponse;
@@ -770,24 +769,18 @@
             {#each item.members as member, memberIndex (member.observation.id)}
               <div
                 class:rounded-b-xl={memberIndex === item.members.length - 1}
-                class="relative grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-1 border-b px-[15px] py-4 last:border-b-0 sm:grid-cols-[7rem_2.5rem_minmax(0,1fr)]"
+                class="relative grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-1 border-b px-[15px] py-4 last:border-b-0 sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem]"
                 data-reconciliation-member-row
               >
-                <span
-                  class="col-start-2 row-start-2 text-sm font-semibold tabular-nums sm:col-start-1 sm:row-start-1 sm:justify-self-end"
-                  data-reconciliation-member-amount
-                >
-                  {member.observation.amount}&nbsp;{member.observation.currency}
-                </span>
                 <div
-                  class="col-start-1 row-span-2 row-start-1 flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground sm:col-start-2 sm:row-span-1"
+                  class="col-start-1 row-span-2 row-start-1 flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground sm:row-span-1"
                   aria-hidden="true"
                   data-reconciliation-member-avatar
                 >
                   {memberInitial(member)}
                 </div>
                 <div
-                  class="col-start-2 row-start-1 min-w-0 pr-24 sm:col-start-3"
+                  class="col-start-2 row-start-1 min-w-0 pr-24"
                   data-reconciliation-member-details
                 >
                   <div class="break-words text-sm font-semibold sm:truncate">
@@ -799,6 +792,12 @@
                     {memberDetail(member)}
                   </div>
                 </div>
+                <span
+                  class="col-start-2 row-start-2 text-sm font-semibold tabular-nums sm:col-start-3 sm:justify-self-end"
+                  data-reconciliation-member-amount
+                >
+                  {member.observation.amount}&nbsp;{member.observation.currency}
+                </span>
                 <Badge
                   variant="outline"
                   class="pointer-events-none absolute right-3 top-2 rounded-full bg-card text-[10px] uppercase tracking-wide text-muted-foreground"
@@ -815,16 +814,14 @@
     </div>
 
     {#if pages.length > 1}
-      <nav
+      <div
         class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-        aria-label="Reconciliation match pages"
+        data-reconciliation-pagination
       >
         <span class="text-sm text-muted-foreground"
           >Page {page} of {pages.length}</span
         >
-        <div
-          class="flex flex-wrap items-center justify-between gap-2 sm:justify-end"
-        >
+        <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
           <div class="hidden items-center gap-2 sm:flex">
             <label
               class="text-sm text-muted-foreground"
@@ -846,27 +843,16 @@
               {/each}
             </select>
           </div>
-          <Button
-            size="icon"
-            variant="outline"
-            aria-label="Previous reconciliation page"
-            disabled={page <= 1}
-            onclick={() =>
-              updateRoute({ reconcilePage: String(Math.max(1, page - 1)) })}
-          >
-            <ChevronsLeft data-icon />
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            aria-label="Next reconciliation page"
-            disabled={page >= pages.length}
-            onclick={() => updateRoute({ reconcilePage: String(page + 1) })}
-          >
-            <ChevronsRight data-icon />
-          </Button>
+          <PagePagination
+            {page}
+            pageCount={pages.length}
+            ariaLabel="Reconciliation match pages"
+            disabled={loading || bulkConfirming || Boolean(busyCandidateId)}
+            onPageChange={(nextPage) =>
+              updateRoute({ reconcilePage: String(nextPage) })}
+          />
         </div>
-      </nav>
+      </div>
     {/if}
   {/if}
 {:else if reviewLoaded && !error}

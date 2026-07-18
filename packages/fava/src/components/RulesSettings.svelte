@@ -2,8 +2,6 @@
   import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
   import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
   import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
-  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
-  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import FileCode2 from "lucide-svelte/icons/file-code-2";
   import ListFilter from "lucide-svelte/icons/list-filter";
   import MoreHorizontal from "lucide-svelte/icons/more-horizontal";
@@ -29,6 +27,7 @@
     RuleRunsResponse,
     RulesResponse,
   } from "../rules/types";
+  import PagePagination from "./PagePagination.svelte";
   import RuleEditorSheet from "./RuleEditorSheet.svelte";
   import RulesPageSkeleton from "./skeletons/RulesPageSkeleton.svelte";
 
@@ -592,34 +591,22 @@
           </div>
 
           {#if runsPageCount > 1}
-            <nav
-              class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
-              aria-label="Rule run pages"
+            <div
+              class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              data-rule-run-pagination
             >
               <span class="text-sm text-muted-foreground"
                 >Page {runsPage} of {runsPageCount}</span
               >
-              <div class="flex items-center gap-2">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  aria-label="Previous run page"
-                  disabled={runsPage <= 1}
-                  onclick={() => changeRunsPage(runsOffset - RUNS_LIMIT)}
-                >
-                  <ChevronsLeft />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  aria-label="Next run page"
-                  disabled={runsPage >= runsPageCount}
-                  onclick={() => changeRunsPage(runsOffset + RUNS_LIMIT)}
-                >
-                  <ChevronsRight />
-                </Button>
-              </div>
-            </nav>
+              <PagePagination
+                page={runsPage}
+                pageCount={runsPageCount}
+                ariaLabel="Rule run pages"
+                disabled={loading}
+                onPageChange={(nextPage) =>
+                  changeRunsPage((nextPage - 1) * RUNS_LIMIT)}
+              />
+            </div>
           {/if}
         {/if}
       </div>

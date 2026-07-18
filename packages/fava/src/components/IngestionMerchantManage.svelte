@@ -1,8 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { SearchFilterBar } from "@beancount-js/forms";
-  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
-  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import FileCode2 from "lucide-svelte/icons/file-code-2";
   import Landmark from "lucide-svelte/icons/landmark";
   import type { MerchantIdentity } from "@beancount-js/beangulp";
@@ -15,6 +13,7 @@
   import { debounceWithDelay } from "../hooks/debounce";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import MerchantEditSheet from "./MerchantEditSheet.svelte";
+  import PagePagination from "./PagePagination.svelte";
   import MerchantsPageSkeleton from "./skeletons/MerchantsPageSkeleton.svelte";
 
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
@@ -310,9 +309,9 @@
             {/each}
           </div>
 
-          <nav
-            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
-            aria-label="Merchant pages"
+          <div
+            class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            data-merchant-pagination
           >
             <span class="text-sm text-muted-foreground">
               {#if pages.length > 1}
@@ -326,7 +325,9 @@
                 {merchants.length} merchant{merchants.length === 1 ? "" : "s"}
               {/if}
             </span>
-            <div class="flex items-center gap-2">
+            <div
+              class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
+            >
               <div class="hidden items-center gap-2 sm:flex">
                 <label
                   class="text-sm text-muted-foreground"
@@ -349,26 +350,17 @@
                   {/each}
                 </select>
               </div>
-              <Button
-                size="icon"
-                variant="outline"
-                aria-label="Previous merchant page"
-                disabled={page <= 1}
-                onclick={() => updateRoute({ page: String(page - 1) })}
-              >
-                <ChevronsLeft />
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                aria-label="Next merchant page"
-                disabled={page >= pages.length}
-                onclick={() => updateRoute({ page: String(page + 1) })}
-              >
-                <ChevronsRight />
-              </Button>
+              {#if pages.length > 1}
+                <PagePagination
+                  {page}
+                  pageCount={pages.length}
+                  ariaLabel="Merchant pages"
+                  onPageChange={(nextPage) =>
+                    updateRoute({ page: String(nextPage) })}
+                />
+              {/if}
             </div>
-          </nav>
+          </div>
         {:else}
           <Empty.Root class="min-h-64 border">
             <Empty.Header>

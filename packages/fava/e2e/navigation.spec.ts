@@ -437,9 +437,7 @@ test.describe("account activity pagination", () => {
     await expect(
       page.getByRole("navigation", { name: "Account activity pages" }),
     ).toBeVisible();
-    await page
-      .getByRole("button", { name: "Next Account activity page" })
-      .click();
+    await page.getByRole("button", { name: "Go to next page" }).click();
     await expect(page).toHaveURL(
       /\/ledger\/.+\/account\/Assets(?::|%3A)Checking(?::|%3A)Starling\/?\?.*pageSize=5.*page=2/,
     );

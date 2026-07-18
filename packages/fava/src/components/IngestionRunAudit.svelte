@@ -6,8 +6,6 @@
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronUp from "lucide-svelte/icons/chevron-up";
   import CircleX from "lucide-svelte/icons/circle-x";
-  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
-  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
@@ -16,6 +14,7 @@
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
+  import PagePagination from "./PagePagination.svelte";
 
   const PAGE_SIZES = [25, 50, 100];
   const { snapshot } = useStudioWorkspace();
@@ -542,14 +541,16 @@
         {/each}
 
         {#if pages.length > 1}
-          <nav
-            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
-            aria-label="Import audit pages"
+          <div
+            class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            data-import-audit-pagination
           >
             <span class="text-sm text-muted-foreground"
               >Page {page} of {pages.length}</span
             >
-            <div class="flex items-center gap-2">
+            <div
+              class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
+            >
               <div class="hidden items-center gap-2 sm:flex">
                 <label
                   class="text-sm text-muted-foreground"
@@ -571,26 +572,15 @@
                   {/each}
                 </select>
               </div>
-              <Button
-                size="icon"
-                variant="outline"
-                aria-label="Previous import audit page"
-                disabled={page <= 1}
-                onclick={() => updateRoute({ page: String(page - 1) })}
-              >
-                <ChevronsLeft />
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                aria-label="Next import audit page"
-                disabled={page >= pages.length}
-                onclick={() => updateRoute({ page: String(page + 1) })}
-              >
-                <ChevronsRight />
-              </Button>
+              <PagePagination
+                {page}
+                pageCount={pages.length}
+                ariaLabel="Import audit pages"
+                onPageChange={(nextPage) =>
+                  updateRoute({ page: String(nextPage) })}
+              />
             </div>
-          </nav>
+          </div>
         {/if}
       {:else if !status}
         <Empty.Root class="border">

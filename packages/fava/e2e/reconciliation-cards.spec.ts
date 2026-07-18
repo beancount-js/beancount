@@ -90,7 +90,10 @@ const reconciliationReview = {
   ],
 };
 
-async function openReconciliationReview(page: Page) {
+async function openReconciliationReview(
+  page: Page,
+  review = reconciliationReview,
+) {
   const summary = {
     id: "mock-run",
     sourceId: "monzo",
@@ -136,7 +139,7 @@ async function openReconciliationReview(page: Page) {
   await page.route("**/ingestion/reconciliation", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(reconciliationReview),
+      body: JSON.stringify(review),
     });
   });
   await gotoStudio(page, "/records?review=reconciliation");
@@ -226,6 +229,8 @@ test("styles reconciliation cards with aligned rows and compact actions", async 
   expect(rowMetrics[0]?.amountX).toBe(rowMetrics[1]?.amountX);
   expect(rowMetrics[0]?.avatarX).toBe(rowMetrics[1]?.avatarX);
   expect(rowMetrics[0]?.detailsX).toBe(rowMetrics[1]?.detailsX);
+  expect(rowMetrics[0]?.avatarX).toBeLessThan(rowMetrics[0]?.detailsX ?? 0);
+  expect(rowMetrics[0]?.detailsX).toBeLessThan(rowMetrics[0]?.amountX ?? 0);
 });
 
 test("keeps reconciliation card rows contained on mobile", async ({ page }) => {
@@ -249,6 +254,57 @@ test("keeps reconciliation card rows contained on mobile", async ({ page }) => {
       const childBox = child.getBoundingClientRect();
       return childBox.left >= rowBox.left && childBox.right <= rowBox.right;
     });
+  });
+  expect(contained).toBe(true);
+});
+
+test("shows responsive numbered reconciliation pagination", async ({
+  page,
+}) => {
+  const manyCandidates = Array.from({ length: 250 }, (_, index) => {
+    const template = reconciliationReview.candidates[index % 2]!;
+    return {
+      ...template,
+      candidate: {
+        ...template.candidate,
+        id: `${template.candidate.id}-${index}`,
+        memberIds: template.candidate.memberIds.map(
+          (memberId) => `${memberId}-${index}`,
+        ),
+        recommendedCanonicalId: `${template.candidate.recommendedCanonicalId}-${index}`,
+      },
+      members: template.members.map((member) => ({
+        observation: {
+          ...member.observation,
+          id: `${member.observation.id}-${index}`,
+        },
+      })),
+    };
+  });
+  await openReconciliationReview(page, { candidates: manyCandidates });
+
+  const pagination = page.getByRole("navigation", {
+    name: "Reconciliation match pages",
+  });
+  await expect(
+    pagination.getByRole("button", { name: "Page 1" }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    pagination.getByRole("button", { name: "Page 2", exact: true }),
+  ).toBeVisible();
+  await expect(pagination.getByText("More pages")).toHaveCount(1);
+
+  await pagination.getByRole("button", { name: "Page 2", exact: true }).click();
+  await expect(page).toHaveURL(/reconcilePage=2/);
+  await expect(
+    pagination.getByRole("button", { name: "Page 2", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByText("Matches per page")).toBeHidden();
+  const contained = await pagination.evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    return box.left >= 0 && box.right <= document.documentElement.clientWidth;
   });
   expect(contained).toBe(true);
 });

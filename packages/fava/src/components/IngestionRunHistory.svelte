@@ -4,8 +4,6 @@
   import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
   import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
   import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
-  import ChevronsLeft from "lucide-svelte/icons/chevrons-left";
-  import ChevronsRight from "lucide-svelte/icons/chevrons-right";
   import ExternalLink from "lucide-svelte/icons/external-link";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
@@ -18,6 +16,7 @@
   import { useNavigation } from "../router/router";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
+  import PagePagination from "./PagePagination.svelte";
 
   const PAGE_SIZES = [25, 50, 100];
   const DEFAULT_PAGE_SIZE = 25;
@@ -468,14 +467,16 @@
         {/each}
 
         {#if pageCount > 1}
-          <nav
-            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
-            aria-label="Import history pages"
+          <div
+            class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            data-import-history-pagination
           >
             <span class="text-sm text-muted-foreground"
               >Page {pageNumber} of {pageCount}</span
             >
-            <div class="flex items-center gap-2">
+            <div
+              class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
+            >
               <div class="hidden items-center gap-2 sm:flex">
                 <label
                   class="text-sm text-muted-foreground"
@@ -495,27 +496,16 @@
                   {/each}
                 </select>
               </div>
-              <Button
-                size="icon"
-                variant="outline"
-                aria-label="Previous import history page"
-                disabled={pageNumber <= 1 || loading}
-                onclick={() =>
-                  void loadHistory(Math.max(0, page.offset - page.limit))}
-              >
-                <ChevronsLeft />
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                aria-label="Next import history page"
-                disabled={pageNumber >= pageCount || loading}
-                onclick={() => void loadHistory(page.offset + page.limit)}
-              >
-                <ChevronsRight />
-              </Button>
+              <PagePagination
+                page={pageNumber}
+                {pageCount}
+                ariaLabel="Import history pages"
+                disabled={loading}
+                onPageChange={(nextPage) =>
+                  void loadHistory((nextPage - 1) * page.limit)}
+              />
             </div>
-          </nav>
+          </div>
         {/if}
       {/if}
     </div>
