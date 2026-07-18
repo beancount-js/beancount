@@ -1,6 +1,7 @@
 import {
   createFormConfig,
   textField,
+  textareaField,
   type FormConfig,
 } from "@beancount-js/forms";
 import type { BrandfetchEnrichmentConfig } from "@beancount-js/server";
@@ -88,7 +89,7 @@ export const brandSettingsForm: FormConfig<
           highResolution,
         }),
     }),
-    textField({
+    textareaField({
       id: "ingestion-global-brandfetch-cache-user-agent",
       label: "Cache User-Agent",
       path: "brandfetch.cacheUserAgent",
