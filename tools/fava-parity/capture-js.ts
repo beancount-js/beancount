@@ -229,10 +229,10 @@ function captureLedger(ledger: {
     for (const interval of CONFIG.intervals as Interval[]) {
       for (const conversionName of CONFIG.conversions as string[]) {
         const conversion = conversionFromFava(conversionName);
-        const filtered = source.data.filter(AccountFilter.of(account));
-
-        const balanceTrees = filtered.balanceTrees(interval);
-        const changeTrees = filtered.changeTrees(interval);
+        // Fava account_report uses `a` as the account to serialise, not as an
+        // entry filter — interval bounds come from the unfiltered ledger.
+        const balanceTrees = source.data.balanceTrees(interval);
+        const changeTrees = source.data.changeTrees(interval);
 
         const toReport = (
           trees: typeof balanceTrees,

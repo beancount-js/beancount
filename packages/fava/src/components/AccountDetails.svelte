@@ -3,7 +3,6 @@
   import ChartSwitcher from "../charts/ChartSwitcher.svelte";
   import { balances } from "../charts/line";
   import { useContext } from "../context";
-  import { AccountFilter } from "@beancount-js/filters";
   import { urlForAccount } from "../helpers";
   import AccountActivityTable from "./AccountActivityTable.svelte";
   import AccountTable from "./AccountTable.svelte";
@@ -31,29 +30,13 @@
     | ((content: Text, directive: Directive) => LedgerError[])
     | undefined = undefined;
 
-  $: ledgerData = useLedger(account ? AccountFilter.of(account) : undefined);
+  $: ledgerData = useLedger();
   $: conversionContext = (asOf = $ledgerData.dateLast) => ({
     prices: $ledgerData.prices,
     date: asOf ?? undefined,
   });
-  $: balanceTrees = $ledgerData
-    .balanceTrees($interval)
-    .filter(
-      (it) =>
-        it.tree.currencies(
-          $conversion,
-          conversionContext(it.range.endInclusive),
-        ).length,
-    );
-  $: changeTrees = $ledgerData
-    .changeTrees($interval)
-    .filter(
-      (it) =>
-        it.tree.currencies(
-          $conversion,
-          conversionContext(it.range.endInclusive),
-        ).length,
-    );
+  $: balanceTrees = $ledgerData.balanceTrees($interval);
+  $: changeTrees = $ledgerData.changeTrees($interval);
   $: budgets = $ledgerData.intervalBudgets(account, $interval);
   $: charts = () => {
     const charts = [
