@@ -36,6 +36,7 @@
   export let isWeb = false;
   export let status = "";
   export let pageTitle = "Beancount Studio";
+  export let routePath = "";
   export let onSelectProject: (id: string) => void | Promise<void>;
   export let onAddProject: (path?: string) => void | Promise<void>;
 
@@ -555,7 +556,7 @@
     {#if snapshot}
       <slot></slot>
     {:else if status.startsWith("Loading")}
-      <RouteLoadingSkeleton />
+      <RouteLoadingSkeleton {routePath} />
     {:else}
       <Empty.Root>
         <Empty.Header>

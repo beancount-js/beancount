@@ -18,5 +18,5 @@
     <svelte:component this={$activeRoute.element} {...$activeRoute.params} />
   {/key}
 {:else if $navigating}
-  <RouteLoadingSkeleton />
+  <RouteLoadingSkeleton routePath={$navigating.to} />
 {/if}

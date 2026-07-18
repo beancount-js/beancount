@@ -304,6 +304,7 @@
     {isWeb}
     {status}
     {pageTitle}
+    routePath={$activeRoute.path}
     {onSelectProject}
     {onAddProject}
   >

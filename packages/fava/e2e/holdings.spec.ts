@@ -1,6 +1,32 @@
 import { expect, test } from "@playwright/test";
 
-import { gotoStudio, minimalLedger, sampleLedger, seedLedger } from "./helpers";
+import {
+  gotoStudio,
+  minimalLedger,
+  resolveLedgerStem,
+  resolveProjectId,
+  sampleLedger,
+  seedLedger,
+  studioUrl,
+} from "./helpers";
+
+test("Query loading skeleton mirrors the query layout", async ({ page }) => {
+  const projectId = await resolveProjectId(page);
+  const ledgerStem = await resolveLedgerStem(page);
+  await page.route(`**/api/projects/${projectId}`, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 750));
+    await route.continue();
+  });
+
+  await page.goto(studioUrl(projectId, "/query", ledgerStem));
+
+  const skeleton = page.locator("[data-query-page-skeleton]");
+  await expect(skeleton).toBeVisible();
+  await expect(skeleton).toHaveAttribute("aria-busy", "true");
+  await expect(skeleton.locator("article")).toHaveCount(2);
+  await expect(skeleton.locator("[data-query-skeleton-result]")).toBeVisible();
+  await expect(skeleton.locator("[data-query-skeleton-row]")).toHaveCount(3);
+});
 
 test("Holdings renders a sortable, paginated table", async ({ page }) => {
   await seedLedger(
