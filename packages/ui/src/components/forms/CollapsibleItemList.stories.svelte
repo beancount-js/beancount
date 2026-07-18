@@ -41,9 +41,9 @@
         onAdd={() => (sources = [...sources, `Source ${sources.length + 1}`])}
       >
         {#snippet children()}
-          <ul class="space-y-1 text-sm">
+          <ul class="space-y-2 text-sm">
             {#each sources as source}
-              <li>{source}</li>
+              <li class="collapsible-item-example-row">{source}</li>
             {/each}
           </ul>
         {/snippet}
@@ -55,3 +55,12 @@
     </div>
   {/snippet}
 </Story>
+
+<style>
+  .collapsible-item-example-row {
+    border: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+    border-radius: 0.375rem;
+    background: color-mix(in srgb, var(--muted) 30%, transparent);
+    padding: 0.45rem 0.6rem;
+  }
+</style>

@@ -62,28 +62,6 @@
 
 <div class="h-[42rem] overflow-hidden rounded-lg border border-border">
   <AppShell pageTitle="Ledger settings" height="container">
-    <svelte:fragment slot="sidebar">
-      <aside
-        aria-label="Ledger settings navigation"
-        class="flex h-full w-52 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-3 text-sidebar-foreground"
-      >
-        <p class="text-sm font-semibold">Northstar Ledger</p>
-        <p class="mt-1 text-xs text-muted-foreground">Settings</p>
-        <nav class="mt-5 space-y-1" aria-label="Settings sections">
-          <button
-            type="button"
-            class="w-full rounded-md bg-sidebar-accent px-2 py-1.5 text-left text-sm font-medium"
-            >Sources</button
-          >
-          <button
-            type="button"
-            class="w-full rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground"
-            >Notifications</button
-          >
-        </nav>
-      </aside>
-    </svelte:fragment>
-
     <svelte:fragment slot="header-actions">
       <output class="text-xs text-muted-foreground">Changes saved</output>
     </svelte:fragment>
