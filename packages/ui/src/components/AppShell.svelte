@@ -1,10 +1,16 @@
 <script lang="ts">
   export let pageTitle: string;
+
+  /**
+   * Use `container` when embedding the shell in a bounded parent, such as its
+   * Storybook preview. Applications retain the viewport-height default.
+   */
+  export let height: "viewport" | "container" = "viewport";
 </script>
 
 <div
   data-slot="app-shell"
-  class="flex h-screen w-full overflow-hidden bg-sidebar text-foreground"
+  class={`flex ${height === "viewport" ? "h-screen" : "h-full"} w-full overflow-hidden bg-sidebar text-foreground`}
 >
   <slot name="sidebar"></slot>
   <div
