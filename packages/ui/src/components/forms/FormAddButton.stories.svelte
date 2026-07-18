@@ -6,6 +6,14 @@
   const { Story } = defineMeta({
     title: "UI Forms/Form Add Button",
     component: FormAddButton,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            "The shared footer affordance for adding a new repeatable item. Place it at the end of a section and give it a domain-specific label, such as Add source.",
+        },
+      },
+    },
   });
 </script>
 

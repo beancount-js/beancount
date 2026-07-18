@@ -5,6 +5,14 @@
   const { Story } = defineMeta({
     title: "Forms/Filter Command Picker",
     component: FilterCommandPicker,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            "The canonical searchable picker for accounts, enum-like values, and filter choices. In forms, place it in `FormField as=\"div\" align=\"center\"` and use `fullWidth`; enable `allowCustom` only when users may supply a value outside the option list.",
+        },
+      },
+    },
   });
 
   const accountOptions = [

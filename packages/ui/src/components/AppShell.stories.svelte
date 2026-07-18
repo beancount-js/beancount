@@ -6,6 +6,14 @@
   const { Story } = defineMeta({
     title: "Layout/App Shell",
     component: AppShellDemo,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            "The application frame for Studio and Fava. Use `hasSidebar` when a persistent navigation rail is present; sidebar-free pages retain equal workspace gutters on both sides.",
+        },
+      },
+    },
   });
 </script>
 

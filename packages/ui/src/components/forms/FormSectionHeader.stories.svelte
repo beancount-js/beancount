@@ -6,6 +6,14 @@
   const { Story } = defineMeta({
     title: "UI Forms/Form Section Header",
     component: FormSectionHeader,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            "The shared header for form sections and repeatable entries. It owns the left-rail disclosure and hover move/delete actions; default titles are editable, while fixed titles should use `titleToggleable` so the whole title row collapses the section.",
+        },
+      },
+    },
   });
 </script>
 

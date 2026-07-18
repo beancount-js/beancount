@@ -6,6 +6,14 @@
   const { Story } = defineMeta({
     title: "UI Forms/Form Field",
     component: FormField,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            'One labelled row in a `beancount-structured-form` grid. Use `as="div"` and `align="center"` for pickers, switches, segmented controls, and other interactive pills; use the default text-row alignment for borderless inputs and output.',
+        },
+      },
+    },
   });
 </script>
 

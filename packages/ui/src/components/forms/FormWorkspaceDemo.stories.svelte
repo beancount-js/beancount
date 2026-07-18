@@ -6,6 +6,14 @@
   const { Story } = defineMeta({
     title: "UI Forms/Form Workspace",
     component: FormWorkspaceDemo,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            "An integrated reference form inside the shared app shell. It demonstrates a toolbar, fixed and editable section headers, nested repeatable rules, add/reorder/remove flows, validation, segmented controls, and searchable account pickers in their intended layout.",
+        },
+      },
+    },
   });
 </script>
 

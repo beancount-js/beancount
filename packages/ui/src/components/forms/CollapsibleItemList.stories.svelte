@@ -6,6 +6,14 @@
   const { Story } = defineMeta({
     title: "UI Forms/Collapsible Item List",
     component: CollapsibleItemList,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            "A disclosure header with an item count and footer add action for a simple repeatable group. Use it when entries do not need their own editable title or row actions.",
+        },
+      },
+    },
   });
 </script>
 

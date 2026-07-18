@@ -6,6 +6,14 @@
   const { Story } = defineMeta({
     title: "UI Forms/Segmented Control",
     component: SegmentedControl,
+    parameters: {
+      docs: {
+        description: {
+          component:
+            "A compact choice control for two or three mutually exclusive options. Keep it inside a centered Form Field row and provide a specific `ariaLabel` that identifies the decision being made.",
+        },
+      },
+    },
   });
 </script>
 
