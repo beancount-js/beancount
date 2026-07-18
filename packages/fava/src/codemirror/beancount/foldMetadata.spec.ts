@@ -25,7 +25,7 @@ describe("foldMetadata", () => {
     view = undefined;
   });
 
-  test("folds transaction and posting metadata from the first property colon", () => {
+  test("folds transaction and posting metadata from the first property colon", async () => {
     const doc = `2026-07-17 * "Coffee"
   import_id: "transaction-1"
   import_source: "monzo"
@@ -66,11 +66,11 @@ describe("foldMetadata", () => {
       metadataFoldEffects(view.state).map((effect) => effect.value),
     ).toEqual(expected);
 
-    foldMetadata(view);
+    await foldMetadata(view);
     expect(foldedRangeList(view.state)).toEqual(expected);
   });
 
-  test("leaves a single metadata attribute unfolded", () => {
+  test("leaves a single metadata attribute unfolded", async () => {
     const doc = `2026-07-17 * "Coffee"
   import_id: "transaction-1"
 `;
@@ -82,7 +82,7 @@ describe("foldMetadata", () => {
       }),
     });
 
-    foldMetadata(view);
+    await foldMetadata(view);
     expect(foldedRangeList(view.state)).toEqual([]);
   });
 
@@ -103,5 +103,29 @@ describe("foldMetadata", () => {
       from: doc.indexOf(":", line.from) + 1,
       to: doc.length,
     });
+  });
+
+  test("folds metadata that is parsed after the initial viewport", async () => {
+    const directives = Array.from(
+      { length: 1_500 },
+      (_, index) => `2026-07-17 * "Transaction ${index}"
+  import_id: "${index}"
+  import_source: "monzo"
+  Assets:Checking:Monzo  -3.50 GBP
+  Expenses:Food
+`,
+    ).join("\n");
+    const expectedCount = 1_500;
+
+    view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({
+        doc: directives,
+        extensions: [beanCount(), metadataFolding, codeFolding()],
+      }),
+    });
+
+    await foldMetadata(view);
+    expect(foldedRangeList(view.state)).toHaveLength(expectedCount);
   });
 });
