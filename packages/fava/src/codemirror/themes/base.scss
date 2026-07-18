@@ -1,22 +1,4 @@
 :root {
-  --color-red-rgb: 233, 49, 71;
-  --color-red: #e93147;
-  --color-orange-rgb: 236, 117, 0;
-  --color-orange: #ec7500;
-  --color-yellow-rgb: 224, 172, 0;
-  --color-yellow: #e0ac00;
-  --color-green-rgb: 8, 185, 78;
-  --color-green: #08b94e;
-  --color-cyan-rgb: 0, 191, 188;
-  --color-cyan: #00bfbc;
-  --color-blue-rgb: 8, 109, 221;
-  --color-blue: #086ddd;
-  --color-purple-rgb: 120, 82, 238;
-  --color-purple: #7852ee;
-  --color-pink-rgb: 213, 57, 132;
-  --color-pink: #d53984;
-  --color-grey: #ababab;
-
   /* Headers */
   --h1-color: inherit;
   --h2-color: inherit;
@@ -60,48 +42,6 @@
   --h4-weight: 600;
   --h5-weight: 600;
   --h6-weight: 600;
-  /* Code */
-  --code-white-space: pre-wrap;
-  --code-radius: var(--radius-s);
-  --code-size: var(--font-smaller);
-  --code-background: var(--background-primary-alt);
-  --code-normal: var(--text-muted);
-  --code-comment: var(--color-grey);
-  --code-function: var(--color-yellow);
-  --code-important: var(--color-orange);
-  --code-keyword: var(--color-pink);
-  --code-operator: var(--color-red);
-  --code-property: var(--color-cyan);
-  --code-punctuation: var(--text-muted);
-  --code-string: var(--color-green);
-  --code-tag: var(--color-red);
-  --code-value: var(--color-purple);
-}
-
-.light,
-.theme-light {
-  --code-caret: #000000;
-  --color-red: #e93147;
-  --color-orange: #ec7500;
-  --color-yellow: #e0ac00;
-  --color-green: #08b94e;
-  --color-cyan: #00bfbc;
-  --color-blue: #086ddd;
-  --color-purple: #7852ee;
-  --color-pink: #d53984;
-}
-
-.dark,
-.theme-dark {
-  --code-caret: #ffffff;
-  --color-red: #fb464c;
-  --color-orange: #e9973f;
-  --color-yellow: #e0de71;
-  --color-green: #44cf6e;
-  --color-cyan: #53dfdd;
-  --color-blue: #027aff;
-  --color-purple: #a882ff;
-  --color-pink: #fa99cd;
 }
 
 .cm-editor {
@@ -220,7 +160,7 @@
 }
 
 .cm-editor .cm-foldPlaceholder {
-  color: var(--color-grey);
+  color: var(--code-comment);
   background-color: transparent;
   border: none;
   margin-inline-start: 8px;

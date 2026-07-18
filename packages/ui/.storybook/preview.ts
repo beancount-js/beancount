@@ -29,6 +29,12 @@ const preview: Preview = {
   parameters: {
     a11y: {
       test: "error",
+      // CodeMirror gutters are visual annotations. The shared editor marks
+      // them aria-hidden, but axe still reports one-character line numbers
+      // and fold glyphs as contrast-inconclusive.
+      context: {
+        exclude: [".cm-gutters"],
+      },
     },
     // The background addon owns a second, independent canvas colour. Keeping it
     // enabled lets a stale `backgrounds` global override the app theme.

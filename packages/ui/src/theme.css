@@ -34,6 +34,23 @@
   --sidebar-accent-foreground: oklch(20% 0.05 295);
   --sidebar-border: oklch(92.5% 0.02 295);
   --sidebar-ring: oklch(55% 0.15 295);
+  /*
+   * Shared syntax palette for CodeMirror-backed controls. These colours retain
+   * their semantic role on a white editor canvas and its active line at 4.5:1
+   * contrast or higher.
+   */
+  --code-caret: #000000;
+  --code-normal: var(--foreground);
+  --code-comment: #626262;
+  --code-function: #6f5700;
+  --code-important: #9a4d00;
+  --code-keyword: #a72a68;
+  --code-operator: #b42318;
+  --code-property: #007a78;
+  --code-punctuation: var(--code-comment);
+  --code-string: #087443;
+  --code-tag: var(--code-operator);
+  --code-value: #6245c2;
 }
 
 .dark {
@@ -71,4 +88,15 @@
   --sidebar-accent-foreground: oklch(98.4% 0.003 247.858);
   --sidebar-border: oklch(100% 0 0 / 10%);
   --sidebar-ring: oklch(55.1% 0.027 264.364);
+  --code-caret: #ffffff;
+  --code-comment: #ababab;
+  --code-function: #e0de71;
+  --code-important: #e9973f;
+  --code-keyword: #fa99cd;
+  --code-operator: #ff6268;
+  --code-property: #53dfdd;
+  --code-punctuation: var(--code-comment);
+  --code-string: #44cf6e;
+  --code-tag: var(--code-operator);
+  --code-value: #a882ff;
 }

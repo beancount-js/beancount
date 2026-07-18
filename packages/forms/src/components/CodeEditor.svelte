@@ -14,7 +14,6 @@
   import { yaml } from "@codemirror/lang-yaml";
   import {
     bracketMatching,
-    defaultHighlightStyle,
     foldGutter,
     indentOnInput,
     syntaxHighlighting,
@@ -33,6 +32,7 @@
   } from "@codemirror/view";
   import { onMount } from "svelte";
   import { parserDiagnostics } from "../code-editor-syntax";
+  import { codeEditorHighlightStyle } from "../code-editor-theme";
 
   let {
     value = $bindable(""),
@@ -131,7 +131,7 @@
     drawSelection(),
     EditorState.allowMultipleSelections.of(true),
     indentOnInput(),
-    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+    syntaxHighlighting(codeEditorHighlightStyle, { fallback: true }),
     bracketMatching(),
     closeBrackets(),
     autocompletion(),
@@ -175,6 +175,9 @@
         }),
       ],
     });
+    // Line numbers and folding glyphs are visual editor chrome. The labelled
+    // content area provides the accessible editing surface.
+    editor.dom.querySelector(".cm-gutters")?.setAttribute("aria-hidden", "true");
 
     return () => editor?.destroy();
   });

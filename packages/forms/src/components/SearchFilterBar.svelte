@@ -1,10 +1,7 @@
 <script lang="ts">
   import "./SearchFilterBar.css";
   import { beancountFilter } from "@beancount-js/filters";
-  import {
-    defaultHighlightStyle,
-    syntaxHighlighting,
-  } from "@codemirror/language";
+  import { syntaxHighlighting } from "@codemirror/language";
   import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
   import { Compartment, EditorState, type Extension } from "@codemirror/state";
   import {
@@ -17,6 +14,7 @@
   import SlidersHorizontalIcon from "lucide-svelte/icons/sliders-horizontal";
   import XIcon from "lucide-svelte/icons/x";
   import type { Snippet } from "svelte";
+  import { codeEditorHighlightStyle } from "../code-editor-theme";
 
   let {
     value = "",
@@ -123,7 +121,7 @@
         doc: source,
         extensions: [
           beancountFilter(),
-          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+          syntaxHighlighting(codeEditorHighlightStyle, { fallback: true }),
           history(),
           drawSelection(),
           EditorView.lineWrapping,
@@ -139,8 +137,7 @@
           }),
           EditorView.theme({
             ".cm-content": {
-              caretColor:
-                "var(--code-caret, var(--foreground, currentColor))",
+              caretColor: "var(--code-caret, var(--foreground, currentColor))",
             },
             "&.cm-focused .cm-cursor": {
               borderLeftColor:
