@@ -97,6 +97,21 @@ test("Query tables use a compact search field and expandable saved queries", asy
   await expect(executeButton).toHaveClass(/hover:text-primary/);
   await expect(queryEditor.locator(".cm-gutters")).toHaveCount(0);
 
+  const syntaxTokens = await queryEditor
+    .locator(".cm-content")
+    .evaluate((content) => {
+      const defaultColor = getComputedStyle(content).color;
+      return Array.from(content.querySelectorAll("span"))
+        .map((token) => ({
+          text: token.textContent,
+          color: getComputedStyle(token).color,
+        }))
+        .filter((token) => token.color !== defaultColor);
+    });
+  expect(syntaxTokens.map((token) => token.text)).toEqual(
+    expect.arrayContaining(["SELECT", "FROM"]),
+  );
+
   const savedQuery = page
     .locator("[data-query-history-item]")
     .filter({ hasText: "SELECT account FROM postings" });

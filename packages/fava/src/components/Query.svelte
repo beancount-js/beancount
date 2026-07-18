@@ -33,7 +33,7 @@
   import TriangleAlert from "lucide-svelte/icons/triangle-alert";
   import Search from "lucide-svelte/icons/search";
   import { useLedger } from "./helpers";
-  import { bql } from "@beancount-js/beanquery";
+  import { bql } from "../bql/bql";
   import { replaceContents } from "../codemirror/extensions/transactions";
   import QueryBox from "./QueryBox.svelte";
   import {
@@ -62,7 +62,7 @@
         doc: query,
         extensions: [
           EditorView.lineWrapping,
-          bql(),
+          bql,
           autocompletion(),
           closeBrackets(),
           bracketMatching(),
