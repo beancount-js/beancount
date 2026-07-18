@@ -41,6 +41,12 @@
 </g>
 
 <style>
+  g :global(text) {
+    fill: var(--muted-foreground);
+    font-family: "Source Code Pro", monospace;
+    font-size: 10px;
+  }
+
   g :global(path),
   g :global(line) {
     fill: none;

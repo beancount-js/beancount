@@ -222,6 +222,10 @@ test.describe("sample ledger navigation", () => {
     await expect(
       page.locator("[data-statement-summary-tree-table]").first(),
     ).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator("svg .tick text").first()).toHaveCSS(
+      "font-family",
+      /Source Code Pro/,
+    );
 
     expect(
       pageErrors.filter((message) => message.includes("reading 'copy'")),
