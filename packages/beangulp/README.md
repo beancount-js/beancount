@@ -48,3 +48,30 @@ recurring-pattern evidence, then optional AI. AI is a `CategorizerPlugin`; it
 receives only the normalized transaction, the allowed account list, and the
 already-derived evidence. The caller must review a proposal before rendering it
 to Beancount.
+
+## Detection rules and AI actions
+
+Detection rules are evaluated in their stored order. During ingestion, later
+rules see the transaction changes made by earlier rules; when two rules write a
+single-value field such as category, merchant, or narration, the later rule
+wins. The same ordering applies to manual bulk runs from **Settings → Rules**.
+
+Manual runs always require a target:
+
+- **Live ledger** is the default and changes the checked-in ledger files.
+- **Pending imports** changes only reviewable import proposals.
+- **Both** is explicit because those are two independent stores.
+
+Bulk runs plan all selected rules against one snapshot, show unique matching
+records separately from rule overlaps, validate the complete prospective ledger
+before writing, and write each changed ledger file once. Run history records
+the selected target plus queued, processed, and modified counts for each target.
+
+Rules may also use **Auto-categorise transactions with AI** and
+**Auto-detect merchants with AI** actions. A preview never invokes an AI
+provider. On apply, matching records for one AI action are sent in bounded,
+structured batches (up to 25 records per request, with up to two batches in
+flight), then validated results are merged into the planned change set. This
+keeps AI actions compatible with ingestion batching and avoids one model call
+per transaction. Existing source-level AI settings continue to work; adding an
+AI rule action scopes rule-driven AI enrichment to that rule's matches.
