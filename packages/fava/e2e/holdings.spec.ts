@@ -67,8 +67,8 @@ test("Query tables use a compact search field and expandable saved queries", asy
   await expect(executeButton).toBeVisible();
   await expect(executeButton.locator("svg")).toHaveCount(1);
   await expect(executeButton).toHaveClass(/bg-secondary/);
-  await expect(executeButton).toHaveClass(/hover:bg-primary/);
-  await expect(executeButton).toHaveClass(/hover:text-primary-foreground/);
+  await expect(executeButton).toHaveClass(/hover:bg-primary\/15/);
+  await expect(executeButton).toHaveClass(/hover:text-primary/);
   await expect(queryEditor.locator(".cm-gutters")).toHaveCount(0);
 
   const savedQuery = page

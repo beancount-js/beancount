@@ -169,7 +169,7 @@
         onclick={handleSearch}
         size="xs"
         variant="secondary"
-        class="mr-1 h-7 shrink-0 px-2 hover:bg-primary hover:text-primary-foreground"
+        class="mr-1 h-7 shrink-0 px-2 hover:bg-primary/15 hover:text-primary"
         data-query-execute
       >
         Execute
