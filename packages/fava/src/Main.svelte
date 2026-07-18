@@ -276,11 +276,7 @@
     reviewLedger?.path === activeLedgerPath ? "ingestion-review" : "file",
   );
 
-  $: context.menu.set([
-    $activeLedgerKind === "ingestion-review"
-      ? MainNav.filter((item) => item.path !== "/editor")
-      : MainNav,
-  ]);
+  $: context.menu.set([MainNav]);
 
   $: if (snapshot && activeLedgerPath) {
     loadLedger(snapshot, activeLedgerPath);
@@ -300,13 +296,6 @@
   ) {
     workspace.activeFile.set(snapshot.project.entryFile);
     router.push("/records");
-  }
-
-  $: if (
-    $activeLedgerKind === "ingestion-review" &&
-    ($activeRoute.path === "/editor" || $activeRoute.path === "/directives")
-  ) {
-    router.push("/journal");
   }
 </script>
 

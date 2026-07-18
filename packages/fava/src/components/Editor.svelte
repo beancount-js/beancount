@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { EditorView, keymap } from "@codemirror/view";
-  import { EditorState } from "@codemirror/state";
+  import { Compartment, EditorState, Prec } from "@codemirror/state";
   import { unfoldAll } from "@codemirror/language";
   import { openSearchPanel } from "@codemirror/search";
   import { onDestroy, onMount } from "svelte";
@@ -26,27 +26,43 @@
   const {
     snapshot,
     activeFile: workspaceActiveFile,
+    activeLedgerKind,
+    reviewLedger,
     saveFile,
     requestInlineAi,
   } = useStudioWorkspace();
 
   let formatOnSave = true;
-  let editor: EditorView;
+  let editor: EditorView | undefined;
   let line = "";
   let dirty = false;
   let replacingContents = false;
   let loadedPath = "";
 
+  function editorMode(readOnly: boolean) {
+    return readOnly
+      ? [
+          EditorState.readOnly.of(true),
+          Prec.highest(EditorView.editable.of(false)),
+        ]
+      : [
+          EditorState.readOnly.of(false),
+          Prec.highest(EditorView.editable.of(true)),
+        ];
+  }
+
   const codeMirror = (
     node: HTMLDivElement,
-    source: { path: string; contents: string },
+    source: { path: string; contents: string; readOnly: boolean },
   ) => {
-    editor = new EditorView({
+    const mode = new Compartment();
+    const view = new EditorView({
       state: EditorState.create({
         doc: source.contents,
         extensions: [
           basicSetup,
           ledgerSetup(() => $ledgerSource),
+          mode.of(editorMode(source.readOnly)),
           EditorView.updateListener.of((update) => {
             if (update.docChanged && !replacingContents) dirty = true;
           }),
@@ -64,6 +80,7 @@
       }),
       parent: node,
     });
+    editor = view;
     loadedPath = source.path;
     dirty = false;
 
@@ -71,22 +88,28 @@
       goToLine(editor, line);
     }
     return {
-      update(next: { path: string; contents: string }) {
+      update(next: { path: string; contents: string; readOnly: boolean }) {
         const nextPath = next.path;
         // Do not let the filesystem polling loop overwrite an unsaved edit.
         // A deliberate source-file switch always loads that source instead.
         if (
           loadedPath !== nextPath ||
-          (!dirty && editor.state.doc.toString() !== next.contents)
+          (!dirty && view.state.doc.toString() !== next.contents)
         ) {
           replacingContents = true;
-          editor.dispatch({
-            ...replaceContents(editor.state, next.contents),
+          view.dispatch({
+            ...replaceContents(view.state, next.contents),
           });
           replacingContents = false;
           loadedPath = nextPath;
           dirty = false;
         }
+        if (source.readOnly !== next.readOnly) {
+          view.dispatch({
+            effects: mode.reconfigure(editorMode(next.readOnly)),
+          });
+        }
+        source = next;
       },
       destroy() {},
     };
@@ -122,7 +145,7 @@
   }
 
   async function handleSave() {
-    if (!editor) return;
+    if (!editor || readOnly) return;
     if (formatOnSave) {
       formatLedger(editor);
     }
@@ -145,50 +168,60 @@
     });
   }
 
-  $: activeFile = $snapshot?.ledgerFiles.find(
-    (file) => file.path === $workspaceActiveFile,
-  );
+  $: reviewFile =
+    $activeLedgerKind === "ingestion-review" &&
+    $reviewLedger?.path === $workspaceActiveFile
+      ? $reviewLedger
+      : undefined;
+  $: activeFile =
+    reviewFile ??
+    $snapshot?.ledgerFiles.find((file) => file.path === $workspaceActiveFile);
+  $: readOnly = Boolean(reviewFile);
 
   $: {
-    ingestionHeaderActions.set({
-      kind: "ledger",
-      formatOnSave,
-      sources: ($snapshot?.ledgerFiles ?? []).map((file) => ({
-        path: file.path,
-      })),
-      activePath: $workspaceActiveFile ?? "",
-      dirty,
-      onOpenSource: (path) => workspaceActiveFile.set(path),
-      onToggleFormatOnSave: () => {
-        formatOnSave = !formatOnSave;
-      },
-      onGotoLine: () => {
-        if (editor) showGotoLine(editor);
-      },
-      onFormat: () => {
-        if (editor) formatLedger(editor);
-      },
-      onToggleComment: () => {
-        if (editor) toggleComment(editor);
-      },
-      onUnfoldAll: () => {
-        if (editor) unfoldAll(editor);
-      },
-      onFoldAll: () => {
-        if (editor) foldAll(editor);
-      },
-      onFind: () => showSearch(),
-      onFindNext: () => {
-        if (editor) findNext(editor);
-      },
-      onFindPrevious: () => {
-        if (editor) findPrevious(editor);
-      },
-      onAskAi: () => askAiAboutSelection(),
-      onSave: () => {
-        void handleSave();
-      },
-    });
+    if (readOnly) {
+      ingestionHeaderActions.set(null);
+    } else {
+      ingestionHeaderActions.set({
+        kind: "ledger",
+        formatOnSave,
+        sources: ($snapshot?.ledgerFiles ?? []).map((file) => ({
+          path: file.path,
+        })),
+        activePath: $workspaceActiveFile ?? "",
+        dirty,
+        onOpenSource: (path) => workspaceActiveFile.set(path),
+        onToggleFormatOnSave: () => {
+          formatOnSave = !formatOnSave;
+        },
+        onGotoLine: () => {
+          if (editor) showGotoLine(editor);
+        },
+        onFormat: () => {
+          if (editor) formatLedger(editor);
+        },
+        onToggleComment: () => {
+          if (editor) toggleComment(editor);
+        },
+        onUnfoldAll: () => {
+          if (editor) unfoldAll(editor);
+        },
+        onFoldAll: () => {
+          if (editor) foldAll(editor);
+        },
+        onFind: () => showSearch(),
+        onFindNext: () => {
+          if (editor) findNext(editor);
+        },
+        onFindPrevious: () => {
+          if (editor) findPrevious(editor);
+        },
+        onAskAi: () => askAiAboutSelection(),
+        onSave: () => {
+          void handleSave();
+        },
+      });
+    }
   }
 
   onDestroy(() => ingestionHeaderActions.set(null));
@@ -213,6 +246,7 @@
         use:codeMirror={{
           path: activeFile?.path ?? "",
           contents: activeFile?.contents ?? "",
+          readOnly,
         }}
       ></div>
     </div>
