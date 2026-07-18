@@ -14,17 +14,16 @@
       "upstreamModule": "beanquery.shell.balances",
       "upstreamBehavior": "balances shell command",
       "localBehavior": "runBql('balances')",
-      "status": "pending",
-      "tests": ["parity/balances-shell"],
-      "reason": "Bare balances currently fails with Invalid query stack(0)"
+      "status": "matched",
+      "tests": ["parity/balances-shell.spec.ts"]
     },
     {
       "upstreamModule": "fava.core.query_shell",
       "upstreamBehavior": "query API table shapes",
       "localBehavior": "runBql SELECT results",
       "status": "adapted",
-      "tests": ["parity/balances-shell"],
-      "reason": "SELECT-style queries already match after normalization; shell still pending"
+      "tests": ["parity/balances-shell.spec.ts"],
+      "reason": "Shell balances expanded to SELECT; full long-example snapshot row set not asserted here"
     },
     {
       "upstreamModule": "beanquery.groupby.holdings",

@@ -4,6 +4,7 @@ import type {
   LedgerError,
 } from "@beancount-js/beancount";
 import { normalizeColumns } from "./query/types";
+import { expandShellQuery } from "./shell";
 import { createDatabase } from "./sources/beancount";
 
 export type QueryColumn = {
@@ -25,7 +26,7 @@ export function runBql(
     errors: LedgerError[];
   }> = {},
 ): QueryResult {
-  const trimmed = query.trim();
+  const trimmed = expandShellQuery(query.trim());
   if (!trimmed) {
     return { data: [], columns: [] };
   }

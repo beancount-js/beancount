@@ -103,4 +103,25 @@ describe("runBql", () => {
       expect(result.data.length).toBeGreaterThan(0);
     }
   });
+
+  test("expands the balances shell command", () => {
+    const [directives, errors, options] = loadString(`
+      1980-01-01 open Assets:Cash USD
+      1980-01-01 open Equity:Opening-Balances USD
+      2020-01-01 * "Seed"
+        Assets:Cash                     100.00 USD
+        Equity:Opening-Balances
+    `);
+
+    const result = runBql(directives, "balances", { errors, options });
+    expect(result.error).toBeUndefined();
+    expect(result.columns.map((column) => column.name)).toEqual([
+      "account",
+      "sum(position)",
+    ]);
+    expect(
+      result.data.some((row) => row.account === "Assets:Cash"),
+    ).toBe(true);
+  });
 });
+
