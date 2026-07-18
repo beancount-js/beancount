@@ -67,8 +67,20 @@ describe("FilesystemRulesStore", () => {
       ruleId: migrated.rules[0].id,
       ruleName: "Plata",
       queued: 3,
+      target: "live-ledger",
+      targetCounts: {
+        queued: { pendingImports: 0, liveLedger: 3 },
+        processed: { pendingImports: 0, liveLedger: 0 },
+        modified: { pendingImports: 0, liveLedger: 0 },
+      },
     });
     expect(run.status).toBe("pending");
+    expect(run).toMatchObject({
+      target: "live-ledger",
+      targetCounts: {
+        queued: { pendingImports: 0, liveLedger: 3 },
+      },
+    });
     const completed = await rules.completeRun("project", run.id, {
       status: "success",
       processed: 3,

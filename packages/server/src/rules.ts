@@ -14,6 +14,7 @@ import {
   type DetectionRule,
   type MerchantRule,
   type RuleRun,
+  type RuleApplyTarget,
   type RuleRunsFile,
   type RulesFile,
 } from "@beancount-js/beangulp";
@@ -169,6 +170,8 @@ export class FilesystemRulesStore {
       ruleName: string;
       queued: number;
       executionType?: RuleRun["executionType"];
+      target?: RuleApplyTarget;
+      targetCounts?: RuleRun["targetCounts"];
     },
   ) {
     const run: RuleRun = {
@@ -176,12 +179,14 @@ export class FilesystemRulesStore {
       ruleId: input.ruleId,
       ruleName: input.ruleName,
       executionType: input.executionType ?? "manual",
+      target: input.target,
       status: "pending",
       executedAt: new Date().toISOString(),
       transactionsQueued: input.queued,
       transactionsProcessed: 0,
       transactionsModified: 0,
       transactionsBlocked: 0,
+      targetCounts: input.targetCounts,
     };
     return this.appendRun(project, run);
   }

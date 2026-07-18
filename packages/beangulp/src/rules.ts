@@ -71,18 +71,32 @@ export interface RulesFile {
 
 export type RuleRunExecutionType = "manual" | "scheduled";
 export type RuleRunStatus = "pending" | "success" | "failed";
+export type RuleApplyTarget = "pending-imports" | "live-ledger" | "both";
+
+export interface RuleRunTargetCounts {
+  pendingImports: number;
+  liveLedger: number;
+}
 
 export interface RuleRun {
   id: string;
   ruleId: string | null;
   ruleName: string;
   executionType: RuleRunExecutionType;
+  /** Scope selected for this manual run. Historical runs predate this field. */
+  target?: RuleApplyTarget;
   status: RuleRunStatus;
   executedAt: string;
   transactionsQueued: number;
   transactionsProcessed: number;
   transactionsModified: number;
   transactionsBlocked: number;
+  /** Counts split by the selected target, recorded for new target-aware runs. */
+  targetCounts?: {
+    queued: RuleRunTargetCounts;
+    processed: RuleRunTargetCounts;
+    modified: RuleRunTargetCounts;
+  };
   errorMessage?: string | null;
 }
 
@@ -623,6 +637,20 @@ export function parseRuleRun(raw: unknown): RuleRun | undefined {
       raw.transactions_blocked ??
       ruleBlockedCount(processed, modified),
   );
+  const target =
+    raw.target === "pending-imports" ||
+    raw.target === "live-ledger" ||
+    raw.target === "both"
+      ? raw.target
+      : undefined;
+  const rawTargetCounts = raw.targetCounts;
+  const targetCounts = isObject(rawTargetCounts)
+    ? {
+        queued: parseRuleRunTargetCounts(rawTargetCounts.queued),
+        processed: parseRuleRunTargetCounts(rawTargetCounts.processed),
+        modified: parseRuleRunTargetCounts(rawTargetCounts.modified),
+      }
+    : undefined;
   return {
     id: typeof raw.id === "string" ? raw.id : newRuleId(),
     ruleId:
@@ -637,6 +665,7 @@ export function parseRuleRun(raw: unknown): RuleRun | undefined {
       raw.executionType === "scheduled" || raw.execution_type === "scheduled"
         ? "scheduled"
         : "manual",
+    target,
     status:
       raw.status === "pending" || raw.status === "failed"
         ? raw.status
@@ -650,6 +679,7 @@ export function parseRuleRun(raw: unknown): RuleRun | undefined {
     transactionsBlocked: Number.isFinite(blocked)
       ? blocked
       : ruleBlockedCount(processed, modified),
+    targetCounts,
     errorMessage:
       raw.errorMessage === null ||
       typeof raw.errorMessage === "string" ||
@@ -657,6 +687,16 @@ export function parseRuleRun(raw: unknown): RuleRun | undefined {
       typeof raw.error_message === "string"
         ? ((raw.errorMessage ?? raw.error_message) as string | null | undefined)
         : undefined,
+  };
+}
+
+function parseRuleRunTargetCounts(raw: unknown): RuleRunTargetCounts {
+  if (!isObject(raw)) return { pendingImports: 0, liveLedger: 0 };
+  const pendingImports = Number(raw.pendingImports ?? 0);
+  const liveLedger = Number(raw.liveLedger ?? 0);
+  return {
+    pendingImports: Number.isFinite(pendingImports) ? pendingImports : 0,
+    liveLedger: Number.isFinite(liveLedger) ? liveLedger : 0,
   };
 }
 

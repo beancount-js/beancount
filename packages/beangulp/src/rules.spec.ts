@@ -6,6 +6,7 @@ import {
   applyRuleActions,
   firstCategoryMatch,
   migrateMerchantRules,
+  parseRuleRun,
   parseRulesFile,
   ruleBlockedCount,
   ruleMatches,
@@ -241,5 +242,29 @@ describe("detection rules", () => {
       "All past and future transactions",
     );
     expect(ruleBlockedCount(10, 3)).toBe(7);
+  });
+
+  test("retains target-aware rule run audit fields and tolerates historical runs", () => {
+    expect(
+      parseRuleRun({
+        id: "run-1",
+        ruleName: "Plata",
+        target: "live-ledger",
+        transactionsQueued: 2,
+        targetCounts: {
+          queued: { pendingImports: 0, liveLedger: 2 },
+          processed: { pendingImports: 0, liveLedger: 2 },
+          modified: { pendingImports: 0, liveLedger: 1 },
+        },
+      }),
+    ).toMatchObject({
+      target: "live-ledger",
+      targetCounts: {
+        queued: { pendingImports: 0, liveLedger: 2 },
+      },
+    });
+    expect(
+      parseRuleRun({ id: "legacy", ruleName: "Legacy rule" })?.target,
+    ).toBeUndefined();
   });
 });
