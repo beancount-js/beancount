@@ -11,9 +11,10 @@ export function expandShellQuery(query: string): string {
   const balances = /^(balances?)\b(.*)$/is.exec(trimmed);
   if (balances) {
     const rest = balances[2].trim();
+    // Match beanquery/Fava column naming: sum((position)).
     return rest
-      ? `SELECT account, sum(position) ${rest} GROUP BY account`
-      : "SELECT account, sum(position) GROUP BY account";
+      ? `SELECT account, sum((position)) ${rest} GROUP BY account`
+      : "SELECT account, sum((position)) GROUP BY account";
   }
 
   const journal = /^(journal)\b(?:\s+('[^']*'|"[^"]*"|\S+))?(.*)$/is.exec(

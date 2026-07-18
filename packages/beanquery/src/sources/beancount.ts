@@ -792,7 +792,10 @@ function convertInventory(
   });
   const positions = result.positions();
   if (!positions.length) {
-    return null;
+    // Empty inventory stays Inventory (Fava serialises as {}), not null.
+    return value instanceof beancount.Inventory
+      ? new beancount.Inventory()
+      : null;
   }
   // Preserve Inventory for inventory inputs (beanquery units(sum(position))).
   if (value instanceof beancount.Inventory) {

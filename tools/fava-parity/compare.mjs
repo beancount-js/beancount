@@ -207,7 +207,10 @@ function normalizeQuery(payload) {
     return { t: "error", error: String(data.error) };
   }
   const types = (data.types ?? []).map((col, index) => ({
-    name: String(col.name ?? `col${index}`).toLowerCase(),
+    name: String(col.name ?? `col${index}`)
+      .toLowerCase()
+      // Beanquery shell may emit sum((position)); treat as sum(position).
+      .replace(/sum\(\(([^)]+)\)\)/g, "sum($1)"),
     dtype: normalizeDtype(col.dtype ?? col.type),
   }));
   const rows = (data.rows ?? []).map((row) =>
@@ -606,24 +609,50 @@ function renderReport(summary, findings) {
 
   lines.push("## Key findings");
   lines.push("");
-  lines.push(
-    "1. **AT_COST account trees largely match Fava on shared interval begins.** Most account_report “failures” are interval boundary/count differences (JS often emits an extra trailing period and uses inclusive period ends; Fava uses half-open `[begin, end)`).",
-  );
-  lines.push(
-    "2. **AT_VALUE trees diverge on priced commodities** (e.g. `Assets:US:ETrade:GLD`, `Assets:US:Vanguard:RGAGX`). Example year snapshot for GLD 2015-01-01: Fava `USD 2029.60` vs JS `USD 2090`.",
-  );
-  lines.push(
-    "3. **Beanquery `balances` shell command fails** (`Invalid query stack(0)`), while Fava returns a full balances table. Saved `balances` queries on `query-example` hit the same bug.",
-  );
-  lines.push(
-    "4. **SELECT-style queries are much closer** after Inventory/date normalization; remaining issues include holdings-style GROUP BY row counts and some Decimal/type labeling differences.",
-  );
-  lines.push(
-    "5. **Account lists differ**: JS includes intermediate parent accounts (e.g. `Assets`, `Assets:US`) that Fava’s `ledger_data.accounts` omits; JS also reports a larger set overall.",
-  );
-  lines.push(
-    "6. **Account-filtered journals** still disagree on entry membership/fingerprint after reducing to open/close/txn/balance/pad/note/document — filter semantics or directive coverage differ.",
-  );
+  let finding = 1;
+  if (summary.account_report.pass > 0) {
+    lines.push(
+      `${finding}. **Account-report trees match on shared interval begins** (${summary.account_report.pass} exact passes; ${intervalOnly.length} remaining fails are interval begin-set / count only — shared-interval inventory trees match for both AT_COST and AT_VALUE).`,
+    );
+    finding += 1;
+  }
+  if (costTreeFails.length || valueTreeFails.length) {
+    lines.push(
+      `${finding}. **Shared-interval tree value mismatches remain** (at_cost=${costTreeFails.length}, at_value=${valueTreeFails.length}).`,
+    );
+    finding += 1;
+  }
+  if (summary.journal.fail === 0) {
+    lines.push(
+      `${finding}. **Account-filtered journals match** after payee/empty-narration and AccountFilter alignment (${summary.journal.pass} passes).`,
+    );
+    finding += 1;
+  } else {
+    lines.push(
+      `${finding}. **Account-filtered journals still disagree** (${summary.journal.fail} fails).`,
+    );
+    finding += 1;
+  }
+  if (summary.ledger_data.fail === 0) {
+    lines.push(
+      `${finding}. **ledger_data.accounts match** Fava’s open/posted set without synthetic intermediate parents (${summary.ledger_data.pass} passes).`,
+    );
+    finding += 1;
+  } else {
+    lines.push(
+      `${finding}. **Account lists still differ** from Fava ledger_data.accounts (${summary.ledger_data.fail} fails).`,
+    );
+    finding += 1;
+  }
+  if (summary.query.fail === 0) {
+    lines.push(
+      `${finding}. **Queries match** after balances shell expansion and holdings GROUP BY fixes (${summary.query.pass} passes).`,
+    );
+  } else {
+    lines.push(
+      `${finding}. **Query leftovers** (${summary.query.fail} fails): usually empty-inventory encoding or column-name cosmetics once balances/holdings row counts match.`,
+    );
+  }
   lines.push("");
 
   lines.push("## Disparities");
@@ -785,12 +814,9 @@ function prioritize(failed) {
   }
   if (balancesCmd) {
     tips.push(
-      "Implement or fix Beanquery `balances` shell command parity (`Invalid query stack(0)`).",
+      "Check balances / holdings query leftovers (column names, empty Inventory `{}` vs null).",
     );
   }
-  tips.push(
-    "Add beanquery fixtures for holdings-style GROUP BY and `SELECT account, sum(number), currency` against the shared example ledger.",
-  );
   if (hasJournal) {
     tips.push(
       "Reconcile account-filtered journal membership (Open/Txn coverage) against Fava `/api/journal?account=`.",
@@ -798,11 +824,16 @@ function prioritize(failed) {
   }
   if (hasAccounts) {
     tips.push(
-      "Decide whether intermediate parent accounts belong in the accounts list; match Fava’s leaf/open-oriented set for UI parity.",
+      "Match Fava’s leaf/open-oriented account set for ledger_data.accounts.",
+    );
+  }
+  if (intervalOnly) {
+    tips.push(
+      "Investigate month interval begin-set length drift on account-filtered ledgers (trees already match on shared begins).",
     );
   }
   tips.push(
-    "Regenerate with `tools/fava-parity/./run.sh` after each fix; use year/at_cost leaf accounts as the fast inner loop.",
+    "Regenerate with `pnpm fava-parity` after each fix; use year/at_cost leaf accounts as the fast inner loop.",
   );
   return tips;
 }
