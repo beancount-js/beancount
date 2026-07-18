@@ -47,3 +47,7 @@ Do not use the legacy `SearchableChoicePicker` for new work.
 Use the <a href="?path=/story/ui-forms-form-workspace--editable-ledger-settings">Form Workspace</a> story as the integration reference. It combines the shared shell, fixed and editable headers, picker, switch, modes, validation, nested repeatable content, and toolbar behavior.
 
 Every reusable control needs meaningful interactive stories. Verify visible state changes—not callbacks alone—and cover empty, validation, collapsed, and error states where they alter behavior. Storybook accessibility checks run as errors: fix violations instead of disabling axe rules.
+
+## Migration boundary
+
+Stage 2 keeps Fava on `@beancount-js/forms` while the catalog is validated. `packages/forms/STAGE2_AUDIT.md` records which components are shared primitives, domain-specific, or deprecated. Do not migrate imports or remove the forms package until the explicit Stage 3 decision.
