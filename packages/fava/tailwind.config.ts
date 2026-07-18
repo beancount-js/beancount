@@ -40,6 +40,8 @@ const config: Config = {
           DEFAULT: cssColor("--destructive"),
           foreground: cssColor("--destructive-foreground"),
         },
+        success: cssColor("--success"),
+        warning: cssColor("--warning"),
         muted: {
           DEFAULT: cssColor("--muted"),
           foreground: cssColor("--muted-foreground"),

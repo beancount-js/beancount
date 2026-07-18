@@ -36,7 +36,7 @@
     updateReviewSelection,
   } from "../lib/review-selection";
   import { useNavigation } from "../router/router";
-  import { Badge } from "$lib/components/ui/badge";
+  import { Badge, type BadgeVariant } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import ReconciliationReviewSkeleton from "./skeletons/ReconciliationReviewSkeleton.svelte";
 
@@ -223,13 +223,23 @@
     member: ReconciliationReviewDisplayItem["members"][number],
   ) {
     const observation = member.observation;
-    return [
-      observation.origin === "ledger"
-        ? "Existing ledger"
-        : (observation.sourceId ?? "Incoming source"),
-      observation.sourceAccount,
-      observation.bookedAt,
-    ].join(" · ");
+    return [observation.sourceAccount, observation.bookedAt].join(" · ");
+  }
+
+  function memberSourceLabel(
+    member: ReconciliationReviewDisplayItem["members"][number],
+  ) {
+    const observation = member.observation;
+    if (observation.origin === "ledger") return "Ledger";
+    return normaliseReconciliationLabel(
+      observation.sourceId?.split(":", 1)[0] ?? "Incoming",
+    );
+  }
+
+  function confidenceBadgeVariant(confidence: string): BadgeVariant {
+    if (confidence === "high") return "success";
+    if (confidence === "possible") return "warning";
+    return "secondary";
   }
 
   function updateRoute(values: Record<string, string | undefined>) {
@@ -671,22 +681,33 @@
             />
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
-                <h2 class="text-sm font-semibold tracking-wide text-foreground">
+                <h2
+                  class="text-sm font-semibold tracking-[0.08em] text-muted-foreground [font-variant:all-small-caps]"
+                  data-reconciliation-kind
+                >
                   {reconciliationKindLabel(item.candidate.kind)}
                 </h2>
-                <Badge variant="secondary"
+                <Badge
+                  variant={confidenceBadgeVariant(item.candidate.confidence)}
+                  class="rounded-full"
+                  data-reconciliation-confidence={item.candidate.confidence}
                   >{normaliseReconciliationLabel(
                     item.candidate.confidence,
                   )}</Badge
                 >
               </div>
             </div>
-            <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <div
+              class="flex shrink-0 flex-wrap items-center justify-end gap-1"
+              data-reconciliation-actions
+            >
               {#if item.decision?.state === "confirmed"}
                 <Button
-                  size="icon"
+                  size="icon-sm"
+                  variant="ghost"
                   aria-label="Apply confirmed match"
                   title="Apply confirmed match"
+                  data-reconciliation-action="apply"
                   disabled={busy || bulkConfirming}
                   onclick={() => void apply(item)}
                 >
@@ -694,10 +715,11 @@
                 </Button>
               {:else}
                 <Button
-                  size="icon"
-                  variant="outline"
+                  size="icon-sm"
+                  variant="ghost"
                   aria-label="Not a match"
                   title="Not a match"
+                  data-reconciliation-action="dismiss"
                   disabled={busy || bulkConfirming}
                   onclick={() => void decide(item, "dismissed")}
                 >
@@ -705,9 +727,11 @@
                 </Button>
                 {#if chosen}
                   <Button
-                    size="icon"
+                    size="icon-sm"
+                    variant="ghost"
                     aria-label="Confirm match"
                     title="Confirm match"
+                    data-reconciliation-action="confirm"
                     disabled={busy || bulkConfirming}
                     onclick={() => void decide(item, "confirmed", chosen)}
                   >
@@ -716,10 +740,11 @@
                 {:else}
                   {#each item.members as member (member.observation.id)}
                     <Button
-                      size="icon"
-                      variant="outline"
+                      size="icon-sm"
+                      variant="ghost"
                       aria-label={`Use ${memberLabel(member)} as the canonical record`}
                       title={`Use ${memberLabel(member)} as the canonical record`}
+                      data-reconciliation-action="confirm"
                       disabled={busy || bulkConfirming}
                       onclick={() =>
                         void decide(item, "confirmed", member.observation.id)}
@@ -745,15 +770,26 @@
             {#each item.members as member, memberIndex (member.observation.id)}
               <div
                 class:rounded-b-xl={memberIndex === item.members.length - 1}
-                class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 last:border-b-0 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+                class="relative grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-1 border-b px-[15px] py-4 last:border-b-0 sm:grid-cols-[7rem_2.5rem_minmax(0,1fr)]"
+                data-reconciliation-member-row
               >
+                <span
+                  class="col-start-2 row-start-2 text-sm font-semibold tabular-nums sm:col-start-1 sm:row-start-1 sm:justify-self-end"
+                  data-reconciliation-member-amount
+                >
+                  {member.observation.amount}&nbsp;{member.observation.currency}
+                </span>
                 <div
-                  class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                  class="col-start-1 row-span-2 row-start-1 flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground sm:col-start-2 sm:row-span-1"
                   aria-hidden="true"
+                  data-reconciliation-member-avatar
                 >
                   {memberInitial(member)}
                 </div>
-                <div class="min-w-0">
+                <div
+                  class="col-start-2 row-start-1 min-w-0 pr-24 sm:col-start-3"
+                  data-reconciliation-member-details
+                >
                   <div class="break-words text-sm font-semibold sm:truncate">
                     {memberLabel(member)}
                   </div>
@@ -763,11 +799,14 @@
                     {memberDetail(member)}
                   </div>
                 </div>
-                <span
-                  class="col-start-2 text-sm font-semibold tabular-nums sm:col-start-auto sm:row-start-1"
+                <Badge
+                  variant="outline"
+                  class="pointer-events-none absolute right-3 top-2 rounded-full bg-card text-[10px] uppercase tracking-wide text-muted-foreground"
+                  aria-label={`Source ${memberSourceLabel(member)}`}
+                  data-reconciliation-member-source
                 >
-                  {member.observation.amount}&nbsp;{member.observation.currency}
-                </span>
+                  {memberSourceLabel(member)}
+                </Badge>
               </div>
             {/each}
           </div>

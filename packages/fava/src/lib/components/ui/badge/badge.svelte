@@ -10,6 +10,10 @@
           "bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/80 border-transparent shadow",
+        success:
+          "border-success/30 bg-success/15 text-success hover:bg-success/20",
+        warning:
+          "border-warning/30 bg-warning/15 text-warning hover:bg-warning/20",
         outline: "text-foreground",
       },
     },
