@@ -61,13 +61,15 @@
         class="group flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
         data-query-history-header
       >
-        <Accordion.Trigger
-          class="min-w-0 flex-1 py-0 text-left text-xs hover:no-underline"
-        >
-          <span class="min-w-0 flex-1">
-            <Highlighter code={query.query} parser={bqlParser} />
-          </span>
-        </Accordion.Trigger>
+        <div class="min-w-0 flex-1">
+          <Accordion.Trigger
+            class="w-full min-w-0 py-0 text-left text-xs hover:no-underline"
+          >
+            <span class="min-w-0 flex-1">
+              <Highlighter code={query.query} parser={bqlParser} />
+            </span>
+          </Accordion.Trigger>
+        </div>
         <div
           class="flex shrink-0 items-center gap-1"
           data-query-history-actions

@@ -77,4 +77,14 @@ test("Query tables use a compact search field and expandable saved queries", asy
   await expect(
     savedQuery.getByRole("button", { name: /^Delete query:/ }),
   ).toBeVisible();
+
+  const [headerBounds, actionBounds] = await Promise.all([
+    savedQuery.locator("[data-query-history-header]").boundingBox(),
+    savedQuery.locator("[data-query-history-actions]").boundingBox(),
+  ]);
+  expect(headerBounds).not.toBeNull();
+  expect(actionBounds).not.toBeNull();
+  expect(actionBounds!.x + actionBounds!.width).toBeGreaterThanOrEqual(
+    headerBounds!.x + headerBounds!.width - 16,
+  );
 });
