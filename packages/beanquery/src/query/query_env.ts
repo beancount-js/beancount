@@ -1222,24 +1222,26 @@ function sum(
     }
   } else if (state === "update") {
     const value = operand.resolve(context);
+    // Match upstream beanquery / SQL: aggregates skip NULLs before typing.
+    if (isNull(value)) {
+      return;
+    }
     const type = typeOf(value);
     if (!isSameType(type, operand.type)) {
       throw new CompilationError(
         `Invalid type expected: sum(${typeName(operand.type)})  got: sum(${typeName(type)})`,
       );
     }
-    if (!isNull(value)) {
-      if (operand.type === Decimal) {
-        store[self.handle] = (store[self.handle] as Decimal).add(value);
-      } else if (operand.type === Amount) {
-        (store[self.handle] as Inventory).addAmount(value);
-      } else if (operand.type === Position) {
-        (store[self.handle] as Inventory).addPosition(value);
-      } else if (operand.type === Inventory) {
-        (store[self.handle] as Inventory).addInventory(value);
-      } else {
-        store[self.handle] += value;
-      }
+    if (operand.type === Decimal) {
+      store[self.handle] = (store[self.handle] as Decimal).add(value);
+    } else if (operand.type === Amount) {
+      (store[self.handle] as Inventory).addAmount(value);
+    } else if (operand.type === Position) {
+      (store[self.handle] as Inventory).addPosition(value);
+    } else if (operand.type === Inventory) {
+      (store[self.handle] as Inventory).addInventory(value);
+    } else {
+      store[self.handle] += value;
     }
   }
 }
