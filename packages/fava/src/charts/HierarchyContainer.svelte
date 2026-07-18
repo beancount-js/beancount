@@ -32,7 +32,7 @@
 
 {#if currencies.length === 0}
   <svg viewBox={`0 0 ${width.toString()} 160`}>
-    <text x={width / 2} y={80} text-anchor="middle">
+    <text class="empty-label" x={width / 2} y={80} text-anchor="middle">
       {"Chart is empty."}
     </text>
   </svg>
@@ -45,3 +45,12 @@
     </g>
   </svg>
 {/if}
+
+<style>
+  .empty-label {
+    fill: var(--muted-foreground);
+    font-family: "DM Sans Variable", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+  }
+</style>

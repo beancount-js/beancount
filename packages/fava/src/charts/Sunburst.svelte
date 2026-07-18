@@ -80,15 +80,28 @@
       />
     </a>
   {/each}
-  <text class="z-50 fill-current font-mono" text-anchor="middle">
+  <text class="label" text-anchor="middle">
     {(current ?? root).data.account}
   </text>
-  <text class="fill-foreground/50" dy="1.2em" text-anchor="middle">
+  <text class="amount" dy="1.2em" text-anchor="middle">
     {balanceText(current ?? root)}
   </text>
 </g>
 
 <style>
+  .label {
+    fill: var(--foreground);
+    font-family: "DM Sans Variable", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .amount {
+    fill: var(--muted-foreground);
+    font-family: "Source Code Pro", monospace;
+    font-size: 11px;
+  }
+
   path {
     cursor: pointer;
   }
