@@ -30,8 +30,10 @@
     indentLess,
   } from "@codemirror/commands";
   import Play from "lucide-svelte/icons/play";
+  import LetterText from "lucide-svelte/icons/letter-text";
   import TriangleAlert from "lucide-svelte/icons/triangle-alert";
   import Search from "lucide-svelte/icons/search";
+  import { format as formatSql } from "sql-formatter";
   import { useLedger } from "./helpers";
   import { bql } from "../bql/bql";
   import { replaceContents } from "../codemirror/extensions/transactions";
@@ -50,11 +52,18 @@
 
   let editor: EditorView;
   let activeRoute = history.activeRoute;
-  export let qs: string = $activeRoute.query["qs"] ?? "";
+  export let qs: string = formatQueryText($activeRoute.query["qs"] ?? "");
   export let selected: string = "";
 
   let error: unknown;
   let init: string = "";
+
+  function formatQueryText(query: string): string {
+    if (!query) {
+      return "";
+    }
+    return formatSql(query, { language: "postgresql" }).replaceAll(" (", "(");
+  }
 
   const codeMirror = (node: HTMLDivElement, query: string) => {
     editor = new EditorView({
@@ -141,6 +150,11 @@
     queryHistory.remove(query.hash);
   };
 
+  function formatQuery() {
+    const query = editor.state.doc.toString().trim();
+    editor.dispatch(replaceContents(editor.state, formatQueryText(query)));
+  }
+
   onMount(() => {
     const value = qs || $bqlQuery;
     if (value && editor) {
@@ -165,6 +179,17 @@
         use:codeMirror={query}
         class="cm-code-editor min-w-0 flex-1 py-1 text-sm"
       ></div>
+      <Button
+        onclick={formatQuery}
+        size="icon-sm"
+        variant="ghost"
+        class="mr-1 size-7 shrink-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+        aria-label="Format query"
+        title="Format query"
+        data-query-format
+      >
+        <LetterText />
+      </Button>
       <Button
         onclick={handleSearch}
         size="xs"

@@ -97,8 +97,31 @@ test("Query tables use a compact search field and expandable saved queries", asy
   await expect(executeButton).toHaveClass(/hover:text-primary/);
   await expect(queryEditor.locator(".cm-gutters")).toHaveCount(0);
 
+  const formatButton = queryEditor.getByRole("button", {
+    name: "Format query",
+  });
+  await expect(formatButton).toBeVisible();
+  await expect(formatButton.locator("svg")).toHaveCount(1);
   await queryEditor.locator(".cm-content").click();
-  await page.keyboard.press("Control+A");
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.insertText(
+    "SELECT account, number FROM postings LIMIT 3",
+  );
+  await formatButton.click();
+  await expect
+    .poll(() => queryEditor.locator(".cm-line").allTextContents())
+    .toEqual([
+      "SELECT",
+      "  account,",
+      "  number",
+      "FROM",
+      "  postings",
+      "LIMIT",
+      "  3",
+    ]);
+
+  await queryEditor.locator(".cm-content").click();
+  await page.keyboard.press("ControlOrMeta+A");
   await page.keyboard.insertText("se");
   const autocompletePopup = page.locator(".cm-tooltip-autocomplete");
   await expect(autocompletePopup).toBeVisible();
@@ -123,6 +146,9 @@ test("Query tables use a compact search field and expandable saved queries", asy
   await page.keyboard.press("Escape");
   await expect(autocompletePopup).toBeHidden();
 
+  await queryEditor.locator(".cm-content").click();
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.insertText("SELECT account FROM postings");
   const syntaxTokens = await queryEditor
     .locator(".cm-content")
     .evaluate((content) => {
@@ -135,7 +161,7 @@ test("Query tables use a compact search field and expandable saved queries", asy
         .filter((token) => token.color !== defaultColor);
     });
   expect(syntaxTokens.map((token) => token.text)).toEqual(
-    expect.arrayContaining(["account", "FROM"]),
+    expect.arrayContaining(["SELECT", "account", "FROM"]),
   );
 
   const savedQuery = page
