@@ -28,10 +28,9 @@
     {
       "upstreamModule": "beanquery.groupby.holdings",
       "upstreamBehavior": "holdings-style GROUP BY cost lots",
-      "localBehavior": "compileGroupBy / units(sum(position))",
-      "status": "pending",
-      "tests": ["parity/holdings-groupby"],
-      "reason": "Row counts drift vs Fava on cost lot grouping"
+      "localBehavior": "Decimal-aware GROUP BY keys + Inventory units()",
+      "status": "matched",
+      "tests": ["parity/holdings-groupby.spec.ts"]
     }
   ]
 }

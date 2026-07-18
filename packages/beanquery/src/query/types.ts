@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Decimal } from "@beancount-js/parser";
 import { DateTime, Duration } from "luxon";
 
 export const NULL = class {
@@ -224,8 +225,14 @@ export function isEqual(a: any, b: any): boolean {
     return isNull(b);
   } else if (a instanceof EvalNode) {
     return a.isEqual(b);
+  } else if (a instanceof Decimal) {
+    return b instanceof Decimal && a.eq(b);
   } else if (a instanceof DateTime) {
-    return b instanceof DateTime && a.toMillis() === b.toMillis();
+    // Group lot dates by calendar day (beanquery date equality).
+    return (
+      b instanceof DateTime &&
+      (a.toISODate() ?? a.toMillis()) === (b.toISODate() ?? b.toMillis())
+    );
   } else if (a instanceof Duration) {
     return b instanceof Duration && a.toMillis() === b.toMillis();
   } else if (Array.isArray(a)) {

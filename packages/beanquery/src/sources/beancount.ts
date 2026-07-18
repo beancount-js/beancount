@@ -791,11 +791,15 @@ function convertInventory(
     date: date ?? DateTime.utc(),
   });
   const positions = result.positions();
-  if (positions.length === 1) {
-    return positions[0];
-  }
   if (!positions.length) {
     return null;
+  }
+  // Preserve Inventory for inventory inputs (beanquery units(sum(position))).
+  if (value instanceof beancount.Inventory) {
+    return counterToInventory(result);
+  }
+  if (positions.length === 1) {
+    return positions[0];
   }
   return counterToInventory(result);
 }
