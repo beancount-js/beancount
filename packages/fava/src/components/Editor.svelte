@@ -44,6 +44,7 @@
   let replacingContents = false;
   let loadedPath = "";
   let reviewHeadersCollapsedAll = false;
+  let ledgerHeadersCollapsedAll = false;
 
   function editorMode(readOnly: boolean) {
     return readOnly
@@ -131,6 +132,7 @@
         }
         if (contentsChanged) {
           foldMetadata(view);
+          ledgerHeadersCollapsedAll = false;
           if (next.readOnly) {
             collapseHeadersExceptLast(view);
             reviewHeadersCollapsedAll = false;
@@ -225,6 +227,7 @@
       ingestionHeaderActions.set({
         kind: "ledger",
         formatOnSave,
+        headersCollapsedAll: ledgerHeadersCollapsedAll,
         sources: ($snapshot?.ledgerFiles ?? []).map((file) => ({
           path: file.path,
         })),
@@ -233,6 +236,16 @@
         onOpenSource: (path) => workspaceActiveFile.set(path),
         onToggleFormatOnSave: () => {
           formatOnSave = !formatOnSave;
+        },
+        onToggleHeaders: () => {
+          if (!editor) return;
+          if (areAllHeadersCollapsed(editor.state)) {
+            expandHeaders(editor);
+            ledgerHeadersCollapsedAll = false;
+          } else {
+            collapseHeaders(editor);
+            ledgerHeadersCollapsedAll = true;
+          }
         },
         onGotoLine: () => {
           if (editor) showGotoLine(editor);

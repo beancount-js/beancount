@@ -107,11 +107,13 @@ export type IngestionAccountsHeaderActions = {
 export type LedgerEditorHeaderActions = {
   kind: "ledger";
   formatOnSave: boolean;
+  headersCollapsedAll: boolean;
   sources: { path: string }[];
   activePath: string;
   dirty: boolean;
   onOpenSource: (path: string) => void;
   onToggleFormatOnSave: () => void;
+  onToggleHeaders: () => void;
   onGotoLine: () => void;
   onFormat: () => void;
   onToggleComment: () => void;

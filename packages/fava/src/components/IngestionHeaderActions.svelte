@@ -644,6 +644,34 @@
                 size="icon"
                 variant="ghost"
                 class="size-8"
+                aria-label={header.headersCollapsedAll
+                  ? "Expand all headings"
+                  : "Collapse all headings"}
+                onclick={() => header.onToggleHeaders()}
+              >
+                {#if header.headersCollapsedAll}
+                  <ChevronsUpDown />
+                {:else}
+                  <ChevronsDownUp />
+                {/if}
+              </Button>
+            {/snippet}
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            {header.headersCollapsedAll
+              ? "Expand all headings"
+              : "Collapse all headings"}
+          </Tooltip.Content>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger>
+            {#snippet child({ props })}
+              <Button
+                {...props}
+                type="button"
+                size="icon"
+                variant="ghost"
+                class="size-8"
                 aria-label="Save ledger"
                 onclick={(event) => {
                   header.onSave();
