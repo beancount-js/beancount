@@ -278,6 +278,13 @@
             <span class="min-w-0 truncate text-sm font-semibold">
               {source.name || "Untitled source"}
             </span>
+            <Badge
+              variant="secondary"
+              class="shrink-0 tabular-nums"
+              aria-label={`${source.accounts?.length ?? 0} linked accounts`}
+            >
+              {source.accounts?.length ?? 0}
+            </Badge>
           </button>
 
           <div class="flex shrink-0 items-center gap-3">
