@@ -18,9 +18,8 @@
       "upstreamModule": "fava.util.date",
       "upstreamBehavior": "interval_ends half-open ranges",
       "localBehavior": "LedgerData.intervalEnds / dateRanges",
-      "status": "pending",
-      "tests": ["parity/interval-ends"],
-      "reason": "JS currently emits inclusive ranges and an extra trailing period"
+      "status": "matched",
+      "tests": ["parity/interval-ends.spec.ts"]
     },
     {
       "upstreamModule": "fava.core.conversion",
@@ -33,9 +32,8 @@
       "upstreamModule": "fava.json_api.account_report",
       "upstreamBehavior": "account_report balances at_value (off-by-one)",
       "localBehavior": "LedgerData.balanceTrees + Tree.toRecord",
-      "status": "adapted",
-      "tests": ["parity/at-value.spec.ts"],
-      "reason": "Balances match Fava oracle; interval begin-set still adapted until half-open dateRanges land"
+      "status": "matched",
+      "tests": ["parity/at-value.spec.ts", "parity/interval-ends.spec.ts"]
     },
     {
       "upstreamModule": "fava.core.filters.AccountFilter",

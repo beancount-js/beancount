@@ -36,6 +36,42 @@ function luxonUnit(interval: Interval): LuxonUnit {
   return interval;
 }
 
+/** Boundary dates for Fava-compatible half-open interval ranges. */
+export function intervalBoundaryDates(
+  first: DateTime,
+  last: DateTime,
+  interval: Interval,
+  complete: boolean = true,
+): DateTime[] {
+  const unit = luxonUnit(interval);
+  const begin = first.toUTC().startOf("day");
+  const end = last.toUTC().startOf("day");
+  if (begin >= end) {
+    return [];
+  }
+
+  let current = complete ? begin.startOf(unit) : begin;
+  const ends: DateTime[] = [];
+  while (current < end) {
+    ends.push(current);
+    current = current.plus(getDuration(interval, 1)).startOf(unit);
+  }
+  ends.push(complete ? current : end);
+  return ends;
+}
+
+export function* intervalBoundaries(
+  first: DateTime,
+  last: DateTime,
+  interval: Interval,
+  complete: boolean = true,
+): Generator<[DateTime, DateTime]> {
+  const ends = intervalBoundaryDates(first, last, interval, complete);
+  for (let index = 0; index < ends.length - 1; index += 1) {
+    yield [ends[index]!, ends[index + 1]!];
+  }
+}
+
 export class LedgerData {
   readonly accountDetails: Record<string, AccountDetails> = {};
   readonly currencyNames: Record<string, string> = {};
@@ -178,19 +214,25 @@ export class LedgerData {
     });
   }
 
+  /**
+   * Half-open interval ranges matching Fava `util.date.dateranges`
+   * (`[begin, end)`). `last` is treated as an exclusive end date (as with
+   * FilteredLedger's first-txn → last-txn/price+1day bounds).
+   */
   *intervalEnds(
     first: DateTime,
     last: DateTime,
     interval: Interval,
+    complete: boolean = true,
   ): Generator<DateRange> {
-    const unit = luxonUnit(interval);
-    let current = first.toUTC().startOf("day").startOf(unit);
-    const end = last.toUTC().endOf("day").endOf(unit);
-    while (current < end) {
-      yield new DateRange(current.startOf(unit), current.endOf(unit), "[]");
-      current = current.plus(getDuration(interval, 1));
+    for (const [begin, end] of intervalBoundaries(
+      first,
+      last,
+      interval,
+      complete,
+    )) {
+      yield new DateRange(begin, end, "[)");
     }
-    yield new DateRange(current.startOf(unit), current.endOf(unit), "[]");
   }
 
   dateRanges(interval: Interval, limit: number = -100): Array<DateRange> {
@@ -222,7 +264,7 @@ export class LedgerData {
     const accounts = this.accounts;
     const value = intervals.map((range) => {
       const entries = this.directives.filter(
-        (it) => it.date && it.date <= range.to,
+        (it) => it.date && it.date < range.to,
       );
       return {
         range,
