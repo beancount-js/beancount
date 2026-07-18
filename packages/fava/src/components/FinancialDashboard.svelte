@@ -20,6 +20,7 @@
   } from "./dashboard/model";
   import { urlForAccount } from "../helpers";
   import * as Select from "$lib/components/ui/select/index.js";
+  import * as ScrollArea from "$lib/components/ui/scroll-area/index.js";
   import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
 
   const { ledgerData, ledgerOptions, conversion, operatingCurrency } =
@@ -244,50 +245,60 @@
             currency={dashboard.currency}
             formatter={$ctx.amount}
           />
-          <div class="p-4 sm:p-5">
+          <ScrollArea.Root
+            orientation="horizontal"
+            class="w-full min-w-0 max-w-full"
+          >
             <div
-              class="mb-2 grid grid-cols-[minmax(0,1fr)_5.5rem_9rem] gap-4 border-b border-border/80 px-2 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+              class="min-w-[32rem] p-4 sm:min-w-0 sm:p-5"
+              data-dashboard-outflow-table
             >
-              <span>Category</span><span class="text-right">Share</span><span
-                class="text-right">Value</span
+              <div
+                class="mb-2 grid grid-cols-[minmax(0,1fr)_5.5rem_9rem] gap-4 border-b border-border/80 px-2 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
               >
-            </div>
-            {#if dashboard.expenseCategories.length}
-              {#each dashboard.expenseCategories as category (category.account)}
-                <a
-                  href={category.account === "Other"
-                    ? undefined
-                    : urlForAccount(category.account)}
-                  class="grid grid-cols-[minmax(0,1fr)_5.5rem_9rem] items-center gap-4 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-muted/65"
+                <span>Category</span><span class="text-right">Share</span><span
+                  class="text-right">Value</span
                 >
-                  <span class="flex min-w-0 items-center gap-2">
+              </div>
+              {#if dashboard.expenseCategories.length}
+                {#each dashboard.expenseCategories as category (category.account)}
+                  <a
+                    href={category.account === "Other"
+                      ? undefined
+                      : urlForAccount(category.account)}
+                    class="grid grid-cols-[minmax(0,1fr)_5.5rem_9rem] items-center gap-4 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-muted/65"
+                  >
+                    <span class="flex min-w-0 items-center gap-2">
+                      <span
+                        class="size-2.5 shrink-0 rounded-full"
+                        style={`background: ${category.color}`}
+                      ></span>
+                      <span class="break-words font-medium text-foreground"
+                        >{category.account}</span
+                      >
+                    </span>
                     <span
-                      class="size-2.5 shrink-0 rounded-full"
-                      style={`background: ${category.color}`}
-                    ></span>
-                    <span class="break-words font-medium text-foreground"
-                      >{category.account}</span
+                      class="text-right font-mono text-xs tabular-nums text-muted-foreground"
                     >
-                  </span>
-                  <span
-                    class="text-right font-mono text-xs tabular-nums text-muted-foreground"
-                  >
-                    {dashboard.expenses
-                      ? ((category.value / dashboard.expenses) * 100).toFixed(1)
-                      : "0.0"}%
-                  </span>
-                  <span
-                    class="text-right font-mono text-sm tabular-nums text-foreground"
-                    >{$ctx.amount(category.value, dashboard.currency)}</span
-                  >
-                </a>
-              {/each}
-            {:else}
-              <p class="px-2 py-6 text-sm text-muted-foreground">
-                No outflows match this period.
-              </p>
-            {/if}
-          </div>
+                      {dashboard.expenses
+                        ? ((category.value / dashboard.expenses) * 100).toFixed(
+                            1,
+                          )
+                        : "0.0"}%
+                    </span>
+                    <span
+                      class="text-right font-mono text-sm tabular-nums text-foreground"
+                      >{$ctx.amount(category.value, dashboard.currency)}</span
+                    >
+                  </a>
+                {/each}
+              {:else}
+                <p class="px-2 py-6 text-sm text-muted-foreground">
+                  No outflows match this period.
+                </p>
+              {/if}
+            </div>
+          </ScrollArea.Root>
         </div>
       </DashboardSection>
 

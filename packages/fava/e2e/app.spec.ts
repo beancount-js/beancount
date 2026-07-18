@@ -190,6 +190,41 @@ test.describe("ported styles", () => {
     expect(parseFloat(groupRadius)).toBeGreaterThan(0);
   });
 
+  test("scrolls financial-statement tables horizontally on mobile", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    for (const path of [
+      "/income_statement",
+      "/balance_sheet",
+      "/trial_balance",
+    ]) {
+      await gotoStudio(page, path);
+      const table = page.locator("[data-statement-summary-tree-table]").first();
+      await expect(table).toBeVisible({ timeout: 15_000 });
+
+      const scrollState = await table.evaluate((element) => {
+        const viewport = element.closest("[data-scroll-area-content]")
+          ?.parentElement as HTMLElement | null;
+        if (!viewport) {
+          throw new Error("Financial statement table ScrollArea is missing");
+        }
+        viewport.scrollLeft = 160;
+        const state = {
+          clientWidth: viewport.clientWidth,
+          scrollWidth: viewport.scrollWidth,
+          scrollLeft: viewport.scrollLeft,
+        };
+        viewport.scrollLeft = 0;
+        return state;
+      });
+
+      expect(scrollState.scrollWidth).toBeGreaterThan(scrollState.clientWidth);
+      expect(scrollState.scrollLeft).toBeGreaterThan(0);
+    }
+  });
+
   test("styles Account Changes and Balances as interval tables", async ({
     page,
   }) => {

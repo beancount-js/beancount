@@ -4,6 +4,7 @@
   import { getAllNodes } from "../tree-table/helpers";
   import DashboardTreeRow from "./DashboardTreeRow.svelte";
   import { dashboardCategoryColor } from "./model";
+  import * as ScrollArea from "$lib/components/ui/scroll-area";
 
   export let tree: AccountTreeNode;
   export let title: string;
@@ -71,7 +72,7 @@
   }
 </script>
 
-<section class="w-full" data-dashboard-tree-table>
+<section class="w-full min-w-0" data-dashboard-tree-table>
   <div class="flex items-baseline justify-between gap-4">
     <h2 class="text-lg font-semibold tracking-tight text-foreground">
       {title}
@@ -113,7 +114,10 @@
       </span>
     {/each}
   </div>
-  <div class="mt-4 overflow-x-auto rounded-xl">
+  <ScrollArea.Root
+    orientation="horizontal"
+    class="mt-4 w-full min-w-0 max-w-full rounded-xl"
+  >
     <ol
       class="min-w-[42rem] overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
       data-dashboard-tree-rows
@@ -154,5 +158,5 @@
         />
       {/each}
     </ol>
-  </div>
+  </ScrollArea.Root>
 </section>

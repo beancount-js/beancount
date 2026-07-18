@@ -127,6 +127,33 @@ test.describe("financial dashboard", () => {
     ).toBeVisible();
   });
 
+  test("scrolls dashboard tables horizontally on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    for (const table of [
+      page.locator("[data-dashboard-outflow-table]"),
+      page.locator("[data-dashboard-tree-rows]").first(),
+    ]) {
+      await expect(table).toBeVisible();
+      const scrollState = await table.evaluate((element) => {
+        const viewport = element.closest("[data-scroll-area-content]")
+          ?.parentElement as HTMLElement | null;
+        if (!viewport) throw new Error("Dashboard table ScrollArea is missing");
+        viewport.scrollLeft = 160;
+        const state = {
+          clientWidth: viewport.clientWidth,
+          scrollWidth: viewport.scrollWidth,
+          scrollLeft: viewport.scrollLeft,
+        };
+        viewport.scrollLeft = 0;
+        return state;
+      });
+
+      expect(scrollState.scrollWidth).toBeGreaterThan(scrollState.clientWidth);
+      expect(scrollState.scrollLeft).toBeGreaterThan(0);
+    }
+  });
+
   test("shows a themed interactive net-worth trend", async ({ page }) => {
     const chart = page.locator("[data-dashboard-net-worth-chart]");
     await expect(chart).toBeVisible();
