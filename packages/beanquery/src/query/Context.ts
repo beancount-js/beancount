@@ -65,7 +65,8 @@ export class Context {
   prepare(
     query: string,
   ): [Expression, ParseError[], Record<string, Constant | Array<Constant>>] {
-    const shorthand = /\bFROM\s+(OPEN|CLOSE|CLEAR)(?:\s+ON\s+(\d{4}-\d{2}-\d{2}))?/i;
+    const shorthand =
+      /\bFROM\s+(OPEN|CLOSE|CLEAR)(?:\s+ON\s+(\d{4}-\d{2}-\d{2}))?/i;
     const matched = query.match(shorthand);
     const source = matched
       ? `SET ${matched[1].toLowerCase()} = ${matched[2] ?? "true"}; ${query.replace(shorthand, "")}`

@@ -292,11 +292,11 @@ export class Parser {
   get query(): Expression {
     if (this.#query) return this.#query;
     if (this.stack.length !== 1) {
-      console.log(this.stack)
+      console.log(this.stack);
       throw new CompilationError(`Invalid query stack(${this.stack.length})`);
     }
-    this.#query =  this.stack.pop();
-    return this.#query
+    this.#query = this.stack.pop();
+    return this.#query;
   }
 
   get top() {
@@ -330,7 +330,7 @@ export class Parser {
           args,
         );
       }
-      
+
       return new CastExpression(
         expression.parseInfo,
         readString(this.content(node.getChild("Type"))),
@@ -458,7 +458,10 @@ export class Parser {
       this.add(
         this.cast(
           node.node.getChild("Cast"),
-          new ColumnExpression(parseInfo, this.content(node.node.getChild("Identifier"))),
+          new ColumnExpression(
+            parseInfo,
+            this.content(node.node.getChild("Identifier")),
+          ),
         ),
       );
     } else if (node.name === "Wildcard") {
@@ -988,13 +991,7 @@ export class Parser {
       if (expr instanceof TableExpression) {
         this.add(expr);
       } else {
-        this.add(
-          new QueryExpression(
-            parseInfo,
-            expr,
-            this.getAlias(node),
-          ),
-        );
+        this.add(new QueryExpression(parseInfo, expr, this.getAlias(node)));
       }
     } else if (node.name === "CastExpr") {
       const type = readString(this.content(node.node.getChild("Identifier")));
@@ -1016,7 +1013,10 @@ export class Parser {
               right.args[0],
             );
             return;
-          } else if (right.name.toLowerCase() === "all" && right.args.length == 1) {
+          } else if (
+            right.name.toLowerCase() === "all" &&
+            right.args.length == 1
+          ) {
             this.stack[this.stack.length - 1] = new AllExpression(
               top.parseInfo,
               top.op,
@@ -1034,13 +1034,7 @@ export class Parser {
         lastChild?.name === "Function"
           ? (this.stack.pop() as FunctionExpression)
           : this.content(node.node.getChild("Identifier"));
-      this.add(
-        new AttributeExpression(
-          parseInfo,
-          this.stack.pop(),
-          fn,
-        ),
-      );
+      this.add(new AttributeExpression(parseInfo, this.stack.pop(), fn));
     } else if (node.name === "Subscript") {
       this.add(
         new SubscriptExpression(

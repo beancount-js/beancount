@@ -250,7 +250,8 @@ export class Compiler {
     );
     targets.push(...orderByTargets);
 
-    const isGroupBy = targets.some((it) => it.hasAggregate) || groupIndexes.length > 0;
+    const isGroupBy =
+      targets.some((it) => it.hasAggregate) || groupIndexes.length > 0;
 
     if (isGroupBy) {
       const nonAggrIndexes: number[] = [];
@@ -941,16 +942,12 @@ export class Compiler {
         }
       });
       return new EvalCase(operands, fallback);
-    } else if (
-      node instanceof TableExpression 
-    ) {
+    } else if (node instanceof TableExpression) {
       return null;
     } else if (node instanceof CastExpression) {
-      return this.compileExpression(new FunctionExpression(
-        node.parseInfo,
-        node.type,
-        [node.expr]
-      ))
+      return this.compileExpression(
+        new FunctionExpression(node.parseInfo, node.type, [node.expr]),
+      );
     }
 
     throw new NotSupportedError(
@@ -1034,16 +1031,16 @@ export class Compiler {
         ),
       );
     }
-   
+
     const execFn = fn.create(ctx, ...operands) as EvalFunction;
     const window = this.compileOverExpression(node.window);
 
     if (!execFn.pure && ctx instanceof EvalNode) {
-       if (!fn.matches([ctx])) {
-          throw new CompilationError(
-            `invalid function for type: ${typeName(ctx.type)} ".${node.name}(${operands.map((it) => typeName(it.type)).join(", ")})"`,
-          );
-       }
+      if (!fn.matches([ctx])) {
+        throw new CompilationError(
+          `invalid function for type: ${typeName(ctx.type)} ".${node.name}(${operands.map((it) => typeName(it.type)).join(", ")})"`,
+        );
+      }
     }
 
     if (operands.every((it) => it instanceof EvalConstant) && execFn.pure) {
@@ -1329,12 +1326,11 @@ export class Compiler {
       }
     }
 
-    const isGroupBy = targets.some((it) => it.aggregate && !it.windows.length) || groupIndexes.length;
+    const isGroupBy =
+      targets.some((it) => it.aggregate && !it.windows.length) ||
+      groupIndexes.length;
 
-    if (
-      this.options.supportImplicitGroupBy &&
-      isGroupBy
-    ) {
+    if (this.options.supportImplicitGroupBy && isGroupBy) {
       targets.forEach((it, index) => {
         if (
           !it.aggregate &&
@@ -1344,7 +1340,7 @@ export class Compiler {
           groupIndexes.push(index);
         }
       });
-    } 
+    }
 
     return [newTargets, groupIndexes, havingIndex];
   }
@@ -1352,7 +1348,10 @@ export class Compiler {
   compileAttribute(node: AttributeExpression): EvalNode | null {
     if (node.operand instanceof ColumnExpression) {
       if (!this.table.columns.has(node.operand.column)) {
-        if (node.operand.column === this.table.name && typeof node.name === "string") {
+        if (
+          node.operand.column === this.table.name &&
+          typeof node.name === "string"
+        ) {
           return this.table.getColumn(node.name, false);
         }
 
@@ -1388,17 +1387,17 @@ export class Compiler {
       }
       return new EvalGetter(operand, getter, getter.type);
     } else if (typeof node.name !== "string") {
-        this.contexts.push(operand);
-        const expr = this.compileExpression(node.name);
-        this.contexts.pop();
-        return expr; 
+      this.contexts.push(operand);
+      const expr = this.compileExpression(node.name);
+      this.contexts.pop();
+      return expr;
     }
 
     throw new CompilationError(
       `column is not structured: ${typeName(dType ?? operand.type)}`,
     );
   }
- 
+
   compileSubscript(node: SubscriptExpression): EvalNode | null {
     const operand = this.compileExpression(node.operand);
     if (operand.type === Object) {

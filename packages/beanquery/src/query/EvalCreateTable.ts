@@ -5,7 +5,6 @@ import { EvalQuery, AttributeColumn } from "./nodes";
 import { EvalNode, isEqual, type DType } from "./types";
 
 export class EvalCreateTable extends EvalNode {
-
   constructor(
     readonly context: Context,
     readonly name: string,

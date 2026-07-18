@@ -17,10 +17,9 @@ export function journalRecordKey(directive: DirectiveBase): string {
 }
 
 /**
- * A content anchor survives edits elsewhere in the source file, unlike a
- * record key's byte offsets. It is intentionally kept in-memory only: route
- * links remain compact position keys and are refreshed after a successful
- * save.
+ * A content anchor survives edits elsewhere in the source file, unlike a record
+ * key's byte offsets. It is intentionally kept in-memory only: route links
+ * remain compact position keys and are refreshed after a successful save.
  */
 export function journalRecordAnchor(
   directive: DirectiveBase,

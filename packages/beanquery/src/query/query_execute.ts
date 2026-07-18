@@ -7,7 +7,7 @@ import {
   EvalConstant,
   EvalQuery,
   findFunction,
- } from "./nodes";
+} from "./nodes";
 import {
   EvalNode,
   getValueByDotNotation,
@@ -91,7 +91,6 @@ export function executeSelect(
 
   const isGroup =
     groupIndexes.size > 0 || targets.some((it) => it.column.hasAggregate);
-
 
   if (isGroup) {
     //  This is an aggregated query.

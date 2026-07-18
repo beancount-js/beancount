@@ -28,8 +28,8 @@ export function fuzzySearchMerchants<T extends MerchantSearchable>(
 }
 
 /**
- * Keeps explicit domain matches ahead of the typo-tolerant fallback used by
- * the local merchant matcher. Unmatched merchants remain available to pick.
+ * Keeps explicit domain matches ahead of the typo-tolerant fallback used by the
+ * local merchant matcher. Unmatched merchants remain available to pick.
  */
 export function rankLocalMerchantMatches<T extends MerchantSearchable>(
   merchants: readonly T[],

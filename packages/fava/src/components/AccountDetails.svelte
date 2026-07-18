@@ -63,10 +63,7 @@
             `${formatDate(it.range.from, "MMM yyyy")}`,
             it.tree
               .get(account)
-              .toRecord(
-                $conversion,
-                conversionContext(it.range.endInclusive),
-              ),
+              .toRecord($conversion, conversionContext(it.range.endInclusive)),
           ),
         ),
     ];

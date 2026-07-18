@@ -69,8 +69,7 @@ ${marketValueFixture.pricesLedger}
     for (const [index, date] of accountReportFixture.oracle.dates.entries()) {
       const actual = byBegin.get(date.begin);
       expect(actual, date.begin).toBeTruthy();
-      const expected =
-        accountReportFixture.oracle.interval_balances[index];
+      const expected = accountReportFixture.oracle.interval_balances[index];
       expect(normalizeInventory(actual!.balanceChildren)).toEqual(
         normalizeInventory(expected.balance_children),
       );

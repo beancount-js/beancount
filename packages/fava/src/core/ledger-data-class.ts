@@ -192,9 +192,9 @@ export class LedgerData {
   }
 
   /**
-   * Accounts named on open/close/postings (and other directives), matching
-   * Fava `ledger_data.accounts`. Does not include synthetic intermediate
-   * parents materialised only for tree rollup (`Assets`, `Assets:US`, …).
+   * Accounts named on open/close/postings (and other directives), matching Fava
+   * `ledger_data.accounts`. Does not include synthetic intermediate parents
+   * materialised only for tree rollup (`Assets`, `Assets:US`, …).
    */
   get accounts(): Array<string> {
     return [...this.taxonomy.accounts].filter((account) => account !== "");
@@ -220,8 +220,8 @@ export class LedgerData {
   }
 
   /**
-   * Half-open interval ranges matching Fava `util.date.dateranges`
-   * (`[begin, end)`). `last` is treated as an exclusive end date (as with
+   * Half-open interval ranges matching Fava `util.date.dateranges` (`[begin,
+   * end)`). `last` is treated as an exclusive end date (as with
    * FilteredLedger's first-txn → last-txn/price+1day bounds).
    */
   *intervalEnds(

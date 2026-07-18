@@ -310,12 +310,16 @@ export class ListExpression extends Expression {
 }
 
 export class CastExpression extends Expression {
-  constructor(parseInfo: ParseInfo, readonly type: string, readonly expr: Expression) {
+  constructor(
+    parseInfo: ParseInfo,
+    readonly type: string,
+    readonly expr: Expression,
+  ) {
     super(parseInfo);
   }
 
   children(): Expression[] {
-    return [this.expr]
+    return [this.expr];
   }
 
   public toString() {
@@ -498,7 +502,10 @@ export class TargetExpression extends Expression {
     }
 
     if (this.expression instanceof AttributeExpression) {
-      if (this.expression.operand instanceof ColumnExpression && typeof this.expression.name === "string") {
+      if (
+        this.expression.operand instanceof ColumnExpression &&
+        typeof this.expression.name === "string"
+      ) {
         return this.expression.name;
       }
     }
@@ -559,7 +566,6 @@ export class FromClause extends Expression {
   }
 }
 
-
 export class QueryExpression extends Expression {
   constructor(
     parseInfo: ParseInfo,
@@ -600,7 +606,7 @@ export class AttributeExpression extends Expression {
   constructor(
     parseInfo: ParseInfo,
     readonly operand: Expression,
-    readonly name: string | Expression ,
+    readonly name: string | Expression,
   ) {
     super(parseInfo);
   }

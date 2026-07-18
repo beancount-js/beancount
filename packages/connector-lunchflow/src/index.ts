@@ -1,7 +1,4 @@
-export {
-  lunchflowConnector,
-  validateLunchflowConfig,
-} from "./connector";
+export { lunchflowConnector, validateLunchflowConfig } from "./connector";
 export { LunchflowClient, LunchflowError } from "./client";
 export { LunchflowNormalizer } from "./normalize";
 export { LunchflowSource, discoverLunchflowAccounts } from "./source";

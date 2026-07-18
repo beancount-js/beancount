@@ -21,9 +21,7 @@ function parseSyncState(
   return {
     lastSyncedAt: value.lastSyncedAt,
     lastStartDate:
-      typeof value.lastStartDate === "string"
-        ? value.lastStartDate
-        : undefined,
+      typeof value.lastStartDate === "string" ? value.lastStartDate : undefined,
     syncedAccount: value.syncedAccount === true,
   };
 }

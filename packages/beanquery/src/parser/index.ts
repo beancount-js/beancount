@@ -11,13 +11,14 @@ export const beancountQueryLanguage = LRLanguage.define({
   parser: parser,
 });
 
-
 export function bql(parser?: LRParser) {
   if (parser) {
-    return new LanguageSupport(LRLanguage.define({
-      name: "bql",
-      parser: parser,
-    }));
+    return new LanguageSupport(
+      LRLanguage.define({
+        name: "bql",
+        parser: parser,
+      }),
+    );
   }
   return new LanguageSupport(beancountQueryLanguage);
 }

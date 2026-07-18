@@ -83,7 +83,9 @@ export function validateLunchflowConfig(value: unknown): LunchflowConfig {
   if (syncStartDate) {
     const parsed = new Date(`${syncStartDate}T00:00:00.000Z`);
     if (Number.isNaN(parsed.getTime())) {
-      throw new Error("syncStartDate must be an ISO calendar date (yyyy-MM-dd).");
+      throw new Error(
+        "syncStartDate must be an ISO calendar date (yyyy-MM-dd).",
+      );
     }
     const earliest = new Date();
     earliest.setUTCFullYear(earliest.getUTCFullYear() - MAX_SYNC_HISTORY_YEARS);
@@ -109,7 +111,10 @@ export function validateLunchflowConfig(value: unknown): LunchflowConfig {
 
   const includePending =
     value.includePending === undefined ? true : value.includePending === true;
-  if (value.includePending !== undefined && typeof value.includePending !== "boolean") {
+  if (
+    value.includePending !== undefined &&
+    typeof value.includePending !== "boolean"
+  ) {
     throw new Error("includePending must be a boolean.");
   }
 

@@ -312,12 +312,10 @@ export class EvalFunction extends EvalNode {
     }
     let ctx = this.context;
     if (ctx instanceof EvalNode) {
-      ctx = ctx.resolve(context)
+      ctx = ctx.resolve(context);
     }
 
-    return this.pure
-      ? this.operator(...args)
-      : this.operator(ctx, ...args);
+    return this.pure ? this.operator(...args) : this.operator(ctx, ...args);
   }
 }
 

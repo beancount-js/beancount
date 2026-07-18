@@ -233,7 +233,10 @@ export async function discoverJsonApiAccounts(options: {
     "JSON API base URL",
   );
   const path = (options.accountsPath ?? "accounts").replace(/^\/+/, "");
-  const url = new URL(path, `${base.origin}${base.pathname.replace(/\/+$/, "")}/`);
+  const url = new URL(
+    path,
+    `${base.origin}${base.pathname.replace(/\/+$/, "")}/`,
+  );
   assertSafeUrl(url.toString(), options.allowedHosts, "JSON API accounts URL");
 
   const token = await options.resolveSecret(options.secretRef);
@@ -294,7 +297,9 @@ export async function discoverJsonApiAccounts(options: {
       ? (body as { accounts: unknown[] }).accounts
       : null;
   if (!list) {
-    throw new Error("Account discovery response did not include an accounts array.");
+    throw new Error(
+      "Account discovery response did not include an accounts array.",
+    );
   }
 
   return list.flatMap((item) => {
@@ -308,7 +313,9 @@ export async function discoverJsonApiAccounts(options: {
         id,
         name,
         currency: scalar(record.currency),
-        institutionName: scalar(record.institution_name ?? record.institutionName),
+        institutionName: scalar(
+          record.institution_name ?? record.institutionName,
+        ),
         status: scalar(record.status),
         iban: scalar(record.iban),
         closed: boolean(record.closed),

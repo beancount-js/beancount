@@ -807,15 +807,41 @@ function convertInventory(
   return counterToInventory(result);
 }
 
-createFunction("units", [beancount.Inventory], beancount.Inventory, unitsFn, true);
-createFunction("units", [beancount.Position], beancount.Position, unitsFn, true);
+createFunction(
+  "units",
+  [beancount.Inventory],
+  beancount.Inventory,
+  unitsFn,
+  true,
+);
+createFunction(
+  "units",
+  [beancount.Position],
+  beancount.Position,
+  unitsFn,
+  true,
+);
 createFunction("units", [beancount.Amount], beancount.Amount, unitsFn, true);
-function unitsFn(value: beancount.Inventory | beancount.Position | beancount.Amount) {
+function unitsFn(
+  value: beancount.Inventory | beancount.Position | beancount.Amount,
+) {
   return convertInventory(value, beancount.Conversion.UNITS);
 }
 
-createFunction("value", [beancount.Inventory], beancount.Inventory, valueFn, true);
-createFunction("value", [beancount.Position], beancount.Position, valueFn, true);
+createFunction(
+  "value",
+  [beancount.Inventory],
+  beancount.Inventory,
+  valueFn,
+  true,
+);
+createFunction(
+  "value",
+  [beancount.Position],
+  beancount.Position,
+  valueFn,
+  true,
+);
 createFunction("value", [beancount.Amount], beancount.Amount, valueFn, true);
 createFunction(
   "value",
@@ -831,7 +857,9 @@ createFunction(
   valueAtFn,
   true,
 );
-function valueFn(value: beancount.Inventory | beancount.Position | beancount.Amount) {
+function valueFn(
+  value: beancount.Inventory | beancount.Position | beancount.Amount,
+) {
   return convertInventory(value, beancount.Conversion.AT_VALUE);
 }
 function valueAtFn(
@@ -842,15 +870,17 @@ function valueAtFn(
 }
 
 createFunction("getprice", [String, String], Decimal, getpriceFn, true);
-createFunction("getprice", [String, String, DateTime], Decimal, getpriceAtFn, true);
+createFunction(
+  "getprice",
+  [String, String, DateTime],
+  Decimal,
+  getpriceAtFn,
+  true,
+);
 function getpriceFn(currency: string, costCurrency: string) {
   return getpriceAtFn(currency, costCurrency, DateTime.utc());
 }
-function getpriceAtFn(
-  currency: string,
-  costCurrency: string,
-  date: DateTime,
-) {
+function getpriceAtFn(currency: string, costCurrency: string, date: DateTime) {
   const quote = new beancount.BaseQuote(currency, costCurrency);
   return getPriceMap().getPrice(quote, date) ?? null;
 }

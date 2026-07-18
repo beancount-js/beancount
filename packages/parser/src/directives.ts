@@ -724,7 +724,13 @@ export class TransactionDirective extends DatedDirective {
 
     if (this.payee) {
       // Empty narration must be written as "" so re-parse keeps the payee.
-      str = (str + " " + writeString(this.payee) + " " + writeString(this.narrative)).trim();
+      str = (
+        str +
+        " " +
+        writeString(this.payee) +
+        " " +
+        writeString(this.narrative)
+      ).trim();
     } else if (this.narrative) {
       str = (str + " " + writeString(this.narrative)).trim();
     }

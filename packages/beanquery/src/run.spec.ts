@@ -119,9 +119,6 @@ describe("runBql", () => {
       "account",
       "sum(position)",
     ]);
-    expect(
-      result.data.some((row) => row.account === "Assets:Cash"),
-    ).toBe(true);
+    expect(result.data.some((row) => row.account === "Assets:Cash")).toBe(true);
   });
 });
-
