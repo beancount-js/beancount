@@ -66,7 +66,8 @@ describe("Filter", () => {
       expected: ["transaction:2015-01-05"],
     },
     {
-      query: ["USD", "/usd/i"],
+      // Quoted / regex free-text (bare USD is AccountName → AccountFilter).
+      query: ['"USD"', "/usd/i"],
       expected: ["balance:2014-12-26", "transaction:2015-01-05"],
     },
     {

@@ -38,10 +38,9 @@
     {
       "upstreamModule": "fava.core.filters.AccountFilter",
       "upstreamBehavior": "account filter membership",
-      "localBehavior": "AccountFilter / filterLedger",
-      "status": "pending",
-      "tests": ["parity/account-filter"],
-      "reason": "Journal membership still drifts vs Fava /api/journal"
+      "localBehavior": "AccountFilter / filterLedger + empty-narration payee parse",
+      "status": "matched",
+      "tests": ["parity/account-filter.spec.ts"]
     },
     {
       "upstreamModule": "fava.core.ledger_data.accounts",

@@ -147,6 +147,16 @@ const testCases: Record<string, Array<{ input: string; expected?: string }>> = {
       input: `include "path/to/include/file.beancount"`,
     },
   ],
+  Transaction: [
+    {
+      input: `2015-01-08 * "EDISON POWER" ""
+  Assets:Cash 1.00 USD
+  Equity:Opening-Balances`,
+      expected: `2015-01-08 * "EDISON POWER" ""
+  Assets:Cash 1.00 USD
+  Equity:Opening-Balances`,
+    },
+  ],
   Comments: [
     {
       input: `

@@ -28,6 +28,7 @@ import {
 import type { Directive, Directives } from "./data";
 import { Decimal, isValidNumber, parseDate } from "@beancount-js/parser";
 import { Cost } from "./position";
+import { hasAccountComponent, isDescendantOf } from "./account";
 
 function getValueByDotNotation(
   obj: unknown,
@@ -209,17 +210,18 @@ export class BeancountFilter extends AbstractFilterVisitor<
     entity: DirectiveBase | string,
     context: VisitorContext,
   ): boolean {
-    if (typeof entity === "string") {
-      return (
-        entity.startsWith(filter.value) ||
-        filter.pattern().accept(this, entity, context)
-      );
+    if (!filter.value) {
+      return true;
     }
-    return entity.accounts.some(
-      (account) =>
-        account.startsWith(filter.value) ||
-        filter.pattern().accept(this, entity, context),
-    );
+    const matchesAccount = (account: string) =>
+      isDescendantOf(filter.value, account) ||
+      hasAccountComponent(account, filter.value) ||
+      filter.pattern().accept(this, account, context);
+
+    if (typeof entity === "string") {
+      return matchesAccount(entity);
+    }
+    return entity.accounts.some(matchesAccount);
   }
 
   visitFieldFilter(

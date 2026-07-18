@@ -660,9 +660,9 @@ export class Transaction extends DirectiveBase {
   public toString() {
     let str = formatDate(this.date) + " " + this.flag;
     if (this.payee) {
-      str += " " + writeString(this.payee);
-    }
-    if (this.narration) {
+      // Empty narration must be written as "" so re-parse keeps the payee.
+      str += " " + writeString(this.payee) + " " + writeString(this.narration);
+    } else if (this.narration) {
       str += " " + writeString(this.narration);
     }
     str +=

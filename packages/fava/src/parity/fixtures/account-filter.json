@@ -5,7 +5,8 @@
     "license": "MIT"
   },
   "scenario": {
-    "ledger": "contrib/examples/example.beancount",
+    "ledger": "tests/data/long-example.beancount",
+    "note": "Fava fixture example_ledger is long-example, not contrib/examples/example.beancount",
     "cases": [
       { "account": "Assets", "expectedCount": 541 },
       { "account": ".*US:State", "expectedCount": 67 }

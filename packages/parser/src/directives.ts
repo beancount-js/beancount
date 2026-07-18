@@ -722,14 +722,12 @@ export class TransactionDirective extends DatedDirective {
   public toString() {
     let str = (formatDate(this.date) + " " + this.status).trim();
 
-    str = (
-      str +
-      " " +
-      [this.payee, this.narrative]
-        .filter((it) => it.length)
-        .map((it) => writeString(it))
-        .join(" ")
-    ).trim();
+    if (this.payee) {
+      // Empty narration must be written as "" so re-parse keeps the payee.
+      str = (str + " " + writeString(this.payee) + " " + writeString(this.narrative)).trim();
+    } else if (this.narrative) {
+      str = (str + " " + writeString(this.narrative)).trim();
+    }
 
     str = (
       str +

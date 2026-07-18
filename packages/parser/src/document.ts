@@ -256,9 +256,10 @@ export class BeanCountDocument {
   private transactionDirective(node: SyntaxNodeRef) {
     const date = node.node.getChild("Date");
     const flag = node.node.getChild("Flag");
-    const descriptions = (node.node.getChildren("String") || [])
-      .map((it) => readString(this.content(it)))
-      .filter((it) => it.trim().length > 0);
+    // Keep empty strings: `"Payee" ""` is payee with empty narration.
+    const descriptions = (node.node.getChildren("String") || []).map((it) =>
+      readString(this.content(it)),
+    );
 
     if (!date) {
       this.error(

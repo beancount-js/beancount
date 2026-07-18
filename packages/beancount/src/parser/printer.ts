@@ -89,8 +89,11 @@ export function formatTransaction(
   renderWeights = false,
 ): string {
   const description = [
-    transaction.payee && writeScalar(transaction.payee),
-    transaction.narration && writeScalar(transaction.narration),
+    ...(transaction.payee
+      ? [writeScalar(transaction.payee), writeScalar(transaction.narration)]
+      : transaction.narration
+        ? [writeScalar(transaction.narration)]
+        : []),
     ...[...transaction.tags].sort().map((tag) => `#${tag}`),
     ...[...transaction.links].sort().map((link) => `^${link}`),
   ]

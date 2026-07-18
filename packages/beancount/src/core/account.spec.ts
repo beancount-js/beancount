@@ -46,6 +46,9 @@ describe("account names", () => {
     expect(sansRoot(account)).toBe("Cash:Wallet");
     expect(parent(account)).toBe("Assets:Cash");
     expect(hasAccountComponent(account, "Cash")).toBe(true);
+    expect(hasAccountComponent(account, "Assets:Cash")).toBe(true);
+    expect(hasAccountComponent(account, "Cash:Wallet")).toBe(true);
+    expect(hasAccountComponent(account, "Assets:Wallet")).toBe(false);
     expect([...accountParents(account)]).toEqual([
       "Assets:Cash:Wallet",
       "Assets:Cash",

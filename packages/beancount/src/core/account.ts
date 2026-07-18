@@ -49,11 +49,19 @@ export function sansRoot(account: string): string {
   return splitAccount(account).slice(1).join(ACCOUNT_SEPARATOR);
 }
 
+/**
+ * True if `component` appears as a contiguous account component sequence
+ * (beancount.core.account.has_component). Matches both single components
+ * (`Cash` in `Assets:Cash`) and multi-component prefixes (`Assets:Cash` in
+ * `Assets:Cash:Wallet`).
+ */
 export function hasAccountComponent(
   account: string,
   component: string,
 ): boolean {
-  return splitAccount(account).includes(component);
+  if (!component) return false;
+  const escaped = component.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|:)${escaped}(?::|$)`).test(account);
 }
 
 /** Return the longest shared hierarchy prefix for the supplied account names. */

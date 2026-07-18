@@ -277,7 +277,8 @@ export class AccountFilter extends Filter {
     super();
   }
 
-  pattern(flags: string = "ig") {
+  /** Case-insensitive search (no `g` — RegExp#test is stateful with /g). */
+  pattern(flags: string = "i") {
     return PatternFilter.of(this.value, flags);
   }
 
