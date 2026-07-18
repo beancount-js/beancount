@@ -280,7 +280,7 @@
             </span>
             <Badge
               variant="secondary"
-              class="shrink-0 tabular-nums"
+              class="ml-auto shrink-0 tabular-nums"
               aria-label={`${source.accounts?.length ?? 0} linked accounts`}
             >
               {source.accounts?.length ?? 0}
