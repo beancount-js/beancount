@@ -550,24 +550,27 @@
               >Page {page} of {pages.length}</span
             >
             <div class="flex items-center gap-2">
-              <label
-                class="text-sm text-muted-foreground"
-                for="ingestion-audit-page-size">Records per page</label
-              >
-              <select
-                id="ingestion-audit-page-size"
-                class="h-8 rounded-md border bg-background px-2 text-sm"
-                value={pageSize}
-                onchange={(event) =>
-                  updateRoute({
-                    pageSize: (event.currentTarget as HTMLSelectElement).value,
-                    page: "1",
-                  })}
-              >
-                {#each PAGE_SIZES as size (size)}
-                  <option value={size}>{size}</option>
-                {/each}
-              </select>
+              <div class="hidden items-center gap-2 sm:flex">
+                <label
+                  class="text-sm text-muted-foreground"
+                  for="ingestion-audit-page-size">Records per page</label
+                >
+                <select
+                  id="ingestion-audit-page-size"
+                  class="h-8 rounded-md border bg-background px-2 text-sm"
+                  value={pageSize}
+                  onchange={(event) =>
+                    updateRoute({
+                      pageSize: (event.currentTarget as HTMLSelectElement)
+                        .value,
+                      page: "1",
+                    })}
+                >
+                  {#each PAGE_SIZES as size (size)}
+                    <option value={size}>{size}</option>
+                  {/each}
+                </select>
+              </div>
               <Button
                 size="icon"
                 variant="outline"

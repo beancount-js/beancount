@@ -572,25 +572,27 @@
         <div
           class="flex flex-wrap items-center justify-between gap-2 sm:justify-end"
         >
-          <label
-            class="text-sm text-muted-foreground"
-            for="reconciliation-review-page-size">Matches per page</label
-          >
-          <select
-            id="reconciliation-review-page-size"
-            class="h-8 rounded-md border bg-background px-2 text-sm"
-            value={pageSize}
-            onchange={(event) =>
-              updateRoute({
-                reconcilePageSize: (event.currentTarget as HTMLSelectElement)
-                  .value,
-                reconcilePage: "1",
-              })}
-          >
-            {#each RECONCILIATION_REVIEW_PAGE_SIZES as size (size)}
-              <option value={size}>{size}</option>
-            {/each}
-          </select>
+          <div class="hidden items-center gap-2 sm:flex">
+            <label
+              class="text-sm text-muted-foreground"
+              for="reconciliation-review-page-size">Matches per page</label
+            >
+            <select
+              id="reconciliation-review-page-size"
+              class="h-8 rounded-md border bg-background px-2 text-sm"
+              value={pageSize}
+              onchange={(event) =>
+                updateRoute({
+                  reconcilePageSize: (event.currentTarget as HTMLSelectElement)
+                    .value,
+                  reconcilePage: "1",
+                })}
+            >
+              {#each RECONCILIATION_REVIEW_PAGE_SIZES as size (size)}
+                <option value={size}>{size}</option>
+              {/each}
+            </select>
+          </div>
           <Button
             size="icon"
             variant="outline"
