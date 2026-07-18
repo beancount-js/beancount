@@ -16,7 +16,7 @@ import {
 import { DateRange, type Filter } from "@beancount-js/filters";
 import { formatDate } from "@beancount-js/parser";
 import { DateTime } from "luxon";
-import * as _ from "lodash";
+import cloneDeep from "lodash/cloneDeep.js";
 
 import type { ParsedBarChartData } from "../charts/bar";
 import { DEFAULT_INTERVAL, getDuration, type Interval } from "../lib/interval";
@@ -199,7 +199,7 @@ export class LedgerData {
     }
     const key = `${interval}:${limit}`;
     if (this.#dateRanges[key]) {
-      return _.cloneDeep(this.#dateRanges[key]);
+      return cloneDeep(this.#dateRanges[key]);
     }
 
     let intervals = Array.from(
@@ -209,14 +209,14 @@ export class LedgerData {
     if (limit < 0) {
       intervals = intervals.slice(-100);
     }
-    this.#dateRanges[key] = _.cloneDeep(intervals);
+    this.#dateRanges[key] = cloneDeep(intervals);
     return intervals;
   }
 
   balanceTrees(interval: Interval = DEFAULT_INTERVAL): Array<IntervalTree> {
     const key = `${interval}`;
     if (this.#balanceTree[key]) {
-      return _.cloneDeep(this.#balanceTree[key]);
+      return cloneDeep(this.#balanceTree[key]);
     }
     const intervals = this.dateRanges(interval);
     const accounts = this.accounts;
@@ -229,14 +229,14 @@ export class LedgerData {
         tree: new Tree({ entries, accounts }),
       };
     });
-    this.#balanceTree[key] = _.cloneDeep(value);
+    this.#balanceTree[key] = cloneDeep(value);
     return value;
   }
 
   changeTrees(interval: Interval = DEFAULT_INTERVAL): Array<IntervalTree> {
     const key = `${interval}`;
     if (this.#changeTrees[key]) {
-      return _.cloneDeep(this.#changeTrees[key]);
+      return cloneDeep(this.#changeTrees[key]);
     }
     const intervals = this.dateRanges(interval);
     const accounts = this.accounts;
@@ -249,7 +249,7 @@ export class LedgerData {
         tree: new Tree({ entries, accounts }),
       };
     });
-    this.#changeTrees[key] = _.cloneDeep(value);
+    this.#changeTrees[key] = cloneDeep(value);
     return value;
   }
 
@@ -268,7 +268,7 @@ export class LedgerData {
   ): ParsedBarChartData {
     const key = `${accounts.sort()}:${conversion}:${interval}:${invert}`;
     if (this.#intervalTotals[key]) {
-      return _.cloneDeep(this.#intervalTotals[key]);
+      return cloneDeep(this.#intervalTotals[key]);
     }
     const intervals = this.dateRanges(interval);
     const value = intervals
@@ -323,7 +323,7 @@ export class LedgerData {
         ];
         return keys.length > 0;
       });
-    this.#intervalTotals[key] = _.cloneDeep(value);
+    this.#intervalTotals[key] = cloneDeep(value);
     return value;
   }
 
@@ -345,7 +345,7 @@ export class LedgerData {
   ): Record<string, Record<string, number>> {
     const key = `${conversion}:${accounts.sort()}`;
     if (this.#accountBalanceByDate[key]) {
-      return _.cloneDeep(this.#accountBalanceByDate[key]);
+      return cloneDeep(this.#accountBalanceByDate[key]);
     }
     const balances: Record<string, Record<string, number>> = {};
     const dates = this.dates();
@@ -368,7 +368,7 @@ export class LedgerData {
       balances[formatDate(date)] = inventory.toRecord(conversion);
     });
 
-    this.#accountBalanceByDate[key] = _.cloneDeep(balances);
+    this.#accountBalanceByDate[key] = cloneDeep(balances);
     return balances;
   }
 
@@ -378,7 +378,7 @@ export class LedgerData {
   ): Record<string, Record<string, number>> {
     const key = `${conversion}:${accounts.sort()}`;
     if (this.#accountChangesByDate[key]) {
-      return _.cloneDeep(this.#accountChangesByDate[key]);
+      return cloneDeep(this.#accountChangesByDate[key]);
     }
     const balances: Record<string, Record<string, number>> = {};
     const inventory = new CounterInventory();
@@ -418,7 +418,7 @@ export class LedgerData {
       balances[dayKey] = delta;
     });
 
-    this.#accountChangesByDate[key] = _.cloneDeep(balances);
+    this.#accountChangesByDate[key] = cloneDeep(balances);
     return balances;
   }
 
@@ -431,7 +431,7 @@ export class LedgerData {
   }> {
     const key = `${account}:${conversion}`;
     if (this.#accountBalance[key]) {
-      return _.cloneDeep(this.#accountBalance[key]);
+      return cloneDeep(this.#accountBalance[key]);
     }
     const data: Array<{
       date: Date;
@@ -445,7 +445,7 @@ export class LedgerData {
         balance: value,
       });
     }
-    this.#accountBalance[key] = _.cloneDeep(data);
+    this.#accountBalance[key] = cloneDeep(data);
     return data;
   }
 
@@ -459,7 +459,7 @@ export class LedgerData {
   }> {
     const key = `${accounts.sort()}:${conversion}:${interval}`;
     if (this.#networth[key]) {
-      return _.cloneDeep(this.#networth[key]);
+      return cloneDeep(this.#networth[key]);
     }
 
     const intervals = this.dateRanges(interval);
@@ -488,7 +488,7 @@ export class LedgerData {
       });
     });
 
-    this.#networth[key] = _.cloneDeep(balances);
+    this.#networth[key] = cloneDeep(balances);
     return balances;
   }
 

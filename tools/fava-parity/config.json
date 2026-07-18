@@ -1,0 +1,55 @@
+{
+  "favaUpstreamPath": "../../../fava-upstream",
+  "favaCommit": "a80d04dc344c7142a53482dd67d54a9ba9f92e35",
+  "favaVersionHint": "1.30.13 (installed CLI)",
+  "port": 5055,
+  "host": "127.0.0.1",
+  "ledgers": [
+    {
+      "id": "example",
+      "path": "contrib/examples/example.beancount",
+      "slug": "example-beancount-file"
+    },
+    {
+      "id": "query-example",
+      "path": "tests/data/query-example.beancount",
+      "slug": "query-example"
+    }
+  ],
+  "accounts": [
+    "Assets",
+    "Assets:US:BofA:Checking",
+    "Assets:US:Vanguard:RGAGX",
+    "Assets:US:ETrade:GLD",
+    "Liabilities",
+    "Equity",
+    "Income",
+    "Expenses",
+    "Expenses:Food:Restaurant"
+  ],
+  "intervals": ["year", "month"],
+  "conversions": ["at_cost", "at_value"],
+  "queries": [
+    {
+      "id": "select-account-sum-position",
+      "query": "SELECT account, sum(position)"
+    },
+    {
+      "id": "balances",
+      "query": "balances"
+    },
+    {
+      "id": "bofa-positions",
+      "query": "SELECT date, account, position WHERE account ~ 'Assets:US:BofA'"
+    },
+    {
+      "id": "sum-number-currency",
+      "query": "SELECT account, sum(number), currency"
+    },
+    {
+      "id": "holdings-style",
+      "query": "SELECT account, units(sum(position)), cost_number, cost_currency, cost_date GROUP BY 1, cost_number, cost_currency, cost_date"
+    }
+  ],
+  "numberTolerance": 0.0001
+}

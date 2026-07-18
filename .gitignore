@@ -6,6 +6,9 @@ coverage
 .clinerules
 .changeyard
 
+# Fava report parity capture artifacts (keep REPORT.md)
+tools/fava-parity/out/
+
 
 # Changeyard local guard hooks
 .changeyard/bin/
