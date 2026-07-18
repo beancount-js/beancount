@@ -26,7 +26,6 @@
   const {
     snapshot,
     activeFile: workspaceActiveFile,
-    activeLedgerKind,
     reviewLedger,
     saveFile,
     requestInlineAi,
@@ -168,11 +167,11 @@
     });
   }
 
+  // The virtual review file arrives alongside route state during a hard reload.
+  // Its path is the authoritative identity here; waiting for the separately
+  // derived ledger kind can briefly replace the editor document with nothing.
   $: reviewFile =
-    $activeLedgerKind === "ingestion-review" &&
-    $reviewLedger?.path === $workspaceActiveFile
-      ? $reviewLedger
-      : undefined;
+    $reviewLedger?.path === $workspaceActiveFile ? $reviewLedger : undefined;
   $: activeFile =
     reviewFile ??
     $snapshot?.ledgerFiles.find((file) => file.path === $workspaceActiveFile);
