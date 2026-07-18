@@ -78,6 +78,27 @@ test("Query tables use a compact search field and expandable saved queries", asy
     savedQuery.getByRole("button", { name: /^Delete query:/ }),
   ).toBeVisible();
 
+  const trigger = savedQuery.locator("[data-query-history-trigger]");
+  const [triggerBounds, indicatorBounds, labelBounds] = await Promise.all([
+    trigger.boundingBox(),
+    trigger.locator("svg").boundingBox(),
+    savedQuery.locator("[data-query-history-label]").boundingBox(),
+  ]);
+  expect(triggerBounds).not.toBeNull();
+  expect(indicatorBounds).not.toBeNull();
+  expect(labelBounds).not.toBeNull();
+  expect(indicatorBounds!.x).toBeLessThanOrEqual(triggerBounds!.x + 1);
+  expect(labelBounds!.x - (indicatorBounds!.x + indicatorBounds!.width)).toBe(
+    12,
+  );
+
+  const initialState = await trigger.getAttribute("data-state");
+  await trigger.click();
+  await expect(trigger).toHaveAttribute(
+    "data-state",
+    initialState === "open" ? "closed" : "open",
+  );
+
   const [headerBounds, actionBounds] = await Promise.all([
     savedQuery.locator("[data-query-history-header]").boundingBox(),
     savedQuery.locator("[data-query-history-actions]").boundingBox(),

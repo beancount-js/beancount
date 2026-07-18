@@ -63,9 +63,11 @@
       >
         <div class="min-w-0 flex-1">
           <Accordion.Trigger
-            class="w-full min-w-0 py-0 text-left text-xs hover:no-underline"
+            indicatorPosition="start"
+            class="w-full min-w-0 gap-3 py-0 text-left text-xs hover:no-underline"
+            data-query-history-trigger
           >
-            <span class="min-w-0 flex-1">
+            <span class="min-w-0 flex-1" data-query-history-label>
               <Highlighter code={query.query} parser={bqlParser} />
             </span>
           </Accordion.Trigger>

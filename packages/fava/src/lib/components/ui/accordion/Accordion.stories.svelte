@@ -42,3 +42,28 @@
     </Accordion.Root>
   {/snippet}
 </Story>
+
+<Story
+  name="Uses a leading disclosure indicator"
+  play={async ({ canvas }) => {
+    const trigger = canvas.getByRole("button", {
+      name: /^Show account details/,
+    });
+    await expect(trigger).toHaveAttribute("data-state", "closed");
+    await userEvent.click(trigger);
+    await expect(trigger).toHaveAttribute("data-state", "open");
+  }}
+>
+  {#snippet template()}
+    <Accordion.Root type="single" collapsible class="w-full max-w-xl">
+      <Accordion.Item value="account-details">
+        <Accordion.Trigger indicatorPosition="start">
+          Show account details
+        </Accordion.Trigger>
+        <Accordion.Content>
+          The indicator points right when closed and down when open.
+        </Accordion.Content>
+      </Accordion.Item>
+    </Accordion.Root>
+  {/snippet}
+</Story>
