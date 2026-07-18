@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import type { NormalizedTransaction } from "./types";
 import {
   RuleCategorizer,
+  RuleActionsHook,
   applyRuleActions,
   firstCategoryMatch,
   migrateMerchantRules,
@@ -167,6 +168,67 @@ describe("detection rules", () => {
       method: "rule",
       hard: true,
     });
+  });
+
+  test("applies matching rule actions in stored order during ingestion", async () => {
+    const hook = new RuleActionsHook([
+      rule({
+        id: "r1",
+        actions: [
+          {
+            id: "a1",
+            actionType: "set_transaction_name",
+            value: "Debt repayment",
+          },
+          {
+            id: "a2",
+            actionType: "set_transaction_category",
+            value: "Expenses:Debt:Repayment",
+          },
+        ],
+      }),
+      rule({
+        id: "r2",
+        conditions: [
+          {
+            id: "c2",
+            conditionType: "transaction_name",
+            operator: "=",
+            value: "Debt repayment",
+          },
+        ],
+        actions: [
+          {
+            id: "a3",
+            actionType: "set_transaction_category",
+            value: "Expenses:Debt:Loan",
+          },
+          {
+            id: "a4",
+            actionType: "set_transaction_tags",
+            value: "debt",
+          },
+        ],
+      }),
+    ]);
+
+    const proposal = await hook.process(
+      {
+        id: "p1",
+        importId: "bank:1",
+        transaction: tx(),
+        suggestions: [],
+        status: "needs-review",
+        issues: [],
+      },
+      { availableAccounts: [], history: [] },
+    );
+
+    expect(proposal.transaction).toMatchObject({
+      narration: "Debt repayment",
+      tags: ["debt"],
+    });
+    expect(proposal.selectedAccount).toBe("Expenses:Debt:Loan");
   });
 
   test("parseRulesFile and summarizeRule", () => {
