@@ -13,6 +13,9 @@
   export let formatter: (value: number, currency: string) => string;
   export let multiplier = 1;
 
+  const accountColumn = "16rem";
+  const weightMeterColumn = "4.5rem";
+  const weightColumn = "5.5rem";
   let collapsed = new Set<string>();
   let roots: AccountTreeNode[] = [];
   let collapsibleAccounts = new Set<string>();
@@ -59,6 +62,7 @@
       };
     })
     .filter((contribution) => contribution.amount);
+  $: gridTemplate = `${accountColumn} ${weightMeterColumn} ${weightColumn} minmax(10rem, 1fr)`;
 
   function toggle(account: string) {
     const next = new Set(collapsed);
@@ -88,6 +92,7 @@
     class="mt-3 flex h-1.5 w-full overflow-hidden rounded-full bg-muted"
     role="img"
     aria-label={`${title} category contributions`}
+    data-dashboard-contribution-bar
   >
     {#each contributions as contribution (contribution.account)}
       <span
@@ -98,18 +103,27 @@
     {/each}
   </div>
   <div
-    class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground"
+    class="contribution-legend mt-4 gap-x-6 gap-y-2 text-sm text-muted-foreground"
+    data-dashboard-contribution-legend
   >
     {#each contributions as contribution (contribution.account)}
-      <span class="flex items-center gap-2">
+      <span
+        class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_max-content_max-content] items-baseline gap-x-2"
+      >
         <span
-          class="size-2.5 shrink-0 rounded-full"
+          class="mt-1 size-2.5 shrink-0 self-start rounded-full"
           style={`background: ${contribution.color}`}
           aria-hidden="true"
         ></span>
-        <span>{contribution.account.split(":").at(-1)}</span>
-        <span class="font-mono text-xs tabular-nums text-foreground"
+        <span class="min-w-0 break-words leading-5">{contribution.account}</span
+        >
+        <span
+          class="whitespace-nowrap font-mono text-xs tabular-nums text-foreground"
           >{contribution.percentage.toFixed(1)}%</span
+        >
+        <span
+          class="whitespace-nowrap font-mono text-xs tabular-nums text-foreground"
+          >{formatter(contribution.amount, currency)}</span
         >
       </span>
     {/each}
@@ -119,11 +133,12 @@
     class="mt-4 w-full min-w-0 max-w-full rounded-xl"
   >
     <ol
-      class="min-w-[42rem] overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
+      class="min-w-[45rem] overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
       data-dashboard-tree-rows
     >
       <li
-        class="grid min-h-10 grid-cols-[minmax(0,1fr)_8rem_10rem] items-center bg-muted/65 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+        class="grid min-h-10 items-center bg-muted/65 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+        style={`grid-template-columns: ${gridTemplate}`}
       >
         <span class="flex items-center gap-2 px-4 py-2">
           <button
@@ -142,6 +157,7 @@
           </button>
           Account
         </span>
+        <span aria-hidden="true"></span>
         <span class="px-4 py-2 text-right">Weight</span>
         <span class="px-4 py-2 text-right">Value</span>
       </li>
@@ -152,6 +168,7 @@
           {formatter}
           {multiplier}
           {total}
+          {gridTemplate}
           {collapsed}
           {toggle}
           branchColor="var(--primary)"
@@ -160,3 +177,10 @@
     </ol>
   </ScrollArea.Root>
 </section>
+
+<style>
+  .contribution-legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  }
+</style>

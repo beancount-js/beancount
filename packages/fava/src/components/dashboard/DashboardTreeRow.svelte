@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ChevronDown } from "lucide-svelte";
   import type { AccountTreeNode } from "../../lib/models";
-  import { urlForAccount } from "../../helpers";
+  import AccountLink from "../AccountLink.svelte";
   import Self from "./DashboardTreeRow.svelte";
   import { dashboardCategoryColor } from "./model";
 
@@ -10,6 +10,7 @@
   export let formatter: (value: number, currency: string) => string;
   export let multiplier = 1;
   export let total = 0;
+  export let gridTemplate: string;
   export let depth = 0;
   export let collapsed: Set<string>;
   export let toggle: (account: string) => void;
@@ -26,7 +27,8 @@
 
 <li>
   <div
-    class="grid min-h-12 grid-cols-[minmax(0,1fr)_8rem_10rem] items-center border-t border-border/70 text-sm transition-colors hover:bg-muted/65"
+    class="grid min-h-12 items-center border-t border-border/70 text-sm transition-colors hover:bg-muted/65"
+    style={`grid-template-columns: ${gridTemplate}`}
     data-dashboard-tree-row
   >
     <div
@@ -47,19 +49,15 @@
       {:else}
         <span class="size-4 shrink-0" aria-hidden="true"></span>
       {/if}
-      <a
-        class="truncate text-sm font-medium text-foreground hover:text-primary hover:underline"
-        href={urlForAccount(node.account)}
-        title={node.account}>{name}</a
-      >
+      <AccountLink account={node.account} label={name} avatarSize="sm" />
     </div>
     <span
-      class:dimmed={!amount}
-      class="grid grid-cols-[3.25rem_minmax(0,1fr)] items-center gap-2 px-4 text-right font-mono text-[13px] tabular-nums"
+      class="grid place-items-center py-2 pl-4 pr-2"
+      data-dashboard-weight-meter-column
     >
       <span
         class:invisible={!amount}
-        class="weight-meter justify-self-start"
+        class="weight-meter"
         style={`--meter-color: ${branchColor}`}
         data-dashboard-weight-meter
         aria-hidden="true"
@@ -68,10 +66,12 @@
           <span style={`opacity: ${0.48 + bar * 0.11}`}></span>
         {/each}
       </span>
-      <span class="justify-self-end"
-        >{amount ? `${weight.toFixed(1)}%` : "—"}</span
-      >
     </span>
+    <span
+      class:dimmed={!amount}
+      class="px-4 text-right font-mono text-[13px] tabular-nums"
+      data-dashboard-weight>{amount ? `${weight.toFixed(1)}%` : "—"}</span
+    >
     <span
       class:dimmed={!amount}
       class="px-4 text-right font-mono text-[13px] tabular-nums"
@@ -88,6 +88,7 @@
           {formatter}
           {multiplier}
           {total}
+          {gridTemplate}
           depth={depth + 1}
           branchColor={depth === 0
             ? dashboardCategoryColor(child.account)
