@@ -3,7 +3,11 @@ import { codeFolding, foldable, foldedRanges } from "@codemirror/language";
 import { EditorView } from "@codemirror/view";
 import { beanCount } from "@beancount-js/codemirror-lang-beancount";
 import { afterEach, describe, expect, test } from "vitest";
-import { foldMetadata, metadataFoldEffects } from "./foldMetadata";
+import {
+  foldMetadata,
+  metadataFoldEffects,
+  metadataFolding,
+} from "./foldMetadata";
 
 function foldedRangeList(state: EditorState) {
   const ranges: Array<{ from: number; to: number }> = [];
@@ -21,7 +25,7 @@ describe("foldMetadata", () => {
     view = undefined;
   });
 
-  test("folds transaction and posting metadata after the first attribute", () => {
+  test("folds transaction and posting metadata from the first property colon", () => {
     const doc = `2026-07-17 * "Coffee"
   import_id: "transaction-1"
   import_source: "monzo"
@@ -35,7 +39,7 @@ describe("foldMetadata", () => {
       parent: document.body,
       state: EditorState.create({
         doc,
-        extensions: [beanCount(), codeFolding()],
+        extensions: [beanCount(), metadataFolding, codeFolding()],
       }),
     });
 
@@ -45,13 +49,18 @@ describe("foldMetadata", () => {
     });
 
     expect(expected[0]).toEqual({
-      from: view.state.doc.line(2).to,
+      from: doc.indexOf(":", view.state.doc.line(2).from) + 1,
       to: view.state.doc.line(4).to,
     });
     expect(expected[1]).toEqual({
-      from: view.state.doc.line(6).to,
+      from: doc.indexOf(":", view.state.doc.line(6).from) + 1,
       to: view.state.doc.line(7).to,
     });
+    expect(
+      expected.map((range) =>
+        view!.state.doc.sliceString(range.to, range.to + 1),
+      ),
+    ).toEqual(["\n", "\n"]);
 
     expect(
       metadataFoldEffects(view.state).map((effect) => effect.value),
@@ -69,11 +78,30 @@ describe("foldMetadata", () => {
       parent: document.body,
       state: EditorState.create({
         doc,
-        extensions: [beanCount(), codeFolding()],
+        extensions: [beanCount(), metadataFolding, codeFolding()],
       }),
     });
 
     foldMetadata(view);
     expect(foldedRangeList(view.state)).toEqual([]);
+  });
+
+  test("keeps the final metadata value intact when the document has no newline", () => {
+    const doc = `2026-07-17 * "Coffee"
+  import_id: "transaction-1"
+  import_source: "monzo"`;
+    view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({
+        doc,
+        extensions: [beanCount(), metadataFolding, codeFolding()],
+      }),
+    });
+
+    const line = view.state.doc.line(2);
+    expect(foldable(view.state, line.from, line.to)).toEqual({
+      from: doc.indexOf(":", line.from) + 1,
+      to: doc.length,
+    });
   });
 });

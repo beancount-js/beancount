@@ -75,7 +75,12 @@ export const parser = grammarParser.configure({
       },
       Metadata: (node: SyntaxNode) => {
         const first = node.firstChild;
-        return first?.nextSibling ? { from: first.to, to: node.to } : null;
+        const attributeName = first?.getChild("AttributeName");
+        // AttributeName includes its colon. Keep the property name visible and
+        // collapse its value together with every following metadata property.
+        return attributeName && first?.nextSibling
+          ? { from: attributeName.to, to: node.to }
+          : null;
       },
     }),
   ],

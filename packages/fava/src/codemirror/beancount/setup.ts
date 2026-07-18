@@ -42,6 +42,7 @@ import { foldGutter } from "../extensions/foldGutter";
 import { classHighlighter } from "../extensions/classHighlighter";
 import { clickableUrls } from "../extensions/urls";
 import { foldHeaders } from "./foldHeaders";
+import { metadataFolding } from "./foldMetadata";
 import { rulerPlugin } from "./ruler";
 import { decorateHeaders } from "./headers";
 import { mathExpressions } from "./math";
@@ -199,6 +200,7 @@ const mixedBeancountLanguage = LRLanguage.define({
 
 export const basicSetup: Extension = (() => [
   mixedBeancountLanguage,
+  metadataFolding,
   beanCountLinter(),
   closeBrackets(),
   headerGutter,

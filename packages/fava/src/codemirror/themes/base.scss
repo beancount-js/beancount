@@ -182,6 +182,11 @@
   align-items: center;
 }
 
+.cm-editor .cm-foldGutter .cm-gutterElement {
+  display: flex;
+  align-items: center;
+}
+
 .HyperMD-header .cm-header-1,
 .HyperMD-header .cm-header-2,
 .HyperMD-header .cm-header-3,
@@ -225,7 +230,17 @@
 .cm-editor .cm-gutterElement .collapse-icon {
   display: flex;
   align-items: center;
+  justify-content: center;
   height: 100%;
+  transition: opacity 100ms ease-in-out;
+}
+
+.cm-editor .cm-foldGutter .fold-icon-posting:not(.fold-icon-active),
+.cm-editor
+  .cm-foldGutter
+  .fold-icon-metadata.fold-icon-collapsed:not(.fold-icon-active) {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .cm-editor .cm-gutters {
@@ -240,6 +255,7 @@
 }
 
 .collapse-icon svg.svg-icon {
+  display: block;
   stroke-width: 4px;
   width: 10px;
   height: 10px;
