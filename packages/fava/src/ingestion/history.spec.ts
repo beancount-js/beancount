@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { ingestionRunSourceDisplay } from "./history";
+import { ingestionHistoryRowPath, ingestionRunSourceDisplay } from "./history";
 import type { IngestionSource } from "./types";
 
 const sources: IngestionSource[] = [
@@ -26,6 +26,23 @@ const sources: IngestionSource[] = [
 ];
 
 describe("ingestion run source display", () => {
+  test("opens pending rows in review and completed rows in their audit", () => {
+    expect(
+      ingestionHistoryRowPath({
+        id: "run:pending",
+        sourceId: "monzo:acc_primary",
+        reviewState: "pending",
+      }),
+    ).toBe("/records?sourceId=monzo&runId=run%3Apending");
+    expect(
+      ingestionHistoryRowPath({
+        id: "run:completed",
+        sourceId: "monzo:acc_primary",
+        reviewState: "completed",
+      }),
+    ).toBe("/import/history/run:completed");
+  });
+
   test("uses the linked account name and source account for grouped runs", () => {
     expect(ingestionRunSourceDisplay("monzo:acc_primary", sources)).toEqual({
       title: "Personal account",

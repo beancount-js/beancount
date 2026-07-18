@@ -8,6 +8,21 @@ export type IngestionRunSourceDisplay = {
   sourceAccount?: string;
 };
 
+type IngestionHistoryRow = {
+  id: string;
+  sourceId: string;
+  reviewState: "pending" | "completed";
+};
+
+/** Select the destination that matches the work still available for a run. */
+export function ingestionHistoryRowPath(run: IngestionHistoryRow) {
+  if (run.reviewState === "completed") return `/import/history/${run.id}`;
+  return `/records?${new URLSearchParams({
+    sourceId: run.sourceId.split(":")[0] ?? run.sourceId,
+    runId: run.id,
+  })}`;
+}
+
 /**
  * Resolve the user-facing identity for a historical run without losing access
  * to archives recorded before a source or linked account was removed.

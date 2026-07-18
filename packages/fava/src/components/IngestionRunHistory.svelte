@@ -6,8 +6,6 @@
   import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
   import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
   import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
-  import ExternalLink from "lucide-svelte/icons/external-link";
-  import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
   import type { SortOrder } from "../grid/sort";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
@@ -17,7 +15,10 @@
     IngestionRunSummary,
   } from "../ingestion/types";
   import { useContext } from "../context";
-  import { ingestionRunSourceDisplay } from "../ingestion/history";
+  import {
+    ingestionHistoryRowPath,
+    ingestionRunSourceDisplay,
+  } from "../ingestion/history";
   import { useNavigation } from "../router/router";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
@@ -124,23 +125,7 @@
     void loadHistory(0, next);
   }
 
-  function openInReview(summary: IngestionRunSummary) {
-    router.push(
-      `/records?${new URLSearchParams({
-        sourceId: summary.sourceId.split(":")[0] ?? summary.sourceId,
-        runId: summary.id,
-      })}`,
-    );
-  }
-
-  function openAudit(summary: IngestionRunSummary) {
-    router.push(`/import/history/${summary.id}`);
-  }
-
-  function handleAuditLinkClick(
-    event: MouseEvent,
-    summary: IngestionRunSummary,
-  ) {
+  function handleRunLinkClick(event: MouseEvent, summary: IngestionRunSummary) {
     if (
       event.button !== 0 ||
       event.metaKey ||
@@ -150,7 +135,7 @@
       return;
     }
     event.preventDefault();
-    openAudit(summary);
+    router.push(ingestionHistoryRowPath(summary));
   }
 
   function formatTime(value: string) {
@@ -430,10 +415,14 @@
                   class="relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-4 py-4 transition-colors last:border-b-0 focus-within:bg-accent focus-within:ring-2 focus-within:ring-ring hover:bg-accent/60 sm:grid-cols-[minmax(0,1fr)_repeat(4,5rem)] sm:gap-x-6"
                 >
                   <a
-                    href={`/import/history/${run.id}`}
+                    href={ingestionHistoryRowPath(run)}
                     class="absolute inset-0 z-0 rounded-[inherit] outline-none"
-                    aria-label={`View audit for ${source.title}`}
-                    onclick={(event) => handleAuditLinkClick(event, run)}
+                    aria-label={`${
+                      run.reviewState === "pending"
+                        ? "Review"
+                        : "View audit for"
+                    } ${source.title}`}
+                    onclick={(event) => handleRunLinkClick(event, run)}
                   ></a>
 
                   <div
@@ -445,13 +434,15 @@
                         color={appearance.color}
                         icon={appearance.icon}
                       />
-                      <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <h3 class="truncate text-sm font-semibold">
+                      <div class="min-w-0 flex-1">
+                        <div class="flex min-w-0 items-center gap-2">
+                          <h3
+                            class="min-w-0 flex-1 truncate text-sm font-semibold"
+                          >
                             {source.title}
                           </h3>
                           <span
-                            class={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                            class={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                               run.reviewState === "pending"
                                 ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
                                 : "bg-muted text-muted-foreground"
@@ -462,22 +453,11 @@
                               : "Completed"}
                           </span>
                         </div>
-                        <p class="mt-1 truncate text-xs text-muted-foreground">
-                          {formatTime(run.completedAt)} · Run {run.id}
+                        <p
+                          class="mt-1 truncate text-right text-xs text-muted-foreground"
+                        >
+                          {formatTime(run.completedAt)}
                         </p>
-                        {#if run.reviewState === "pending"}
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            class="pointer-events-auto mt-3"
-                            onclick={() => openInReview(run)}
-                          >
-                            <ExternalLink data-icon="inline-start" />
-                            <span class="hidden lg:inline">Open in Review</span>
-                            <span class="lg:hidden">Review</span>
-                          </Button>
-                        {/if}
                       </div>
                     </div>
                   </div>
