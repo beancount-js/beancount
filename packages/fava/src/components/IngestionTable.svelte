@@ -298,13 +298,9 @@
     return message;
   });
 
-  const summaryLine = $derived.by(() => {
-    if (!activeRuns.length) return "";
-    const duplicates = proposalRows.filter(
-      (row) => row.proposal.status === "duplicate",
-    ).length;
-    return `${ready.length} ready · ${pending.length} need review · ${duplicates} duplicates`;
-  });
+  const duplicates = $derived(
+    proposalRows.filter((row) => row.proposal.status === "duplicate").length,
+  );
   const reconciliationRefreshKey = $derived(
     activeRuns
       .map(
@@ -556,6 +552,7 @@
     }
     ingestionHeaderActions.set({
       kind: "review",
+      recordCount: proposalRows.length,
       sourceId,
       sourceOptions,
       canForceRefetch,
@@ -927,7 +924,20 @@
       "Uncategorized";
     const aiError =
       proposal.lastAiEnrichment?.ok === false ? " · AI error" : "";
-    return `${ingestionProposalReviewLabel(proposal)} · ${category}${aiError}`;
+    return `${category}${aiError}`;
+  }
+
+  function rowStatusClass(proposal: ImportProposal) {
+    switch (proposal.status) {
+      case "ready":
+        return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+      case "held":
+        return "bg-amber-500/15 text-amber-700 dark:text-amber-300";
+      case "duplicate":
+        return "bg-rose-500/15 text-rose-700 dark:text-rose-300";
+      default:
+        return "bg-violet-500/15 text-violet-700 dark:text-violet-300";
+    }
   }
 
   function rowAmount(proposal: ImportProposal) {
@@ -1251,11 +1261,22 @@
       <div
         class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
-        <div class="min-w-0">
-          <h2 class="text-lg font-semibold">Review</h2>
-          {#if summaryLine}
-            <p class="text-sm text-muted-foreground">{summaryLine}</p>
-          {/if}
+        <div class="flex flex-wrap items-center gap-2" role="status">
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300"
+          >
+            <span class="tabular-nums">{ready.length}</span> ready
+          </span>
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-700 dark:text-violet-300"
+          >
+            <span class="tabular-nums">{pending.length}</span> need review
+          </span>
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-2.5 py-1 text-xs font-medium text-rose-700 dark:text-rose-300"
+          >
+            <span class="tabular-nums">{duplicates}</span> duplicates
+          </span>
         </div>
         <ToggleGroup.Root
           type="single"
@@ -1555,7 +1576,7 @@
                       role="button"
                       tabindex="0"
                       class:rounded-b-xl={index === group.rows.length - 1}
-                      class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_auto_minmax(0,1fr)_auto]"
+                      class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_auto_minmax(0,1fr)_7.5rem]"
                       aria-label={`Review ${rowTitle(row.proposal)}`}
                       onclick={() => openRow(row)}
                       onkeydown={(event) => handleRowKeydown(event, row)}
@@ -1602,22 +1623,31 @@
                         </div>
                       </div>
                       <div
-                        class="col-start-3 flex flex-wrap items-center justify-between gap-1 sm:col-start-4 sm:row-start-1 sm:justify-end"
+                        class="col-start-3 flex flex-col items-end gap-1.5 sm:col-start-4 sm:row-start-1"
                       >
-                        {#if reviewFilter === "accepted"}
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            class="size-8 text-muted-foreground"
-                            aria-label={`Move ${rowTitle(row.proposal)} to review`}
-                            title="Move to review"
-                            disabled={loading || bulkUpdating || syncing}
-                            onclick={(event) => void unacceptRow(row, event)}
+                        <div class="flex items-center justify-end gap-1">
+                          {#if reviewFilter === "accepted"}
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              class="size-8 text-muted-foreground"
+                              aria-label={`Move ${rowTitle(row.proposal)} to review`}
+                              title="Move to review"
+                              disabled={loading || bulkUpdating || syncing}
+                              onclick={(event) => void unacceptRow(row, event)}
+                            >
+                              <Undo2 data-icon />
+                            </Button>
+                          {/if}
+                          <span
+                            class={`inline-flex w-20 justify-center rounded-full px-2 py-0.5 text-xs font-medium ${rowStatusClass(
+                              row.proposal,
+                            )}`}
                           >
-                            <Undo2 data-icon />
-                          </Button>
-                        {/if}
+                            {ingestionProposalReviewLabel(row.proposal)}
+                          </span>
+                        </div>
                         <span class="text-sm font-semibold tabular-nums">
                           {rowAmount(row.proposal)}
                         </span>

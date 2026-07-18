@@ -19,6 +19,7 @@ export type IngestionEditorHeaderActions = {
 
 export type IngestionReviewHeaderActions = {
   kind: "review";
+  recordCount: number;
   sourceId: string;
   sourceOptions: { value: string; label: string }[];
   canForceRefetch: boolean;

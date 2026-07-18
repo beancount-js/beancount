@@ -115,7 +115,7 @@
   const { activeRoute, router, routerLink } = navigation;
   const utilityPageTitles: Record<string, string> = {
     "/errors": "Errors",
-    "/records": "Review imports",
+    "/records": "Records",
     "/import/editor": "Sources",
     "/import/accounts": "Accounts",
     "/import/merchants": "Review merchants",

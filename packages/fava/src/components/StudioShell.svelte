@@ -493,6 +493,14 @@
             >{$ingestionHeaderActions.runCount}</span
           >
         {/if}
+        {#if $ingestionHeaderActions?.kind === "review"}
+          <span
+            class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+            aria-label={`${$ingestionHeaderActions.recordCount} total records`}
+            title={`${$ingestionHeaderActions.recordCount} total records`}
+            >{$ingestionHeaderActions.recordCount}</span
+          >
+        {/if}
         {#if $ingestionHeaderActions?.kind === "ledger"}
           <div
             data-slot="studio-workspace-header-leading"
