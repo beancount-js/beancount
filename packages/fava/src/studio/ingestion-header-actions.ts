@@ -58,6 +58,7 @@ export type IngestionMerchantsHeaderActions = {
   groupsCollapsedAll: boolean;
   canDetect: boolean;
   detectBusy: boolean;
+  bulkAction?: IngestionBulkReviewAction;
   onSourceChange: (sourceId: string) => void;
   onToggleCollapseGroups: () => void;
   onDetectMerchants: () => void;

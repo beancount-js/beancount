@@ -14,9 +14,17 @@
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
   import type { SortOrder } from "../grid/sort";
+  import {
+    checkboxSelectionState,
+    pruneReviewSelection,
+    updateReviewSelection,
+  } from "../lib/review-selection";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
-  import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
+  import {
+    ingestionHeaderActions,
+    type IngestionBulkReviewAction,
+  } from "../studio/ingestion-header-actions";
   import { debounceWithDelay } from "../hooks/debounce";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type { IngestionConfigResponse } from "../ingestion/types";
@@ -74,6 +82,7 @@
     cloneIngestionMerchantSearchState(),
   );
   let lastSearchSignature = $state("");
+  let selectedClusterIds = $state(new Set<string>());
 
   const project = $derived($snapshot);
   const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
@@ -128,6 +137,39 @@
   );
   const page = $derived(Math.min(requestedPage, Math.max(1, pages.length)));
   const visibleClusters = $derived(pages[page - 1] ?? []);
+  const actionableClusterIds = $derived(
+    new Set(matchedClusters.map((cluster) => cluster.id)),
+  );
+  const selectedClusters = $derived(
+    matchedClusters.filter((cluster) => selectedClusterIds.has(cluster.id)),
+  );
+  const visibleClusterIds = $derived(
+    visibleClusters.map((cluster) => cluster.id),
+  );
+  const masterSelection = $derived(
+    checkboxSelectionState(selectedClusterIds, visibleClusterIds),
+  );
+  const allMatchingSelected = $derived(
+    matchedClusters.length > 0 &&
+      selectedClusterIds.size === matchedClusters.length,
+  );
+  const showSelectionBanner = $derived(
+    matchedClusters.length > visibleClusterIds.length &&
+      visibleClusterIds.length > 0 &&
+      (masterSelection.checked || allMatchingSelected),
+  );
+  const merchantBulkAction = $derived.by(
+    (): IngestionBulkReviewAction | undefined => {
+      if (!selectedClusters.length) return;
+      return {
+        label: "Detect",
+        selectedCount: selectedClusters.length,
+        canRun: Boolean(project && sourceId && !loading && !detectBusy),
+        busy: detectBusy,
+        onRun: () => void detectSelected(),
+      };
+    },
+  );
 
   const summaryLine = $derived(
     matchedClusters.length
@@ -149,6 +191,7 @@
         sourceId && clusters.length && !loading && !detectBusy,
       ),
       detectBusy,
+      bulkAction: merchantBulkAction,
       onSourceChange: (next) => void loadForSource(next),
       onToggleCollapseGroups: () => {
         groupsCollapsedAll = !groupsCollapsedAll;
@@ -181,6 +224,34 @@
       result.push(items.slice(index, index + size));
     }
     return result;
+  }
+
+  function setIndeterminate(node: HTMLInputElement, value: boolean) {
+    node.indeterminate = value;
+    return {
+      update(next: boolean) {
+        node.indeterminate = next;
+      },
+    };
+  }
+
+  function setSelectedClusters(
+    clusterIds: readonly string[],
+    selected: boolean,
+  ) {
+    selectedClusterIds = updateReviewSelection(
+      selectedClusterIds,
+      clusterIds,
+      selected,
+    );
+  }
+
+  function selectAllMatchingClusters() {
+    selectedClusterIds = new Set(matchedClusters.map((cluster) => cluster.id));
+  }
+
+  function clearSelectedClusters() {
+    selectedClusterIds = new Set();
   }
 
   function updateRoute(values: Record<string, string | undefined>) {
@@ -248,6 +319,16 @@
     if (signature === lastSearchSignature) return;
     lastSearchSignature = signature;
     searchState = parseIngestionMerchantSearchState($activeRoute.query);
+  });
+
+  $effect(() => {
+    const next = pruneReviewSelection(selectedClusterIds, actionableClusterIds);
+    if (
+      next.size !== selectedClusterIds.size ||
+      [...next].some((id) => !selectedClusterIds.has(id))
+    ) {
+      selectedClusterIds = next;
+    }
   });
 
   function openCluster(cluster: MerchantReviewCluster) {
@@ -388,7 +469,7 @@
     }
   }
 
-  async function detectAll() {
+  async function detectClusters(clusterIds?: readonly string[]) {
     if (!project || !clusters.length) return;
     detectBusy = true;
     status = "Detecting merchants…";
@@ -398,16 +479,25 @@
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ sourceId }),
+          body: JSON.stringify({ sourceId, clusterIds }),
         },
       );
       await refreshClusters();
+      selectedClusterIds = new Set();
       status = `Merchant detection finished for ${result.clusters} cluster${result.clusters === 1 ? "" : "s"} in ${result.calls} AI call${result.calls === 1 ? "" : "s"}.`;
     } catch (error) {
       status = error instanceof Error ? error.message : String(error);
     } finally {
       detectBusy = false;
     }
+  }
+
+  function detectAll() {
+    void detectClusters();
+  }
+
+  function detectSelected() {
+    void detectClusters(selectedClusters.map((cluster) => cluster.id));
   }
 </script>
 
@@ -516,8 +606,21 @@
         {:else if matchedClusters.length}
           <div
             role="row"
-            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
+            <input
+              use:setIndeterminate={masterSelection.indeterminate}
+              type="checkbox"
+              class="size-4 rounded border-input text-primary focus:ring-ring"
+              aria-label="Select visible merchant clusters"
+              checked={masterSelection.checked}
+              disabled={!visibleClusterIds.length || detectBusy}
+              onchange={(event) =>
+                setSelectedClusters(
+                  visibleClusterIds,
+                  (event.currentTarget as HTMLInputElement).checked,
+                )}
+            />
             <div
               role="columnheader"
               aria-sort={ariaSortFor("merchant")}
@@ -561,17 +664,60 @@
               </button>
             </div>
           </div>
+
+          {#if showSelectionBanner}
+            <div
+              data-merchant-selection-banner
+              role="status"
+              class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+            >
+              {#if allMatchingSelected}
+                All {matchedClusters.length} matching merchant clusters are selected.
+                <button
+                  type="button"
+                  class="font-medium text-primary underline-offset-2 hover:underline"
+                  onclick={clearSelectedClusters}
+                >
+                  Clear selection
+                </button>
+              {:else}
+                All {visibleClusterIds.length} merchant clusters on this page are
+                selected.
+                <button
+                  type="button"
+                  class="font-medium text-primary underline-offset-2 hover:underline"
+                  onclick={selectAllMatchingClusters}
+                >
+                  Select all {matchedClusters.length} matching clusters
+                </button>
+              {/if}
+            </div>
+          {/if}
+
           <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
             {#each visibleClusters as cluster, index (cluster.id)}
               <div
                 role="button"
                 tabindex="0"
                 class:rounded-b-xl={index === visibleClusters.length - 1}
-                class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={`Review merchant ${cluster.displayName}`}
                 onclick={() => openCluster(cluster)}
                 onkeydown={(event) => handleRowKeydown(event, cluster)}
               >
+                <input
+                  type="checkbox"
+                  class="size-4 rounded border-input text-primary focus:ring-ring"
+                  aria-label={`Select ${cluster.displayName}`}
+                  checked={selectedClusterIds.has(cluster.id)}
+                  disabled={detectBusy}
+                  onclick={(event) => event.stopPropagation()}
+                  onchange={(event) =>
+                    setSelectedClusters(
+                      [cluster.id],
+                      (event.currentTarget as HTMLInputElement).checked,
+                    )}
+                />
                 {#if cluster.logoUrl && !failedLogoIds.has(cluster.id)}
                   <img
                     class="size-10 rounded-full border object-contain"
@@ -598,7 +744,10 @@
                     · {clusterDetail(cluster)}
                   </div>
                 </div>
-                <span class="text-sm font-semibold tabular-nums">
+                <span
+                  class="inline-flex min-w-7 justify-center rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-violet-700 dark:text-violet-300"
+                  aria-label={`${cluster.pendingCount} pending transaction${cluster.pendingCount === 1 ? "" : "s"}`}
+                >
                   {cluster.pendingCount}
                 </span>
               </div>

@@ -26,11 +26,28 @@ export async function POST({
   request: Request;
 }) {
   try {
-    const body = (await request.json()) as { sourceId?: unknown };
+    const body = (await request.json()) as {
+      sourceId?: unknown;
+      clusterIds?: unknown;
+    };
     const sourceId =
       typeof body.sourceId === "string" ? body.sourceId.trim() : "";
     if (!sourceId)
       return json({ error: "sourceId is required." }, { status: 400 });
+    if (
+      body.clusterIds !== undefined &&
+      (!Array.isArray(body.clusterIds) ||
+        !body.clusterIds.length ||
+        body.clusterIds.some((id) => typeof id !== "string" || !id.trim()))
+    ) {
+      return json(
+        { error: "clusterIds must be a non-empty list of cluster ids." },
+        { status: 400 },
+      );
+    }
+    const selectedClusterIds = body.clusterIds
+      ? new Set(body.clusterIds.map((id) => id.trim()))
+      : undefined;
 
     const store = serverIngestion();
     const [source, runs, latest, workspace] = await Promise.all([
@@ -39,9 +56,23 @@ export async function POST({
       store.latestSyncJob(params.id, sourceId),
       serverWorkspace(),
     ]);
-    const clusters = buildMerchantReviewClusters(runs, sourceId, {
+    const availableClusters = buildMerchantReviewClusters(runs, sourceId, {
       syncRunIds: latest?.runIds,
     }).clusters;
+    const clusters = selectedClusterIds
+      ? availableClusters.filter((cluster) =>
+          selectedClusterIds.has(cluster.id),
+        )
+      : availableClusters;
+    if (selectedClusterIds && clusters.length !== selectedClusterIds.size) {
+      return json(
+        {
+          error:
+            "One or more selected merchant clusters are no longer current.",
+        },
+        { status: 409 },
+      );
+    }
     if (!clusters.length) return json({ runIds: [], clusters: 0, calls: 0 });
 
     const snapshot = await workspace.readProject(params.id);
