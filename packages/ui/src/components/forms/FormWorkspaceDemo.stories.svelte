@@ -26,6 +26,13 @@
     ).toBeVisible();
 
     await userEvent.click(canvas.getByRole("button", { name: "Expand all" }));
+    const enabledSwitch = canvas.getByRole("switch", {
+      name: "Enable ledger",
+    });
+    await expect(enabledSwitch).toBeChecked();
+    await userEvent.click(enabledSwitch);
+    await expect(enabledSwitch).not.toBeChecked();
+
     const sourceName = canvas.getByRole("textbox", {
       name: "Main card source name",
     });

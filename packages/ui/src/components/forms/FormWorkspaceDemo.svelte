@@ -7,6 +7,7 @@
   import FormSectionHeader from "./FormSectionHeader.svelte";
   import FormToolbar from "./FormToolbar.svelte";
   import SegmentedControl from "./SegmentedControl.svelte";
+  import Switch from "./Switch.svelte";
 
   type Source = {
     id: number;
@@ -194,13 +195,11 @@
                 </FormField>
                 <FormField label="Enabled" as="div" align="center">
                   {#snippet children()}
-                    <button
-                      type="button"
-                      aria-pressed={enabled}
-                      class="rounded-md border border-border px-2.5 py-1 text-sm"
-                      onclick={() => (enabled = !enabled)}
-                      >{enabled ? "Enabled" : "Disabled"}</button
-                    >
+                    <Switch
+                      checked={enabled}
+                      aria-label="Enable ledger"
+                      onCheckedChange={(checked) => (enabled = checked)}
+                    />
                   {/snippet}
                 </FormField>
               </div>
