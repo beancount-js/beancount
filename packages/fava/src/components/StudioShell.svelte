@@ -229,7 +229,7 @@
 </script>
 
 <Sidebar.Provider class="h-screen overflow-hidden" style={sidebarWidthStyle}>
-  <AppShell {pageTitle}>
+  <AppShell {pageTitle} hasSidebar>
     <svelte:fragment slot="sidebar">
       <Sidebar.Root collapsible="icon" showBorder={false}>
         <div class="relative flex h-full min-h-0 flex-col">

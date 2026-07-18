@@ -6,6 +6,12 @@
    * Storybook preview. Applications retain the viewport-height default.
    */
   export let height: "viewport" | "container" = "viewport";
+
+  /**
+   * A shell with a persistent sidebar lets the workspace align directly to it.
+   * Sidebar-free views retain the same gutter on both sides of the workspace.
+   */
+  export let hasSidebar = false;
 </script>
 
 <div
@@ -15,7 +21,7 @@
   <slot name="sidebar"></slot>
   <div
     data-slot="studio-workspace-shell"
-    class="flex min-w-0 flex-1 gap-2 p-2 md:pl-0"
+    class={`flex min-w-0 flex-1 gap-2 p-2 ${hasSidebar ? "md:pl-0" : ""}`}
   >
     <main
       class="flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm dark:shadow-[0_2px_8px_oklch(0_0_0/0.5)]"

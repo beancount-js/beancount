@@ -1,6 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from "@storybook/addon-svelte-csf";
-  import { expect, userEvent } from "storybook/test";
+  import { expect, userEvent, within } from "storybook/test";
   import FormWorkspaceDemo from "./FormWorkspaceDemo.svelte";
 
   const { Story } = defineMeta({
@@ -18,6 +18,22 @@
     ).toBeVisible();
 
     await userEvent.click(canvas.getByRole("button", { name: "Expand all" }));
+    const sourceName = canvas.getByRole("textbox", {
+      name: "Main card source name",
+    });
+    await userEvent.clear(sourceName);
+    await userEvent.type(sourceName, "Primary card");
+    await expect(sourceName).toHaveValue("Primary card");
+
+    const primaryCard = canvas.getByRole("region", {
+      name: "Primary card source",
+    });
+    const primaryCardCanvas = within(primaryCard);
+    await userEvent.click(
+      primaryCardCanvas.getByRole("button", { name: "Add rule" }),
+    );
+    await expect(primaryCardCanvas.getByText("Rule 2")).toBeVisible();
+
     await userEvent.click(canvas.getByRole("button", { name: "Add source" }));
     await expect(canvas.getByText("3 sources")).toBeVisible();
   }}

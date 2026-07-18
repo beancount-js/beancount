@@ -12,7 +12,7 @@
 </script>
 
 <div class="h-[42rem] overflow-hidden rounded-lg border border-border">
-  <AppShell pageTitle={activeView} height="container">
+  <AppShell pageTitle={activeView} height="container" hasSidebar>
     <svelte:fragment slot="sidebar">
       <aside
         aria-label="Ledger navigation"

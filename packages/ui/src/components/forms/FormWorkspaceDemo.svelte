@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { FilterCommandPicker } from "@beancount-js/forms";
   import AppShell from "../AppShell.svelte";
-  import EntryActions from "./EntryActions.svelte";
+  import CollapsibleItemList from "./CollapsibleItemList.svelte";
   import FormAddButton from "./FormAddButton.svelte";
   import FormField from "./FormField.svelte";
   import FormSectionHeader from "./FormSectionHeader.svelte";
@@ -12,11 +13,37 @@
     label: string;
     endpoint: string;
     mode: string;
+    account: string;
+    open: boolean;
+    rulesOpen: boolean;
+    rules: string[];
   };
+
+  const accountOptions = [
+    {
+      value: "Assets:Cash",
+      label: "Assets:Cash",
+      description: "Cash on hand",
+      accent: "oklch(56% 0.14 160)",
+    },
+    {
+      value: "Assets:Bank:Checking",
+      label: "Assets:Bank:Checking",
+      description: "Primary checking account",
+      accent: "oklch(62% 0.14 250)",
+    },
+    {
+      value: "Expenses:Groceries",
+      label: "Expenses:Groceries",
+      description: "Food and household shopping",
+      accent: "oklch(70% 0.14 75)",
+    },
+  ];
 
   let connectionOpen = $state(true);
   let sourcesOpen = $state(true);
   let ledgerName = $state("Northstar household");
+  let defaultAccount = $state("Assets:Bank:Checking");
   let enabled = $state(true);
   let sources = $state<Source[]>([
     {
@@ -24,16 +51,28 @@
       label: "Main card",
       endpoint: "https://api.northstar.example/card",
       mode: "automatic",
+      account: "Assets:Bank:Checking",
+      open: true,
+      rulesOpen: true,
+      rules: ["Import settled transactions"],
     },
     {
       id: 2,
       label: "Cash account",
       endpoint: "",
       mode: "manual",
+      account: "Assets:Cash",
+      open: true,
+      rulesOpen: true,
+      rules: ["Include cash withdrawals"],
     },
   ]);
 
-  const collapsedAll = $derived(!connectionOpen && !sourcesOpen);
+  const collapsedAll = $derived(
+    !connectionOpen &&
+      !sourcesOpen &&
+      sources.every((source) => !source.open && !source.rulesOpen),
+  );
   const sourceCount = $derived(sources.length);
 
   function moveSource(index: number, direction: -1 | 1) {
@@ -51,11 +90,35 @@
     );
   }
 
+  function updateSourceRules(id: number, rules: string[]) {
+    updateSource(id, { rules });
+  }
+
+  function setAllSections(open: boolean) {
+    connectionOpen = open;
+    sourcesOpen = open;
+    sources = sources.map((source) => ({
+      ...source,
+      open,
+      rulesOpen: open,
+    }));
+  }
+
   function addSource() {
     const id = Math.max(0, ...sources.map((source) => source.id)) + 1;
+    const open = !collapsedAll;
     sources = [
       ...sources,
-      { id, label: "New source", endpoint: "", mode: "automatic" },
+      {
+        id,
+        label: "New source",
+        endpoint: "",
+        mode: "automatic",
+        account: "",
+        open,
+        rulesOpen: open,
+        rules: [],
+      },
     ];
   }
 </script>
@@ -70,11 +133,7 @@
       <div class="mx-auto max-w-3xl space-y-6">
         <FormToolbar
           {collapsedAll}
-          onToggleCollapse={() => {
-            const shouldExpand = collapsedAll;
-            connectionOpen = shouldExpand;
-            sourcesOpen = shouldExpand;
-          }}
+          onToggleCollapse={() => setAllSections(collapsedAll)}
         >
           {#snippet leading()}
             <span class="text-sm font-medium">Source configuration</span>
@@ -108,6 +167,19 @@
                 >
                   {#snippet children()}
                     <input id="ledger-name" bind:value={ledgerName} />
+                  {/snippet}
+                </FormField>
+                <FormField label="Default account" as="div" align="center">
+                  {#snippet children()}
+                    <FilterCommandPicker
+                      label="Default account"
+                      value={defaultAccount}
+                      options={accountOptions}
+                      fullWidth
+                      onChange={(account) => {
+                        defaultAccount = account;
+                      }}
+                    />
                   {/snippet}
                 </FormField>
                 <FormField label="Sync mode" as="div" align="center">
@@ -148,68 +220,120 @@
           />
 
           {#if sourcesOpen}
-            <div class="space-y-4 pl-4">
+            <div class="space-y-5 pl-10">
               {#each sources as source, index (source.id)}
-                <EntryActions
-                  {index}
-                  total={sources.length}
-                  removeLabel={`Remove ${source.label}`}
-                  onMove={(direction) => moveSource(index, direction)}
-                  onRemove={() =>
-                    (sources = sources.filter((item) => item.id !== source.id))}
+                <section
+                  class="space-y-4"
+                  aria-label={`${source.label} source`}
                 >
-                  {#snippet children()}
-                    <div class="beancount-structured-form">
-                      <FormField label="Source name" align="center">
-                        {#snippet children()}
-                          <input
-                            aria-label={`${source.label} source name`}
-                            value={source.label}
-                            oninput={(event) =>
-                              updateSource(source.id, {
-                                label: event.currentTarget.value,
-                              })}
-                          />
-                        {/snippet}
-                      </FormField>
-                      <FormField
-                        label="Endpoint"
-                        align="center"
-                        invalid={source.endpoint.length === 0}
-                        messages={source.endpoint.length === 0
-                          ? ["Enter an endpoint or remove this source."]
-                          : []}
+                  <FormSectionHeader
+                    title={source.label}
+                    disclosureTitle={source.label || "New source"}
+                    {index}
+                    total={sources.length}
+                    open={source.open}
+                    removeLabel={`Remove ${source.label || "source"}`}
+                    titleLabel={`${source.label || "New source"} source name`}
+                    titlePlaceholder="Add source name"
+                    onTitleChange={(label) =>
+                      updateSource(source.id, { label })}
+                    onToggle={() =>
+                      updateSource(source.id, { open: !source.open })}
+                    onMove={(direction) => moveSource(index, direction)}
+                    onRemove={() =>
+                      (sources = sources.filter(
+                        (item) => item.id !== source.id,
+                      ))}
+                  />
+
+                  {#if source.open}
+                    <div class="space-y-4 pl-6">
+                      <div class="beancount-structured-form">
+                        <FormField
+                          label="Endpoint"
+                          align="center"
+                          invalid={source.endpoint.length === 0}
+                          messages={source.endpoint.length === 0
+                            ? ["Enter an endpoint or remove this source."]
+                            : []}
+                        >
+                          {#snippet children()}
+                            <input
+                              aria-label={`${source.label || "New source"} endpoint`}
+                              placeholder="https://api.example.com"
+                              value={source.endpoint}
+                              oninput={(event) =>
+                                updateSource(source.id, {
+                                  endpoint: event.currentTarget.value,
+                                })}
+                            />
+                          {/snippet}
+                        </FormField>
+                        <FormField
+                          label="Import account"
+                          as="div"
+                          align="center"
+                        >
+                          {#snippet children()}
+                            <FilterCommandPicker
+                              label={`${source.label || "New source"} import account`}
+                              value={source.account}
+                              options={accountOptions}
+                              fullWidth
+                              onChange={(account) =>
+                                updateSource(source.id, { account })}
+                            />
+                          {/snippet}
+                        </FormField>
+                        <FormField label="Import mode" as="div" align="center">
+                          {#snippet children()}
+                            <SegmentedControl
+                              value={source.mode}
+                              options={["automatic", "manual"]}
+                              labels={{
+                                automatic: "Automatic",
+                                manual: "Manual",
+                              }}
+                              ariaLabel={`${source.label || "New source"} import mode`}
+                              onChange={(mode) =>
+                                updateSource(source.id, { mode })}
+                            />
+                          {/snippet}
+                        </FormField>
+                      </div>
+
+                      <CollapsibleItemList
+                        title="Import rules"
+                        addLabel="rule"
+                        count={source.rules.length}
+                        open={source.rulesOpen}
+                        onToggle={() =>
+                          updateSource(source.id, {
+                            rulesOpen: !source.rulesOpen,
+                          })}
+                        onAdd={() =>
+                          updateSourceRules(source.id, [
+                            ...source.rules,
+                            `Rule ${source.rules.length + 1}`,
+                          ])}
                       >
                         {#snippet children()}
-                          <input
-                            aria-label={`${source.label} endpoint`}
-                            placeholder="https://api.example.com"
-                            value={source.endpoint}
-                            oninput={(event) =>
-                              updateSource(source.id, {
-                                endpoint: event.currentTarget.value,
-                              })}
-                          />
+                          {#if source.rules.length}
+                            <ul class="space-y-2 text-sm">
+                              {#each source.rules as rule}
+                                <li
+                                  class="rounded-md border border-dashed border-border bg-muted/30 px-2.5 py-2"
+                                >
+                                  {rule}
+                                </li>
+                              {/each}
+                            </ul>
+                          {/if}
                         {/snippet}
-                      </FormField>
-                      <FormField label="Import mode" as="div" align="center">
-                        {#snippet children()}
-                          <SegmentedControl
-                            value={source.mode}
-                            options={["automatic", "manual"]}
-                            labels={{
-                              automatic: "Automatic",
-                              manual: "Manual",
-                            }}
-                            ariaLabel={`${source.label} import mode`}
-                            onChange={(mode) =>
-                              updateSource(source.id, { mode })}
-                          />
-                        {/snippet}
-                      </FormField>
+                      </CollapsibleItemList>
                     </div>
-                  {/snippet}
-                </EntryActions>
+                  {/if}
+                </section>
               {/each}
               <div class="flex justify-end">
                 <FormAddButton label="Add source" onclick={addSource} />
