@@ -15,7 +15,13 @@ export default defineConfig({
       "lucide-svelte/icons/chevron-right",
       "lucide-svelte/icons/chevron-up",
       "lucide-svelte/icons/circle",
+      "lucide-svelte/icons/ellipsis",
       "lucide-svelte/icons/minus",
+      "lucide-svelte/icons/panel-left",
+      "paneforge",
+      "svelte-radix/ChevronRight.svelte",
+      "svelte-radix/DotsHorizontal.svelte",
+      "svelte-radix/DragHandleDots2.svelte",
     ],
   },
   resolve: {
