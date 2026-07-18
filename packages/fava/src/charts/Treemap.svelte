@@ -75,7 +75,7 @@
           x={(d.x1 - d.x0) / 2}
           y={(d.y1 - d.y0) / 2}
           text-anchor="middle"
-          class="!font-mono"
+          class="label"
         >
           {d.data.account.split(":").pop() ?? ""}
         </text>
@@ -91,5 +91,12 @@
 
   text {
     cursor: pointer;
+  }
+
+  .label {
+    fill: var(--foreground);
+    font-family: "DM Sans Variable", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
   }
 </style>
