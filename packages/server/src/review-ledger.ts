@@ -12,7 +12,7 @@ import {
   type Directive,
   type Directives,
 } from "@beancount-js/beancount";
-import { format as formatBeancount, writeString } from "@beancount-js/parser";
+import { writeString } from "@beancount-js/parser";
 import {
   proposalTransaction,
   type ImportProposal,
@@ -196,11 +196,6 @@ function revision(contents: string) {
   return createHash("sha256").update(contents).digest("hex");
 }
 
-function formatReviewLedgerContents(contents: string) {
-  const withoutTrailingWhitespace = contents.replace(/[ \t]+$/gmu, "");
-  return `${formatBeancount(withoutTrailingWhitespace)}\n`;
-}
-
 /**
  * Project active review proposals into a standalone, read-only Beancount
  * document. Existing ledger entries are context only and never contribute
@@ -240,20 +235,18 @@ export function buildIngestionReviewLedger(options: {
     }
   }
 
-  const contents = formatReviewLedgerContents(
-    [
-      ";; Generated from the active ingestion review. Read-only.",
-      ...projectionOptions(options.beancountOptions),
-      "",
-      ...copied.map(contextLine),
-      ...missingOpens,
-      "",
-      ...transactions,
-      "",
-    ]
-      .filter((line, index, lines) => line || index === 0 || lines[index - 1])
-      .join("\n"),
-  );
+  const contents = [
+    ";; Generated from the active ingestion review. Read-only.",
+    ...projectionOptions(options.beancountOptions),
+    "",
+    ...copied.map(contextLine),
+    ...missingOpens,
+    "",
+    ...transactions,
+    "",
+  ]
+    .filter((line, index, lines) => line || index === 0 || lines[index - 1])
+    .join("\n");
 
   return {
     kind: "ingestion-review",

@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { beancountFormat } from "./format";
+import { EditorState } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { beanCount } from "@beancount-js/codemirror-lang-beancount";
+import { beancountFormat, formatLedger } from "./format";
 import dedent from "dedent";
 
 describe("beancountFormat", () => {
@@ -33,5 +36,28 @@ describe("beancountFormat", () => {
         );
       });
     });
+  });
+
+  test("aligns raw active-review postings", () => {
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({
+        doc: `2026-07-17 * "Coffee"
+  Assets:Checking:Starling -3.50 GBP
+  Expenses:Food:Coffee 3.50 GBP
+`,
+        extensions: [beanCount()],
+      }),
+    });
+
+    formatLedger(view);
+    const currencyColumns = view.state.doc
+      .toString()
+      .split("\n")
+      .filter((line) => line.includes(" GBP"))
+      .map((line) => line.indexOf("GBP"));
+
+    expect(new Set(currencyColumns)).toHaveLength(1);
+    view.destroy();
   });
 });

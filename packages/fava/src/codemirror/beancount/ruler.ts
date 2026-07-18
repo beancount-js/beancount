@@ -1,6 +1,16 @@
 import { syntaxTree } from "@codemirror/language";
+import type { SyntaxNode } from "@lezer/common";
 import type { EditorView, ViewUpdate } from "@codemirror/view";
 import { ViewPlugin } from "@codemirror/view";
+
+function isPostingCurrency(node: SyntaxNode) {
+  let parent = node.parent;
+  while (parent) {
+    if (parent.name === "Posting") return true;
+    parent = parent.parent;
+  }
+  return false;
+}
 
 export function determineCurrencyColumn(view: EditorView): number {
   let max = 0;
@@ -16,6 +26,7 @@ export function determineCurrencyColumn(view: EditorView): number {
       const line = state.doc.lineAt(node.from);
       if (
         node.name === "Currency" &&
+        isPostingCurrency(node.node) &&
         node.node.prevSibling?.name !== "Currency"
       ) {
         const diff = node.from - line.from;

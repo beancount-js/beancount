@@ -50,6 +50,13 @@
         ];
   }
 
+  function formatReviewContents(view: EditorView, readOnly: boolean) {
+    if (!readOnly) return;
+    replacingContents = true;
+    formatLedger(view);
+    replacingContents = false;
+  }
+
   const codeMirror = (
     node: HTMLDivElement,
     source: { path: string; contents: string; readOnly: boolean },
@@ -82,6 +89,7 @@
     editor = view;
     loadedPath = source.path;
     dirty = false;
+    formatReviewContents(view, source.readOnly);
 
     if (line) {
       goToLine(editor, line);
@@ -91,10 +99,10 @@
         const nextPath = next.path;
         // Do not let the filesystem polling loop overwrite an unsaved edit.
         // A deliberate source-file switch always loads that source instead.
-        if (
+        const contentsChanged =
           loadedPath !== nextPath ||
-          (!dirty && view.state.doc.toString() !== next.contents)
-        ) {
+          (!dirty && view.state.doc.toString() !== next.contents);
+        if (contentsChanged) {
           replacingContents = true;
           view.dispatch({
             ...replaceContents(view.state, next.contents),
@@ -103,10 +111,14 @@
           loadedPath = nextPath;
           dirty = false;
         }
-        if (source.readOnly !== next.readOnly) {
+        const readOnlyChanged = source.readOnly !== next.readOnly;
+        if (readOnlyChanged) {
           view.dispatch({
             effects: mode.reconfigure(editorMode(next.readOnly)),
           });
+        }
+        if (next.readOnly && (contentsChanged || readOnlyChanged)) {
+          formatReviewContents(view, next.readOnly);
         }
         source = next;
       },
