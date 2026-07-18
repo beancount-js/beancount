@@ -8,6 +8,10 @@
     SearchFilterBar,
     type FilterCommandOption,
   } from "@beancount-js/forms";
+  import { Decimal } from "@beancount-js/parser";
+  import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
+  import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
+  import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronUp from "lucide-svelte/icons/chevron-up";
   import Landmark from "lucide-svelte/icons/landmark";
@@ -55,6 +59,7 @@
     pruneReviewSelection,
     updateReviewSelection,
   } from "../lib/review-selection";
+  import type { SortOrder } from "../grid/sort";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
@@ -66,8 +71,14 @@
 
   const PAGE_SIZES = [25, 50, 100];
   const ALL_CONNECTIONS = "__all__";
+  const SORT_CYCLE: Record<SortOrder, SortOrder> = {
+    none: "asc",
+    asc: "desc",
+    desc: "none",
+  };
 
   type ReviewFilter = "pending" | "accepted" | "reconciliation";
+  type SortKey = "date" | "amount";
 
   type ProposalRow = {
     key: string;
@@ -113,6 +124,10 @@
     cloneIngestionReviewSearchState(),
   );
   let lastSearchSignature = $state("");
+  let sortOrders = $state<Record<SortKey, SortOrder>>({
+    date: "none",
+    amount: "none",
+  });
 
   const project = $derived($snapshot);
   const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
@@ -211,16 +226,17 @@
       list.push(row);
       buckets.set(date, list);
     }
+    const dateOrder = sortOrders.date === "none" ? "desc" : sortOrders.date;
+    const amountOrder =
+      sortOrders.amount === "none" ? "desc" : sortOrders.amount;
     return [...buckets.entries()]
-      .sort(([a], [b]) => b.localeCompare(a))
+      .sort(([left], [right]) => compareDateKeys(left, right, dateOrder))
       .map(([date, rows]) => ({
         key: date,
         date,
         label: formatGroupDate(date),
         rows: rows.sort((left, right) =>
-          (right.proposal.transaction?.amount ?? "").localeCompare(
-            left.proposal.transaction?.amount ?? "",
-          ),
+          compareProposalAmounts(left, right, amountOrder),
         ),
       }));
   });
@@ -521,6 +537,45 @@
       review: value === "pending" ? undefined : value,
       page: "1",
     });
+  }
+
+  function cycleSort(key: SortKey) {
+    sortOrders = { ...sortOrders, [key]: SORT_CYCLE[sortOrders[key]] };
+    if (requestedPage !== 1) updateRoute({ page: "1" });
+  }
+
+  function ariaSortFor(key: SortKey): "ascending" | "descending" | "none" {
+    const order = sortOrders[key];
+    if (order === "none") return "none";
+    return order === "asc" ? "ascending" : "descending";
+  }
+
+  function compareDateKeys(
+    left: string,
+    right: string,
+    order: Exclude<SortOrder, "none">,
+  ) {
+    if (left === right) return 0;
+    if (left === "unknown") return 1;
+    if (right === "unknown") return -1;
+    const direction = order === "asc" ? 1 : -1;
+    return direction * left.localeCompare(right);
+  }
+
+  function compareProposalAmounts(
+    left: ProposalRow,
+    right: ProposalRow,
+    order: Exclude<SortOrder, "none">,
+  ) {
+    const leftAmount = left.proposal.transaction?.amount;
+    const rightAmount = right.proposal.transaction?.amount;
+    if (leftAmount === rightAmount) return 0;
+    if (leftAmount === undefined) return 1;
+    if (rightAmount === undefined) return -1;
+    const direction = order === "asc" ? 1 : -1;
+    return (
+      direction * new Decimal(leftAmount).minus(new Decimal(rightAmount)).number
+    );
   }
 
   function toggleAllGroups() {
@@ -1450,8 +1505,44 @@
                 (event.currentTarget as HTMLInputElement).checked,
               )}
           />
-          <span>Date</span>
-          <span class="text-right">Amount</span>
+          <div role="columnheader" aria-sort={ariaSortFor("date")}>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by date"
+              onclick={() => cycleSort("date")}
+            >
+              Date
+              {#if sortOrders.date === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.date === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
+          <div
+            role="columnheader"
+            aria-sort={ariaSortFor("amount")}
+            class="justify-self-end"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort by amount"
+              onclick={() => cycleSort("amount")}
+            >
+              Amount
+              {#if sortOrders.amount === "asc"}
+                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+              {:else if sortOrders.amount === "desc"}
+                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+              {:else}
+                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+              {/if}
+            </button>
+          </div>
         </div>
 
         {#if showSelectionBanner}
