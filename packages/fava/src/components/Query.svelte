@@ -49,7 +49,6 @@
   const ledgerData = useLedger();
 
   let editor: EditorView;
-  let innerHeight = 500;
   let activeRoute = history.activeRoute;
   export let qs: string = $activeRoute.query["qs"] ?? "";
   export let selected: string = "";
@@ -153,7 +152,6 @@
   });
 </script>
 
-<svelte:window bind:innerHeight />
 <ContentScrollArea contentClass="scroll-container p-4">
   <div class="beancount-editor relative">
     <div
@@ -177,10 +175,5 @@
       <Alert.Description class="whitespace-pre-wrap">{error}</Alert.Description>
     </Alert.Root>
   {/if}
-  <QueryBox
-    queries={$queryHistory}
-    {onDelete}
-    {selected}
-    height={Math.max(innerHeight - 200, 280)}
-  />
+  <QueryBox queries={$queryHistory} {onDelete} {selected} />
 </ContentScrollArea>

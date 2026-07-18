@@ -1,8 +1,12 @@
 <script lang="ts">
   import * as Alert from "$lib/components/ui/alert";
-  import VirtualList from "svelte-tiny-virtual-list";
+  import * as Select from "$lib/components/ui/select";
+  import * as Table from "$lib/components/ui/table";
 
-  import { TriangleAlert } from "lucide-svelte";
+  import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
+  import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
+  import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
+  import TriangleAlert from "lucide-svelte/icons/triangle-alert";
   import { derived, writable } from "svelte/store";
   import { stringify, useDataset, useLedger, type Columns } from "./helpers";
   import { Inventory } from "@beancount-js/beancount";
@@ -22,15 +26,14 @@
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import Chart from "../charts/Chart.svelte";
   import { balances } from "../charts/line";
-  import { useSortableTable, type SortType, sortDataset } from "../grid/sort";
+  import { type SortOrder, type SortType, sortDataset } from "../grid/sort";
   import { Position } from "@beancount-js/beancount";
   import { runBql } from "@beancount-js/beanquery";
-  import * as ScrollArea from "$lib/components/ui/scroll-area";
+  import PagePagination from "./PagePagination.svelte";
 
-  export let height: number = 500;
-  export let rowHeight: number = 20;
   export let query: string = "";
-  export let padding: number = 0;
+
+  const PAGE_SIZES = [25, 50, 100];
 
   const ctx = useCtx();
   const ledgerData = useLedger();
@@ -106,6 +109,13 @@
   }
 
   const sortOrder = writable<SortType>({});
+  const SORT_CYCLE: Record<SortOrder, SortOrder> = {
+    none: "asc",
+    asc: "desc",
+    desc: "none",
+  };
+  let page = 1;
+  let pageSize = PAGE_SIZES[0];
 
   $: queryResult = derived([ledgerData], ([$ledgerData]) => {
     if (!query) {
@@ -124,16 +134,39 @@
     return $queryResult.data;
   });
 
-  $: table = useDataset(data, { height: rowHeight, padding });
-  $: ({ getSize, columns, maxHeight } = $table);
-
-  // Query tables use their page scroll area as the vertical scroller. The
-  // virtual-list package renders its header outside the measured item area,
-  // so account for the 35px table heading when the rows fill the viewport.
-  const headerHeight = 35;
-  $: viewportHeight = Math.max(height, maxHeight + headerHeight);
+  $: table = useDataset(data);
+  $: ({ columns } = $table);
 
   $: chart = chartData($data, columns);
+  $: pageCount = Math.max(1, Math.ceil($data.length / pageSize));
+  $: if (page > pageCount) page = pageCount;
+  $: pageStart = (page - 1) * pageSize;
+  $: pageEnd = Math.min(pageStart + pageSize, $data.length);
+  $: visibleRows = $data.slice(pageStart, pageEnd);
+
+  function orderFor(columnId: string): SortOrder {
+    return $sortOrder[columnId]?.order ?? "none";
+  }
+
+  function ariaSortFor(columnId: string) {
+    const order = orderFor(columnId);
+    if (order === "asc") return "ascending";
+    if (order === "desc") return "descending";
+    return "none";
+  }
+
+  function cycleSort(columnId: string, type: string) {
+    const order = SORT_CYCLE[orderFor(columnId)];
+    page = 1;
+    sortOrder.set(order === "none" ? {} : { [columnId]: { type, order } });
+  }
+
+  function setPageSize(value: string | undefined) {
+    const next = Number(value);
+    if (!PAGE_SIZES.includes(next)) return;
+    pageSize = next;
+    page = 1;
+  }
 </script>
 
 <div class="query-table" data-query-table>
@@ -146,125 +179,153 @@
       >
     </Alert.Root>
   {/if}
-  <ScrollArea.Root orientation="horizontal" class="w-full">
-    <div class="w-full pr-3 pt-4">
-      {#if chart}
-        <div class="pb-2 text-xs">
-          <Chart {chart} hideButtons />
-        </div>
-      {/if}
-      <ol class="bean-table flex-table font-mono text-xs">
-        <VirtualList
-          height={viewportHeight}
-          width="max-content"
-          itemCount={$data.length}
-          itemSize={getSize}
-        >
-          <li
-            class="head sticky top-0 z-10 border-b border-l border-t border-solid bg-muted tracking-wide [font-variant-caps:all-small-caps]"
-            slot="header"
-          >
-            <p use:useSortableTable={sortOrder}>
-              {#each columns.values as col}
-                <span
-                  data-sort={col.type}
-                  data-sort-name={col.id}
-                  style={col.style}
-                  class={"border-r border-solid " + col.class.join(" ")}
-                  >{col.name}</span
-                >
-              {/each}
-            </p>
-          </li>
-          <div
-            slot="item"
-            let:index
-            let:style
-            class="align-middle"
-            style={`` + style}
-          >
-            {@const row = $data[index]}
-            {@const cellHeight = `height: ${rowHeight - 1}px; line-height: ${rowHeight - 1}px; `}
-            <li class="border-b border-l border-solid">
-              <div>
-                {#each columns.values as col}
-                  {@const value = row[col.id]}
-                  <span
-                    style={col.style}
-                    class={"border-r border-solid " + col.class.join(" ")}
-                  >
-                    {#if col.id === "account" || matchesAccount(value)}
-                      <span class="block" style={cellHeight}
-                        ><a href={urlForAccount(String(value ?? ""))}>{value}</a
-                        ></span
-                      >
-                    {:else if value instanceof Inventory}
-                      {#each [...value.values()] as position}
-                        <span class="block text-right" style={cellHeight}
-                          >{$ctx.money(position.units)}</span
-                        >
-                      {/each}
-                    {:else if Array.isArray(value)}
-                      {#each value as item, i}
-                        {@const rowval = stringify(item)}
-                        {@const lines = countLines(rowval)}
-                        {@const cellHeight = `height: ${rowHeight * lines - 1}px; line-height: ${rowHeight - 1}px; `}
-                        <div class:border-t={i > 0}>
-                          {#if col.type === "account"}
-                            <span class="block" style={cellHeight}
-                              ><a href={urlForAccount(rowval)}>{rowval}</a
-                              ></span
-                            >
-                          {:else if item instanceof Amount || item instanceof Decimal}
-                            {$ctx.money(item)}
-                          {:else if item instanceof Date || item instanceof DateTime}
-                            {formatDate(
-                              item instanceof DateTime ? item.toJSDate() : item,
-                            )}
-                          {:else}
-                            <span
-                              class:whitespace-pre={lines > 1}
-                              class="block"
-                              style={cellHeight}>{rowval}</span
-                            >
-                          {/if}
-                        </div>
-                      {/each}
-                    {:else if value instanceof Date || value instanceof DateTime}
-                      <span class="block" style={cellHeight}
-                        >{formatDate(
-                          value instanceof DateTime ? value.toJSDate() : value,
-                        )}</span
-                      >
-                    {:else if value instanceof Amount || value instanceof Decimal}
-                      <span class="block" style={cellHeight}
-                        >{value instanceof Decimal && value.eq(0)
-                          ? ""
-                          : $ctx.money(value)}</span
-                      >
-                    {:else}
-                      {@const rowval = stringify(value)}
-                      {@const lines = countLines(rowval)}
-                      {@const cellHeight = `height: ${rowHeight * lines - 1}px; line-height: ${rowHeight - 1}px; `}
-                      <span
-                        class:whitespace-pre={countLines(rowval) > 1}
-                        class="block"
-                        style={cellHeight}>{rowval}</span
-                      >
-                    {/if}
-                  </span>
-                {/each}
-              </div>
-            </li>
-          </div>
-        </VirtualList>
-      </ol>
+  {#if chart}
+    <div class="mt-4 rounded-xl border bg-card p-3 text-xs shadow-sm">
+      <Chart {chart} hideButtons />
     </div>
-  </ScrollArea.Root>
+  {/if}
+  <div class="mt-4 overflow-hidden rounded-xl border bg-card shadow-sm">
+    <Table.Root class="min-w-max font-mono text-xs text-foreground">
+      <Table.Header class="bg-muted text-muted-foreground">
+        <Table.Row class="hover:bg-muted">
+          {#each columns.values as col}
+            {@const order = orderFor(col.id)}
+            <Table.Head
+              aria-sort={ariaSortFor(col.id)}
+              style={col.style}
+              class={"!p-0 " + col.class.join(" ")}
+            >
+              <button
+                type="button"
+                class="inline-flex h-10 w-full items-center gap-1.5 rounded-md px-3 text-left font-sans text-xs font-semibold tracking-wide outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                class:justify-end={col.class.includes("text-right")}
+                aria-label={`Sort by ${col.name}`}
+                onclick={() => cycleSort(col.id, col.type)}
+              >
+                <span class="truncate">{col.name}</span>
+                {#if order === "asc"}
+                  <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                {:else if order === "desc"}
+                  <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                {:else}
+                  <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+                {/if}
+              </button>
+            </Table.Head>
+          {/each}
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
+        {#each visibleRows as row}
+          <Table.Row>
+            {#each columns.values as col}
+              {@const value = row[col.id]}
+              <Table.Cell
+                style={col.style}
+                class={"font-mono text-xs " + col.class.join(" ")}
+              >
+                {#if col.id === "account" || matchesAccount(value)}
+                  <a href={urlForAccount(String(value ?? ""))}>{value}</a>
+                {:else if value instanceof Inventory}
+                  {#each [...value.values()] as position}
+                    <span class="block text-right"
+                      >{$ctx.money(position.units)}</span
+                    >
+                  {/each}
+                {:else if Array.isArray(value)}
+                  {#each value as item, i}
+                    {@const rowval = stringify(item)}
+                    {@const lines = countLines(rowval)}
+                    <div class:border-t={i > 0}>
+                      {#if col.type === "account"}
+                        <a href={urlForAccount(rowval)}>{rowval}</a>
+                      {:else if item instanceof Amount || item instanceof Decimal}
+                        {$ctx.money(item)}
+                      {:else if item instanceof Date || item instanceof DateTime}
+                        {formatDate(
+                          item instanceof DateTime ? item.toJSDate() : item,
+                        )}
+                      {:else}
+                        <span class:whitespace-pre={lines > 1}>{rowval}</span>
+                      {/if}
+                    </div>
+                  {/each}
+                {:else if value instanceof Date || value instanceof DateTime}
+                  {formatDate(
+                    value instanceof DateTime ? value.toJSDate() : value,
+                  )}
+                {:else if value instanceof Amount || value instanceof Decimal}
+                  {value instanceof Decimal && value.eq(0)
+                    ? ""
+                    : $ctx.money(value)}
+                {:else}
+                  {@const rowval = stringify(value)}
+                  <span class:whitespace-pre={countLines(rowval) > 1}
+                    >{rowval}</span
+                  >
+                {/if}
+              </Table.Cell>
+            {/each}
+          </Table.Row>
+        {:else}
+          <Table.Row>
+            <Table.Cell
+              colspan={Math.max(columns.values.length, 1)}
+              class="h-24 text-center font-sans text-sm text-muted-foreground"
+            >
+              No results.
+            </Table.Cell>
+          </Table.Row>
+        {/each}
+      </Table.Body>
+    </Table.Root>
+  </div>
+  {#if $data.length > 0}
+    <div
+      class="mt-3 flex flex-col gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      data-query-pagination
+    >
+      <span class="text-sm text-muted-foreground"
+        >Showing {pageStart + 1}&ndash;{pageEnd} of {$data.length}</span
+      >
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div class="flex items-center gap-2">
+          <span
+            class="text-sm text-muted-foreground"
+            id="query-table-page-size-label">Rows per page</span
+          >
+          <Select.Root
+            type="single"
+            value={String(pageSize)}
+            onValueChange={setPageSize}
+          >
+            <Select.Trigger
+              aria-labelledby="query-table-page-size-label"
+              class="h-8 w-20 font-mono text-sm tabular-nums"
+              data-query-page-size
+            >
+              {pageSize}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Group>
+                {#each PAGE_SIZES as size (size)}
+                  <Select.Item value={String(size)} label={`${size} records`}>
+                    {size}
+                  </Select.Item>
+                {/each}
+              </Select.Group>
+            </Select.Content>
+          </Select.Root>
+        </div>
+        {#if pageCount > 1}
+          <PagePagination
+            {page}
+            {pageCount}
+            ariaLabel="Query result pages"
+            onPageChange={(nextPage) => (page = nextPage)}
+          />
+        {/if}
+      </div>
+    </div>
+  {/if}
 </div>
-
-<style>
-  .query-table :global(.virtual-list-wrapper) {
-    overflow: visible;
-  }
-</style>

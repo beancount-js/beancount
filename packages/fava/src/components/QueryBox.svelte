@@ -11,7 +11,6 @@
   import { useLedger } from "./helpers";
   import { nextOpenQueryState } from "./query-box";
   export let queries: Array<QueryHistory>;
-  export let height: number = 500;
   export let selected: string = "";
   export let onDelete: (history: QueryHistory) => void = () => {};
 
@@ -69,7 +68,7 @@
       </Accordion.Trigger>
       <Accordion.Content class="border-t">
         {#if isOpen[query.hash]}
-          <QueryTable query={query.query} {height} />
+          <QueryTable query={query.query} />
         {/if}
       </Accordion.Content>
     </Accordion.Item>

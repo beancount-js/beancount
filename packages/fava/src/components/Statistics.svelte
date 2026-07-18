@@ -5,7 +5,6 @@
   import QueryTable from "./QueryTable.svelte";
   import ContentScrollArea from "./ContentScrollArea.svelte";
 
-  let innerHeight = 500;
   const queries: Array<{
     id: string;
     name: string;
@@ -50,7 +49,6 @@
   }
 </script>
 
-<svelte:window bind:innerHeight />
 <ContentScrollArea contentClass="scroll-container min-h-full p-4">
   <Tabs.Root class="w-full" {value} onValueChange={handleChange}>
     <Tabs.List>
@@ -68,10 +66,7 @@
           >
         </div>
         {#if value === query.id}
-          <QueryTable
-            query={query.query}
-            height={Math.max(innerHeight - 190, 280)}
-          />
+          <QueryTable query={query.query} />
         {/if}
       </Tabs.Content>
     {/each}
