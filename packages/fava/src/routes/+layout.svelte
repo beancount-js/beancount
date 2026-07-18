@@ -1,5 +1,5 @@
 <script lang="ts">
-  import "@fontsource-variable/dm-sans";
+  import "@beancount-js/ui/styles.css";
   import { ModeWatcher } from "mode-watcher";
   import "../style.scss";
 

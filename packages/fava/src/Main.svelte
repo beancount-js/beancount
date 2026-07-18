@@ -46,8 +46,6 @@
   import { setStudioRouteEnv } from "./lib/studio-route-env";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import "@fontsource/source-code-pro/400.css";
-  import "@fontsource/source-code-pro/600.css";
   import "./codemirror/themes/base.scss";
 
   export let snapshot: ProjectSnapshot | undefined;
