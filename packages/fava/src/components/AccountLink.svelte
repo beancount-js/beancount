@@ -84,5 +84,5 @@
     {merchantLogoUrl}
     size={avatarSize}
   />
-  <span class="min-w-0">{label ?? account}</span>
+  <span class="min-w-0 truncate">{label ?? account}</span>
 </a>

@@ -1,8 +1,8 @@
 <script lang="ts">
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import type { AccountTreeNode } from "../../lib/models";
-  import { urlForAccount } from "../../helpers";
   import { useCtx } from "../../stores/format";
+  import AccountLink from "../AccountLink.svelte";
   import { dashboardCategoryColor } from "../dashboard/model";
   import { isEmpty } from "./helpers";
   import Self from "./StatementSummaryTreeRow.svelte";
@@ -63,11 +63,7 @@
       {:else}
         <span class="size-4 shrink-0" aria-hidden="true"></span>
       {/if}
-      <a
-        class="truncate text-sm font-medium text-foreground hover:text-primary hover:underline"
-        href={urlForAccount(node.account)}
-        title={node.account}>{name}</a
-      >
+      <AccountLink account={node.account} label={name} avatarSize="sm" />
     </div>
     <span
       class:dimmed={!displayAmount}
