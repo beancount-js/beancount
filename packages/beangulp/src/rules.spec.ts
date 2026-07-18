@@ -4,6 +4,7 @@ import {
   RuleCategorizer,
   RuleActionsHook,
   applyRuleActions,
+  createRuleRegistry,
   firstCategoryMatch,
   migrateMerchantRules,
   parseRuleRun,
@@ -11,6 +12,7 @@ import {
   ruleBlockedCount,
   ruleMatches,
   summarizeRule,
+  validateDetectionRule,
   type DetectionRule,
 } from "./rules";
 
@@ -32,7 +34,9 @@ function tx(
   };
 }
 
-function rule(partial: Partial<DetectionRule> & Pick<DetectionRule, "id">): DetectionRule {
+function rule(
+  partial: Partial<DetectionRule> & Pick<DetectionRule, "id">,
+): DetectionRule {
   return {
     name: "Plata",
     resourceType: "transaction",
@@ -133,6 +137,35 @@ describe("detection rules", () => {
       tags: ["debt", "repay"],
       exclude: true,
     });
+  });
+
+  test("registers AI actions without invoking them during deterministic ingestion", () => {
+    const detection = rule({
+      id: "r1",
+      actions: [
+        {
+          id: "a1",
+          actionType: "auto_categorise_with_ai",
+          value: null,
+        },
+        {
+          id: "a2",
+          actionType: "auto_detect_merchant_with_ai",
+          value: null,
+        },
+      ],
+    });
+
+    expect(validateDetectionRule(detection)).toEqual([]);
+    expect(applyRuleActions(detection, { transaction: tx() })).toBeUndefined();
+    expect(
+      createRuleRegistry().executors.map((executor) => executor.key),
+    ).toEqual(
+      expect.arrayContaining([
+        "auto_categorise_with_ai",
+        "auto_detect_merchant_with_ai",
+      ]),
+    );
   });
 
   test("migrates merchant rules", () => {

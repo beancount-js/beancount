@@ -8,10 +8,7 @@ import type {
   PipelineContext,
   ProposalHook,
 } from "./types";
-import {
-  normalizeMerchant,
-  type MerchantRule,
-} from "./categorize";
+import { normalizeMerchant, type MerchantRule } from "./categorize";
 
 export type RuleConditionType =
   | "compound"
@@ -26,7 +23,9 @@ export type RuleActionType =
   | "set_transaction_tags"
   | "set_transaction_merchant"
   | "set_transaction_name"
-  | "exclude_transaction";
+  | "exclude_transaction"
+  | "auto_categorise_with_ai"
+  | "auto_detect_merchant_with_ai";
 
 export type RuleOperator =
   | "like"
@@ -256,6 +255,16 @@ export function createRuleRegistry(options?: {
         key: "exclude_transaction",
         label: "Exclude transaction",
       },
+      {
+        type: "function",
+        key: "auto_categorise_with_ai",
+        label: "Auto-categorise transactions with AI",
+      },
+      {
+        type: "function",
+        key: "auto_detect_merchant_with_ai",
+        label: "Auto-detect merchants with AI",
+      },
     ],
   };
 }
@@ -283,7 +292,8 @@ function normalizeWhitespace(value: string) {
 
 function absAmount(amount: string) {
   const value = Number(amount);
-  if (!Number.isFinite(value)) return Math.abs(Number(amount.replace(/^-/, "")));
+  if (!Number.isFinite(value))
+    return Math.abs(Number(amount.replace(/^-/, "")));
   return Math.abs(value);
 }
 
@@ -390,7 +400,9 @@ export function ruleMatches(
   context: RuleEvaluationContext,
 ): boolean {
   if (!rule.active) return false;
-  if (!ruleAppliesOnDate(rule, context.bookedAt ?? context.transaction.bookedAt))
+  if (
+    !ruleAppliesOnDate(rule, context.bookedAt ?? context.transaction.bookedAt)
+  )
     return false;
   if (rule.conditions.length === 0) return false;
   return rule.conditions.every((condition) =>
@@ -462,6 +474,10 @@ export function applyRuleActions(
       case "exclude_transaction":
         patch.exclude = true;
         applied = true;
+        break;
+      case "auto_categorise_with_ai":
+      case "auto_detect_merchant_with_ai":
+        // AI actions are staged by the caller so they can run in batches.
         break;
     }
   }
@@ -623,9 +639,7 @@ export function parseRuleRun(raw: unknown): RuleRun | undefined {
   if (!isObject(raw)) return undefined;
   if (typeof raw.ruleName !== "string" && typeof raw.rule_name !== "string")
     return undefined;
-  const queued = Number(
-    raw.transactionsQueued ?? raw.transactions_queued ?? 0,
-  );
+  const queued = Number(raw.transactionsQueued ?? raw.transactions_queued ?? 0);
   const processed = Number(
     raw.transactionsProcessed ?? raw.transactions_processed ?? 0,
   );
@@ -713,7 +727,8 @@ export function parseRuleRunsFile(raw: unknown): RuleRunsFile {
 export function validateDetectionRule(rule: DetectionRule): string[] {
   const errors: string[] = [];
   if (!rule.id) errors.push("Rule id is required.");
-  if (rule.actions.length === 0) errors.push("At least one action is required.");
+  if (rule.actions.length === 0)
+    errors.push("At least one action is required.");
   const actionTypes = new Set<string>();
   for (const action of rule.actions) {
     if (actionTypes.has(action.actionType)) {
@@ -722,6 +737,8 @@ export function validateDetectionRule(rule: DetectionRule): string[] {
     actionTypes.add(action.actionType);
     if (
       action.actionType !== "exclude_transaction" &&
+      action.actionType !== "auto_categorise_with_ai" &&
+      action.actionType !== "auto_detect_merchant_with_ai" &&
       (action.value == null || action.value.trim() === "")
     ) {
       errors.push(`Action ${action.actionType} requires a value.`);
@@ -818,7 +835,8 @@ export class RuleActionsHook implements ProposalHook {
       });
       if (!patch) continue;
       const transaction = { ...next.transaction! };
-      if (patch.narration !== undefined) transaction.narration = patch.narration;
+      if (patch.narration !== undefined)
+        transaction.narration = patch.narration;
       if (patch.merchant !== undefined) transaction.merchant = patch.merchant;
       if (patch.tags) transaction.tags = patch.tags;
       next = {
@@ -874,6 +892,10 @@ function summarizeAction(action: RuleAction): string {
       return `Set transaction name to ${action.value ?? ""}`;
     case "exclude_transaction":
       return "Exclude transaction";
+    case "auto_categorise_with_ai":
+      return "Auto-categorise transactions with AI";
+    case "auto_detect_merchant_with_ai":
+      return "Auto-detect merchants with AI";
   }
 }
 
