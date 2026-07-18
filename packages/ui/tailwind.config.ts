@@ -6,6 +6,7 @@ const config: Config = {
   content: [
     "./src/**/*.{html,js,svelte,ts}",
     "../forms/src/**/*.{html,js,svelte,ts}",
+    "../fava/src/lib/components/ui/**/*.{html,js,svelte,ts}",
   ],
   presets: [uiTailwindPreset],
 };

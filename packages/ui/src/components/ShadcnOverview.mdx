@@ -1,0 +1,29 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Shadcn/Overview" />
+
+# Shadcn components in Fava
+
+This section renders the shadcn-svelte source that Fava currently owns. It is a visual and behavioural reference for the exact component code and shared theme tokens used in the application.
+
+The components remain local to Fava. Use a shared `@beancount-js/ui` primitive when one exists; promote a Fava component only when it is intentionally needed across applications.
+
+## How to use this catalog
+
+- Check the component story before adding or changing a Fava UI pattern. Stories cover the supported variants, semantic structure, and interactive states.
+- Use the catalog theme switcher to review the same shared tokens as Fava. Do not introduce Storybook-only visual overrides.
+- Keep each story beside its source component. Update its story whenever the component’s public behaviour or visual states change.
+- New shared primitives belong in `@beancount-js/ui`; Fava-local shadcn wrappers remain here until there is a deliberate extraction.
+
+## Component groups
+
+- **Actions:** Button, Toggle, and Toggle Group
+- **Forms:** Input, Textarea, Switch, Select, Calendar, and Command
+- **Disclosure:** Accordion, Collapsible, and Tabs
+- **Overlays:** Alert, Alert Dialog, Dialog, Dropdown Menu, Menubar, Popover, Sheet, and Tooltip
+- **Layout:** Breadcrumb, Pagination, Resizable, Scroll Area, Separator, Sidebar, and Skeleton
+- **Data display:** Badge, Data Table, Empty, Progress, and Table
+
+Fava also contains copied Drawer and Range Calendar source, but neither is currently imported by the app. They intentionally stay out of this catalog until that changes.
+
+For APIs and upstream examples, see the official <a href="https://shadcn-svelte.com/docs/components">shadcn-svelte component documentation</a>.

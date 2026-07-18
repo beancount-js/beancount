@@ -5,6 +5,7 @@ const config: StorybookConfig = {
     "../../ui/src/**/*.mdx",
     "../../ui/src/**/*.stories.@(js|jsx|ts|tsx|svelte)",
     "../../forms/src/**/*.stories.@(js|jsx|ts|tsx|svelte)",
+    "../../fava/src/lib/components/ui/**/*.stories.@(js|jsx|ts|tsx|svelte)",
   ],
   addons: [
     "@storybook/addon-docs",
