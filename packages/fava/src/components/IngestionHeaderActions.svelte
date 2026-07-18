@@ -467,6 +467,14 @@
           </Tooltip.Trigger>
           <Tooltip.Content>Edit sources</Tooltip.Content>
         </Tooltip.Root>
+      {:else if header.kind === "history"}
+        <CycleSelect
+          value={header.sourceId}
+          options={header.sourceOptions}
+          label="Source"
+          ariaLabel="Select source"
+          onChange={header.onSourceChange}
+        />
       {:else if header.kind === "manage-merchants"}
         <Tooltip.Root>
           <Tooltip.Trigger>

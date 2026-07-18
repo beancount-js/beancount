@@ -46,6 +46,8 @@ describe("ingestion run source display", () => {
   test("uses the linked account name and source account for grouped runs", () => {
     expect(ingestionRunSourceDisplay("monzo:acc_primary", sources)).toEqual({
       title: "Personal account",
+      sourceId: "monzo",
+      sourceName: "Monzo",
       sourceAccount: "Assets:Bank:Monzo",
     });
   });
@@ -53,6 +55,8 @@ describe("ingestion run source display", () => {
   test("uses the configured source name for standalone runs", () => {
     expect(ingestionRunSourceDisplay("credit-card", sources)).toEqual({
       title: "Credit card",
+      sourceId: "credit-card",
+      sourceName: "Credit card",
       sourceAccount: "Liabilities:Card:Main",
     });
   });
@@ -60,6 +64,8 @@ describe("ingestion run source display", () => {
   test("retains the archived source id when configuration no longer has it", () => {
     expect(ingestionRunSourceDisplay("removed:account", sources)).toEqual({
       title: "removed:account",
+      sourceId: "removed",
+      sourceName: "removed",
     });
   });
 });

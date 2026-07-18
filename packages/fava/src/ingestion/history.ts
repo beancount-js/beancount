@@ -4,6 +4,12 @@ import type { IngestionSource } from "./types";
 export type IngestionRunSourceDisplay = {
   /** Friendly name supplied by the connection or linked-account configuration. */
   title: string;
+  /** Identity for the connection that supplied the run. */
+  sourceId: string;
+  /** Friendly connection name for the source chip. */
+  sourceName: string;
+  /** Optional merchant profile used to render the configured source avatar. */
+  sourceMerchantId?: string;
   /** Ledger account whose configured appearance should be shown in the avatar. */
   sourceAccount?: string;
 };
@@ -35,6 +41,9 @@ export function ingestionRunSourceDisplay(
   if (source) {
     return {
       title: source.name.trim() || runSourceId,
+      sourceId: source.id,
+      sourceName: source.name.trim() || source.id,
+      sourceMerchantId: source.merchantId,
       sourceAccount: source.sourceAccount?.trim() || undefined,
     };
   }
@@ -46,10 +55,18 @@ export function ingestionRunSourceDisplay(
     if (account) {
       return {
         title: account.name.trim() || connection.name.trim() || runSourceId,
+        sourceId: connection.id,
+        sourceName: connection.name.trim() || connection.id,
+        sourceMerchantId: connection.merchantId,
         sourceAccount: account.sourceAccount.trim() || undefined,
       };
     }
   }
 
-  return { title: runSourceId };
+  const sourceId = runSourceId.split(":", 1)[0] ?? runSourceId;
+  return {
+    title: runSourceId,
+    sourceId,
+    sourceName: sourceId,
+  };
 }

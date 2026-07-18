@@ -88,6 +88,9 @@ export type IngestionManageMerchantsHeaderActions = {
 export type IngestionHistoryHeaderActions = {
   kind: "history";
   runCount: number;
+  sourceId: string;
+  sourceOptions: { value: string; label: string }[];
+  onSourceChange: (sourceId: string) => void;
 };
 
 /** Account-linking actions in the workspace header. */

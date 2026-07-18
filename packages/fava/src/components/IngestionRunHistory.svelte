@@ -1,6 +1,6 @@
 <script lang="ts">
   import { accountOpenClose } from "@beancount-js/beancount";
-  import { AccountAvatar } from "@beancount-js/forms";
+  import { AccountAvatar, accountAvatarInitial } from "@beancount-js/forms";
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
   import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
@@ -15,6 +15,7 @@
     IngestionRunSummary,
   } from "../ingestion/types";
   import { useContext } from "../context";
+  import { urlForAccount } from "../helpers";
   import {
     ingestionHistoryRowPath,
     ingestionRunSourceDisplay,
@@ -26,6 +27,7 @@
 
   const PAGE_SIZES = [25, 50, 100];
   const DEFAULT_PAGE_SIZE = 25;
+  const ALL_CONNECTIONS = "__all__";
   const SORT_CYCLE: Record<SortOrder, SortOrder> = {
     none: "asc",
     asc: "desc",
@@ -34,7 +36,12 @@
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
   const { snapshot } = useStudioWorkspace();
   const { ledgerData } = useContext();
-  const { router } = useNavigation();
+  const { activeRoute, router } = useNavigation();
+
+  type ConnectionMerchant = {
+    merchantId: string;
+    logoUrl?: string;
+  };
 
   let page = $state<IngestionRunPage>({
     runs: [],
@@ -46,6 +53,9 @@
   let status = $state("");
   let loadedProjectId = $state("");
   let sourceConfig = $state<IngestionConfigResponse | undefined>(undefined);
+  let sourceId = $state(ALL_CONNECTIONS);
+  let merchantsById = $state<Record<string, ConnectionMerchant>>({});
+  let failedMerchantLogoIds = $state(new Set<string>());
   let pageSize = $state(DEFAULT_PAGE_SIZE);
   let sortOrders = $state<Record<SortKey, SortOrder>>({
     date: "none",
@@ -58,6 +68,14 @@
   let sortPriority = $state<SortKey[]>([]);
 
   const project = $derived($snapshot);
+  const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
+  const sourceOptions = $derived([
+    { value: ALL_CONNECTIONS, label: "All connections" },
+    ...(sourceConfig?.sources ?? []).map((source) => ({
+      value: source.id,
+      label: `${source.name}${source.credentialAvailable ? "" : " (credential unavailable)"}`,
+    })),
+  ]);
   const pageNumber = $derived(Math.floor(page.offset / page.limit) + 1);
   const pageCount = $derived(Math.max(1, Math.ceil(page.total / page.limit)));
   const historyGroups = $derived.by(() =>
@@ -74,20 +92,30 @@
     runs: IngestionRunSummary[];
   };
 
-  function historyPath(projectId: string, offset: number, limit: number) {
+  function historyPath(
+    projectId: string,
+    offset: number,
+    limit: number,
+    nextSourceId = sourceId,
+  ) {
     const query = new URLSearchParams({
       offset: String(offset),
       limit: String(limit),
     });
+    if (nextSourceId !== ALL_CONNECTIONS) query.set("sourceId", nextSourceId);
     return ingestionPath(projectId, `/runs?${query}`);
   }
 
-  async function loadHistory(offset = 0, limit = pageSize) {
+  async function loadHistory(
+    offset = 0,
+    limit = pageSize,
+    nextSourceId = sourceId,
+  ) {
     if (!project || isWeb) return;
     loading = true;
     try {
       page = await ingestionJson<IngestionRunPage>(
-        historyPath(project.project.id, offset, limit),
+        historyPath(project.project.id, offset, limit, nextSourceId),
       );
       status = "";
     } catch (error) {
@@ -102,10 +130,45 @@
       const next = await ingestionJson<IngestionConfigResponse>(
         ingestionPath(projectId),
       );
-      if ($snapshot?.project.id === projectId) sourceConfig = next;
+      if ($snapshot?.project.id !== projectId) return;
+      sourceConfig = next;
+      void loadMerchants(projectId);
+
+      const requestedSourceId = querySourceId;
+      const nextSourceId =
+        requestedSourceId === ALL_CONNECTIONS ||
+        next.sources.some((source) => source.id === requestedSourceId)
+          ? requestedSourceId
+          : ALL_CONNECTIONS;
+      if (sourceId !== nextSourceId) {
+        sourceId = nextSourceId;
+        void loadHistory(0, pageSize, nextSourceId);
+      }
     } catch {
       if ($snapshot?.project.id === projectId) sourceConfig = undefined;
     }
+  }
+
+  async function loadMerchants(projectId: string) {
+    try {
+      const merchants = await ingestionJson<ConnectionMerchant[]>(
+        ingestionPath(projectId, "/merchants"),
+      );
+      if ($snapshot?.project.id !== projectId) return;
+      merchantsById = Object.fromEntries(
+        merchants.map((merchant) => [merchant.merchantId, merchant]),
+      );
+    } catch {
+      if ($snapshot?.project.id === projectId) merchantsById = {};
+    }
+  }
+
+  function merchantFor(sourceMerchantId?: string) {
+    return sourceMerchantId ? merchantsById[sourceMerchantId] : undefined;
+  }
+
+  function markMerchantLogoFailed(merchantId: string) {
+    failedMerchantLogoIds = new Set([...failedMerchantLogoIds, merchantId]);
   }
 
   function accountAppearanceFor(sourceAccount?: string) {
@@ -123,6 +186,21 @@
     if (!PAGE_SIZES.includes(next) || next === pageSize) return;
     pageSize = next;
     void loadHistory(0, next);
+  }
+
+  function historyRoutePath(nextSourceId: string) {
+    const query = new URLSearchParams($activeRoute?.query ?? {});
+    if (nextSourceId === ALL_CONNECTIONS) query.delete("sourceId");
+    else query.set("sourceId", nextSourceId);
+    const suffix = query.toString();
+    return suffix ? `/import/history?${suffix}` : "/import/history";
+  }
+
+  function changeSource(nextSourceId: string) {
+    if (nextSourceId === sourceId) return;
+    sourceId = nextSourceId;
+    router.push(historyRoutePath(nextSourceId));
+    void loadHistory(0, pageSize, nextSourceId);
   }
 
   function handleRunLinkClick(event: MouseEvent, summary: IngestionRunSummary) {
@@ -238,7 +316,13 @@
       ingestionHeaderActions.set(null);
       return;
     }
-    ingestionHeaderActions.set({ kind: "history", runCount: page.total });
+    ingestionHeaderActions.set({
+      kind: "history",
+      runCount: page.total,
+      sourceId,
+      sourceOptions,
+      onSourceChange: changeSource,
+    });
   });
 
   onDestroy(() => ingestionHeaderActions.set(null));
@@ -410,6 +494,7 @@
                   sourceConfig?.sources ?? [],
                 )}
                 {@const appearance = accountAppearanceFor(source.sourceAccount)}
+                {@const merchant = merchantFor(source.sourceMerchantId)}
                 <div
                   class:rounded-b-xl={index === group.runs.length - 1}
                   class="relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-4 py-4 transition-colors last:border-b-0 focus-within:bg-accent focus-within:ring-2 focus-within:ring-ring hover:bg-accent/60 sm:grid-cols-[minmax(0,1fr)_repeat(4,5rem)] sm:gap-x-6"
@@ -426,7 +511,7 @@
                   ></a>
 
                   <div
-                    class="pointer-events-none relative z-10 col-span-2 min-w-0 sm:col-span-1"
+                    class="pointer-events-none relative z-10 col-span-2 min-w-0 sm:col-span-1 sm:row-span-2"
                   >
                     <div class="flex min-w-0 items-start gap-3">
                       <AccountAvatar
@@ -436,34 +521,70 @@
                       />
                       <div class="min-w-0 flex-1">
                         <div class="flex min-w-0 items-center gap-2">
-                          <h3
-                            class="min-w-0 flex-1 truncate text-sm font-semibold"
-                          >
+                          <h3 class="min-w-0 truncate text-sm font-semibold">
                             {source.title}
                           </h3>
-                          <span
-                            class={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                              run.reviewState === "pending"
-                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {run.reviewState === "pending"
-                              ? "Pending review"
-                              : "Completed"}
-                          </span>
                         </div>
-                        <p
-                          class="mt-1 truncate text-right text-xs text-muted-foreground"
-                        >
-                          {formatTime(run.completedAt)}
-                        </p>
+                        {#if source.sourceAccount}
+                          <a
+                            class="pointer-events-auto relative z-10 mt-1 block truncate text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            href={urlForAccount(source.sourceAccount)}
+                            title={source.sourceAccount}
+                            >{source.sourceAccount}</a
+                          >
+                        {/if}
                       </div>
                     </div>
                   </div>
 
                   <div
-                    class="pointer-events-none relative z-10 order-3 col-span-2 grid grid-cols-4 gap-3 text-center text-xs text-muted-foreground sm:order-none sm:col-span-1 sm:contents sm:text-sm"
+                    class="pointer-events-none relative z-10 order-2 col-span-2 grid min-w-0 grid-cols-[6.75rem_1.25rem_4.5rem] items-center justify-end gap-2 sm:order-none sm:col-span-4 sm:col-start-2 sm:grid-cols-[6.75rem_8rem_4.5rem]"
+                  >
+                    <span
+                      class={`justify-self-start rounded-full px-2 py-0.5 text-xs font-medium ${
+                        run.reviewState === "pending"
+                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {run.reviewState === "pending"
+                        ? "Pending review"
+                        : "Completed"}
+                    </span>
+                    <span
+                      class="inline-flex size-5 items-center justify-center justify-self-start overflow-hidden rounded-full border border-border bg-muted text-[0.625rem] font-semibold text-muted-foreground sm:size-auto sm:max-w-32 sm:gap-1 sm:rounded-full sm:px-1 sm:py-0.5 sm:text-xs"
+                      aria-label={`Source: ${source.sourceName}`}
+                      title={`Source: ${source.sourceName}`}
+                    >
+                      {#if merchant?.logoUrl && !failedMerchantLogoIds.has(merchant.merchantId)}
+                        <img
+                          class="size-full object-cover sm:size-3.5 sm:rounded-full"
+                          src={merchant.logoUrl}
+                          alt=""
+                          onerror={() =>
+                            markMerchantLogoFailed(merchant.merchantId)}
+                        />
+                      {:else}
+                        <span
+                          class="grid size-full place-items-center bg-rose-200 text-rose-800 sm:size-3.5 sm:rounded-full"
+                          aria-hidden="true"
+                        >
+                          {accountAvatarInitial(source.sourceName)}
+                        </span>
+                      {/if}
+                      <span class="hidden min-w-0 truncate sm:inline"
+                        >{source.sourceName}</span
+                      >
+                    </span>
+                    <span
+                      class="justify-self-end whitespace-nowrap text-xs text-muted-foreground"
+                    >
+                      {formatTime(run.completedAt)}
+                    </span>
+                  </div>
+
+                  <div
+                    class="pointer-events-none relative z-10 order-3 col-span-2 grid grid-cols-4 gap-3 text-center text-xs text-muted-foreground sm:order-none sm:col-span-4 sm:col-start-2 sm:gap-x-6 sm:text-sm"
                   >
                     <span
                       class="font-medium tabular-nums text-foreground sm:text-center"
