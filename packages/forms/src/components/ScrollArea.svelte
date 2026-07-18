@@ -9,6 +9,7 @@
     ref = $bindable(null),
     class: className = "",
     orientation = "vertical",
+    tabindex = 0,
     children,
     ...restProps
   }: WithoutChild<ScrollAreaPrimitive.RootProps> & {
@@ -21,7 +22,10 @@
   {...restProps}
   class={`beancount-scroll-area ${className}`}
 >
-  <ScrollAreaPrimitive.Viewport class="beancount-scroll-area__viewport">
+  <ScrollAreaPrimitive.Viewport
+    class="beancount-scroll-area__viewport"
+    {tabindex}
+  >
     {@render children?.()}
   </ScrollAreaPrimitive.Viewport>
   {#if orientation === "vertical" || orientation === "both"}
