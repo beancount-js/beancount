@@ -13,6 +13,7 @@
   import type { MerchantReviewCluster } from "@beancount-js/server";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
+  import * as ToggleGroup from "$lib/components/ui/toggle-group";
   import type { SortOrder } from "../grid/sort";
   import {
     checkboxSelectionState,
@@ -57,11 +58,14 @@
   type MerchantReviewResponse = {
     runIds: string[];
     clusters: MerchantReviewCluster[];
+    reviewedClusters: MerchantReviewCluster[];
   };
   type SortKey = "merchant" | "pending";
+  type MerchantReviewView = "pending" | "reviewed";
 
   let config = $state<IngestionConfigResponse | null>(null);
-  let clusters = $state<MerchantReviewCluster[]>([]);
+  let pendingClusters = $state<MerchantReviewCluster[]>([]);
+  let reviewedClusters = $state<MerchantReviewCluster[]>([]);
   let sourceId = $state("");
   let loading = $state(false);
   let detectBusy = $state(false);
@@ -87,6 +91,21 @@
   const project = $derived($snapshot);
   const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
   const queryClusterId = $derived($activeRoute?.query?.cluster ?? "");
+  const queryMerchantView = $derived($activeRoute?.query?.merchantView ?? "");
+  const merchantView = $derived<MerchantReviewView>(
+    queryMerchantView === "pending" || queryMerchantView === "reviewed"
+      ? queryMerchantView
+      : !pendingClusters.length && reviewedClusters.length
+        ? "reviewed"
+        : "pending",
+  );
+  const isPendingView = $derived(merchantView === "pending");
+  const clusters = $derived(
+    isPendingView ? pendingClusters : reviewedClusters,
+  );
+  const hasMerchantClusters = $derived(
+    pendingClusters.length > 0 || reviewedClusters.length > 0,
+  );
   const sourceOptions = $derived(
     (config?.sources ?? []).map((source) => ({
       value: source.id,
@@ -160,11 +179,13 @@
   );
   const merchantBulkAction = $derived.by(
     (): IngestionBulkReviewAction | undefined => {
-      if (!selectedClusters.length) return;
+      if (!isPendingView || !selectedClusters.length) return;
       return {
         label: "Detect",
         selectedCount: selectedClusters.length,
-        canRun: Boolean(project && sourceId && !loading && !detectBusy),
+        canRun: Boolean(
+          isPendingView && project && sourceId && !loading && !detectBusy,
+        ),
         busy: detectBusy,
         onRun: () => void detectSelected(),
       };
@@ -173,7 +194,7 @@
 
   const summaryLine = $derived(
     matchedClusters.length
-      ? `${matchedClusters.length} merchant cluster${matchedClusters.length === 1 ? "" : "s"}${activeSearch && matchedClusters.length !== clusters.length ? ` of ${clusters.length}` : ""} · ${matchedClusters.reduce((sum, item) => sum + item.pendingCount, 0)} pending transactions`
+      ? `${matchedClusters.length} merchant cluster${matchedClusters.length === 1 ? "" : "s"}${activeSearch && matchedClusters.length !== clusters.length ? ` of ${clusters.length}` : ""} · ${matchedClusters.reduce((sum, item) => sum + item.pendingCount, 0)} ${isPendingView ? "pending" : "reviewed"} transactions`
       : "",
   );
 
@@ -188,7 +209,7 @@
       sourceOptions,
       groupsCollapsedAll,
       canDetect: Boolean(
-        sourceId && clusters.length && !loading && !detectBusy,
+        isPendingView && sourceId && clusters.length && !loading && !detectBusy,
       ),
       detectBusy,
       bulkAction: merchantBulkAction,
@@ -351,6 +372,11 @@
     if (requestedPage !== 1) updateRoute({ page: "1" });
   }
 
+  function setMerchantView(value: string | undefined) {
+    if (value !== "pending" && value !== "reviewed") return;
+    updateRoute({ merchantView: value, page: "1", cluster: undefined });
+  }
+
   function ariaSortFor(key: SortKey): "ascending" | "descending" | "none" {
     const order = sortOrders[key];
     if (order === "none") return "none";
@@ -409,7 +435,8 @@
 
   async function refreshClusters() {
     if (!project || !sourceId) {
-      clusters = [];
+      pendingClusters = [];
+      reviewedClusters = [];
       return;
     }
     const response = await ingestionJson<MerchantReviewResponse>(
@@ -418,7 +445,8 @@
         `/merchant-review?sourceId=${encodeURIComponent(sourceId)}`,
       ),
     );
-    clusters = response.clusters;
+    pendingClusters = response.clusters;
+    reviewedClusters = response.reviewedClusters;
     const nextPages = paginateClusters(clusters, pageSize);
     if (
       requestedPage > 1 &&
@@ -470,7 +498,7 @@
   }
 
   async function detectClusters(clusterIds?: readonly string[]) {
-    if (!project || !clusters.length) return;
+    if (!isPendingView || !project || !clusters.length) return;
     detectBusy = true;
     status = "Detecting merchants…";
     try {
@@ -521,9 +549,42 @@
     {/if}
 
     {#if !isWeb && project}
-      {#if loading && !clusters.length}
+      {#if loading && !hasMerchantClusters}
         <MerchantsPageSkeleton />
-      {:else if clusters.length}
+      {:else if hasMerchantClusters}
+        <ToggleGroup.Root
+          type="single"
+          value={merchantView}
+          aria-label="Merchant review status"
+          class="!gap-0 self-start rounded-lg bg-muted p-1"
+          data-ingestion-merchant-view
+          onValueChange={setMerchantView}
+        >
+          <ToggleGroup.Item
+            value="pending"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-3 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+          >
+            Pending review
+            <span
+              class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
+            >
+              {pendingClusters.length}
+            </span>
+          </ToggleGroup.Item>
+          <ToggleGroup.Item
+            value="reviewed"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-3 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+          >
+            Reviewed
+            <span
+              class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
+            >
+              {reviewedClusters.length}
+            </span>
+          </ToggleGroup.Item>
+        </ToggleGroup.Root>
+
+        {#if clusters.length}
         {#if summaryLine}
           <p class="text-sm text-muted-foreground">{summaryLine}</p>
         {/if}
@@ -606,21 +667,25 @@
         {:else if matchedClusters.length}
           <div
             role="row"
-            class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            class={isPendingView
+              ? "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+              : "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"}
           >
-            <input
-              use:setIndeterminate={masterSelection.indeterminate}
-              type="checkbox"
-              class="size-4 rounded border-input text-primary focus:ring-ring"
-              aria-label="Select visible merchant clusters"
-              checked={masterSelection.checked}
-              disabled={!visibleClusterIds.length || detectBusy}
-              onchange={(event) =>
-                setSelectedClusters(
-                  visibleClusterIds,
-                  (event.currentTarget as HTMLInputElement).checked,
-                )}
-            />
+            {#if isPendingView}
+              <input
+                use:setIndeterminate={masterSelection.indeterminate}
+                type="checkbox"
+                class="size-4 rounded border-input text-primary focus:ring-ring"
+                aria-label="Select visible merchant clusters"
+                checked={masterSelection.checked}
+                disabled={!visibleClusterIds.length || detectBusy}
+                onchange={(event) =>
+                  setSelectedClusters(
+                    visibleClusterIds,
+                    (event.currentTarget as HTMLInputElement).checked,
+                  )}
+              />
+            {/if}
             <div
               role="columnheader"
               aria-sort={ariaSortFor("merchant")}
@@ -650,10 +715,10 @@
               <button
                 type="button"
                 class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="Sort by pending count"
+                aria-label={`Sort by ${isPendingView ? "pending" : "reviewed"} count`}
                 onclick={() => cycleSort("pending")}
               >
-                Pending
+                {isPendingView ? "Pending" : "Reviewed"}
                 {#if sortOrders.pending === "asc"}
                   <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
                 {:else if sortOrders.pending === "desc"}
@@ -700,24 +765,28 @@
                 role="button"
                 tabindex="0"
                 class:rounded-b-xl={index === visibleClusters.length - 1}
-                class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={`Review merchant ${cluster.displayName}`}
+                class={isPendingView
+                  ? "grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                  : "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"}
+                aria-label={`${isPendingView ? "Review" : "View"} merchant ${cluster.displayName}`}
                 onclick={() => openCluster(cluster)}
                 onkeydown={(event) => handleRowKeydown(event, cluster)}
               >
-                <input
-                  type="checkbox"
-                  class="size-4 rounded border-input text-primary focus:ring-ring"
-                  aria-label={`Select ${cluster.displayName}`}
-                  checked={selectedClusterIds.has(cluster.id)}
-                  disabled={detectBusy}
-                  onclick={(event) => event.stopPropagation()}
-                  onchange={(event) =>
-                    setSelectedClusters(
-                      [cluster.id],
-                      (event.currentTarget as HTMLInputElement).checked,
-                    )}
-                />
+                {#if isPendingView}
+                  <input
+                    type="checkbox"
+                    class="size-4 rounded border-input text-primary focus:ring-ring"
+                    aria-label={`Select ${cluster.displayName}`}
+                    checked={selectedClusterIds.has(cluster.id)}
+                    disabled={detectBusy}
+                    onclick={(event) => event.stopPropagation()}
+                    onchange={(event) =>
+                      setSelectedClusters(
+                        [cluster.id],
+                        (event.currentTarget as HTMLInputElement).checked,
+                      )}
+                  />
+                {/if}
                 {#if cluster.logoUrl && !failedLogoIds.has(cluster.id)}
                   <img
                     class="size-10 rounded-full border object-contain"
@@ -745,8 +814,10 @@
                   </div>
                 </div>
                 <span
-                  class="inline-flex min-w-7 justify-center rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-violet-700 dark:text-violet-300"
-                  aria-label={`${cluster.pendingCount} pending transaction${cluster.pendingCount === 1 ? "" : "s"}`}
+                  class={isPendingView
+                    ? "inline-flex min-w-7 justify-center rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-violet-700 dark:text-violet-300"
+                    : "inline-flex min-w-7 justify-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-300"}
+                  aria-label={`${cluster.pendingCount} ${isPendingView ? "pending" : "reviewed"} transaction${cluster.pendingCount === 1 ? "" : "s"}`}
                 >
                   {cluster.pendingCount}
                 </span>
@@ -797,6 +868,23 @@
             </div>
           {/if}
         {/if}
+        {:else}
+          <Empty.Root class="min-h-64 border">
+            <Empty.Header>
+              <Empty.Media variant="icon"><Landmark /></Empty.Media>
+              <Empty.Title>
+                {isPendingView
+                  ? "No merchants pending review"
+                  : "No reviewed merchants"}
+              </Empty.Title>
+              <Empty.Description>
+                {isPendingView
+                  ? "Switch to Reviewed to view merchants already accepted in this ingest."
+                  : "Switch to Pending review to view merchants that still need attention."}
+              </Empty.Description>
+            </Empty.Header>
+          </Empty.Root>
+        {/if}
       {:else}
         <Empty.Root class="min-h-64 border">
           <Empty.Header>
@@ -839,6 +927,7 @@
       projectId={project.project.id}
       {sourceId}
       cluster={selectedCluster}
+      readOnly={!isPendingView}
       onClosed={closeClusterSheet}
       onUpdated={() => void refreshClusters()}
       onStatus={(message) => (status = message)}

@@ -54,6 +54,8 @@ export type MerchantReviewProposalRow = {
   proposal: ImportProposal;
 };
 
+export type MerchantReviewMode = "pending" | "reviewed";
+
 function md5(value: string) {
   return createHash("md5").update(value).digest("hex");
 }
@@ -63,8 +65,7 @@ export function runBelongsToConnection(
   connectionId: string,
 ) {
   return (
-    runSourceId === connectionId ||
-    runSourceId.startsWith(`${connectionId}:`)
+    runSourceId === connectionId || runSourceId.startsWith(`${connectionId}:`)
   );
 }
 
@@ -103,6 +104,19 @@ export function needsMerchantReview(proposal: ImportProposal) {
     status === "suppressed" ||
     status === undefined
   );
+}
+
+/**
+ * Merchant-bearing proposals that have already progressed beyond merchant
+ * review. This includes confirmed merchants and proposal rows accepted in the
+ * import review, while excluding duplicates and invalid imports.
+ */
+export function isReviewedMerchantProposal(proposal: ImportProposal) {
+  if (!proposal.transaction) return false;
+  if (proposal.status === "duplicate" || proposal.status === "invalid") {
+    return false;
+  }
+  return !needsMerchantReview(proposal);
 }
 
 function primaryToken(normalized: string) {
@@ -180,8 +194,13 @@ export function pickActiveRunsForConnection(
 
 export function clusterMerchantReviewProposals(
   rows: readonly MerchantReviewProposalRow[],
+  mode: MerchantReviewMode = "pending",
 ): MerchantReviewCluster[] {
-  const eligible = rows.filter((row) => needsMerchantReview(row.proposal));
+  const eligible = rows.filter((row) =>
+    mode === "pending"
+      ? needsMerchantReview(row.proposal)
+      : isReviewedMerchantProposal(row.proposal),
+  );
   // Union-find style merge: share domain or primary token (≥4 chars).
   const parent = new Map<number, number>();
   const find = (index: number): number => {
@@ -296,13 +315,15 @@ export function clusterMerchantReviewProposals(
     }
 
     const memberList = [...labels.values()].sort(
-      (left, right) => right.count - left.count || left.rawLabel.localeCompare(right.rawLabel),
+      (left, right) =>
+        right.count - left.count || left.rawLabel.localeCompare(right.rawLabel),
     );
     const primaryMember = memberList[0]!;
     const primary = primaryMember.refs[0]!;
-    transactions.sort((left, right) =>
-      right.bookedAt.localeCompare(left.bookedAt) ||
-      right.amount.localeCompare(left.amount),
+    transactions.sort(
+      (left, right) =>
+        right.bookedAt.localeCompare(left.bookedAt) ||
+        right.amount.localeCompare(left.amount),
     );
     clusters.push({
       id: md5(mergeKey),
@@ -332,6 +353,7 @@ export function buildMerchantReviewClusters(
   options?: {
     preferredRunId?: string;
     syncRunIds?: readonly string[];
+    mode?: MerchantReviewMode;
   },
 ) {
   const active = pickActiveRunsForConnection(runs, connectionId, options);
@@ -340,7 +362,7 @@ export function buildMerchantReviewClusters(
   );
   return {
     runIds: active.map((run) => run.id),
-    clusters: clusterMerchantReviewProposals(rows),
+    clusters: clusterMerchantReviewProposals(rows, options?.mode),
   };
 }
 

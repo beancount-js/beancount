@@ -21,6 +21,7 @@
     projectId: string;
     sourceId?: string;
     cluster: MerchantReviewCluster;
+    readOnly?: boolean;
     onClosed?: () => void;
     onUpdated?: () => void;
     onStatus?: (message: string) => void;
@@ -31,6 +32,7 @@
     projectId,
     sourceId = "",
     cluster,
+    readOnly = false,
     onClosed,
     onUpdated,
     onStatus,
@@ -109,6 +111,7 @@
   }
 
   function startCorrection() {
+    if (readOnly) return;
     correcting = true;
     correctionName = candidate?.canonicalName ?? cluster.displayName ?? "";
     if (!correctionDomain.trim()) {
@@ -118,6 +121,7 @@
   }
 
   function saveDomainOnly() {
+    if (readOnly) return;
     const domain = correctionDomain.trim();
     if (!domain) return;
     if (primaryStatus === "suggested" && candidate) {
@@ -143,6 +147,7 @@
     action: "confirm" | "correct" | "reject" | "clear-suppression",
     extra: Record<string, string | undefined> = {},
   ) {
+    if (readOnly) return;
     busy = true;
     errors = [];
     try {
@@ -180,6 +185,7 @@
   }
 
   async function detectMerchant() {
+    if (readOnly) return;
     busy = true;
     errors = [];
     try {
@@ -227,10 +233,12 @@
         tabindex={-1}
         class="merchant-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
       >
-        Review Merchant
+        {readOnly ? "Merchant details" : "Review Merchant"}
       </Sheet.Title>
       <Sheet.Description class="sr-only">
-        Confirm or correct this merchant across matching pending imports.
+        {readOnly
+          ? "View accepted merchant details for this active ingest."
+          : "Confirm or correct this merchant across matching pending imports."}
       </Sheet.Description>
       <div class="ml-auto flex shrink-0 items-center gap-1">
         <Tooltip.Root>
@@ -261,27 +269,29 @@
             {sectionsCollapsedAll ? "Expand all" : "Collapse all"}
           </Tooltip.Content>
         </Tooltip.Root>
-        <Tooltip.Root>
-          <Tooltip.Trigger>
-            {#snippet child({ props })}
-              <Button
-                {...props}
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="size-8"
-                aria-label="Detect merchant"
-                disabled={busy}
-                onclick={(event) => {
-                  void detectMerchant();
-                }}
-              >
-                <Sparkles class="size-4" />
-              </Button>
-            {/snippet}
-          </Tooltip.Trigger>
-          <Tooltip.Content>Detect merchant</Tooltip.Content>
-        </Tooltip.Root>
+        {#if !readOnly}
+          <Tooltip.Root>
+            <Tooltip.Trigger>
+              {#snippet child({ props })}
+                <Button
+                  {...props}
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  class="size-8"
+                  aria-label="Detect merchant"
+                  disabled={busy}
+                  onclick={(event) => {
+                    void detectMerchant();
+                  }}
+                >
+                  <Sparkles class="size-4" />
+                </Button>
+              {/snippet}
+            </Tooltip.Trigger>
+            <Tooltip.Content>Detect merchant</Tooltip.Content>
+          </Tooltip.Root>
+        {/if}
         <Tooltip.Root>
           <Tooltip.Trigger>
             {#snippet child({ props })}
@@ -346,7 +356,7 @@
                     {cluster.displayName}
                   </p>
                   <p class="truncate text-xs text-muted-foreground">
-                    {cluster.pendingCount} pending
+                    {cluster.pendingCount} {readOnly ? "reviewed" : "pending"}
                     {#if cluster.domain}
                       · {cluster.domain}
                     {/if}
@@ -380,7 +390,7 @@
                   align="center"
                   controlId="merchant-cluster-domain"
                 >
-                  {#if cluster.domain && !correcting}
+                  {#if readOnly || (cluster.domain && !correcting)}
                     <output id="merchant-cluster-domain" class="truncate"
                       >{cluster.domain}</output
                     >
@@ -399,7 +409,7 @@
                   {/if}
                 </FormField>
                 <FormField
-                  label="Pending"
+                  label={readOnly ? "Reviewed" : "Pending"}
                   as="div"
                   controlId="merchant-cluster-pending"
                 >
@@ -418,7 +428,7 @@
                     >
                   </FormField>
                 {/if}
-                {#if primaryStatus !== "suppressed"}
+                {#if !readOnly && primaryStatus !== "suppressed"}
                   <LocalMerchantMatchPicker
                     {projectId}
                     domain={correctionDomain}
@@ -434,7 +444,8 @@
                 {/if}
               </div>
 
-              <div class="mt-3 flex flex-wrap gap-2">
+              {#if !readOnly}
+                <div class="mt-3 flex flex-wrap gap-2">
                 {#if primaryStatus === "suggested" && candidate}
                   <Button
                     size="sm"
@@ -475,9 +486,9 @@
                     onclick={startCorrection}>Set merchant</Button
                   >
                 {/if}
-              </div>
+                </div>
 
-              {#if correcting}
+                {#if correcting}
                 <div class="beancount-structured-form">
                   <FormField
                     label="Name"
@@ -521,6 +532,7 @@
                     onclick={() => (correcting = false)}>Cancel</Button
                   >
                 </div>
+                {/if}
               {/if}
             </div>
           {/if}

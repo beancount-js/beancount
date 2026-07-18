@@ -23,11 +23,16 @@ export async function GET({
     await store.source(params.id, sourceId);
     const runs = await store.readRuns(params.id);
     const latest = await store.latestSyncJob(params.id, sourceId);
-    const result = buildMerchantReviewClusters(runs, sourceId, {
+    const options = {
       preferredRunId,
       syncRunIds: latest?.runIds,
+    };
+    const pending = buildMerchantReviewClusters(runs, sourceId, options);
+    const reviewed = buildMerchantReviewClusters(runs, sourceId, {
+      ...options,
+      mode: "reviewed",
     });
-    return json(result);
+    return json({ ...pending, reviewedClusters: reviewed.clusters });
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });
   }
