@@ -5,9 +5,21 @@
   let {
     ref = $bindable(null),
     class: className,
+    children,
+    child,
     ...restProps
   }: CalendarPrimitive.HeaderProps = $props();
 </script>
+
+{#snippet CalendarHeader({ props }: { props: Record<string, unknown> })}
+  {#if child}
+    {@render child({ props })}
+  {:else}
+    <div {...props}>
+      {@render children?.()}
+    </div>
+  {/if}
+{/snippet}
 
 <CalendarPrimitive.Header
   bind:ref
@@ -16,4 +28,5 @@
     className,
   )}
   {...restProps}
+  child={CalendarHeader}
 />

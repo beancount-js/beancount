@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@beancount-js/forms": "workspace:*",
+    "@internationalized/date": "^3.6.0",
     "@storybook/addon-a11y": "^10.5.2",
     "@storybook/addon-docs": "^10.5.2",
     "@storybook/addon-mcp": "^0.7.0",

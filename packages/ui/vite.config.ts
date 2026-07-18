@@ -8,7 +8,13 @@ const favaLib = fileURLToPath(new URL("../fava/src/lib", import.meta.url));
 export default defineConfig({
   plugins: [svelte()],
   optimizeDeps: {
-    include: ["@storybook/addon-a11y/preview"],
+    include: [
+      "@internationalized/date",
+      "@storybook/addon-a11y/preview",
+      "lucide-svelte/icons/chevron-left",
+      "lucide-svelte/icons/chevron-right",
+      "lucide-svelte/icons/chevron-up",
+    ],
   },
   resolve: {
     alias: {
