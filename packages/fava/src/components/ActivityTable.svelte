@@ -593,7 +593,7 @@
                         : undefined}
                     >
                       {#if linkAccounts}
-                        <span class="text-xs">
+                        <span class="block min-w-0 text-left text-xs">
                           <AccountLink
                             account={posting.account}
                             avatarSize="sm"
