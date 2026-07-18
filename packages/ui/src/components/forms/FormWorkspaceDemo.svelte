@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { FilterCommandPicker } from "@beancount-js/forms";
+  import { FilterCommandPicker, YamlBackedForm } from "@beancount-js/forms";
   import AppShell from "../AppShell.svelte";
   import CollapsibleItemList from "./CollapsibleItemList.svelte";
   import FormAddButton from "./FormAddButton.svelte";
@@ -42,10 +42,20 @@
   ];
 
   let connectionOpen = $state(true);
+  let sourceEditingOpen = $state(true);
   let sourcesOpen = $state(true);
   let ledgerName = $state("Northstar household");
   let defaultAccount = $state("Assets:Bank:Checking");
+  let syncMode = $state("automatic");
   let enabled = $state(true);
+  let yamlMode = $state(false);
+  let yamlApplied = $state(false);
+  let sourceYaml = $state(`ledger: Northstar household
+default_account: Assets:Bank:Checking
+sources:
+  - id: main-card
+    mode: automatic
+`);
   let sources = $state<Source[]>([
     {
       id: 1,
@@ -71,6 +81,7 @@
 
   const collapsedAll = $derived(
     !connectionOpen &&
+      !sourceEditingOpen &&
       !sourcesOpen &&
       sources.every((source) => !source.open && !source.rulesOpen),
   );
@@ -97,6 +108,7 @@
 
   function setAllSections(open: boolean) {
     connectionOpen = open;
+    sourceEditingOpen = open;
     sourcesOpen = open;
     sources = sources.map((source) => ({
       ...source,
@@ -131,7 +143,7 @@
     </svelte:fragment>
 
     <section class="h-full overflow-auto p-6" aria-label="Ledger settings form">
-      <div class="mx-auto max-w-3xl space-y-6">
+      <div class="mx-auto flex max-w-3xl flex-col gap-6">
         <FormToolbar
           {collapsedAll}
           onToggleCollapse={() => setAllSections(collapsedAll)}
@@ -147,7 +159,7 @@
           {/snippet}
         </FormToolbar>
 
-        <section class="space-y-3" aria-label="Connection settings">
+        <section class="flex flex-col gap-3" aria-label="Connection settings">
           <FormSectionHeader
             title="Connection"
             editable={false}
@@ -186,10 +198,13 @@
                 <FormField label="Sync mode" as="div" align="center">
                   {#snippet children()}
                     <SegmentedControl
-                      value="automatic"
+                      value={syncMode}
                       options={["automatic", "manual"]}
                       labels={{ automatic: "Automatic", manual: "Manual" }}
                       ariaLabel="Connection sync mode"
+                      onChange={(mode) => {
+                        syncMode = mode;
+                      }}
                     />
                   {/snippet}
                 </FormField>
@@ -207,7 +222,62 @@
           {/if}
         </section>
 
-        <section class="space-y-3" aria-label="Sources settings">
+        <section
+          class="flex flex-col gap-3"
+          aria-label="Source editing settings"
+        >
+          <FormSectionHeader
+            title="Source editing"
+            editable={false}
+            titleToggleable
+            open={sourceEditingOpen}
+            movable={false}
+            removable={false}
+            onToggle={() => (sourceEditingOpen = !sourceEditingOpen)}
+          />
+
+          {#if sourceEditingOpen}
+            <div class="flex flex-col gap-4 pl-4">
+              <div class="beancount-structured-form">
+                <FormField label="Edit as YAML" as="div" align="center">
+                  {#snippet children()}
+                    <Switch
+                      checked={yamlMode}
+                      aria-label="Edit ledger source as YAML"
+                      onCheckedChange={(checked) => {
+                        yamlMode = checked;
+                      }}
+                    />
+                  {/snippet}
+                </FormField>
+              </div>
+
+              {#if yamlMode}
+                <YamlBackedForm
+                  yamlMode
+                  bind:yamlText={sourceYaml}
+                  yamlLabel="Ledger source YAML"
+                  yamlMinHeight="18rem"
+                  onYamlApply={() => {
+                    yamlApplied = true;
+                  }}
+                />
+                <output class="block text-sm text-muted-foreground">
+                  {yamlApplied
+                    ? "YAML source draft applied"
+                    : "YAML source draft not applied"}
+                </output>
+              {:else}
+                <p class="text-sm text-muted-foreground">
+                  Use the structured fields for routine edits, or switch to the
+                  authoritative YAML source when the whole draft needs editing.
+                </p>
+              {/if}
+            </div>
+          {/if}
+        </section>
+
+        <section class="flex flex-col gap-3" aria-label="Sources settings">
           <FormSectionHeader
             title="Sources"
             editable={false}
@@ -219,10 +289,10 @@
           />
 
           {#if sourcesOpen}
-            <div class="space-y-5 pl-10">
+            <div class="flex flex-col gap-5 pl-10">
               {#each sources as source, index (source.id)}
                 <section
-                  class="space-y-4"
+                  class="flex flex-col gap-4"
                   aria-label={`${source.label} source`}
                 >
                   <FormSectionHeader
@@ -246,7 +316,7 @@
                   />
 
                   {#if source.open}
-                    <div class="space-y-4 pl-6">
+                    <div class="flex flex-col gap-4 pl-6">
                       <div class="beancount-structured-form">
                         <FormField
                           label="Endpoint"
@@ -318,7 +388,7 @@
                       >
                         {#snippet children()}
                           {#if source.rules.length}
-                            <ul class="space-y-2 text-sm">
+                            <ul class="flex flex-col gap-2 text-sm">
                               {#each source.rules as rule}
                                 <li
                                   class="rounded-md border border-dashed border-border bg-muted/30 px-2.5 py-2"

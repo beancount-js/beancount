@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "An integrated reference form inside the shared app shell. It demonstrates a toolbar, fixed and editable section headers, nested repeatable rules, add/reorder/remove flows, validation, switches, segmented controls, and searchable account pickers in their intended layout. Use the [Form guidance](?path=/docs/ui-forms-guidance--docs) to choose the primitives.",
+            "An integrated reference form inside the shared app shell. It demonstrates a toolbar, fixed and editable section headers, nested repeatable rules, add/reorder/remove flows, validation, switches, segmented controls, searchable account pickers, and the authoritative YAML source mode in their intended layout. Use the [Form guidance](?path=/docs/ui-forms-guidance--docs) to choose the primitives.",
         },
       },
     },
@@ -33,6 +33,11 @@
     await userEvent.click(enabledSwitch);
     await expect(enabledSwitch).not.toBeChecked();
 
+    const syncMode = within(canvas.getByRole("group", { name: "Sync mode" }));
+    const manualSync = syncMode.getByRole("button", { name: "Manual" });
+    await userEvent.click(manualSync);
+    await expect(manualSync).toHaveAttribute("aria-pressed", "true");
+
     const sourceName = canvas.getByRole("textbox", {
       name: "Main card source name",
     });
@@ -51,5 +56,17 @@
 
     await userEvent.click(canvas.getByRole("button", { name: "Add source" }));
     await expect(canvas.getByText("3 sources")).toBeVisible();
+
+    const yamlSwitch = canvas.getByRole("switch", {
+      name: "Edit ledger source as YAML",
+    });
+    await expect(yamlSwitch).not.toBeChecked();
+    await userEvent.click(yamlSwitch);
+    await expect(yamlSwitch).toBeChecked();
+    await expect(
+      canvas.getByRole("textbox", { name: "Ledger source YAML" }),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Apply YAML" }));
+    await expect(canvas.getByText("YAML source draft applied")).toBeVisible();
   }}
 />
