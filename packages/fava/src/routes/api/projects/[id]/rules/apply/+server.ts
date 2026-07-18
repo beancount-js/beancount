@@ -52,7 +52,7 @@ export async function POST({
         ingestionStore,
         workspace,
       });
-      return json({ preview });
+      return json(preview);
     }
 
     const result = await applyDetectionRules({
