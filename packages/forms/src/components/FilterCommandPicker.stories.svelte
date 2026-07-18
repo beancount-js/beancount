@@ -29,27 +29,74 @@
   ];
 </script>
 
-<Story
-  name="Single selection"
-  args={{
-    label: "Account",
-    value: "Assets:Cash",
-    options: accountOptions,
-  }}
-/>
+<script lang="ts">
+  let account = $state("Assets:Cash");
+  let accounts = $state(["Assets:Cash", "Expenses:Groceries"]);
+  let environmentVariable = $state("");
+</script>
 
-<Story
-  name="Multiple full-width selection"
-  args={{
-    label: "Accounts",
-    multiple: true,
-    values: ["Assets:Cash", "Expenses:Groceries"],
-    fullWidth: true,
-    options: accountOptions,
-  }}
-/>
+<Story name="Single selection">
+  {#snippet template()}
+    <div class="space-y-3">
+      <FilterCommandPicker
+        label="Account"
+        value={account}
+        options={accountOptions}
+        onChange={(value) => {
+          account = value;
+        }}
+      />
+      <p class="text-muted-foreground text-sm">
+        Selected account:
+        <output class="text-foreground font-medium" aria-live="polite"
+          >{account || "No account selected"}</output
+        >
+      </p>
+    </div>
+  {/snippet}
+</Story>
 
-<Story
-  name="Custom value"
-  args={{ label: "Environment variable", allowCustom: true, options: [] }}
-/>
+<Story name="Multiple full-width selection">
+  {#snippet template()}
+    <div class="max-w-md space-y-3">
+      <FilterCommandPicker
+        label="Accounts"
+        multiple
+        values={accounts}
+        fullWidth
+        options={accountOptions}
+        onValuesChange={(values) => {
+          accounts = values;
+        }}
+      />
+      <p class="text-muted-foreground text-sm">
+        Selected accounts:
+        <output class="text-foreground font-medium" aria-live="polite"
+          >{accounts.length > 0 ? accounts.join(", ") : "All accounts"}</output
+        >
+      </p>
+    </div>
+  {/snippet}
+</Story>
+
+<Story name="Custom value">
+  {#snippet template()}
+    <div class="space-y-3">
+      <FilterCommandPicker
+        label="Environment variable"
+        value={environmentVariable}
+        allowCustom
+        options={[]}
+        onChange={(value) => {
+          environmentVariable = value;
+        }}
+      />
+      <p class="text-muted-foreground text-sm">
+        Selected value:
+        <output class="text-foreground font-medium" aria-live="polite"
+          >{environmentVariable || "No value selected"}</output
+        >
+      </p>
+    </div>
+  {/snippet}
+</Story>
