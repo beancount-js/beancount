@@ -1,5 +1,6 @@
 import type {
   DetectionRule,
+  RuleApplyTarget,
   RuleRegistryMeta,
   RuleRun,
 } from "@beancount-js/beangulp";
@@ -21,8 +22,9 @@ export interface RuleRunsResponse {
 export interface RuleApplyPreviewEntry {
   ruleId: string;
   ruleName: string;
-  proposals: number;
-  ledger: number;
+  target: RuleApplyTarget;
+  pendingImports: number;
+  liveLedger: number;
   total: number;
 }
 
@@ -39,6 +41,12 @@ export interface RuleApplyResultEntry {
   processed: number;
   modified: number;
   blocked: number;
+  target: RuleApplyTarget;
+  targetCounts: {
+    queued: { pendingImports: number; liveLedger: number };
+    processed: { pendingImports: number; liveLedger: number };
+    modified: { pendingImports: number; liveLedger: number };
+  };
   errorMessage?: string | null;
 }
 
@@ -46,4 +54,4 @@ export interface RuleApplyResponse {
   results: RuleApplyResultEntry[];
 }
 
-export type { DetectionRule, RuleRegistryMeta, RuleRun };
+export type { DetectionRule, RuleApplyTarget, RuleRegistryMeta, RuleRun };

@@ -5,8 +5,10 @@ import {
   type ImportProposal,
   type IngestionRun,
   type NormalizedTransaction,
+  type RuleApplyTarget,
   type RuleEvaluationContext,
   type RulePatch,
+  type RuleRunTargetCounts,
 } from "@beancount-js/beangulp";
 import {
   loadProjectSources,
@@ -18,9 +20,16 @@ import type { FilesystemIngestionStore } from "./ingestion";
 import type { FilesystemRulesStore } from "./rules";
 import type { FilesystemWorkspaceAdapter } from "./workspace-adapter";
 
-export type RuleApplyMatchCounts = {
-  proposals: number;
-  ledger: number;
+export type RuleApplyMatchCounts = RuleRunTargetCounts & {
+  total: number;
+};
+
+export type RuleApplyPreview = {
+  ruleId: string;
+  ruleName: string;
+  target: RuleApplyTarget;
+  pendingImports: number;
+  liveLedger: number;
   total: number;
 };
 
@@ -33,8 +42,39 @@ export type RuleApplyResult = {
   processed: number;
   modified: number;
   blocked: number;
+  target: RuleApplyTarget;
+  targetCounts: {
+    queued: RuleRunTargetCounts;
+    processed: RuleRunTargetCounts;
+    modified: RuleRunTargetCounts;
+  };
   errorMessage?: string | null;
 };
+
+function emptyTargetCounts(): RuleRunTargetCounts {
+  return { pendingImports: 0, liveLedger: 0 };
+}
+
+function targetIncludesPendingImports(target: RuleApplyTarget) {
+  return target === "pending-imports" || target === "both";
+}
+
+function targetIncludesLiveLedger(target: RuleApplyTarget) {
+  return target === "live-ledger" || target === "both";
+}
+
+function countsForTarget(
+  counts: RuleApplyMatchCounts,
+  target: RuleApplyTarget,
+): RuleApplyMatchCounts {
+  const pendingImports = targetIncludesPendingImports(target)
+    ? counts.pendingImports
+    : 0;
+  const liveLedger = targetIncludesLiveLedger(target)
+    ? counts.liveLedger
+    : 0;
+  return { pendingImports, liveLedger, total: pendingImports + liveLedger };
+}
 
 function errorMessages(errors: readonly { message: string }[]) {
   return new Set(errors.map((error) => error.message));
@@ -213,23 +253,28 @@ export function countRuleMatches(
   runs: readonly IngestionRun[],
   entries: readonly Directive[],
 ): RuleApplyMatchCounts {
-  let proposals = 0;
+  let pendingImports = 0;
   for (const { proposal } of pendingProposals(runs)) {
     const context = proposalContext(proposal);
-    if (context && ruleMatches(rule, context)) proposals += 1;
+    if (context && ruleMatches(rule, context)) pendingImports += 1;
   }
-  let ledger = 0;
+  let liveLedger = 0;
   for (const entry of entries) {
     if (!(entry instanceof Transaction)) continue;
     const context = ledgerContext(entry);
-    if (context && ruleMatches(rule, context)) ledger += 1;
+    if (context && ruleMatches(rule, context)) liveLedger += 1;
   }
-  return { proposals, ledger, total: proposals + ledger };
+  return {
+    pendingImports,
+    liveLedger,
+    total: pendingImports + liveLedger,
+  };
 }
 
 export async function previewRuleApply(options: {
   projectId: string;
   ruleIds?: string[];
+  target: RuleApplyTarget;
   rulesStore: FilesystemRulesStore;
   ingestionStore: FilesystemIngestionStore;
   workspace: FilesystemWorkspaceAdapter;
@@ -247,16 +292,24 @@ export async function previewRuleApply(options: {
       contents: file.contents,
     })),
   );
-  return selected.map((rule) => ({
-    ruleId: rule.id,
-    ruleName: rule.name ?? "Untitled rule",
-    ...countRuleMatches(rule, runs, entries),
-  }));
+  return selected.map((rule) => {
+    const counts = countsForTarget(
+      countRuleMatches(rule, runs, entries),
+      options.target,
+    );
+    return {
+      ruleId: rule.id,
+      ruleName: rule.name ?? "Untitled rule",
+      target: options.target,
+      ...counts,
+    } satisfies RuleApplyPreview;
+  });
 }
 
 export async function applyDetectionRules(options: {
   projectId: string;
   ruleIds?: string[];
+  target: RuleApplyTarget;
   rulesStore: FilesystemRulesStore;
   ingestionStore: FilesystemIngestionStore;
   workspace: FilesystemWorkspaceAdapter;
@@ -272,120 +325,125 @@ export async function applyDetectionRules(options: {
       ...options,
       ruleIds: [rule.id],
     });
-    const queued = preview[0]?.total ?? 0;
+    const queuedByTarget: RuleRunTargetCounts = {
+      pendingImports: preview[0]?.pendingImports ?? 0,
+      liveLedger: preview[0]?.liveLedger ?? 0,
+    };
+    const queued = queuedByTarget.pendingImports + queuedByTarget.liveLedger;
     const run = await options.rulesStore.startRun(options.projectId, {
       ruleId: rule.id,
       ruleName: rule.name ?? "Untitled rule",
       queued,
+      target: options.target,
+      targetCounts: {
+        queued: queuedByTarget,
+        processed: emptyTargetCounts(),
+        modified: emptyTargetCounts(),
+      },
     });
+    const processedByTarget = emptyTargetCounts();
+    const modifiedByTarget = emptyTargetCounts();
 
     try {
-      let processed = 0;
-      let modified = 0;
-
-      // Patch pending proposals.
-      const runs = await options.ingestionStore.readRuns(options.projectId);
       const changedRuns: IngestionRun[] = [];
-      for (const ingestionRun of runs) {
-        let runChanged = false;
-        const proposals = ingestionRun.proposals.map((proposal) => {
-          if (
-            proposal.status !== "ready" &&
-            proposal.status !== "needs-review" &&
-            proposal.status !== "held"
-          ) {
-            return proposal;
-          }
-          const context = proposalContext(proposal);
-          if (!context || !ruleMatches(rule, context)) return proposal;
-          processed += 1;
-          const patch = applyRuleActions(rule, context);
-          if (!patch) return proposal;
-          const next = applyPatchToProposal(proposal, patch);
-          if (next !== proposal) {
-            modified += 1;
-            runChanged = true;
-          }
-          return next;
-        });
-        if (runChanged) {
-          changedRuns.push({ ...ingestionRun, proposals });
+      let pendingModified = 0;
+      if (targetIncludesPendingImports(options.target)) {
+        const runs = await options.ingestionStore.readRuns(options.projectId);
+        for (const ingestionRun of runs) {
+          let runChanged = false;
+          const proposals = ingestionRun.proposals.map((proposal) => {
+            if (
+              proposal.status !== "ready" &&
+              proposal.status !== "needs-review" &&
+              proposal.status !== "held"
+            ) {
+              return proposal;
+            }
+            const context = proposalContext(proposal);
+            if (!context || !ruleMatches(rule, context)) return proposal;
+            processedByTarget.pendingImports += 1;
+            const patch = applyRuleActions(rule, context);
+            if (!patch) return proposal;
+            const next = applyPatchToProposal(proposal, patch);
+            if (next !== proposal) {
+              pendingModified += 1;
+              runChanged = true;
+            }
+            return next;
+          });
+          if (runChanged) changedRuns.push({ ...ingestionRun, proposals });
         }
       }
-      if (changedRuns.length) {
-        await options.ingestionStore.writeRuns(options.projectId, changedRuns);
-      }
 
-      // Rewrite matching ledger transactions.
-      let snapshot = await options.workspace.readProject(options.projectId);
-      const [entries, previousErrors] = loadProjectSources(
-        snapshot.project.entryFile,
-        snapshot.ledgerFiles.map((ledgerFile) => ({
-          path: ledgerFile.path,
-          contents: ledgerFile.contents,
-        })),
-      );
-
-      type Edit = {
-        path: string;
-        from: number;
-        to: number;
-        original: string;
-        next: string;
-      };
-      const editsByPath = new Map<string, Edit[]>();
-
-      for (const entry of entries) {
-        if (!(entry instanceof Transaction)) continue;
-        const context = ledgerContext(entry);
-        if (!context || !ruleMatches(rule, context)) continue;
-        processed += 1;
-        const patch = applyRuleActions(rule, context);
-        if (!patch) continue;
-        const updated = applyPatchToLedger(entry, patch, context);
-        if (!updated) continue;
-        const source = entry.source;
-        const path = String(entry.meta.filename ?? "");
-        if (!source || !path) continue;
-        const list = editsByPath.get(path) ?? [];
-        list.push({
-          path,
-          from: source.position.from,
-          to: source.position.to,
-          original: source.content,
-          next: updated.toString().trimEnd() + "\n",
-        });
-        editsByPath.set(path, list);
-      }
-
-      for (const [path, edits] of editsByPath) {
-        const fileEntry = snapshot.ledgerFiles.find((item) => item.path === path);
-        const revision = snapshot.revisions.find(
-          (item) => item.path === path,
-        )?.revision;
-        if (!fileEntry || !revision) {
-          throw new Error(`Missing ledger file revision for ${path}.`);
-        }
-        let contents = fileEntry.contents;
-        const ordered = [...edits].sort((a, b) => b.from - a.from);
-        for (const edit of ordered) {
-          if (contents.slice(edit.from, edit.to) !== edit.original) {
-            throw new Error(
-              `Ledger changed while applying rules to ${path}; reload and retry.`,
-            );
-          }
-          contents = `${contents.slice(0, edit.from)}${edit.next}${contents.slice(edit.to)}`;
-          modified += 1;
-        }
-        const sourceFiles = snapshot.ledgerFiles.map((item) =>
-          item.path === path ? { ...item, contents } : item,
+      if (targetIncludesLiveLedger(options.target)) {
+        const snapshot = await options.workspace.readProject(options.projectId);
+        const [entries, previousErrors] = loadProjectSources(
+          snapshot.project.entryFile,
+          snapshot.ledgerFiles.map((ledgerFile) => ({
+            path: ledgerFile.path,
+            contents: ledgerFile.contents,
+          })),
         );
+        type Edit = {
+          path: string;
+          from: number;
+          to: number;
+          original: string;
+          next: string;
+        };
+        const editsByPath = new Map<string, Edit[]>();
+
+        for (const entry of entries) {
+          if (!(entry instanceof Transaction)) continue;
+          const context = ledgerContext(entry);
+          if (!context || !ruleMatches(rule, context)) continue;
+          processedByTarget.liveLedger += 1;
+          const patch = applyRuleActions(rule, context);
+          if (!patch) continue;
+          const updated = applyPatchToLedger(entry, patch, context);
+          if (!updated) continue;
+          const source = entry.source;
+          const path = String(entry.meta.filename ?? "");
+          if (!source || !path) continue;
+          const list = editsByPath.get(path) ?? [];
+          list.push({
+            path,
+            from: source.position.from,
+            to: source.position.to,
+            original: source.content,
+            next: updated.toString().trimEnd() + "\n",
+          });
+          editsByPath.set(path, list);
+        }
+
+        const contentsByPath = new Map<string, string>();
+        for (const [path, edits] of editsByPath) {
+          const fileEntry = snapshot.ledgerFiles.find((item) => item.path === path);
+          const revision = snapshot.revisions.find(
+            (item) => item.path === path,
+          )?.revision;
+          if (!fileEntry || !revision) {
+            throw new Error(`Missing ledger file revision for ${path}.`);
+          }
+          let contents = fileEntry.contents;
+          for (const edit of [...edits].sort((a, b) => b.from - a.from)) {
+            if (contents.slice(edit.from, edit.to) !== edit.original) {
+              throw new Error(
+                `Ledger changed while applying rules to ${path}; reload and retry.`,
+              );
+            }
+            contents = `${contents.slice(0, edit.from)}${edit.next}${contents.slice(edit.to)}`;
+          }
+          contentsByPath.set(path, contents);
+        }
+
+        const sourceFiles = snapshot.ledgerFiles.map((item) => ({
+          ...item,
+          contents: contentsByPath.get(item.path) ?? item.contents,
+        }));
         const [, nextErrors] = loadProjectSources(
           snapshot.project.entryFile,
-          sourceFiles.map((item) => ({
-            path: item.path,
-            contents: item.contents,
-          })),
+          sourceFiles.map((item) => ({ path: item.path, contents: item.contents })),
         );
         const known = errorMessages(previousErrors);
         const introduced = nextErrors.filter(
@@ -398,13 +456,33 @@ export async function applyDetectionRules(options: {
               .join("; ")}`,
           );
         }
-        await options.workspace.writeFile(
-          options.projectId,
-          { path, contents },
-          { expectedRevision: revision },
-        );
-        snapshot = await options.workspace.readProject(options.projectId);
+
+        for (const fileEntry of sourceFiles) {
+          if (!contentsByPath.has(fileEntry.path)) continue;
+          const revision = snapshot.revisions.find(
+            (item) => item.path === fileEntry.path,
+          )?.revision;
+          if (!revision) {
+            throw new Error(`Missing ledger file revision for ${fileEntry.path}.`);
+          }
+          await options.workspace.writeFile(
+            options.projectId,
+            { path: fileEntry.path, contents: fileEntry.contents },
+            { expectedRevision: revision },
+          );
+          modifiedByTarget.liveLedger += editsByPath.get(fileEntry.path)?.length ?? 0;
+        }
       }
+
+      if (changedRuns.length) {
+        await options.ingestionStore.writeRuns(options.projectId, changedRuns);
+        modifiedByTarget.pendingImports = pendingModified;
+      }
+
+      const processed =
+        processedByTarget.pendingImports + processedByTarget.liveLedger;
+      const modified =
+        modifiedByTarget.pendingImports + modifiedByTarget.liveLedger;
 
       const completed = await options.rulesStore.completeRun(
         options.projectId,
@@ -413,6 +491,11 @@ export async function applyDetectionRules(options: {
           status: "success",
           processed,
           modified,
+          targetCounts: {
+            queued: queuedByTarget,
+            processed: processedByTarget,
+            modified: modifiedByTarget,
+          },
         },
       );
       results.push({
@@ -424,6 +507,12 @@ export async function applyDetectionRules(options: {
         processed: completed.transactionsProcessed,
         modified: completed.transactionsModified,
         blocked: completed.transactionsBlocked,
+        target: options.target,
+        targetCounts: completed.targetCounts ?? {
+          queued: queuedByTarget,
+          processed: processedByTarget,
+          modified: modifiedByTarget,
+        },
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -432,8 +521,15 @@ export async function applyDetectionRules(options: {
         run.id,
         {
           status: "failed",
-          processed: 0,
-          modified: 0,
+          processed:
+            processedByTarget.pendingImports + processedByTarget.liveLedger,
+          modified:
+            modifiedByTarget.pendingImports + modifiedByTarget.liveLedger,
+          targetCounts: {
+            queued: queuedByTarget,
+            processed: processedByTarget,
+            modified: modifiedByTarget,
+          },
           errorMessage: message,
         },
       );
@@ -446,6 +542,12 @@ export async function applyDetectionRules(options: {
         processed: failed.transactionsProcessed,
         modified: failed.transactionsModified,
         blocked: failed.transactionsBlocked,
+        target: options.target,
+        targetCounts: failed.targetCounts ?? {
+          queued: queuedByTarget,
+          processed: processedByTarget,
+          modified: modifiedByTarget,
+        },
         errorMessage: message,
       });
     }

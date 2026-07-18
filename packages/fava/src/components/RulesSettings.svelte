@@ -12,9 +12,11 @@
   import { onDestroy } from "svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
+  import * as Dialog from "$lib/components/ui/dialog";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import * as Empty from "$lib/components/ui/empty";
   import { Switch } from "$lib/components/ui/switch";
+  import * as ToggleGroup from "$lib/components/ui/toggle-group";
   import { cn } from "$lib/utils";
   import type { SortOrder } from "../grid/sort";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
@@ -23,6 +25,7 @@
   import type {
     RuleApplyPreviewResponse,
     RuleApplyResponse,
+    RuleApplyTarget,
     RuleRun,
     RuleRunsResponse,
     RulesResponse,
@@ -61,6 +64,12 @@
   let editorOpen = $state(false);
   let editingRule = $state<DetectionRule | null>(null);
   let applyBusy = $state(false);
+  let applyOpen = $state(false);
+  let applyPreviewLoading = $state(false);
+  let applyRuleIds = $state<string[] | undefined>(undefined);
+  let applyLabel = $state("");
+  let applyTarget = $state<RuleApplyTarget>("live-ledger");
+  let applyPreview = $state<RuleApplyPreviewResponse["preview"]>([]);
 
   const project = $derived($snapshot);
   const sortedRules = $derived.by(() => {
@@ -230,86 +239,77 @@
     await saveRules(rules.filter((item) => item.id !== rule.id));
   }
 
-  function previewMessage(
-    label: string,
-    entries: RuleApplyPreviewResponse["preview"],
-  ) {
-    const total = entries.reduce((sum, entry) => sum + entry.total, 0);
-    const proposals = entries.reduce((sum, entry) => sum + entry.proposals, 0);
-    const ledger = entries.reduce((sum, entry) => sum + entry.ledger, 0);
-    return `Apply ${label} to ${total} transaction${total === 1 ? "" : "s"}? (${proposals} pending import${proposals === 1 ? "" : "s"}, ${ledger} ledger entr${ledger === 1 ? "y" : "ies"})`;
+  function targetLabel(target: RuleApplyTarget) {
+    if (target === "live-ledger") return "live ledger";
+    if (target === "pending-imports") return "pending imports";
+    return "pending imports and the live ledger";
   }
 
-  async function applyRule(rule: DetectionRule) {
-    if (!project) return;
-    applyBusy = true;
-    status = "Checking matching transactions…";
+  function previewTotals(entries: RuleApplyPreviewResponse["preview"]) {
+    return entries.reduce(
+      (totals, entry) => ({
+        pendingImports: totals.pendingImports + entry.pendingImports,
+        liveLedger: totals.liveLedger + entry.liveLedger,
+        total: totals.total + entry.total,
+      }),
+      { pendingImports: 0, liveLedger: 0, total: 0 },
+    );
+  }
+
+  async function loadApplyPreview() {
+    if (!project || !applyOpen) return;
+    applyPreviewLoading = true;
     try {
-      const preview = await rulesJson<RuleApplyPreviewResponse>(
+      const response = await rulesJson<RuleApplyPreviewResponse>(
         rulesPath(project.project.id, "/apply"),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ruleIds: [rule.id], dryRun: true }),
+          body: JSON.stringify({
+            ruleIds: applyRuleIds,
+            target: applyTarget,
+            dryRun: true,
+          }),
         },
       );
-      if (
-        !window.confirm(previewMessage(`"${ruleName(rule)}"`, preview.preview))
-      ) {
-        status = "";
-        return;
-      }
-      status = "Applying rule…";
-      await rulesJson<RuleApplyResponse>(
-        rulesPath(project.project.id, "/apply"),
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ruleIds: [rule.id] }),
-        },
-      );
-      status = "Rule applied.";
-      await loadRuns();
+      applyPreview = response.preview;
     } catch (error) {
       status = message(error);
+      applyPreview = [];
     } finally {
-      applyBusy = false;
+      applyPreviewLoading = false;
     }
   }
 
-  async function applyAll() {
-    if (!project) return;
-    const activeRules = rules.filter((rule) => rule.active);
-    if (!activeRules.length) {
-      status = "No active rules to apply.";
+  function openApply(rule?: DetectionRule) {
+    if (!rule && !rules.some((item) => item.active)) {
+      status = "No active rules to run.";
       return;
     }
+    applyRuleIds = rule ? [rule.id] : undefined;
+    applyLabel = rule ? `"${ruleName(rule)}"` : "all active rules";
+    applyTarget = "live-ledger";
+    applyPreview = [];
+    applyOpen = true;
+  }
+
+  async function applySelectedRules() {
+    if (!project) return;
     applyBusy = true;
-    status = "Checking matching transactions…";
+    status = `Running ${applyLabel} on the ${targetLabel(applyTarget)}…`;
     try {
-      const preview = await rulesJson<RuleApplyPreviewResponse>(
-        rulesPath(project.project.id, "/apply"),
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ dryRun: true }),
-        },
-      );
-      if (
-        !window.confirm(previewMessage("all active rules", preview.preview))
-      ) {
-        status = "";
-        return;
-      }
-      status = "Applying rules…";
       await rulesJson<RuleApplyResponse>(
         rulesPath(project.project.id, "/apply"),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({}),
+          body: JSON.stringify({
+            ruleIds: applyRuleIds,
+            target: applyTarget,
+          }),
         },
       );
+      applyOpen = false;
       status = "Rules applied.";
       await loadRuns();
     } catch (error) {
@@ -327,6 +327,13 @@
   });
 
   $effect(() => {
+    if (!applyOpen || !project) return;
+    applyTarget;
+    applyRuleIds;
+    void loadApplyPreview();
+  });
+
+  $effect(() => {
     if (isWeb || !project) {
       ingestionHeaderActions.set(null);
       return;
@@ -338,7 +345,7 @@
       canApplyAll: rules.some((rule) => rule.active),
       applyBusy,
       onApplyAll: () => {
-        void applyAll();
+        openApply();
       },
       onAddRule: openCreate,
     });
@@ -503,10 +510,10 @@
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
                     disabled={applyBusy}
-                    onSelect={() => void applyRule(rule)}
+                    onSelect={() => openApply(rule)}
                   >
                     <Play class="size-3.5" aria-hidden="true" />
-                    Apply
+                    Run…
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator />
                   <DropdownMenu.Item
@@ -615,6 +622,80 @@
 </section>
 
 {#if project}
+  <Dialog.Root bind:open={applyOpen}>
+    <Dialog.Content class="sm:max-w-xl">
+      <Dialog.Header>
+        <Dialog.Title>Run rules</Dialog.Title>
+        <Dialog.Description>
+          Choose where to run {applyLabel}. Running rules from this page is a
+          bulk-fix operation; it does not change ingestion automation.
+        </Dialog.Description>
+      </Dialog.Header>
+
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-2">
+          <p class="text-sm font-medium">Apply to</p>
+          <ToggleGroup.Root
+            type="single"
+            variant="outline"
+            class="grid w-full grid-cols-3"
+            bind:value={applyTarget}
+            disabled={applyBusy}
+          >
+            <ToggleGroup.Item value="live-ledger">Live ledger</ToggleGroup.Item>
+            <ToggleGroup.Item value="pending-imports"
+              >Pending imports</ToggleGroup.Item
+            >
+            <ToggleGroup.Item value="both">Both</ToggleGroup.Item>
+          </ToggleGroup.Root>
+          <p class="text-xs text-muted-foreground">
+            Live ledger is selected by default. Both updates two separate
+            stores and is never selected automatically.
+          </p>
+        </div>
+
+        <div class="rounded-lg border bg-muted/30 px-3 py-2.5 text-sm">
+          {#if applyPreviewLoading}
+            Checking matching transactions…
+          {:else}
+            {@const totals = previewTotals(applyPreview)}
+            <p>
+              {totals.total} matching rule {totals.total === 1 ? "entry" : "entries"}
+              across {totals.pendingImports} pending
+              {totals.pendingImports === 1 ? "import" : "imports"} and
+              {totals.liveLedger} live ledger
+              {totals.liveLedger === 1 ? "entry" : "entries"}.
+            </p>
+            {#if applyPreview.length > 1}
+              <p class="mt-1 text-xs text-muted-foreground">
+                A transaction matched by more than one rule is counted once per
+                matching rule.
+              </p>
+            {/if}
+          {/if}
+        </div>
+      </div>
+
+      <Dialog.Footer>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={applyBusy}
+          onclick={() => (applyOpen = false)}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          disabled={applyBusy || applyPreviewLoading}
+          onclick={() => void applySelectedRules()}
+        >
+          Run on {targetLabel(applyTarget)}
+        </Button>
+      </Dialog.Footer>
+    </Dialog.Content>
+  </Dialog.Root>
+
   {#key editingRule?.id ?? "new"}
     <RuleEditorSheet
       bind:open={editorOpen}

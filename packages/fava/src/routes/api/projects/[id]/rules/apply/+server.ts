@@ -20,10 +20,22 @@ export async function POST({
     const body = (await request.json().catch(() => ({}))) as {
       ruleIds?: unknown;
       dryRun?: unknown;
+      target?: unknown;
     };
     const ruleIds = Array.isArray(body.ruleIds)
       ? body.ruleIds.filter((id): id is string => typeof id === "string")
       : undefined;
+    if (
+      body.target !== "pending-imports" &&
+      body.target !== "live-ledger" &&
+      body.target !== "both"
+    ) {
+      return json(
+        { error: "Choose whether to run rules on pending imports, the live ledger, or both." },
+        { status: 400 },
+      );
+    }
+    const target = body.target;
     const workspace = await serverWorkspace();
     const rulesStore = serverRules();
     const ingestionStore = serverIngestion();
@@ -32,6 +44,7 @@ export async function POST({
       const preview = await previewRuleApply({
         projectId: params.id,
         ruleIds,
+        target,
         rulesStore,
         ingestionStore,
         workspace,
@@ -42,6 +55,7 @@ export async function POST({
     const result = await applyDetectionRules({
       projectId: params.id,
       ruleIds,
+      target,
       rulesStore,
       ingestionStore,
       workspace,

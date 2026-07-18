@@ -198,6 +198,7 @@ export class FilesystemRulesStore {
       status: "success" | "failed";
       processed: number;
       modified: number;
+      targetCounts?: RuleRun["targetCounts"];
       errorMessage?: string | null;
     },
   ) {
@@ -206,6 +207,7 @@ export class FilesystemRulesStore {
       transactionsProcessed: result.processed,
       transactionsModified: result.modified,
       transactionsBlocked: ruleBlockedCount(result.processed, result.modified),
+      targetCounts: result.targetCounts,
       errorMessage: result.errorMessage ?? null,
     });
   }
