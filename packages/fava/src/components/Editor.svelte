@@ -17,7 +17,6 @@
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
-  import ContentScrollArea from "./ContentScrollArea.svelte";
 
   const {
     router: { activeRoute },
@@ -248,12 +247,10 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-col">
-  <ContentScrollArea
-    class="min-h-0 flex-1"
-    contentClass="scroll-container pt-0"
-  >
+  <div class="editor-scroll-host min-h-0 flex-1 overflow-hidden">
     <div class="beancount-editor relative">
       <div
+        class="h-full"
         use:codeMirror={{
           path: activeFile?.path ?? "",
           contents: activeFile?.contents ?? "",
@@ -261,5 +258,13 @@
         }}
       ></div>
     </div>
-  </ContentScrollArea>
+  </div>
 </div>
+
+<style>
+  .editor-scroll-host,
+  .editor-scroll-host .beancount-editor,
+  .editor-scroll-host :global(.cm-editor) {
+    height: 100%;
+  }
+</style>
