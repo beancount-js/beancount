@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Accordion from "$lib/components/ui/accordion/index.js";
   import Highlighter from "./Highlighter.svelte";
-  import { parser as bqlParser } from "@beancount-js/beanquery";
+  import { bqlLanguage } from "../bql/bql";
   import QueryTable from "./QueryTable.svelte";
   import { type QueryHistory } from "../stores/query";
   import { cn } from "$lib/utils";
@@ -68,7 +68,7 @@
             data-query-history-trigger
           >
             <span class="min-w-0 flex-1" data-query-history-label>
-              <Highlighter code={query.query} parser={bqlParser} />
+              <Highlighter code={query.query} parser={bqlLanguage.parser} />
             </span>
           </Accordion.Trigger>
         </div>

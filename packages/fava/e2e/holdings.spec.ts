@@ -116,6 +116,20 @@ test("Query tables use a compact search field and expandable saved queries", asy
     .locator("[data-query-history-item]")
     .filter({ hasText: "SELECT account FROM postings" });
   await expect(savedQuery).toBeVisible();
+  const savedQuerySyntaxTokens = await savedQuery
+    .locator("pre")
+    .evaluate((query) => {
+      const defaultColor = getComputedStyle(query).color;
+      return Array.from(query.querySelectorAll("span"))
+        .map((token) => ({
+          text: token.textContent,
+          color: getComputedStyle(token).color,
+        }))
+        .filter((token) => token.color !== defaultColor);
+    });
+  expect(savedQuerySyntaxTokens.map((token) => token.text)).toEqual(
+    expect.arrayContaining(["SELECT", "FROM"]),
+  );
   await expect(savedQuery.locator("[data-query-history-header]")).toBeVisible();
   await expect(
     savedQuery.getByRole("button", { name: /^Copy query:/ }),
