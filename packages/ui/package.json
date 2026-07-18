@@ -51,6 +51,8 @@
     "./forms/CollapsibleItemList.svelte": "./src/components/forms/CollapsibleItemList.svelte",
     "./forms/EntryActions.svelte": "./src/components/forms/EntryActions.svelte",
     "./forms/FormAddButton.svelte": "./src/components/forms/FormAddButton.svelte",
+    "./forms/FormField.svelte": "./src/components/forms/FormField.svelte",
+    "./forms/FormSectionHeader.svelte": "./src/components/forms/FormSectionHeader.svelte",
     "./forms/FormToolbar.svelte": "./src/components/forms/FormToolbar.svelte",
     "./forms/SegmentedControl.svelte": "./src/components/forms/SegmentedControl.svelte",
     "./styles.css": "./src/styles.css",
