@@ -25,3 +25,15 @@
   min-height: 100vh;
   padding: 1.5rem;
 }
+
+/* Docs stories share one canvas. Storybook's auto-scrolling wrapper shows
+ * needless scrollbars for sub-pixel story heights, and also clips controls
+ * that intentionally sit outside a component's content edge. */
+.docs-story {
+  overflow: visible !important;
+}
+
+.docs-story .sb-story {
+  box-sizing: border-box;
+  padding: 1rem 2.5rem;
+}
