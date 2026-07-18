@@ -90,7 +90,8 @@ test("Query tables use a compact search field and expandable saved queries", asy
   ]);
   expect(triggerBounds).not.toBeNull();
   expect(indicatorBounds).not.toBeNull();
-  expect(indicatorBounds!.x).toBeLessThanOrEqual(triggerBounds!.x + 1);
+  expect(indicatorBounds!.x).toBeGreaterThanOrEqual(triggerBounds!.x + 12);
+  expect(indicatorBounds!.x).toBeLessThanOrEqual(triggerBounds!.x + 20);
   await expect(trigger).toHaveClass(/gap-3/);
 
   const initialState = await trigger.getAttribute("data-state");

@@ -27,14 +27,6 @@
     isOpen = nextOpenQueryState(isOpen, items);
   }
 
-  function handleHeaderClick(event: MouseEvent, query: QueryHistory) {
-    if (event.target instanceof Element && event.target.closest("button")) {
-      return;
-    }
-
-    isOpen = { ...isOpen, [query.hash]: !isOpen[query.hash] };
-  }
-
   function handleCopy(evt: MouseEvent, query: QueryHistory) {
     evt.preventDefault();
     evt.stopImmediatePropagation();
@@ -66,14 +58,13 @@
       data-query-history-item
     >
       <div
-        class="group flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+        class="group flex min-h-14 items-stretch gap-3 transition-colors hover:bg-muted/50"
         data-query-history-header
-        onclick={(event) => handleHeaderClick(event, query)}
       >
-        <div class="min-w-0 flex-1">
+        <div class="flex min-w-0 flex-1">
           <Accordion.Trigger
             indicatorPosition="start"
-            class="w-full min-w-0 gap-3 py-0 text-left text-xs hover:no-underline"
+            class="h-full w-full min-w-0 gap-3 py-0 pl-4 text-left text-xs hover:no-underline"
             data-query-history-trigger
           >
             <span class="min-w-0 flex-1" data-query-history-label>
@@ -82,7 +73,7 @@
           </Accordion.Trigger>
         </div>
         <div
-          class="flex shrink-0 items-center gap-1"
+          class="flex shrink-0 items-center gap-1 pr-4"
           data-query-history-actions
         >
           <Button
