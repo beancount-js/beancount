@@ -41,16 +41,16 @@ export interface DashboardData {
 }
 
 const CATEGORY_COLORS = [
-  "#7667d9",
-  "#3c8ce7",
-  "#36a981",
-  "#dd8b45",
-  "#d96478",
-  "#8491b6",
-  "#b476c7",
-  "#4c9fa6",
-  "#c5a145",
-  "#6b879a",
+  "#f97316",
+  "#3b82f6",
+  "#0ea5e9",
+  "#8b5cf6",
+  "#10b981",
+  "#eab308",
+  "#ef4444",
+  "#14b8a6",
+  "#06b6d4",
+  "#6366f1",
 ];
 
 export const dashboardPeriodLabels: Record<DashboardPeriod, string> = {

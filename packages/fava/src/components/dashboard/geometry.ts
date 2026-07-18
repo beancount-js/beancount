@@ -1,5 +1,14 @@
 import type { DashboardCategory } from "./model";
 
+export const dashboardFlowSurplusAccount = "__dashboard-flow-surplus";
+export const dashboardFlowDeficitAccount = "__dashboard-flow-deficit";
+
+export interface DashboardFlowBalance {
+  cashFlow: number;
+  sources: DashboardCategory[];
+  targets: DashboardCategory[];
+}
+
 export interface PositionedDashboardFlow extends DashboardCategory {
   centerY: number;
   height: number;
@@ -14,6 +23,56 @@ export interface DashboardFlowLayout {
   targets: PositionedDashboardFlow[];
   totalIn: number;
   totalOut: number;
+}
+
+/**
+ * Balance the flow topology so its streams conserve value on both sides of
+ * Cash flow. Positive cash flow becomes a Surplus leaf; a shortfall is shown
+ * as a Deficit source.
+ */
+export function dashboardFlowBalance(
+  inflows: DashboardCategory[],
+  outflows: DashboardCategory[],
+): DashboardFlowBalance {
+  const sources = inflows.filter((entry) => entry.value > 0);
+  const targets = outflows.filter((entry) => entry.value > 0);
+  const totalIn = sources.reduce((sum, entry) => sum + entry.value, 0);
+  const totalOut = targets.reduce((sum, entry) => sum + entry.value, 0);
+  const cashFlow = totalIn - totalOut;
+
+  if (cashFlow > 0) {
+    return {
+      cashFlow,
+      sources,
+      targets: [
+        ...targets,
+        {
+          account: dashboardFlowSurplusAccount,
+          color: "#10b981",
+          label: "Surplus",
+          value: cashFlow,
+        },
+      ],
+    };
+  }
+
+  if (cashFlow < 0) {
+    return {
+      cashFlow,
+      sources: [
+        ...sources,
+        {
+          account: dashboardFlowDeficitAccount,
+          color: "#ef4444",
+          label: "Deficit",
+          value: -cashFlow,
+        },
+      ],
+      targets,
+    };
+  }
+
+  return { cashFlow, sources, targets };
 }
 
 /**

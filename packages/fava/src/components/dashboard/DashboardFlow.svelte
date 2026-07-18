@@ -1,7 +1,12 @@
 <script lang="ts">
   import { urlForAccount } from "../../helpers";
   import DashboardChartTooltip from "./DashboardChartTooltip.svelte";
-  import { dashboardFlowLayout } from "./geometry";
+  import {
+    dashboardFlowBalance,
+    dashboardFlowDeficitAccount,
+    dashboardFlowLayout,
+    dashboardFlowSurplusAccount,
+  } from "./geometry";
   import type { DashboardCategory } from "./model";
 
   export let inflows: DashboardCategory[] = [];
@@ -24,7 +29,14 @@
   let tooltipX = 0;
   let tooltipY = 0;
 
-  $: layout = dashboardFlowLayout(inflows, outflows, chartHeight, 16, 32);
+  $: flow = dashboardFlowBalance(inflows, outflows);
+  $: layout = dashboardFlowLayout(flow.sources, flow.targets, chartHeight, 16, 32);
+  $: cashFlowColor =
+    flow.cashFlow > 0
+      ? "#059669"
+      : flow.cashFlow < 0
+        ? "#dc2626"
+        : "var(--primary)";
   $: isEmpty = !layout.sources.length && !layout.targets.length;
   $: activeTotal = active?.side === "in" ? layout.totalIn : layout.totalOut;
   $: tooltipTitle = active
@@ -102,6 +114,14 @@
   function isDimmed(entry: DashboardCategory, side: FlowSide) {
     return Boolean(active && !isActive(entry, side));
   }
+
+  function isAccountLink(entry: DashboardCategory) {
+    return ![
+      "Other",
+      dashboardFlowDeficitAccount,
+      dashboardFlowSurplusAccount,
+    ].includes(entry.account);
+  }
 </script>
 
 {#if isEmpty}
@@ -127,8 +147,8 @@
               <stop offset="0" stop-color={source.color} stop-opacity="0.5" />
               <stop
                 offset="1"
-                stop-color="var(--primary)"
-                stop-opacity="0.34"
+                stop-color={cashFlowColor}
+                stop-opacity="0.48"
               />
             </linearGradient>
           {/each}
@@ -140,10 +160,10 @@
             >
               <stop
                 offset="0"
-                stop-color="var(--primary)"
-                stop-opacity="0.34"
+                stop-color={cashFlowColor}
+                stop-opacity="0.48"
               />
-              <stop offset="1" stop-color={target.color} stop-opacity="0.5" />
+              <stop offset="1" stop-color={target.color} stop-opacity="0.72" />
             </linearGradient>
           {/each}
         </defs>
@@ -207,9 +227,7 @@
 
         {#each layout.sources as source (source.account)}
           <a
-            href={source.account === "Other"
-              ? undefined
-              : urlForAccount(source.account)}
+            href={isAccountLink(source) ? urlForAccount(source.account) : undefined}
             class:dimmed={isDimmed(source, "in")}
             class="flow-node"
           >
@@ -244,7 +262,7 @@
           width={barWidth}
           height={layout.centerHeight}
           rx="3"
-          fill="var(--primary)"
+          fill={cashFlowColor}
         />
         <text
           x={centerX + 22}
@@ -256,14 +274,12 @@
           y={layout.centerY + layout.centerHeight / 2 + 12}
           class="amount"
         >
-          {formatter(layout.totalIn - layout.totalOut, currency)}
+          {formatter(flow.cashFlow, currency)}
         </text>
 
         {#each layout.targets as target (target.account)}
           <a
-            href={target.account === "Other"
-              ? undefined
-              : urlForAccount(target.account)}
+            href={isAccountLink(target) ? urlForAccount(target.account) : undefined}
             class:dimmed={isDimmed(target, "out")}
             class="flow-node"
           >
