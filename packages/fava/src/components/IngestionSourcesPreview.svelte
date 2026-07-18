@@ -34,6 +34,7 @@
     setupHref,
   } from "../ingestion/setup-markdown";
   import { useContext } from "../context";
+  import { urlForAccount } from "../helpers";
   import { accountAppearanceStore } from "../lib/account-appearance";
 
   let {
@@ -451,27 +452,39 @@
                           account.sourceAccount,
                         )}
                         <li
-                          class="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm transition-colors even:bg-muted/40 hover:bg-accent/60"
+                          class="relative rounded-lg border border-border px-3 py-2 text-sm transition-colors even:bg-muted/40 hover:bg-accent/60"
                         >
-                          <AccountAvatar
-                            account={account.sourceAccount}
-                            color={appearance?.color}
-                            icon={appearance?.icon}
-                            merchantLogoUrl={accountMerchant?.logoUrl}
-                            size="sm"
-                          />
-                          <span class="min-w-0">
-                            <span class="block truncate font-medium"
-                              >{account.name}</span
-                            >
-                            <span
-                              class="block truncate text-xs text-muted-foreground"
-                            >
-                              {[account.sourceAccount, account.defaultCurrency]
-                                .filter(Boolean)
-                                .join(" · ")}
+                          <a
+                            href={urlForAccount(account.sourceAccount)}
+                            class="absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label={`Open ${account.sourceAccount}`}
+                          ></a>
+                          <div
+                            class="pointer-events-none relative z-10 flex min-w-0 items-center gap-3"
+                          >
+                            <AccountAvatar
+                              account={account.sourceAccount}
+                              color={appearance?.color}
+                              icon={appearance?.icon}
+                              merchantLogoUrl={accountMerchant?.logoUrl}
+                              size="sm"
+                            />
+                            <span class="min-w-0">
+                              <span class="block truncate font-medium"
+                                >{account.name}</span
+                              >
+                              <span
+                                class="block truncate text-xs text-muted-foreground"
+                              >
+                                {[
+                                  account.sourceAccount,
+                                  account.defaultCurrency,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </span>
                             </span>
-                          </span>
+                          </div>
                         </li>
                       {/each}
                     </ul>
