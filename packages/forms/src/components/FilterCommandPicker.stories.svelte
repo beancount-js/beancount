@@ -1,5 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from "@storybook/addon-svelte-csf";
+  import { expect, userEvent, within } from "storybook/test";
   import FilterCommandPicker from "./FilterCommandPicker.svelte";
 
   const { Story } = defineMeta({
@@ -43,9 +44,21 @@
   let environmentVariable = $state("");
 </script>
 
-<Story name="Single selection">
+<Story
+  name="Single selection"
+  play={async ({ canvas, canvasElement }) => {
+    await userEvent.click(canvas.getByRole("button", { name: "Account" }));
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(
+      page.getByRole("option", { name: /Expenses:Groceries/ }),
+    );
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "Expenses:Groceries",
+    );
+  }}
+>
   {#snippet template()}
-    <div class="space-y-3">
+    <div class="flex flex-col gap-3">
       <FilterCommandPicker
         label="Account"
         value={account}
@@ -64,9 +77,21 @@
   {/snippet}
 </Story>
 
-<Story name="Multiple full-width selection">
+<Story
+  name="Multiple full-width selection"
+  play={async ({ canvas, canvasElement }) => {
+    await userEvent.click(canvas.getByRole("button", { name: "Accounts" }));
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(
+      page.getByRole("option", { name: /Liabilities:Card/ }),
+    );
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "Liabilities:Card",
+    );
+  }}
+>
   {#snippet template()}
-    <div class="max-w-md space-y-3">
+    <div class="flex max-w-md flex-col gap-3">
       <FilterCommandPicker
         label="Accounts"
         multiple
@@ -87,9 +112,23 @@
   {/snippet}
 </Story>
 
-<Story name="Custom value">
+<Story
+  name="Custom value"
+  play={async ({ canvas, canvasElement }) => {
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Environment variable" }),
+    );
+    const page = within(canvasElement.ownerDocument.body);
+    const query = page.getByPlaceholderText("Filter environment variable...");
+    await userEvent.type(query, "BEANCOUNT_FILE");
+    await userEvent.click(page.getByRole("option", { name: /BEANCOUNT_FILE/ }));
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "BEANCOUNT_FILE",
+    );
+  }}
+>
   {#snippet template()}
-    <div class="space-y-3">
+    <div class="flex flex-col gap-3">
       <FilterCommandPicker
         label="Environment variable"
         value={environmentVariable}

@@ -50,7 +50,9 @@
       <FormFieldRenderer
         root={settings}
         {field}
-        onChange={(next) => (settings = next as SourceSettings)}
+        onChange={(next) => {
+          settings = next as SourceSettings;
+        }}
       />
       <output class="sr-only">{settings.mode} import selected</output>
     </div>

@@ -43,9 +43,11 @@
         ]}
         ariaLabel="Legacy account"
         placeholder="Type an account"
-        onCommit={(next) => (committed = next)}
+        onCommit={(next) => {
+          committed = next;
+        }}
       />
-      <output class="text-sm text-muted-foreground">
+      <output class="text-muted-foreground text-sm">
         {committed || "No account committed"}
       </output>
     </div>

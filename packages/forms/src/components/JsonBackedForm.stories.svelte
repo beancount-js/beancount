@@ -39,9 +39,11 @@
         bind:jsonText
         jsonLabel="Ledger JSON"
         jsonMinHeight="12rem"
-        onJsonApply={() => (applied = true)}
+        onJsonApply={() => {
+          applied = true;
+        }}
       />
-      <output class="text-sm text-muted-foreground">
+      <output class="text-muted-foreground text-sm">
         {applied ? "JSON draft applied" : "JSON draft not applied"}
       </output>
     </div>

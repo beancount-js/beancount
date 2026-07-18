@@ -83,9 +83,12 @@
       <StructuredForm
         value={settings}
         {config}
-        onChange={(next) => (settings = next)}
+        context={undefined}
+        onChange={(next) => {
+          settings = next;
+        }}
       />
-      <output class="mt-3 block text-sm text-muted-foreground">
+      <output class="text-muted-foreground mt-3 block text-sm">
         {settings.name} uses {settings.syncMode} sync and is {settings.enabled
           ? "enabled"
           : "disabled"}.

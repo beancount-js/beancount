@@ -4,6 +4,9 @@ import { fileURLToPath, URL } from "node:url";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const favaLib = fileURLToPath(new URL("../fava/src/lib", import.meta.url));
+const storybookTest = fileURLToPath(
+  new URL("./node_modules/storybook/dist/test/index.js", import.meta.url),
+);
 
 export default defineConfig({
   plugins: [svelte()],
@@ -27,6 +30,9 @@ export default defineConfig({
   resolve: {
     alias: {
       $lib: favaLib,
+      // Colocated Stories under `packages/forms` resolve test helpers from the
+      // catalog package, which owns the Storybook runtime.
+      "storybook/test": storybookTest,
     },
   },
   server: {

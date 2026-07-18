@@ -62,6 +62,7 @@
   let open = $state(false);
   let search = $state("");
   let failedImageUrls = $state(new Set<string>());
+  const commandListId = `filter-command-picker-list-${Math.random().toString(36).slice(2)}`;
 
   const selectedValues = $derived(multiple ? (values ?? []) : []);
   const effectiveSelectedValues = $derived(
@@ -219,11 +220,15 @@
             <CommandPrimitive.Input
               bind:value={search}
               class="bj-filter-command-picker__input"
+              aria-controls={commandListId}
               {placeholder}
             />
           </div>
         </div>
-        <CommandPrimitive.List class="bj-filter-command-picker__list">
+        <CommandPrimitive.List
+          id={commandListId}
+          class="bj-filter-command-picker__list"
+        >
           {#if filteredOptions.length > 0}
             <CommandPrimitive.Group
               class="bj-filter-command-picker__group"

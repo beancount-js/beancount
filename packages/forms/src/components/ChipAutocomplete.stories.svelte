@@ -44,9 +44,11 @@
         label="Payee aliases"
         suggestions={["Market", "Supermarket", "Grocer"]}
         uppercase={false}
-        onChange={(items) => (payees = items)}
+        onChange={(items) => {
+          payees = items;
+        }}
       />
-      <output class="text-sm text-muted-foreground">
+      <output class="text-muted-foreground text-sm">
         {payees.join(", ") || "No aliases"}
       </output>
     </div>

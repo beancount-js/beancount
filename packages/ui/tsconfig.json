@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "allowJs": true,
+    "baseUrl": ".",
     "checkJs": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -12,7 +13,10 @@
     "strict": true,
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "storybook/test": ["./node_modules/storybook/dist/test/index.d.ts"]
+    }
   },
   "include": [
     ".storybook/**/*.ts",

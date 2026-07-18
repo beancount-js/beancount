@@ -28,10 +28,10 @@
 >
   {#snippet template()}
     <ScrollArea.Root
-      class="relative h-32 max-w-md overflow-hidden rounded-md border border-border"
+      class="border-border relative h-32 max-w-md overflow-hidden rounded-md border"
       aria-label="Scrollable legacy content"
     >
-      <ScrollArea.Viewport class="h-full w-full rounded-[inherit]" tabindex="0">
+      <ScrollArea.Viewport class="h-full w-full rounded-[inherit]" tabindex={0}>
         <div class="flex flex-col gap-2 p-3 text-sm">
           {#each Array.from({ length: 12 }) as _, index}
             <span>Legacy item {index + 1}</span>

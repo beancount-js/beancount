@@ -1,5 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from "@storybook/addon-svelte-csf";
+  import { expect, userEvent } from "storybook/test";
   import YamlBackedForm from "./YamlBackedForm.svelte";
 
   const { Story } = defineMeta({
@@ -22,9 +23,35 @@ sources:
 `;
 </script>
 
-<Story name="YAML source mode">
+<script lang="ts">
+  let yamlSource = $state(yaml);
+  let yamlApplied = $state(false);
+</script>
+
+<Story
+  name="YAML source mode"
+  play={async ({ canvas }) => {
+    await userEvent.click(canvas.getByRole("button", { name: "Apply YAML" }));
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "YAML draft applied",
+    );
+  }}
+>
   {#snippet template()}
-    <YamlBackedForm yamlMode yamlText={yaml} yamlLabel="Source YAML" />
+    <div class="flex max-w-2xl flex-col gap-3">
+      <YamlBackedForm
+        yamlMode
+        bind:yamlText={yamlSource}
+        yamlLabel="Source YAML"
+        yamlMinHeight="14rem"
+        onYamlApply={() => {
+          yamlApplied = true;
+        }}
+      />
+      <output class="text-muted-foreground text-sm">
+        {yamlApplied ? "YAML draft applied" : "YAML draft not applied"}
+      </output>
+    </div>
   {/snippet}
 </Story>
 

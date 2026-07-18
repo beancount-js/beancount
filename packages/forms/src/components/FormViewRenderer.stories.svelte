@@ -47,7 +47,7 @@
 <Story name="Shows a read-only configuration summary">
   {#snippet template()}
     <div class="max-w-2xl">
-      <FormViewRenderer {value} {config} view="readonly" />
+      <FormViewRenderer {value} {config} context={undefined} view="readonly" />
     </div>
   {/snippet}
 </Story>

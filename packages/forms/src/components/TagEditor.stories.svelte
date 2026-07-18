@@ -39,9 +39,11 @@
         value={tags}
         label="Transaction tags"
         suggestions={["review", "travel", "tax"]}
-        onChange={(next) => (tags = next)}
+        onChange={(next) => {
+          tags = next;
+        }}
       />
-      <output class="text-sm text-muted-foreground">
+      <output class="text-muted-foreground text-sm">
         {tags.join(", ") || "No tags"}
       </output>
     </div>

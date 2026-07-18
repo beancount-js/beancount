@@ -48,8 +48,12 @@
         placeholder="Search payees and accounts"
         showFilterToggle
         bind:filtersExpanded
-        onValueChange={(value) => (query = value)}
-        onClearSearch={() => (query = "")}
+        onValueChange={(value) => {
+          query = value;
+        }}
+        onClearSearch={() => {
+          query = "";
+        }}
       >
         {#snippet filters()}
           <div class="flex flex-wrap gap-2">
@@ -70,7 +74,7 @@
           </div>
         {/snippet}
       </SearchFilterBar>
-      <output class="text-sm text-muted-foreground">
+      <output class="text-muted-foreground text-sm">
         Query: {query || "none"}; account: {accountFilter}
       </output>
     </div>
