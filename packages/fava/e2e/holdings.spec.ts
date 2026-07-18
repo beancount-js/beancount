@@ -61,9 +61,13 @@ test("Query tables use a compact search field and expandable saved queries", asy
 
   const queryEditor = page.locator("[data-query-editor]");
   await expect(queryEditor).toBeVisible();
-  await expect(
-    queryEditor.getByRole("button", { name: "Search" }),
-  ).toBeVisible();
+  const executeButton = queryEditor.getByRole("button", {
+    name: "Execute",
+  });
+  await expect(executeButton).toBeVisible();
+  await expect(executeButton.locator("svg")).toHaveCount(1);
+  await expect(executeButton).toHaveClass(/bg-secondary/);
+  await expect(executeButton).toHaveClass(/hover:bg-secondary\/80/);
   await expect(queryEditor.locator(".cm-gutters")).toHaveCount(0);
 
   const savedQuery = page

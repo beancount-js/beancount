@@ -29,6 +29,7 @@
     indentMore,
     indentLess,
   } from "@codemirror/commands";
+  import Play from "lucide-svelte/icons/play";
   import TriangleAlert from "lucide-svelte/icons/triangle-alert";
   import Search from "lucide-svelte/icons/search";
   import { useLedger } from "./helpers";
@@ -166,12 +167,13 @@
       ></div>
       <Button
         onclick={handleSearch}
-        size="sm"
-        variant="default"
-        class="mr-1 shrink-0"
+        size="xs"
+        variant="secondary"
+        class="mr-1 h-7 shrink-0 px-2"
+        data-query-execute
       >
-        <Search data-icon="inline-start" />
-        Search
+        Execute
+        <Play data-icon="inline-end" />
       </Button>
     </div>
   </div>
