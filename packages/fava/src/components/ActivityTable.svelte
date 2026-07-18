@@ -17,6 +17,7 @@
     type JournalMerchantLogoMaps,
   } from "../lib/journal-merchant-logos";
   import { Button } from "$lib/components/ui/button";
+  import * as Select from "$lib/components/ui/select";
   import * as ToggleGroup from "$lib/components/ui/toggle-group";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronUp from "lucide-svelte/icons/chevron-up";
@@ -638,24 +639,36 @@
         >
         <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
           <div class="hidden items-center gap-2 sm:flex">
-            <label
+            <span
               class="text-sm text-muted-foreground"
-              for={`${tableId}-page-size`}>Records per page</label
+              id={`${tableId}-page-size-label`}>Records per page</span
             >
-            <select
-              id={`${tableId}-page-size`}
-              class="h-8 rounded-md border bg-background px-2 text-sm"
-              value={pageSize}
-              onchange={(event) =>
+            <Select.Root
+              type="single"
+              value={String(pageSize)}
+              onValueChange={(value) =>
                 updateRoute({
-                  pageSize: (event.currentTarget as HTMLSelectElement).value,
+                  pageSize: value,
                   page: "1",
                 })}
             >
-              {#each PAGE_SIZES as size}
-                <option value={size}>{size}</option>
-              {/each}
-            </select>
+              <Select.Trigger
+                id={`${tableId}-page-size`}
+                aria-labelledby={`${tableId}-page-size-label`}
+                class="h-8 w-20 font-mono text-sm tabular-nums"
+              >
+                {pageSize}
+              </Select.Trigger>
+              <Select.Content>
+                <Select.Group>
+                  {#each PAGE_SIZES as size (size)}
+                    <Select.Item value={String(size)} label={`${size} records`}>
+                      {size}
+                    </Select.Item>
+                  {/each}
+                </Select.Group>
+              </Select.Content>
+            </Select.Root>
           </div>
           <PagePagination
             {page}
