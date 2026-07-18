@@ -14,6 +14,7 @@ import {
   historySamplesFromEntries,
   summarizeIngestionProposals,
   migrateMerchantRules,
+  ruleMatches,
   runIngestion,
   normalizeMerchant,
   sortSuggestions,
@@ -194,6 +195,36 @@ function resolveDetectionRules(
 ): DetectionRule[] {
   if (options?.detectionRules) return [...options.detectionRules];
   return migrateMerchantRules(source.rules ?? []);
+}
+
+type AiRuleActionType =
+  | "auto_categorise_with_ai"
+  | "auto_detect_merchant_with_ai";
+
+function aiRulesFor(
+  rules: readonly DetectionRule[],
+  actionType: AiRuleActionType,
+) {
+  return rules.filter((rule) =>
+    rule.actions.some((action) => action.actionType === actionType),
+  );
+}
+
+export function proposalMatchesAiRule(
+  proposal: ImportProposal,
+  rules: readonly DetectionRule[],
+) {
+  if (!proposal.transaction || !rules.length) return false;
+  return rules.some((rule) =>
+    ruleMatches(rule, {
+      transaction: proposal.transaction!,
+      merchant:
+        proposal.merchantResolution?.status === "confirmed"
+          ? proposal.merchantResolution.merchant
+          : undefined,
+      bookedAt: proposal.transaction!.bookedAt,
+    }),
+  );
 }
 
 function buildCategorizers(
@@ -2214,7 +2245,10 @@ export async function ingestSource(
   // Fetches remain account-by-account so cursors and repeat suppression stay
   // deterministic. AI enrichment runs after all fetched accounts are collected,
   // allowing a single bounded batch to span the whole sync.
-  const deferAi = Boolean(merchantContext && sourceHasAiEnabled(source));
+  const detectionRules = resolveDetectionRules(source, options);
+  const deferAi = Boolean(
+    merchantContext && sourceHasAiEnabled(source, detectionRules),
+  );
   const connector = isConnectorIngestionSource(source)
     ? requireConnector(source.kind)
     : undefined;
@@ -2251,7 +2285,6 @@ export async function ingestSource(
       },
       allAccounts,
     );
-    const detectionRules = resolveDetectionRules(source, options);
     const aiCalls: AiEnrichmentCallRecord[] = [];
     const categorizers = buildCategorizers(detectionRules, {
       ...providerCategoryOptions(source),
@@ -2424,7 +2457,7 @@ export async function ingestSource(
           model,
           merchantContext!,
           {
-            detectionRules: resolveDetectionRules(source, options),
+            detectionRules,
             source: "ingest",
             forceAi: false,
           },
@@ -2433,11 +2466,16 @@ export async function ingestSource(
   return { runs: enrichedRuns, syncStatePatches };
 }
 
-function sourceHasAiEnabled(source: IngestionSourceDefinition) {
+function sourceHasAiEnabled(
+  source: IngestionSourceDefinition,
+  detectionRules: readonly DetectionRule[] = [],
+) {
   return (
     source.aiEnabled === true ||
     (source.merchantEnrichment?.enabled === true &&
-      source.merchantEnrichment.aiEnabled === true)
+      source.merchantEnrichment.aiEnabled === true) ||
+    aiRulesFor(detectionRules, "auto_categorise_with_ai").length > 0 ||
+    aiRulesFor(detectionRules, "auto_detect_merchant_with_ai").length > 0
   );
 }
 
@@ -2495,7 +2533,12 @@ async function resolveMerchantWithResolvers(
 }
 
 type EnrichPrepared = {
+  aiCategorize: boolean;
+  aiCategorizeForAll: boolean;
+  aiCategorizeRules: readonly DetectionRule[];
   aiMerchant: boolean;
+  aiMerchantForAll: boolean;
+  aiMerchantRules: readonly DetectionRule[];
   availableAccounts: string[];
   history: ReturnType<typeof historySamplesFromEntries>;
   categorizers: CategorizerPlugin[];
@@ -2512,34 +2555,54 @@ async function prepareAiEnrichment(
     detectionRules?: readonly DetectionRule[];
   },
 ): Promise<EnrichPrepared> {
-  if (!sourceHasAiEnabled(source)) {
-    throw new Error(
-      "Enable AI categorisation or AI merchant enrichment first.",
-    );
+  const detectionRules = resolveDetectionRules(source, options);
+  if (!sourceHasAiEnabled(source, detectionRules)) {
+    throw new Error("Enable an AI rule action or AI source enrichment first.");
   }
-  const aiCategorize = source.aiEnabled === true;
-  const aiMerchant =
+  const aiCategorizeRules = aiRulesFor(
+    detectionRules,
+    "auto_categorise_with_ai",
+  );
+  const aiMerchantRules = aiRulesFor(
+    detectionRules,
+    "auto_detect_merchant_with_ai",
+  );
+  const aiCategorizeForAll = source.aiEnabled === true;
+  const aiMerchantForAll =
     source.merchantEnrichment?.enabled === true &&
     source.merchantEnrichment.aiEnabled === true;
+  const aiCategorize = aiCategorizeForAll || aiCategorizeRules.length > 0;
+  const aiMerchant = aiMerchantForAll || aiMerchantRules.length > 0;
   const allAccounts = [...new Set(entries.flatMap((entry) => entry.accounts))]
     .filter(Boolean)
     .sort();
   const availableAccounts = categoryAccountsForSource(source, allAccounts);
   const history = historySamplesFromEntries(entries);
-  const detectionRules = resolveDetectionRules(source, options);
   const categorizers = buildCategorizers(detectionRules, {
     ...providerCategoryOptions(source),
     aiEnabled: aiCategorize,
     model,
     onAiDebug: options?.onAiDebug,
   });
-  const merchantResolvers = aiMerchant
+  const merchantResolvers = aiMerchantForAll
     ? await merchantResolversFor(source, model, merchantContext, {
         onAiDebug: options?.onAiDebug,
       })
-    : [];
+    : aiMerchant
+      ? [
+          new CodexMerchantAdvisor({
+            model,
+            onDebug: options?.onAiDebug,
+          }),
+        ]
+      : [];
   return {
+    aiCategorize,
+    aiCategorizeForAll,
+    aiCategorizeRules,
     aiMerchant,
+    aiMerchantForAll,
+    aiMerchantRules,
     availableAccounts,
     history,
     categorizers,
@@ -2667,6 +2730,7 @@ type MerchantBatchState = {
   transaction: NonNullable<ImportProposal["transaction"]>;
   resolution: MerchantResolution;
   issues: string[];
+  allowAi: boolean;
 };
 
 async function resolveMerchantBatches(
@@ -2681,8 +2745,10 @@ async function resolveMerchantBatches(
     );
     if (!active.length) break;
     if (resolver instanceof CodexMerchantAdvisor) {
+      const aiActive = active.filter((state) => state.allowAi);
+      if (!aiActive.length) continue;
       const outcomes = await runBatchedCodex(
-        active.map((state) => ({
+        aiActive.map((state) => ({
           id: state.id,
           context: {
             transaction: state.transaction,
@@ -2691,7 +2757,7 @@ async function resolveMerchantBatches(
         })),
         (batch) => resolver.resolveBatch(batch),
       );
-      for (const state of active) {
+      for (const state of aiActive) {
         const outcome = outcomes.get(state.id);
         if (outcome?.value) {
           state.resolution = mergeMerchantResolution(
@@ -2790,6 +2856,9 @@ async function enrichProposalsWithPrepared(
       ].join("\u0000");
       const existing = groups.get(key);
       if (existing) {
+        existing.state.allowAi ||=
+          prepared.aiMerchantForAll ||
+          proposalMatchesAiRule(item.proposal, prepared.aiMerchantRules);
         existing.work.push(item);
         continue;
       }
@@ -2800,6 +2869,9 @@ async function enrichProposalsWithPrepared(
           transaction: item.transaction,
           resolution: initialMerchantResolution(item.transaction),
           issues: [],
+          allowAi:
+            prepared.aiMerchantForAll ||
+            proposalMatchesAiRule(item.proposal, prepared.aiMerchantRules),
         },
         work: [item],
       });
@@ -2810,6 +2882,10 @@ async function enrichProposalsWithPrepared(
     );
     for (const group of groups.values()) {
       for (const item of group.work) {
+        const applyResolution =
+          prepared.aiMerchantForAll ||
+          proposalMatchesAiRule(item.proposal, prepared.aiMerchantRules);
+        if (!applyResolution) continue;
         item.merchantResolution = group.state.resolution;
         item.issues.push(...group.state.issues);
         item.debugIds.add(group.state.id);
@@ -2876,8 +2952,10 @@ async function enrichProposalsWithPrepared(
       categorizer instanceof CodexCategorizer,
   );
   if (aiCategorizer) {
-    const eligible = work.filter(
-      (item) => options?.forceAi !== false || shouldAskAi(item.suggestions),
+    const eligible = work.filter((item) =>
+      prepared.aiCategorizeForAll
+        ? options?.forceAi !== false || shouldAskAi(item.suggestions)
+        : proposalMatchesAiRule(item.proposal, prepared.aiCategorizeRules),
     );
     const outcomes = await runBatchedCodex(
       eligible.map((item) => ({

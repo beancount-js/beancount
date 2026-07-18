@@ -2,7 +2,11 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import type { ImportProposal, IngestionRun } from "@beancount-js/beangulp";
+import type {
+  DetectionRule,
+  ImportProposal,
+  IngestionRun,
+} from "@beancount-js/beangulp";
 import {
   categoryAccountsForSource,
   expandIngestionSource,
@@ -10,6 +14,7 @@ import {
   brandfetchDomainLogoUrl,
   merchantAdvisorLabel,
   merchantLogoUrlFor,
+  proposalMatchesAiRule,
   recategorizeProposal,
   type IngestionConfig,
   type IngestionSourceDefinition,
@@ -60,6 +65,64 @@ function config(
 }
 
 describe("FilesystemIngestionStore", () => {
+  test("uses rule conditions to scope staged AI enrichment", () => {
+    const proposal: ImportProposal = {
+      id: "proposal-1",
+      importId: "bank:1",
+      transaction: {
+        sourceId: "bank",
+        sourceAccount: "Assets:Bank:Checking",
+        bookedAt: "2026-07-01",
+        amount: "-42.00",
+        currency: "GBP",
+        merchant: "Plata",
+        narration: "Plata payment",
+        status: "posted",
+        fetchedAt: "2026-07-02T00:00:00.000Z",
+        metadata: {},
+      },
+      suggestions: [],
+      status: "needs-review",
+      issues: [],
+    };
+    const matchingRule: DetectionRule = {
+      id: "ai-plata",
+      resourceType: "transaction",
+      active: true,
+      effectiveDate: null,
+      conditions: [
+        {
+          id: "plata",
+          conditionType: "transaction_name",
+          operator: "like",
+          value: "Plata",
+        },
+      ],
+      actions: [
+        {
+          id: "ai-category",
+          actionType: "auto_categorise_with_ai",
+          value: null,
+        },
+      ],
+    };
+    const nonMatchingRule: DetectionRule = {
+      ...matchingRule,
+      id: "ai-tesco",
+      conditions: [
+        {
+          id: "tesco",
+          conditionType: "transaction_name",
+          operator: "like",
+          value: "Tesco",
+        },
+      ],
+    };
+
+    expect(proposalMatchesAiRule(proposal, [matchingRule])).toBe(true);
+    expect(proposalMatchesAiRule(proposal, [nonMatchingRule])).toBe(false);
+  });
+
   test("persists an optional merchant id for each connection", async () => {
     const directory = await mkdtemp(
       join(tmpdir(), "beancount-js-ingestion-connection-merchant-"),

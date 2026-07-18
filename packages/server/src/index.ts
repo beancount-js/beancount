@@ -75,6 +75,7 @@ export {
   merchantAdvisorLabel,
   brandfetchDomainLogoUrl,
   merchantLogoUrlFor,
+  proposalMatchesAiRule,
   recategorizeProposal,
   resolveBrandfetchRuntime,
   sourceSecretRef,
