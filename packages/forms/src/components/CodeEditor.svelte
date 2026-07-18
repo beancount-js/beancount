@@ -58,6 +58,7 @@
   let editor: EditorView | undefined;
   const languageCompartment = new Compartment();
   const themeCompartment = new Compartment();
+  const ariaLabelCompartment = new Compartment();
   const placeholderCompartment = new Compartment();
   const diagnosticsCompartment = new Compartment();
   const extensionsCompartment = new Compartment();
@@ -160,6 +161,9 @@
         setup,
         languageCompartment.of(languageExtension()),
         themeCompartment.of(editorTheme()),
+        ariaLabelCompartment.of(
+          EditorView.contentAttributes.of({ "aria-label": ariaLabel }),
+        ),
         placeholderCompartment.of(placeholderExtension(placeholder)),
         diagnosticsCompartment.of(diagnosticsExtension()),
         extensionsCompartment.of(extensions),
@@ -191,6 +195,9 @@
       effects: [
         languageCompartment.reconfigure(languageExtension()),
         themeCompartment.reconfigure(editorTheme()),
+        ariaLabelCompartment.reconfigure(
+          EditorView.contentAttributes.of({ "aria-label": ariaLabel }),
+        ),
         placeholderCompartment.reconfigure(placeholderExtension(placeholder)),
         diagnosticsCompartment.reconfigure(diagnosticsExtension()),
         extensionsCompartment.reconfigure(extensions),
@@ -203,7 +210,6 @@
   bind:this={host}
   class="beancount-json-code-editor"
   data-code-editor={language}
-  aria-label={ariaLabel}
 ></div>
 
 <style>

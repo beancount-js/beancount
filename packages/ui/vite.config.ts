@@ -6,6 +6,9 @@ const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export default defineConfig({
   plugins: [svelte()],
+  optimizeDeps: {
+    include: ["@storybook/addon-a11y/preview"],
+  },
   server: {
     fs: {
       allow: [repoRoot],
