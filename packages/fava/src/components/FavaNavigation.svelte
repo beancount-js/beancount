@@ -1119,7 +1119,7 @@
         type="button"
         variant="ghost"
         size="icon"
-        class="relative z-10 size-7 shrink-0 rounded-sm p-0 hover:bg-background/70"
+        class="relative z-10 size-7 shrink-0 rounded-sm p-0 hover:bg-transparent"
         aria-label={expanded
           ? "Collapse review transactions"
           : "Expand review transactions"}
@@ -1135,7 +1135,7 @@
         type="button"
         variant="ghost"
         size="sm"
-        class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs font-semibold hover:bg-background/70"
+        class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs font-semibold hover:bg-transparent"
         title="Active review transactions"
         onclick={() => {
           activateLedger(review.path);
