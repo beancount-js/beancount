@@ -18,6 +18,19 @@ const config: StorybookConfig = {
     name: "@storybook/svelte-vite",
     options: {},
   },
+  viteFinal: async (viteConfig) => ({
+    ...viteConfig,
+    server: {
+      ...viteConfig.server,
+      watch: {
+        ...viteConfig.server?.watch,
+        // The catalog's static build lives inside this package. Ignore its
+        // generated output so a validation build does not trigger an HMR loop
+        // in a concurrently running Storybook server.
+        ignored: ["**/storybook-static/**"],
+      },
+    },
+  }),
 };
 
 export default config;
