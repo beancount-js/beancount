@@ -13,7 +13,9 @@
   <div
     class="flex h-full flex-col gap-4 p-4 sm:p-6"
     data-route-loading-skeleton
+    role="status"
     aria-busy="true"
+    aria-label="Loading ledger page"
   >
     <div class="flex items-center justify-between gap-3">
       <Skeleton class="h-5 w-36" />

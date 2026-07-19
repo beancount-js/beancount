@@ -6,6 +6,7 @@
   class="flex h-full min-w-0 flex-col p-4"
   data-route-loading-skeleton
   data-query-page-skeleton
+  role="status"
   aria-busy="true"
   aria-label="Loading query page"
 >

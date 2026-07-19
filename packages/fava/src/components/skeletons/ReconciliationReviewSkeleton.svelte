@@ -5,6 +5,7 @@
 <div
   class="flex min-w-0 flex-col gap-5"
   data-reconciliation-review-skeleton
+  role="status"
   aria-busy="true"
   aria-label="Loading reconciliation matches"
 >
