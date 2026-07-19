@@ -9,9 +9,10 @@
     "test-unit": "vitest run --project unit",
     "test-storybook": "vitest run --project storybook",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "check-boundaries": "node ./scripts/check-boundaries.mjs",
     "fmt": "prettier . --write",
     "fmt:check": "prettier . --check",
-    "checks": "pnpm fmt:check && pnpm check && pnpm test-unit && pnpm test-storybook && pnpm build-storybook"
+    "checks": "pnpm fmt:check && pnpm check-boundaries && pnpm check && pnpm test-unit && pnpm test-storybook && pnpm build-storybook"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"

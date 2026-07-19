@@ -143,3 +143,6 @@ after it accepts a complete display-ready model and callbacks.
 5. Migrate Fava imports only after the visual model is manually approved. The
    adapter may then become a small data/route boundary rather than another
    component implementation.
+6. Keep UI source and build configuration independent from Fava. The package
+   boundary check must pass without Fava aliases, scans, source imports, or
+   application-only SvelteKit aliases.

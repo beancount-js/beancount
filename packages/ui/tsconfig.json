@@ -16,9 +16,6 @@
     "useDefineForClassFields": true,
     "verbatimModuleSyntax": true,
     "paths": {
-      "$lib/*": ["../fava/src/lib/*"],
-      "$app/navigation": ["./.storybook/sveltekit-navigation.ts"],
-      "$app/stores": ["./.storybook/sveltekit-stores.ts"],
       "storybook/test": ["./node_modules/storybook/dist/test/index.d.ts"]
     }
   },
@@ -26,7 +23,6 @@
     ".storybook/**/*.ts",
     "src/**/*.ts",
     "src/**/*.svelte",
-    "../fava/src/**/*.stories.svelte",
     "tailwind.config.ts",
     "vite.config.ts",
     "vitest.config.ts"
