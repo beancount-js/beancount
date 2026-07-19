@@ -13,6 +13,7 @@ export { default as SegmentedControl } from "./SegmentedControl.svelte";
 export { default as YamlBackedForm } from "./YamlBackedForm.svelte";
 export { default as CodeEditor } from "./CodeEditor.svelte";
 export { default as CodeHighlighter } from "./CodeHighlighter.svelte";
+export { default as ReviewDiff } from "./ReviewDiff.svelte";
 export { default as JsonBackedForm } from "./JsonBackedForm.svelte";
 export { default as SearchFilterBar } from "./SearchFilterBar.svelte";
 export { default as SearchableChoicePicker } from "./SearchableChoicePicker.svelte";

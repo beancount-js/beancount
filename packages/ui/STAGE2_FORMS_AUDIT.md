@@ -6,16 +6,17 @@ Stage 2 establishes `@beancount-js/ui/forms` as the complete visual and behaviou
 
 These are the reusable patterns agents should choose for new form work. They are implemented in the UI package, with generated Docs and colocated Storybook examples.
 
-| Pattern                       | Canonical implementation during Stage 2                                                                                    | Decision                                                  |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Label/value rows              | `@beancount-js/ui/forms/FormField.svelte`                                                                                  | Shared UI primitive                                       |
-| Sections and repeated entries | `FormSectionHeader`, `EntryActions`, `CollapsibleItemList`, `FormAddButton`, and `FormToolbar` in `@beancount-js/ui/forms` | Shared UI primitives                                      |
-| Exclusive modes               | `@beancount-js/ui/forms/SegmentedControl.svelte`                                                                           | Shared UI primitive for two or three values               |
-| Boolean values                | `@beancount-js/ui/forms/Switch.svelte`                                                                                     | Shared UI primitive                                       |
-| Searchable choices            | `@beancount-js/ui/forms/FilterCommandPicker.svelte`                                                                        | Canonical shared form primitive                           |
-| Credential references         | `@beancount-js/ui/forms/SecretField.svelte`                                                                                | Shared UI component for `env:NAME` or masked inline value |
-| Schema-shaped forms           | `StructuredForm`, `FormFieldRenderer`, and `FormViewRenderer`                                                              | Shared UI forms runtime; not a generic visual primitive   |
-| Source editors                | `YamlBackedForm`, `JsonBackedForm`, and `CodeEditor`                                                                       | Shared UI forms runtime; YAML is the standard source mode |
+| Pattern                       | Canonical implementation during Stage 2                                                                                    | Decision                                                                                 |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Label/value rows              | `@beancount-js/ui/forms/FormField.svelte`                                                                                  | Shared UI primitive                                                                      |
+| Sections and repeated entries | `FormSectionHeader`, `EntryActions`, `CollapsibleItemList`, `FormAddButton`, and `FormToolbar` in `@beancount-js/ui/forms` | Shared UI primitives                                                                     |
+| Exclusive modes               | `@beancount-js/ui/forms/SegmentedControl.svelte`                                                                           | Shared UI primitive for two or three values                                              |
+| Boolean values                | `@beancount-js/ui/forms/Switch.svelte`                                                                                     | Shared UI primitive                                                                      |
+| Searchable choices            | `@beancount-js/ui/forms/FilterCommandPicker.svelte`                                                                        | Canonical shared form primitive                                                          |
+| Credential references         | `@beancount-js/ui/forms/SecretField.svelte`                                                                                | Shared UI component for `env:NAME` or masked inline value                                |
+| Schema-shaped forms           | `StructuredForm`, `FormFieldRenderer`, and `FormViewRenderer`                                                              | Shared UI forms runtime; not a generic visual primitive                                  |
+| Source editors                | `YamlBackedForm`, `JsonBackedForm`, and `CodeEditor`                                                                       | Shared UI forms runtime; YAML is the standard source mode                                |
+| Read-only source output       | `CodeHighlighter` and `ReviewDiff`                                                                                         | Shared UI primitives; applications provide parsers, proposals, approval, and persistence |
 
 ## UI-owned domain form components
 

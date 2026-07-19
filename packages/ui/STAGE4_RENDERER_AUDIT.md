@@ -12,6 +12,7 @@ route, server API, ledger object, or formatter context.
 | shadcn-svelte families      | `src/components/shadcn`                                                       | Original editable Fava source remains until consumer migration.                                                                 |
 | shared forms and editors    | `src/components/forms`                                                        | Fava continues to import `@beancount-js/forms` until the forms migration.                                                       |
 | read-only syntax preview    | `forms/CodeHighlighter.svelte`                                                | Fava still chooses the Beancount/BQL parser; the shared component only renders supplied source and a supplied Lezer parser.     |
+| source change review        | `forms/ReviewDiff.svelte`                                                     | Fava retains proposal generation, approval/rejection, AI streams, and file persistence; the shared component receives strings.  |
 | app frame and navigation    | `AppShell.svelte`, `layout/*`, `navigation/*`                                 | Studio-specific project, router, and storage behaviour stays in Fava adapters.                                                  |
 | workspace tree navigation   | `navigation/WorkspaceTreeNavigation.svelte`                                   | Fava maps tree items; the application retains filtering, routes, and storage.                                                   |
 | ledger workspace navigation | `navigation/LedgerWorkspaceNavigation.svelte`                                 | Fava maps ledgers, folders, tags, picker options, routes, and persisted expansion/filter state into its display model.          |
@@ -48,12 +49,12 @@ route, server API, ledger object, or formatter context.
 | saved merchant picker       | `forms/MerchantPicker.svelte`                                                 | Fava continues to fetch, rank, create, and persist saved merchants.                                                             |
 | credential reference field  | `forms/SecretField.svelte`                                                    | Fava continues to supply project environment names and persist credentials.                                                     |
 
-## Application adapters still to extract
+## Fava application adapters intentionally retained
 
-These Fava components remain Storybook-visible only because they have no
-independent UI copy yet. They are not allowed to become new cross-app
-primitives in place; first extract a model-driven UI component, then migrate
-the Fava adapter in a separate change.
+These Fava components remain application boundaries rather than cross-app UI
+primitives. They must not move Fava routes, stores, server APIs, formatter
+context, or ledger-derived state into `@beancount-js/ui`. Extract a visual only
+after it accepts a complete display-ready model and callbacks.
 
 - Chart rendering: `ChartPanel` plus the UI-owned `LineChart`, `ScatterPlot`,
   `BarChart`, `HierarchyChart`, `FinancialDashboard`, `DashboardDonut`,
@@ -87,12 +88,12 @@ the Fava adapter in a separate change.
   `AccountTable`, `Query`, and report routes retain ledger filtering, BQL,
   account-tree derivation, interval selection, and route state. They compose
   the UI search controls, account link, charts, and table display models.
-- AI and ingestion adapters: `AiDock`, `AiUnifiedReviewDiff`, the journal and
-  ingestion sheets, merchant review, source configuration, and reconciliation
-  panels retain session/API streams, approval decisions, file mutations,
-  matching, persistence, and project-local state. Promote only a future
-  provider-agnostic visual primitive with a complete display model; never copy
-  API or mutation logic into the UI package.
+- AI and ingestion adapters: `AiDock`, the journal and ingestion sheets,
+  merchant review, source configuration, and reconciliation panels retain
+  session/API streams, approval decisions, file mutations, matching,
+  persistence, and project-local state. `ReviewDiff` is the provider-agnostic
+  visual extracted from `AiUnifiedReviewDiff`; never copy API or mutation logic
+  into the UI package.
 
 ## Completion rule for a copied visual surface
 
