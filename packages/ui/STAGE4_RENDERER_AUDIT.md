@@ -11,6 +11,7 @@ route, server API, ledger object, or formatter context.
 | --------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | shadcn-svelte families      | `src/components/shadcn`                                                       | Original editable Fava source remains until consumer migration.                                                                 |
 | shared forms and editors    | `src/components/forms`                                                        | Fava continues to import `@beancount-js/forms` until the forms migration.                                                       |
+| read-only syntax preview    | `forms/CodeHighlighter.svelte`                                                | Fava still chooses the Beancount/BQL parser; the shared component only renders supplied source and a supplied Lezer parser.     |
 | app frame and navigation    | `AppShell.svelte`, `layout/*`, `navigation/*`                                 | Studio-specific project, router, and storage behaviour stays in Fava adapters.                                                  |
 | workspace tree navigation   | `navigation/WorkspaceTreeNavigation.svelte`                                   | Fava maps tree items; the application retains filtering, routes, and storage.                                                   |
 | ledger workspace navigation | `navigation/LedgerWorkspaceNavigation.svelte`                                 | Fava maps ledgers, folders, tags, picker options, routes, and persisted expansion/filter state into its display model.          |
@@ -76,11 +77,12 @@ the Fava adapter in a separate change.
   balance derivation, workspace-header wiring, patches, and saves. `QueryTable`,
   reconciliation flows, and dashboard containers retain their Fava data,
   ranking, Brand Match, and persistence adapters until consumer migration.
-- Editor adapters: `Editor`, `EditorDialog`, `ImportEditor`, and `Highlighter`
-  retain Beancount/BQL language setup, file synchronisation, source positions,
-  command dispatch, linting, formatting, and save actions. The shared
-  `CodeEditor` and syntax-token palette are their UI foundation; they must not
-  import Fava CodeMirror extensions into `@beancount-js/ui`.
+- Editor adapters: `Editor`, `EditorDialog`, and `ImportEditor` retain
+  Beancount/BQL language setup, file synchronisation, source positions, command
+  dispatch, linting, formatting, and save actions. The shared `CodeEditor`,
+  `CodeHighlighter`, and syntax-token palette are their UI foundation; Fava
+  supplies the relevant language parser and must not import Fava CodeMirror
+  extensions into `@beancount-js/ui`.
 - Search and account adapters: `Search`, `AccountDetails`, `AccountActivityTable`,
   `AccountTable`, `Query`, and report routes retain ledger filtering, BQL,
   account-tree derivation, interval selection, and route state. They compose
