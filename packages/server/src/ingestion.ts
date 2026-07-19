@@ -62,6 +62,7 @@ import {
 import { isValidAccount, type Directive } from "@beancount-js/beancount";
 import { isValidDomain } from "./brandfetch";
 import { FilesystemMerchantStore, type ProjectRootResolver } from "./merchant";
+import { autoConfirmMerchantResolution } from "./merchant-persist";
 import { projectIngestionRoot } from "./paths";
 import {
   FilesystemIngestionRunArchive,
@@ -2546,6 +2547,7 @@ type EnrichPrepared = {
   history: ReturnType<typeof historySamplesFromEntries>;
   categorizers: CategorizerPlugin[];
   merchantResolvers: MerchantResolverPlugin[];
+  merchantContext: IngestMerchantContext;
 };
 
 async function prepareAiEnrichment(
@@ -2610,6 +2612,7 @@ async function prepareAiEnrichment(
     history,
     categorizers,
     merchantResolvers,
+    merchantContext,
   };
 }
 
@@ -2739,6 +2742,7 @@ type MerchantBatchState = {
 async function resolveMerchantBatches(
   states: readonly MerchantBatchState[],
   resolvers: readonly MerchantResolverPlugin[],
+  autoConfirm?: (state: MerchantBatchState) => Promise<MerchantResolution>,
 ) {
   for (const resolver of resolvers) {
     const active = states.filter(
@@ -2789,6 +2793,17 @@ async function resolveMerchantBatches(
           `Merchant resolver ${resolver.id} was unavailable: ${detail}`,
         );
       }
+    }
+  }
+  if (!autoConfirm) return;
+  for (const state of states) {
+    try {
+      state.resolution = await autoConfirm(state);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      state.issues.push(
+        `AI merchant advisor could not auto-confirm this merchant: ${detail}`,
+      );
     }
   }
 }
@@ -2883,6 +2898,13 @@ async function enrichProposalsWithPrepared(
     await resolveMerchantBatches(
       [...groups.values()].map((group) => group.state),
       prepared.merchantResolvers,
+      (state) =>
+        autoConfirmMerchantResolution(
+          prepared.merchantContext.store.merchants,
+          prepared.merchantContext.projectId,
+          state.transaction.sourceId,
+          state.resolution,
+        ),
     );
     for (const group of groups.values()) {
       for (const item of group.work) {

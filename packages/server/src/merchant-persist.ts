@@ -1,11 +1,16 @@
 import {
+  AUTO_READY_SCORE_THRESHOLD,
   normalizeMerchant,
   type ImportProposal,
   type MerchantCandidate,
   type MerchantIdentity,
   type MerchantResolution,
 } from "@beancount-js/beangulp";
+import { isValidDomain } from "./brandfetch";
 import type { FilesystemMerchantStore } from "./merchant";
+
+/** Shares the confidence bar used for automatic category acceptance. */
+export const MERCHANT_AUTO_CONFIRM_SCORE_THRESHOLD = AUTO_READY_SCORE_THRESHOLD;
 
 /** True when a merchant has domain, description, or brand enrichment worth storing. */
 export function hasMerchantCatalogData(
@@ -15,9 +20,7 @@ export function hasMerchantCatalogData(
   >,
 ): boolean {
   return Boolean(
-    merchant.domain?.trim() ||
-      merchant.description?.trim() ||
-      merchant.brand,
+    merchant.domain?.trim() || merchant.description?.trim() || merchant.brand,
   );
 }
 
@@ -26,8 +29,7 @@ export function proposalMerchantLabel(
   proposal: Pick<ImportProposal, "transaction" | "merchantResolution">,
 ): string | undefined {
   const fromResolution =
-    proposal.merchantResolution &&
-    "rawLabel" in proposal.merchantResolution
+    proposal.merchantResolution && "rawLabel" in proposal.merchantResolution
       ? proposal.merchantResolution.rawLabel?.trim()
       : undefined;
   const fromTxn =
@@ -48,15 +50,31 @@ export function candidateForAutoPersist(
   if (!resolution || resolution.status === "suppressed") return undefined;
   if (resolution.status === "confirmed") return undefined;
 
-  if (resolution.status === "suggested" && resolution.candidates.length) {
-    const ranked = [...resolution.candidates].sort(
-      (left, right) => (right.rawScore ?? 0) - (left.rawScore ?? 0),
-    );
-    const top = ranked[0];
-    return top && hasMerchantCatalogData(top) ? top : undefined;
-  }
+  const top = topSuggestedMerchantCandidate(resolution);
+  return top && hasMerchantCatalogData(top) ? top : undefined;
+}
 
-  return undefined;
+function topSuggestedMerchantCandidate(
+  resolution: MerchantResolution | undefined,
+): MerchantCandidate | undefined {
+  if (resolution?.status !== "suggested") return undefined;
+  return [...resolution.candidates].sort(
+    (left, right) => (right.rawScore ?? 0) - (left.rawScore ?? 0),
+  )[0];
+}
+
+/**
+ * Select a candidate that is safe to confirm during AI enrichment. It must
+ * clear the shared automatic threshold and have a syntactically valid domain.
+ */
+export function candidateForMerchantAutoConfirm(
+  resolution: MerchantResolution | undefined,
+): MerchantCandidate | undefined {
+  const candidate = topSuggestedMerchantCandidate(resolution);
+  if (!candidate || !isValidDomain(candidate.domain)) return undefined;
+  return (candidate.rawScore ?? 0) >= MERCHANT_AUTO_CONFIRM_SCORE_THRESHOLD
+    ? candidate
+    : undefined;
 }
 
 function confirmedResolution(
@@ -70,6 +88,61 @@ function confirmedResolution(
     merchant,
     explanation,
   };
+}
+
+async function persistMerchantCandidate(
+  merchants: FilesystemMerchantStore,
+  projectId: string,
+  sourceId: string,
+  rawLabel: string,
+  candidate: MerchantCandidate,
+  explanation: string,
+): Promise<MerchantResolution> {
+  let targetMerchantId: string | undefined;
+  if (candidate.domain) {
+    const byDomain = await merchants.findByDomain(projectId, candidate.domain);
+    if (byDomain) targetMerchantId = byDomain.merchantId;
+  }
+
+  const merchant = await merchants.confirm(projectId, {
+    sourceId,
+    rawLabel,
+    candidate,
+    targetMerchantId,
+  });
+  return confirmedResolution(rawLabel, merchant, explanation);
+}
+
+/**
+ * Confirm a high-confidence, domain-backed candidate as soon as AI enrichment
+ * has resolved it. Other resolutions remain available for manual review.
+ */
+export async function autoConfirmMerchantResolution(
+  merchants: FilesystemMerchantStore,
+  projectId: string,
+  sourceId: string,
+  resolution: MerchantResolution,
+): Promise<MerchantResolution> {
+  if (resolution.status !== "suggested") return resolution;
+  const candidate = candidateForMerchantAutoConfirm(resolution);
+  if (!candidate) return resolution;
+
+  const existing = await merchants.resolve(
+    projectId,
+    sourceId,
+    resolution.rawLabel,
+  );
+  if (existing?.status === "confirmed" || existing?.status === "suppressed")
+    return existing;
+
+  return persistMerchantCandidate(
+    merchants,
+    projectId,
+    sourceId,
+    resolution.rawLabel,
+    candidate,
+    `Auto-confirmed merchant ${candidate.canonicalName} from a high-confidence domain-backed AI suggestion.`,
+  );
 }
 
 /**
@@ -106,25 +179,15 @@ export async function ensureProposalMerchantPersisted(
   const candidate = candidateForAutoPersist(proposal);
   if (!candidate) return proposal;
 
-  let targetMerchantId: string | undefined;
-  if (candidate.domain) {
-    const byDomain = await merchants.findByDomain(projectId, candidate.domain);
-    if (byDomain) targetMerchantId = byDomain.merchantId;
-  }
-
-  const merchant = await merchants.confirm(projectId, {
-    sourceId,
-    rawLabel: label,
-    candidate,
-    targetMerchantId,
-  });
-
   return {
     ...proposal,
-    merchantResolution: confirmedResolution(
+    merchantResolution: await persistMerchantCandidate(
+      merchants,
+      projectId,
+      sourceId,
       label,
-      merchant,
-      `Auto-persisted merchant ${merchant.canonicalName}.`,
+      candidate,
+      `Auto-persisted merchant ${candidate.canonicalName}.`,
     ),
   };
 }
@@ -156,10 +219,7 @@ export async function ensureProposalsMerchantsPersisted(
       sourceId,
       proposal,
     );
-    if (
-      key &&
-      persisted.merchantResolution?.status === "confirmed"
-    ) {
+    if (key && persisted.merchantResolution?.status === "confirmed") {
       byLabel.set(key, persisted.merchantResolution);
     }
     next.push(persisted);

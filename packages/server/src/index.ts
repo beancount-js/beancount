@@ -127,10 +127,13 @@ export {
   type UpdateMerchantInput,
 } from "./merchant";
 export {
+  autoConfirmMerchantResolution,
   candidateForAutoPersist,
+  candidateForMerchantAutoConfirm,
   ensureProposalMerchantPersisted,
   ensureProposalsMerchantsPersisted,
   hasMerchantCatalogData,
+  MERCHANT_AUTO_CONFIRM_SCORE_THRESHOLD,
   proposalMerchantLabel,
 } from "./merchant-persist";
 export {

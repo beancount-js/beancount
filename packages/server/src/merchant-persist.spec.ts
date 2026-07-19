@@ -1,10 +1,14 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import type { ImportProposal } from "@beancount-js/beangulp";
 import {
+  MERCHANT_AUTO_CONFIRM_SCORE_THRESHOLD,
+  autoConfirmMerchantResolution,
   candidateForAutoPersist,
+  candidateForMerchantAutoConfirm,
   hasMerchantCatalogData,
   proposalMerchantLabel,
 } from "./merchant-persist";
+import type { FilesystemMerchantStore } from "./merchant";
 
 function proposal(
   partial: Partial<ImportProposal> &
@@ -100,6 +104,88 @@ describe("proposalMerchantLabel / candidateForAutoPersist", () => {
       id: "high",
       canonicalName: "Tesco",
       domain: "tesco.com",
+    });
+  });
+
+  test("requires a valid domain and the shared high-confidence score to auto-confirm", () => {
+    const candidate = {
+      id: "ai:paypal:paypal.com",
+      canonicalName: "PayPal",
+      domain: "paypal.com",
+      rawScore: MERCHANT_AUTO_CONFIRM_SCORE_THRESHOLD,
+      explanation: "The label identifies PayPal.",
+      provenance: [{ source: "ai" as const, observedAt: "2026-07-19" }],
+    };
+    const resolution = {
+      status: "suggested" as const,
+      rawLabel: "PayPal",
+      candidates: [candidate],
+      explanation: candidate.explanation,
+    };
+
+    expect(candidateForMerchantAutoConfirm(resolution)).toEqual(candidate);
+    expect(
+      candidateForMerchantAutoConfirm({
+        ...resolution,
+        candidates: [{ ...candidate, rawScore: 0.84 }],
+      }),
+    ).toBeUndefined();
+    expect(
+      candidateForMerchantAutoConfirm({
+        ...resolution,
+        candidates: [{ ...candidate, domain: undefined }],
+      }),
+    ).toBeUndefined();
+  });
+
+  test("persists a high-confidence domain-backed suggestion immediately", async () => {
+    const merchants = {
+      resolve: vi.fn().mockResolvedValue(undefined),
+      findByDomain: vi.fn().mockResolvedValue(undefined),
+      confirm: vi.fn().mockResolvedValue({
+        merchantId: "paypal",
+        canonicalName: "PayPal",
+        aliases: [],
+        domain: "paypal.com",
+        provenance: [],
+      }),
+    } as unknown as FilesystemMerchantStore;
+
+    const resolution = await autoConfirmMerchantResolution(
+      merchants,
+      "project",
+      "bank",
+      {
+        status: "suggested",
+        rawLabel: "PAYPAL *SERVICE",
+        candidates: [
+          {
+            id: "ai:paypal:paypal.com",
+            canonicalName: "PayPal",
+            domain: "paypal.com",
+            rawScore: 0.98,
+            explanation: "The label identifies PayPal.",
+            provenance: [
+              { source: "ai", observedAt: "2026-07-19T00:00:00.000Z" },
+            ],
+          },
+        ],
+        explanation: "The label identifies PayPal.",
+      },
+    );
+
+    expect(merchants.confirm).toHaveBeenCalledWith(
+      "project",
+      expect.objectContaining({
+        sourceId: "bank",
+        rawLabel: "PAYPAL *SERVICE",
+        candidate: expect.objectContaining({ canonicalName: "PayPal" }),
+      }),
+    );
+    expect(resolution).toMatchObject({
+      status: "confirmed",
+      rawLabel: "PAYPAL *SERVICE",
+      merchant: { canonicalName: "PayPal", domain: "paypal.com" },
     });
   });
 
