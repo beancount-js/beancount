@@ -25,24 +25,21 @@
   });
 </script>
 
-{#if readonly}
-  <output>{value || " "}</output>
-{:else}
-  <div data-merchant-field={field.id}>
-    <MerchantPicker
-      {projectId}
-      sourceId={source.id}
-      sourceName={source.name}
-      value={value ?? ""}
-      label="Merchant"
-      ariaLabel={field.ariaLabel ?? field.label}
-      placeholder="Search saved merchants..."
-      emptyOption={{
-        label: "No merchant selected",
-        description:
-          "Choose a saved merchant to use its logo for this connection.",
-      }}
-      onChange={(next) => void update(next)}
-    />
-  </div>
-{/if}
+<div data-merchant-field={field.id}>
+  <MerchantPicker
+    {projectId}
+    sourceId={source.id}
+    sourceName={source.name}
+    value={value ?? ""}
+    readOnly={readonly}
+    label="Merchant"
+    ariaLabel={field.ariaLabel ?? field.label}
+    placeholder="Search saved merchants..."
+    emptyOption={{
+      label: "No merchant selected",
+      description:
+        "Choose a saved merchant to use its logo for this connection.",
+    }}
+    onChange={(next) => void update(next)}
+  />
+</div>

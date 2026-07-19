@@ -34,6 +34,7 @@
     placeholder?: string;
     emptyOption?: EmptyOption;
     autoAttachExactDomain?: boolean;
+    readOnly?: boolean;
     onChange?: (merchantId: string) => void | Promise<void>;
     onAttach?: (merchant: Merchant) => void;
     onError?: (message: string) => void;
@@ -52,6 +53,7 @@
     placeholder = "Search merchants...",
     emptyOption,
     autoAttachExactDomain = false,
+    readOnly = false,
     onChange,
     onAttach,
     onError,
@@ -258,23 +260,30 @@
 </script>
 
 <div class="merchant-picker">
-  <FilterCommandPicker
-    fullWidth
-    {label}
-    {ariaLabel}
-    {placeholder}
-    emptyLabel={merchants.length
-      ? "No matching merchants."
-      : "No saved merchants yet."}
-    stackedOptions
-    {value}
-    {options}
-    searchAction={brandMatchAction}
-    searchActionGroupLabel="Brand Match"
-    onSearchAction={createMerchantFromBrandMatch}
-    onChange={handleChange}
-  />
-  {#if loadError}
+  {#if readOnly}
+    <output
+      >{(options.find((option) => option.value === value)?.label ?? value) ||
+        " "}</output
+    >
+  {:else}
+    <FilterCommandPicker
+      fullWidth
+      {label}
+      {ariaLabel}
+      {placeholder}
+      emptyLabel={merchants.length
+        ? "No matching merchants."
+        : "No saved merchants yet."}
+      stackedOptions
+      {value}
+      {options}
+      searchAction={brandMatchAction}
+      searchActionGroupLabel="Brand Match"
+      onSearchAction={createMerchantFromBrandMatch}
+      onChange={handleChange}
+    />
+  {/if}
+  {#if !readOnly && loadError}
     <p class="merchant-picker__error">{loadError}</p>
   {/if}
 </div>
