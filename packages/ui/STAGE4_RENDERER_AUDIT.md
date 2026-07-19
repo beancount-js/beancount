@@ -7,37 +7,38 @@ route, server API, ledger object, or formatter context.
 
 ## Canonical UI copies
 
-| Surface                    | UI source                                                                     | Fava ownership during this stage                                                      |
-| -------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| shadcn-svelte families     | `src/components/shadcn`                                                       | Original editable Fava source remains until consumer migration.                       |
-| shared forms and editors   | `src/components/forms`                                                        | Fava continues to import `@beancount-js/forms` until the forms migration.             |
-| app frame and navigation   | `AppShell.svelte`, `layout/*`, `navigation/*`                                 | Studio-specific project, router, and storage behaviour stays in Fava adapters.        |
-| Studio shell header        | `layout/StudioShellHeader.svelte`                                             | Fava continues to bind workspace settings and responsive sidebar state.               |
-| sidebar resize rail        | `layout/ResizableSidebar.svelte`                                              | Fava continues to persist the selected width and compose sidebar content.             |
-| ordinary typed tables      | `tables/DataTable.svelte`                                                     | Applications provide their own columns and data.                                      |
-| account hierarchy          | `tables/AccountTreeTable.svelte`                                              | Fava maps account-tree data and routes into its plain tree/callback model.            |
-| statement account summary  | `tables/StatementSummaryTreeTable.svelte`                                     | Fava derives, formats, filters, and routes the financial-statement account tree.      |
-| ledger activity            | `tables/LedgerActivityTable.svelte`                                           | Fava continues to derive records, balances, and date groups from ledger data.         |
-| query results              | `tables/QueryResultsTable.svelte`                                             | Fava continues to execute BQL and preformat values.                                   |
-| account bulk actions       | `tables/AccountBulkActionSheet.svelte`                                        | Fava continues to calculate patches, confirm destructive actions, and persist files.  |
-| ingestion review queue     | `tables/IngestionReviewTable.svelte`                                          | Fava continues to apply search, paginate, open review sheets, and mutate proposals.   |
-| import account mapping     | `tables/ImportMappingTable.svelte`                                            | Fava continues to parse files, infer accounts, rewrite directives, and persist files. |
-| validation feedback        | `feedback/ValidationErrorTable.svelte`                                        | Fava continues to normalize parser and validation errors.                             |
-| loading/skeleton states    | `feedback/*Skeleton.svelte`                                                   | Route loading remains application orchestration.                                      |
-| chart controls             | `charts/ChartLegend.svelte`, `ChartModeSwitch.svelte`, `ChartSwitcher.svelte` | Chart data/rendering remains a separate extraction below.                             |
-| line and area charts       | `charts/LineChart.svelte`                                                     | Fava continues to derive time-series data and ledger-format values.                   |
-| ledger event plot          | `charts/ScatterPlot.svelte`                                                   | Fava continues to derive event categories and routes.                                 |
-| grouped and stacked bars   | `charts/BarChart.svelte`                                                      | Fava continues to derive interval, budget, account-stack, and route data.             |
-| allocation hierarchy       | `charts/HierarchyChart.svelte`                                                | Fava continues to select currencies and own account navigation routes.                |
-| dashboard card disclosure  | `dashboard/DashboardSection.svelte`                                           | Fava continues to compose dashboard sections and persist dashboard state.             |
-| dashboard category donut   | `dashboard/DashboardDonut.svelte`                                             | Fava continues to derive categories, format values, and own category navigation.      |
-| dashboard trend chart      | `dashboard/DashboardLine.svelte`                                              | Fava continues to derive history, format values, and own dashboard navigation.        |
-| dashboard cash flow        | `dashboard/DashboardFlow.svelte`                                              | Fava continues to derive categories, format values, and own account navigation.       |
-| dashboard balance tree     | `dashboard/DashboardTreeTable.svelte`                                         | Fava continues to derive account trees, format values, and own account navigation.    |
-| all-or-one picker adapter  | `forms/ComboBox.svelte`                                                       | Fava retains its legacy import until forms consumer migration.                        |
-| account picker             | `forms/AccountPicker.svelte`                                                  | Fava continues to derive account choices and persist source configuration.            |
-| saved merchant picker      | `forms/MerchantPicker.svelte`                                                 | Fava continues to fetch, rank, create, and persist saved merchants.                   |
-| credential reference field | `forms/SecretField.svelte`                                                    | Fava continues to supply project environment names and persist credentials.           |
+| Surface                     | UI source                                                                     | Fava ownership during this stage                                                            |
+| --------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| shadcn-svelte families      | `src/components/shadcn`                                                       | Original editable Fava source remains until consumer migration.                             |
+| shared forms and editors    | `src/components/forms`                                                        | Fava continues to import `@beancount-js/forms` until the forms migration.                   |
+| app frame and navigation    | `AppShell.svelte`, `layout/*`, `navigation/*`                                 | Studio-specific project, router, and storage behaviour stays in Fava adapters.              |
+| Studio shell header         | `layout/StudioShellHeader.svelte`                                             | Fava continues to bind workspace settings and responsive sidebar state.                     |
+| sidebar resize rail         | `layout/ResizableSidebar.svelte`                                              | Fava continues to persist the selected width and compose sidebar content.                   |
+| ordinary typed tables       | `tables/DataTable.svelte`                                                     | Applications provide their own columns and data.                                            |
+| account hierarchy           | `tables/AccountTreeTable.svelte`                                              | Fava maps account-tree data and routes into its plain tree/callback model.                  |
+| statement account summary   | `tables/StatementSummaryTreeTable.svelte`                                     | Fava derives, formats, filters, and routes the financial-statement account tree.            |
+| interval account comparison | `tables/IntervalTreeTable.svelte`                                             | Fava derives date ranges, currency values, budget variance, account visibility, and routes. |
+| ledger activity             | `tables/LedgerActivityTable.svelte`                                           | Fava continues to derive records, balances, and date groups from ledger data.               |
+| query results               | `tables/QueryResultsTable.svelte`                                             | Fava continues to execute BQL and preformat values.                                         |
+| account bulk actions        | `tables/AccountBulkActionSheet.svelte`                                        | Fava continues to calculate patches, confirm destructive actions, and persist files.        |
+| ingestion review queue      | `tables/IngestionReviewTable.svelte`                                          | Fava continues to apply search, paginate, open review sheets, and mutate proposals.         |
+| import account mapping      | `tables/ImportMappingTable.svelte`                                            | Fava continues to parse files, infer accounts, rewrite directives, and persist files.       |
+| validation feedback         | `feedback/ValidationErrorTable.svelte`                                        | Fava continues to normalize parser and validation errors.                                   |
+| loading/skeleton states     | `feedback/*Skeleton.svelte`                                                   | Route loading remains application orchestration.                                            |
+| chart controls              | `charts/ChartLegend.svelte`, `ChartModeSwitch.svelte`, `ChartSwitcher.svelte` | Chart data/rendering remains a separate extraction below.                                   |
+| line and area charts        | `charts/LineChart.svelte`                                                     | Fava continues to derive time-series data and ledger-format values.                         |
+| ledger event plot           | `charts/ScatterPlot.svelte`                                                   | Fava continues to derive event categories and routes.                                       |
+| grouped and stacked bars    | `charts/BarChart.svelte`                                                      | Fava continues to derive interval, budget, account-stack, and route data.                   |
+| allocation hierarchy        | `charts/HierarchyChart.svelte`                                                | Fava continues to select currencies and own account navigation routes.                      |
+| dashboard card disclosure   | `dashboard/DashboardSection.svelte`                                           | Fava continues to compose dashboard sections and persist dashboard state.                   |
+| dashboard category donut    | `dashboard/DashboardDonut.svelte`                                             | Fava continues to derive categories, format values, and own category navigation.            |
+| dashboard trend chart       | `dashboard/DashboardLine.svelte`                                              | Fava continues to derive history, format values, and own dashboard navigation.              |
+| dashboard cash flow         | `dashboard/DashboardFlow.svelte`                                              | Fava continues to derive categories, format values, and own account navigation.             |
+| dashboard balance tree      | `dashboard/DashboardTreeTable.svelte`                                         | Fava continues to derive account trees, format values, and own account navigation.          |
+| all-or-one picker adapter   | `forms/ComboBox.svelte`                                                       | Fava retains its legacy import until forms consumer migration.                              |
+| account picker              | `forms/AccountPicker.svelte`                                                  | Fava continues to derive account choices and persist source configuration.                  |
+| saved merchant picker       | `forms/MerchantPicker.svelte`                                                 | Fava continues to fetch, rank, create, and persist saved merchants.                         |
+| credential reference field  | `forms/SecretField.svelte`                                                    | Fava continues to supply project environment names and persist credentials.                 |
 
 ## Application adapters still to extract
 
