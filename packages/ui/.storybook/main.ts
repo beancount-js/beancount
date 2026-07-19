@@ -5,7 +5,9 @@ const config: StorybookConfig = {
     "../../ui/src/**/*.mdx",
     "../../ui/src/**/*.stories.@(js|jsx|ts|tsx|svelte)",
     "../../forms/src/**/*.stories.@(js|jsx|ts|tsx|svelte)",
-    "../../fava/src/**/*.stories.@(js|jsx|ts|tsx|svelte)",
+    // Fava application stories remain available during the migration. Local
+    // shadcn stories are now discovered only from UI-owned source above.
+    "../../fava/src/{charts,components}/**/*.stories.@(js|jsx|ts|tsx|svelte)",
   ],
   addons: [
     "@storybook/addon-docs",

@@ -4,13 +4,13 @@
   import { Button } from "./index.js";
 
   const { Story } = defineMeta({
-    title: "UI Foundation/Shadcn/Actions/Button",
+    title: "Shadcn/Actions/Button",
     component: Button,
     parameters: {
       docs: {
         description: {
           component:
-            "UI-owned shadcn-svelte button. This migration story proves the package-safe copy before the existing Fava catalog entry is retired.",
+            "UI-owned shadcn-svelte button. Use its semantic variants and sizes instead of styling a native button from scratch.",
         },
       },
     },

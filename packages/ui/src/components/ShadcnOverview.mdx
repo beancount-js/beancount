@@ -2,22 +2,22 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 <Meta title="Shadcn/Overview" />
 
-# Shadcn components in Fava
+# UI-owned shadcn-svelte components
 
-This section renders the shadcn-svelte source that Fava currently owns. It is a visual and behavioural reference for the exact component code and shared theme tokens used in the application.
+This section renders the editable shadcn-svelte source owned by `@beancount-js/ui`. It is the visual and behavioural reference for the shared theme tokens and component contracts that applications consume.
 
-The components remain local to Fava. Use a shared `@beancount-js/ui` primitive when one exists; promote a Fava component only when it is intentionally needed across applications.
+Fava's original local source remains unchanged while application imports are migrated. New shared work belongs here, not in a Fava-local wrapper.
 
 ## How to use this catalog
 
-- Check the component story before adding or changing a Fava UI pattern. Stories cover the supported variants, semantic structure, and interactive states.
-- Use the catalog theme switcher to review the same shared tokens as Fava. Do not introduce Storybook-only visual overrides.
+- Check the component story before adding or changing a UI pattern. Stories cover the supported variants, semantic structure, and interactive states.
+- Use the catalog theme switcher to review the same shared tokens as the applications. Do not introduce Storybook-only visual overrides.
 - Keep each story beside its source component. Update its story whenever the component’s public behaviour or visual states change.
-- New shared primitives belong in `@beancount-js/ui`; Fava-local shadcn wrappers remain here until there is a deliberate extraction.
+- Import a shared primitive from `@beancount-js/ui/shadcn/<family>` when it exists. Do not duplicate it in application source.
 
 ## Component groups
 
-- **Actions:** Button, Toggle, and Toggle Group
+- **Actions:** Button, Button Group, Toggle, and Toggle Group
 - **Forms:** Input, Textarea, Switch, Select, Calendar, and Command
 - **Disclosure:** Accordion, Collapsible, and Tabs
 - **Overlays:** Alert, Alert Dialog, Dialog, Dropdown Menu, Menubar, Popover, Sheet, and Tooltip

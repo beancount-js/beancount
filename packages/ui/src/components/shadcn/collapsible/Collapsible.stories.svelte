@@ -4,13 +4,13 @@
   import * as Collapsible from "./index.js";
 
   const { Story } = defineMeta({
-    title: "UI Foundation/Shadcn/Disclosure/Collapsible",
+    title: "Shadcn/Disclosure/Collapsible",
     component: Collapsible.Root,
     parameters: {
       docs: {
         description: {
           component:
-            "UI-owned shadcn-svelte disclosure primitive. This migration story proves the package-safe copy before the existing Fava catalog entry is retired.",
+            "UI-owned shadcn-svelte disclosure primitive for local, non-form content.",
         },
       },
     },
