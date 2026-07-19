@@ -120,4 +120,83 @@ describe("ingestion-merchant-search-state", () => {
       }),
     ).toEqual([tesco]);
   });
+
+  it("supports shared filter-query syntax for merchant fields", () => {
+    const tesco = cluster({
+      displayName: "Tesco",
+      domain: "tesco.com",
+      statuses: ["suggested"],
+      pendingCount: 30,
+      candidates: [
+        {
+          id: "merchant-tesco",
+          canonicalName: "Tesco",
+          domain: "tesco.com",
+          rawScore: 0.98,
+          explanation: "Exact domain match",
+          provenance: [],
+        },
+      ],
+      transactions: [
+        {
+          runId: "run-1",
+          proposalId: "p1",
+          bookedAt: "2026-07-17",
+          amount: "-29.97",
+          currency: "GBP",
+          payee: "Tesco",
+          narration: "Weekly groceries",
+          rawLabel: "TESCO STORES 1234",
+          sourceAccount: "Assets:Checking:Monzo",
+          proposalStatus: "needs-review",
+        },
+      ],
+    });
+    const cafe = cluster({
+      id: "cluster-2",
+      displayName: "Unknown Cafe",
+      statuses: ["unresolved"],
+      pendingCount: 4,
+      members: [
+        {
+          rawLabel: "CAFE 99",
+          normalizedLabel: "cafe 99",
+          count: 1,
+          refs: [{ runId: "run-1", proposalId: "p2" }],
+        },
+      ],
+    });
+    const empty = { query: "", statuses: [], domain: "" };
+
+    expect(
+      filterIngestionMerchantSearch([tesco, cafe], {
+        ...empty,
+        query: "confidence >= 0.9",
+      }),
+    ).toEqual([tesco]);
+    expect(
+      filterIngestionMerchantSearch([tesco, cafe], {
+        ...empty,
+        query: "pending > 10 status:suggested",
+      }),
+    ).toEqual([tesco]);
+    expect(
+      filterIngestionMerchantSearch([tesco, cafe], {
+        ...empty,
+        query: "domain:tesco.com OR status:unresolved",
+      }),
+    ).toEqual([tesco, cafe]);
+    expect(
+      filterIngestionMerchantSearch([tesco, cafe], {
+        ...empty,
+        query: "label:cafe",
+      }),
+    ).toEqual([cafe]);
+    expect(
+      filterIngestionMerchantSearch([tesco, cafe], {
+        ...empty,
+        query: "amount > 20 account:Monzo currency:GBP",
+      }),
+    ).toEqual([tesco]);
+  });
 });

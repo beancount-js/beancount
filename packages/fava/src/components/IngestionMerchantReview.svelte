@@ -36,6 +36,7 @@
     cloneIngestionMerchantSearchState,
     filterIngestionMerchantSearch,
     hasActiveIngestionMerchantSearch,
+    merchantClusterConfidence,
     MERCHANT_CLUSTER_STATUS_OPTIONS,
     MERCHANT_DOMAIN_OPTIONS,
     parseIngestionMerchantSearchState,
@@ -422,16 +423,6 @@
     return `${domain}${labels}${more}`;
   }
 
-  function aiConfidenceScore(cluster: MerchantReviewCluster) {
-    const scores = cluster.candidates
-      .map((candidate) => candidate.rawScore)
-      .filter(
-        (score): score is number =>
-          typeof score === "number" && Number.isFinite(score),
-      );
-    return scores.length ? Math.max(...scores) : undefined;
-  }
-
   function formatAiConfidence(score: number) {
     return `${Math.round(score * 100)}%`;
   }
@@ -609,9 +600,8 @@
           style="--cv-search-filter-justify: stretch; --cv-search-filter-content-justify: stretch; --cv-search-filter-max-width: 100%;"
         >
           <SearchFilterBar
-            inputMode="plain"
             value={searchState.query}
-            placeholder="Search merchants…"
+            placeholder="Search merchants… e.g. confidence >= 0.9"
             ariaLabel="Search merchants"
             clearSearchLabel="Clear search"
             clearAllLabel="Clear all filters"
@@ -776,7 +766,7 @@
 
           <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
             {#each visibleClusters as cluster, index (cluster.id)}
-              {@const confidence = aiConfidenceScore(cluster)}
+              {@const confidence = merchantClusterConfidence(cluster)}
               <div
                 role="button"
                 tabindex="0"
