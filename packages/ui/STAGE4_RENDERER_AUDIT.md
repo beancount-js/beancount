@@ -26,6 +26,7 @@ route, server API, ledger object, or formatter context.
 | line and area charts     | `charts/LineChart.svelte`                                                     | Fava continues to derive time-series data and ledger-format values.                   |
 | ledger event plot        | `charts/ScatterPlot.svelte`                                                   | Fava continues to derive event categories and routes.                                 |
 | grouped and stacked bars | `charts/BarChart.svelte`                                                      | Fava continues to derive interval, budget, account-stack, and route data.             |
+| allocation hierarchy     | `charts/HierarchyChart.svelte`                                                | Fava continues to select currencies and own account navigation routes.                |
 
 ## Application adapters still to extract
 
@@ -34,10 +35,10 @@ independent UI copy yet. They are not allowed to become new cross-app
 primitives in place; first extract a model-driven UI component, then migrate
 the Fava adapter in a separate change.
 
-- Chart rendering: Fava's `Chart` adapter, hierarchy renderer, and dashboard
-  charts. The UI-owned `LineChart`, `ScatterPlot`, and `BarChart` accept display
-  models; extract the remaining data/formatter/callback models without importing
-  Fava chart or format stores.
+- Chart rendering: Fava's `Chart` adapter and dashboard charts. The UI-owned
+  `LineChart`, `ScatterPlot`, `BarChart`, and `HierarchyChart` accept display
+  models; keep the Fava adapter responsible for data selection, formatting, and
+  routes until consumer migration.
 - Review and import surfaces: `ImportTable`. The UI-owned
   `IngestionReviewTable` covers grouped queue presentation, selection, and row
   callbacks, while `ImportMappingTable` covers controlled account mapping. Fava
