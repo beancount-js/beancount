@@ -8,7 +8,7 @@ When working on UI components, use the local Storybook catalog and its browser t
 - Add or update a colocated `ComponentName.stories.svelte` in the same change as every component. Point `defineMeta` at the actual component, give the story group a clear catalog title, and give each story a human-readable scenario name.
 - Type every public prop and add short JSDoc to non-obvious props, events, and state. Use a Docs description when that source-level information and the story names would not explain the component's intent or constraints.
 - Update the Form guidance page whenever form composition, control choice, disclosure, repeated-item, or verification rules change. The guide owns high-level rules; component Docs descriptions state the component-specific constraints and link to the guide.
-- Before adding a visual export to `@beancount-js/forms`, classify it in `packages/forms/STAGE2_AUDIT.md` as a shared primitive, a retained domain component, or deprecated compatibility. Every visual export needs a colocated story and Docs description; helper-only exports do not.
+- Before adding a visual form export, classify it in `packages/ui/STAGE2_FORMS_AUDIT.md` as a shared primitive, retained domain component, or deprecated compatibility. Keep its implementation, styles, stories, and supporting APIs in this package; helper-only exports do not need standalone visual stories.
 - `Shadcn/` is the UI-owned shadcn-svelte catalog. Its source and stories live together in `packages/ui/src/components/shadcn`; import a family from `@beancount-js/ui/shadcn/<family>`. Fava's original local source remains unchanged only until its later application migration.
 - Stage 3 extends the catalog to reusable Fava application components. Keep these stories beside the existing source in `packages/fava/src`; this catalog-only stage must not move, re-export, or remove production components. Use realistic fixtures and local story state so the app's real layouts, tables, pickers, and shell controls can be reviewed under the shared theme.
 - Document the meaningful behaviour, not only the default: collectively cover distinct variants, validation/error and empty/loading states, permissions or feature states, themes, and responsive layouts when they alter behaviour. Do not duplicate equivalent visuals.
@@ -16,7 +16,7 @@ When working on UI components, use the local Storybook catalog and its browser t
 
 ## Live reload
 
-- Start the catalog from this package with `pnpm storybook`; do not invoke `storybook dev` directly. The package script enables polling so changes in both `packages/ui` and `packages/forms` are detected reliably.
+- Start the catalog from this package with `pnpm storybook`; do not invoke `storybook dev` directly. The package script enables polling so UI-owned source and colocated stories are detected reliably.
 - Component, style, and existing-story edits should update the preview through HMR. Newly added, renamed, or deleted `.stories.*` files must appear in (or leave) the Storybook index without a restart.
 - Restart only after changing Storybook startup configuration, such as `.storybook/main.ts`, addons, or the Vite configuration. Do not treat a stale story index as a reason to restart; verify the file is saved and let the polling watcher update it.
 

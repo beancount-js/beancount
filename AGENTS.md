@@ -22,8 +22,8 @@
 
 ## Shared forms
 
-- Before adding or changing an editable form, read the canonical form contract at `packages/forms/FORMS.md` (origin: `~/code/cv/spec/src/30-domain-contracts/forms-and-shared-ui.md`).
-- Treat that contract as the implementation standard for this repository. If this repository needs a new form pattern, extend `@beancount-js/forms` first; do not create a Fava-local row, section-header, disclosure, or separator layout.
+- Before adding or changing an editable form, read the canonical form contract at `packages/ui/FORMS.md` (origin: `~/code/cv/spec/src/30-domain-contracts/forms-and-shared-ui.md`).
+- Treat that contract as the implementation standard for this repository. If this repository needs a new form pattern, extend `@beancount-js/ui/forms` first; do not create a Fava-local row, section-header, disclosure, or separator layout.
 - Use the shared form primitives for editable fields and sections. Forms use one `max-content minmax(0, 1fr)` label/value grid per scope, visible single separators, title-only collapsible section headers, and a left-rail disclosure control. Content inside a collapsible section is indented; the header itself is not.
 - Keep every labelled field inside one `beancount-structured-form` scope per section. Do not place a `FormField` outside that grid next to sibling stacks — label columns will drift.
 - For `FilterCommandPicker`, date pickers, switches, and other pill/button controls: always `FormField as="div" align="center"`. Default `align="start"` is for borderless text inputs/`output` only; pills otherwise sit flush on the row separator and labels look vertically off.
@@ -34,18 +34,18 @@
 
 ## Searchable pickers
 
-- Default to `FilterCommandPicker` from `@beancount-js/forms` for any searchable select (accounts, queries, facets, env var names, enum-like choices). Use `fullWidth` in forms and sidebars.
+- Default to `FilterCommandPicker` from `@beancount-js/ui/forms` for any searchable select (accounts, queries, facets, env var names, enum-like choices). Use `fullWidth` in forms and sidebars.
 - In forms, wrap every `FilterCommandPicker` with `FormField as="div" align="center"` (see Shared forms). Never nest the picker in a label-only `FormField`.
 - For values the user may type that are not in the option list (e.g. Environment credential names from project `.env`), set `allowCustom={true}` on `FilterCommandPicker`. Do not use `SearchableChoicePicker` for new work — it is the legacy picker.
 - Multi-select: `multiple` + `values` + `onValuesChange`. Single-select: `value` + `onChange`.
 
 ## UI catalog and Storybook
 
-- `@beancount-js/ui` owns the shared visual foundation and Storybook catalog. Keep stories next to the component they document. During the forms migration, Stories in `packages/forms/src` are intentionally discovered by the UI catalog.
+- `@beancount-js/ui` owns the shared visual foundation and Storybook catalog. Keep stories next to the component they document. The complete forms contract and its stories live in `packages/ui/src/components/forms`; the original forms package remains untouched until application migration.
 - The `Shadcn/` Storybook section is owned by `@beancount-js/ui`. Keep the editable source and colocated stories in `packages/ui/src/components/shadcn`, and import families from `@beancount-js/ui/shadcn/<family>`. Fava's original source remains untouched until the separate application migration; do not add new shared work there.
 - Stage 3 catalogs reusable Fava application components in place. Keep stories beside the existing source under `packages/fava/src` and use fixtures to render the real component behaviour; do not move, re-export, or remove production application code merely for Storybook coverage.
 - `UI Forms/Guidance` is the canonical high-level form decision guide. Generated Docs pages retain props and examples; every reusable form component must link back to the guide and update it whenever its usage rules change.
-- During Stage 2, classify every `@beancount-js/forms` visual export in `packages/forms/STAGE2_AUDIT.md`. Add a colocated story and Docs description before treating it as catalogued; only deliberate cross-app primitives belong in `@beancount-js/ui`.
+- During the forms-copy stage, keep the complete visual contract, support APIs, CSS, stories, and tests in `packages/ui/src/components/forms`. Classify the copied surface in `packages/ui/STAGE2_FORMS_AUDIT.md`; every visual export needs a colocated story and Docs description before it is catalogued.
 - Every reusable component must have stories covering its meaningful visual states, variants, and error/empty states. Treat the stories as the canonical visual contract for agents and application code.
 - Interactive controls must be interactive in their stories. Keep the story's state locally, pass it back through callbacks such as `onChange` or `onValuesChange`, and render the selected or changed value in the preview. Do not use static args for a control whose primary behavior is user interaction.
 - Storybook accessibility checks are required: `@beancount-js/ui` runs axe with `a11y.test = "error"`, so any accessibility violation fails the browser test. Fix violations; do not disable or waive axe rules to make a story pass.

@@ -26,7 +26,6 @@
     ".storybook/**/*.ts",
     "src/**/*.ts",
     "src/**/*.svelte",
-    "../forms/src/**/*.stories.svelte",
     "../fava/src/**/*.stories.svelte",
     "tailwind.config.ts",
     "vite.config.ts",

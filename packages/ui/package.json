@@ -6,20 +6,32 @@
   "scripts": {
     "storybook": "WATCHPACK_POLLING=250 storybook dev -p 6006",
     "build-storybook": "storybook build",
+    "test-unit": "vitest run --project unit",
     "test-storybook": "vitest run --project storybook",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "fmt": "prettier . --write",
     "fmt:check": "prettier . --check",
-    "checks": "pnpm fmt:check && pnpm check && pnpm test-storybook && pnpm build-storybook"
+    "checks": "pnpm fmt:check && pnpm check && pnpm test-unit && pnpm test-storybook && pnpm build-storybook"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
   },
   "dependencies": {
+    "@beancount-js/filters": "workspace:*",
+    "@codemirror/autocomplete": "^6.18.3",
+    "@codemirror/commands": "^6.7.1",
+    "@codemirror/lang-json": "^6.0.1",
+    "@codemirror/lang-yaml": "^6.1.1",
+    "@codemirror/language": "^6.10.3",
+    "@codemirror/lint": "^6.8.3",
+    "@codemirror/search": "^6.5.8",
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/view": "^6.35.0",
     "@fontsource-variable/dm-sans": "^5.2.8",
     "@fontsource/source-code-pro": "^5.1.0",
     "@internationalized/date": "^3.6.0",
     "@tanstack/table-core": "^8.20.5",
+    "@lezer/highlight": "^1.2.1",
     "bits-ui": "^1.8.0",
     "clsx": "^2.1.1",
     "lucide-svelte": "^0.460.1",
@@ -29,7 +41,6 @@
     "tailwind-variants": "^0.3.0"
   },
   "devDependencies": {
-    "@beancount-js/forms": "workspace:*",
     "@storybook/addon-a11y": "^10.5.2",
     "@storybook/addon-docs": "^10.5.2",
     "@storybook/addon-mcp": "^0.7.0",
@@ -58,14 +69,10 @@
   "exports": {
     "./app-shell": "./src/components/AppShell.svelte",
     "./shadcn/*": "./src/components/shadcn/*/index.ts",
-    "./forms/CollapsibleItemList.svelte": "./src/components/forms/CollapsibleItemList.svelte",
-    "./forms/EntryActions.svelte": "./src/components/forms/EntryActions.svelte",
-    "./forms/FormAddButton.svelte": "./src/components/forms/FormAddButton.svelte",
-    "./forms/FormField.svelte": "./src/components/forms/FormField.svelte",
-    "./forms/FormSectionHeader.svelte": "./src/components/forms/FormSectionHeader.svelte",
-    "./forms/FormToolbar.svelte": "./src/components/forms/FormToolbar.svelte",
-    "./forms/SegmentedControl.svelte": "./src/components/forms/SegmentedControl.svelte",
-    "./forms/Switch.svelte": "./src/components/forms/Switch.svelte",
+    "./forms": "./src/components/forms/index.ts",
+    "./forms/core": "./src/components/forms/core.ts",
+    "./forms/components/*.svelte": "./src/components/forms/*.svelte",
+    "./forms/*.svelte": "./src/components/forms/*.svelte",
     "./styles.css": "./src/styles.css",
     "./tailwind": "./src/tailwind-preset.ts"
   }

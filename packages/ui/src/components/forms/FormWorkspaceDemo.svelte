@@ -1,13 +1,14 @@
 <script lang="ts">
-  import { FilterCommandPicker, YamlBackedForm } from "@beancount-js/forms";
   import AppShell from "../AppShell.svelte";
   import CollapsibleItemList from "./CollapsibleItemList.svelte";
+  import FilterCommandPicker from "./FilterCommandPicker.svelte";
   import FormAddButton from "./FormAddButton.svelte";
   import FormField from "./FormField.svelte";
   import FormSectionHeader from "./FormSectionHeader.svelte";
   import FormToolbar from "./FormToolbar.svelte";
   import SegmentedControl from "./SegmentedControl.svelte";
   import Switch from "./Switch.svelte";
+  import YamlBackedForm from "./YamlBackedForm.svelte";
 
   type Source = {
     id: number;

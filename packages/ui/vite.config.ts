@@ -116,8 +116,8 @@ export default defineConfig({
       // its in-memory navigation render in the isolated Storybook preview.
       "$app/navigation": svelteKitNavigation,
       "$app/stores": svelteKitStores,
-      // Colocated Stories under `packages/forms` resolve test helpers from the
-      // catalog package, which owns the Storybook runtime.
+      // UI-owned colocated stories resolve test helpers from the catalog
+      // package, which owns the Storybook runtime.
       "storybook/test": storybookTest,
     },
   },

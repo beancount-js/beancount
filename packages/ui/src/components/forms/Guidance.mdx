@@ -4,7 +4,7 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 # Form guidance
 
-Use the shared form primitives before creating a Fava-local form layout. This page is the decision guide; each component’s generated Docs page supplies its props and interactive examples.
+Use `@beancount-js/ui/forms` before creating a Fava-local form layout. This page is the decision guide; each component’s generated Docs page supplies its props and interactive examples.
 
 ## Start with the form shape
 
@@ -24,11 +24,11 @@ Use <a href="?path=/docs/ui-forms-segmented-control--docs">Segmented Control</a>
 
 ### Searchable choice
 
-Use <a href="?path=/docs/forms-filter-command-picker--docs">Filter Command Picker</a> for accounts, queries, facets, enums, and environment names. Use `FormField as="div" align="center"` and `fullWidth` in forms and sidebars. Enable `allowCustom` only for values outside the supplied list.
+Use <a href="?path=/docs/ui-forms-filter-command-picker--docs">Filter Command Picker</a> for accounts, queries, facets, enums, and environment names. Use `FormField as="div" align="center"` and `fullWidth` in forms and sidebars. Enable `allowCustom` only for values outside the supplied list.
 
 ### Text, output, and YAML
 
-Use <a href="?path=/docs/ui-forms-form-field--docs">Form Field</a> for plain text or read-only output. Use the default row treatment for borderless text inputs and output; use centred alignment when mixed with pill controls. Use `YamlBackedForm` for YAML source editing—never a plain textarea YAML editor.
+Use <a href="?path=/docs/ui-forms-form-field--docs">Form Field</a> for plain text or read-only output. Use the default row treatment for borderless text inputs and output; use centred alignment when mixed with pill controls. Use <a href="?path=/docs/ui-forms-yaml-backed-form--docs">YamlBackedForm</a> for YAML source editing—never a plain textarea YAML editor.
 
 Do not use the legacy `SearchableChoicePicker` for new work.
 
@@ -50,4 +50,4 @@ Every reusable control needs meaningful interactive stories. Verify visible stat
 
 ## Migration boundary
 
-Stage 2 keeps Fava on `@beancount-js/forms` while the catalog is validated. `packages/forms/STAGE2_AUDIT.md` records which components are shared primitives, domain-specific, or deprecated. Do not migrate imports or remove the forms package until the explicit Stage 3 decision.
+This catalog owns the complete forms contract at `@beancount-js/ui/forms`. Fava remains on `@beancount-js/forms` until its explicit migration stage; do not modify Fava imports or remove the original package in this slice.
