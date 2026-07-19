@@ -7,18 +7,19 @@ route, server API, ledger object, or formatter context.
 
 ## Canonical UI copies
 
-| Surface                  | UI source                                                                     | Fava ownership during this stage                                               |
-| ------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| shadcn-svelte families   | `src/components/shadcn`                                                       | Original editable Fava source remains until consumer migration.                |
-| shared forms and editors | `src/components/forms`                                                        | Fava continues to import `@beancount-js/forms` until the forms migration.      |
-| app frame and navigation | `AppShell.svelte`, `layout/*`, `navigation/*`                                 | Studio-specific project, router, and storage behaviour stays in Fava adapters. |
-| ordinary typed tables    | `tables/DataTable.svelte`                                                     | Applications provide their own columns and data.                               |
-| account hierarchy        | `tables/AccountTreeTable.svelte`                                              | Fava maps account-tree data and routes into its plain tree/callback model.     |
-| ledger activity          | `tables/LedgerActivityTable.svelte`                                           | Fava continues to derive records, balances, and date groups from ledger data.  |
-| query results            | `tables/QueryResultsTable.svelte`                                             | Fava continues to execute BQL and preformat values.                            |
-| validation feedback      | `feedback/ValidationErrorTable.svelte`                                        | Fava continues to normalize parser and validation errors.                      |
-| loading/skeleton states  | `feedback/*Skeleton.svelte`                                                   | Route loading remains application orchestration.                               |
-| chart controls           | `charts/ChartLegend.svelte`, `ChartModeSwitch.svelte`, `ChartSwitcher.svelte` | Chart data/rendering remains a separate extraction below.                      |
+| Surface                  | UI source                                                                     | Fava ownership during this stage                                                     |
+| ------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| shadcn-svelte families   | `src/components/shadcn`                                                       | Original editable Fava source remains until consumer migration.                      |
+| shared forms and editors | `src/components/forms`                                                        | Fava continues to import `@beancount-js/forms` until the forms migration.            |
+| app frame and navigation | `AppShell.svelte`, `layout/*`, `navigation/*`                                 | Studio-specific project, router, and storage behaviour stays in Fava adapters.       |
+| ordinary typed tables    | `tables/DataTable.svelte`                                                     | Applications provide their own columns and data.                                     |
+| account hierarchy        | `tables/AccountTreeTable.svelte`                                              | Fava maps account-tree data and routes into its plain tree/callback model.           |
+| ledger activity          | `tables/LedgerActivityTable.svelte`                                           | Fava continues to derive records, balances, and date groups from ledger data.        |
+| query results            | `tables/QueryResultsTable.svelte`                                             | Fava continues to execute BQL and preformat values.                                  |
+| account bulk actions     | `tables/AccountBulkActionSheet.svelte`                                        | Fava continues to calculate patches, confirm destructive actions, and persist files. |
+| validation feedback      | `feedback/ValidationErrorTable.svelte`                                        | Fava continues to normalize parser and validation errors.                            |
+| loading/skeleton states  | `feedback/*Skeleton.svelte`                                                   | Route loading remains application orchestration.                                     |
+| chart controls           | `charts/ChartLegend.svelte`, `ChartModeSwitch.svelte`, `ChartSwitcher.svelte` | Chart data/rendering remains a separate extraction below.                            |
 
 ## Application adapters still to extract
 
@@ -29,9 +30,10 @@ the Fava adapter in a separate change.
 
 - Chart rendering: `Chart`, dashboard charts, and hierarchy renderers. Extract
   data/formatter/callback models without importing Fava chart or format stores.
-- Review and import surfaces: `ImportTable`, `IngestionTable`, and
-  `AccountBulkActionSheet`. Extract selection, row action, and review models;
-  the APIs and persistence remain in Fava.
+- Review and import surfaces: `ImportTable` and `IngestionTable`. Extract
+  selection, row action, and review models; the APIs and persistence remain in
+  Fava. `AccountBulkActionSheet` now has a UI copy; its Fava adapter still owns
+  patch calculation, confirmation, and saves.
 - Workspace adapters: `StudioShell`, `FavaNavigation`, and
   `StudioShellHeader`. `AppShell` is already UI-owned; project selection,
   routing, local storage, and server actions remain in the application.
