@@ -10,7 +10,6 @@ const config: StorybookConfig = {
     "../../fava/src/charts/Chart.stories.@(js|jsx|ts|tsx|svelte)",
     "../../fava/src/components/{ComboBox,FavaNavigation,FinancialDashboard,JournalTable,MerchantPicker,QueryTable,StudioShell}.stories.@(js|jsx|ts|tsx|svelte)",
     "../../fava/src/components/{errors,form}/**/*.stories.@(js|jsx|ts|tsx|svelte)",
-    "../../fava/src/components/dashboard/DashboardFlow.stories.@(js|jsx|ts|tsx|svelte)",
     "../../fava/src/components/tree-table/{IntervalTreeTable,StatementSummaryTreeTable}.stories.@(js|jsx|ts|tsx|svelte)",
   ],
   addons: [
