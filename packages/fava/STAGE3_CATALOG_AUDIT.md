@@ -21,7 +21,7 @@ Stories stay colocated with the Fava source and use deterministic local fixtures
 | Tables                           | `DataTable`, `ActivityTable`, `JournalTable`, `QueryTable`, `ImportTable`, `IngestionTable`, and `tree-table/*` | Generic `DataTable` catalogued; catalogue each distinct domain interaction with representative ledger fixtures |
 | Dashboard and chart composition  | `Chart`, `ChartSwitcher`, `ModeSwitch`, `dashboard/*`                                                           | Chart mode and legend selection catalogued; add chart-type, empty/error, and dashboard composition fixtures    |
 | Fava form adapters               | `form/AccountComboField`, `MerchantComboField`, `SecretField`, `SwitchField`                                    | Catalogued with stateful source fixtures, including Merchant Picker and its source-form adapter                |
-| Loading and feedback             | `skeletons/*`, `errors/Errors`, `Empty` compositions                                                            | Route and reconciliation loading skeletons catalogued; add an error fixture and any materially different page-level loading state |
+| Loading and feedback             | `skeletons/*`, `errors/Errors`, `Empty` compositions                                                            | Route/reconciliation skeletons and the validation-error state catalogued; add any materially different page-level loading state |
 
 ## Intentional exclusions
 

@@ -18,7 +18,13 @@
   }
 
   function getLine(error: any) {
-    return error.line || error.source["lineno"];
+    return (
+      error.line ??
+      error.source?.lineno ??
+      error.context?.directive?.meta?.lineno ??
+      error.context?.lineno ??
+      "-"
+    );
   }
 
   const data = derived([ledgerData, predicate], ([$ledgerData, $predicate]) => {
@@ -81,7 +87,7 @@
         } else if (row instanceof ValidationError) {
           return row.context.directive?.toString() ?? "";
         } else {
-          return row.position.toString();
+          return row.position?.toString() ?? "-";
         }
       },
     },

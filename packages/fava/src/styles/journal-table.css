@@ -1,6 +1,7 @@
 /* stylelint-disable no-descending-specificity */
 
 .flex-table p,
+.flex-table .grid-row,
 .flex-table li,
 .flex-table ul,
 .flex-table ol {
@@ -12,7 +13,12 @@
   display: flex;
 }
 
-.flex-table p > span {
+.flex-table .grid-row {
+  display: flex;
+}
+
+.flex-table p > span,
+.flex-table .grid-row > span {
   flex-shrink: 0;
   padding: 2px 4px;
 }
@@ -22,7 +28,8 @@
   text-align: right;
 }
 
-.flex-table .head p > span {
+.flex-table .head p > span,
+.flex-table .head .grid-row > span {
   padding: 3px 4px;
   color: var(--table-header-text);
   background-color: var(--table-header-background);
