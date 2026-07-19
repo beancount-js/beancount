@@ -23,6 +23,7 @@ route, server API, ledger object, or formatter context.
 | validation feedback      | `feedback/ValidationErrorTable.svelte`                                        | Fava continues to normalize parser and validation errors.                             |
 | loading/skeleton states  | `feedback/*Skeleton.svelte`                                                   | Route loading remains application orchestration.                                      |
 | chart controls           | `charts/ChartLegend.svelte`, `ChartModeSwitch.svelte`, `ChartSwitcher.svelte` | Chart data/rendering remains a separate extraction below.                             |
+| line and area charts     | `charts/LineChart.svelte`                                                     | Fava continues to derive time-series data and ledger-format values.                   |
 
 ## Application adapters still to extract
 
@@ -31,8 +32,10 @@ independent UI copy yet. They are not allowed to become new cross-app
 primitives in place; first extract a model-driven UI component, then migrate
 the Fava adapter in a separate change.
 
-- Chart rendering: `Chart`, dashboard charts, and hierarchy renderers. Extract
-  data/formatter/callback models without importing Fava chart or format stores.
+- Chart rendering: Fava's `Chart` adapter, bar/scatter/hierarchy renderers, and
+  dashboard charts. The UI-owned `LineChart` accepts time-series display models;
+  extract the remaining data/formatter/callback models without importing Fava
+  chart or format stores.
 - Review and import surfaces: `ImportTable`. The UI-owned
   `IngestionReviewTable` covers grouped queue presentation, selection, and row
   callbacks, while `ImportMappingTable` covers controlled account mapping. Fava
