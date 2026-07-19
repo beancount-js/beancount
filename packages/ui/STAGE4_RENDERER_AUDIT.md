@@ -61,10 +61,11 @@ the Fava adapter in a separate change.
   still applies parsing, matching, source rewrites, upload, persistence, search,
   pagination, review sheets, and mutation APIs. `AccountBulkActionSheet`'s Fava
   adapter still owns patch calculation, confirmation, and saves.
-- Workspace adapters: `StudioShell` and `FavaNavigation`. `AppShell`,
-  `StudioShellHeader`, and `WorkspaceTreeNavigation` are UI-owned; Fava retains
-  project selection, ledger/tag filtering, navigation mode selection, routing,
-  local storage, responsive sidebar state, picker data, and server actions.
+- Workspace adapters: `StudioWorkspaceShell`, `AppShell`,
+  `StudioShellHeader`, and `WorkspaceTreeNavigation` are UI-owned.
+  Fava's `StudioShell` and `FavaNavigation` retain project selection,
+  ledger/tag filtering, navigation mode selection, routing, local storage,
+  responsive sidebar state, picker data, and server actions.
 - Domain pages: `JournalTable`, `QueryTable`, reconciliation flows, and
   dashboard containers. `MerchantPicker` is now UI-owned; Fava remains its
   data, ranking, Brand Match, and persistence adapter until consumer migration.
