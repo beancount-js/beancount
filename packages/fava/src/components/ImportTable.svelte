@@ -4,10 +4,9 @@
   import * as Tabs from "$lib/components/ui/tabs";
   import { useLedger } from "./helpers";
   import ComboBox from "./ComboBox.svelte";
-  import { Transaction } from "@beancount-js/beancount";
+  import { filterLedger, Transaction } from "@beancount-js/beancount";
   import { derived } from "svelte/store";
   import { useContext } from "../context";
-  import type { FormInputEvent } from "$lib/components/ui/input";
   import type { Column } from "../grid/grid";
   import { Cell, Grid } from "../grid";
   import EditorDialog from "./EditorDialog.svelte";
@@ -44,7 +43,7 @@
     uncategorized: Array<ImportRecord>;
   }
 
-  const { predicate, importConfig, importFile, ledgerSource } = useContext();
+  const { predicate, importConfig, importFile } = useContext();
 
   const ledger = useLedger();
 
@@ -52,21 +51,16 @@
     .filter((it) => it.length)
     .map((it) => ({ label: it, value: it }));
 
-  $: directiveIds = derived([ledgerSource], ([$ledgerSource]) => {
-    return $ledgerSource.groupByComment();
-  });
-
   $: groupedDirectives = derived(
-    [importFile, importConfig, directiveIds],
-    ([$importFile, $importConfig, $directiveIds]) => {
+    [importFile, importConfig],
+    ([$importFile, $importConfig]) => {
       const groups: GroupedRecords = { categorized: [], uncategorized: [] };
       ($importFile?.data || []).forEach((row) => {
         const account = $importConfig.accountFor(row.data);
-        const directive = $directiveIds[$importConfig.identity(row.data)];
         const record: ImportRecord = {
           data: { ...row.data },
           matches: account.determineAccount(row.data),
-          directive: directive instanceof Transaction ? directive : null,
+          directive: $importConfig.directive(row),
           account: row.account,
           record: row,
         };
@@ -92,14 +86,20 @@
 
       $groupedDirectives.categorized.forEach((record) => {
         const directive = record.directive;
-        if (directive instanceof Transaction && filter.matches(directive)) {
+        if (
+          directive instanceof Transaction &&
+          filterLedger([directive], filter)[0][0].length
+        ) {
           groups.categorized.push(record);
         }
       });
 
       $groupedDirectives.uncategorized.forEach((record) => {
         const directive = record.directive;
-        if (directive instanceof Transaction && filter.matches(directive)) {
+        if (
+          directive instanceof Transaction &&
+          filterLedger([directive], filter)[0][0].length
+        ) {
           groups.uncategorized.push(record);
         }
       });
@@ -116,8 +116,8 @@
     return $filteredDirectives.categorized;
   });
 
-  $: handleChange = (evt: FormInputEvent) => {
-    const target = evt!.target! as HTMLInputElement;
+  $: handleChange = (evt: Event) => {
+    const target = evt.currentTarget as HTMLInputElement;
     const file = target.files![0];
     const filename = file.name.toLowerCase().trim();
     const files = $importerStore.filter((it) => it.filename !== file.name);
@@ -199,9 +199,9 @@
     if (account && row.directive) {
       const doc = Text.of(row.directive.toString().split("\n"));
       const tree = ledgerParser.parse(doc.toString());
-      let updated: Text | null = null;
+      const next = { value: null as Text | null };
       tree.cursor().iterate((node: SyntaxNodeRef) => {
-        if (updated) {
+        if (next.value) {
           return false;
         }
         if (
@@ -211,14 +211,14 @@
         ) {
           const name = doc.sliceString(node.from, node.to);
           if (name === account) {
-            updated = doc.replace(node.from, node.to, Text.of([value]));
+            next.value = doc.replace(node.from, node.to, Text.of([value]));
             return false;
           }
         }
       });
 
-      if (updated) {
-        row.record.source = updated.toString();
+      if (next.value) {
+        row.record.source = next.value.toString();
       }
     }
 
@@ -406,7 +406,7 @@
             style={`line-height: ${rowHeight - 4}px`}
           >
             <div style={`line-height: ${rowHeight - 4}px`}>
-              <li class="border-b border-l" style={`height: ${size}px`}>
+              <div class="border-b border-l" style={`height: ${size}px`}>
                 <p class="h-full">
                   {#each model as column, i}
                     {#if i == 0}
@@ -437,7 +437,7 @@
                     {/if}
                   {/each}
                 </p>
-              </li>
+              </div>
             </div>
           </div>
         </Grid>
@@ -460,7 +460,7 @@
             style={`line-height: ${rowHeight - 4}px`}
           >
             <div style={`line-height: ${rowHeight - 4}px`}>
-              <li class="border-b border-l" style={`height: ${size}px`}>
+              <div class="border-b border-l" style={`height: ${size}px`}>
                 <p class="h-full">
                   {#each model as column, i}
                     {#if i == 0}
@@ -491,7 +491,7 @@
                     {/if}
                   {/each}
                 </p>
-              </li>
+              </div>
             </div>
           </div>
         </Grid>
@@ -533,14 +533,7 @@
                   {#each $importerStore as file}
                     <Command.Item
                       value={file.filename}
-                      onSelect={(currentValue) => {
-                        const file = $importerStore.find(
-                          (it) => it.filename === currentValue,
-                        );
-                        if (file) {
-                          importFile.set(file);
-                        }
-                      }}
+                      onSelect={() => importFile.set(file)}
                     >
                       <Check
                         class={cn(

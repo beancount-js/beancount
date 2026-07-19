@@ -100,6 +100,7 @@
 {#if directive}
   <Dialog.Root bind:open={dialogOpen}>
     <Dialog.Trigger
+      aria-label="Edit directive"
       class={cn(
         "clickable-icon view-action inline-block size-[18px] p-1",
         className,
@@ -145,6 +146,7 @@
   <Button
     variant="ghost"
     disabled
+    aria-label="Directive editor unavailable"
     class={cn(
       "clickable-icon view-action inline-block size-[18px] cursor-not-allowed p-1",
       className,
