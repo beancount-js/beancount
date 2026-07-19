@@ -17,6 +17,7 @@ These are the reusable patterns agents should choose for new form work. They are
 | Schema-shaped forms           | `StructuredForm`, `FormFieldRenderer`, and `FormViewRenderer`                                                              | Shared UI forms runtime; not a generic visual primitive                                  |
 | Source editors                | `YamlBackedForm`, `JsonBackedForm`, and `CodeEditor`                                                                       | Shared UI forms runtime; YAML is the standard source mode                                |
 | Read-only source output       | `CodeHighlighter` and `ReviewDiff`                                                                                         | Shared UI primitives; applications provide parsers, proposals, approval, and persistence |
+| Date configuration            | `DatePicker`                                                                                                               | Shared UI primitive; applications provide parsing, persistence, and editor extensions    |
 
 ## UI-owned domain form components
 
