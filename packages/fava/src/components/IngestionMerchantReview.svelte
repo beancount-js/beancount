@@ -11,6 +11,7 @@
   import Landmark from "lucide-svelte/icons/landmark";
   import Link2 from "lucide-svelte/icons/link-2";
   import type { MerchantReviewCluster } from "@beancount-js/server";
+  import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
   import * as ToggleGroup from "$lib/components/ui/toggle-group";
@@ -421,6 +422,20 @@
     return `${domain}${labels}${more}`;
   }
 
+  function aiConfidenceScore(cluster: MerchantReviewCluster) {
+    const scores = cluster.candidates
+      .map((candidate) => candidate.rawScore)
+      .filter(
+        (score): score is number =>
+          typeof score === "number" && Number.isFinite(score),
+      );
+    return scores.length ? Math.max(...scores) : undefined;
+  }
+
+  function formatAiConfidence(score: number) {
+    return `${Math.round(score * 100)}%`;
+  }
+
   function markLogoFailed(clusterId: string) {
     failedLogoIds = new Set([...failedLogoIds, clusterId]);
   }
@@ -761,6 +776,7 @@
 
           <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
             {#each visibleClusters as cluster, index (cluster.id)}
+              {@const confidence = aiConfidenceScore(cluster)}
               <div
                 role="button"
                 tabindex="0"
@@ -806,11 +822,22 @@
                   <div class="truncate text-sm font-semibold">
                     {cluster.displayName}
                   </div>
-                  <div class="mt-1 truncate text-xs text-muted-foreground">
-                    <span class="capitalize"
-                      >{cluster.statuses[0] ?? "unresolved"}</span
-                    >
-                    · {clusterDetail(cluster)}
+                  <div
+                    class="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
+                  >
+                    <span class="min-w-0 truncate">
+                      <span class="capitalize"
+                        >{cluster.statuses[0] ?? "unresolved"}</span
+                      >
+                      · {clusterDetail(cluster)}
+                    </span>
+                    {#if confidence !== undefined}
+                      <Badge
+                        variant="secondary"
+                        class="shrink-0 px-1.5 py-0 text-[0.65rem] leading-5"
+                        title={`AI merchant confidence ${confidence.toFixed(2)}`}
+                      >AI {formatAiConfidence(confidence)}</Badge>
+                    {/if}
                   </div>
                 </div>
                 <span
