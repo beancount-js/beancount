@@ -1,35 +1,51 @@
-# Stage 3 Fava catalog inventory
+# Fava application-adapter inventory
 
-Stage 3 expands Storybook coverage without changing application ownership. Fava remains the implementation owner for its application components; the UI package continues to own only deliberately cross-application primitives.
+The design-system catalog is now owned by `@beancount-js/ui`. This historical
+Stage 3 inventory records the boundary left in Fava while its production imports
+remain unchanged. It supersedes the earlier in-place Fava catalog approach.
 
-## Already catalogued
+## Catalog ownership
 
-| Surface                                 | Catalog location                      | Boundary                                                    |
-| --------------------------------------- | ------------------------------------- | ----------------------------------------------------------- |
-| Shared form primitives and form runtime | `packages/forms/src`                  | Stage 2 visual contract; no import migration in this stage  |
-| Fava-local shadcn-svelte source         | `packages/fava/src/lib/components/ui` | Editable Fava-local source rendered under the shared tokens |
-| Shared app-shell composition            | `packages/ui/src/components/layout`   | Cross-app shell primitive                                   |
+`packages/ui/.storybook/main.ts` discovers UI-package sources only. The
+canonical visual implementation, Docs page, interaction story, accessibility
+coverage, shared theme, and shadcn configuration live in `packages/ui`.
 
-## Fava application components to catalogue
+Existing Fava `*.stories.svelte` files are retained as local fixture or
+regression material where useful. They are not discovered by the UI catalog and
+must not become the source of truth for a reusable component.
 
-Stories stay colocated with the Fava source and use deterministic local fixtures. A component is catalogued only when its Docs page explains its purpose and its stories exercise the meaningful interactive, empty, or error states.
+| Surface                                                         | Canonical location                  | Fava boundary during the copy stage                                                                                        |
+| --------------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Shared forms, editors, and form-domain controls                 | `packages/ui/src/components/forms`  | `@beancount-js/forms` remains a compatibility package for existing imports.                                                |
+| shadcn-svelte component families                                | `packages/ui/src/components/shadcn` | The editable Fava-local source remains only until consumer migration.                                                      |
+| App shell, navigation, tables, charts, dashboards, and feedback | `packages/ui/src/components`        | Fava maps route, ledger, formatter, server, and persisted state into the UI component's display-ready props and callbacks. |
 
-| Area                             | Components                                                                                                      | Stage 3 decision                                                                                                                                                                                                                                            |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Compact selection and navigation | `ContentScrollArea`, `CycleSelect`, `ComboBox`, `PagePagination`                                                | Catalogued: reusable, fixture-free building blocks                                                                                                                                                                                                          |
-| Studio shell                     | `StudioShellHeader`, `StudioShell`, `FavaNavigation`                                                            | Catalogued with fixture-backed workspace and in-memory routing contexts                                                                                                                                                                                     |
-| Tables                           | `DataTable`, `ActivityTable`, `JournalTable`, `QueryTable`, `ImportTable`, `IngestionTable`, and `tree-table/*` | Generic, BQL-query, grouped-activity, journal-wrapper, statement-summary, legacy-import, ingestion-review, and single/multi-period account-tree tables catalogued; catalogue each remaining distinct domain interaction with representative ledger fixtures |
-| Selected-record actions          | `AccountBulkActionSheet`                                                                                        | Catalogued with its real account-replacement and duplicate-action sections                                                                                                                                                                                  |
-| Dashboard and chart composition  | `Chart`, `ChartSwitcher`, `ModeSwitch`, `dashboard/*`, `FinancialDashboard`                                     | Chart types, mode and legend selection, chart-perspective switching, net worth, outflow, flow, empty states, and the composed dashboard are catalogued                                                                                                      |
-| Fava form adapters               | `form/AccountComboField`, `MerchantComboField`, `SecretField`, `SwitchField`                                    | Catalogued with stateful source fixtures, including Merchant Picker and its source-form adapter                                                                                                                                                             |
-| Loading and feedback             | `skeletons/*`, `errors/Errors`, `Empty` compositions                                                            | Route/reconciliation and application-page skeleton gallery, plus the validation-error state, catalogued; add any materially different loading state                                                                                                         |
+## Retained application adapters
 
-## Intentional exclusions
+Fava continues to own SvelteKit routes, workspace and project selection,
+ledger parsing and formatting, Beancount Query execution, server actions,
+file persistence, editor-document positions, and feature workflows. Keep these
+responsibilities in Fava when a UI copy is consumed; do not move them into the
+design system.
 
-- SvelteKit routes and page orchestration are application integration surfaces, not reusable catalog components. Exercise them through end-to-end coverage.
-- CodeMirror widgets and extensions are editor implementation details. `CodeEditor` and `YamlBackedForm` already provide the editable-source visual contract.
-- Private shadcn subcomponents are represented by their public family stories in `Shadcn/`.
+The authoritative visual-surface classification is
+`packages/ui/STAGE4_RENDERER_AUDIT.md`. It records the prop-driven UI copy and
+the retained Fava responsibility for every production Svelte surface.
 
-## Completion rule
+## Consumer-migration gate
 
-Each in-scope component above has a colocated Storybook story and generated Docs description, with local reactive state and interaction coverage where applicable. The catalog shows the exact Fava source under the shared theme; it does not require a production code move or package removal.
+Do not change a Fava production import merely because a UI copy exists. First
+manually inspect that UI component's Storybook Docs and meaningful states in
+both themes. Then migrate one bounded consumer slice:
+
+1. Replace only the selected primitive or visual with its UI-package export.
+2. Keep the Fava adapter responsible for display-model mapping, routes, stores,
+   server calls, and persistence.
+3. Preserve the existing Fava source until the migrated adapter is verified; do
+   not combine a consumer migration with an unrelated workflow rewrite.
+4. Run `pnpm --filter @beancount-js/fava checks` and the relevant tests. If the
+   UI component or its story changes, also run
+   `pnpm --filter @beancount-js/ui checks`.
+
+The shared app shell is already consumed from `@beancount-js/ui/app-shell`.
+All other migrations follow this gate after manual catalog approval.
