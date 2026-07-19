@@ -164,7 +164,7 @@
     matchedClusters.filter((cluster) => selectedClusterIds.has(cluster.id)),
   );
   const confirmableClusters = $derived(
-    selectedClusters.filter((cluster) => cluster.candidates.length > 0),
+    selectedClusters.filter((cluster) => Boolean(cluster.primaryCandidate)),
   );
   const visibleClusterIds = $derived(
     visibleClusters.map((cluster) => cluster.id),
@@ -557,7 +557,7 @@
     let confirmedCount = 0;
     try {
       for (const cluster of clustersToConfirm) {
-        const candidate = cluster.candidates[0];
+        const candidate = cluster.primaryCandidate;
         if (!candidate) continue;
         await ingestionJson(
           ingestionPath(

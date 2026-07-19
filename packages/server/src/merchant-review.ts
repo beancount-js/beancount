@@ -47,6 +47,8 @@ export type MerchantReviewCluster = {
   explanation?: string;
   /** Representative proposal used for merchant actions. */
   primary: MerchantReviewProposalRef;
+  /** Candidate belonging to the representative proposal, if it is suggested. */
+  primaryCandidate?: MerchantCandidate;
 };
 
 export type MerchantReviewProposalRow = {
@@ -307,7 +309,18 @@ export function clusterMerchantReviewProposals(
         right.count - left.count || left.rawLabel.localeCompare(right.rawLabel),
     );
     const primaryMember = memberList[0]!;
-    const primary = primaryMember.refs[0]!;
+    const primaryRow = members.find(
+      (row) =>
+        row.proposal.merchantResolution?.status === "suggested" &&
+        row.proposal.merchantResolution.candidates.length > 0,
+    );
+    const primary = primaryRow
+      ? { runId: primaryRow.runId, proposalId: primaryRow.proposal.id }
+      : primaryMember.refs[0]!;
+    const primaryCandidate =
+      primaryRow?.proposal.merchantResolution?.status === "suggested"
+        ? primaryRow.proposal.merchantResolution.candidates[0]
+        : undefined;
     transactions.sort(
       (left, right) =>
         right.bookedAt.localeCompare(left.bookedAt) ||
@@ -325,6 +338,7 @@ export function clusterMerchantReviewProposals(
       transactions,
       explanation,
       primary,
+      primaryCandidate,
     });
   }
 

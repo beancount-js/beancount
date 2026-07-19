@@ -89,6 +89,7 @@
 
   const candidate = $derived(
     cluster.candidates.find((item) => item.id === selectedCandidateId) ??
+      cluster.primaryCandidate ??
       cluster.candidates[0],
   );
   const primaryStatus = $derived(cluster.statuses[0] ?? "unresolved");
@@ -502,7 +503,8 @@
                     {cluster.displayName}
                   </p>
                   <p class="truncate text-xs text-muted-foreground">
-                    {cluster.pendingCount} {readOnly ? "reviewed" : "pending"}
+                    {cluster.pendingCount}
+                    {readOnly ? "reviewed" : "pending"}
                     {#if cluster.domain}
                       · {cluster.domain}
                     {/if}
@@ -592,92 +594,92 @@
 
               {#if !readOnly}
                 <div class="mt-3 flex flex-wrap gap-2">
-                {#if primaryStatus === "suggested" && candidate}
-                  <Button
-                    size="sm"
-                    disabled={busy}
-                    onclick={() =>
-                      void updateMerchant("confirm", {
-                        candidateId: candidate.id,
-                        domain: correctionDomain.trim() || undefined,
-                        targetMerchantId: attachedMerchantId || undefined,
-                      })}>Confirm</Button
-                  >
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy}
-                    onclick={startCorrection}>Correct</Button
-                  >
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={busy}
-                    onclick={() => void updateMerchant("reject")}
-                    >Dismiss</Button
-                  >
-                {:else if primaryStatus === "suppressed"}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy}
-                    onclick={() => void updateMerchant("clear-suppression")}
-                    >Try again</Button
-                  >
-                {:else}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy}
-                    onclick={startCorrection}>Set merchant</Button
-                  >
-                {/if}
+                  {#if primaryStatus === "suggested" && candidate}
+                    <Button
+                      size="sm"
+                      disabled={busy}
+                      onclick={() =>
+                        void updateMerchant("confirm", {
+                          candidateId: candidate.id,
+                          domain: correctionDomain.trim() || undefined,
+                          targetMerchantId: attachedMerchantId || undefined,
+                        })}>Confirm</Button
+                    >
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onclick={startCorrection}>Correct</Button
+                    >
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onclick={() => void updateMerchant("reject")}
+                      >Dismiss</Button
+                    >
+                  {:else if primaryStatus === "suppressed"}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onclick={() => void updateMerchant("clear-suppression")}
+                      >Try again</Button
+                    >
+                  {:else}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onclick={startCorrection}>Set merchant</Button
+                    >
+                  {/if}
                 </div>
 
                 {#if correcting}
-                <div class="beancount-structured-form">
-                  <FormField
-                    label="Name"
-                    align="center"
-                    controlId="merchant-review-name"
-                  >
-                    <Input
-                      id="merchant-review-name"
-                      bind:value={correctionName}
-                      placeholder="Merchant name"
-                    />
-                  </FormField>
-                  <FormField
-                    label="Description"
-                    align="center"
-                    controlId="merchant-review-description"
-                  >
-                    <Input
-                      id="merchant-review-description"
-                      bind:value={correctionDescription}
-                      placeholder="Description"
-                    />
-                  </FormField>
-                </div>
-                <div class="mt-3 flex flex-wrap justify-end gap-2">
-                  <Button
-                    size="sm"
-                    disabled={busy || !correctionName.trim()}
-                    onclick={() =>
-                      void updateMerchant("correct", {
-                        canonicalName: correctionName,
-                        domain: correctionDomain || undefined,
-                        description: correctionDescription || undefined,
-                        targetMerchantId: attachedMerchantId || undefined,
-                      })}>Save merchant</Button
-                  >
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={busy}
-                    onclick={() => (correcting = false)}>Cancel</Button
-                  >
-                </div>
+                  <div class="beancount-structured-form">
+                    <FormField
+                      label="Name"
+                      align="center"
+                      controlId="merchant-review-name"
+                    >
+                      <Input
+                        id="merchant-review-name"
+                        bind:value={correctionName}
+                        placeholder="Merchant name"
+                      />
+                    </FormField>
+                    <FormField
+                      label="Description"
+                      align="center"
+                      controlId="merchant-review-description"
+                    >
+                      <Input
+                        id="merchant-review-description"
+                        bind:value={correctionDescription}
+                        placeholder="Description"
+                      />
+                    </FormField>
+                  </div>
+                  <div class="mt-3 flex flex-wrap justify-end gap-2">
+                    <Button
+                      size="sm"
+                      disabled={busy || !correctionName.trim()}
+                      onclick={() =>
+                        void updateMerchant("correct", {
+                          canonicalName: correctionName,
+                          domain: correctionDomain || undefined,
+                          description: correctionDescription || undefined,
+                          targetMerchantId: attachedMerchantId || undefined,
+                        })}>Save merchant</Button
+                    >
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onclick={() => (correcting = false)}>Cancel</Button
+                    >
+                  </div>
                 {/if}
               {/if}
             </div>
@@ -847,7 +849,8 @@
                             >{tx.bookedAt}</Table.Cell
                           >
                           <Table.Cell class="min-w-52 px-4 py-3">
-                            <span class="block truncate font-medium text-foreground"
+                            <span
+                              class="block truncate font-medium text-foreground"
                               >{matchingTransactionLabel(tx)}</span
                             >
                           </Table.Cell>

@@ -112,7 +112,61 @@ describe("merchant review clusters", () => {
       "tesco",
       "tesco stores",
     ]);
+    expect(clusters[0]!.primaryCandidate?.id).toBe("ai:tesco:tesco.com");
     expect(clusters[0]!.transactions).toHaveLength(3);
+  });
+
+  test("uses a suggested proposal as the representative for confirmation", () => {
+    const rows = [
+      {
+        runId: "run:1",
+        proposal: proposal({
+          id: "unresolved-primary",
+          merchantResolution: {
+            status: "unresolved",
+            rawLabel: "Cafe one",
+            explanation: "No match",
+          },
+        }),
+      },
+      {
+        runId: "run:1",
+        proposal: proposal({
+          id: "suggested-secondary",
+          transaction: {
+            sourceId: "lunchflow:7072",
+            sourceAccount: "Assets:Checking:Starling",
+            bookedAt: "2026-07-02",
+            amount: "-5.00",
+            currency: "GBP",
+            narration: "Cafe",
+            merchant: "Cafe two",
+            status: "posted",
+            fetchedAt: "2026-07-02T00:00:00.000Z",
+            metadata: {},
+          },
+          merchantResolution: {
+            status: "suggested",
+            rawLabel: "Cafe two",
+            candidates: [
+              {
+                id: "ai:cafe:cafe.example",
+                canonicalName: "Cafe",
+                domain: "cafe.example",
+                explanation: "Likely Cafe",
+                provenance: [],
+              },
+            ],
+            explanation: "Suggested",
+          },
+        }),
+      },
+    ];
+
+    const [cluster] = clusterMerchantReviewProposals(rows);
+    expect(cluster?.candidates).toHaveLength(1);
+    expect(cluster?.primary.proposalId).toBe("suggested-secondary");
+    expect(cluster?.primaryCandidate?.id).toBe("ai:cafe:cafe.example");
   });
 
   test("keeps unconfirmed merchants pending after transaction review", () => {
@@ -256,5 +310,78 @@ describe("applyMerchantResolutionToPendingProposals", () => {
     const accepted = next.find((p) => p.id === "accepted")!;
     expect(accepted.status).toBe("accepted");
     expect(accepted.merchantResolution?.status).toBe("confirmed");
+  });
+
+  test("confirms every label supplied by a merged merchant cluster", () => {
+    const confirmed = {
+      status: "confirmed" as const,
+      rawLabel: "TESCO STORES",
+      merchant: {
+        merchantId: "m1",
+        canonicalName: "Tesco",
+        aliases: [],
+        domain: "tesco.com",
+        provenance: [],
+      },
+      explanation: "Confirmed",
+    };
+    const runs: IngestionRun[] = [
+      {
+        id: "run:1",
+        sourceId: "lunchflow:7072",
+        startedAt: "2026-07-01T00:00:00.000Z",
+        completedAt: "2026-07-01T00:00:01.000Z",
+        cursor: undefined,
+        summary: {
+          total: 3,
+          ready: 0,
+          needsReview: 3,
+          accepted: 0,
+          duplicates: 0,
+          invalid: 0,
+          held: 0,
+          excluded: 0,
+        },
+        proposals: [
+          proposal({
+            id: "stores",
+            merchantResolution: {
+              status: "suggested",
+              rawLabel: "TESCO STORES",
+              candidates: [],
+              explanation: "Suggested",
+            },
+          }),
+          proposal({
+            id: "express",
+            merchantResolution: {
+              status: "unresolved",
+              rawLabel: "TESCO EXPRESS",
+              explanation: "No match",
+            },
+          }),
+          proposal({
+            id: "metro",
+            merchantResolution: {
+              status: "unresolved",
+              rawLabel: "TESCO METRO",
+              explanation: "No match",
+            },
+          }),
+        ],
+      },
+    ];
+
+    const result = applyMerchantResolutionToPendingProposals(
+      runs,
+      "lunchflow",
+      new Set(["tesco stores", "tesco express", "tesco metro"]),
+      confirmed,
+    );
+
+    expect(result.updatedCount).toBe(3);
+    expect(result.runs[0]!.proposals.every(isReviewedMerchantProposal)).toBe(
+      true,
+    );
   });
 });
