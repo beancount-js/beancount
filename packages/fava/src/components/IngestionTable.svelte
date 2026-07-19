@@ -1874,33 +1874,31 @@
                         >
                           {rowDetail(row.proposal)}
                         </div>
+                        <span
+                          class={`mt-2 inline-flex w-20 justify-center rounded-full px-2 py-0.5 text-xs font-medium ${rowStatusClass(
+                            row.proposal,
+                          )}`}
+                        >
+                          {ingestionProposalReviewLabel(row.proposal)}
+                        </span>
                       </div>
                       <div
                         class="col-span-2 col-start-2 flex min-w-0 flex-col gap-1 text-right sm:col-span-1 sm:col-start-4 sm:row-start-1"
                       >
-                        <div class="flex items-center justify-end gap-1">
-                          {#if reviewFilter === "accepted"}
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              class="size-8 text-muted-foreground"
-                              aria-label={`Move ${rowTitle(row.proposal)} to review`}
-                              title="Move to review"
-                              disabled={loading || bulkUpdating || syncing}
-                              onclick={(event) => void unacceptRow(row, event)}
-                            >
-                              <Undo2 data-icon />
-                            </Button>
-                          {/if}
-                          <span
-                            class={`inline-flex w-20 justify-center rounded-full px-2 py-0.5 text-xs font-medium ${rowStatusClass(
-                              row.proposal,
-                            )}`}
+                        {#if reviewFilter === "accepted"}
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            class="ml-auto size-8 text-muted-foreground"
+                            aria-label={`Move ${rowTitle(row.proposal)} to review`}
+                            title="Move to review"
+                            disabled={loading || bulkUpdating || syncing}
+                            onclick={(event) => void unacceptRow(row, event)}
                           >
-                            {ingestionProposalReviewLabel(row.proposal)}
-                          </span>
-                        </div>
+                            <Undo2 data-icon />
+                          </Button>
+                        {/if}
                         {#if postings.length}
                           {#each postings as posting}
                             <div
