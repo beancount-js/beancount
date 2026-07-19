@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "A model-driven ledger activity surface. It owns visual grouping, disclosure, selection, compact two-or-three-option timeframe controls, merchant marks, balance summaries, and record actions while the application supplies ledger-derived data and routing callbacks. Use this instead of rebuilding a journal-like list in a route.",
+            "A model-driven ledger activity surface. It owns visual grouping, disclosure, selection, compact two-or-three-option timeframe controls, record identity, multi-posting breakdowns, balance summaries, and record actions while the application supplies ledger-derived data and routing callbacks. Use this instead of rebuilding a journal-like list in a route.",
         },
       },
     },
@@ -38,12 +38,25 @@
               "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' rx='8' fill='%234f46e5'/%3E%3Ctext x='20' y='26' text-anchor='middle' fill='white' font-family='sans-serif' font-size='20'%3EG%3C/text%3E%3C/svg%3E",
             alt: "Groceries merchant mark",
           },
+          postings: [
+            {
+              account: "Expenses:Groceries",
+              amount: "£42.17",
+              href: "/account/Expenses:Groceries",
+            },
+            { account: "Assets:Cash", amount: "−£42.17" },
+          ],
         },
         {
           id: "salary",
           description: "Salary",
           account: "Income:Salary",
           amount: "+£3,200.00",
+          avatar: { fallback: "S" },
+          postings: [
+            { account: "Assets:Cash", amount: "+£3,200.00" },
+            { account: "Income:Salary", amount: "−£3,200.00" },
+          ],
         },
       ],
     },

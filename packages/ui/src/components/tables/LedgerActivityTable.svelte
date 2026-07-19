@@ -2,11 +2,27 @@
   import { untrack } from "svelte";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronRight from "lucide-svelte/icons/chevron-right";
+  import FileText from "lucide-svelte/icons/file-text";
   import SegmentedControl from "../forms/SegmentedControl.svelte";
+
+  export type LedgerActivityAvatar = {
+    imageUrl?: string;
+    /** Describe a meaningful image; omit for a decorative brand mark. */
+    alt?: string;
+    /** Visible fallback, typically a merchant or record initial. */
+    fallback?: string;
+  };
 
   export type LedgerActivityMerchant = {
     imageUrl: string;
     alt: string;
+  };
+
+  export type LedgerActivityPosting = {
+    id?: string;
+    account: string;
+    amount?: string;
+    href?: string;
   };
 
   export type LedgerActivityRecord = {
@@ -15,6 +31,11 @@
     account?: string;
     amount: string;
     balance?: string;
+    /** Generic record identity. Prefer this to the legacy `merchant` field. */
+    avatar?: LedgerActivityAvatar;
+    /** A display-ready posting breakdown for transaction-style activity. */
+    postings?: readonly LedgerActivityPosting[];
+    /** @deprecated Use `avatar` for new display models. */
     merchant?: LedgerActivityMerchant;
     /** Secondary text, such as transaction narration or posting detail. */
     detail?: string;
@@ -129,6 +150,10 @@
         node.indeterminate = next;
       },
     };
+  }
+
+  function avatarFor(record: LedgerActivityRecord): LedgerActivityAvatar {
+    return record.avatar ?? record.merchant ?? {};
   }
 </script>
 
@@ -293,9 +318,37 @@
                           {@render ActivityRecord(record)}
                         </div>
                       {/if}
-                      <div class="text-right font-mono text-sm tabular-nums">
-                        {record.amount}
-                      </div>
+                      {#if record.postings?.length}
+                        <div class="flex min-w-0 flex-col gap-1 text-right">
+                          {#each record.postings as posting, index (`${record.id}-${posting.id ?? posting.account}-${index}`)}
+                            <div
+                              class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3"
+                            >
+                              {#if posting.href}
+                                <a
+                                  href={posting.href}
+                                  class="truncate text-left text-xs text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  >{posting.account}</a
+                                >
+                              {:else}
+                                <span
+                                  class="truncate text-left text-xs text-muted-foreground"
+                                  title={posting.account}
+                                  >{posting.account}</span
+                                >
+                              {/if}
+                              <span
+                                class="font-mono text-sm font-semibold tabular-nums"
+                                >{posting.amount ?? "—"}</span
+                              >
+                            </div>
+                          {/each}
+                        </div>
+                      {:else}
+                        <div class="text-right font-mono text-sm tabular-nums">
+                          {record.amount}
+                        </div>
+                      {/if}
                     </li>
                   {/each}
                 </ul>
@@ -313,13 +366,25 @@
 </section>
 
 {#snippet ActivityRecord(record: LedgerActivityRecord, interactive = false)}
+  {@const avatar = avatarFor(record)}
   <span class="flex min-w-0 items-start gap-2">
-    {#if record.merchant}
+    {#if avatar.imageUrl}
       <img
-        src={record.merchant.imageUrl}
-        alt={record.merchant.alt}
-        class="mt-0.5 size-5 shrink-0 rounded-sm border border-border/70 object-contain"
+        src={avatar.imageUrl}
+        alt={avatar.alt ?? ""}
+        class="mt-0.5 size-10 shrink-0 rounded-full border border-border/70 object-contain"
       />
+    {:else}
+      <span
+        class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full border border-border/70 bg-muted text-sm font-semibold text-muted-foreground"
+        aria-hidden="true"
+      >
+        {#if avatar.fallback}
+          {avatar.fallback.slice(0, 1).toUpperCase()}
+        {:else}
+          <FileText class="size-4" />
+        {/if}
+      </span>
     {/if}
     <span class="min-w-0">
       <span
