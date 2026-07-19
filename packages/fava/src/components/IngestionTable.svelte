@@ -2,6 +2,7 @@
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
   import type { IngestionSyncJob } from "@beancount-js/server";
+  import { Amount } from "@beancount-js/beancount";
   import type { ProjectSnapshot } from "@beancount-js/workspace";
   import {
     FilterCommandPicker,
@@ -18,6 +19,7 @@
   import Link2 from "lucide-svelte/icons/link-2";
   import Undo2 from "lucide-svelte/icons/undo-2";
   import { useStudioWorkspace } from "../studio/workspace";
+  import { useContext } from "../context";
   import { ledgerStemForPath } from "../lib/ledger-route";
   import { setStudioRouteEnv } from "../lib/studio-route-env";
   import {
@@ -69,9 +71,11 @@
   import IngestionReconciliationPanel from "./IngestionReconciliationPanel.svelte";
   import ReviewImportsSkeleton from "./skeletons/ReviewImportsSkeleton.svelte";
   import AccountLink from "./AccountLink.svelte";
+  import { useCtx } from "../stores/format";
 
   const PAGE_SIZES = [25, 50, 100];
   const ALL_CONNECTIONS = "__all__";
+  const REVIEW_UNCATEGORISED_ACCOUNT = "Review:Uncategorised";
   const SORT_CYCLE: Record<SortOrder, SortOrder> = {
     none: "asc",
     asc: "desc",
@@ -96,6 +100,8 @@
 
   const { activeFile, refreshReviewLedger, reviewLedger, snapshot } =
     useStudioWorkspace();
+  const { ledgerOptions } = useContext();
+  const ctx = useCtx();
   const { activeRoute, router } = useNavigation();
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
 
@@ -999,16 +1005,20 @@
     );
   }
 
-  function rowAccount(proposal: ImportProposal) {
-    return proposal.selectedAccount ?? proposal.suggestions[0]?.account;
-  }
-
   function rowDetail(proposal: ImportProposal) {
-    const category =
-      rowAccount(proposal) ?? proposal.issues[0] ?? "Uncategorized";
-    const aiError =
-      proposal.lastAiEnrichment?.ok === false ? " · AI error" : "";
-    return `${category}${aiError}`;
+    const transaction = proposal.transaction;
+    if (!transaction) return proposal.issues[0] ?? "Import proposal";
+    const detail = [
+      transaction.payee,
+      transaction.merchant,
+      transaction.narration,
+    ]
+      .filter(
+        (value, index, values) =>
+          Boolean(value) && values.indexOf(value) === index,
+      )
+      .join(" · ");
+    return detail || proposal.issues[0] || "Import proposal";
   }
 
   function rowStatusClass(proposal: ImportProposal) {
@@ -1027,6 +1037,28 @@
   function rowAmount(proposal: ImportProposal) {
     const tx = proposal.transaction;
     return tx ? `${tx.amount} ${tx.currency}` : "—";
+  }
+
+  function reviewOffsetAccount() {
+    return `${$ledgerOptions.beancount.name_equity}:${REVIEW_UNCATEGORISED_ACCOUNT}`;
+  }
+
+  function rowPostings(proposal: ImportProposal) {
+    const transaction = proposal.transaction;
+    if (!transaction) return [];
+    return [
+      {
+        account: transaction.sourceAccount,
+        amount: new Amount(transaction.amount, transaction.currency),
+      },
+      {
+        account: proposal.selectedAccount ?? reviewOffsetAccount(),
+        amount: new Amount(
+          new Decimal(transaction.amount).neg().toString(),
+          transaction.currency,
+        ),
+      },
+    ];
   }
 
   function rowInitial(proposal: ImportProposal) {
@@ -1701,12 +1733,12 @@
                 >
                   {#each group.rows as row, index (row.key)}
                     {@const logo = merchantLogo(row.proposal)}
-                    {@const account = rowAccount(row.proposal)}
+                    {@const postings = rowPostings(row.proposal)}
                     <div
                       role="button"
                       tabindex="0"
                       class:rounded-b-xl={index === group.rows.length - 1}
-                      class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_7.5rem]"
+                      class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)]"
                       aria-label={`Review ${rowTitle(row.proposal)}`}
                       onclick={() => openRow(row)}
                       onkeydown={(event) => handleRowKeydown(event, row)}
@@ -1727,47 +1759,35 @@
                             (event.currentTarget as HTMLInputElement).checked,
                           )}
                       />
-                      <div class="min-w-0">
-                        <div class="flex min-w-0 items-center gap-2">
-                          {#if logo && !failedLogoIds.has(row.proposal.id)}
-                            <img
-                              class="size-7 shrink-0 rounded-full border object-contain"
-                              src={logo}
-                              alt=""
-                              onerror={() => markLogoFailed(row.proposal.id)}
-                            />
-                          {:else}
-                            <div
-                              class="flex size-7 shrink-0 items-center justify-center rounded-full border bg-muted text-xs font-semibold text-muted-foreground"
-                              aria-hidden="true"
-                            >
-                              {rowInitial(row.proposal)}
-                            </div>
-                          {/if}
-                          <div
-                            class="break-words text-sm font-semibold sm:truncate"
-                          >
-                            {rowTitle(row.proposal)}
-                          </div>
+                      {#if logo && !failedLogoIds.has(row.proposal.id)}
+                        <img
+                          class="size-10 shrink-0 rounded-full border object-contain"
+                          src={logo}
+                          alt=""
+                          onerror={() => markLogoFailed(row.proposal.id)}
+                        />
+                      {:else}
+                        <div
+                          class="flex size-10 shrink-0 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                          aria-hidden="true"
+                        >
+                          {rowInitial(row.proposal)}
                         </div>
-                        <div class="mt-1 text-xs text-muted-foreground">
-                          {#if account}
-                            <AccountLink
-                              {account}
-                              avatarSize="sm"
-                              on:click={(event) => event.stopPropagation()}
-                              on:keydown={(event) => event.stopPropagation()}
-                            />
-                            {#if row.proposal.lastAiEnrichment?.ok === false}
-                              <span> · AI error</span>
-                            {/if}
-                          {:else}
-                            {rowDetail(row.proposal)}
-                          {/if}
+                      {/if}
+                      <div class="min-w-0">
+                        <div
+                          class="break-words text-sm font-semibold sm:truncate"
+                        >
+                          {rowTitle(row.proposal)}
+                        </div>
+                        <div
+                          class="mt-1 truncate text-xs text-muted-foreground"
+                        >
+                          {rowDetail(row.proposal)}
                         </div>
                       </div>
                       <div
-                        class="col-start-2 flex flex-col items-end gap-1.5 sm:col-start-3 sm:row-start-1"
+                        class="col-span-2 col-start-2 flex min-w-0 flex-col gap-1 text-right sm:col-span-1 sm:col-start-4 sm:row-start-1"
                       >
                         <div class="flex items-center justify-end gap-1">
                           {#if reviewFilter === "accepted"}
@@ -1792,9 +1812,33 @@
                             {ingestionProposalReviewLabel(row.proposal)}
                           </span>
                         </div>
-                        <span class="text-sm font-semibold tabular-nums">
-                          {rowAmount(row.proposal)}
-                        </span>
+                        {#if postings.length}
+                          {#each postings as posting}
+                            <div
+                              class="grid min-w-0 grid-cols-[minmax(0,1fr)_8rem] items-center gap-3"
+                            >
+                              <span class="block min-w-0 text-left text-xs">
+                                <AccountLink
+                                  account={posting.account}
+                                  avatarSize="sm"
+                                  on:click={(event) => event.stopPropagation()}
+                                  on:keydown={(event) =>
+                                    event.stopPropagation()}
+                                />
+                              </span>
+                              <span class="text-sm font-semibold tabular-nums">
+                                {$ctx.money(
+                                  posting.amount,
+                                  posting.amount.currency ?? undefined,
+                                )}
+                              </span>
+                            </div>
+                          {/each}
+                        {:else}
+                          <span class="text-sm font-semibold tabular-nums">
+                            {rowAmount(row.proposal)}
+                          </span>
+                        {/if}
                       </div>
                     </div>
                   {/each}
