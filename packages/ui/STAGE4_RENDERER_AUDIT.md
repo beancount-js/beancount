@@ -50,11 +50,11 @@ independent UI copy yet. They are not allowed to become new cross-app
 primitives in place; first extract a model-driven UI component, then migrate
 the Fava adapter in a separate change.
 
-- Chart rendering: Fava's `Chart` adapter. The UI-owned `LineChart`,
-  `ScatterPlot`, `BarChart`, `HierarchyChart`, `FinancialDashboard`,
-  `DashboardDonut`, `DashboardLine`, `DashboardFlow`, and
-  `DashboardTreeTable` accept display models; keep the Fava adapter responsible
-  for data selection, formatting, and routes until consumer migration.
+- Chart rendering: `ChartPanel` plus the UI-owned `LineChart`, `ScatterPlot`,
+  `BarChart`, `HierarchyChart`, `FinancialDashboard`, `DashboardDonut`,
+  `DashboardLine`, `DashboardFlow`, and `DashboardTreeTable` accept display
+  models. Fava's `Chart` adapter remains responsible for data selection,
+  formatting, conversion, interval, and routes until consumer migration.
 - Review and import surfaces: `ImportTable`. The UI-owned
   `IngestionReviewTable` covers grouped queue presentation, selection, and row
   callbacks, while `ImportMappingTable` covers controlled account mapping. Fava
