@@ -62,10 +62,10 @@
       const merchantDomain = merchant.domain;
       items.push({
         value: merchant.merchantId,
-        label: merchantDomain ? `${name} · ${merchantDomain}` : name,
-        description: [merchant.description, merchantDomain]
+        label: name,
+        description: [merchantDomain, merchant.description]
           .filter(Boolean)
-          .join(" · "),
+          .join("\n"),
         imageUrl: merchant.logoUrl,
         keywords: [
           name,
@@ -171,6 +171,7 @@
     emptyLabel={merchants.length
       ? "No matching merchants."
       : "No saved merchants yet."}
+    stackedOptions
     value={attachedMerchantId}
     {options}
     onChange={handleChange}
