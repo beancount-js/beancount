@@ -4,10 +4,6 @@ const config: StorybookConfig = {
   stories: [
     "../../ui/src/**/*.mdx",
     "../../ui/src/**/*.stories.@(js|jsx|ts|tsx|svelte)",
-    // Fava stories remain available only while they have no independent UI
-    // copy. The explicit list makes a copied component's UI source canonical
-    // in Storybook without modifying the original application source.
-    "../../fava/src/components/FavaNavigation.stories.@(js|jsx|ts|tsx|svelte)",
   ],
   addons: [
     "@storybook/addon-docs",

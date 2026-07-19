@@ -13,6 +13,7 @@ route, server API, ledger object, or formatter context.
 | shared forms and editors    | `src/components/forms`                                                        | Fava continues to import `@beancount-js/forms` until the forms migration.                                                       |
 | app frame and navigation    | `AppShell.svelte`, `layout/*`, `navigation/*`                                 | Studio-specific project, router, and storage behaviour stays in Fava adapters.                                                  |
 | workspace tree navigation   | `navigation/WorkspaceTreeNavigation.svelte`                                   | Fava maps tree items; the application retains filtering, routes, and storage.                                                   |
+| ledger workspace navigation | `navigation/LedgerWorkspaceNavigation.svelte`                                 | Fava maps ledgers, folders, tags, picker options, routes, and persisted expansion/filter state into its display model.          |
 | Studio shell header         | `layout/StudioShellHeader.svelte`                                             | Fava continues to bind workspace settings and responsive sidebar state.                                                         |
 | project switcher            | `navigation/ProjectSwitcher.svelte`                                           | Fava continues to discover projects, open folders, persist the project list, and route selection.                               |
 | sidebar resize rail         | `layout/ResizableSidebar.svelte`                                              | Fava continues to persist the selected width and compose sidebar content.                                                       |
@@ -62,10 +63,11 @@ the Fava adapter in a separate change.
   pagination, review sheets, and mutation APIs. `AccountBulkActionSheet`'s Fava
   adapter still owns patch calculation, confirmation, and saves.
 - Workspace adapters: `StudioWorkspaceShell`, `AppShell`,
-  `StudioShellHeader`, and `WorkspaceTreeNavigation` are UI-owned.
-  Fava's `StudioShell` and `FavaNavigation` retain project selection,
-  ledger/tag filtering, navigation mode selection, routing, local storage,
-  responsive sidebar state, picker data, and server actions.
+  `StudioShellHeader`, `WorkspaceTreeNavigation`, and
+  `LedgerWorkspaceNavigation` are UI-owned. Fava's `StudioShell` and
+  `FavaNavigation` retain project selection, ledger/tag filtering, route
+  selection, local storage, responsive sidebar state, picker data, and server
+  actions until consumer migration.
 - Domain adapters: Fava's `JournalTable` composes the UI-owned
   `LedgerActivityTable` and `AccountBulkActionSheet`; it retains ledger data,
   balance derivation, workspace-header wiring, patches, and saves. `QueryTable`,

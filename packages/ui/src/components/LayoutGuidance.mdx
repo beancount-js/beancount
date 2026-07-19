@@ -21,6 +21,8 @@ For a user-resizable desktop rail, use <a href="?path=/docs/layout-resizable-sid
 ## Navigation
 
 - Use <a href="?path=/docs/navigation-sidebar-navigation--docs">Sidebar Navigation</a> for the visual navigation list. Keep routing outside it: pass controlled `activeHref` state and update it from `onNavigate`.
+- Use <a href="?path=/docs/navigation-workspace-tree-navigation--docs">Workspace Tree Navigation</a> for a controlled nested file, folder, tag, or page tree. Applications supply display-ready items and retain their route, filtering, and persisted expansion state.
+- Use <a href="?path=/docs/navigation-ledger-workspace-navigation--docs">Ledger Workspace Navigation</a> when those trees form a multi-ledger sidebar. It provides the shared ledger/folder/tag modes, search, tag chips, disclosure controls, and optional picker/tool layout; application adapters own the domain transforms and callbacks.
 - Use <a href="?path=/docs/navigation-cycle-select--docs">Cycle Select</a> only for a small ordered set that benefits from previous/next actions. For ordinary searchable choices, use <a href="?path=/docs/ui-forms-filter-command-picker--docs">Filter Command Picker</a> instead.
 - Use <a href="?path=/docs/navigation-page-pagination--docs">Page Pagination</a> for paged collections. The parent owns the page state and should expose the current result state near the control.
 
