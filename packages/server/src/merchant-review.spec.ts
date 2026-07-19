@@ -34,7 +34,7 @@ function proposal(
 }
 
 describe("merchant review clusters", () => {
-  test("groups by domain then primary token and skips accepted rows", () => {
+  test("groups every unconfirmed merchant by domain then primary token", () => {
     const rows = [
       {
         runId: "run:1",
@@ -103,23 +103,19 @@ describe("merchant review clusters", () => {
       },
     ];
 
-    expect(needsMerchantReview(rows[2]!.proposal)).toBe(false);
+    expect(needsMerchantReview(rows[2]!.proposal)).toBe(true);
     const clusters = clusterMerchantReviewProposals(rows);
     expect(clusters).toHaveLength(1);
     expect(clusters[0]!.domain).toBe("tesco.com");
-    expect(clusters[0]!.pendingCount).toBe(2);
+    expect(clusters[0]!.pendingCount).toBe(3);
     expect(clusters[0]!.members.map((m) => m.normalizedLabel).sort()).toEqual([
       "tesco",
       "tesco stores",
     ]);
-    expect(clusters[0]!.transactions).toHaveLength(2);
-    expect(clusters[0]!.transactions.map((tx) => tx.bookedAt)).toEqual([
-      "2026-07-02",
-      "2026-07-01",
-    ]);
+    expect(clusters[0]!.transactions).toHaveLength(3);
   });
 
-  test("groups reviewed and accepted merchants separately from pending review", () => {
+  test("keeps unconfirmed merchants pending after transaction review", () => {
     const rows = [
       {
         runId: "run:1",
@@ -143,8 +139,7 @@ describe("merchant review clusters", () => {
         runId: "run:1",
         proposal: proposal({
           id: "accepted",
-          status: "ready",
-          selectedAccount: "Expenses:Groceries",
+          status: "accepted",
           merchantResolution: {
             status: "suggested",
             rawLabel: "TESCO EXPRESS",
@@ -167,21 +162,21 @@ describe("merchant review clusters", () => {
     ];
 
     expect(isReviewedMerchantProposal(rows[0]!.proposal)).toBe(true);
-    expect(isReviewedMerchantProposal(rows[1]!.proposal)).toBe(true);
+    expect(isReviewedMerchantProposal(rows[1]!.proposal)).toBe(false);
     expect(isReviewedMerchantProposal(rows[2]!.proposal)).toBe(false);
-    expect(clusterMerchantReviewProposals(rows)).toHaveLength(1);
+    const pending = clusterMerchantReviewProposals(rows);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]!.pendingCount).toBe(2);
 
     const reviewed = clusterMerchantReviewProposals(rows, "reviewed");
     expect(reviewed).toHaveLength(1);
-    expect(reviewed[0]!.pendingCount).toBe(2);
-    expect(reviewed[0]!.statuses).toEqual(
-      expect.arrayContaining(["confirmed", "suggested"]),
-    );
+    expect(reviewed[0]!.pendingCount).toBe(1);
+    expect(reviewed[0]!.statuses).toEqual(["confirmed"]);
   });
 });
 
 describe("applyMerchantResolutionToPendingProposals", () => {
-  test("updates pending matches and leaves accepted rows unchanged", () => {
+  test("updates matching merchants without changing transaction acceptance", () => {
     const confirmed = {
       status: "confirmed" as const,
       rawLabel: "TESCO STORES",
@@ -231,8 +226,7 @@ describe("applyMerchantResolutionToPendingProposals", () => {
           }),
           proposal({
             id: "accepted",
-            status: "ready",
-            selectedAccount: "Expenses:Groceries",
+            status: "accepted",
             merchantResolution: {
               status: "suggested",
               rawLabel: "TESCO STORES",
@@ -251,7 +245,7 @@ describe("applyMerchantResolutionToPendingProposals", () => {
       confirmed,
     );
 
-    expect(result.updatedCount).toBe(2);
+    expect(result.updatedCount).toBe(3);
     const next = result.runs[0]!.proposals;
     expect(next.find((p) => p.id === "pending-a")?.merchantResolution).toEqual(
       confirmed,
@@ -260,8 +254,7 @@ describe("applyMerchantResolutionToPendingProposals", () => {
       next.find((p) => p.id === "pending-b")?.merchantResolution?.status,
     ).toBe("confirmed");
     const accepted = next.find((p) => p.id === "accepted")!;
-    expect(accepted.status).toBe("ready");
-    expect(accepted.selectedAccount).toBe("Expenses:Groceries");
-    expect(accepted.merchantResolution?.status).toBe("suggested");
+    expect(accepted.status).toBe("accepted");
+    expect(accepted.merchantResolution?.status).toBe("confirmed");
   });
 });

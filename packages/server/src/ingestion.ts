@@ -2813,7 +2813,8 @@ async function enrichProposalsWithPrepared(
     if (
       proposal.status !== "ready" &&
       proposal.status !== "needs-review" &&
-      proposal.status !== "held"
+      proposal.status !== "held" &&
+      !(options?.merchantOnly && proposal.status === "accepted")
     ) {
       throw new Error("This proposal cannot be enriched.");
     }

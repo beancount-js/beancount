@@ -111,8 +111,7 @@ export async function PATCH({
     if (
       !proposal.transaction ||
       proposal.status === "duplicate" ||
-      proposal.status === "invalid" ||
-      proposal.status === "accepted"
+      proposal.status === "invalid"
     )
       return json(
         { error: "This proposal cannot be updated." },
@@ -204,7 +203,6 @@ export async function PATCH({
           action === "correct",
       },
     );
-    // Ensure the primary proposal is included even if it was UI-accepted.
     const runs = fanOut.runs.map((item) => {
       if (item.id !== params.runId) return item;
       return {

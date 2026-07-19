@@ -89,27 +89,15 @@ export function isUiAcceptedProposal(proposal: ImportProposal) {
 
 export function needsMerchantReview(proposal: ImportProposal) {
   if (!proposal.transaction) return false;
-  if (
-    proposal.status === "duplicate" ||
-    proposal.status === "invalid" ||
-    proposal.status === "accepted"
-  ) {
+  if (proposal.status === "duplicate" || proposal.status === "invalid") {
     return false;
   }
-  if (isUiAcceptedProposal(proposal)) return false;
-  const status = proposal.merchantResolution?.status;
-  return (
-    status === "suggested" ||
-    status === "unresolved" ||
-    status === "suppressed" ||
-    status === undefined
-  );
+  return proposal.merchantResolution?.status !== "confirmed";
 }
 
 /**
- * Merchant-bearing proposals that have already progressed beyond merchant
- * review. This includes confirmed merchants and proposal rows accepted in the
- * import review, while excluding duplicates and invalid imports.
+ * Merchant-bearing proposals whose merchant has been confirmed. Transaction
+ * acceptance and account selection do not resolve the merchant itself.
  */
 export function isReviewedMerchantProposal(proposal: ImportProposal) {
   if (!proposal.transaction) return false;
@@ -375,9 +363,8 @@ function stripMerchantIssues(issues: readonly string[]) {
 }
 
 /**
- * Apply a merchant resolution to pending (non-accepted) proposals that share
- * the given normalized labels. Does not change status / selectedAccount /
- * suggestions.
+ * Apply a merchant resolution to unconfirmed proposals that share the given
+ * normalized labels. Does not change status / selectedAccount / suggestions.
  */
 export function applyMerchantResolutionToPendingProposals(
   runs: readonly IngestionRun[],
@@ -397,14 +384,9 @@ export function applyMerchantResolutionToPendingProposals(
     let changed = false;
     const proposals = run.proposals.map((proposal) => {
       if (!proposal.transaction) return proposal;
-      if (
-        proposal.status === "duplicate" ||
-        proposal.status === "invalid" ||
-        proposal.status === "accepted"
-      ) {
+      if (proposal.status === "duplicate" || proposal.status === "invalid") {
         return proposal;
       }
-      if (isUiAcceptedProposal(proposal)) return proposal;
       const label = rawMerchantLabel(proposal);
       if (!label) return proposal;
       if (!normalizedLabels.has(normalizeMerchant(label))) return proposal;
