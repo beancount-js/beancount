@@ -29,6 +29,7 @@ route, server API, ledger object, or formatter context.
 | grouped and stacked bars  | `charts/BarChart.svelte`                                                      | Fava continues to derive interval, budget, account-stack, and route data.             |
 | allocation hierarchy      | `charts/HierarchyChart.svelte`                                                | Fava continues to select currencies and own account navigation routes.                |
 | dashboard card disclosure | `dashboard/DashboardSection.svelte`                                           | Fava continues to compose dashboard sections and persist dashboard state.             |
+| dashboard category donut  | `dashboard/DashboardDonut.svelte`                                             | Fava continues to derive categories, format values, and own category navigation.      |
 
 ## Application adapters still to extract
 

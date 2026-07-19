@@ -14,7 +14,8 @@
   --muted-foreground: oklch(50% 0.05 295);
   --accent: oklch(96.5% 0.015 295);
   --accent-foreground: oklch(20% 0.05 295);
-  --destructive: oklch(57.7% 0.245 27.325);
+  /* Meets 4.5:1 against the translucent destructive status surfaces. */
+  --destructive: oklch(50% 0.2 27.325);
   --destructive-foreground: oklch(99% 0.005 295);
   --success: oklch(49% 0.13 160);
   --success-foreground: oklch(47% 0.13 160);
