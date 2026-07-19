@@ -49,6 +49,7 @@ export default defineConfig({
       "lucide-svelte/icons/chevron-right",
       "lucide-svelte/icons/chevron-up",
       "lucide-svelte/icons/circle",
+      "lucide-svelte/icons/circle-alert",
       "lucide-svelte/icons/clipboard-list",
       "lucide-svelte/icons/database-zap",
       "lucide-svelte/icons/ellipsis",
