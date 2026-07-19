@@ -7,7 +7,7 @@ const config: StorybookConfig = {
     // Fava stories remain available only while they have no independent UI
     // copy. The explicit list makes a copied component's UI source canonical
     // in Storybook without modifying the original application source.
-    "../../fava/src/charts/**/*.stories.@(js|jsx|ts|tsx|svelte)",
+    "../../fava/src/charts/Chart.stories.@(js|jsx|ts|tsx|svelte)",
     "../../fava/src/components/{AccountBulkActionSheet,ActivityTable,ComboBox,FavaNavigation,FinancialDashboard,ImportTable,IngestionTable,JournalTable,MerchantPicker,QueryTable,StudioShell,StudioShellHeader}.stories.@(js|jsx|ts|tsx|svelte)",
     "../../fava/src/components/{dashboard,errors,form,tree-table}/**/*.stories.@(js|jsx|ts|tsx|svelte)",
   ],

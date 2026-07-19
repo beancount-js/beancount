@@ -73,6 +73,7 @@
     "./navigation/*.svelte": "./src/components/navigation/*.svelte",
     "./tables/*.svelte": "./src/components/tables/*.svelte",
     "./feedback/*.svelte": "./src/components/feedback/*.svelte",
+    "./charts/*.svelte": "./src/components/charts/*.svelte",
     "./forms": "./src/components/forms/index.ts",
     "./forms/core": "./src/components/forms/core.ts",
     "./forms/components/*.svelte": "./src/components/forms/*.svelte",
