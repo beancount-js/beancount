@@ -132,7 +132,7 @@
       {#each stacks as [currency, account_stacks]}
         {#each account_stacks as stack}
           {@const account = stack.key}
-          <a href={urlForAccount(account)}>
+          <a href={urlForAccount(account)} aria-label={`Open ${account}`}>
             <g
               class="category"
               class:faded={highlighted != null && account !== highlighted}
@@ -148,7 +148,7 @@
               on:blur={() => {
                 highlighted = null;
               }}
-              role="img"
+              aria-hidden="true"
             >
               {#each stack as bar}
                 <rect
@@ -163,7 +163,7 @@
                 />
               {/each}
             </g>
-          </a>v
+          </a>
         {/each}
       {/each}
     {/if}
