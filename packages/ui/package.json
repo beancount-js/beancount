@@ -74,6 +74,7 @@
     "./tables/*.svelte": "./src/components/tables/*.svelte",
     "./feedback/*.svelte": "./src/components/feedback/*.svelte",
     "./charts/*.svelte": "./src/components/charts/*.svelte",
+    "./dashboard/*.svelte": "./src/components/dashboard/*.svelte",
     "./forms": "./src/components/forms/index.ts",
     "./forms/core": "./src/components/forms/core.ts",
     "./forms/components/*.svelte": "./src/components/forms/*.svelte",
