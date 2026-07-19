@@ -3,7 +3,6 @@
     FilterCommandPicker,
     type FilterCommandOption,
   } from "@beancount-js/forms";
-  import { SvelteSet } from "svelte/reactivity";
   import type { Snippet } from "svelte";
   import type { Icon as IconType } from "lucide-svelte";
 
@@ -45,9 +44,12 @@
     onValueChange = () => {},
   }: ComboProps = $props();
 
-  const pickerOptions = $derived.by(() => {
+  let pickerOptions = $state<FilterCommandOption[]>([]);
+  let pickerValue = $state("all");
+
+  $effect(() => {
     const values: FilterCommandOption[] = [];
-    const seen = new SvelteSet<string>();
+    const seen = new Set<string>();
 
     values.push({ value: "all", label: placeholder });
     seen.add("all");
@@ -75,12 +77,9 @@
       values.push({ label: selected, value: selected });
     }
 
-    return values;
+    pickerOptions = values;
+    pickerValue = selected && selected !== "all" ? selected : "all";
   });
-
-  const pickerValue = $derived(
-    selected && selected !== "all" ? selected : "all",
-  );
 </script>
 
 <div class={["bj-combo-box", klass].filter(Boolean).join(" ")}>
