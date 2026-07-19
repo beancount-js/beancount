@@ -16,6 +16,8 @@
     "verbatimModuleSyntax": true,
     "paths": {
       "$lib/*": ["../fava/src/lib/*"],
+      "$app/navigation": ["./.storybook/sveltekit-navigation.ts"],
+      "$app/stores": ["./.storybook/sveltekit-stores.ts"],
       "storybook/test": ["./node_modules/storybook/dist/test/index.d.ts"]
     }
   },

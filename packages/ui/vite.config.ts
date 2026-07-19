@@ -4,6 +4,15 @@ import { fileURLToPath, URL } from "node:url";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const favaLib = fileURLToPath(new URL("../fava/src/lib", import.meta.url));
+const beancountSource = fileURLToPath(
+  new URL("../beancount/src/index.ts", import.meta.url),
+);
+const svelteKitNavigation = fileURLToPath(
+  new URL("./.storybook/sveltekit-navigation.ts", import.meta.url),
+);
+const svelteKitStores = fileURLToPath(
+  new URL("./.storybook/sveltekit-stores.ts", import.meta.url),
+);
 const storybookTest = fileURLToPath(
   new URL("./node_modules/storybook/dist/test/index.js", import.meta.url),
 );
@@ -44,6 +53,13 @@ export default defineConfig({
   resolve: {
     alias: {
       $lib: favaLib,
+      // Catalog Fava's Beancount source rather than its package distribution,
+      // which cannot resolve its internal source modules in Vite.
+      "@beancount-js/beancount": beancountSource,
+      // Fava owns its real SvelteKit router. These compatibility modules let
+      // its in-memory navigation render in the isolated Storybook preview.
+      "$app/navigation": svelteKitNavigation,
+      "$app/stores": svelteKitStores,
       // Colocated Stories under `packages/forms` resolve test helpers from the
       // catalog package, which owns the Storybook runtime.
       "storybook/test": storybookTest,
