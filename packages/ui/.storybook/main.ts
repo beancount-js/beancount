@@ -9,7 +9,6 @@ const config: StorybookConfig = {
     // in Storybook without modifying the original application source.
     "../../fava/src/charts/Chart.stories.@(js|jsx|ts|tsx|svelte)",
     "../../fava/src/components/{FavaNavigation,FinancialDashboard,JournalTable,QueryTable,StudioShell}.stories.@(js|jsx|ts|tsx|svelte)",
-    "../../fava/src/components/errors/**/*.stories.@(js|jsx|ts|tsx|svelte)",
   ],
   addons: [
     "@storybook/addon-docs",
