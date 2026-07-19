@@ -16,6 +16,7 @@ route, server API, ledger object, or formatter context.
 | sidebar resize rail        | `layout/ResizableSidebar.svelte`                                              | Fava continues to persist the selected width and compose sidebar content.             |
 | ordinary typed tables      | `tables/DataTable.svelte`                                                     | Applications provide their own columns and data.                                      |
 | account hierarchy          | `tables/AccountTreeTable.svelte`                                              | Fava maps account-tree data and routes into its plain tree/callback model.            |
+| statement account summary  | `tables/StatementSummaryTreeTable.svelte`                                     | Fava derives, formats, filters, and routes the financial-statement account tree.      |
 | ledger activity            | `tables/LedgerActivityTable.svelte`                                           | Fava continues to derive records, balances, and date groups from ledger data.         |
 | query results              | `tables/QueryResultsTable.svelte`                                             | Fava continues to execute BQL and preformat values.                                   |
 | account bulk actions       | `tables/AccountBulkActionSheet.svelte`                                        | Fava continues to calculate patches, confirm destructive actions, and persist files.  |
