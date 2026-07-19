@@ -27,7 +27,7 @@
     <svg
       viewBox="-116 -116 232 232"
       class="size-56"
-      role="img"
+      role="group"
       aria-label="Outflows by account"
     >
       {#each arcs as arcDatum (arcDatum.data.account)}
