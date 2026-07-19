@@ -1,6 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from "@storybook/addon-svelte-csf";
-  import { expect, userEvent } from "storybook/test";
+  import { expect, screen, userEvent } from "storybook/test";
   import LedgerActivityTable from "./LedgerActivityTable.svelte";
 
   const { Story } = defineMeta({
@@ -77,9 +77,15 @@
 </script>
 
 <script lang="ts">
+  import AccountBulkActionSheet from "./AccountBulkActionSheet.svelte";
+  import { Button } from "../shadcn/button";
+
   let selectedIds = $state<string[]>([]);
   let openedRecord = $state("");
   let activityTimeframe = $state("posted");
+  let bulkSelectedIds = $state<string[]>([]);
+  let bulkSheetOpen = $state(false);
+  let bulkStatus = $state("");
 </script>
 
 <Story
@@ -177,6 +183,81 @@
   {#snippet template()}
     <div class="max-w-5xl p-5">
       <LedgerActivityTable groups={[]} />
+    </div>
+  {/snippet}
+</Story>
+
+<Story
+  name="Selects activity and applies bulk account actions"
+  play={async ({ canvas }) => {
+    await userEvent.click(
+      canvas.getByRole("checkbox", { name: "Select Groceries" }),
+    );
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "1 record selected",
+    );
+
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Replace accounts (1)" }),
+    );
+    const dialog = screen.getByRole("dialog", { name: "Bulk actions" });
+    await expect(dialog).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+    await expect(
+      screen.getByText("Updated 1 record from Expenses:Groceries."),
+    ).toBeVisible();
+  }}
+>
+  {#snippet template()}
+    <div class="max-w-5xl overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div
+        class="flex items-center justify-between border-b bg-muted/30 px-4 py-2"
+      >
+        <span class="text-sm font-medium">Journal actions</span>
+        <Button
+          type="button"
+          size="sm"
+          disabled={bulkSelectedIds.length === 0}
+          onclick={() => {
+            bulkSheetOpen = true;
+          }}
+        >
+          Replace accounts ({bulkSelectedIds.length})
+        </Button>
+      </div>
+      <div class="p-5">
+        <LedgerActivityTable
+          {groups}
+          selectedIds={bulkSelectedIds}
+          onSelectedIdsChange={(ids) => {
+            bulkSelectedIds = ids;
+          }}
+        />
+      </div>
+      <AccountBulkActionSheet
+        bind:open={bulkSheetOpen}
+        recordCount={bulkSelectedIds.length}
+        fromAccount="Expenses:Groceries"
+        toAccount="Expenses:Food"
+        fromOptions={[
+          { value: "Expenses:Groceries", label: "Expenses:Groceries" },
+        ]}
+        toOptions={[
+          { value: "Expenses:Food", label: "Expenses:Food" },
+          { value: "Expenses:Groceries", label: "Expenses:Groceries" },
+        ]}
+        replacement={{ changedCount: bulkSelectedIds.length }}
+        duplicates={{ groupCount: 0, deleteCount: 0, keepCount: 0 }}
+        status={bulkStatus}
+        onApplyReplacement={({ fromAccount }) => {
+          bulkStatus = `Updated ${bulkSelectedIds.length} record${bulkSelectedIds.length === 1 ? "" : "s"} from ${fromAccount}.`;
+        }}
+      />
+      <output class="sr-only" aria-live="polite">
+        {bulkSelectedIds.length} record{bulkSelectedIds.length === 1 ? "" : "s"}
+        selected
+      </output>
     </div>
   {/snippet}
 </Story>

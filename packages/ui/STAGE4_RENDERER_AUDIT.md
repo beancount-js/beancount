@@ -66,11 +66,11 @@ the Fava adapter in a separate change.
   Fava's `StudioShell` and `FavaNavigation` retain project selection,
   ledger/tag filtering, navigation mode selection, routing, local storage,
   responsive sidebar state, picker data, and server actions.
-- Domain pages: `JournalTable`, `QueryTable`, reconciliation flows, and
-  dashboard containers. `MerchantPicker` is now UI-owned; Fava remains its
-  data, ranking, Brand Match, and persistence adapter until consumer migration.
-  Compose the canonical UI tables and controls after their input models have
-  been extracted.
+- Domain adapters: Fava's `JournalTable` composes the UI-owned
+  `LedgerActivityTable` and `AccountBulkActionSheet`; it retains ledger data,
+  balance derivation, workspace-header wiring, patches, and saves. `QueryTable`,
+  reconciliation flows, and dashboard containers retain their Fava data,
+  ranking, Brand Match, and persistence adapters until consumer migration.
 
 ## Completion rule for a copied visual surface
 
