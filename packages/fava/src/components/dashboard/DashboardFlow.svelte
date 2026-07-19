@@ -148,7 +148,7 @@
       <svg
         class="w-full text-foreground"
         viewBox={`0 0 ${width} ${chartHeight}`}
-        role="img"
+        role="group"
         aria-label={flowAriaLabel}
         data-dashboard-flow
         on:pointerleave={clearActive}
