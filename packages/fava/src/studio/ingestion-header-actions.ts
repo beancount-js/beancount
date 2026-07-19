@@ -45,6 +45,8 @@ export type IngestionReviewHeaderActions = {
 
 export type IngestionBulkReviewAction = {
   label: string;
+  /** Overrides the primary label while an additional action is running. */
+  busyLabel?: string;
   selectedCount: number;
   canRun: boolean;
   busy: boolean;

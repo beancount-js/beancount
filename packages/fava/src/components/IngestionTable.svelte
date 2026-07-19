@@ -3,6 +3,10 @@
   import { DateTime } from "luxon";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import { Amount } from "@beancount-js/beancount";
+  import {
+    normalizeMerchant,
+    type MerchantCandidate,
+  } from "@beancount-js/beangulp";
   import type { ProjectSnapshot } from "@beancount-js/workspace";
   import {
     FilterCommandPicker,
@@ -116,6 +120,7 @@
   let loading = $state(false);
   let accepting = $state(false);
   let bulkUpdating = $state(false);
+  let bulkActionBusyLabel = $state<string | undefined>(undefined);
   let loadedProjectId = $state("");
   let syncJob = $state<IngestionSyncJob | null>(null);
   let syncAbort = $state<AbortController | null>(null);
@@ -365,6 +370,9 @@
   const selectedProposalRows = $derived(
     actionableRows.filter((row) => selectedProposalKeys.has(row.key)),
   );
+  const merchantConfirmations = $derived(
+    merchantConfirmationsFor(selectedProposalRows),
+  );
   const visibleActionableKeys = $derived(
     visibleGroups.flatMap((group) =>
       group.rows
@@ -390,12 +398,22 @@
       const approving = reviewFilter === "pending";
       return {
         label: approving ? "Approve" : "Accept",
+        busyLabel: bulkActionBusyLabel,
         selectedCount: selectedProposalRows.length,
         canRun: !loading && !syncing && !accepting && !bulkUpdating,
         busy: approving ? bulkUpdating : accepting,
         onRun: approving
           ? () => void approveSelectedProposals()
           : () => void accept(selectedProposalRows),
+        additionalActions: approving
+          ? [
+              {
+                label: "Confirm merchants",
+                disabled: merchantConfirmations.length === 0,
+                onRun: () => void confirmSelectedMerchants(),
+              },
+            ]
+          : undefined,
       };
     },
   );
@@ -433,6 +451,31 @@
     return (
       row.proposal.status !== "held" && Boolean(row.proposal.selectedAccount)
     );
+  }
+
+  type MerchantConfirmation = {
+    row: ProposalRow;
+    candidate: MerchantCandidate;
+  };
+
+  /**
+   * Confirming a merchant fans out to the matching source label. Keep one
+   * request per source/label pair so a selection containing duplicate rows does
+   * not make a second, stale confirmation request.
+   */
+  function merchantConfirmationsFor(rows: readonly ProposalRow[]) {
+    const confirmations = new Map<string, MerchantConfirmation>();
+    for (const row of rows) {
+      const resolution = row.proposal.merchantResolution;
+      if (resolution?.status !== "suggested") continue;
+      const candidate = resolution.candidates[0];
+      if (!candidate) continue;
+      const sourceId =
+        activeRuns.find((run) => run.id === row.runId)?.sourceId ?? row.runId;
+      const key = `${sourceId}\0${normalizeMerchant(resolution.rawLabel)}`;
+      if (!confirmations.has(key)) confirmations.set(key, { row, candidate });
+    }
+    return [...confirmations.values()];
   }
 
   function setSelectedRows(rowKeys: readonly string[], selected: boolean) {
@@ -1214,6 +1257,45 @@
         : message;
     } finally {
       bulkUpdating = false;
+    }
+  }
+
+  async function confirmSelectedMerchants() {
+    if (!project || bulkUpdating || !merchantConfirmations.length) return;
+    const confirmations = [...merchantConfirmations];
+    bulkUpdating = true;
+    bulkActionBusyLabel = "Confirming merchants";
+    status = `Confirming ${confirmations.length} merchant${confirmations.length === 1 ? "" : "s"}…`;
+    let confirmedCount = 0;
+    try {
+      for (const { row, candidate } of confirmations) {
+        const response = await ingestionJson<{ run: IngestionRun }>(
+          ingestionPath(
+            project.project.id,
+            `/runs/${encodeURIComponent(row.runId)}/proposals/${encodeURIComponent(row.proposal.id)}/merchant`,
+          ),
+          {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              action: "confirm",
+              candidateId: candidate.id,
+            }),
+          },
+        );
+        replaceRun(response.run);
+        confirmedCount += 1;
+      }
+      selectedProposalKeys = new Set();
+      status = `Confirmed ${confirmedCount} merchant${confirmedCount === 1 ? "" : "s"}.`;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      status = confirmedCount
+        ? `Confirmed ${confirmedCount} merchant${confirmedCount === 1 ? "" : "s"}; ${message}`
+        : message;
+    } finally {
+      bulkUpdating = false;
+      bulkActionBusyLabel = undefined;
     }
   }
 

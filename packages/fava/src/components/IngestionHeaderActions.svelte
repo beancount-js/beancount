@@ -159,7 +159,7 @@
                   >
                     <Check data-icon="inline-start" />
                     {bulkAction.busy
-                      ? `${bulkAction.label}…`
+                      ? `${bulkAction.busyLabel ?? bulkAction.label}…`
                       : `${bulkAction.label} ${bulkAction.selectedCount}`}
                   </Button>
                 {/snippet}
@@ -437,7 +437,7 @@
                   >
                     <ScanSearch data-icon="inline-start" />
                     {bulkAction.busy
-                      ? `${bulkAction.label}…`
+                      ? `${bulkAction.busyLabel ?? bulkAction.label}…`
                       : `${bulkAction.label} ${bulkAction.selectedCount}`}
                   </Button>
                 {/snippet}
