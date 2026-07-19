@@ -1,11 +1,15 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vite";
+import { createRequire } from "node:module";
 import { fileURLToPath, URL } from "node:url";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const favaLib = fileURLToPath(new URL("../fava/src/lib", import.meta.url));
 const beancountSource = fileURLToPath(
   new URL("../beancount/src/index.ts", import.meta.url),
+);
+const beanquerySource = fileURLToPath(
+  new URL("../beanquery/src/index.ts", import.meta.url),
 );
 const svelteKitNavigation = fileURLToPath(
   new URL("./.storybook/sveltekit-navigation.ts", import.meta.url),
@@ -25,9 +29,17 @@ const virtualList = fileURLToPath(
 const storybookTest = fileURLToPath(
   new URL("./node_modules/storybook/dist/test/index.js", import.meta.url),
 );
+const requireFromFava = createRequire(
+  fileURLToPath(new URL("../fava/package.json", import.meta.url)),
+);
+const { lezer } = requireFromFava("@lezer/generator/rollup") as {
+  lezer: () => unknown;
+};
 
 export default defineConfig({
-  plugins: [svelte()],
+  // Fava's source imports its Lezer grammars. Load the same generator plugin
+  // the application uses, resolved from Fava's declared development tooling.
+  plugins: [lezer() as any, svelte()],
   optimizeDeps: {
     include: [
       "@internationalized/date",
@@ -67,6 +79,7 @@ export default defineConfig({
       // Catalog Fava's Beancount source rather than its package distribution,
       // which cannot resolve its internal source modules in Vite.
       "@beancount-js/beancount": beancountSource,
+      "@beancount-js/beanquery": beanquerySource,
       // Fava-only dependencies used by catalogued components are resolved from
       // the application workspace, where pnpm keeps their source packages.
       "d3-array": d3Array,
