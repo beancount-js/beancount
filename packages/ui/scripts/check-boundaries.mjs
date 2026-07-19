@@ -17,6 +17,8 @@ const forbiddenReferences = [
   /packages\/fava\b/,
   /(?:\.\.\/)+fava(?:\/|["'])/,
   /@beancount-js\/fava\b/,
+  /packages\/forms\b/,
+  /@beancount-js\/forms\b/,
   /\$lib(?:\/|["'])/,
   /\$app\/(?:navigation|stores)\b/,
 ];
@@ -60,7 +62,7 @@ for (const file of files) {
 
 if (violations.length) {
   console.error(
-    "@beancount-js/ui must not resolve Fava source or SvelteKit application aliases:\n" +
+    "@beancount-js/ui must not resolve Fava/forms compatibility source or SvelteKit application aliases:\n" +
       violations.join("\n"),
   );
   process.exitCode = 1;
