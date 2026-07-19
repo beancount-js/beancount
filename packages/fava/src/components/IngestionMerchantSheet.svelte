@@ -17,8 +17,8 @@
   import * as Alert from "$lib/components/ui/alert";
   import * as Sheet from "$lib/components/ui/sheet";
   import * as Tooltip from "$lib/components/ui/tooltip";
-  import { urlFor } from "../helpers";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
+  import { useNavigation } from "../router/router";
   import LocalMerchantMatchPicker from "./LocalMerchantMatchPicker.svelte";
   import PagePagination from "./PagePagination.svelte";
 
@@ -63,6 +63,8 @@
     onUpdated,
     onStatus,
   }: Props = $props();
+
+  const { router } = useNavigation();
 
   let busy = $state(false);
   let errors = $state<string[]>([]);
@@ -174,12 +176,22 @@
     matchingTransactionSortOrder = "none";
   });
 
-  function reviewHref(tx: MerchantReviewCluster["transactions"][number]) {
-    return urlFor("/records", {
-      sourceId: sourceId || undefined,
+  function openReview(tx: MerchantReviewCluster["transactions"][number]) {
+    const query = new URLSearchParams({
       runId: tx.runId,
       proposalId: tx.proposalId,
     });
+    if (sourceId) query.set("sourceId", sourceId);
+    router.push(`/records?${query}`);
+  }
+
+  function handleMatchingTransactionKeydown(
+    event: KeyboardEvent,
+    tx: MerchantReviewCluster["transactions"][number],
+  ) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openReview(tx);
   }
 
   function matchingTransactionLabel(
@@ -821,17 +833,22 @@
                     </Table.Header>
                     <Table.Body>
                       {#each visibleMatchingTransactions as tx (tx.proposalId)}
-                        <Table.Row>
+                        <Table.Row
+                          class="cursor-pointer"
+                          role="link"
+                          tabindex={0}
+                          aria-label={`Open review for ${matchingTransactionLabel(tx)}`}
+                          onclick={() => openReview(tx)}
+                          onkeydown={(event) =>
+                            handleMatchingTransactionKeydown(event, tx)}
+                        >
                           <Table.Cell
                             class="whitespace-nowrap px-4 py-3 text-muted-foreground"
                             >{tx.bookedAt}</Table.Cell
                           >
                           <Table.Cell class="min-w-52 px-4 py-3">
-                            <a
-                              href={reviewHref(tx)}
-                              class="block truncate rounded-md font-medium text-foreground outline-none transition-colors hover:text-primary focus-visible:text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                              aria-label={`Open review for ${matchingTransactionLabel(tx)}`}
-                              >{matchingTransactionLabel(tx)}</a
+                            <span class="block truncate font-medium text-foreground"
+                              >{matchingTransactionLabel(tx)}</span
                             >
                           </Table.Cell>
                           <Table.Cell
