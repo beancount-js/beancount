@@ -1,5 +1,13 @@
 <script lang="ts">
-  import type { ImportProposal, IngestionRun } from "../ingestion/types";
+  import {
+    normalizeMerchant,
+    scopeAiEnrichmentCall,
+  } from "@beancount-js/beangulp";
+  import type {
+    AiEnrichmentCallRecord,
+    ImportProposal,
+    IngestionRun,
+  } from "../ingestion/types";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import {
     CollapsibleItemList,
@@ -62,6 +70,8 @@
     runId: string;
     projectId: string;
     allowedAccounts?: readonly string[];
+    /** Full run audit retained for compatibility with older batched snapshots. */
+    auditCalls?: readonly AiEnrichmentCallRecord[];
     aiEnabled?: boolean;
     readOnly?: boolean;
     onClosed?: () => void;
@@ -75,6 +85,7 @@
     runId,
     projectId,
     allowedAccounts = [],
+    auditCalls = [],
     aiEnabled = false,
     readOnly = false,
     onClosed,
@@ -153,7 +164,55 @@
     );
   }
 
+  function transactionMerchantLabel(proposal: ImportProposal) {
+    return (
+      proposal.merchantResolution?.rawLabel ??
+      proposal.transaction?.merchant ??
+      proposal.transaction?.payee ??
+      proposal.transaction?.narration
+    );
+  }
+
+  function merchantAdvisorBatchItemId(sourceId: string, rawLabel: string) {
+    return `merchant:${sourceId}\u0000${normalizeMerchant(rawLabel)}`;
+  }
+
+  function matchingAiItemIds(call: AiEnrichmentCallRecord) {
+    const itemIds = new Set(call.itemIds ?? []);
+    const matches = [`category:${proposal.id}`].filter((id) => itemIds.has(id));
+    const merchantLabel = transactionMerchantLabel(proposal);
+    if (merchantLabel && proposal.transaction) {
+      const merchantId = merchantAdvisorBatchItemId(
+        proposal.transaction.sourceId,
+        merchantLabel,
+      );
+      if (itemIds.has(merchantId)) matches.push(merchantId);
+    }
+    return matches;
+  }
+
+  function callKey(call: AiEnrichmentCallRecord) {
+    return call.callId ?? `${call.id}:${call.at}`;
+  }
+
+  function workflowCall(call: AiEnrichmentCallRecord) {
+    if (call.prompt || call.response || !call.batchSize || call.batchSize <= 1)
+      return call;
+    const auditCall = auditCalls.find(
+      (candidate) => callKey(candidate) === callKey(call),
+    );
+    if (!auditCall) return call;
+    const itemIds = matchingAiItemIds(call);
+    return itemIds.length
+      ? scopeAiEnrichmentCall(auditCall, itemIds)
+      : { ...call, prompt: auditCall.prompt, response: auditCall.response };
+  }
+
   const aiIssues = $derived(proposal.issues.filter(isAiIssue));
+
+  const workflowCalls = $derived.by(() =>
+    (proposal.lastAiEnrichment?.calls ?? []).map(workflowCall),
+  );
 
   const workflowSteps = $derived.by((): WorkflowStep[] => {
     const steps: WorkflowStep[] = [];
@@ -172,10 +231,13 @@
         response: "No source payload was stored for this proposal.",
       });
     }
-    for (const call of proposal.lastAiEnrichment?.calls ?? []) {
+    for (const call of workflowCalls) {
       steps.push({
         key: `${call.id}:${call.at}`,
-        label: call.label,
+        label:
+          call.batchSize && call.batchSize > 1
+            ? `${call.label} · batch of ${call.batchSize}`
+            : call.label,
         ok: call.ok,
         at: call.at,
         prompt: call.prompt,

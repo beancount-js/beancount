@@ -4,6 +4,7 @@ import type {
   MerchantResolutionContext,
   NormalizedTransaction,
 } from "@beancount-js/beangulp";
+import { scopeAiEnrichmentCall } from "@beancount-js/beangulp";
 import { CodexCategorizer, CodexMerchantAdvisor } from "./ingestion";
 
 function transaction(id: string, merchant = `Merchant ${id} 123456`) {
@@ -48,6 +49,43 @@ function categoryContext(id: string): CategorizationContext {
 }
 
 describe("batched Codex enrichment adapters", () => {
+  test("keeps only the matching batch request and response on a proposal", () => {
+    const call = scopeAiEnrichmentCall(
+      {
+        id: "codex-ai",
+        label: "AI categoriser",
+        prompt: JSON.stringify({
+          task: "Categorise each transaction.",
+          availableAccounts: ["Expenses:Food", "Expenses:Travel"],
+          transactions: [
+            { id: "category:first", merchant: "First" },
+            { id: "category:second", merchant: "Second" },
+          ],
+        }),
+        response: JSON.stringify({
+          results: [
+            { id: "category:first", account: "Expenses:Food" },
+            { id: "category:second", account: "Expenses:Travel" },
+          ],
+        }),
+        ok: true,
+        at: "2026-07-19T00:00:00.000Z",
+        itemIds: ["category:first", "category:second"],
+        batchSize: 2,
+      },
+      ["category:second"],
+    );
+
+    expect(call.itemIds).toEqual(["category:second"]);
+    expect(JSON.parse(call.prompt!)).toMatchObject({
+      availableAccounts: ["Expenses:Food", "Expenses:Travel"],
+      transactions: [{ id: "category:second", merchant: "Second" }],
+    });
+    expect(JSON.parse(call.response!)).toEqual({
+      results: [{ id: "category:second", account: "Expenses:Travel" }],
+    });
+  });
+
   test("correlates out-of-order category results in one audited call", async () => {
     const prompts: string[] = [];
     const calls: unknown[] = [];

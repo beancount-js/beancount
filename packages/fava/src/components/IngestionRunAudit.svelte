@@ -603,6 +603,7 @@
       proposal={selectedRow.proposal}
       runId={run.id}
       projectId={project.project.id}
+      auditCalls={run.audit?.ai}
       readOnly
       onClosed={closeProposalSheet}
     />

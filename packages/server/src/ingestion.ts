@@ -17,6 +17,7 @@ import {
   ruleMatches,
   runIngestion,
   normalizeMerchant,
+  scopeAiEnrichmentCall,
   sortSuggestions,
   suggestionsMeetAutoReadyThreshold,
   transactionFingerprint,
@@ -2900,11 +2901,9 @@ async function enrichProposalsWithPrepared(
     const scopedCalls = calls.filter((call) =>
       call.itemIds?.some((id) => item.debugIds.has(id)),
     );
-    const snapshotCalls = scopedCalls.map((call) => {
-      if (!call.batchSize || call.batchSize === 1) return call;
-      const { prompt: _prompt, response: _response, ...summary } = call;
-      return summary;
-    });
+    const snapshotCalls = scopedCalls.map((call) =>
+      scopeAiEnrichmentCall(call, [...item.debugIds]),
+    );
     return snapshotCalls.length
       ? {
           at: nowIso(),

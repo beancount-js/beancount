@@ -44,6 +44,7 @@
     IngestionRunPage,
     IngestionRunSummary,
     ImportProposal,
+    AiEnrichmentCallRecord,
   } from "../ingestion/types";
   import PagePagination from "./PagePagination.svelte";
   import {
@@ -89,6 +90,7 @@
     key: string;
     runId: string;
     proposal: ImportProposal;
+    auditCalls?: readonly AiEnrichmentCallRecord[];
   };
 
   type DateGroup = {
@@ -171,6 +173,7 @@
         key: `${run.id}:${proposal.id}`,
         runId: run.id,
         proposal,
+        auditCalls: run.audit?.ai,
       })),
     ),
   );
@@ -1934,6 +1937,7 @@
       proposal={selectedRow.proposal}
       runId={selectedRow.runId}
       projectId={project.project.id}
+      auditCalls={selectedRow.auditCalls}
       {allowedAccounts}
       aiEnabled={sourceAiEnabled}
       onClosed={closeProposalSheet}

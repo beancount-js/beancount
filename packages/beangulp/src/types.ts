@@ -308,7 +308,10 @@ export interface AiEnrichmentCallRecord {
   /** Unique per-process identifier. Older persisted calls do not have one. */
   callId?: string;
   label: string;
-  /** Omitted from per-proposal batch references; retained once on the run audit. */
+  /**
+   * Full request/response data on the run audit. Per-proposal snapshots of a
+   * batched call retain only the matching item so their workflow is readable.
+   */
   prompt?: string;
   response?: string;
   error?: string;
@@ -323,6 +326,67 @@ export interface AiEnrichmentCallRecord {
   /** Input/output byte counts are cost proxies for the Codex CLI transport. */
   promptBytes?: number;
   responseBytes?: number;
+}
+
+function isAiBatchEntry(value: unknown): value is { id: string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    typeof value.id === "string"
+  );
+}
+
+function scopeAiBatchJson(
+  value: string | undefined,
+  itemIds: readonly string[],
+) {
+  if (!value) return value;
+  try {
+    const parsed = JSON.parse(value);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
+      return value;
+    let changed = false;
+    const scoped = Object.fromEntries(
+      Object.entries(parsed).map(([key, entry]) => {
+        if (!Array.isArray(entry) || !entry.some(isAiBatchEntry)) {
+          return [key, entry];
+        }
+        const matching = entry.filter(
+          (item): item is { id: string } =>
+            isAiBatchEntry(item) && itemIds.includes(item.id),
+        );
+        if (!matching.length) return [key, entry];
+        changed = true;
+        return [key, matching];
+      }),
+    );
+    return changed ? JSON.stringify(scoped, null, 2) : value;
+  } catch {
+    return value;
+  }
+}
+
+/**
+ * Derive the portion of one batched AI call that belongs to a proposal.
+ * The full request and response remain on the run audit; this compact record
+ * gives a proposal's Workflow panel the item that actually informed it.
+ */
+export function scopeAiEnrichmentCall(
+  call: AiEnrichmentCallRecord,
+  itemIds: readonly string[],
+): AiEnrichmentCallRecord {
+  if (!call.batchSize || call.batchSize <= 1 || !call.itemIds?.length) {
+    return call;
+  }
+  const scopedItemIds = call.itemIds.filter((id) => itemIds.includes(id));
+  if (!scopedItemIds.length) return call;
+  return {
+    ...call,
+    itemIds: scopedItemIds,
+    prompt: scopeAiBatchJson(call.prompt, scopedItemIds),
+    response: scopeAiBatchJson(call.response, scopedItemIds),
+  };
 }
 
 /** Latest AI enrichment attempt for a proposal (persisted on the import run). */
