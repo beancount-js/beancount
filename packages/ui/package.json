@@ -71,6 +71,8 @@
     "./shadcn/*": "./src/components/shadcn/*/index.ts",
     "./layout/*.svelte": "./src/components/layout/*.svelte",
     "./navigation/*.svelte": "./src/components/navigation/*.svelte",
+    "./tables/*.svelte": "./src/components/tables/*.svelte",
+    "./feedback/*.svelte": "./src/components/feedback/*.svelte",
     "./forms": "./src/components/forms/index.ts",
     "./forms/core": "./src/components/forms/core.ts",
     "./forms/components/*.svelte": "./src/components/forms/*.svelte",
