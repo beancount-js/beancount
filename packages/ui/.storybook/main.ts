@@ -8,7 +8,7 @@ const config: StorybookConfig = {
     // copy. The explicit list makes a copied component's UI source canonical
     // in Storybook without modifying the original application source.
     "../../fava/src/charts/Chart.stories.@(js|jsx|ts|tsx|svelte)",
-    "../../fava/src/components/{FavaNavigation,FinancialDashboard,JournalTable,MerchantPicker,QueryTable,StudioShell}.stories.@(js|jsx|ts|tsx|svelte)",
+    "../../fava/src/components/{FavaNavigation,FinancialDashboard,JournalTable,QueryTable,StudioShell}.stories.@(js|jsx|ts|tsx|svelte)",
     "../../fava/src/components/{errors,form}/**/*.stories.@(js|jsx|ts|tsx|svelte)",
     "../../fava/src/components/tree-table/{IntervalTreeTable,StatementSummaryTreeTable}.stories.@(js|jsx|ts|tsx|svelte)",
   ],
