@@ -13,6 +13,7 @@ These are the reusable patterns agents should choose for new form work. They are
 | Exclusive modes               | `@beancount-js/ui/forms/SegmentedControl.svelte`                                                                           | Shared UI primitive for two or three values               |
 | Boolean values                | `@beancount-js/ui/forms/Switch.svelte`                                                                                     | Shared UI primitive                                       |
 | Searchable choices            | `@beancount-js/ui/forms/FilterCommandPicker.svelte`                                                                        | Canonical shared form primitive                           |
+| Credential references         | `@beancount-js/ui/forms/SecretField.svelte`                                                                                | Shared UI component for `env:NAME` or masked inline value |
 | Schema-shaped forms           | `StructuredForm`, `FormFieldRenderer`, and `FormViewRenderer`                                                              | Shared UI forms runtime; not a generic visual primitive   |
 | Source editors                | `YamlBackedForm`, `JsonBackedForm`, and `CodeEditor`                                                                       | Shared UI forms runtime; YAML is the standard source mode |
 
@@ -20,11 +21,12 @@ These are the reusable patterns agents should choose for new form work. They are
 
 These components are part of the public UI forms contract, but remain domain-specific rather than becoming generic low-level primitives. Their implementations, styles, stories, and supporting APIs are all UI-owned.
 
-| Component                             | UI-package boundary                                                 |
-| ------------------------------------- | ------------------------------------------------------------------- |
-| `SearchFilterBar`                     | Beancount filter-query syntax and application-specific filter slots |
-| `ChipAutocomplete` and `TagEditor`    | Multi-value editing behaviour used by journal and rules workflows   |
-| `AccountAvatar` and `IconColorPicker` | Account appearance, merchant logos, and contrast-correction rules   |
+| Component                             | UI-package boundary                                                             |
+| ------------------------------------- | ------------------------------------------------------------------------------- |
+| `SearchFilterBar`                     | Beancount filter-query syntax and application-specific filter slots             |
+| `ChipAutocomplete` and `TagEditor`    | Multi-value editing behaviour used by journal and rules workflows               |
+| `AccountAvatar` and `IconColorPicker` | Account appearance, merchant logos, and contrast-correction rules               |
+| `MerchantPicker`                      | Saved-merchant choice presentation; applications supply ranking and persistence |
 
 ## Deprecated compatibility components
 

@@ -32,6 +32,10 @@ Use <a href="?path=/docs/ui-forms-form-field--docs">Form Field</a> for plain tex
 
 Do not use the legacy `SearchableChoicePicker` for new work.
 
+### Credentials
+
+Use <a href="?path=/docs/ui-forms-secret-field--docs">Secret Field</a> for API keys and other credentials only. Prefer an environment-variable reference; it is stored as `env:NAME` and can use a supplied project key or a custom name. Inline values are intentionally masked in read-only views. Put the field in `FormField as="div" align="start"`.
+
 ## Sections and repeated data
 
 - Use <a href="?path=/docs/ui-forms-form-section-header--docs">Form Section Header</a> for editable sections and repeated entries with their own editable title and disclosure. Its left rail owns the chevron and hover move/remove actions.
