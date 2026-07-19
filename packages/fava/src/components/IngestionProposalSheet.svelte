@@ -1085,6 +1085,7 @@
                       {projectId}
                       domain={correctionDomain}
                       searchText={`${correctionName} ${correctionDomain}`.trim()}
+                      sourceId={proposal.transaction?.sourceId ?? ""}
                       bind:attachedMerchantId
                       onAttach={(merchant) => {
                         correctionName = merchant.canonicalName;

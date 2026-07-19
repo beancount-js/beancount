@@ -11,8 +11,6 @@
     FormSectionHeader,
     IconColorPicker,
     TagEditor,
-    type FilterCommandOption,
-    type FilterCommandSearchAction,
   } from "@beancount-js/forms";
   import { onDestroy } from "svelte";
   import * as Alert from "$lib/components/ui/alert";
@@ -39,7 +37,6 @@
     type JournalRecordAnchor,
   } from "../lib/journal-record-key";
   import { useStudioWorkspace } from "../studio/workspace";
-  import { ingestionJson, ingestionPath } from "../ingestion/api";
   import {
     bookingOptions,
     buildDirectiveSource,
@@ -53,6 +50,7 @@
     tryParseDirectiveDraft,
     type DirectiveDraft,
   } from "./journal-editor/directive-draft";
+  import MerchantPicker from "./MerchantPicker.svelte";
 
   type SectionKey = "details" | "postings" | "metadata";
   type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
@@ -61,15 +59,6 @@
     directive: DirectiveBase;
     open?: boolean;
     onRecordKeyChange?: (key: string) => void;
-  };
-
-  type Merchant = {
-    merchantId: string;
-    canonicalName: string;
-    domain?: string;
-    description?: string;
-    aliases?: { normalizedValue: string }[];
-    logoUrl?: string;
   };
 
   let {
@@ -102,9 +91,6 @@
     postings: true,
     metadata: true,
   });
-  let merchants = $state<Merchant[]>([]);
-  let merchantLoadError = $state("");
-  let brandMatchBusy = $state(false);
   const kind = $derived(directiveKind(directive));
   const title = $derived(sheetTitleForKind(kind));
   const isYamlOnly = $derived(kind === "unknown");
@@ -119,42 +105,6 @@
 
   const currencySuggestions = $derived([...$currencies]);
   const merchantProjectId = $derived($snapshot?.project.id ?? "");
-  const merchantOptions = $derived.by((): FilterCommandOption[] => {
-    const listed = merchants.map((merchant) => ({
-      value: merchant.merchantId,
-      label: merchant.canonicalName,
-      description: [merchant.domain, merchant.description]
-        .filter(Boolean)
-        .join("\n"),
-      imageUrl: merchant.logoUrl,
-      keywords: [
-        merchant.canonicalName,
-        ...(merchant.domain ? [merchant.domain] : []),
-        ...(merchant.description ? [merchant.description] : []),
-        ...(merchant.aliases?.map((alias) => alias.normalizedValue) ?? []),
-      ],
-    }));
-    const selected = listed.find(
-      (merchant) => merchant.value === draft.merchantId,
-    );
-    return [
-      {
-        value: "",
-        label: "No merchant selected",
-        description: "Use the account's colour and icon instead.",
-      },
-      ...(selected || !draft.merchantId
-        ? listed
-        : [
-            {
-              value: draft.merchantId,
-              label: draft.merchantId,
-              description: "Saved merchant is unavailable in this project.",
-            },
-            ...listed,
-          ]),
-    ];
-  });
 
   const sectionsCollapsedAll = $derived.by(() => {
     if (!isSectionOpen("details") || !isSectionOpen("metadata")) return true;
@@ -173,97 +123,6 @@
             ? "Save failed"
             : "",
   );
-
-  async function loadMerchants(projectId: string) {
-    try {
-      const listed = await ingestionJson<Merchant[]>(
-        ingestionPath(projectId, "/merchants"),
-      );
-      if (merchantProjectId !== projectId) return;
-      merchants = Array.isArray(listed) ? listed : [];
-      merchantLoadError = "";
-    } catch (error) {
-      if (merchantProjectId !== projectId) return;
-      merchants = [];
-      merchantLoadError =
-        error instanceof Error ? error.message : "Failed to load merchants.";
-    }
-  }
-
-  function domainFromUrl(value: string) {
-    const input = value.trim();
-    if (!input) return undefined;
-    try {
-      const url = new URL(
-        /^[a-z][a-z\d+.-]*:\/\//i.test(input) ? input : `https://${input}`,
-      );
-      const domain = url.hostname.toLowerCase().replace(/^(?:www\.|api\.)/, "");
-      return domain.includes(".") ? domain : undefined;
-    } catch {
-      return undefined;
-    }
-  }
-
-  function brandMatchAction(search: string): FilterCommandSearchAction | null {
-    const domain = domainFromUrl(search);
-    if (
-      !merchantProjectId ||
-      !draft.account.trim() ||
-      !domain ||
-      merchants.some((merchant) => merchant.domain?.toLowerCase() === domain)
-    ) {
-      return null;
-    }
-    return {
-      label: `Fetch ${domain} with Brand Match`,
-      description: "Create and select a merchant with its brand logo.",
-    };
-  }
-
-  async function createMerchantFromBrandMatch(url: string) {
-    const projectId = merchantProjectId;
-    const account = draft.account.trim();
-    if (brandMatchBusy || !projectId || !account) return;
-
-    brandMatchBusy = true;
-    merchantLoadError = "";
-    try {
-      const merchant = await ingestionJson<Merchant>(
-        ingestionPath(projectId, "/merchants/brand-match"),
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ url, account }),
-        },
-      );
-      if (merchantProjectId !== projectId) return;
-      merchants = [
-        merchant,
-        ...merchants.filter((item) => item.merchantId !== merchant.merchantId),
-      ].sort((left, right) =>
-        left.canonicalName.localeCompare(right.canonicalName),
-      );
-      draft.merchantId = merchant.merchantId;
-      scheduleSave();
-    } catch (error) {
-      merchantLoadError =
-        error instanceof Error
-          ? error.message
-          : "Could not create a merchant from that URL.";
-    } finally {
-      brandMatchBusy = false;
-    }
-  }
-
-  $effect(() => {
-    const projectId = merchantProjectId;
-    if (!projectId) {
-      merchants = [];
-      merchantLoadError = "";
-      return;
-    }
-    void loadMerchants(projectId);
-  });
 
   const codeMirror = (node: HTMLDivElement, source: string) => {
     editor = new EditorView({
@@ -831,22 +690,19 @@
                       as="div"
                       align="center"
                       controlId="journal-account-merchant"
-                      messages={merchantLoadError ? [merchantLoadError] : []}
                     >
-                      <FilterCommandPicker
-                        fullWidth
+                      <MerchantPicker
+                        projectId={merchantProjectId}
+                        account={draft.account.trim()}
                         label="Merchant"
                         ariaLabel="Merchant"
                         placeholder="Search saved merchants..."
-                        emptyLabel={merchants.length
-                          ? "No matching merchants."
-                          : "No saved merchants yet."}
-                        stackedOptions
                         value={draft.merchantId}
-                        options={merchantOptions}
-                        searchAction={brandMatchAction}
-                        searchActionGroupLabel="Brand Match"
-                        onSearchAction={createMerchantFromBrandMatch}
+                        emptyOption={{
+                          label: "No merchant selected",
+                          description:
+                            "Use the account's colour and icon instead.",
+                        }}
                         onChange={(value) => {
                           draft.merchantId = value;
                           scheduleSave();
