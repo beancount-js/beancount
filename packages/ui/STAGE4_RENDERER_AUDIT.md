@@ -18,7 +18,7 @@ route, server API, ledger object, or formatter context.
 | account hierarchy           | `tables/AccountTreeTable.svelte`                                              | Fava maps account-tree data and routes into its plain tree/callback model.                  |
 | statement account summary   | `tables/StatementSummaryTreeTable.svelte`                                     | Fava derives, formats, filters, and routes the financial-statement account tree.            |
 | interval account comparison | `tables/IntervalTreeTable.svelte`                                             | Fava derives date ranges, currency values, budget variance, account visibility, and routes. |
-| ledger activity             | `tables/LedgerActivityTable.svelte`                                           | Fava continues to derive records, balances, and date groups from ledger data.               |
+| ledger activity             | `tables/LedgerActivityTable.svelte`                                           | Fava supplies preformatted records, timeframes, balance summaries, and record routing data. |
 | query results               | `tables/QueryResultsTable.svelte`                                             | Fava continues to execute BQL and preformat values.                                         |
 | account bulk actions        | `tables/AccountBulkActionSheet.svelte`                                        | Fava continues to calculate patches, confirm destructive actions, and persist files.        |
 | ingestion review queue      | `tables/IngestionReviewTable.svelte`                                          | Fava continues to apply search, paginate, open review sheets, and mutate proposals.         |

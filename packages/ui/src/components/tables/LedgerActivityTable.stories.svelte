@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "A model-driven ledger activity surface. It owns visual grouping, disclosure, selection, and record actions while the application supplies ledger-derived data and routing callbacks. Use this instead of rebuilding a journal-like list in a route.",
+            "A model-driven ledger activity surface. It owns visual grouping, disclosure, selection, compact two-or-three-option timeframe controls, merchant marks, balance summaries, and record actions while the application supplies ledger-derived data and routing callbacks. Use this instead of rebuilding a journal-like list in a route.",
         },
       },
     },
@@ -21,6 +21,11 @@
       id: "2026-07-18",
       date: "18 July 2026",
       balance: "£1,510.00",
+      summary: {
+        start: "£1,552.17",
+        change: "−£42.17",
+        final: "£1,510.00",
+      },
       records: [
         {
           id: "groceries",
@@ -28,6 +33,11 @@
           account: "Expenses:Groceries",
           detail: "Weekly household shopping",
           amount: "−£42.17",
+          merchant: {
+            imageUrl:
+              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' rx='8' fill='%234f46e5'/%3E%3Ctext x='20' y='26' text-anchor='middle' fill='white' font-family='sans-serif' font-size='20'%3EG%3C/text%3E%3C/svg%3E",
+            alt: "Groceries merchant mark",
+          },
         },
         {
           id: "salary",
@@ -56,6 +66,7 @@
 <script lang="ts">
   let selectedIds = $state<string[]>([]);
   let openedRecord = $state("");
+  let activityTimeframe = $state("posted");
 </script>
 
 <Story
@@ -102,11 +113,42 @@
     await expect(
       canvas.queryByText("Weekly household shopping"),
     ).not.toBeInTheDocument();
+    await expect(canvas.queryByText("Start balance")).not.toBeInTheDocument();
   }}
 >
   {#snippet template()}
     <div class="max-w-5xl p-5">
       <LedgerActivityTable {groups} selectable={false} />
+    </div>
+  {/snippet}
+</Story>
+
+<Story
+  name="Changes between posted and upcoming activity"
+  play={async ({ canvas }) => {
+    await userEvent.click(canvas.getByRole("button", { name: "Upcoming" }));
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "Showing upcoming activity",
+    );
+  }}
+>
+  {#snippet template()}
+    <div class="max-w-5xl p-5">
+      <LedgerActivityTable
+        {groups}
+        selectable={false}
+        timeframes={[
+          { id: "posted", label: "Posted" },
+          { id: "upcoming", label: "Upcoming" },
+        ]}
+        timeframe={activityTimeframe}
+        onTimeframeChange={(value) => {
+          activityTimeframe = value;
+        }}
+      />
+      <output class="sr-only" aria-live="polite">
+        Showing {activityTimeframe} activity
+      </output>
     </div>
   {/snippet}
 </Story>

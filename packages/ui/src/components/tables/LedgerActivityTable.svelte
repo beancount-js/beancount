@@ -2,6 +2,12 @@
   import { untrack } from "svelte";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronRight from "lucide-svelte/icons/chevron-right";
+  import SegmentedControl from "../forms/SegmentedControl.svelte";
+
+  export type LedgerActivityMerchant = {
+    imageUrl: string;
+    alt: string;
+  };
 
   export type LedgerActivityRecord = {
     id: string;
@@ -9,6 +15,7 @@
     account?: string;
     amount: string;
     balance?: string;
+    merchant?: LedgerActivityMerchant;
     /** Secondary text, such as transaction narration or posting detail. */
     detail?: string;
   };
@@ -18,6 +25,16 @@
     date: string;
     records: readonly LedgerActivityRecord[];
     balance?: string;
+    summary?: {
+      start: string;
+      change: string;
+      final: string;
+    };
+  };
+
+  export type LedgerActivityTimeframe = {
+    id: string;
+    label: string;
   };
 
   let {
@@ -28,8 +45,11 @@
     amountHeading = "Amount",
     balanceDescription = "Running balance",
     emptyMessage = "No dated records match the current filter.",
+    timeframes = [],
+    timeframe,
     onSelectedIdsChange = () => {},
     onOpenRecord,
+    onTimeframeChange = () => {},
   }: {
     groups: readonly LedgerActivityGroup[];
     selectedIds?: readonly string[];
@@ -38,8 +58,12 @@
     amountHeading?: string;
     balanceDescription?: string;
     emptyMessage?: string;
+    /** Two or three display modes, such as posted and upcoming activity. */
+    timeframes?: readonly LedgerActivityTimeframe[];
+    timeframe?: string;
     onSelectedIdsChange?: (ids: string[]) => void;
     onOpenRecord?: (record: LedgerActivityRecord) => void;
+    onTimeframeChange?: (timeframe: string) => void;
   } = $props();
 
   let expandedGroupIds = $state<Set<string>>(
@@ -109,6 +133,19 @@
 </script>
 
 <section class="w-full" aria-label={ariaLabel}>
+  {#if timeframes.length > 1}
+    <div class="mb-3">
+      <SegmentedControl
+        value={timeframe ?? timeframes[0]!.id}
+        options={timeframes.map(({ id }) => id)}
+        labels={Object.fromEntries(
+          timeframes.map(({ id, label }) => [id, label]),
+        )}
+        ariaLabel="Activity timeframe"
+        onChange={onTimeframeChange}
+      />
+    </div>
+  {/if}
   <div
     class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm"
   >
@@ -161,7 +198,7 @@
                 type="button"
                 class="flex min-w-0 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-expanded={expanded}
-                aria-controls={`${group.id}-records`}
+                aria-controls={`${group.id}-details`}
                 onclick={() => toggleGroupDisclosure(group.id)}
               >
                 {#if expanded}
@@ -194,74 +231,75 @@
             </div>
 
             {#if expanded}
-              <ul id={`${group.id}-records`} class="border-t border-border/70">
-                {#each group.records as record (record.id)}
-                  <li
-                    class={selectable
-                      ? "activity-grid activity-grid--selectable items-start gap-4 px-5 py-3 transition-colors hover:bg-muted/45"
-                      : "activity-grid activity-grid--read-only items-start gap-4 px-5 py-3 transition-colors hover:bg-muted/45"}
+              <div id={`${group.id}-details`} class="border-t border-border/70">
+                {#if group.summary}
+                  <div
+                    class="grid gap-x-4 gap-y-2 border-b border-dashed border-border/80 px-5 py-4 text-sm sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+                    aria-label={`Balance summary for ${group.date}`}
                   >
-                    {#if selectable}
-                      <input
-                        type="checkbox"
-                        checked={selectedIdSet.has(record.id)}
-                        aria-label={`Select ${record.description}`}
-                        class="mt-0.5 size-4 shrink-0 rounded border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        onchange={(event) =>
-                          toggleRecord(
-                            record.id,
-                            (event.currentTarget as HTMLInputElement).checked,
-                          )}
-                      />
-                    {/if}
-                    {#if onOpenRecord}
-                      <button
-                        type="button"
-                        class="min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        onclick={() => onOpenRecord(record)}
-                      >
-                        <span
-                          class="block truncate text-sm font-medium hover:underline"
-                          >{record.description}</span
+                    <span>Start balance</span>
+                    <span
+                      class="hidden self-center border-t border-dashed border-border/80 sm:block"
+                    ></span>
+                    <span class="text-right font-semibold tabular-nums">
+                      {group.summary.start}
+                    </span>
+                    <span>Net cash flow</span>
+                    <span
+                      class="hidden self-center border-t border-dashed border-border/80 sm:block"
+                    ></span>
+                    <span class="text-right font-semibold tabular-nums">
+                      {group.summary.change}
+                    </span>
+                    <span>Final balance</span>
+                    <span
+                      class="hidden self-center border-t border-dashed border-border/80 sm:block"
+                    ></span>
+                    <span class="text-right font-bold tabular-nums">
+                      {group.summary.final}
+                    </span>
+                  </div>
+                {/if}
+                <ul>
+                  {#each group.records as record (record.id)}
+                    <li
+                      class={selectable
+                        ? "activity-grid activity-grid--selectable items-start gap-4 px-5 py-3 transition-colors hover:bg-muted/45"
+                        : "activity-grid activity-grid--read-only items-start gap-4 px-5 py-3 transition-colors hover:bg-muted/45"}
+                    >
+                      {#if selectable}
+                        <input
+                          type="checkbox"
+                          checked={selectedIdSet.has(record.id)}
+                          aria-label={`Select ${record.description}`}
+                          class="mt-0.5 size-4 shrink-0 rounded border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          onchange={(event) =>
+                            toggleRecord(
+                              record.id,
+                              (event.currentTarget as HTMLInputElement).checked,
+                            )}
+                        />
+                      {/if}
+                      {#if onOpenRecord}
+                        <button
+                          type="button"
+                          class="min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          onclick={() => onOpenRecord(record)}
                         >
-                        {#if record.account}
-                          <span
-                            class="mt-0.5 block truncate font-mono text-xs text-muted-foreground"
-                            >{record.account}</span
-                          >
-                        {/if}
-                        {#if record.detail}
-                          <span
-                            class="mt-1 block truncate text-xs text-muted-foreground"
-                            >{record.detail}</span
-                          >
-                        {/if}
-                      </button>
-                    {:else}
-                      <div class="min-w-0">
-                        <span class="block truncate text-sm font-medium"
-                          >{record.description}</span
-                        >
-                        {#if record.account}
-                          <span
-                            class="mt-0.5 block truncate font-mono text-xs text-muted-foreground"
-                            >{record.account}</span
-                          >
-                        {/if}
-                        {#if record.detail}
-                          <span
-                            class="mt-1 block truncate text-xs text-muted-foreground"
-                            >{record.detail}</span
-                          >
-                        {/if}
+                          {@render ActivityRecord(record, true)}
+                        </button>
+                      {:else}
+                        <div class="min-w-0">
+                          {@render ActivityRecord(record)}
+                        </div>
+                      {/if}
+                      <div class="text-right font-mono text-sm tabular-nums">
+                        {record.amount}
                       </div>
-                    {/if}
-                    <div class="text-right font-mono text-sm tabular-nums">
-                      {record.amount}
-                    </div>
-                  </li>
-                {/each}
-              </ul>
+                    </li>
+                  {/each}
+                </ul>
+              </div>
             {/if}
           </section>
         {/each}
@@ -273,6 +311,36 @@
     {/if}
   </div>
 </section>
+
+{#snippet ActivityRecord(record: LedgerActivityRecord, interactive = false)}
+  <span class="flex min-w-0 items-start gap-2">
+    {#if record.merchant}
+      <img
+        src={record.merchant.imageUrl}
+        alt={record.merchant.alt}
+        class="mt-0.5 size-5 shrink-0 rounded-sm border border-border/70 object-contain"
+      />
+    {/if}
+    <span class="min-w-0">
+      <span
+        class={`block truncate text-sm font-medium ${interactive ? "hover:underline" : ""}`}
+      >
+        {record.description}
+      </span>
+      {#if record.account}
+        <span
+          class="mt-0.5 block truncate font-mono text-xs text-muted-foreground"
+          >{record.account}</span
+        >
+      {/if}
+      {#if record.detail}
+        <span class="mt-1 block truncate text-xs text-muted-foreground">
+          {record.detail}
+        </span>
+      {/if}
+    </span>
+  </span>
+{/snippet}
 
 <style>
   .activity-grid {
