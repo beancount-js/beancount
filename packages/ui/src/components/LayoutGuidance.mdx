@@ -16,6 +16,8 @@ Do not build a second shell around a page or make route content responsible for 
 
 Use <a href="?path=/docs/layout-content-scroll-area--docs">Content Scroll Area</a> when a page body must scroll independently within the shell. It keeps the shared viewport styling and keyboard access. The page still owns its content padding through `contentClass`.
 
+For a user-resizable desktop rail, use <a href="?path=/docs/layout-resizable-sidebar--docs">Resizable Sidebar</a>. Keep its `width` controlled and persist that value in the application if needed. It provides pointer resizing plus Arrow keys (16px), Shift+Arrow keys (32px), Home, and End; do not duplicate local resize handles or use a vertical slider role for a horizontal width control.
+
 ## Navigation
 
 - Use <a href="?path=/docs/navigation-sidebar-navigation--docs">Sidebar Navigation</a> for the visual navigation list. Keep routing outside it: pass controlled `activeHref` state and update it from `onNavigate`.

@@ -13,6 +13,7 @@ route, server API, ledger object, or formatter context.
 | shared forms and editors | `src/components/forms`                                                        | Fava continues to import `@beancount-js/forms` until the forms migration.             |
 | app frame and navigation | `AppShell.svelte`, `layout/*`, `navigation/*`                                 | Studio-specific project, router, and storage behaviour stays in Fava adapters.        |
 | Studio shell header      | `layout/StudioShellHeader.svelte`                                             | Fava continues to bind workspace settings and responsive sidebar state.               |
+| sidebar resize rail      | `layout/ResizableSidebar.svelte`                                              | Fava continues to persist the selected width and compose sidebar content.             |
 | ordinary typed tables    | `tables/DataTable.svelte`                                                     | Applications provide their own columns and data.                                      |
 | account hierarchy        | `tables/AccountTreeTable.svelte`                                              | Fava maps account-tree data and routes into its plain tree/callback model.            |
 | ledger activity          | `tables/LedgerActivityTable.svelte`                                           | Fava continues to derive records, balances, and date groups from ledger data.         |
