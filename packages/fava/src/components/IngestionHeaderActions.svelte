@@ -144,6 +144,9 @@
         {#if header.bulkAction}
           {@const bulkAction = header.bulkAction}
           {@const additionalActions = bulkAction.additionalActions ?? []}
+          {@const hasEnabledAdditionalAction = additionalActions.some(
+            (action) => !action.disabled,
+          )}
           <ButtonGroup.Root aria-label={`${bulkAction.label} selected items`}>
             <Tooltip.Root>
               <Tooltip.Trigger>
@@ -180,7 +183,7 @@
                     aria-label={`More ${bulkAction.label.toLowerCase()} actions`}
                     disabled={!bulkAction.canRun ||
                       bulkAction.busy ||
-                      !additionalActions.length}
+                      !hasEnabledAdditionalAction}
                   >
                     <ChevronDown class="size-4" aria-hidden="true" />
                   </Button>
@@ -420,6 +423,9 @@
         {#if header.bulkAction}
           {@const bulkAction = header.bulkAction}
           {@const additionalActions = bulkAction.additionalActions ?? []}
+          {@const hasEnabledAdditionalAction = additionalActions.some(
+            (action) => !action.disabled,
+          )}
           <ButtonGroup.Root
             aria-label={`${bulkAction.label} selected merchant clusters`}
           >
@@ -458,7 +464,7 @@
                     aria-label={`More ${bulkAction.label.toLowerCase()} actions`}
                     disabled={!bulkAction.canRun ||
                       bulkAction.busy ||
-                      !additionalActions.length}
+                      !hasEnabledAdditionalAction}
                   >
                     <ChevronDown class="size-4" aria-hidden="true" />
                   </Button>

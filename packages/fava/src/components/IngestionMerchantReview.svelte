@@ -71,6 +71,7 @@
   let sourceId = $state("");
   let loading = $state(false);
   let detectBusy = $state(false);
+  let confirmBusy = $state(false);
   let status = $state("");
   let sheetOpen = $state(false);
   let selectedCluster = $state<MerchantReviewCluster | null>(null);
@@ -102,9 +103,7 @@
         : "pending",
   );
   const isPendingView = $derived(merchantView === "pending");
-  const clusters = $derived(
-    isPendingView ? pendingClusters : reviewedClusters,
-  );
+  const clusters = $derived(isPendingView ? pendingClusters : reviewedClusters);
   const hasMerchantClusters = $derived(
     pendingClusters.length > 0 || reviewedClusters.length > 0,
   );
@@ -164,6 +163,9 @@
   const selectedClusters = $derived(
     matchedClusters.filter((cluster) => selectedClusterIds.has(cluster.id)),
   );
+  const confirmableClusters = $derived(
+    selectedClusters.filter((cluster) => cluster.candidates.length > 0),
+  );
   const visibleClusterIds = $derived(
     visibleClusters.map((cluster) => cluster.id),
   );
@@ -184,12 +186,25 @@
       if (!isPendingView || !selectedClusters.length) return;
       return {
         label: "Detect",
+        busyLabel: confirmBusy ? "Confirming merchants" : undefined,
         selectedCount: selectedClusters.length,
         canRun: Boolean(
-          isPendingView && project && sourceId && !loading && !detectBusy,
+          isPendingView &&
+            project &&
+            sourceId &&
+            !loading &&
+            !detectBusy &&
+            !confirmBusy,
         ),
-        busy: detectBusy,
+        busy: detectBusy || confirmBusy,
         onRun: () => void detectSelected(),
+        additionalActions: [
+          {
+            label: "Confirm merchants",
+            disabled: confirmableClusters.length === 0,
+            onRun: () => void confirmSelectedMerchants(),
+          },
+        ],
       };
     },
   );
@@ -533,6 +548,48 @@
   function detectSelected() {
     void detectClusters(selectedClusters.map((cluster) => cluster.id));
   }
+
+  async function confirmSelectedMerchants() {
+    if (!project || confirmBusy || !confirmableClusters.length) return;
+    const clustersToConfirm = [...confirmableClusters];
+    confirmBusy = true;
+    status = `Confirming ${clustersToConfirm.length} merchant${clustersToConfirm.length === 1 ? "" : "s"}…`;
+    let confirmedCount = 0;
+    try {
+      for (const cluster of clustersToConfirm) {
+        const candidate = cluster.candidates[0];
+        if (!candidate) continue;
+        await ingestionJson(
+          ingestionPath(
+            project.project.id,
+            `/runs/${encodeURIComponent(cluster.primary.runId)}/proposals/${encodeURIComponent(cluster.primary.proposalId)}/merchant`,
+          ),
+          {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              action: "confirm",
+              candidateId: candidate.id,
+              normalizedLabels: cluster.members.map(
+                (member) => member.normalizedLabel,
+              ),
+            }),
+          },
+        );
+        confirmedCount += 1;
+      }
+      await refreshClusters();
+      selectedClusterIds = new Set();
+      status = `Confirmed ${confirmedCount} merchant${confirmedCount === 1 ? "" : "s"}.`;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      status = confirmedCount
+        ? `Confirmed ${confirmedCount} merchant${confirmedCount === 1 ? "" : "s"}; ${message}`
+        : message;
+    } finally {
+      confirmBusy = false;
+    }
+  }
 </script>
 
 <div class="h-full overflow-auto p-3 sm:p-5" data-ingestion-merchant-review>
@@ -591,300 +648,309 @@
         </ToggleGroup.Root>
 
         {#if clusters.length}
-        {#if summaryLine}
-          <p class="text-sm text-muted-foreground">{summaryLine}</p>
-        {/if}
+          {#if summaryLine}
+            <p class="text-sm text-muted-foreground">{summaryLine}</p>
+          {/if}
 
-        <div
-          class="ingestion-page-search"
-          style="--cv-search-filter-justify: stretch; --cv-search-filter-content-justify: stretch; --cv-search-filter-max-width: 100%;"
-        >
-          <SearchFilterBar
-            value={searchState.query}
-            placeholder="Search merchants… e.g. confidence >= 0.9"
-            ariaLabel="Search merchants"
-            clearSearchLabel="Clear search"
-            clearAllLabel="Clear all filters"
-            expandFiltersLabel="Expand filter options"
-            collapseFiltersLabel="Collapse filter options"
-            showActiveQueryChip={true}
-            showFilterToggle={true}
-            showClearAll={activeSearch}
-            clearAllDisabled={!activeSearch}
-            bind:filtersExpanded
-            onValueChange={onSearchQueryInput}
-            onClearSearch={clearSearchQuery}
-            onClearAll={clearAllSearch}
+          <div
+            class="ingestion-page-search"
+            style="--cv-search-filter-justify: stretch; --cv-search-filter-content-justify: stretch; --cv-search-filter-max-width: 100%;"
           >
-            {#snippet filters()}
-              <div class="ingestion-page-search__facet-row">
-                <FilterCommandPicker
-                  multiple
-                  label="Status"
-                  values={searchState.statuses}
-                  options={statusOptions}
-                  placeholder="Filter by status…"
-                  onValuesChange={(statuses) =>
-                    setSearchFacet("statuses", statuses)}
-                />
-                <FilterCommandPicker
-                  label="Domain"
-                  value={searchState.domain}
-                  options={domainOptions}
-                  placeholder="Filter by domain…"
-                  onChange={(domain) =>
-                    setSearchFacet("domain", domain as MerchantDomainFacet)}
-                />
-              </div>
-            {/snippet}
-            {#snippet collapsedFilters()}
-              <div class="ingestion-page-search__facet-row">
-                {#if searchState.statuses.length > 0}
+            <SearchFilterBar
+              value={searchState.query}
+              placeholder="Search merchants… e.g. confidence >= 0.9"
+              ariaLabel="Search merchants"
+              clearSearchLabel="Clear search"
+              clearAllLabel="Clear all filters"
+              expandFiltersLabel="Expand filter options"
+              collapseFiltersLabel="Collapse filter options"
+              showActiveQueryChip={true}
+              showFilterToggle={true}
+              showClearAll={activeSearch}
+              clearAllDisabled={!activeSearch}
+              bind:filtersExpanded
+              onValueChange={onSearchQueryInput}
+              onClearSearch={clearSearchQuery}
+              onClearAll={clearAllSearch}
+            >
+              {#snippet filters()}
+                <div class="ingestion-page-search__facet-row">
                   <FilterCommandPicker
                     multiple
                     label="Status"
                     values={searchState.statuses}
                     options={statusOptions}
+                    placeholder="Filter by status…"
                     onValuesChange={(statuses) =>
                       setSearchFacet("statuses", statuses)}
                   />
-                {/if}
-                {#if searchState.domain}
                   <FilterCommandPicker
                     label="Domain"
                     value={searchState.domain}
                     options={domainOptions}
+                    placeholder="Filter by domain…"
                     onChange={(domain) =>
                       setSearchFacet("domain", domain as MerchantDomainFacet)}
                   />
-                {/if}
-              </div>
-            {/snippet}
-          </SearchFilterBar>
-        </div>
-
-        {#if activeSearch && !matchedClusters.length}
-          <div
-            class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-          >
-            No merchants match this search.
-          </div>
-        {:else if matchedClusters.length}
-          <div
-            role="row"
-            class={isPendingView
-              ? "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-              : "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"}
-          >
-            {#if isPendingView}
-              <input
-                use:setIndeterminate={masterSelection.indeterminate}
-                type="checkbox"
-                class="size-4 rounded border-input text-primary focus:ring-ring"
-                aria-label="Select visible merchant clusters"
-                checked={masterSelection.checked}
-                disabled={!visibleClusterIds.length || detectBusy}
-                onchange={(event) =>
-                  setSelectedClusters(
-                    visibleClusterIds,
-                    (event.currentTarget as HTMLInputElement).checked,
-                  )}
-              />
-            {/if}
-            <div
-              role="columnheader"
-              aria-sort={ariaSortFor("merchant")}
-              class="justify-self-start"
-            >
-              <button
-                type="button"
-                class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="Sort by merchant"
-                onclick={() => cycleSort("merchant")}
-              >
-                Merchant
-                {#if sortOrders.merchant === "asc"}
-                  <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
-                {:else if sortOrders.merchant === "desc"}
-                  <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
-                {:else}
-                  <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
-                {/if}
-              </button>
-            </div>
-            <div
-              role="columnheader"
-              aria-sort={ariaSortFor("pending")}
-              class="justify-self-end"
-            >
-              <button
-                type="button"
-                class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={`Sort by ${isPendingView ? "pending" : "reviewed"} count`}
-                onclick={() => cycleSort("pending")}
-              >
-                {isPendingView ? "Pending" : "Reviewed"}
-                {#if sortOrders.pending === "asc"}
-                  <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
-                {:else if sortOrders.pending === "desc"}
-                  <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
-                {:else}
-                  <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
-                {/if}
-              </button>
-            </div>
-          </div>
-
-          {#if showSelectionBanner}
-            <div
-              data-merchant-selection-banner
-              role="status"
-              class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
-            >
-              {#if allMatchingSelected}
-                All {matchedClusters.length} matching merchant clusters are selected.
-                <button
-                  type="button"
-                  class="font-medium text-primary underline-offset-2 hover:underline"
-                  onclick={clearSelectedClusters}
-                >
-                  Clear selection
-                </button>
-              {:else}
-                All {visibleClusterIds.length} merchant clusters on this page are
-                selected.
-                <button
-                  type="button"
-                  class="font-medium text-primary underline-offset-2 hover:underline"
-                  onclick={selectAllMatchingClusters}
-                >
-                  Select all {matchedClusters.length} matching clusters
-                </button>
-              {/if}
-            </div>
-          {/if}
-
-          <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
-            {#each visibleClusters as cluster, index (cluster.id)}
-              {@const confidence = merchantClusterConfidence(cluster)}
-              <div
-                role="button"
-                tabindex="0"
-                class:rounded-b-xl={index === visibleClusters.length - 1}
-                class={isPendingView
-                  ? "grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-                  : "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"}
-                aria-label={`${isPendingView ? "Review" : "View"} merchant ${cluster.displayName}`}
-                onclick={() => openCluster(cluster)}
-                onkeydown={(event) => handleRowKeydown(event, cluster)}
-              >
-                {#if isPendingView}
-                  <input
-                    type="checkbox"
-                    class="size-4 rounded border-input text-primary focus:ring-ring"
-                    aria-label={`Select ${cluster.displayName}`}
-                    checked={selectedClusterIds.has(cluster.id)}
-                    disabled={detectBusy}
-                    onclick={(event) => event.stopPropagation()}
-                    onchange={(event) =>
-                      setSelectedClusters(
-                        [cluster.id],
-                        (event.currentTarget as HTMLInputElement).checked,
-                      )}
-                  />
-                {/if}
-                {#if cluster.logoUrl && !failedLogoIds.has(cluster.id)}
-                  <img
-                    class="size-10 rounded-full border object-contain"
-                    src={cluster.logoUrl}
-                    alt=""
-                    onerror={() => markLogoFailed(cluster.id)}
-                  />
-                {:else}
-                  <div
-                    class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
-                    aria-hidden="true"
-                  >
-                    {clusterInitial(cluster)}
-                  </div>
-                {/if}
-                <div class="min-w-0">
-                  <div class="truncate text-sm font-semibold">
-                    {cluster.displayName}
-                  </div>
-                  <div
-                    class="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
-                  >
-                    <span class="min-w-0 truncate">
-                      <span class="capitalize"
-                        >{cluster.statuses[0] ?? "unresolved"}</span
-                      >
-                      · {clusterDetail(cluster)}
-                    </span>
-                    {#if confidence !== undefined}
-                      <Badge
-                        variant="secondary"
-                        class="shrink-0 px-1.5 py-0 text-[0.65rem] leading-5"
-                        title={`AI merchant confidence ${confidence.toFixed(2)}`}
-                      >AI {formatAiConfidence(confidence)}</Badge>
-                    {/if}
-                  </div>
                 </div>
-                <span
-                  class={isPendingView
-                    ? "inline-flex min-w-7 justify-center rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-violet-700 dark:text-violet-300"
-                    : "inline-flex min-w-7 justify-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-300"}
-                  aria-label={`${cluster.pendingCount} ${isPendingView ? "pending" : "reviewed"} transaction${cluster.pendingCount === 1 ? "" : "s"}`}
-                >
-                  {cluster.pendingCount}
-                </span>
-              </div>
-            {/each}
+              {/snippet}
+              {#snippet collapsedFilters()}
+                <div class="ingestion-page-search__facet-row">
+                  {#if searchState.statuses.length > 0}
+                    <FilterCommandPicker
+                      multiple
+                      label="Status"
+                      values={searchState.statuses}
+                      options={statusOptions}
+                      onValuesChange={(statuses) =>
+                        setSearchFacet("statuses", statuses)}
+                    />
+                  {/if}
+                  {#if searchState.domain}
+                    <FilterCommandPicker
+                      label="Domain"
+                      value={searchState.domain}
+                      options={domainOptions}
+                      onChange={(domain) =>
+                        setSearchFacet("domain", domain as MerchantDomainFacet)}
+                    />
+                  {/if}
+                </div>
+              {/snippet}
+            </SearchFilterBar>
           </div>
 
-          {#if pages.length > 1}
+          {#if activeSearch && !matchedClusters.length}
             <div
-              class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-              data-review-merchant-pagination
+              class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
             >
-              <span class="text-sm text-muted-foreground"
-                >Page {page} of {pages.length}</span
-              >
-              <div
-                class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
-              >
-                <div class="hidden items-center gap-2 sm:flex">
-                  <label
-                    class="text-sm text-muted-foreground"
-                    for="ingestion-merchant-page-size">Records per page</label
-                  >
-                  <select
-                    id="ingestion-merchant-page-size"
-                    class="h-8 rounded-md border bg-background px-2 text-sm"
-                    value={pageSize}
-                    onchange={(event) =>
-                      updateRoute({
-                        pageSize: (event.currentTarget as HTMLSelectElement)
-                          .value,
-                        page: "1",
-                      })}
-                  >
-                    {#each PAGE_SIZES as size (size)}
-                      <option value={size}>{size}</option>
-                    {/each}
-                  </select>
-                </div>
-                <PagePagination
-                  {page}
-                  pageCount={pages.length}
-                  ariaLabel="Review merchant pages"
-                  onPageChange={(nextPage) =>
-                    updateRoute({ page: String(nextPage) })}
+              No merchants match this search.
+            </div>
+          {:else if matchedClusters.length}
+            <div
+              role="row"
+              class={isPendingView
+                ? "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                : "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"}
+            >
+              {#if isPendingView}
+                <input
+                  use:setIndeterminate={masterSelection.indeterminate}
+                  type="checkbox"
+                  class="size-4 rounded border-input text-primary focus:ring-ring"
+                  aria-label="Select visible merchant clusters"
+                  checked={masterSelection.checked}
+                  disabled={!visibleClusterIds.length || detectBusy}
+                  onchange={(event) =>
+                    setSelectedClusters(
+                      visibleClusterIds,
+                      (event.currentTarget as HTMLInputElement).checked,
+                    )}
                 />
+              {/if}
+              <div
+                role="columnheader"
+                aria-sort={ariaSortFor("merchant")}
+                class="justify-self-start"
+              >
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Sort by merchant"
+                  onclick={() => cycleSort("merchant")}
+                >
+                  Merchant
+                  {#if sortOrders.merchant === "asc"}
+                    <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                  {:else if sortOrders.merchant === "desc"}
+                    <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                  {:else}
+                    <ArrowUpDown
+                      class="size-3.5 opacity-50"
+                      aria-hidden="true"
+                    />
+                  {/if}
+                </button>
+              </div>
+              <div
+                role="columnheader"
+                aria-sort={ariaSortFor("pending")}
+                class="justify-self-end"
+              >
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={`Sort by ${isPendingView ? "pending" : "reviewed"} count`}
+                  onclick={() => cycleSort("pending")}
+                >
+                  {isPendingView ? "Pending" : "Reviewed"}
+                  {#if sortOrders.pending === "asc"}
+                    <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                  {:else if sortOrders.pending === "desc"}
+                    <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                  {:else}
+                    <ArrowUpDown
+                      class="size-3.5 opacity-50"
+                      aria-hidden="true"
+                    />
+                  {/if}
+                </button>
               </div>
             </div>
+
+            {#if showSelectionBanner}
+              <div
+                data-merchant-selection-banner
+                role="status"
+                class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+              >
+                {#if allMatchingSelected}
+                  All {matchedClusters.length} matching merchant clusters are selected.
+                  <button
+                    type="button"
+                    class="font-medium text-primary underline-offset-2 hover:underline"
+                    onclick={clearSelectedClusters}
+                  >
+                    Clear selection
+                  </button>
+                {:else}
+                  All {visibleClusterIds.length} merchant clusters on this page are
+                  selected.
+                  <button
+                    type="button"
+                    class="font-medium text-primary underline-offset-2 hover:underline"
+                    onclick={selectAllMatchingClusters}
+                  >
+                    Select all {matchedClusters.length} matching clusters
+                  </button>
+                {/if}
+              </div>
+            {/if}
+
+            <div
+              class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+            >
+              {#each visibleClusters as cluster, index (cluster.id)}
+                {@const confidence = merchantClusterConfidence(cluster)}
+                <div
+                  role="button"
+                  tabindex="0"
+                  class:rounded-b-xl={index === visibleClusters.length - 1}
+                  class={isPendingView
+                    ? "grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                    : "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"}
+                  aria-label={`${isPendingView ? "Review" : "View"} merchant ${cluster.displayName}`}
+                  onclick={() => openCluster(cluster)}
+                  onkeydown={(event) => handleRowKeydown(event, cluster)}
+                >
+                  {#if isPendingView}
+                    <input
+                      type="checkbox"
+                      class="size-4 rounded border-input text-primary focus:ring-ring"
+                      aria-label={`Select ${cluster.displayName}`}
+                      checked={selectedClusterIds.has(cluster.id)}
+                      disabled={detectBusy}
+                      onclick={(event) => event.stopPropagation()}
+                      onchange={(event) =>
+                        setSelectedClusters(
+                          [cluster.id],
+                          (event.currentTarget as HTMLInputElement).checked,
+                        )}
+                    />
+                  {/if}
+                  {#if cluster.logoUrl && !failedLogoIds.has(cluster.id)}
+                    <img
+                      class="size-10 rounded-full border object-contain"
+                      src={cluster.logoUrl}
+                      alt=""
+                      onerror={() => markLogoFailed(cluster.id)}
+                    />
+                  {:else}
+                    <div
+                      class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                      aria-hidden="true"
+                    >
+                      {clusterInitial(cluster)}
+                    </div>
+                  {/if}
+                  <div class="min-w-0">
+                    <div class="truncate text-sm font-semibold">
+                      {cluster.displayName}
+                    </div>
+                    <div
+                      class="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
+                    >
+                      <span class="min-w-0 truncate">
+                        <span class="capitalize"
+                          >{cluster.statuses[0] ?? "unresolved"}</span
+                        >
+                        · {clusterDetail(cluster)}
+                      </span>
+                      {#if confidence !== undefined}
+                        <Badge
+                          variant="secondary"
+                          class="shrink-0 px-1.5 py-0 text-[0.65rem] leading-5"
+                          title={`AI merchant confidence ${confidence.toFixed(2)}`}
+                          >AI {formatAiConfidence(confidence)}</Badge
+                        >
+                      {/if}
+                    </div>
+                  </div>
+                  <span
+                    class={isPendingView
+                      ? "inline-flex min-w-7 justify-center rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-violet-700 dark:text-violet-300"
+                      : "inline-flex min-w-7 justify-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-300"}
+                    aria-label={`${cluster.pendingCount} ${isPendingView ? "pending" : "reviewed"} transaction${cluster.pendingCount === 1 ? "" : "s"}`}
+                  >
+                    {cluster.pendingCount}
+                  </span>
+                </div>
+              {/each}
+            </div>
+
+            {#if pages.length > 1}
+              <div
+                class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                data-review-merchant-pagination
+              >
+                <span class="text-sm text-muted-foreground"
+                  >Page {page} of {pages.length}</span
+                >
+                <div
+                  class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
+                >
+                  <div class="hidden items-center gap-2 sm:flex">
+                    <label
+                      class="text-sm text-muted-foreground"
+                      for="ingestion-merchant-page-size">Records per page</label
+                    >
+                    <select
+                      id="ingestion-merchant-page-size"
+                      class="h-8 rounded-md border bg-background px-2 text-sm"
+                      value={pageSize}
+                      onchange={(event) =>
+                        updateRoute({
+                          pageSize: (event.currentTarget as HTMLSelectElement)
+                            .value,
+                          page: "1",
+                        })}
+                    >
+                      {#each PAGE_SIZES as size (size)}
+                        <option value={size}>{size}</option>
+                      {/each}
+                    </select>
+                  </div>
+                  <PagePagination
+                    {page}
+                    pageCount={pages.length}
+                    ariaLabel="Review merchant pages"
+                    onPageChange={(nextPage) =>
+                      updateRoute({ page: String(nextPage) })}
+                  />
+                </div>
+              </div>
+            {/if}
           {/if}
-        {/if}
         {:else}
           <Empty.Root class="min-h-64 border">
             <Empty.Header>
