@@ -26,7 +26,10 @@
   {...restProps}
   class={cn("relative overflow-hidden", className)}
 >
-  <ScrollAreaPrimitive.Viewport class="h-full w-full rounded-[inherit]">
+  <ScrollAreaPrimitive.Viewport
+    class="h-full w-full rounded-[inherit]"
+    tabindex={0}
+  >
     {@render children?.()}
   </ScrollAreaPrimitive.Viewport>
   {#if orientation === "vertical" || orientation === "both"}

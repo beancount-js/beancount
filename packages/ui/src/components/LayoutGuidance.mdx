@@ -1,0 +1,27 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Layout/Guidance" />
+
+# Layout and navigation guidance
+
+Use the UI package's layout and navigation components before recreating application chrome. Their Stories are the visual contract; generated Docs pages supply the props and interactive examples.
+
+## Application frame
+
+Use <a href="?path=/docs/layout-app-shell--docs">App Shell</a> once per application view. Give it the page title, place persistent navigation in its `sidebar` slot, and put page-specific content only in the main content slot. Use `height="container"` for a bounded embedded preview; applications use the viewport default.
+
+Do not build a second shell around a page or make route content responsible for the sidebar gutter, header, or workspace border.
+
+## Page bodies
+
+Use <a href="?path=/docs/layout-content-scroll-area--docs">Content Scroll Area</a> when a page body must scroll independently within the shell. It keeps the shared viewport styling and keyboard access. The page still owns its content padding through `contentClass`.
+
+## Navigation
+
+- Use <a href="?path=/docs/navigation-sidebar-navigation--docs">Sidebar Navigation</a> for the visual navigation list. Keep routing outside it: pass controlled `activeHref` state and update it from `onNavigate`.
+- Use <a href="?path=/docs/navigation-cycle-select--docs">Cycle Select</a> only for a small ordered set that benefits from previous/next actions. For ordinary searchable choices, use <a href="?path=/docs/ui-forms-filter-command-picker--docs">Filter Command Picker</a> instead.
+- Use <a href="?path=/docs/navigation-page-pagination--docs">Page Pagination</a> for paged collections. The parent owns the page state and should expose the current result state near the control.
+
+## Verify the composition
+
+Every interactive navigation story keeps state locally and asserts a visible result. New layouts must cover bounded shell behaviour, keyboard reachability for scrolling regions, and both catalogue themes before application migration.
