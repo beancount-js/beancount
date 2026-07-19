@@ -30,6 +30,7 @@ route, server API, ledger object, or formatter context.
 | allocation hierarchy      | `charts/HierarchyChart.svelte`                                                | Fava continues to select currencies and own account navigation routes.                |
 | dashboard card disclosure | `dashboard/DashboardSection.svelte`                                           | Fava continues to compose dashboard sections and persist dashboard state.             |
 | dashboard category donut  | `dashboard/DashboardDonut.svelte`                                             | Fava continues to derive categories, format values, and own category navigation.      |
+| dashboard trend chart     | `dashboard/DashboardLine.svelte`                                              | Fava continues to derive history, format values, and own dashboard navigation.        |
 
 ## Application adapters still to extract
 
