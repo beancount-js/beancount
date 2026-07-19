@@ -176,13 +176,6 @@
     updateRoute({ record: record.key });
   }
 
-  function handleRecordKeydown(event: KeyboardEvent, record: JournalRecord) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openRecord(record);
-    }
-  }
-
   function stopRowClick(event: MouseEvent) {
     event.stopPropagation();
   }
@@ -530,15 +523,10 @@
           {#each group.records as record, index}
             {@const logo = recordLogo(record)}
             <div
-              role="button"
-              tabindex="0"
               class:rounded-b-xl={index === group.records.length - 1}
               class={selectable
-                ? "grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-                : "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"}
-              aria-label={`Open ${record.title}`}
-              onclick={() => openRecord(record)}
-              onkeydown={(event) => handleRecordKeydown(event, record)}
+                ? "grid grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
+                : "grid grid-cols-[auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"}
             >
               {#if selectable}
                 <input
@@ -573,12 +561,17 @@
                   {/if}
                 </div>
               {/if}
-              <div class="min-w-0">
+              <button
+                type="button"
+                class="min-w-0 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Open ${record.title}`}
+                onclick={() => openRecord(record)}
+              >
                 <div class="truncate text-sm font-semibold">{record.title}</div>
                 <div class="mt-1 truncate text-xs text-muted-foreground">
                   {record.detail}
                 </div>
-              </div>
+              </button>
               <div class="flex min-w-0 flex-col gap-1 text-right">
                 {#if record.postings?.length}
                   {#each record.postings as posting}

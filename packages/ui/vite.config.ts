@@ -54,6 +54,7 @@ export default defineConfig({
       "lucide-svelte/icons/ellipsis",
       "lucide-svelte/icons/fold-vertical",
       "lucide-svelte/icons/folder-open",
+      "lucide-svelte/icons/info",
       "lucide-svelte/icons/layout-panel-left",
       "lucide-svelte/icons/minus",
       "lucide-svelte/icons/moon",
