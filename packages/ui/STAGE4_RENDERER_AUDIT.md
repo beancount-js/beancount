@@ -33,6 +33,7 @@ route, server API, ledger object, or formatter context.
 | dashboard trend chart     | `dashboard/DashboardLine.svelte`                                              | Fava continues to derive history, format values, and own dashboard navigation.        |
 | dashboard cash flow       | `dashboard/DashboardFlow.svelte`                                              | Fava continues to derive categories, format values, and own account navigation.       |
 | dashboard balance tree    | `dashboard/DashboardTreeTable.svelte`                                         | Fava continues to derive account trees, format values, and own account navigation.    |
+| all-or-one picker adapter | `forms/ComboBox.svelte`                                                       | Fava retains its legacy import until forms consumer migration.                        |
 
 ## Application adapters still to extract
 
