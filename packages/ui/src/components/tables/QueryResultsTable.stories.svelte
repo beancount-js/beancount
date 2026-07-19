@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "A formatted, client-sortable query result table. Supply precomputed display values from the query layer; this visual primitive intentionally does not parse BQL or infer account and money formatting.",
+            "A formatted, client-sortable query result table. Supply precomputed display values and controlled page ranges from the query layer; this visual primitive intentionally does not parse BQL or infer account and money formatting.",
         },
       },
     },
@@ -42,7 +42,41 @@
         amount: "12.50",
       },
     },
+    {
+      id: "utilities",
+      values: {
+        date: "16 Jul 2026",
+        description: "Household utilities",
+        account: "Expenses:Utilities",
+        amount: "-86.55",
+      },
+    },
+    {
+      id: "salary",
+      values: {
+        date: "15 Jul 2026",
+        description: "Salary payment",
+        account: "Income:Salary",
+        amount: "3200.00",
+      },
+    },
   ];
+</script>
+
+<script lang="ts">
+  let queryPage = $state(1);
+  let queryPageSize = $state(2);
+
+  function visibleRows() {
+    const start = (queryPage - 1) * queryPageSize;
+    return rows.slice(start, start + queryPageSize);
+  }
+
+  function resultLabel() {
+    const start = (queryPage - 1) * queryPageSize + 1;
+    const end = Math.min(queryPage * queryPageSize, rows.length);
+    return `Showing ${start}–${end} of ${rows.length}`;
+  }
 </script>
 
 <Story
@@ -61,7 +95,44 @@
 >
   {#snippet template()}
     <div class="max-w-5xl p-5">
-      <QueryResultsTable {columns} {rows} />
+      <QueryResultsTable {columns} rows={rows.slice(0, 2)} />
+    </div>
+  {/snippet}
+</Story>
+
+<Story
+  name="Changes controlled query pages"
+  play={async ({ canvas }) => {
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Go to next page" }),
+    );
+    await expect(canvas.getByText("Household utilities")).toBeVisible();
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "Showing 3–4 of 4",
+    );
+  }}
+>
+  {#snippet template()}
+    <div class="max-w-5xl p-5">
+      <QueryResultsTable
+        {columns}
+        rows={visibleRows()}
+        pagination={{
+          page: queryPage,
+          pageCount: Math.ceil(rows.length / queryPageSize),
+          resultLabel: resultLabel(),
+          pageSize: queryPageSize,
+          pageSizes: [2, 4],
+        }}
+        onPageChange={(page) => {
+          queryPage = page;
+        }}
+        onPageSizeChange={(pageSize) => {
+          queryPageSize = pageSize;
+          queryPage = 1;
+        }}
+      />
+      <output class="sr-only" aria-live="polite">{resultLabel()}</output>
     </div>
   {/snippet}
 </Story>
