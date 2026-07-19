@@ -612,12 +612,6 @@
     if (requestedPage !== 1) updateRoute({ page: "1" });
   }
 
-  function ariaSortFor(key: SortKey): "ascending" | "descending" | "none" {
-    const order = sortOrders[key];
-    if (order === "none") return "none";
-    return order === "asc" ? "ascending" : "descending";
-  }
-
   function compareDateKeys(
     left: string,
     right: string,
@@ -1175,13 +1169,6 @@
     sheetOpen = true;
   });
 
-  function handleRowKeydown(event: KeyboardEvent, row: ProposalRow) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openRow(row);
-    }
-  }
-
   function markLogoFailed(proposalId: string) {
     failedLogoIds = new Set([...failedLogoIds, proposalId]);
   }
@@ -1664,7 +1651,7 @@
                 (event.currentTarget as HTMLInputElement).checked,
               )}
           />
-          <div role="columnheader" aria-sort={ariaSortFor("date")}>
+          <div>
             <button
               type="button"
               class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
@@ -1681,11 +1668,7 @@
               {/if}
             </button>
           </div>
-          <div
-            role="columnheader"
-            aria-sort={ariaSortFor("amount")}
-            class="justify-self-end"
-          >
+          <div class="justify-self-end">
             <button
               type="button"
               class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
@@ -1824,13 +1807,8 @@
                     {@const logo = merchantLogo(row.proposal)}
                     {@const postings = rowPostings(row.proposal)}
                     <div
-                      role="button"
-                      tabindex="0"
                       class:rounded-b-xl={index === group.rows.length - 1}
-                      class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)]"
-                      aria-label={`Review ${rowTitle(row.proposal)}`}
-                      onclick={() => openRow(row)}
-                      onkeydown={(event) => handleRowKeydown(event, row)}
+                      class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60 sm:grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)]"
                     >
                       <input
                         type="checkbox"
@@ -1863,7 +1841,12 @@
                           {rowInitial(row.proposal)}
                         </div>
                       {/if}
-                      <div class="min-w-0">
+                      <button
+                        type="button"
+                        class="min-w-0 rounded-md border-0 bg-transparent p-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label={`Review ${rowTitle(row.proposal)}`}
+                        onclick={() => openRow(row)}
+                      >
                         <div
                           class="break-words text-sm font-semibold sm:truncate"
                         >
@@ -1881,7 +1864,7 @@
                         >
                           {ingestionProposalReviewLabel(row.proposal)}
                         </span>
-                      </div>
+                      </button>
                       <div
                         class="col-span-2 col-start-2 flex min-w-0 flex-col gap-1 text-right sm:col-span-1 sm:col-start-4 sm:row-start-1"
                       >

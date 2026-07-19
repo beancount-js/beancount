@@ -35,6 +35,7 @@ const requireFromFava = createRequire(
 const { lezer } = requireFromFava("@lezer/generator/rollup") as {
   lezer: () => unknown;
 };
+const favaDependency = (name: string) => requireFromFava.resolve(name);
 
 export default defineConfig({
   // Fava's source imports its Lezer grammars. Load the same generator plugin
@@ -43,15 +44,26 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       "@internationalized/date",
+      "@codemirror/lang-sql",
+      "@codemirror/search",
+      "@lezer/common",
       "@storybook/addon-a11y/preview",
+      "ajv",
       "d3-array",
+      "papaparse",
+      "lucide-svelte/icons/arrow-down-to-line",
+      "lucide-svelte/icons/calendar",
+      "lucide-svelte/icons/case-sensitive",
       "lucide-svelte/icons/chevron-left",
       "lucide-svelte/icons/chevron-right",
       "lucide-svelte/icons/chevron-up",
       "lucide-svelte/icons/circle",
       "lucide-svelte/icons/circle-alert",
+      "lucide-svelte/icons/circle-x",
       "lucide-svelte/icons/clipboard-list",
+      "lucide-svelte/icons/check-check",
       "lucide-svelte/icons/database-zap",
+      "lucide-svelte/icons/edit",
       "lucide-svelte/icons/ellipsis",
       "lucide-svelte/icons/fold-vertical",
       "lucide-svelte/icons/folder-open",
@@ -61,13 +73,19 @@ export default defineConfig({
       "lucide-svelte/icons/moon",
       "lucide-svelte/icons/panel-left",
       "lucide-svelte/icons/play",
+      "lucide-svelte/icons/regex",
       "lucide-svelte/icons/refresh-cw",
+      "lucide-svelte/icons/replace",
+      "lucide-svelte/icons/replace-all",
       "lucide-svelte/icons/save",
       "lucide-svelte/icons/scan-search",
       "lucide-svelte/icons/settings",
       "lucide-svelte/icons/settings-2",
       "lucide-svelte/icons/sparkles",
+      "lucide-svelte/icons/text-select",
       "lucide-svelte/icons/unfold-vertical",
+      "lucide-svelte/icons/undo-2",
+      "lucide-svelte/icons/whole-word",
       "paneforge",
       "svelte-radix/ChevronRight.svelte",
       "svelte-radix/DotsHorizontal.svelte",
@@ -82,6 +100,14 @@ export default defineConfig({
       // which cannot resolve its internal source modules in Vite.
       "@beancount-js/beancount": beancountSource,
       "@beancount-js/beanquery": beanquerySource,
+      // These packages are direct Fava dependencies. Explicit aliases let
+      // Storybook pre-bundle them from the application workspace instead of
+      // dynamically optimizing them after a colocated story is opened.
+      "@codemirror/lang-sql": favaDependency("@codemirror/lang-sql"),
+      "@codemirror/search": favaDependency("@codemirror/search"),
+      "@lezer/common": favaDependency("@lezer/common"),
+      ajv: favaDependency("ajv"),
+      papaparse: favaDependency("papaparse"),
       // Fava-only dependencies used by catalogued components are resolved from
       // the application workspace, where pnpm keeps their source packages.
       "d3-array": d3Array,
