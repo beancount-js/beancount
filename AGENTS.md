@@ -43,6 +43,7 @@
 
 - `@beancount-js/ui` owns the shared visual foundation and Storybook catalog. Keep stories next to the component they document. During the forms migration, Stories in `packages/forms/src` are intentionally discovered by the UI catalog.
 - The `Shadcn/` Storybook section documents Fava's local shadcn-svelte source in place. Keep those stories colocated in `packages/fava/src/lib/components/ui`; do not move or re-export a Fava component solely for catalog coverage. Promote only deliberate cross-app primitives into `@beancount-js/ui`.
+- Stage 3 catalogs reusable Fava application components in place. Keep stories beside the existing source under `packages/fava/src` and use fixtures to render the real component behaviour; do not move, re-export, or remove production application code merely for Storybook coverage.
 - `UI Forms/Guidance` is the canonical high-level form decision guide. Generated Docs pages retain props and examples; every reusable form component must link back to the guide and update it whenever its usage rules change.
 - During Stage 2, classify every `@beancount-js/forms` visual export in `packages/forms/STAGE2_AUDIT.md`. Add a colocated story and Docs description before treating it as catalogued; only deliberate cross-app primitives belong in `@beancount-js/ui`.
 - Every reusable component must have stories covering its meaningful visual states, variants, and error/empty states. Treat the stories as the canonical visual contract for agents and application code.

@@ -15,6 +15,7 @@
     "useDefineForClassFields": true,
     "verbatimModuleSyntax": true,
     "paths": {
+      "$lib/*": ["../fava/src/lib/*"],
       "storybook/test": ["./node_modules/storybook/dist/test/index.d.ts"]
     }
   },
@@ -23,6 +24,7 @@
     "src/**/*.ts",
     "src/**/*.svelte",
     "../forms/src/**/*.stories.svelte",
+    "../fava/src/**/*.stories.svelte",
     "tailwind.config.ts",
     "vite.config.ts",
     "vitest.config.ts"

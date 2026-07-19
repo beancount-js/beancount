@@ -32,7 +32,7 @@
   }}
 >
   {#snippet template()}
-    <Accordion.Root type="single" collapsible class="w-full max-w-xl">
+    <Accordion.Root type="single" class="w-full max-w-xl">
       <Accordion.Item value="balances">
         <Accordion.Trigger>How are balances calculated?</Accordion.Trigger>
         <Accordion.Content>
@@ -55,7 +55,7 @@
   }}
 >
   {#snippet template()}
-    <Accordion.Root type="single" collapsible class="w-full max-w-xl">
+    <Accordion.Root type="single" class="w-full max-w-xl">
       <Accordion.Item value="account-details">
         <Accordion.Trigger indicatorPosition="start">
           Show account details
