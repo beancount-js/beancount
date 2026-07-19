@@ -684,6 +684,11 @@
     preferredRunId?: string,
     syncRunIds?: readonly string[],
   ) {
+    // A linked review row can be opened before its source summaries have
+    // loaded. Prefer the explicit run in the URL so the initial
+    // `__all__` source does not repeatedly clear active runs.
+    if (preferredRunId) return [preferredRunId];
+
     if (id === ALL_CONNECTIONS) {
       const selected = new Map<string, IngestionRunSummary>();
       for (const item of items) {
@@ -699,7 +704,6 @@
       return [...selected.values()].map((item) => item.id);
     }
     const belonging = items.filter((item) => runBelongsToSource(item, id));
-    if (preferredRunId) return [preferredRunId];
     if (!belonging.length) return [] as string[];
 
     if (syncRunIds?.length) {
