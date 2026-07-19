@@ -60,6 +60,12 @@
       ? [title, `${startDateFilter}-${title}`]
       : [title, title];
   });
+  $: roots =
+    trees[0]?.account === ""
+      ? trees[0].children.map((_, index) =>
+          trees.map((tree) => tree.children[index]!),
+        )
+      : [trees];
 </script>
 
 <ScrollArea.Root orientation="horizontal" class="w-full max-w-full">
@@ -79,6 +85,8 @@
         {/each}
       </p>
     </li>
-    <IntervalTreeTableNode nodes={trees} {budgets} />
+    {#each roots as nodes}
+      <IntervalTreeTableNode {nodes} {budgets} />
+    {/each}
   </ol>
 </ScrollArea.Root>

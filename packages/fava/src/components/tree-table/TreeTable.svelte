@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { DateTime } from "luxon";
   import { writable } from "svelte/store";
   import { useCollapseAccount, useInvertAccount } from "../../stores/account";
   import type { AccountTreeNode } from "../../lib/models";
@@ -19,7 +20,7 @@
   /** The account tree to show. */
   export let tree: AccountTreeNode;
   /** The end date (for closed accounts). */
-  export let end: Date | null;
+  export let end: DateTime | null;
 
   const collapseAccount = useCollapseAccount();
   const invertAccount = useInvertAccount();
