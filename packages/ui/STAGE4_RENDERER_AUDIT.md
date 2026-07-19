@@ -76,6 +76,21 @@ the Fava adapter in a separate change.
   balance derivation, workspace-header wiring, patches, and saves. `QueryTable`,
   reconciliation flows, and dashboard containers retain their Fava data,
   ranking, Brand Match, and persistence adapters until consumer migration.
+- Editor adapters: `Editor`, `EditorDialog`, `ImportEditor`, and `Highlighter`
+  retain Beancount/BQL language setup, file synchronisation, source positions,
+  command dispatch, linting, formatting, and save actions. The shared
+  `CodeEditor` and syntax-token palette are their UI foundation; they must not
+  import Fava CodeMirror extensions into `@beancount-js/ui`.
+- Search and account adapters: `Search`, `AccountDetails`, `AccountActivityTable`,
+  `AccountTable`, `Query`, and report routes retain ledger filtering, BQL,
+  account-tree derivation, interval selection, and route state. They compose
+  the UI search controls, account link, charts, and table display models.
+- AI and ingestion adapters: `AiDock`, `AiUnifiedReviewDiff`, the journal and
+  ingestion sheets, merchant review, source configuration, and reconciliation
+  panels retain session/API streams, approval decisions, file mutations,
+  matching, persistence, and project-local state. Promote only a future
+  provider-agnostic visual primitive with a complete display model; never copy
+  API or mutation logic into the UI package.
 
 ## Completion rule for a copied visual surface
 
