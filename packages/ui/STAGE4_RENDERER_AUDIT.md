@@ -32,6 +32,7 @@ route, server API, ledger object, or formatter context.
 | dashboard category donut  | `dashboard/DashboardDonut.svelte`                                             | Fava continues to derive categories, format values, and own category navigation.      |
 | dashboard trend chart     | `dashboard/DashboardLine.svelte`                                              | Fava continues to derive history, format values, and own dashboard navigation.        |
 | dashboard cash flow       | `dashboard/DashboardFlow.svelte`                                              | Fava continues to derive categories, format values, and own account navigation.       |
+| dashboard balance tree    | `dashboard/DashboardTreeTable.svelte`                                         | Fava continues to derive account trees, format values, and own account navigation.    |
 
 ## Application adapters still to extract
 
@@ -42,9 +43,9 @@ the Fava adapter in a separate change.
 
 - Chart rendering: Fava's `Chart` adapter and dashboard containers. The
   UI-owned `LineChart`, `ScatterPlot`, `BarChart`, `HierarchyChart`,
-  `DashboardDonut`, `DashboardLine`, and `DashboardFlow` accept display models;
-  keep the Fava adapter responsible for data selection, formatting, and routes
-  until consumer migration.
+  `DashboardDonut`, `DashboardLine`, `DashboardFlow`, and
+  `DashboardTreeTable` accept display models; keep the Fava adapter responsible
+  for data selection, formatting, and routes until consumer migration.
 - Review and import surfaces: `ImportTable`. The UI-owned
   `IngestionReviewTable` covers grouped queue presentation, selection, and row
   callbacks, while `ImportMappingTable` covers controlled account mapping. Fava
