@@ -1,5 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { Decimal } from "@beancount-js/parser";
+  import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
+  import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
+  import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import CircleAlert from "lucide-svelte/icons/circle-alert";
@@ -9,12 +13,34 @@
   import type { MerchantReviewCluster } from "@beancount-js/server";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
+  import * as Table from "$lib/components/ui/table";
   import * as Alert from "$lib/components/ui/alert";
   import * as Sheet from "$lib/components/ui/sheet";
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { urlFor } from "../helpers";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import LocalMerchantMatchPicker from "./LocalMerchantMatchPicker.svelte";
+  import PagePagination from "./PagePagination.svelte";
+
+  type TransactionSortKey = "date" | "transaction" | "account" | "amount";
+  type SortOrder = "none" | "asc" | "desc";
+
+  const MATCHING_TRANSACTION_PAGE_SIZE = 10;
+  const MATCHING_TRANSACTION_COLUMNS: Array<{
+    key: TransactionSortKey;
+    label: string;
+    rightAligned?: boolean;
+  }> = [
+    { key: "date", label: "Date" },
+    { key: "transaction", label: "Transaction" },
+    { key: "account", label: "Account" },
+    { key: "amount", label: "Amount", rightAligned: true },
+  ];
+  const SORT_CYCLE: Record<SortOrder, SortOrder> = {
+    none: "asc",
+    asc: "desc",
+    desc: "none",
+  };
 
   type Props = {
     open?: boolean;
@@ -48,6 +74,10 @@
   let attachedMerchantId = $state("");
   let failedLogo = $state(false);
   let sheetTitleEl = $state<HTMLElement | null>(null);
+  let matchingTransactionPage = $state(1);
+  let matchingTransactionSortKey = $state<TransactionSortKey | null>(null);
+  let matchingTransactionSortOrder = $state<SortOrder>("none");
+  let previousClusterId = $state("");
   let openSections = $state<Record<string, boolean>>({
     merchant: true,
     suggestion: true,
@@ -68,11 +98,80 @@
   );
   const sectionTitleClass =
     "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+  const sortedMatchingTransactions = $derived.by(() => {
+    if (
+      !matchingTransactionSortKey ||
+      matchingTransactionSortOrder === "none"
+    ) {
+      return cluster.transactions;
+    }
+
+    const direction = matchingTransactionSortOrder === "asc" ? 1 : -1;
+    const key = matchingTransactionSortKey;
+    return [...cluster.transactions].sort((left, right) => {
+      const comparison =
+        key === "date"
+          ? left.bookedAt.localeCompare(right.bookedAt)
+          : key === "transaction"
+            ? matchingTransactionLabel(left).localeCompare(
+                matchingTransactionLabel(right),
+                undefined,
+                { sensitivity: "base" },
+              )
+            : key === "account"
+              ? left.sourceAccount.localeCompare(
+                  right.sourceAccount,
+                  undefined,
+                  {
+                    sensitivity: "base",
+                  },
+                )
+              : compareTransactionAmounts(left.amount, right.amount);
+      return direction * comparison;
+    });
+  });
+  const matchingTransactionPageCount = $derived(
+    Math.max(
+      1,
+      Math.ceil(
+        sortedMatchingTransactions.length / MATCHING_TRANSACTION_PAGE_SIZE,
+      ),
+    ),
+  );
+  const matchingTransactionPageStart = $derived(
+    (matchingTransactionPage - 1) * MATCHING_TRANSACTION_PAGE_SIZE,
+  );
+  const matchingTransactionPageEnd = $derived(
+    Math.min(
+      matchingTransactionPageStart + MATCHING_TRANSACTION_PAGE_SIZE,
+      sortedMatchingTransactions.length,
+    ),
+  );
+  const visibleMatchingTransactions = $derived(
+    sortedMatchingTransactions.slice(
+      matchingTransactionPageStart,
+      matchingTransactionPageEnd,
+    ),
+  );
 
   let wasOpen = $state(false);
   $effect(() => {
     if (wasOpen && !open) onClosed?.();
     wasOpen = open;
+  });
+
+  $effect(() => {
+    if (matchingTransactionPage > matchingTransactionPageCount) {
+      matchingTransactionPage = matchingTransactionPageCount;
+    }
+  });
+
+  $effect(() => {
+    if (cluster.id === previousClusterId) return;
+    previousClusterId = cluster.id;
+    matchingTransactionPage = 1;
+    matchingTransactionSortKey = null;
+    matchingTransactionSortOrder = "none";
   });
 
   function reviewHref(tx: MerchantReviewCluster["transactions"][number]) {
@@ -81,6 +180,41 @@
       runId: tx.runId,
       proposalId: tx.proposalId,
     });
+  }
+
+  function matchingTransactionLabel(
+    tx: MerchantReviewCluster["transactions"][number],
+  ) {
+    return tx.narration || tx.payee || tx.rawLabel || "Untitled transaction";
+  }
+
+  function compareTransactionAmounts(left: string, right: string) {
+    const leftAmount = new Decimal(left);
+    const rightAmount = new Decimal(right);
+    if (leftAmount.eq(rightAmount)) return 0;
+    return leftAmount.lt(rightAmount) ? -1 : 1;
+  }
+
+  function cycleMatchingTransactionSort(key: TransactionSortKey) {
+    if (matchingTransactionSortKey !== key) {
+      matchingTransactionSortKey = key;
+      matchingTransactionSortOrder = "asc";
+    } else {
+      matchingTransactionSortOrder = SORT_CYCLE[matchingTransactionSortOrder];
+      if (matchingTransactionSortOrder === "none") {
+        matchingTransactionSortKey = null;
+      }
+    }
+    matchingTransactionPage = 1;
+  }
+
+  function matchingTransactionAriaSort(
+    key: TransactionSortKey,
+  ): "ascending" | "descending" | "none" {
+    if (matchingTransactionSortKey !== key) return "none";
+    if (matchingTransactionSortOrder === "asc") return "ascending";
+    if (matchingTransactionSortOrder === "desc") return "descending";
+    return "none";
   }
 
   onMount(() => {
@@ -643,30 +777,91 @@
                 <div
                   class="overflow-hidden rounded-xl border bg-card shadow-sm"
                 >
-                  {#each cluster.transactions as tx, index (tx.proposalId)}
-                    <a
-                      href={reviewHref(tx)}
-                      class:rounded-b-xl={index ===
-                        cluster.transactions.length - 1}
-                      class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-3 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-                      aria-label={`Open review for ${tx.narration || tx.payee || tx.rawLabel}`}
-                    >
-                      <div class="min-w-0">
-                        <div class="truncate text-sm font-semibold">
-                          {tx.narration || tx.payee || tx.rawLabel}
-                        </div>
-                        <div
-                          class="mt-1 truncate text-xs text-muted-foreground"
-                        >
-                          {tx.bookedAt} · {tx.sourceAccount}
-                        </div>
-                      </div>
-                      <span class="text-sm font-semibold tabular-nums">
-                        {tx.amount}
-                        {tx.currency}
-                      </span>
-                    </a>
-                  {/each}
+                  <Table.Root class="min-w-[44rem]">
+                    <Table.Header class="bg-muted/40">
+                      <Table.Row class="hover:bg-transparent">
+                        {#each MATCHING_TRANSACTION_COLUMNS as column (column.key)}
+                          <Table.Head
+                            scope="col"
+                            aria-sort={matchingTransactionAriaSort(column.key)}
+                            class={column.rightAligned
+                              ? "p-0 text-right"
+                              : "p-0"}
+                          >
+                            <button
+                              type="button"
+                              class="inline-flex h-10 w-full items-center gap-1.5 rounded-md px-4 text-left text-xs font-semibold uppercase tracking-wide outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                              class:justify-end={column.rightAligned}
+                              class:text-right={column.rightAligned}
+                              aria-label={`Sort matching transactions by ${column.label.toLowerCase()}`}
+                              onclick={() =>
+                                cycleMatchingTransactionSort(column.key)}
+                            >
+                              {column.label}
+                              {#if matchingTransactionSortKey === column.key && matchingTransactionSortOrder === "asc"}
+                                <ArrowUpNarrowWide
+                                  class="size-3.5"
+                                  aria-hidden="true"
+                                />
+                              {:else if matchingTransactionSortKey === column.key && matchingTransactionSortOrder === "desc"}
+                                <ArrowDownWideNarrow
+                                  class="size-3.5"
+                                  aria-hidden="true"
+                                />
+                              {:else}
+                                <ArrowUpDown
+                                  class="size-3.5 opacity-50"
+                                  aria-hidden="true"
+                                />
+                              {/if}
+                            </button>
+                          </Table.Head>
+                        {/each}
+                      </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                      {#each visibleMatchingTransactions as tx (tx.proposalId)}
+                        <Table.Row>
+                          <Table.Cell
+                            class="whitespace-nowrap px-4 py-3 text-muted-foreground"
+                            >{tx.bookedAt}</Table.Cell
+                          >
+                          <Table.Cell class="min-w-52 px-4 py-3">
+                            <a
+                              href={reviewHref(tx)}
+                              class="block truncate rounded-md font-medium text-foreground outline-none transition-colors hover:text-primary focus-visible:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                              aria-label={`Open review for ${matchingTransactionLabel(tx)}`}
+                              >{matchingTransactionLabel(tx)}</a
+                            >
+                          </Table.Cell>
+                          <Table.Cell
+                            class="min-w-64 whitespace-nowrap px-4 py-3 text-muted-foreground"
+                            >{tx.sourceAccount}</Table.Cell
+                          >
+                          <Table.Cell
+                            class="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-foreground"
+                            >{tx.amount} {tx.currency}</Table.Cell
+                          >
+                        </Table.Row>
+                      {/each}
+                    </Table.Body>
+                  </Table.Root>
+                </div>
+                <div
+                  class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  data-merchant-matching-transaction-pagination
+                >
+                  <span class="text-sm text-muted-foreground"
+                    >Showing {matchingTransactionPageStart +
+                      1}&ndash;{matchingTransactionPageEnd} of {sortedMatchingTransactions.length}</span
+                  >
+                  <PagePagination
+                    page={matchingTransactionPage}
+                    pageCount={matchingTransactionPageCount}
+                    ariaLabel="Matching transaction pages"
+                    onPageChange={(nextPage) =>
+                      (matchingTransactionPage = nextPage)}
+                  />
                 </div>
               {/if}
             </div>
