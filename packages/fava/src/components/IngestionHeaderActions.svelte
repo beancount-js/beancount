@@ -4,6 +4,7 @@
   import DatabaseZap from "lucide-svelte/icons/database-zap";
   import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
+  import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ClipboardList from "lucide-svelte/icons/clipboard-list";
   import Check from "lucide-svelte/icons/check";
   import FoldVertical from "lucide-svelte/icons/fold-vertical";
@@ -21,6 +22,8 @@
   import { FormToolbar } from "@beancount-js/forms";
   import CycleSelect from "./CycleSelect.svelte";
   import { Button } from "$lib/components/ui/button";
+  import * as ButtonGroup from "$lib/components/ui/button-group";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import * as Menubar from "$lib/components/ui/menubar";
   import { Switch } from "$lib/components/ui/switch";
   import * as Tooltip from "$lib/components/ui/tooltip";
@@ -140,29 +143,61 @@
         </Tooltip.Root>
         {#if header.bulkAction}
           {@const bulkAction = header.bulkAction}
-          <Tooltip.Root>
-            <Tooltip.Trigger>
-              {#snippet child({ props })}
-                <Button
-                  {...props}
-                  type="button"
-                  size="sm"
-                  class="h-8 gap-1.5"
-                  aria-label={`${bulkAction.label} ${bulkAction.selectedCount} selected item${bulkAction.selectedCount === 1 ? "" : "s"}`}
-                  disabled={!bulkAction.canRun || bulkAction.busy}
-                  onclick={() => bulkAction.onRun()}
-                >
-                  <Check data-icon="inline-start" />
-                  {bulkAction.busy
-                    ? `${bulkAction.label}…`
-                    : `${bulkAction.label} ${bulkAction.selectedCount}`}
-                </Button>
-              {/snippet}
-            </Tooltip.Trigger>
-            <Tooltip.Content>
-              {bulkAction.label} selected items
-            </Tooltip.Content>
-          </Tooltip.Root>
+          {@const additionalActions = bulkAction.additionalActions ?? []}
+          <ButtonGroup.Root aria-label={`${bulkAction.label} selected items`}>
+            <Tooltip.Root>
+              <Tooltip.Trigger>
+                {#snippet child({ props })}
+                  <Button
+                    {...props}
+                    type="button"
+                    size="sm"
+                    class="h-8 gap-1.5"
+                    aria-label={`${bulkAction.label} ${bulkAction.selectedCount} selected item${bulkAction.selectedCount === 1 ? "" : "s"}`}
+                    disabled={!bulkAction.canRun || bulkAction.busy}
+                    onclick={() => bulkAction.onRun()}
+                  >
+                    <Check data-icon="inline-start" />
+                    {bulkAction.busy
+                      ? `${bulkAction.label}…`
+                      : `${bulkAction.label} ${bulkAction.selectedCount}`}
+                  </Button>
+                {/snippet}
+              </Tooltip.Trigger>
+              <Tooltip.Content>
+                {bulkAction.label} selected items
+              </Tooltip.Content>
+            </Tooltip.Root>
+            <ButtonGroup.Separator />
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger>
+                {#snippet child({ props })}
+                  <Button
+                    {...props}
+                    type="button"
+                    size="icon"
+                    class="size-8"
+                    aria-label={`More ${bulkAction.label.toLowerCase()} actions`}
+                    disabled={!bulkAction.canRun ||
+                      bulkAction.busy ||
+                      !additionalActions.length}
+                  >
+                    <ChevronDown class="size-4" aria-hidden="true" />
+                  </Button>
+                {/snippet}
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content align="end">
+                {#each additionalActions as action (action.label)}
+                  <DropdownMenu.Item
+                    disabled={action.disabled || bulkAction.busy}
+                    onSelect={() => action.onRun()}
+                  >
+                    {action.label}
+                  </DropdownMenu.Item>
+                {/each}
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          </ButtonGroup.Root>
         {:else}
           <Tooltip.Root>
             <Tooltip.Trigger>

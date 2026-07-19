@@ -49,6 +49,11 @@ export type IngestionBulkReviewAction = {
   canRun: boolean;
   busy: boolean;
   onRun: () => void;
+  additionalActions?: {
+    label: string;
+    disabled?: boolean;
+    onRun: () => void;
+  }[];
 };
 
 export type IngestionMerchantsHeaderActions = {
