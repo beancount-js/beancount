@@ -26,6 +26,7 @@ These components are part of the public UI forms contract, but remain domain-spe
 | `SearchFilterBar`                     | Beancount filter-query syntax and application-specific filter slots             |
 | `ChipAutocomplete` and `TagEditor`    | Multi-value editing behaviour used by journal and rules workflows               |
 | `AccountAvatar` and `IconColorPicker` | Account appearance, merchant logos, and contrast-correction rules               |
+| `AccountPicker`                       | Account-choice presentation; applications supply account names and persistence  |
 | `MerchantPicker`                      | Saved-merchant choice presentation; applications supply ranking and persistence |
 
 ## Deprecated compatibility components

@@ -21,6 +21,7 @@ export { default as ChipAutocomplete } from "./ChipAutocomplete.svelte";
 export { default as AccountAvatar } from "./AccountAvatar.svelte";
 export { default as IconColorPicker } from "./IconColorPicker.svelte";
 export { default as TagEditor } from "./TagEditor.svelte";
+export { default as AccountPicker } from "./AccountPicker.svelte";
 export { default as MerchantPicker } from "./MerchantPicker.svelte";
 export { default as SecretField } from "./SecretField.svelte";
 export { autosizeTextarea } from "./autosize-textarea";

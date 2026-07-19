@@ -34,6 +34,7 @@ route, server API, ledger object, or formatter context.
 | dashboard cash flow        | `dashboard/DashboardFlow.svelte`                                              | Fava continues to derive categories, format values, and own account navigation.       |
 | dashboard balance tree     | `dashboard/DashboardTreeTable.svelte`                                         | Fava continues to derive account trees, format values, and own account navigation.    |
 | all-or-one picker adapter  | `forms/ComboBox.svelte`                                                       | Fava retains its legacy import until forms consumer migration.                        |
+| account picker             | `forms/AccountPicker.svelte`                                                  | Fava continues to derive account choices and persist source configuration.            |
 | saved merchant picker      | `forms/MerchantPicker.svelte`                                                 | Fava continues to fetch, rank, create, and persist saved merchants.                   |
 | credential reference field | `forms/SecretField.svelte`                                                    | Fava continues to supply project environment names and persist credentials.           |
 
