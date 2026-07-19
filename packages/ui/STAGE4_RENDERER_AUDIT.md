@@ -36,6 +36,7 @@ route, server API, ledger object, or formatter context.
 | dashboard trend chart       | `dashboard/DashboardLine.svelte`                                              | Fava continues to derive history, format values, and own dashboard navigation.                                                  |
 | dashboard cash flow         | `dashboard/DashboardFlow.svelte`                                              | Fava continues to derive categories, format values, and own account navigation.                                                 |
 | dashboard balance tree      | `dashboard/DashboardTreeTable.svelte`                                         | Fava continues to derive account trees, format values, and own account navigation.                                              |
+| financial dashboard page    | `dashboard/FinancialDashboard.svelte`                                         | Fava supplies selected display models and retains data derivation, routes, preferences, and navigation actions.                 |
 | all-or-one picker adapter   | `forms/ComboBox.svelte`                                                       | Fava retains its legacy import until forms consumer migration.                                                                  |
 | account picker              | `forms/AccountPicker.svelte`                                                  | Fava continues to derive account choices and persist source configuration.                                                      |
 | saved merchant picker       | `forms/MerchantPicker.svelte`                                                 | Fava continues to fetch, rank, create, and persist saved merchants.                                                             |
@@ -48,8 +49,8 @@ independent UI copy yet. They are not allowed to become new cross-app
 primitives in place; first extract a model-driven UI component, then migrate
 the Fava adapter in a separate change.
 
-- Chart rendering: Fava's `Chart` adapter and dashboard containers. The
-  UI-owned `LineChart`, `ScatterPlot`, `BarChart`, `HierarchyChart`,
+- Chart rendering: Fava's `Chart` adapter. The UI-owned `LineChart`,
+  `ScatterPlot`, `BarChart`, `HierarchyChart`, `FinancialDashboard`,
   `DashboardDonut`, `DashboardLine`, `DashboardFlow`, and
   `DashboardTreeTable` accept display models; keep the Fava adapter responsible
   for data selection, formatting, and routes until consumer migration.
