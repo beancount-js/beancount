@@ -379,7 +379,7 @@
 
 <style>
   .positive {
-    color: var(--chart-2);
+    color: var(--success-foreground);
   }
 
   .negative {
