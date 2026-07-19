@@ -20,7 +20,7 @@ Stories stay colocated with the Fava source and use deterministic local fixtures
 | Studio shell                     | `StudioShellHeader`, `StudioShell`, `FavaNavigation`                                                            | Catalogue with a fixture-backed workspace context; preserve the app's stores and routes                        |
 | Tables                           | `DataTable`, `ActivityTable`, `JournalTable`, `QueryTable`, `ImportTable`, `IngestionTable`, and `tree-table/*` | Generic `DataTable` catalogued; catalogue each distinct domain interaction with representative ledger fixtures |
 | Dashboard and chart composition  | `Chart`, `ChartSwitcher`, `ModeSwitch`, `dashboard/*`                                                           | Catalogue chart type, empty/error, and selection states                                                        |
-| Fava form adapters               | `form/AccountComboField`, `MerchantComboField`, `SecretField`, `SwitchField`                                    | `AccountComboField`, `SecretField`, and `SwitchField` catalogued with stateful source fixtures; `MerchantComboField` remains for its deterministic saved-merchant fixture |
+| Fava form adapters               | `form/AccountComboField`, `MerchantComboField`, `SecretField`, `SwitchField`                                    | Catalogued with stateful source fixtures, including Merchant Picker and its source-form adapter                |
 | Loading and feedback             | `skeletons/*`, `errors/Errors`, `Empty` compositions                                                            | Route and reconciliation loading skeletons catalogued; add an error fixture and any materially different page-level loading state |
 
 ## Intentional exclusions
