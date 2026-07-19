@@ -12,6 +12,7 @@ route, server API, ledger object, or formatter context.
 | shadcn-svelte families   | `src/components/shadcn`                                                       | Original editable Fava source remains until consumer migration.                      |
 | shared forms and editors | `src/components/forms`                                                        | Fava continues to import `@beancount-js/forms` until the forms migration.            |
 | app frame and navigation | `AppShell.svelte`, `layout/*`, `navigation/*`                                 | Studio-specific project, router, and storage behaviour stays in Fava adapters.       |
+| Studio shell header      | `layout/StudioShellHeader.svelte`                                             | Fava continues to bind workspace settings and responsive sidebar state.              |
 | ordinary typed tables    | `tables/DataTable.svelte`                                                     | Applications provide their own columns and data.                                     |
 | account hierarchy        | `tables/AccountTreeTable.svelte`                                              | Fava maps account-tree data and routes into its plain tree/callback model.           |
 | ledger activity          | `tables/LedgerActivityTable.svelte`                                           | Fava continues to derive records, balances, and date groups from ledger data.        |
@@ -34,9 +35,9 @@ the Fava adapter in a separate change.
   selection, row action, and review models; the APIs and persistence remain in
   Fava. `AccountBulkActionSheet` now has a UI copy; its Fava adapter still owns
   patch calculation, confirmation, and saves.
-- Workspace adapters: `StudioShell`, `FavaNavigation`, and
-  `StudioShellHeader`. `AppShell` is already UI-owned; project selection,
-  routing, local storage, and server actions remain in the application.
+- Workspace adapters: `StudioShell` and `FavaNavigation`. `AppShell` and
+  `StudioShellHeader` are UI-owned; project selection, routing, local storage,
+  responsive sidebar state, and server actions remain in the application.
 - Domain pages: `JournalTable`, `QueryTable`, merchant/reconciliation flows,
   and dashboard containers. Compose the canonical UI tables and controls after
   their input models have been extracted.
