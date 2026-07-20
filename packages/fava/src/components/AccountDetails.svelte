@@ -5,7 +5,6 @@
   import { useContext } from "../context";
   import { urlForAccount } from "../helpers";
   import AccountActivityTable from "./AccountActivityTable.svelte";
-  import AccountTable from "./AccountTable.svelte";
   import * as Tabs from "$lib/components/ui/tabs";
   import type { AccountTreeNode } from "../lib/models";
   import { useLedger } from "./helpers";
@@ -17,18 +16,12 @@
   import { useChartContext } from "../charts/context";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import moment from "moment";
-  import type { LedgerError } from "@beancount-js/beancount";
-  import type { Text } from "@codemirror/state";
-  import type { Directive } from "@beancount-js/beancount";
   import { formatDate } from "@beancount-js/parser";
   import ContentScrollArea from "./ContentScrollArea.svelte";
   const { conversion, interval } = useContext();
   const chartContext = useChartContext();
 
   export let account: string = "";
-  export let onValueChange:
-    | ((content: Text, directive: Directive) => LedgerError[])
-    | undefined = undefined;
 
   $: ledgerData = useLedger();
   $: conversionContext = (asOf = $ledgerData.dateLast) => ({
@@ -146,11 +139,7 @@
               {/if}
             </Tabs.List>
             <Tabs.Content value="account-table">
-              {#if account}
-                <AccountActivityTable {account} />
-              {:else}
-                <AccountTable {account} {onValueChange} />
-              {/if}
+              <AccountActivityTable {account} />
             </Tabs.Content>
             {#if changeTreeNodes.length > 0}
               <Tabs.Content value="changes">

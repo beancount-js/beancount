@@ -321,6 +321,23 @@ test.describe("sample ledger navigation", () => {
 });
 
 test.describe("account details", () => {
+  test("root account page uses the canonical activity view", async ({
+    page,
+  }) => {
+    await gotoStudio(page, "/accounts");
+    await page.waitForSelector("[data-ledger-file-row]");
+    await expect(page).toHaveURL(/\/ledger\/.+\/accounts\/?/);
+    await expect(page.getByRole("tab", { name: "Account Table" })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.locator("[data-account-activity-table]")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByLabel("Select visible account activity records"),
+    ).toBeVisible();
+  });
+
   test("account page renders without runtime errors", async ({ page }) => {
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
