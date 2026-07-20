@@ -884,7 +884,7 @@
                 </div>
                 <Badge
                   variant="outline"
-                  class="pointer-events-none col-start-3 row-start-1 max-w-full justify-self-center truncate rounded-full bg-card text-[10px] uppercase tracking-wide text-muted-foreground"
+                  class="pointer-events-none col-start-3 row-start-1 max-w-full gap-1 justify-self-center truncate rounded-full bg-card text-[10px] uppercase tracking-wide text-muted-foreground"
                   aria-label={`Source ${memberSourceLabel(member)}`}
                   data-reconciliation-member-source
                 >

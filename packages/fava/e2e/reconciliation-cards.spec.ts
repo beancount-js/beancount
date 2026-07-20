@@ -205,6 +205,13 @@ test("styles reconciliation cards with aligned rows and compact actions", async 
       .first()
       .evaluate((node) => getComputedStyle(node).position),
   ).not.toBe("absolute");
+  expect(
+    await cards
+      .first()
+      .locator("[data-reconciliation-member-source]")
+      .first()
+      .evaluate((node) => getComputedStyle(node).columnGap),
+  ).toBe("4px");
 
   const firstRow = cards
     .first()
