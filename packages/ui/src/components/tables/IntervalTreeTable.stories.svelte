@@ -39,6 +39,17 @@
               },
             },
           ],
+          collapsedValues: [
+            {
+              value: "£560.00",
+              title: "Pounds sterling",
+              difference: {
+                value: "(+£40.00)",
+                title: "Budget £600.00",
+                tone: "positive",
+              },
+            },
+          ],
         },
         july: {
           values: [
@@ -136,7 +147,7 @@
       docs: {
         description: {
           component:
-            "A display-model-driven, multi-period account comparison. Pass formatted amounts and budget variance state per period; applications remain responsible for date ranges, currency formatting, account visibility, routes, and persisted disclosure preferences.",
+            "A display-model-driven, multi-period account comparison. Pass formatted direct and collapsed roll-up amounts plus budget variance state per period; applications remain responsible for date ranges, currency formatting, account visibility, routes, and persisted disclosure preferences.",
         },
       },
     },
@@ -156,11 +167,13 @@
     await expect(
       canvas.queryByRole("link", { name: "Groceries" }),
     ).not.toBeInTheDocument();
+    await expect(canvas.getByText("£560.00")).toBeVisible();
 
     await userEvent.click(
       canvas.getByRole("button", { name: "Expand Expenses" }),
     );
     await expect(canvas.getByRole("link", { name: "Groceries" })).toBeVisible();
+    await expect(canvas.getByText("£250.00")).toBeVisible();
   }}
 >
   {#snippet template()}

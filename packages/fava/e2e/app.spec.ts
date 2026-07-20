@@ -256,150 +256,34 @@ test.describe("ported styles", () => {
 
     const intervalTable = page.locator("[data-interval-tree-table]:visible");
     await expect(intervalTable).toHaveCount(1);
-    const intervalTableFont = await intervalTable.evaluate(
-      (el) => getComputedStyle(el).fontFamily,
-    );
-    expect(intervalTableFont.toLowerCase()).toContain("source code pro");
-    const intervalTableFontSize = await intervalTable.evaluate(
-      (el) => getComputedStyle(el).fontSize,
-    );
-    expect(parseFloat(intervalTableFontSize)).toBe(14);
+    await expect(intervalTable.locator(".flex-table")).toHaveCount(0);
+    await expect(intervalTable.getByRole("table")).toBeVisible();
+    await expect(
+      intervalTable.getByRole("columnheader", { name: "Account" }),
+    ).toBeVisible();
+    await expect(
+      intervalTable.getByRole("button", { name: "Collapse all accounts" }),
+    ).toBeVisible();
 
-    const intervalHeader = intervalTable.locator(".head p > span").first();
-    const intervalHeaderBackground = await intervalHeader.evaluate(
-      (el) => getComputedStyle(el).backgroundColor,
-    );
-    expect(intervalHeaderBackground).not.toBe("rgba(0, 0, 0, 0)");
-
-    const intervalCellBorders = await intervalHeader.evaluate((el) => {
-      const firstDataCell = el
-        .closest("ol")
-        ?.querySelector("li:not(.head) p > span");
-      if (!firstDataCell)
-        throw new Error("Interval table data cell is missing");
+    const surface = await intervalTable.evaluate((element) => {
+      const header = element.querySelector("thead tr");
+      if (!header) throw new Error("Interval table header is missing");
       return {
-        headerTop: getComputedStyle(el).borderTopWidth,
-        headerBottom: getComputedStyle(el).borderBottomWidth,
-        dataTop: getComputedStyle(firstDataCell).borderTopWidth,
-        dataBottom: getComputedStyle(firstDataCell).borderBottomWidth,
-        rowMarginTop: getComputedStyle(firstDataCell.parentElement!).marginTop,
+        borderRadius: getComputedStyle(element).borderTopLeftRadius,
+        boxShadow: getComputedStyle(element).boxShadow,
+        overflowX: getComputedStyle(element).overflowX,
+        headerBackground: getComputedStyle(header).backgroundColor,
       };
     });
-    expect(parseFloat(intervalCellBorders.headerTop)).toBeGreaterThan(0);
-    expect(parseFloat(intervalCellBorders.headerBottom)).toBeGreaterThan(0);
-    expect(parseFloat(intervalCellBorders.dataTop)).toBe(0);
-    expect(parseFloat(intervalCellBorders.dataBottom)).toBeGreaterThan(0);
-    expect(parseFloat(intervalCellBorders.rowMarginTop)).toBe(0);
+    expect(parseFloat(surface.borderRadius)).toBeGreaterThan(0);
+    expect(surface.boxShadow).not.toBe("none");
+    expect(surface.overflowX).toBe("auto");
+    expect(surface.headerBackground).not.toBe("rgba(0, 0, 0, 0)");
 
-    const branchBoundaryBorder = await intervalTable.evaluate((table) => {
-      const branchBoundaryAccountCell = table.querySelector(
-        "li:has(> ol) + li > p > [data-account-name]",
-      );
-      if (!branchBoundaryAccountCell) {
-        throw new Error("Branch boundary account cell is missing");
-      }
-      return {
-        borderTop: getComputedStyle(branchBoundaryAccountCell).borderTopWidth,
-        segmentHeight: getComputedStyle(branchBoundaryAccountCell, "::before")
-          .height,
-        segmentTop: getComputedStyle(branchBoundaryAccountCell, "::before").top,
-        segmentWidth: getComputedStyle(branchBoundaryAccountCell, "::before")
-          .width,
-      };
-    });
-    expect(parseFloat(branchBoundaryBorder.borderTop)).toBe(0);
-    // Tree rail segment is drawn via ::before; tolerate browsers that omit pseudo computed sizes.
-    if (
-      branchBoundaryBorder.segmentHeight &&
-      branchBoundaryBorder.segmentHeight !== "auto"
-    ) {
-      expect(parseFloat(branchBoundaryBorder.segmentHeight)).toBe(1);
-      expect(parseFloat(branchBoundaryBorder.segmentTop)).toBe(-1);
-      expect(parseFloat(branchBoundaryBorder.segmentWidth)).toBeGreaterThan(0);
-    }
-
-    const headerCells = intervalTable.locator(".head p > span");
-    expect(await headerCells.count()).toBeGreaterThan(1);
-    const adjacentHeaderCell = headerCells.nth(1);
-    const sharedEdge = await adjacentHeaderCell.evaluate((el) => ({
-      left: getComputedStyle(el).borderLeftWidth,
-      previousRight: getComputedStyle(el.previousElementSibling!)
-        .borderRightWidth,
-      previousMarginRight: getComputedStyle(el.previousElementSibling!)
-        .marginRight,
-    }));
-    expect(parseFloat(sharedEdge.left)).toBe(1);
-    expect(parseFloat(sharedEdge.previousRight)).toBe(1);
-    expect(parseFloat(sharedEdge.previousMarginRight)).toBe(-1);
-
-    const accountCellOffsets = await intervalTable
-      .locator("[data-account-name]")
-      .evaluateAll((cells) =>
-        cells.map((cell) => cell.getBoundingClientRect().left),
-      );
-    expect(Math.max(...accountCellOffsets)).toBeGreaterThan(
-      Math.min(...accountCellOffsets),
-    );
-
-    const stickyColumnState = await intervalTable.evaluate((table) => {
-      const viewport = table.closest("[data-scroll-area-content]")
-        ?.parentElement as HTMLElement | null;
-      const headerCell = table.querySelector(".head p > span");
-      if (!viewport || !headerCell) {
-        throw new Error("Interval table scroll viewport is unavailable");
-      }
-
-      viewport.scrollLeft = 240;
-      const state = {
-        scrollLeft: viewport.scrollLeft,
-        viewportLeft: viewport.getBoundingClientRect().left,
-        headerLeft: headerCell.getBoundingClientRect().left,
-        accountOffsets: Array.from(
-          table.querySelectorAll("[data-account-name]"),
-        ).map((cell) => cell.getBoundingClientRect().left),
-      };
-      viewport.scrollLeft = 0;
-      return state;
-    });
-    expect(stickyColumnState.scrollLeft).toBeGreaterThan(0);
-    expect(
-      Math.abs(stickyColumnState.headerLeft - stickyColumnState.viewportLeft),
-    ).toBeLessThanOrEqual(1);
-    expect(Math.max(...stickyColumnState.accountOffsets)).toBeGreaterThan(
-      Math.min(...stickyColumnState.accountOffsets),
-    );
-
-    const indentMask = await intervalTable
-      .locator("[data-account-name]")
-      .evaluateAll((cells) => {
-        const nestedCell = cells.find(
-          (cell) => parseFloat(getComputedStyle(cell).marginLeft) > 0,
-        );
-        if (!nestedCell) return undefined;
-        return {
-          boxShadow: getComputedStyle(nestedCell).boxShadow,
-        };
-      });
-    if (!indentMask) throw new Error("Nested account indent mask is missing");
-    expect(indentMask.boxShadow).not.toBe("none");
-
-    const dimmedCells = intervalTable.locator(".dimmed");
-    expect(await dimmedCells.count()).toBeGreaterThan(0);
-    const dimmedOpacity = await dimmedCells
-      .nth(0)
-      .evaluate((el) => getComputedStyle(el).opacity);
-    expect(dimmedOpacity).toBe("0.8");
-
-    const intervalExpander = intervalTable
-      .locator(".clickable-icon svg")
-      .first();
-    await expect(intervalExpander).toBeVisible();
-    const intervalIconSize = await intervalExpander.evaluate((el) => ({
-      width: getComputedStyle(el).width,
-      height: getComputedStyle(el).height,
-    }));
-    expect(parseFloat(intervalIconSize.width)).toBe(12);
-    expect(parseFloat(intervalIconSize.height)).toBe(12);
+    const branchToggle = intervalTable.locator("button[aria-expanded]").first();
+    await expect(branchToggle).toHaveAttribute("aria-expanded", "true");
+    await branchToggle.click();
+    await expect(branchToggle).toHaveAttribute("aria-expanded", "false");
 
     const balancesTab = page.getByRole("tab", { name: "Balances (Monthly)" });
     await balancesTab.click();
@@ -407,6 +291,9 @@ test.describe("ported styles", () => {
     await expect(
       page.locator("[data-interval-tree-table]:visible"),
     ).toHaveCount(1);
+    await expect(
+      page.locator("[data-interval-tree-table]:visible").getByRole("table"),
+    ).toBeVisible();
   });
 
   test("loads codemirror theme styles", async ({ page }) => {

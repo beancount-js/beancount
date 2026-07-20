@@ -23,7 +23,11 @@
 
   export type IntervalTreeCell = {
     values: readonly IntervalTreeAmount[];
+    /** Values to show when this row's descendants are collapsed into it. */
+    collapsedValues?: readonly IntervalTreeAmount[];
     dimmed?: boolean;
+    /** Dimmed state to use alongside `collapsedValues`. */
+    collapsedDimmed?: boolean;
   };
 
   export type IntervalTreeNode = {
@@ -44,17 +48,27 @@
     nodes,
     columns,
     ariaLabel = "Account interval comparison",
+    initialCollapsedIds = new Set<string>(),
     onNavigate,
     onColumnNavigate,
   }: {
     nodes: readonly IntervalTreeNode[];
     columns: readonly IntervalTreeColumn[];
     ariaLabel?: string;
+    /** Account ids initially collapsed from an application's persisted preferences. */
+    initialCollapsedIds?: ReadonlySet<string>;
     onNavigate?: (node: IntervalTreeNode) => void;
     onColumnNavigate?: (column: IntervalTreeColumn) => void;
   } = $props();
 
   let collapsedIds = $state<Set<string>>(new Set());
+  let hasAppliedInitialCollapsedIds = false;
+
+  $effect.pre(() => {
+    if (hasAppliedInitialCollapsedIds) return;
+    collapsedIds = new Set(initialCollapsedIds);
+    hasAppliedInitialCollapsedIds = true;
+  });
 
   const collapsibleIds = $derived(collectCollapsibleIds(nodes));
   const allCollapsed = $derived(
@@ -112,6 +126,7 @@
 </script>
 
 <div
+  data-interval-tree-table
   class="overflow-x-auto rounded-xl border border-border/80 bg-card shadow-sm"
 >
   <Table.Root aria-label={ariaLabel} class="min-w-[48rem]">
@@ -198,10 +213,17 @@
           </Table.Cell>
           {#each columns as column (column.id)}
             {@const cell = node.cells[column.id]}
+            {@const displayedCell =
+              isCollapsed && cell?.collapsedValues !== undefined
+                ? {
+                    values: cell.collapsedValues,
+                    dimmed: cell.collapsedDimmed ?? cell.dimmed,
+                  }
+                : cell}
             <Table.Cell
-              class={`px-4 py-2 text-right font-mono text-xs tabular-nums ${cell?.dimmed ? "opacity-55" : ""}`}
+              class={`px-4 py-2 text-right font-mono text-xs tabular-nums ${displayedCell?.dimmed ? "opacity-55" : ""}`}
             >
-              {#each cell?.values ?? [] as amount, index (index)}
+              {#each displayedCell?.values ?? [] as amount, index (index)}
                 <span class="block whitespace-nowrap" title={amount.title}>
                   {amount.value}
                   {#if amount.difference}
