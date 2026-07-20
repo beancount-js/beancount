@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronRight from "lucide-svelte/icons/chevron-right";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
@@ -51,6 +52,7 @@
     initialCollapsedIds = new Set<string>(),
     onNavigate,
     onColumnNavigate,
+    accountCell,
   }: {
     nodes: readonly IntervalTreeNode[];
     columns: readonly IntervalTreeColumn[];
@@ -59,6 +61,11 @@
     initialCollapsedIds?: ReadonlySet<string>;
     onNavigate?: (node: IntervalTreeNode) => void;
     onColumnNavigate?: (column: IntervalTreeColumn) => void;
+    /**
+     * Optional application-specific account renderer. When supplied, it owns
+     * account navigation and can add contextual content such as an avatar.
+     */
+    accountCell?: Snippet<[IntervalTreeNode]>;
   } = $props();
 
   let collapsedIds = $state<Set<string>>(new Set());
@@ -198,7 +205,9 @@
               {:else}
                 <span class="size-4 shrink-0" aria-hidden="true"></span>
               {/if}
-              {#if node.href}
+              {#if accountCell}
+                {@render accountCell(node)}
+              {:else if node.href}
                 <a
                   href={node.href}
                   class="min-w-0 truncate font-medium text-primary hover:underline"

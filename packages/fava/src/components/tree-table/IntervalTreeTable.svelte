@@ -1,6 +1,7 @@
 <script lang="ts">
   import { intersection, min } from "d3-array";
   import { leaf } from "$lib/accounts";
+  import AccountLink from "../AccountLink.svelte";
   import UiIntervalTreeTable, {
     type IntervalTreeAmount,
     type IntervalTreeCell,
@@ -182,11 +183,16 @@
   }
 </script>
 
+{#snippet accountCell(node: IntervalTreeNode)}
+  <AccountLink account={node.id} label={node.label} avatarSize="sm" />
+{/snippet}
+
 {#key tableKey}
   <UiIntervalTreeTable
     {nodes}
     {columns}
     {initialCollapsedIds}
+    {accountCell}
     ariaLabel={`${accumulate ? "Cumulative" : "Period"} account comparison`}
   />
 {/key}

@@ -147,7 +147,7 @@
       docs: {
         description: {
           component:
-            "A display-model-driven, multi-period account comparison. Pass formatted direct and collapsed roll-up amounts plus budget variance state per period; applications remain responsible for date ranges, currency formatting, account visibility, routes, and persisted disclosure preferences.",
+            "A display-model-driven, multi-period account comparison. Pass formatted direct and collapsed roll-up amounts plus budget variance state per period; applications remain responsible for date ranges, currency formatting, account visibility, routes, and persisted disclosure preferences. Use `accountCell` for an application-specific account link with contextual content such as an avatar; that renderer owns its navigation.",
         },
       },
     },
@@ -157,6 +157,31 @@
 <script lang="ts">
   let selected = $state("");
 </script>
+
+{#snippet accountCell(node: IntervalTreeNode)}
+  {#snippet contents()}
+    <span
+      class="grid size-4 shrink-0 place-items-center rounded-full bg-primary/15 text-[0.55rem] text-primary"
+      aria-hidden="true"
+    >
+      {node.label.slice(0, 1)}
+    </span>
+    <span class="min-w-0 truncate">{node.label}</span>
+  {/snippet}
+
+  {#if node.href}
+    <a
+      href={node.href}
+      class="inline-flex min-w-0 items-center gap-2 font-medium text-foreground hover:text-primary"
+    >
+      {@render contents()}
+    </a>
+  {:else}
+    <span class="inline-flex min-w-0 items-center gap-2 font-medium">
+      {@render contents()}
+    </span>
+  {/if}
+{/snippet}
 
 <Story
   name="Compares periods and preserves account disclosure"
@@ -179,6 +204,14 @@
   {#snippet template()}
     <div class="max-w-5xl p-5">
       <IntervalTreeTable {nodes} {columns} />
+    </div>
+  {/snippet}
+</Story>
+
+<Story name="Supports contextual account links">
+  {#snippet template()}
+    <div class="max-w-5xl p-5">
+      <IntervalTreeTable {nodes} {columns} {accountCell} />
     </div>
   {/snippet}
 </Story>

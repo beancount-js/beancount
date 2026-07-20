@@ -258,6 +258,9 @@ test.describe("ported styles", () => {
     await expect(intervalTable).toHaveCount(1);
     await expect(intervalTable.locator(".flex-table")).toHaveCount(0);
     await expect(intervalTable.getByRole("table")).toBeVisible();
+    const accountLinks = intervalTable.locator("[data-account-link]");
+    expect(await accountLinks.count()).toBeGreaterThan(0);
+    await expect(accountLinks.first()).toBeVisible();
     await expect(
       intervalTable.getByRole("columnheader", { name: "Account" }),
     ).toBeVisible();
