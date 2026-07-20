@@ -72,6 +72,19 @@ test("Holdings renders a sortable, paginated table", async ({ page }) => {
     pagination.getByText(/^Showing 1\u2013\d+ of \d+$/),
   ).toBeVisible();
   await expect(table.locator("[data-query-page-size]")).toHaveText("10");
+
+  await page
+    .getByRole("tab", { name: "Holdings by Currency", exact: true })
+    .click();
+  await expect(
+    page.getByRole("tab", { name: "Holdings by Currency", exact: true }),
+  ).toHaveAttribute("data-state", "active");
+  await expect(page.locator("[data-query-table]")).toHaveCount(1);
+  await expect(
+    page
+      .locator("[data-query-table]")
+      .getByRole("columnheader", { name: "Sort by units" }),
+  ).toBeVisible();
 });
 
 test("Query tables use a compact search field and expandable saved queries", async ({

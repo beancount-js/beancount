@@ -1,9 +1,5 @@
 <script lang="ts">
-  import Button from "$lib/components/ui/button/button.svelte";
-  import * as Tabs from "$lib/components/ui/tabs";
-  import { urlFor } from "../helpers";
-  import QueryTable from "./QueryTable.svelte";
-  import ContentScrollArea from "./ContentScrollArea.svelte";
+  import PresetQueryView from "./PresetQueryView.svelte";
 
   const queries: Array<{
     id: string;
@@ -42,33 +38,6 @@
       `,
     },
   ];
-  let value: string = queries[0].id;
-
-  function handleChange(id: string | undefined) {
-    value = id || queries[0].id;
-  }
 </script>
 
-<ContentScrollArea contentClass="scroll-container min-h-full p-4">
-  <Tabs.Root class="w-full" {value} onValueChange={handleChange}>
-    <Tabs.List>
-      {#each queries as query}
-        <Tabs.Trigger value={query.id}>{query.name}</Tabs.Trigger>
-      {/each}
-    </Tabs.List>
-    {#each queries as query}
-      <Tabs.Content value={query.id}>
-        <div class="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            href={urlFor("/query", { qs: query.query.trim() })}>Query</Button
-          >
-        </div>
-        {#if value === query.id}
-          <QueryTable query={query.query} />
-        {/if}
-      </Tabs.Content>
-    {/each}
-  </Tabs.Root>
-</ContentScrollArea>
+<PresetQueryView {queries} alignQueryActionEnd />

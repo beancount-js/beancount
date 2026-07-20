@@ -1,10 +1,5 @@
 <script lang="ts">
-  import Button from "$lib/components/ui/button/button.svelte";
-  import * as Tabs from "$lib/components/ui/tabs";
-  import * as ScrollArea from "$lib/components/ui/scroll-area";
-  import { urlFor } from "../helpers";
-  import QueryTable from "./QueryTable.svelte";
-  import ContentScrollArea from "./ContentScrollArea.svelte";
+  import PresetQueryView from "./PresetQueryView.svelte";
   const queries: Array<{
     id: string;
     name: string;
@@ -70,34 +65,6 @@
             `,
     },
   ];
-  let value: string = queries[0].id;
-  function handleChange(id: string | undefined) {
-    value = id || queries[0].id;
-  }
 </script>
 
-<ContentScrollArea contentClass="scroll-container min-h-full p-4">
-  <Tabs.Root class="w-full" {value} onValueChange={handleChange}>
-    <ScrollArea.Root orientation="horizontal" class="w-full">
-      <div class="w-max pr-3">
-        <Tabs.List>
-          {#each queries as query}
-            <Tabs.Trigger value={query.id}>{query.name}</Tabs.Trigger>
-          {/each}
-        </Tabs.List>
-      </div>
-    </ScrollArea.Root>
-    {#each queries as query}
-      <Tabs.Content value={query.id}>
-        <Button
-          variant="outline"
-          size="sm"
-          href={urlFor("/query", { qs: query.query.trim() })}>Query</Button
-        >
-        {#if value === query.id}
-          <QueryTable query={query.query} />
-        {/if}
-      </Tabs.Content>
-    {/each}
-  </Tabs.Root>
-</ContentScrollArea>
+<PresetQueryView {queries} scrollTabs />
