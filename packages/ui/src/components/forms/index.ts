@@ -7,6 +7,7 @@ export { default as EntryActions } from "./EntryActions.svelte";
 export { default as CollapsibleItemList } from "./CollapsibleItemList.svelte";
 export { default as FormAddButton } from "./FormAddButton.svelte";
 export { default as FormToolbar } from "./FormToolbar.svelte";
+export { default as FormSheet } from "./FormSheet.svelte";
 export { default as ScrollArea } from "./ScrollArea.svelte";
 export { default as ScrollAreaScrollbar } from "./ScrollAreaScrollbar.svelte";
 export { default as SegmentedControl } from "./SegmentedControl.svelte";
