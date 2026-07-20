@@ -248,11 +248,11 @@ test.describe("ported styles", () => {
   test("styles Account Changes and Balances as interval tables", async ({
     page,
   }) => {
-    await gotoStudio(page, "/account/Expenses");
+    await gotoStudio(page, "/account/Expenses?tab=changes");
     const changesTab = page.getByRole("tab", { name: "Changes (Monthly)" });
     await expect(changesTab).toBeVisible({ timeout: 15_000 });
-    await changesTab.click();
     await expect(changesTab).toHaveAttribute("aria-selected", "true");
+    await expect(page).toHaveURL(/\/account\/Expenses\/?\?tab=changes$/);
 
     const intervalTable = page.locator("[data-interval-tree-table]:visible");
     await expect(intervalTable).toHaveCount(1);
@@ -287,6 +287,9 @@ test.describe("ported styles", () => {
 
     const balancesTab = page.getByRole("tab", { name: "Balances (Monthly)" });
     await balancesTab.click();
+    await expect(balancesTab).toHaveAttribute("aria-selected", "true");
+    await expect(page).toHaveURL(/\/account\/Expenses\/?\?tab=balances$/);
+    await page.reload();
     await expect(balancesTab).toHaveAttribute("aria-selected", "true");
     await expect(
       page.locator("[data-interval-tree-table]:visible"),

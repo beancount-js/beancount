@@ -18,8 +18,12 @@
   import moment from "moment";
   import { formatDate } from "@beancount-js/parser";
   import ContentScrollArea from "./ContentScrollArea.svelte";
+  import { useNavigation } from "../router/router";
   const { conversion, interval } = useContext();
   const chartContext = useChartContext();
+  const { activeRoute, router } = useNavigation();
+
+  const DEFAULT_TAB = "account-table";
 
   export let account: string = "";
 
@@ -97,6 +101,23 @@
     .map((it) => it.account)
     .filter((it) => it)
     .reverse();
+  $: availableTabs = [
+    DEFAULT_TAB,
+    ...(changeTreeNodes.length > 0 ? ["changes"] : []),
+    ...(balanceTreeNodes.length > 0 ? ["balances"] : []),
+  ];
+  $: selectedTab = availableTabs.includes($activeRoute.query.tab)
+    ? $activeRoute.query.tab
+    : DEFAULT_TAB;
+
+  function handleTabChange(value: string | undefined) {
+    if (!value || !availableTabs.includes(value)) return;
+    const query = new URLSearchParams($activeRoute.query);
+    if (value === DEFAULT_TAB) query.delete("tab");
+    else query.set("tab", value);
+    const next = query.toString();
+    void router.updateState(next ? `?${next}` : "?");
+  }
 </script>
 
 <div class="flex h-full min-h-0 flex-col">
@@ -124,7 +145,11 @@
     <div class="min-w-0 max-w-full p-2">
       <div class="flex min-w-0 max-w-full">
         <div class="w-full min-w-0 max-w-full">
-          <Tabs.Root value="account-table" class="min-w-0 max-w-full pt-2">
+          <Tabs.Root
+            value={selectedTab}
+            onValueChange={handleTabChange}
+            class="min-w-0 max-w-full pt-2"
+          >
             <Tabs.List>
               <Tabs.Trigger value="account-table">Account Table</Tabs.Trigger>
               {#if changeTreeNodes.length > 0}
