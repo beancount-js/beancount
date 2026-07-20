@@ -133,7 +133,7 @@ test.describe("Docs-shell visual foundation", () => {
       page.getByText("Current project", { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /beancount-js-studio/ }),
+      page.getByRole("button", { name: /beancount-js-studio/ }).first(),
     ).toBeVisible();
     await page.getByRole("button", { name: "Workspace" }).click();
     await expect(
@@ -345,6 +345,26 @@ test.describe("Docs-shell visual foundation", () => {
     await page.getByRole("button", { name: "Workspace" }).click();
     await page.getByRole("button", { name: "Ledgers", exact: true }).click();
     await expect(page.locator("[data-ledger-file-row]").first()).toBeVisible();
+  });
+
+  test("keeps workspace search icons compact", async ({ page }) => {
+    async function expectCompactSearchIcon(placeholder: string) {
+      const input = page.getByPlaceholder(placeholder);
+      await expect(input).toBeVisible();
+      const icon = input.locator("xpath=preceding-sibling::*[1]");
+      await expect(icon).toHaveCSS("width", "14px");
+      await expect(icon).toHaveCSS("height", "14px");
+    }
+
+    await page.getByRole("button", { name: "Workspace" }).click();
+    await page.getByRole("button", { name: "Ledgers", exact: true }).click();
+    await expectCompactSearchIcon("Search ledgers");
+
+    await page.getByRole("button", { name: "Folders", exact: true }).click();
+    await expectCompactSearchIcon("Search folders");
+
+    await page.getByRole("button", { name: "Tags", exact: true }).click();
+    await expectCompactSearchIcon("Search tags");
   });
 
   test("shows the active page name in the workspace header", async ({

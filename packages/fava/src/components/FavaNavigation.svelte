@@ -838,7 +838,7 @@
       <div class="flex items-center gap-1">
         <label class="relative min-w-0 flex-1">
           <ListFilter
-            class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             bind:value={ledgerQuery}
@@ -953,7 +953,7 @@
       <div class="flex items-center gap-1">
         <label class="relative min-w-0 flex-1">
           <ListFilter
-            class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             bind:value={folderQuery}
@@ -1004,7 +1004,7 @@
       <div class="flex items-center gap-1">
         <label class="relative min-w-0 flex-1">
           <ListFilter
-            class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             bind:value={tagQuery}
