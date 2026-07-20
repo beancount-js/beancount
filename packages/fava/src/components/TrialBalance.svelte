@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { stratify } from "../lib/tree";
-  import type { AccountTreeNode } from "../lib/models";
+  import { createNode } from "../core/tree";
   import StatementSummaryTreeTable from "./tree-table/StatementSummaryTreeTable.svelte";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import Chart from "../charts/Chart.svelte";
@@ -14,28 +13,7 @@
 
   export let ledgerData: Readable<LedgerData> = context.ledgerData;
 
-  $: createNode = (account: string) => {
-    const tree = $ledgerData.tree;
-    return stratify(
-      tree.get(account).accounts,
-      (id) => id,
-      (name) => {
-        const node = tree.get(name);
-        const entity: AccountTreeNode = {
-          children: [],
-          account: name,
-          balance: node.balance.toRecord(),
-          balanceChildren: node.balanceChildren.toRecord(),
-          cost: {},
-          costChildren: {},
-          hasTxns: node.hasTxns,
-        };
-        return entity;
-      },
-    );
-  };
-
-  $: node = createNode("");
+  $: node = createNode($ledgerData.tree, "");
   $: charts = ["Income", "Expenses", "Assets", "Liabilities", "Equity"].map(
     (account) => {
       return {

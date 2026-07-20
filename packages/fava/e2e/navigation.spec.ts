@@ -33,12 +33,21 @@ test.describe("sample ledger navigation", () => {
     await expect(
       page.locator("[data-statement-summary-tree-table]").first(),
     ).toBeVisible();
+    await expect(page.locator("[data-statement-report]")).toContainText(
+      "Net Profit",
+    );
+    await expect(
+      page.locator("[data-statement-report] [data-statement-summary]"),
+    ).toHaveCount(3);
 
     await navigateTo(page, "Balance Sheet");
     await expect(page).toHaveURL(/\/ledger\/.+\/balance-sheet\/?/);
     await expect(
       page.locator("[data-statement-summary-tree-table]").first(),
     ).toBeVisible();
+    await expect(
+      page.locator("[data-statement-report] [data-statement-summary]"),
+    ).toHaveCount(3);
 
     await navigateTo(page, "Journal");
     await expect(page).toHaveURL(/\/ledger\/.+\/journal\/?/);

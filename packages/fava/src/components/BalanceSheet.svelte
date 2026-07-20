@@ -1,13 +1,10 @@
 <script lang="ts">
-  import { stratify } from "../lib/tree";
-  import type { AccountTreeNode } from "../lib/models";
-  import StatementSummaryTreeTable from "./tree-table/StatementSummaryTreeTable.svelte";
+  import { createNode } from "../core/tree";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
-  import ChartSwitcher from "../charts/ChartSwitcher.svelte";
   import { balances } from "../charts/line";
   import { useContext } from "../context";
-  import ContentScrollArea from "./ContentScrollArea.svelte";
   import { urlForAccount } from "../helpers";
+  import StatementReport from "./StatementReport.svelte";
 
   const { ledgerData, conversion, interval, ledgerOptions } = useContext();
 
@@ -19,29 +16,10 @@
     );
     tree.insertBalance(netProfit.account, netProfit.balanceChildren);
 
-    function createNode(account: string) {
-      return stratify(
-        tree.get(account).accounts,
-        (id) => id,
-        (name) => {
-          const node = tree.get(name);
-          const entity: AccountTreeNode = {
-            children: [],
-            account: name,
-            balance: node.balance.toRecord(),
-            balanceChildren: node.balanceChildren.toRecord(),
-            cost: {},
-            costChildren: {},
-            hasTxns: node.hasTxns,
-          };
-          return entity;
-        },
-      );
-    }
     return {
-      assets: createNode("Assets"),
-      liabilities: createNode("Liabilities"),
-      equity: createNode("Equity"),
+      assets: createNode(tree, $ledgerOptions.beancount.name_assets),
+      liabilities: createNode(tree, $ledgerOptions.beancount.name_liabilities),
+      equity: createNode(tree, $ledgerOptions.beancount.name_equity),
     };
   };
 
@@ -78,27 +56,24 @@
         .toRecord($conversion),
     ),
   ];
+
+  $: sections = [
+    {
+      tree: nodes.assets,
+      title: $ledgerOptions.beancount.name_assets,
+      href: urlForAccount($ledgerOptions.beancount.name_assets),
+    },
+    {
+      tree: nodes.liabilities,
+      title: $ledgerOptions.beancount.name_liabilities,
+      href: urlForAccount($ledgerOptions.beancount.name_liabilities),
+    },
+    {
+      tree: nodes.equity,
+      title: $ledgerOptions.beancount.name_equity,
+      href: urlForAccount($ledgerOptions.beancount.name_equity),
+    },
+  ];
 </script>
 
-<ContentScrollArea contentClass="scroll-container min-h-full">
-  <div class="p-4">
-    <ChartSwitcher {charts} />
-  </div>
-  <div class="grid w-full gap-8 p-4">
-    <StatementSummaryTreeTable
-      tree={nodes.assets}
-      title={$ledgerOptions.beancount.name_assets}
-      href={urlForAccount($ledgerOptions.beancount.name_assets)}
-    />
-    <StatementSummaryTreeTable
-      tree={nodes.liabilities}
-      title={$ledgerOptions.beancount.name_liabilities}
-      href={urlForAccount($ledgerOptions.beancount.name_liabilities)}
-    />
-    <StatementSummaryTreeTable
-      tree={nodes.equity}
-      title={$ledgerOptions.beancount.name_equity}
-      href={urlForAccount($ledgerOptions.beancount.name_equity)}
-    />
-  </div>
-</ContentScrollArea>
+<StatementReport {charts} {sections} />
