@@ -196,12 +196,13 @@
 
 .cv-search-filter-bar__editor .cm-completionLabel {
   min-width: max-content;
+  padding-right: 0.75rem;
   font-weight: 750;
 }
 
 .cv-search-filter-bar__editor .cm-completionDetail {
   min-width: 0;
-  margin-left: 0.8rem;
+  margin-left: 0;
   overflow: hidden;
   color: var(--cv-form-muted, var(--kanban-muted, var(--muted-foreground)));
   font-style: normal;

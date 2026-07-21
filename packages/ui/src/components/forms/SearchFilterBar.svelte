@@ -108,6 +108,7 @@
     return [
       autocompletion({
         override: [searchFilterCompletion(filterSyntax)],
+        icons: false,
         activateOnTyping: true,
         activateOnTypingDelay: 0,
         interactionDelay: 0,
