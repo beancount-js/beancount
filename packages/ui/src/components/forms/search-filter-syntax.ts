@@ -56,11 +56,45 @@ function fieldForName(syntax: SearchFilterSyntax, name: string) {
   );
 }
 
-function detailForField(field: SearchFilterField) {
-  const aliases = field.aliases?.length
-    ? ` · aliases: ${field.aliases.join(", ")}`
-    : "";
-  return `${field.description} · ${field.operators.join(" ")}${aliases}`;
+export type SearchFilterCompletionStage = "field" | "operator" | "value";
+
+/**
+ * Identify the next syntax token at a query position. SearchFilterBar uses
+ * this to distinguish the compact field/operator menus from the scrollable
+ * dynamic-value menu.
+ */
+export function searchFilterCompletionStage(
+  syntax: SearchFilterSyntax,
+  query: string,
+  position = query.length,
+): SearchFilterCompletionStage | null {
+  const before = query.slice(0, position);
+
+  const valueMatch = before.match(
+    /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s*(>=|<=|!=|!~|>|<|=|~|:)\s*([^\s()]*)$/,
+  );
+  if (valueMatch && fieldForName(syntax, valueMatch[1]!)) return "value";
+
+  const operatorMatch = before.match(
+    /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s+([!<>=~:]*)$/,
+  );
+  if (operatorMatch && fieldForName(syntax, operatorMatch[1]!)) {
+    return "operator";
+  }
+
+  const fieldMatch = before.match(new RegExp(`${FIELD_TOKEN.source}$`));
+  if (
+    fieldMatch &&
+    syntax.fields.some((field) =>
+      field.name
+        .toLocaleLowerCase()
+        .startsWith(fieldMatch[0]!.toLocaleLowerCase()),
+    )
+  ) {
+    return "field";
+  }
+
+  return null;
 }
 
 function uniqueValues(field: SearchFilterField): SearchFilterValue[] {
@@ -87,7 +121,7 @@ function uniqueValues(field: SearchFilterField): SearchFilterValue[] {
 function fieldCompletions(syntax: SearchFilterSyntax): Completion[] {
   return syntax.fields.map((field) => ({
     label: field.name,
-    detail: detailForField(field),
+    detail: field.description,
     type: "property",
     apply: `${field.name} `,
   }));
@@ -96,10 +130,26 @@ function fieldCompletions(syntax: SearchFilterSyntax): Completion[] {
 function operatorCompletions(field: SearchFilterField): Completion[] {
   return field.operators.map((operator) => ({
     label: operator,
-    detail: `${field.name} ${operator} value`,
+    detail: operatorDescription(operator),
     type: "operator",
     apply: `${operator} `,
   }));
+}
+
+function operatorDescription(operator: string) {
+  return (
+    {
+      ":": "matches",
+      "=": "equals",
+      "!=": "does not equal",
+      ">": "greater than",
+      ">=": "greater than or equal to",
+      "<": "less than",
+      "<=": "less than or equal to",
+      "~": "contains",
+      "!~": "does not contain",
+    }[operator] ?? "comparison"
+  );
 }
 
 function valueCompletions(field: SearchFilterField): Completion[] {
@@ -129,11 +179,13 @@ export function searchFilterCompletion(
 ): CompletionSource {
   return (context: CompletionContext) => {
     const before = context.state.sliceDoc(0, context.pos);
+    const stage = searchFilterCompletionStage(syntax, before);
 
-    const valueMatch = before.match(
-      /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s*(>=|<=|!=|!~|>|<|=|~|:)\s*([^\s()]*)$/,
-    );
-    if (valueMatch) {
+    if (stage === "value") {
+      const valueMatch = before.match(
+        /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s*(>=|<=|!=|!~|>|<|=|~|:)\s*([^\s()]*)$/,
+      );
+      if (!valueMatch) return null;
       const field = fieldForName(syntax, valueMatch[1]!);
       if (field) {
         return result(
@@ -144,10 +196,11 @@ export function searchFilterCompletion(
       }
     }
 
-    const operatorMatch = before.match(
-      /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s+([!<>=~:]*)$/,
-    );
-    if (operatorMatch) {
+    if (stage === "operator") {
+      const operatorMatch = before.match(
+        /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s+([!<>=~:]*)$/,
+      );
+      if (!operatorMatch) return null;
       const field = fieldForName(syntax, operatorMatch[1]!);
       if (field) {
         return result(
@@ -158,8 +211,8 @@ export function searchFilterCompletion(
       }
     }
 
+    if (stage !== "field" && !context.explicit) return null;
     const fieldMatch = context.matchBefore(FIELD_TOKEN);
-    if (!fieldMatch && !context.explicit) return null;
     if (
       fieldMatch &&
       !syntax.fields.some((field) =>

@@ -3,6 +3,7 @@ import { EditorState } from "@codemirror/state";
 import { describe, expect, test } from "vitest";
 import {
   searchFilterCompletion,
+  searchFilterCompletionStage,
   type SearchFilterSyntax,
 } from "./search-filter-syntax";
 
@@ -34,6 +35,18 @@ describe("search filter syntax completion", () => {
     await expect(labelsFor("conf")).resolves.toEqual(["confidence", "status"]);
   });
 
+  test("keeps field descriptions distinct from their operators", async () => {
+    const state = EditorState.create({ doc: "conf" });
+    const result = await searchFilterCompletion(syntax)(
+      new CompletionContext(state, 4, true),
+    );
+
+    expect(result?.options[0]).toMatchObject({
+      label: "confidence",
+      detail: "Best candidate score.",
+    });
+  });
+
   test("suggests only the selected field's operators", async () => {
     await expect(labelsFor("confidence ")).resolves.toEqual([
       ">",
@@ -55,5 +68,11 @@ describe("search filter syntax completion", () => {
 
   test("does not offer arbitrary value suggestions for unknown free text", async () => {
     await expect(labelsFor("groceries")).resolves.toEqual([]);
+  });
+
+  test("moves from field to operator to value stages", () => {
+    expect(searchFilterCompletionStage(syntax, "stat")).toBe("field");
+    expect(searchFilterCompletionStage(syntax, "status ")).toBe("operator");
+    expect(searchFilterCompletionStage(syntax, "status: ")).toBe("value");
   });
 });

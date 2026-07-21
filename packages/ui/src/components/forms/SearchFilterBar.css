@@ -159,6 +159,75 @@
   padding: 0;
 }
 
+.cv-search-filter-bar__editor .cm-tooltip-autocomplete {
+  border-color: var(--cv-form-border, var(--kanban-border, var(--border)));
+  border-radius: 0.5rem;
+  background: var(--cv-form-background, var(--kanban-card, var(--background)));
+  color: var(--cv-form-foreground, var(--kanban-foreground, var(--foreground)));
+  box-shadow: 0 0.75rem 1.5rem
+    color-mix(in srgb, var(--foreground) 14%, transparent);
+}
+
+.cv-search-filter-bar__editor .cm-tooltip-autocomplete ul {
+  min-width: min(18rem, 88vw);
+  max-width: min(26rem, 88vw);
+  margin: 0;
+  padding: 0.2rem;
+  list-style: none;
+}
+
+.cv-search-filter-bar__editor .cm-tooltip-autocomplete ul > li {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0;
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.45rem;
+  color: inherit;
+}
+
+.cv-search-filter-bar__editor .cm-tooltip-autocomplete ul > li[aria-selected] {
+  background: var(
+    --cv-form-selection,
+    color-mix(in srgb, var(--primary) 14%, transparent)
+  );
+  color: var(--cv-form-accent, var(--kanban-accent-foreground, var(--primary)));
+}
+
+.cv-search-filter-bar__editor .cm-completionLabel {
+  min-width: max-content;
+  font-weight: 750;
+}
+
+.cv-search-filter-bar__editor .cm-completionDetail {
+  min-width: 0;
+  margin-left: 0.8rem;
+  overflow: hidden;
+  color: var(--cv-form-muted, var(--kanban-muted, var(--muted-foreground)));
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cv-search-filter-bar__autocomplete-scroll-area {
+  width: min(26rem, 88vw);
+  height: min(14rem, 45vh);
+}
+
+.cv-search-filter-bar__autocomplete-scroll-area-content {
+  min-width: min(18rem, 88vw);
+}
+
+.cv-search-filter-bar__autocomplete-scroll-area-content > ul {
+  width: 100%;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.cv-search-filter-bar__autocomplete-scrollbar {
+  opacity: 0.75;
+}
+
 .cv-search-filter-bar__editor .cm-placeholder {
   color: var(--cv-form-muted, var(--kanban-muted, var(--muted-foreground)));
   font-weight: 700;

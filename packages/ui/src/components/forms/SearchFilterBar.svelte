@@ -4,7 +4,12 @@
   import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
   import { syntaxHighlighting } from "@codemirror/language";
   import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-  import { Compartment, EditorState, type Extension } from "@codemirror/state";
+  import {
+    Compartment,
+    EditorState,
+    Prec,
+    type Extension,
+  } from "@codemirror/state";
   import {
     drawSelection,
     EditorView,
@@ -14,12 +19,14 @@
   import SearchIcon from "lucide-svelte/icons/search";
   import SlidersHorizontalIcon from "lucide-svelte/icons/sliders-horizontal";
   import XIcon from "lucide-svelte/icons/x";
-  import type { Snippet } from "svelte";
+  import { mount, type Snippet, unmount } from "svelte";
   import { codeEditorHighlightStyle } from "./code-editor-theme";
   import {
     searchFilterCompletion,
+    searchFilterCompletionStage,
     type SearchFilterSyntax,
   } from "./search-filter-syntax";
+  import SearchFilterAutocompleteScrollArea from "./SearchFilterAutocompleteScrollArea.svelte";
 
   let {
     value = "",
@@ -102,9 +109,76 @@
       autocompletion({
         override: [searchFilterCompletion(filterSyntax)],
         activateOnTyping: true,
+        activateOnTypingDelay: 0,
+        interactionDelay: 0,
+        activateOnCompletion: (completion) =>
+          completion.type === "property" || completion.type === "operator",
+        tooltipClass: (state) =>
+          searchFilterCompletionStage(
+            filterSyntax,
+            state.doc.toString(),
+            state.selection.main.head,
+          ) === "value"
+            ? "cv-search-filter-bar__autocomplete--values"
+            : "",
       }),
-      keymap.of(completionKeymap),
+      Prec.highest(keymap.of(completionKeymap)),
     ];
+  }
+
+  /**
+   * CodeMirror owns and replaces the listbox. Mount a shadcn ScrollArea only
+   * around its dynamic-value lists, and remount it whenever CodeMirror swaps
+   * the list for a new completion stage.
+   */
+  function autocompletePopup(node: HTMLDivElement) {
+    let mounted: Record<string, unknown> | null = null;
+    let mountedList: HTMLUListElement | null = null;
+
+    function cleanup() {
+      if (mounted) void unmount(mounted);
+      mounted = null;
+      mountedList = null;
+    }
+
+    function refresh() {
+      const tooltip = node.querySelector<HTMLElement>(
+        ".cm-tooltip-autocomplete",
+      );
+      const shouldScrollValues = tooltip?.classList.contains(
+        "cv-search-filter-bar__autocomplete--values",
+      );
+      const list = tooltip?.querySelector<HTMLUListElement>(":scope > ul");
+
+      if (!tooltip || !shouldScrollValues) {
+        cleanup();
+        return;
+      }
+      if (!list || list === mountedList) return;
+
+      cleanup();
+      mountedList = list;
+      mounted = mount(SearchFilterAutocompleteScrollArea, {
+        target: tooltip,
+        props: { list },
+      });
+    }
+
+    const observer = new MutationObserver(refresh);
+    observer.observe(node, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    refresh();
+
+    return {
+      destroy() {
+        observer.disconnect();
+        cleanup();
+      },
+    };
   }
 
   export function focus() {
@@ -247,6 +321,7 @@
         <div
           class="cv-search-filter-bar__editor"
           use:filterQueryEditor={value}
+          use:autocompletePopup
         ></div>
       {/if}
       {#if shortcut && !hasValue && (!showFilterToggle || filtersExpanded)}
