@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { ReconciliationReview } from "@beancount-js/server";
-import { compactReconciliationReview } from "./reconciliation-review-response";
+import {
+  compactConfirmedProposalReconciliations,
+  compactReconciliationReview,
+} from "./reconciliation-review-response";
 
 describe("compactReconciliationReview", () => {
   it("keeps display context while removing raw records and top-level observations", () => {
@@ -82,5 +85,31 @@ describe("compactReconciliationReview", () => {
     expect(JSON.stringify(compact).length).toBeLessThan(
       JSON.stringify(review).length / 10,
     );
+  });
+});
+
+describe("compactConfirmedProposalReconciliations", () => {
+  it("returns only the proposal-facing confirmed decision fields", () => {
+    expect(
+      compactConfirmedProposalReconciliations([
+        {
+          runId: "run-1",
+          proposalId: "proposal-1",
+          candidateId: "candidate-1",
+          kind: "overlap",
+          canonicalObservationId: "proposal:run-1:proposal-1",
+        },
+      ]),
+    ).toEqual({
+      reconciliations: [
+        {
+          runId: "run-1",
+          proposalId: "proposal-1",
+          candidateId: "candidate-1",
+          kind: "overlap",
+          canonicalObservationId: "proposal:run-1:proposal-1",
+        },
+      ],
+    });
   });
 });

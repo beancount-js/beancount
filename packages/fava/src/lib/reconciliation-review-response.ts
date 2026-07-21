@@ -3,6 +3,7 @@ import type {
   ReconciliationObservation,
 } from "@beancount-js/beangulp";
 import type {
+  ConfirmedProposalReconciliation,
   ReconciliationDecision,
   ReconciliationReview,
 } from "@beancount-js/server";
@@ -30,6 +31,15 @@ export type ReconciliationReviewDisplayItem = {
 
 export type ReconciliationReviewResponse = {
   candidates: ReconciliationReviewDisplayItem[];
+};
+
+export type ConfirmedProposalReconciliationResponse = Pick<
+  ConfirmedProposalReconciliation,
+  "runId" | "proposalId" | "candidateId" | "kind" | "canonicalObservationId"
+>;
+
+export type ReconciliationProposalReconciliationsResponse = {
+  reconciliations: ConfirmedProposalReconciliationResponse[];
 };
 
 function compactObservation(
@@ -61,6 +71,20 @@ export function compactReconciliationReview(
       members: item.members.map((member) => ({
         observation: compactObservation(member.observation),
       })),
+    })),
+  };
+}
+
+export function compactConfirmedProposalReconciliations(
+  reconciliations: readonly ConfirmedProposalReconciliation[],
+): ReconciliationProposalReconciliationsResponse {
+  return {
+    reconciliations: reconciliations.map((item) => ({
+      runId: item.runId,
+      proposalId: item.proposalId,
+      candidateId: item.candidateId,
+      kind: item.kind,
+      canonicalObservationId: item.canonicalObservationId,
     })),
   };
 }
