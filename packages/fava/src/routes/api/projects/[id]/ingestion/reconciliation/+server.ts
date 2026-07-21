@@ -1,19 +1,28 @@
 import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
+import { summarizeIngestionProposals } from "@beancount-js/beangulp";
 import {
   autoConfirmableMappedOverlaps,
   buildReconciliationReview,
   confirmedProposalReconciliations,
+  recheckReviewProposal,
 } from "@beancount-js/server";
 import {
   compactConfirmedProposalReconciliations,
   compactReconciliationReview,
 } from "$lib/reconciliation-review-response";
 import { serverIngestion, serverReconciliations } from "$lib/server/ingestion";
+import { serverRules } from "$lib/server/rules";
 import { serverWorkspace } from "$lib/server/workspace";
 
 function message(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function stringArray(value: unknown): string[] | undefined {
+  return Array.isArray(value) && value.every((item) => typeof item === "string")
+    ? value
+    : undefined;
 }
 
 async function review(projectId: string) {
@@ -33,6 +42,85 @@ async function review(projectId: string) {
     serverReconciliations().read(projectId),
   ]);
   return buildReconciliationReview({ config, runs, entries, decisions });
+}
+
+function reviewableProposalStatus(status: string) {
+  return status === "ready" || status === "needs-review" || status === "held";
+}
+
+async function recheckSelectedCandidates(
+  projectId: string,
+  candidateIds: readonly string[],
+) {
+  const workspace = await serverWorkspace();
+  const snapshot = await workspace.readProject(projectId);
+  const [entries] = loadProjectSources(
+    snapshot.project.entryFile,
+    snapshot.ledgerFiles.map((file) => ({
+      path: file.path,
+      contents: file.contents,
+    })),
+  );
+  const ingestion = serverIngestion();
+  const [config, runs, decisions, detectionRules] = await Promise.all([
+    ingestion.readConfig(projectId),
+    ingestion.readRuns(projectId),
+    serverReconciliations().read(projectId),
+    serverRules().listActive(projectId),
+  ]);
+  const current = buildReconciliationReview({
+    config,
+    runs,
+    entries,
+    decisions,
+  });
+  const proposalIdsByRun = new Map<string, Set<string>>();
+  for (const candidateId of candidateIds) {
+    const item = current.candidates.find(
+      (candidate) => candidate.candidate.id === candidateId,
+    );
+    if (!item) {
+      throw new Error("That reconciliation candidate is no longer current.");
+    }
+    for (const member of item.members) {
+      if (!member.proposal) continue;
+      const proposalIds =
+        proposalIdsByRun.get(member.proposal.runId) ?? new Set<string>();
+      proposalIds.add(member.proposal.proposalId);
+      proposalIdsByRun.set(member.proposal.runId, proposalIds);
+    }
+  }
+
+  let updatedProposalCount = 0;
+  for (const run of runs) {
+    const proposalIds = proposalIdsByRun.get(run.id);
+    if (!proposalIds?.size) continue;
+    const source = await ingestion.sourceForRunSourceId(
+      projectId,
+      run.sourceId,
+    );
+    const proposals = await Promise.all(
+      run.proposals.map(async (proposal) => {
+        if (
+          !proposalIds.has(proposal.id) ||
+          !proposal.transaction ||
+          !reviewableProposalStatus(proposal.status)
+        ) {
+          return proposal;
+        }
+        updatedProposalCount += 1;
+        return recheckReviewProposal(source, proposal, entries, {
+          detectionRules,
+        });
+      }),
+    );
+    await ingestion.saveRun(projectId, {
+      ...run,
+      proposals,
+      summary: summarizeIngestionProposals(proposals),
+    });
+  }
+  return updatedProposalCount;
 }
 
 export async function GET({
@@ -70,30 +158,51 @@ export async function POST({
 }) {
   try {
     const body = await request.json();
-    if (!body || body.action !== "auto-confirm") {
+    if (!body || typeof body.action !== "string") {
       return json(
-        { error: "action auto-confirm is required." },
+        { error: "A reconciliation action is required." },
         { status: 400 },
       );
     }
-    const current = await review(params.id);
-    const candidates = autoConfirmableMappedOverlaps(current);
-    const reconciliations = serverReconciliations();
-    const updatedAt = new Date().toISOString();
-    await Promise.all(
-      candidates.map((item) =>
-        reconciliations.save(params.id, {
-          candidateId: item.candidate.id,
-          state: "confirmed",
-          canonicalObservationId: item.candidate.recommendedCanonicalId,
-          updatedAt,
-        }),
-      ),
+    if (body.action === "auto-confirm") {
+      const current = await review(params.id);
+      const candidates = autoConfirmableMappedOverlaps(current);
+      const reconciliations = serverReconciliations();
+      const updatedAt = new Date().toISOString();
+      await Promise.all(
+        candidates.map((item) =>
+          reconciliations.save(params.id, {
+            candidateId: item.candidate.id,
+            state: "confirmed",
+            canonicalObservationId: item.candidate.recommendedCanonicalId,
+            updatedAt,
+          }),
+        ),
+      );
+      return json({
+        confirmedCandidateIds: candidates.map((item) => item.candidate.id),
+        review: compactReconciliationReview(await review(params.id)),
+      });
+    }
+    const candidateIds = stringArray(body.candidateIds);
+    if (
+      body.action === "incremental-recheck" &&
+      candidateIds &&
+      candidateIds.length > 0
+    ) {
+      const updatedProposalCount = await recheckSelectedCandidates(
+        params.id,
+        candidateIds,
+      );
+      return json({
+        updatedProposalCount,
+        review: compactReconciliationReview(await review(params.id)),
+      });
+    }
+    return json(
+      { error: "A supported reconciliation action is required." },
+      { status: 400 },
     );
-    return json({
-      confirmedCandidateIds: candidates.map((item) => item.candidate.id),
-      review: compactReconciliationReview(await review(params.id)),
-    });
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });
   }
