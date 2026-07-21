@@ -1,7 +1,14 @@
 import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
-import { buildReconciliationReview } from "@beancount-js/server";
-import { compactReconciliationReview } from "$lib/reconciliation-review-response";
+import {
+  autoConfirmableMappedOverlaps,
+  buildReconciliationReview,
+  confirmedProposalReconciliations,
+} from "@beancount-js/server";
+import {
+  compactConfirmedProposalReconciliations,
+  compactReconciliationReview,
+} from "$lib/reconciliation-review-response";
 import { serverIngestion, serverReconciliations } from "$lib/server/ingestion";
 import { serverWorkspace } from "$lib/server/workspace";
 
@@ -40,7 +47,53 @@ export async function GET({
     if (url.searchParams.get("summary") === "count") {
       return json({ count: result.candidates.length });
     }
+    if (url.searchParams.get("summary") === "proposal-reconciliations") {
+      return json(
+        compactConfirmedProposalReconciliations(
+          confirmedProposalReconciliations(result),
+        ),
+      );
+    }
     return json(compactReconciliationReview(result));
+  } catch (error) {
+    return json({ error: message(error) }, { status: 400 });
+  }
+}
+
+/** Confirm only the unambiguous mapped-source subset; applying remains manual. */
+export async function POST({
+  params,
+  request,
+}: {
+  params: { id: string };
+  request: Request;
+}) {
+  try {
+    const body = await request.json();
+    if (!body || body.action !== "auto-confirm") {
+      return json(
+        { error: "action auto-confirm is required." },
+        { status: 400 },
+      );
+    }
+    const current = await review(params.id);
+    const candidates = autoConfirmableMappedOverlaps(current);
+    const reconciliations = serverReconciliations();
+    const updatedAt = new Date().toISOString();
+    await Promise.all(
+      candidates.map((item) =>
+        reconciliations.save(params.id, {
+          candidateId: item.candidate.id,
+          state: "confirmed",
+          canonicalObservationId: item.candidate.recommendedCanonicalId,
+          updatedAt,
+        }),
+      ),
+    );
+    return json({
+      confirmedCandidateIds: candidates.map((item) => item.candidate.id),
+      review: compactReconciliationReview(await review(params.id)),
+    });
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });
   }
@@ -112,6 +165,36 @@ export async function PUT({
       canonicalObservationId,
       updatedAt: new Date().toISOString(),
     });
+    return json(compactReconciliationReview(await review(params.id)));
+  } catch (error) {
+    return json({ error: message(error) }, { status: 400 });
+  }
+}
+
+/** Clear a confirmed decision without dismissing the underlying candidate. */
+export async function DELETE({
+  params,
+  request,
+}: {
+  params: { id: string };
+  request: Request;
+}) {
+  try {
+    const body = await request.json();
+    if (!body || typeof body.candidateId !== "string") {
+      return json({ error: "candidateId is required." }, { status: 400 });
+    }
+    const current = await review(params.id);
+    const candidate = current.candidates.find(
+      (item) => item.candidate.id === body.candidateId,
+    );
+    if (candidate?.decision?.state !== "confirmed") {
+      return json(
+        { error: "That reconciliation is not currently confirmed." },
+        { status: 409 },
+      );
+    }
+    await serverReconciliations().remove(params.id, body.candidateId);
     return json(compactReconciliationReview(await review(params.id)));
   } catch (error) {
     return json({ error: message(error) }, { status: 400 });
