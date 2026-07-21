@@ -1,9 +1,9 @@
 <script lang="ts">
   import {
     FilterCommandPicker,
-    SearchFilterBar,
     type FilterCommandOption,
   } from "@beancount-js/forms";
+  import { SearchFilterBar } from "@beancount-js/ui/forms";
   import { syntaxHighlighting } from "@codemirror/language";
   import ChevronRightIcon from "lucide-svelte/icons/chevron-right";
   import ChevronsDownUpIcon from "lucide-svelte/icons/chevrons-down-up";
@@ -18,6 +18,7 @@
   import {
     appendLedgerSearchParams,
     cloneLedgerSearchState,
+    createLedgerSearchFilterSyntax,
     facetsToFilterQuery,
     hasActiveLedgerSearchState,
     parseLedgerSearchState,
@@ -281,6 +282,17 @@
   );
   const hasAmbientFilter = $derived(Boolean(filterQueryLive.trim()));
   const filterEditorExtensions = [syntaxHighlighting(classHighlighter)];
+  const filterSyntax = $derived(
+    createLedgerSearchFilterSyntax({
+      types: TYPE_OPTIONS.filter((option) => option.value !== "all").map(
+        (option) => option.value,
+      ),
+      accounts: accountList,
+      payees: payeeList,
+      tags: tagList,
+      years: yearList,
+    }),
+  );
 </script>
 
 <div class="ledger-search flex min-h-0 flex-1 flex-col">
@@ -297,6 +309,7 @@
     showClearAll={activeSearch}
     clearAllDisabled={!activeSearch}
     editorExtensions={filterEditorExtensions}
+    {filterSyntax}
     bind:filtersExpanded
     onValueChange={onQueryInput}
     onClearSearch={clearSearch}

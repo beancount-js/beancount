@@ -2,9 +2,9 @@
   import { onDestroy } from "svelte";
   import {
     FilterCommandPicker,
-    SearchFilterBar,
     type FilterCommandOption,
   } from "@beancount-js/forms";
+  import { SearchFilterBar } from "@beancount-js/ui/forms";
   import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
   import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
   import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
@@ -43,6 +43,7 @@
     type IngestionMerchantSearchState,
     type MerchantDomainFacet,
   } from "../lib/ingestion-merchant-search-state";
+  import { merchantReviewFilterSyntax } from "../lib/ingestion-merchant-filter-syntax";
   import IngestionMerchantSheet from "./IngestionMerchantSheet.svelte";
   import MerchantsPageSkeleton from "./skeletons/MerchantsPageSkeleton.svelte";
 
@@ -120,6 +121,7 @@
       : 50,
   );
   const activeSearch = $derived(hasActiveIngestionMerchantSearch(searchState));
+  const filterSyntax = $derived(merchantReviewFilterSyntax(clusters));
   const statusOptions = $derived<FilterCommandOption[]>(
     MERCHANT_CLUSTER_STATUS_OPTIONS.map((option) => ({ ...option })),
   );
@@ -669,6 +671,7 @@
               showClearAll={activeSearch}
               clearAllDisabled={!activeSearch}
               bind:filtersExpanded
+              {filterSyntax}
               onValueChange={onSearchQueryInput}
               onClearSearch={clearSearchQuery}
               onClearAll={clearAllSearch}

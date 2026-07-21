@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendLedgerSearchParams,
   clearLedgerSearchParams,
+  createLedgerSearchFilterSyntax,
   facetsToFilterQuery,
   hasActiveLedgerSearchState,
   parseLedgerSearchState,
@@ -10,6 +11,28 @@ import {
 } from "./ledger-search-state";
 
 describe("ledger-search-state", () => {
+  it("exposes supported sidebar query fields with current values", () => {
+    const syntax = createLedgerSearchFilterSyntax({
+      types: ["transaction"],
+      accounts: ["Assets:Cash"],
+      payees: ["Cafe Nero"],
+      tags: ["travel"],
+      years: ["2026"],
+    });
+    const account = syntax.fields.find((field) => field.name === "account");
+    const year = syntax.fields.find((field) => field.name === "date.year");
+    const flag = syntax.fields.find((field) => field.name === "flag");
+
+    expect(account?.values).toEqual([
+      { value: "Assets:Cash", apply: "Assets:Cash" },
+    ]);
+    expect(year?.values).toEqual([{ value: "2026", apply: "2026" }]);
+    expect(flag?.aliases).toContain("posting.flag");
+    expect(syntax.notes).toContain(
+      "Any directive or posting metadata key can also be queried as key: value, but metadata keys depend on this ledger and are not suggested.",
+    );
+  });
+
   it("quotes filter tokens with spaces or metacharacters", () => {
     expect(quoteFilterToken("Assets:Cash")).toBe("Assets:Cash");
     expect(quoteFilterToken("Cafe Nero")).toBe('"Cafe Nero"');

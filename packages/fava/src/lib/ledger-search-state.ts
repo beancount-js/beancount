@@ -1,3 +1,8 @@
+import type {
+  SearchFilterSyntax,
+  SearchFilterValue,
+} from "@beancount-js/ui/forms";
+
 export const LEDGER_SEARCH_SORTS = [
   "relevance",
   "dateDesc",
@@ -45,6 +50,161 @@ export const DEFAULT_LEDGER_SEARCH_STATE: LedgerSearchState = {
   tags: [],
   years: [],
 };
+
+const LEDGER_TEXT_OPERATORS = [":", "=", "!=", ">", ">=", "<", "<=", "~", "!~"];
+const LEDGER_NUMBER_OPERATORS = LEDGER_TEXT_OPERATORS;
+const LEDGER_DATE_OPERATORS = [":", "=", ">", ">=", "<", "<="];
+
+function filterSyntaxValues(values: readonly string[]): SearchFilterValue[] {
+  const seen = new Set<string>();
+  return values.flatMap((value) => {
+    const normalized = value.trim();
+    const key = normalized.toLocaleLowerCase();
+    if (!normalized || seen.has(key)) return [];
+    seen.add(key);
+    return { value: normalized, apply: quoteFilterToken(normalized) };
+  });
+}
+
+/** The discoverable filter-query syntax executed by the sidebar ledger search. */
+export function createLedgerSearchFilterSyntax(values: {
+  types: readonly string[];
+  accounts: readonly string[];
+  payees: readonly string[];
+  tags: readonly string[];
+  years: readonly string[];
+}): SearchFilterSyntax {
+  return {
+    description:
+      "Use a field, comparison, and value to narrow ledger directives. Plain words search directive text.",
+    fields: [
+      {
+        name: "type",
+        description: "Directive type.",
+        operators: LEDGER_TEXT_OPERATORS,
+        values: filterSyntaxValues(values.types),
+      },
+      {
+        name: "account",
+        description: "Any directive account.",
+        operators: LEDGER_TEXT_OPERATORS,
+        values: filterSyntaxValues(values.accounts),
+      },
+      {
+        name: "payee",
+        description: "Transaction payee.",
+        operators: LEDGER_TEXT_OPERATORS,
+        values: filterSyntaxValues(values.payees),
+      },
+      {
+        name: "narration",
+        description: "Transaction narration.",
+        operators: LEDGER_TEXT_OPERATORS,
+      },
+      {
+        name: "flag",
+        description: "Transaction or posting flag.",
+        aliases: [
+          "tx.flag",
+          "transaction.flag",
+          "txn.flag",
+          "posting.flag",
+          "p.flag",
+        ],
+        operators: LEDGER_TEXT_OPERATORS,
+      },
+      {
+        name: "tag",
+        description: "Transaction tag.",
+        operators: LEDGER_TEXT_OPERATORS,
+        values: filterSyntaxValues(
+          values.tags.map((tag) => tag.replace(/^#+/, "")),
+        ),
+      },
+      {
+        name: "link",
+        description: "Transaction link.",
+        operators: LEDGER_TEXT_OPERATORS,
+      },
+      {
+        name: "amount",
+        description: "Posting amount.",
+        aliases: ["units"],
+        operators: LEDGER_NUMBER_OPERATORS,
+      },
+      {
+        name: "cost",
+        description: "Posting cost amount.",
+        operators: LEDGER_NUMBER_OPERATORS,
+      },
+      {
+        name: "price",
+        description: "Posting price amount.",
+        operators: LEDGER_NUMBER_OPERATORS,
+      },
+      {
+        name: "date",
+        description: "Directive date, including relative dates such as today.",
+        operators: LEDGER_DATE_OPERATORS,
+      },
+      {
+        name: "date.year",
+        description: "Directive year.",
+        operators: LEDGER_DATE_OPERATORS,
+        values: filterSyntaxValues(values.years),
+      },
+      {
+        name: "date.month",
+        description: "Directive month number.",
+        operators: LEDGER_DATE_OPERATORS,
+      },
+      {
+        name: "date.day",
+        description: "Directive day number.",
+        operators: LEDGER_DATE_OPERATORS,
+      },
+      {
+        name: "date.week",
+        description: "Directive week number.",
+        operators: LEDGER_DATE_OPERATORS,
+      },
+      {
+        name: "date.quarter",
+        description: "Directive quarter number.",
+        operators: LEDGER_DATE_OPERATORS,
+      },
+      {
+        name: "date.weekday",
+        description: "Directive weekday number.",
+        operators: LEDGER_DATE_OPERATORS,
+      },
+      {
+        name: "date.timestamp",
+        description: "Directive date as milliseconds.",
+        aliases: ["date.ms", "date.milliseconds", "timestamp"],
+        operators: LEDGER_NUMBER_OPERATORS,
+      },
+    ],
+    examples: [
+      {
+        query: "type: transaction account: Assets:Checking",
+        description: "Transactions affecting an account branch.",
+      },
+      {
+        query: "date.year: 2026 amount > 100",
+        description: "Large postings in a year.",
+      },
+      {
+        query: 'payee: "Coffee Shop" -tag: reimbursable',
+        description: "A payee while excluding a tag.",
+      },
+    ],
+    notes: [
+      "Separate terms with a space to require both; use OR, parentheses, or a leading - to change that logic.",
+      "Any directive or posting metadata key can also be queried as key: value, but metadata keys depend on this ledger and are not suggested.",
+    ],
+  };
+}
 
 export function isLedgerSearchSort(value: string): value is LedgerSearchSort {
   return LEDGER_SEARCH_SORTS.includes(value as LedgerSearchSort);
