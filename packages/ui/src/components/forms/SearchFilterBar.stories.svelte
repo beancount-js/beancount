@@ -2,6 +2,7 @@
   import { defineMeta } from "@storybook/addon-svelte-csf";
   import { expect, userEvent } from "storybook/test";
   import SearchFilterBar from "./SearchFilterBar.svelte";
+  import type { SearchFilterSyntax } from "./search-filter-syntax";
 
   const { Story } = defineMeta({
     title: "UI Forms/Search Filter Bar",
@@ -10,7 +11,7 @@
       docs: {
         description: {
           component:
-            "The Beancount-aware search and filter composition used by application lists. It owns filter-query editing, clear actions, and optional filter slots; it is a domain component rather than a general form field. See the [Form guidance](?path=/docs/ui-forms-guidance--docs).",
+            "The Beancount-aware search and filter composition used by application lists. It owns filter-query editing, clear actions, optional filter slots, and opt-in field/operator/value autocomplete with an inline syntax guide. Hosts supply the domain-specific filter syntax; it is a domain component rather than a general form field. See the [Form guidance](?path=/docs/ui-forms-guidance--docs).",
         },
       },
     },
@@ -21,6 +22,34 @@
   let query = $state("");
   let filtersExpanded = $state(false);
   let accountFilter = $state("All accounts");
+  let syntaxQuery = $state("");
+  let syntaxFiltersExpanded = $state(false);
+
+  const merchantFilterSyntax: SearchFilterSyntax = {
+    description:
+      "Use a field, an operator, and a value to narrow merchant review.",
+    fields: [
+      {
+        name: "confidence",
+        description: "Best AI candidate score.",
+        operators: [">", ">=", "<", "<=", "=", "!="],
+      },
+      {
+        name: "status",
+        description: "Merchant resolution state.",
+        operators: [":", "=", "!="],
+        values: ["confirmed", "suggested", "unresolved"],
+      },
+    ],
+    examples: [
+      {
+        query: "confidence >= 0.9",
+        description: "High-confidence suggestions.",
+      },
+      { query: "status: unresolved", description: "Needs review." },
+    ],
+    notes: ["Separate terms with a space to require both."],
+  };
 </script>
 
 <Story
@@ -76,6 +105,56 @@
       </SearchFilterBar>
       <output class="text-sm text-muted-foreground">
         Query: {query || "none"}; account: {accountFilter}
+      </output>
+    </div>
+  {/snippet}
+</Story>
+
+<Story
+  name="Discovers filter fields and syntax"
+  play={async ({ canvas }) => {
+    const editor = canvas.getByRole("searchbox", { name: "Search merchants" });
+    await userEvent.click(editor);
+    await userEvent.type(editor, "conf");
+    await expect(
+      canvas.getByRole("option", { name: /confidence/i }),
+    ).toBeVisible();
+    await userEvent.keyboard("{Enter}");
+    await expect(canvas.getByRole("status")).toHaveTextContent("confidence");
+
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Expand filter options" }),
+    );
+    const syntaxGuide = canvas.getByText("Search syntax", { exact: true });
+    await expect(syntaxGuide).toBeVisible();
+    await userEvent.click(syntaxGuide);
+    await expect(canvas.getByText("Best AI candidate score.")).toBeVisible();
+  }}
+>
+  {#snippet template()}
+    <div class="flex max-w-2xl flex-col gap-3">
+      <SearchFilterBar
+        value={syntaxQuery}
+        ariaLabel="Search merchants"
+        placeholder="Search merchants…"
+        showFilterToggle
+        bind:filtersExpanded={syntaxFiltersExpanded}
+        filterSyntax={merchantFilterSyntax}
+        onValueChange={(value) => {
+          syntaxQuery = value;
+        }}
+        onClearSearch={() => {
+          syntaxQuery = "";
+        }}
+      >
+        {#snippet filters()}
+          <div class="flex flex-wrap gap-2">
+            <button type="button">Status</button>
+          </div>
+        {/snippet}
+      </SearchFilterBar>
+      <output class="text-sm text-muted-foreground">
+        Query: {syntaxQuery || "none"}
       </output>
     </div>
   {/snippet}

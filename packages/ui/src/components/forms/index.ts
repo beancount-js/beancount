@@ -18,6 +18,12 @@ export { default as ReviewDiff } from "./ReviewDiff.svelte";
 export { default as DatePicker } from "./DatePicker.svelte";
 export { default as JsonBackedForm } from "./JsonBackedForm.svelte";
 export { default as SearchFilterBar } from "./SearchFilterBar.svelte";
+export type {
+  SearchFilterExample,
+  SearchFilterField,
+  SearchFilterSyntax,
+  SearchFilterValue,
+} from "./search-filter-syntax";
 export { default as SearchableChoicePicker } from "./SearchableChoicePicker.svelte";
 export { default as FilterCommandPicker } from "./FilterCommandPicker.svelte";
 export { default as AutocompleteInput } from "./AutocompleteInput.svelte";

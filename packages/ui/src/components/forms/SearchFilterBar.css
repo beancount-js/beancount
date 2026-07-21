@@ -29,7 +29,8 @@
 .cv-search-filter-bar__query-chip,
 .cv-search-filter-bar__filters,
 .cv-search-filter-bar__collapsed-filters,
-.cv-search-filter-bar__actions {
+.cv-search-filter-bar__actions,
+.cv-search-filter-bar__syntax-help {
   display: inline-flex;
   min-width: 0;
   align-items: center;
@@ -259,6 +260,99 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.4rem;
+}
+
+.cv-search-filter-bar__syntax-help {
+  width: 100%;
+  flex: 1 0 100%;
+  flex-direction: column;
+  align-items: stretch;
+  border: 1px solid var(--cv-form-border, var(--kanban-border, var(--border)));
+  border-radius: 0.65rem;
+  background: color-mix(
+    in srgb,
+    var(--cv-form-background, var(--kanban-card, var(--background))) 88%,
+    var(--cv-form-selection, var(--muted))
+  );
+  color: var(--cv-form-muted, var(--kanban-muted, var(--muted-foreground)));
+  font-size: 0.75rem;
+}
+
+.cv-search-filter-bar__syntax-help summary {
+  cursor: pointer;
+  color: var(--cv-form-foreground, var(--kanban-foreground, var(--foreground)));
+  font-weight: 750;
+  padding: 0.45rem 0.6rem;
+}
+
+.cv-search-filter-bar__syntax-help-content {
+  display: grid;
+  gap: 0.5rem;
+  border-top: 1px solid
+    var(--cv-form-border, var(--kanban-border, var(--border)));
+  padding: 0.55rem 0.6rem 0.65rem;
+}
+
+.cv-search-filter-bar__syntax-help p,
+.cv-search-filter-bar__syntax-help ul,
+.cv-search-filter-bar__syntax-help dl {
+  margin: 0;
+}
+
+.cv-search-filter-bar__syntax-help dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.45rem 0.8rem;
+}
+
+.cv-search-filter-bar__syntax-help dl > div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.cv-search-filter-bar__syntax-help dt,
+.cv-search-filter-bar__syntax-help dd {
+  margin: 0;
+}
+
+.cv-search-filter-bar__syntax-help dd {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.4rem;
+}
+
+.cv-search-filter-bar__syntax-help code {
+  overflow-wrap: anywhere;
+  color: var(--cv-form-foreground, var(--kanban-foreground, var(--foreground)));
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.cv-search-filter-bar__syntax-help ul {
+  display: grid;
+  gap: 0.25rem;
+  padding-left: 1rem;
+}
+
+.cv-search-filter-bar__syntax-help li {
+  min-width: 0;
+}
+
+.cv-search-filter-bar__syntax-help li span {
+  margin-left: 0.35rem;
+}
+
+.cv-search-filter-bar__syntax-aliases {
+  color: var(--cv-form-muted, var(--kanban-muted, var(--muted-foreground)));
+  font-size: 0.7rem;
+}
+
+.cv-search-filter-bar__syntax-notes {
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  padding-top: 0.45rem;
 }
 
 .cv-search-filter-bar .cv-search-filter-bar__filters > .cv-structured-form,

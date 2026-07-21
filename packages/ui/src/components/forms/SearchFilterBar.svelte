@@ -1,6 +1,7 @@
 <script lang="ts">
   import "./SearchFilterBar.css";
   import { beancountFilter } from "@beancount-js/filters";
+  import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
   import { syntaxHighlighting } from "@codemirror/language";
   import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
   import { Compartment, EditorState, type Extension } from "@codemirror/state";
@@ -15,6 +16,10 @@
   import XIcon from "lucide-svelte/icons/x";
   import type { Snippet } from "svelte";
   import { codeEditorHighlightStyle } from "./code-editor-theme";
+  import {
+    searchFilterCompletion,
+    type SearchFilterSyntax,
+  } from "./search-filter-syntax";
 
   let {
     value = "",
@@ -35,6 +40,7 @@
     filtersExpanded = $bindable(false),
     clearAllDisabled = false,
     editorExtensions = [],
+    filterSyntax = undefined,
     onValueChange = () => {},
     onClearSearch = () => {},
     onClearAll = () => {},
@@ -60,6 +66,8 @@
     clearAllDisabled?: boolean;
     /** Extra CodeMirror extensions (e.g. themed syntax highlighting). */
     editorExtensions?: Extension[];
+    /** Optional field, operator, and value completion plus inline syntax help. */
+    filterSyntax?: SearchFilterSyntax;
     onValueChange?: (value: string) => void;
     onClearSearch?: () => void | Promise<void>;
     onClearAll?: () => void | Promise<void>;
@@ -73,6 +81,7 @@
   let replacing = false;
   const editableCompartment = new Compartment();
   const placeholderCompartment = new Compartment();
+  const autocompleteCompartment = new Compartment();
 
   const trimmedValue = $derived(value.trim());
   const hasValue = $derived(trimmedValue.length > 0);
@@ -86,6 +95,17 @@
       hasFilterControls &&
       !filtersExpanded,
   );
+
+  function autocompleteExtension(): Extension {
+    if (!filterSyntax || disabled || inputMode !== "filter-query") return [];
+    return [
+      autocompletion({
+        override: [searchFilterCompletion(filterSyntax)],
+        activateOnTyping: true,
+      }),
+      keymap.of(completionKeymap),
+    ];
+  }
 
   export function focus() {
     if (inputMode === "plain") {
@@ -127,6 +147,7 @@
           EditorView.lineWrapping,
           editableCompartment.of(EditorView.editable.of(!disabled)),
           placeholderCompartment.of(placeholderExtension(placeholder)),
+          autocompleteCompartment.of(autocompleteExtension()),
           EditorView.contentAttributes.of({
             role: "searchbox",
             "aria-label": ariaLabel,
@@ -179,6 +200,12 @@
       effects: editableCompartment.reconfigure(
         EditorView.editable.of(!disabled),
       ),
+    });
+  });
+
+  $effect(() => {
+    editor?.dispatch({
+      effects: autocompleteCompartment.reconfigure(autocompleteExtension()),
     });
   });
 
@@ -309,6 +336,49 @@
       <div class="cv-search-filter-bar__filters">
         {@render filters()}
       </div>
+    {/if}
+
+    {#if filtersVisible && filterSyntax}
+      <details class="cv-search-filter-bar__syntax-help">
+        <summary>{filterSyntax.title ?? "Search syntax"}</summary>
+        <div class="cv-search-filter-bar__syntax-help-content">
+          {#if filterSyntax.description}
+            <p>{filterSyntax.description}</p>
+          {/if}
+          <dl>
+            {#each filterSyntax.fields as field (field.name)}
+              <div>
+                <dt><code>{field.name}</code></dt>
+                <dd>
+                  <span>{field.description}</span>
+                  <code>{field.operators.join(" ")}</code>
+                  {#if field.aliases?.length}
+                    <span class="cv-search-filter-bar__syntax-aliases"
+                      >Aliases: {field.aliases.join(", ")}</span
+                    >
+                  {/if}
+                </dd>
+              </div>
+            {/each}
+          </dl>
+          {#if filterSyntax.examples?.length}
+            <ul>
+              {#each filterSyntax.examples as example (example.query)}
+                <li>
+                  <code>{example.query}</code><span>{example.description}</span>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+          {#if filterSyntax.notes?.length}
+            <ul class="cv-search-filter-bar__syntax-notes">
+              {#each filterSyntax.notes as note (note)}
+                <li>{note}</li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+      </details>
     {/if}
   </div>
 </div>
