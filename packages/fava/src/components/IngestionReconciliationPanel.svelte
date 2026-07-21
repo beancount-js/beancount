@@ -55,6 +55,7 @@
     sources = [],
     refreshKey = "",
     onApplied = () => {},
+    onReconciliationChanged = () => {},
     onBulkActionChange = () => {},
   }: {
     projectId?: string;
@@ -62,6 +63,7 @@
     /** Changes after sync, edits, and ordinary acceptance to reload candidates. */
     refreshKey?: string;
     onApplied?: () => void;
+    onReconciliationChanged?: () => void;
     onBulkActionChange?: (
       action: IngestionBulkReviewAction | undefined,
     ) => void;
@@ -73,6 +75,8 @@
   let error = $state("");
   let busyCandidateId = $state("");
   let bulkConfirming = $state(false);
+  let autoConfirming = $state(false);
+  let rechecking = $state(false);
   let selectedCandidateIds = $state(new Set<string>());
   let merchantsById = $state<Record<string, ConnectionMerchant>>({});
   let failedMerchantLogoIds = $state(new Set<string>());
@@ -173,11 +177,24 @@
     if (!selectedCandidates.length) return;
     return {
       label: "Confirm",
+      busyLabel: rechecking ? "Re-running checks" : undefined,
       selectedCount: selectedCandidates.length,
       canRun:
-        !loading && !bulkConfirming && !busyCandidateId && Boolean(projectId),
-      busy: bulkConfirming,
+        !loading &&
+        !bulkConfirming &&
+        !autoConfirming &&
+        !rechecking &&
+        !busyCandidateId &&
+        Boolean(projectId),
+      busy: bulkConfirming || rechecking,
       onRun: () => void confirmSelectedCandidates(),
+      additionalActions: [
+        {
+          label: "Re-run selected checks",
+          disabled: rechecking || autoConfirming,
+          onRun: () => void recheckSelectedCandidates(),
+        },
+      ],
     };
   });
 
@@ -398,7 +415,15 @@
     state: "confirmed" | "dismissed",
     canonicalObservationId?: string,
   ) {
-    if (!projectId || busyCandidateId || bulkConfirming) return;
+    if (
+      !projectId ||
+      busyCandidateId ||
+      bulkConfirming ||
+      autoConfirming ||
+      rechecking
+    ) {
+      return;
+    }
     busyCandidateId = item.candidate.id;
     try {
       review = await ingestionJson<Review>(
@@ -414,6 +439,7 @@
         },
       );
       error = "";
+      onReconciliationChanged();
     } catch (cause) {
       error = cause instanceof Error ? cause.message : String(cause);
     } finally {
@@ -422,7 +448,15 @@
   }
 
   async function apply(item: ReconciliationReviewDisplayItem) {
-    if (!projectId || busyCandidateId || bulkConfirming) return;
+    if (
+      !projectId ||
+      busyCandidateId ||
+      bulkConfirming ||
+      autoConfirming ||
+      rechecking
+    ) {
+      return;
+    }
     busyCandidateId = item.candidate.id;
     try {
       await ingestionJson(
@@ -442,7 +476,15 @@
   }
 
   async function confirmSelectedCandidates() {
-    if (!projectId || bulkConfirming || !selectedCandidates.length) return;
+    if (
+      !projectId ||
+      bulkConfirming ||
+      autoConfirming ||
+      rechecking ||
+      !selectedCandidates.length
+    ) {
+      return;
+    }
     const items = [...selectedCandidates];
     bulkConfirming = true;
     error = "";
@@ -479,6 +521,54 @@
         : message;
     } finally {
       bulkConfirming = false;
+      if (confirmedCount) onReconciliationChanged();
+    }
+  }
+
+  async function autoConfirmExactMappedMatches() {
+    if (!projectId || autoConfirming || bulkConfirming || rechecking) return;
+    autoConfirming = true;
+    error = "";
+    try {
+      const response = await ingestionJson<{
+        confirmedCandidateIds: string[];
+        review: Review;
+      }>(ingestionPath(projectId, "/reconciliation"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "auto-confirm" }),
+      });
+      review = response.review;
+      onReconciliationChanged();
+    } catch (cause) {
+      error = cause instanceof Error ? cause.message : String(cause);
+    } finally {
+      autoConfirming = false;
+    }
+  }
+
+  async function recheckSelectedCandidates() {
+    if (!projectId || rechecking || !selectedCandidates.length) return;
+    rechecking = true;
+    error = "";
+    try {
+      const response = await ingestionJson<{
+        updatedProposalCount: number;
+        review: Review;
+      }>(ingestionPath(projectId, "/reconciliation"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "incremental-recheck",
+          candidateIds: selectedCandidates.map((item) => item.candidate.id),
+        }),
+      });
+      review = response.review;
+      onReconciliationChanged();
+    } catch (cause) {
+      error = cause instanceof Error ? cause.message : String(cause);
+    } finally {
+      rechecking = false;
     }
   }
 
@@ -682,6 +772,26 @@
       No reconciliation matches this search.
     </div>
   {:else if matchedCandidates.length}
+    <div class="flex justify-end">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        data-reconciliation-auto-confirm
+        disabled={loading ||
+          autoConfirming ||
+          bulkConfirming ||
+          rechecking ||
+          Boolean(busyCandidateId)}
+        onclick={() => void autoConfirmExactMappedMatches()}
+      >
+        <Check data-icon="inline-start" />
+        {autoConfirming
+          ? "Auto-confirming exact matches…"
+          : "Auto-confirm exact mapped matches"}
+      </Button>
+    </div>
+
     <div
       class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
     >
@@ -691,7 +801,10 @@
         class="size-4 rounded border-input text-primary focus:ring-ring"
         aria-label="Select visible reconciliation matches"
         checked={masterSelection.checked}
-        disabled={!visibleActionableCandidateIds.length || bulkConfirming}
+        disabled={!visibleActionableCandidateIds.length ||
+          bulkConfirming ||
+          autoConfirming ||
+          rechecking}
         onchange={(event) =>
           setSelectedCandidates(
             visibleActionableCandidateIds,
@@ -752,7 +865,10 @@
                   ? "This match is already confirmed"
                   : "Choose a canonical record before confirming this match"}
               checked={selectedCandidateIds.has(item.candidate.id)}
-              disabled={!selectable || bulkConfirming}
+              disabled={!selectable ||
+                bulkConfirming ||
+                autoConfirming ||
+                rechecking}
               onchange={(event) =>
                 setSelectedCandidates(
                   [item.candidate.id],
@@ -788,7 +904,10 @@
                   aria-label="Apply confirmed match"
                   title="Apply confirmed match"
                   data-reconciliation-action="apply"
-                  disabled={busy || bulkConfirming}
+                  disabled={busy ||
+                    bulkConfirming ||
+                    autoConfirming ||
+                    rechecking}
                   onclick={() => void apply(item)}
                 >
                   <Check data-icon />
@@ -800,7 +919,10 @@
                   aria-label="Not a match"
                   title="Not a match"
                   data-reconciliation-action="dismiss"
-                  disabled={busy || bulkConfirming}
+                  disabled={busy ||
+                    bulkConfirming ||
+                    autoConfirming ||
+                    rechecking}
                   onclick={() => void decide(item, "dismissed")}
                 >
                   <X data-icon />
@@ -812,7 +934,10 @@
                     aria-label="Confirm match"
                     title="Confirm match"
                     data-reconciliation-action="confirm"
-                    disabled={busy || bulkConfirming}
+                    disabled={busy ||
+                      bulkConfirming ||
+                      autoConfirming ||
+                      rechecking}
                     onclick={() => void decide(item, "confirmed", chosen)}
                   >
                     <Check data-icon />
@@ -825,7 +950,10 @@
                       aria-label={`Use ${memberLabel(member)} as the canonical record`}
                       title={`Use ${memberLabel(member)} as the canonical record`}
                       data-reconciliation-action="confirm"
-                      disabled={busy || bulkConfirming}
+                      disabled={busy ||
+                        bulkConfirming ||
+                        autoConfirming ||
+                        rechecking}
                       onclick={() =>
                         void decide(item, "confirmed", member.observation.id)}
                     >
@@ -953,7 +1081,11 @@
             {page}
             pageCount={pages.length}
             ariaLabel="Reconciliation match pages"
-            disabled={loading || bulkConfirming || Boolean(busyCandidateId)}
+            disabled={loading ||
+              bulkConfirming ||
+              autoConfirming ||
+              rechecking ||
+              Boolean(busyCandidateId)}
             onPageChange={(nextPage) =>
               updateRoute({ reconcilePage: String(nextPage) })}
           />

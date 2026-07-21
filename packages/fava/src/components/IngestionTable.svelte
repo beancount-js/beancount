@@ -19,9 +19,11 @@
   import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import ChevronUp from "lucide-svelte/icons/chevron-up";
+  import Check from "lucide-svelte/icons/check";
   import Landmark from "lucide-svelte/icons/landmark";
   import Link2 from "lucide-svelte/icons/link-2";
   import Undo2 from "lucide-svelte/icons/undo-2";
+  import X from "lucide-svelte/icons/x";
   import { useStudioWorkspace } from "../studio/workspace";
   import { useContext } from "../context";
   import { ledgerStemForPath } from "../lib/ledger-route";
@@ -66,6 +68,10 @@
     pruneReviewSelection,
     updateReviewSelection,
   } from "../lib/review-selection";
+  import type {
+    ConfirmedProposalReconciliationResponse,
+    ReconciliationProposalReconciliationsResponse,
+  } from "../lib/reconciliation-review-response";
   import type { SortOrder } from "../grid/sort";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
@@ -144,6 +150,12 @@
   });
   let reconciliationCount = $state(0);
   let reconciliationCountKey = $state("");
+  let reconciliationProposalRows = $state<
+    ConfirmedProposalReconciliationResponse[]
+  >([]);
+  let reconciliationProposalRowsKey = $state("");
+  let reconciliationProposalRevision = $state(0);
+  let clearingReconciliationCandidateId = $state("");
 
   const project = $derived($snapshot);
   const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
@@ -182,6 +194,16 @@
       })),
     ),
   );
+  const reconciliationsByProposal = $derived.by(() => {
+    const result = new Map<string, ConfirmedProposalReconciliationResponse[]>();
+    for (const reconciliation of reconciliationProposalRows) {
+      const key = `${reconciliation.runId}:${reconciliation.proposalId}`;
+      const rows = result.get(key) ?? [];
+      rows.push(reconciliation);
+      result.set(key, rows);
+    }
+    return result;
+  });
 
   function isReadyRow(row: ProposalRow) {
     return ingestionProposalReviewBucket(row.proposal) === "ready";
@@ -513,6 +535,36 @@
     }
   }
 
+  async function loadReconciliationProposalRows(projectId: string) {
+    try {
+      const response =
+        await ingestionJson<ReconciliationProposalReconciliationsResponse>(
+          ingestionPath(
+            projectId,
+            "/reconciliation?summary=proposal-reconciliations",
+          ),
+        );
+      if (project?.project.id === projectId) {
+        reconciliationProposalRows = response.reconciliations;
+      }
+    } catch {
+      if (project?.project.id === projectId) reconciliationProposalRows = [];
+    }
+  }
+
+  function reconciliationRowsFor(row: ProposalRow) {
+    return reconciliationsByProposal.get(row.key) ?? [];
+  }
+
+  function reconciliationChanged() {
+    reconciliationProposalRevision += 1;
+  }
+
+  function handleReconciliationChanged() {
+    reconciliationChanged();
+    void refresh();
+  }
+
   function updateRoute(values: Record<string, string | undefined>) {
     const query = new URLSearchParams($activeRoute.query);
     for (const [key, value] of Object.entries(values)) {
@@ -666,12 +718,22 @@
     if (!project || isWeb) {
       reconciliationCount = 0;
       reconciliationCountKey = "";
+      reconciliationProposalRows = [];
+      reconciliationProposalRowsKey = "";
       return;
     }
-    const nextKey = `${project.project.id}\0${reconciliationRefreshKey}`;
+    const nextKey = `${project.project.id}\0${reconciliationRefreshKey}\0${reconciliationProposalRevision}`;
     if (nextKey === reconciliationCountKey) return;
     reconciliationCountKey = nextKey;
     void loadReconciliationCount(project.project.id);
+  });
+
+  $effect(() => {
+    if (!project || isWeb) return;
+    const nextKey = `${project.project.id}\0${reconciliationRefreshKey}\0${reconciliationProposalRevision}`;
+    if (nextKey === reconciliationProposalRowsKey) return;
+    reconciliationProposalRowsKey = nextKey;
+    void loadReconciliationProposalRows(project.project.id);
   });
 
   $effect(() => {
@@ -1094,6 +1156,7 @@
       {
         account: transaction.sourceAccount,
         amount: new Amount(transaction.amount, transaction.currency),
+        source: true,
       },
       {
         account: proposal.selectedAccount ?? reviewOffsetAccount(),
@@ -1101,8 +1164,30 @@
           new Decimal(transaction.amount).neg().toString(),
           transaction.currency,
         ),
+        source: false,
       },
     ];
+  }
+
+  async function clearReconciliationDecision(candidateId: string) {
+    if (!project || clearingReconciliationCandidateId) return;
+    clearingReconciliationCandidateId = candidateId;
+    try {
+      await ingestionJson(
+        ingestionPath(project.project.id, "/reconciliation"),
+        {
+          method: "DELETE",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ candidateId }),
+        },
+      );
+      status = "Cleared reconciliation decision.";
+      reconciliationChanged();
+    } catch (error) {
+      status = error instanceof Error ? error.message : String(error);
+    } finally {
+      clearingReconciliationCandidateId = "";
+    }
   }
 
   function rowInitial(proposal: ImportProposal) {
@@ -1628,10 +1713,8 @@
           projectId={project?.project.id}
           sources={config?.sources ?? []}
           refreshKey={reconciliationRefreshKey}
-          onApplied={() => {
-            void refresh();
-            if (project) void loadReconciliationCount(project.project.id);
-          }}
+          onApplied={handleReconciliationChanged}
+          onReconciliationChanged={handleReconciliationChanged}
           onBulkActionChange={setReconciliationBulkAction}
         />
       {:else}
@@ -1887,7 +1970,9 @@
                             <div
                               class="grid min-w-0 grid-cols-[minmax(0,1fr)_8rem] items-center gap-3"
                             >
-                              <span class="block min-w-0 text-left text-xs">
+                              <span
+                                class="flex min-w-0 items-center gap-1 text-left text-xs"
+                              >
                                 <AccountLink
                                   account={posting.account}
                                   avatarSize="sm"
@@ -1895,6 +1980,49 @@
                                   on:keydown={(event) =>
                                     event.stopPropagation()}
                                 />
+                                {#if posting.source}
+                                  {@const rowReconciliations =
+                                    reconciliationRowsFor(row)}
+                                  {#each rowReconciliations as reconciliation (reconciliation.candidateId)}
+                                    <span
+                                      class="inline-flex shrink-0 items-center gap-0.5 text-emerald-600 dark:text-emerald-400"
+                                      data-reconciliation-row-control
+                                    >
+                                      <span
+                                        role="status"
+                                        aria-label="Reconciliation confirmed"
+                                        title="Reconciliation confirmed; apply it from Reconcile"
+                                      >
+                                        <Check
+                                          class="size-3.5"
+                                          aria-hidden="true"
+                                        />
+                                      </span>
+                                      <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        class="size-5 text-muted-foreground hover:text-destructive"
+                                        aria-label="Clear confirmed reconciliation"
+                                        title="Clear reconciliation decision"
+                                        disabled={Boolean(
+                                          clearingReconciliationCandidateId,
+                                        )}
+                                        onclick={(event) => {
+                                          event.stopPropagation();
+                                          void clearReconciliationDecision(
+                                            reconciliation.candidateId,
+                                          );
+                                        }}
+                                      >
+                                        <X
+                                          class="size-3.5"
+                                          aria-hidden="true"
+                                        />
+                                      </Button>
+                                    </span>
+                                  {/each}
+                                {/if}
                               </span>
                               <span class="text-sm font-semibold tabular-nums">
                                 {$ctx.money(
