@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 import {
   JsonApiSource,
   JsonMappingNormalizer,
+  applyRuleActions,
   RuleActionsHook,
   RuleCategorizer,
   ProviderCategoryCategorizer,
@@ -3293,4 +3294,37 @@ export async function recategorizeProposal(
           ? "ready"
           : "needs-review",
   } satisfies ImportProposal;
+}
+
+/**
+ * Refresh the safe, deterministic portion of an active-review proposal.
+ * AI snapshots are evidence, not a trigger for another provider or model call.
+ */
+export async function recheckReviewProposal(
+  source: IngestionSourceDefinition,
+  proposal: ImportProposal,
+  entries: readonly Directive[],
+  options?: { detectionRules?: readonly DetectionRule[] },
+) {
+  const recategorized = await recategorizeProposal(source, proposal, entries, {
+    detectionRules: options?.detectionRules,
+  });
+  if (!recategorized.transaction) return recategorized;
+
+  const rules = resolveDetectionRules(source, options);
+  let transaction = recategorized.transaction;
+  for (const rule of rules) {
+    const patch = applyRuleActions(rule, {
+      transaction,
+      merchant:
+        recategorized.merchantResolution?.status === "confirmed"
+          ? recategorized.merchantResolution.merchant
+          : undefined,
+      bookedAt: transaction.bookedAt,
+    });
+    // Tag actions are additive and safe to replay. Other rule actions may
+    // overwrite reviewer-authored values, so a future forced refresh owns them.
+    if (patch?.tags) transaction = { ...transaction, tags: patch.tags };
+  }
+  return { ...recategorized, transaction } satisfies ImportProposal;
 }

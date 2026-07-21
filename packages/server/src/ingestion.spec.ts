@@ -16,6 +16,7 @@ import {
   merchantLogoUrlFor,
   proposalMatchesAiRule,
   recategorizeProposal,
+  recheckReviewProposal,
   type IngestionConfig,
   type IngestionSourceDefinition,
 } from "./ingestion";
@@ -620,6 +621,101 @@ describe("FilesystemIngestionStore", () => {
           hard: true,
         }),
       ],
+    });
+  });
+
+  test("rechecks tags and readiness without replacing stored AI evidence", async () => {
+    const source = {
+      id: "bank",
+      name: "Bank",
+      kind: "json-api",
+      sourceAccount: "Assets:Bank:Checking",
+      api: { endpoint: "https://bank.example.test", secretRef: "env:TOKEN" },
+      mapping: { date: "date", amount: "amount" },
+      rules: [],
+    } satisfies IngestionSourceDefinition;
+    const aiSuggestion = {
+      account: "Expenses:Coffee",
+      rawScore: 0.5,
+      scoreKind: "ai-advisory" as const,
+      support: 1,
+      method: "ai" as const,
+      explanation: "Earlier AI evidence",
+      evidence: [],
+    };
+    const proposal = {
+      id: "proposal:coffee",
+      importId: "bank:coffee",
+      status: "needs-review",
+      selectedAccount: "Expenses:Coffee",
+      suggestions: [aiSuggestion],
+      issues: [],
+      lastAiEnrichment: {
+        at: "2026-07-20T10:00:00.000Z",
+        source: "ai-rerun" as const,
+        ok: true,
+        calls: [],
+      },
+      transaction: {
+        sourceId: "bank",
+        sourceAccount: "Assets:Bank:Checking",
+        bookedAt: "2026-07-20",
+        amount: "-4.50",
+        currency: "GBP",
+        narration: "Coffee shop",
+        status: "posted" as const,
+        fetchedAt: "2026-07-20T10:00:00.000Z",
+        metadata: {},
+      },
+    } satisfies ImportProposal;
+    const rules: DetectionRule[] = [
+      {
+        id: "coffee-rule",
+        resourceType: "transaction",
+        active: true,
+        effectiveDate: null,
+        conditions: [
+          {
+            id: "coffee-name",
+            conditionType: "transaction_name",
+            operator: "like",
+            value: "Coffee",
+          },
+        ],
+        actions: [
+          {
+            id: "coffee-tag",
+            actionType: "set_transaction_tags",
+            value: "coffee",
+          },
+          {
+            id: "coffee-category",
+            actionType: "set_transaction_category",
+            value: "Expenses:Coffee",
+          },
+        ],
+      },
+    ];
+
+    const result = await recheckReviewProposal(
+      source,
+      proposal,
+      [
+        {
+          accounts: ["Assets:Bank:Checking", "Expenses:Coffee"],
+        },
+      ] as never,
+      { detectionRules: rules },
+    );
+
+    expect(result).toMatchObject({
+      status: "ready",
+      transaction: { tags: ["coffee"] },
+      lastAiEnrichment: proposal.lastAiEnrichment,
+      suggestions: expect.arrayContaining([
+        aiSuggestion,
+        expect.objectContaining({ method: "rule", hard: true }),
+      ]),
     });
   });
 

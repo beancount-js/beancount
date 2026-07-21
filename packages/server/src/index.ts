@@ -78,6 +78,7 @@ export {
   merchantLogoUrlFor,
   proposalMatchesAiRule,
   recategorizeProposal,
+  recheckReviewProposal,
   resolveBrandfetchRuntime,
   sourceSecretRef,
   validateBrandfetchConfig,
