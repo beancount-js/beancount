@@ -4,6 +4,7 @@ import type {
   CompletionResult,
   CompletionSource,
 } from "@codemirror/autocomplete";
+import { pickedCompletion } from "@codemirror/autocomplete";
 
 /** A value that can be inserted after a field operator. */
 export type SearchFilterValue = {
@@ -44,6 +45,24 @@ export type SearchFilterSyntax = {
 const MAX_VALUE_SUGGESTIONS = 100;
 const FIELD_TOKEN = /[A-Za-z][A-Za-z0-9.*$_-]*/;
 const VALUE_TOKEN = /[^\s()]+/;
+const OPERATOR_TOKEN = />=|<=|!=|!~|>|<|=|~|:/;
+const VALUE_CONTEXT =
+  /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s*(>=|<=|!=|!~|>|<|=|~|:)\s*([^\s()]*)$/;
+const OPERATOR_CONTEXT =
+  /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s+([!<>=~:]*)$/;
+const FIELD_BEFORE_OPERATOR = /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s*$/;
+
+type ValueCompletionContext = {
+  field: SearchFilterField;
+  value: string;
+};
+
+type OperatorCompletionContext = {
+  field: SearchFilterField;
+  from: number;
+  /** Replace an already-present operator that sits to the cursor's right. */
+  to?: number;
+};
 
 function fieldForName(syntax: SearchFilterSyntax, name: string) {
   const normalizedName = name.toLocaleLowerCase();
@@ -54,6 +73,53 @@ function fieldForName(syntax: SearchFilterSyntax, name: string) {
         (alias) => alias.toLocaleLowerCase() === normalizedName,
       ),
   );
+}
+
+function valueCompletionContext(
+  syntax: SearchFilterSyntax,
+  query: string,
+  position: number,
+): ValueCompletionContext | null {
+  const match = query.slice(0, position).match(VALUE_CONTEXT);
+  if (!match) return null;
+
+  const field = fieldForName(syntax, match[1]!);
+  return field ? { field, value: match[3]! } : null;
+}
+
+function operatorCompletionContext(
+  syntax: SearchFilterSyntax,
+  query: string,
+  position: number,
+): OperatorCompletionContext | null {
+  const before = query.slice(0, position);
+  const directMatch = before.match(OPERATOR_CONTEXT);
+  if (directMatch) {
+    const field = fieldForName(syntax, directMatch[1]!);
+    if (field) {
+      const operatorToRight = query
+        .slice(position)
+        .match(new RegExp(`^\\s*(${OPERATOR_TOKEN.source})`));
+      return {
+        field,
+        from: position - directMatch[2]!.length,
+        ...(operatorToRight
+          ? { to: position + operatorToRight[0].length }
+          : {}),
+      };
+    }
+  }
+
+  const fieldMatch = before.match(FIELD_BEFORE_OPERATOR);
+  const operatorToRight = query
+    .slice(position)
+    .match(new RegExp(`^\\s*(${OPERATOR_TOKEN.source})`));
+  if (!fieldMatch || !operatorToRight) return null;
+
+  const field = fieldForName(syntax, fieldMatch[1]!);
+  return field
+    ? { field, from: position, to: position + operatorToRight[0].length }
+    : null;
 }
 
 export type SearchFilterCompletionStage = "field" | "operator" | "value";
@@ -70,15 +136,9 @@ export function searchFilterCompletionStage(
 ): SearchFilterCompletionStage | null {
   const before = query.slice(0, position);
 
-  const valueMatch = before.match(
-    /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s*(>=|<=|!=|!~|>|<|=|~|:)\s*([^\s()]*)$/,
-  );
-  if (valueMatch && fieldForName(syntax, valueMatch[1]!)) return "value";
+  if (valueCompletionContext(syntax, query, position)) return "value";
 
-  const operatorMatch = before.match(
-    /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s+([!<>=~:]*)$/,
-  );
-  if (operatorMatch && fieldForName(syntax, operatorMatch[1]!)) {
+  if (operatorCompletionContext(syntax, query, position)) {
     return "operator";
   }
 
@@ -127,12 +187,23 @@ function fieldCompletions(syntax: SearchFilterSyntax): Completion[] {
   }));
 }
 
-function operatorCompletions(field: SearchFilterField): Completion[] {
+function operatorCompletions(
+  field: SearchFilterField,
+  replaceTo?: number,
+): Completion[] {
   return field.operators.map((operator) => ({
     label: operator,
     detail: operatorDescription(operator),
     type: "operator",
-    apply: `${operator} `,
+    apply:
+      replaceTo === undefined
+        ? `${operator} `
+        : (view, completion, from) => {
+            view.dispatch({
+              changes: { from, to: replaceTo, insert: `${operator} ` },
+              annotations: pickedCompletion.of(completion),
+            });
+          },
   }));
 }
 
@@ -178,34 +249,30 @@ export function searchFilterCompletion(
   syntax: SearchFilterSyntax,
 ): CompletionSource {
   return (context: CompletionContext) => {
-    const before = context.state.sliceDoc(0, context.pos);
-    const stage = searchFilterCompletionStage(syntax, before);
+    const query = context.state.doc.toString();
+    const stage = searchFilterCompletionStage(syntax, query, context.pos);
 
     if (stage === "value") {
-      const valueMatch = before.match(
-        /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s*(>=|<=|!=|!~|>|<|=|~|:)\s*([^\s()]*)$/,
-      );
-      if (!valueMatch) return null;
-      const field = fieldForName(syntax, valueMatch[1]!);
-      if (field) {
+      const valueContext = valueCompletionContext(syntax, query, context.pos);
+      if (valueContext) {
         return result(
-          context.pos - valueMatch[3]!.length,
-          valueCompletions(field),
+          context.pos - valueContext.value.length,
+          valueCompletions(valueContext.field),
           VALUE_TOKEN,
         );
       }
     }
 
     if (stage === "operator") {
-      const operatorMatch = before.match(
-        /(?:^|[\s(,])([A-Za-z][A-Za-z0-9.*$_-]*)\s+([!<>=~:]*)$/,
+      const operatorContext = operatorCompletionContext(
+        syntax,
+        query,
+        context.pos,
       );
-      if (!operatorMatch) return null;
-      const field = fieldForName(syntax, operatorMatch[1]!);
-      if (field) {
+      if (operatorContext) {
         return result(
-          context.pos - operatorMatch[2]!.length,
-          operatorCompletions(field),
+          operatorContext.from,
+          operatorCompletions(operatorContext.field, operatorContext.to),
           /[!<>=~:]*/,
         );
       }

@@ -1,7 +1,12 @@
 <script lang="ts">
   import "./SearchFilterBar.css";
   import { beancountFilter } from "@beancount-js/filters";
-  import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
+  import {
+    acceptCompletion,
+    autocompletion,
+    completionKeymap,
+    startCompletion,
+  } from "@codemirror/autocomplete";
   import { syntaxHighlighting } from "@codemirror/language";
   import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
   import {
@@ -123,8 +128,36 @@
             ? "cv-search-filter-bar__autocomplete--values"
             : "",
       }),
-      Prec.highest(keymap.of(completionKeymap)),
+      // CodeMirror prevents the browser's normal Tab navigation when this
+      // command accepts an open completion, but preserves Tab otherwise.
+      Prec.highest(
+        keymap.of([{ key: "Tab", run: acceptCompletion }, ...completionKeymap]),
+      ),
     ];
+  }
+
+  function shouldStartAutocomplete(view: EditorView) {
+    if (!filterSyntax || disabled || inputMode !== "filter-query") {
+      return false;
+    }
+
+    const query = view.state.doc.toString();
+    if (!query) return true;
+
+    const stage = searchFilterCompletionStage(
+      filterSyntax,
+      query,
+      view.state.selection.main.head,
+    );
+    return stage === "operator" || stage === "value";
+  }
+
+  function scheduleAutocomplete(view: EditorView) {
+    queueMicrotask(() => {
+      if (view.hasFocus && shouldStartAutocomplete(view)) {
+        startCompletion(view);
+      }
+    });
   }
 
   /**
@@ -245,6 +278,12 @@
           EditorView.updateListener.of((update) => {
             if (update.docChanged && !replacing) {
               onValueChange(update.state.doc.toString());
+            }
+            if (
+              (update.focusChanged && update.view.hasFocus) ||
+              (update.selectionSet && !update.docChanged)
+            ) {
+              scheduleAutocomplete(update.view);
             }
           }),
           ...editorExtensions,

@@ -115,9 +115,12 @@
   play={async ({ canvas }) => {
     const editor = canvas.getByRole("searchbox", { name: "Search merchants" });
     await userEvent.click(editor);
+    await expect(
+      canvas.getByRole("option", { name: /confidence/i }),
+    ).toBeVisible();
     await userEvent.type(editor, "stat");
     await expect(canvas.getByRole("option", { name: /status/i })).toBeVisible();
-    await userEvent.keyboard("{Enter}");
+    await userEvent.keyboard("{Tab}");
     await expect(
       canvas.getByRole("option", { name: ": matches" }),
     ).toBeVisible();

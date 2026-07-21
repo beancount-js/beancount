@@ -23,10 +23,10 @@ const syntax: SearchFilterSyntax = {
   ],
 };
 
-async function labelsFor(query: string) {
+async function labelsFor(query: string, position = query.length) {
   const state = EditorState.create({ doc: query });
   const source = searchFilterCompletion(syntax);
-  const result = await source(new CompletionContext(state, query.length, true));
+  const result = await source(new CompletionContext(state, position, true));
   return result?.options.map((option) => option.label) ?? [];
 }
 
@@ -74,5 +74,27 @@ describe("search filter syntax completion", () => {
     expect(searchFilterCompletionStage(syntax, "stat")).toBe("field");
     expect(searchFilterCompletionStage(syntax, "status ")).toBe("operator");
     expect(searchFilterCompletionStage(syntax, "status: ")).toBe("value");
+  });
+
+  test("recognises a cursor on either side of an existing operator", async () => {
+    const beforeOperator = "status".length;
+    const afterOperator = "status =".length;
+
+    expect(
+      searchFilterCompletionStage(syntax, "status =", beforeOperator),
+    ).toBe("operator");
+    expect(searchFilterCompletionStage(syntax, "status =", afterOperator)).toBe(
+      "value",
+    );
+    await expect(labelsFor("status =", beforeOperator)).resolves.toEqual([
+      ":",
+      "=",
+      "!=",
+    ]);
+    await expect(labelsFor("status =", afterOperator)).resolves.toEqual([
+      "confirmed",
+      "suggested",
+      "unresolved",
+    ]);
   });
 });
