@@ -4,8 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadProjectSources } from "@beancount-js/beancount";
 import type { ImportProposal, IngestionRun } from "@beancount-js/beangulp";
-import { buildReconciliationReview } from "./reconciliation";
-import { FilesystemReconciliationStore } from "./reconciliation";
+import {
+  autoConfirmableMappedOverlaps,
+  buildReconciliationReview,
+  confirmedProposalReconciliations,
+  FilesystemReconciliationStore,
+} from "./reconciliation";
 import { applyReconciliation } from "./reconciliation-apply";
 import { FilesystemIngestionStore } from "./ingestion";
 import type { IngestionConfig } from "./ingestion";
@@ -171,6 +175,168 @@ describe("buildReconciliationReview", () => {
         expect.objectContaining({ kind: "matching-import-id" }),
       ]),
     );
+  });
+
+  test("identifies one unambiguous mapped overlap for automatic confirmation", () => {
+    const review = buildReconciliationReview({
+      config,
+      runs: [
+        run("aggregator-run", "aggregator", [
+          proposal({
+            importId: "aggregator-1",
+            transaction: {
+              ...proposal().transaction!,
+              sourceId: "aggregator",
+            },
+          }),
+        ]),
+        run("bank-run", "bank", [proposal()]),
+      ],
+      entries: [],
+    });
+
+    expect(autoConfirmableMappedOverlaps(review)).toEqual([
+      expect.objectContaining({
+        candidate: expect.objectContaining({ kind: "overlap" }),
+      }),
+    ]);
+  });
+
+  test("does not automatically confirm an overlap with an ambiguous member", () => {
+    const review = buildReconciliationReview({
+      config,
+      runs: [
+        run("aggregator-run", "aggregator", [
+          proposal({
+            id: "aggregator-one",
+            importId: "aggregator-1",
+            transaction: {
+              ...proposal().transaction!,
+              sourceId: "aggregator",
+            },
+          }),
+          proposal({
+            id: "aggregator-two",
+            importId: "aggregator-2",
+            transaction: {
+              ...proposal().transaction!,
+              sourceId: "aggregator",
+            },
+          }),
+        ]),
+        run("bank-run", "bank", [proposal()]),
+      ],
+      entries: [],
+    });
+
+    expect(autoConfirmableMappedOverlaps(review)).toEqual([]);
+  });
+
+  test("keeps decimal-equivalent mapped amounts eligible", () => {
+    const review = buildReconciliationReview({
+      config,
+      runs: [
+        run("aggregator-run", "aggregator", [
+          proposal({
+            importId: "aggregator-1",
+            transaction: {
+              ...proposal().transaction!,
+              sourceId: "aggregator",
+              amount: "-12.340",
+            },
+          }),
+        ]),
+        run("bank-run", "bank", [proposal()]),
+      ],
+      entries: [],
+    });
+
+    expect(autoConfirmableMappedOverlaps(review)).toHaveLength(1);
+  });
+
+  test("projects confirmed decisions onto their pending proposal rows", () => {
+    const initial = buildReconciliationReview({
+      config,
+      runs: [
+        run("aggregator-run", "aggregator", [
+          proposal({
+            importId: "aggregator-1",
+            transaction: {
+              ...proposal().transaction!,
+              sourceId: "aggregator",
+            },
+          }),
+        ]),
+        run("bank-run", "bank", [proposal()]),
+      ],
+      entries: [],
+    });
+    const candidate = initial.candidates[0]!.candidate;
+    const review = buildReconciliationReview({
+      config,
+      runs: [
+        run("aggregator-run", "aggregator", [
+          proposal({
+            importId: "aggregator-1",
+            transaction: {
+              ...proposal().transaction!,
+              sourceId: "aggregator",
+            },
+          }),
+        ]),
+        run("bank-run", "bank", [proposal()]),
+      ],
+      entries: [],
+      decisions: [
+        {
+          candidateId: candidate.id,
+          state: "confirmed",
+          canonicalObservationId: candidate.recommendedCanonicalId,
+          updatedAt: "2026-07-20T10:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(confirmedProposalReconciliations(review)).toEqual([
+      expect.objectContaining({
+        runId: "aggregator-run",
+        proposalId: "proposal-1",
+        candidateId: candidate.id,
+      }),
+      expect.objectContaining({
+        runId: "bank-run",
+        proposalId: "proposal-1",
+        candidateId: candidate.id,
+      }),
+    ]);
+  });
+});
+
+describe("FilesystemReconciliationStore", () => {
+  test("removes a prior decision without affecting other candidates", async () => {
+    const root = await mkdtemp(join(tmpdir(), "beancount-js-decisions-"));
+    try {
+      const decisions = new FilesystemReconciliationStore((project) =>
+        join(root, project),
+      );
+      await decisions.save("project", {
+        candidateId: "one",
+        state: "confirmed",
+        updatedAt: "2026-07-20T10:00:00.000Z",
+      });
+      await decisions.save("project", {
+        candidateId: "two",
+        state: "dismissed",
+        updatedAt: "2026-07-20T10:00:00.000Z",
+      });
+
+      await expect(decisions.remove("project", "one")).resolves.toBe(true);
+      await expect(decisions.read("project")).resolves.toEqual([
+        expect.objectContaining({ candidateId: "two" }),
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
 

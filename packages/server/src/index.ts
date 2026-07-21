@@ -103,8 +103,11 @@ export {
 } from "./ingestion";
 export { ensureConnectorsRegistered } from "./connectors";
 export {
+  autoConfirmableMappedOverlaps,
   buildReconciliationReview,
+  confirmedProposalReconciliations,
   FilesystemReconciliationStore,
+  type ConfirmedProposalReconciliation,
   type ReconciliationDecision,
   type ReconciliationDecisionState,
   type ReconciliationLedgerRef,

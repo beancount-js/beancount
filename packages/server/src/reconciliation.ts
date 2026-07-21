@@ -52,6 +52,15 @@ export interface ReconciliationReview {
   observations: ReconciliationReviewMember[];
 }
 
+/** A confirmed reconciliation attached to one pending import proposal. */
+export interface ConfirmedProposalReconciliation {
+  runId: string;
+  proposalId: string;
+  candidateId: string;
+  kind: ReconciliationCandidate["kind"];
+  canonicalObservationId?: string;
+}
+
 type PersistedDecisions = {
   version: 1;
   decisions: ReconciliationDecision[];
@@ -269,6 +278,75 @@ export function buildReconciliationReview(options: {
   };
 }
 
+/**
+ * Find the deterministic subset of outstanding overlaps that can safely use
+ * their configured source priority as the canonical side. Applying remains a
+ * separate reviewer action.
+ */
+export function autoConfirmableMappedOverlaps(
+  review: ReconciliationReview,
+): ReconciliationReviewItem[] {
+  const membershipCount = new Map<string, number>();
+  for (const item of review.candidates) {
+    for (const memberId of item.candidate.memberIds) {
+      membershipCount.set(memberId, (membershipCount.get(memberId) ?? 0) + 1);
+    }
+  }
+
+  return review.candidates.filter((item) => {
+    if (
+      item.candidate.kind !== "overlap" ||
+      item.decision ||
+      !item.candidate.recommendedCanonicalId ||
+      item.members.length !== 2
+    ) {
+      return false;
+    }
+    const [left, right] = item.members;
+    if (!left || !right || !left.proposal || !right.proposal) return false;
+    const leftObservation = left.observation;
+    const rightObservation = right.observation;
+    const leftConnection = sourceConnectionId(leftObservation.sourceId ?? "");
+    const rightConnection = sourceConnectionId(rightObservation.sourceId ?? "");
+    return (
+      Boolean(leftConnection) &&
+      Boolean(rightConnection) &&
+      leftConnection !== rightConnection &&
+      leftObservation.sourceAccount === rightObservation.sourceAccount &&
+      leftObservation.currency === rightObservation.currency &&
+      item.candidate.memberIds.every(
+        (memberId) => membershipCount.get(memberId) === 1,
+      )
+    );
+  });
+}
+
+/**
+ * Project confirmed candidate decisions onto the proposal rows that remain in
+ * ordinary review. A proposal can intentionally appear in more than one
+ * manual decision, so callers must preserve every annotation.
+ */
+export function confirmedProposalReconciliations(
+  review: ReconciliationReview,
+): ConfirmedProposalReconciliation[] {
+  return review.candidates.flatMap((item) => {
+    const decision = item.decision;
+    if (decision?.state !== "confirmed") return [];
+    return item.members.flatMap((member) =>
+      member.proposal
+        ? [
+            {
+              ...member.proposal,
+              candidateId: item.candidate.id,
+              kind: item.candidate.kind,
+              canonicalObservationId: decision.canonicalObservationId,
+            },
+          ]
+        : [],
+    );
+  });
+}
+
 function projectId(value: string) {
   if (!/^[a-zA-Z0-9_-]+$/.test(value))
     throw new Error("Invalid project identifier.");
@@ -318,6 +396,23 @@ export class FilesystemReconciliationStore {
       ...previous.filter((item) => item.candidateId !== decision.candidateId),
       decision,
     ].sort((left, right) => left.candidateId.localeCompare(right.candidateId));
+    await this.write(path, decisions);
+    return decision;
+  }
+
+  /** Remove a prior reviewer choice so a current candidate is visible again. */
+  async remove(project: string, candidateId: string) {
+    const path = await this.path(project);
+    const previous = await this.read(project);
+    const decisions = previous.filter(
+      (decision) => decision.candidateId !== candidateId,
+    );
+    if (decisions.length === previous.length) return false;
+    await this.write(path, decisions);
+    return true;
+  }
+
+  private async write(path: string, decisions: ReconciliationDecision[]) {
     const payload: PersistedDecisions = { version: 1, decisions };
     const serialized = JSON.stringify(payload, null, 2) + "\n";
     await fs.mkdir(dirname(path), { recursive: true, mode: 0o700 });
@@ -325,6 +420,5 @@ export class FilesystemReconciliationStore {
     await fs.writeFile(temporary, serialized, { mode: 0o600 });
     await fs.chmod(temporary, 0o600);
     await fs.rename(temporary, path);
-    return decision;
   }
 }
