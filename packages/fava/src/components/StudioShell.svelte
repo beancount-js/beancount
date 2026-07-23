@@ -4,7 +4,6 @@
   import FolderOpen from "lucide-svelte/icons/folder-open";
   import LayoutPanelLeft from "lucide-svelte/icons/layout-panel-left";
   import Moon from "lucide-svelte/icons/moon";
-  import Plus from "lucide-svelte/icons/plus";
   import SearchIcon from "lucide-svelte/icons/search";
   import Sun from "lucide-svelte/icons/sun";
   import { toggleMode } from "mode-watcher";
@@ -15,12 +14,13 @@
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
-  import { Separator } from "$lib/components/ui/separator";
   import { cn } from "$lib/utils";
   import {
+    FilterCommandPicker,
     StructuredForm,
     createFormConfig,
     textField,
+    type FilterCommandOption,
   } from "@beancount-js/forms";
   import AppShell from "@beancount-js/ui/app-shell";
   import StudioShellHeader from "./StudioShellHeader.svelte";
@@ -40,7 +40,7 @@
   export let onSelectProject: (id: string) => void | Promise<void>;
   export let onAddProject: (path?: string) => void | Promise<void>;
 
-  type SidebarTab = "projects" | "workspace" | "search";
+  type SidebarTab = "workspace" | "search";
 
   const SIDEBAR_WIDTH_STORAGE_KEY = "beancount-studio:sidebar-width";
   const SIDEBAR_TAB_STORAGE_KEY = "beancount-studio:sidebar-tab";
@@ -60,9 +60,16 @@
   let resizeStartWidth = DEFAULT_SIDEBAR_WIDTH;
   let previousBodyCursor = "";
   let previousBodyUserSelect = "";
+  let projectOptions: FilterCommandOption[] = [];
   const { ledgerSidebarMode } = useStudioWorkspace();
 
   $: sidebarWidthStyle = `--sidebar-width: ${sidebarWidth}px;`;
+  $: projectOptions = projects.map<FilterCommandOption>((project) => ({
+    value: project.id,
+    label: project.name,
+    description: project.entryFile,
+    keywords: [project.entryFile],
+  }));
   $: if (typeof localStorage !== "undefined") {
     localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(sidebarWidth));
     localStorage.setItem(SIDEBAR_TAB_STORAGE_KEY, tab);
@@ -122,7 +129,6 @@
   }
 
   async function openProject() {
-    tab = "projects";
     await addProject();
   }
 
@@ -151,11 +157,7 @@
   function readStoredSidebarTab(): SidebarTab {
     if (typeof localStorage === "undefined") return "workspace";
     const stored = localStorage.getItem(SIDEBAR_TAB_STORAGE_KEY);
-    if (
-      stored === "projects" ||
-      stored === "workspace" ||
-      stored === "search"
-    ) {
+    if (stored === "workspace" || stored === "search") {
       return stored;
     }
     return "workspace";
@@ -244,18 +246,8 @@
               />
               {#if $ledgerSidebarMode !== "settings"}
                 <div
-                  class="grid w-full grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
+                  class="grid w-full grid-cols-2 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
                 >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class={tab === "projects"
-                      ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                      : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
-                    aria-label="Projects"
-                    title="Projects"
-                    onclick={() => (tab = "projects")}><FolderOpen /></Button
-                  >
                   <Button
                     variant="ghost"
                     size="icon"
@@ -281,114 +273,7 @@
               {/if}
             </Sidebar.Header>
             <Sidebar.Content class="px-2 pb-3">
-              {#if tab === "projects"}
-                <Sidebar.Group>
-                  <Sidebar.GroupLabel>Current project</Sidebar.GroupLabel>
-                  <Sidebar.GroupContent class="flex flex-col gap-1">
-                    {#if snapshot}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="h-auto w-full justify-start border border-sidebar-border bg-background py-2 text-sidebar-accent-foreground shadow-sm hover:bg-background hover:text-sidebar-accent-foreground"
-                        title={snapshot.project.name}
-                        aria-current="page"
-                        onclick={() =>
-                          void onSelectProject(snapshot!.project.id)}
-                      >
-                        <FolderOpen data-icon="inline-start" />
-                        <span class="min-w-0 text-left"
-                          ><span class="block truncate"
-                            >{snapshot.project.name}</span
-                          ><span
-                            class="block truncate text-xs text-muted-foreground"
-                            >{snapshot.project.entryFile}</span
-                          ></span
-                        >
-                      </Button>
-                    {:else}
-                      <p class="px-2 text-sm text-muted-foreground">
-                        Opening project…
-                      </p>
-                    {/if}
-                    {#each projects.filter((project) => project.id !== snapshot?.project.id) as project (project.id)}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="h-auto w-full justify-start py-2"
-                        title={project.name}
-                        onclick={() => void onSelectProject(project.id)}
-                      >
-                        <FolderOpen data-icon="inline-start" />
-                        <span class="min-w-0 text-left"
-                          ><span class="block truncate">{project.name}</span
-                          ><span
-                            class="block truncate text-xs text-muted-foreground"
-                            >{project.entryFile}</span
-                          ></span
-                        >
-                      </Button>
-                    {/each}
-                  </Sidebar.GroupContent>
-                </Sidebar.Group>
-                <Separator class="my-2" />
-                <div class="px-2">
-                  {#if projectActionError}
-                    <p
-                      class="mb-2 px-1 text-xs text-destructive"
-                      role="alert"
-                      data-project-action-error
-                    >
-                      {projectActionError}
-                    </p>
-                  {/if}
-                  {#if enteringPath}
-                    <form
-                      class="flex flex-col gap-2"
-                      onsubmit={(event) => {
-                        event.preventDefault();
-                        void submitPath();
-                      }}
-                    >
-                      <StructuredForm
-                        config={projectPathForm}
-                        value={{ path }}
-                        context={undefined}
-                        onChange={(value) => {
-                          path = value.path;
-                        }}
-                      />
-                      <div class="flex gap-2">
-                        <Button
-                          type="submit"
-                          size="sm"
-                          class="flex-1"
-                          disabled={addingProject || !path.trim()}>Add</Button
-                        ><Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={addingProject}
-                          onclick={cancelPathEntry}>Cancel</Button
-                        >
-                      </div>
-                    </form>
-                  {:else}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      class="w-full justify-start"
-                      disabled={addingProject}
-                      onclick={() => void openProject()}
-                    >
-                      <Plus data-icon="inline-start" /><span
-                        >{addingProject
-                          ? "Opening folder…"
-                          : "Open another project"}</span
-                      >
-                    </Button>
-                  {/if}
-                </div>
-              {:else if tab === "search"}
+              {#if tab === "search"}
                 <div
                   data-slot="search-tab"
                   class="flex min-h-0 flex-1 flex-col"
@@ -400,6 +285,21 @@
               {/if}
             </Sidebar.Content>
           </div>
+          <Sidebar.Footer
+            class="border-t border-sidebar-border group-data-[collapsible=icon]:hidden"
+          >
+            <FilterCommandPicker
+              label="Project"
+              ariaLabel="Select project"
+              placeholder="Search projects..."
+              emptyLabel="No projects found."
+              fullWidth
+              stackedOptions
+              options={projectOptions}
+              value={snapshot?.project.id ?? ""}
+              onChange={(id) => void onSelectProject(id)}
+            />
+          </Sidebar.Footer>
 
           <div
             class="hidden h-full min-h-0 flex-col items-center gap-2 px-1.5 py-2 group-data-[collapsible=icon]:flex"
@@ -568,10 +468,46 @@
           </Empty.Description>
         </Empty.Header>
         <Empty.Content>
-          <Button onclick={() => void openProject()}>
-            <FolderOpen data-icon="inline-start" />
-            Open project
-          </Button>
+          {#if enteringPath}
+            <form
+              class="flex w-full max-w-sm flex-col gap-3"
+              onsubmit={(event) => {
+                event.preventDefault();
+                void submitPath();
+              }}
+            >
+              <StructuredForm
+                config={projectPathForm}
+                value={{ path }}
+                context={undefined}
+                onChange={(value) => {
+                  path = value.path;
+                }}
+              />
+              <div class="flex gap-2">
+                <Button
+                  type="submit"
+                  class="flex-1"
+                  disabled={addingProject || !path.trim()}>Open project</Button
+                ><Button
+                  type="button"
+                  variant="ghost"
+                  disabled={addingProject}
+                  onclick={cancelPathEntry}>Cancel</Button
+                >
+              </div>
+            </form>
+          {:else}
+            <Button disabled={addingProject} onclick={() => void openProject()}>
+              <FolderOpen data-icon="inline-start" />
+              {addingProject ? "Opening folder…" : "Open project"}
+            </Button>
+          {/if}
+          {#if projectActionError}
+            <Empty.Description role="alert" class="text-destructive">
+              {projectActionError}
+            </Empty.Description>
+          {/if}
           {#if status && !status.startsWith("Add a local")}
             <Empty.Description role="alert" class="text-destructive">
               {status}
