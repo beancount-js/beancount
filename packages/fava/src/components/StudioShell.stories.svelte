@@ -138,9 +138,6 @@
         <svelte:fragment slot="workspace">
           <p class="p-3 text-sm text-muted-foreground">Workspace content</p>
         </svelte:fragment>
-        <svelte:fragment slot="search">
-          <p class="p-3 text-sm text-muted-foreground">Search content</p>
-        </svelte:fragment>
       </StudioShell>
     </div>
     <output class="sr-only" aria-live="polite">

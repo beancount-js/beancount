@@ -29,7 +29,6 @@
   import IngestionRunAudit from "./components/IngestionRunAudit.svelte";
   import RulesSettings from "./components/RulesSettings.svelte";
   import FavaNavigation from "./components/FavaNavigation.svelte";
-  import Search from "./components/Search.svelte";
   import JournalRecordRouteSheet from "./components/JournalRecordRouteSheet.svelte";
   import StudioShell from "./components/StudioShell.svelte";
   import AiDock from "./components/AiDock.svelte";
@@ -309,7 +308,6 @@
     {onAddProject}
   >
     <svelte:fragment slot="workspace"><FavaNavigation /></svelte:fragment>
-    <svelte:fragment slot="search"><Search /></svelte:fragment>
     <div class="h-full min-w-0 overflow-hidden" use:routerLink>
       <View />
     </div>

@@ -123,3 +123,37 @@
     </output>
   {/snippet}
 </Story>
+
+<Story
+  name="Toggles the ledger search sidebar"
+  play={async ({ canvas }) => {
+    const searchToggle = canvas.getByRole("button", {
+      name: "Show search sidebar",
+    });
+    await expect(searchToggle).toHaveAttribute("aria-pressed", "false");
+
+    await userEvent.click(searchToggle);
+    await expect(
+      canvas.getByRole("searchbox", { name: "Search ledger" }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "Show ledger sidebar" }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Show ledger sidebar" }),
+    );
+    await expect(
+      canvas.getByRole("button", { name: "Ledgers", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+  }}
+>
+  {#snippet template()}
+    <aside
+      class="flex h-[42rem] w-72 flex-col overflow-hidden rounded-xl border bg-sidebar p-3 text-sidebar-foreground shadow-sm"
+      aria-label="Ledger search navigation example"
+    >
+      <FavaNavigation />
+    </aside>
+  {/snippet}
+</Story>

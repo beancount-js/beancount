@@ -2,9 +2,7 @@
   import { onDestroy } from "svelte";
   import ChevronRight from "lucide-svelte/icons/chevron-right";
   import FolderOpen from "lucide-svelte/icons/folder-open";
-  import LayoutPanelLeft from "lucide-svelte/icons/layout-panel-left";
   import Moon from "lucide-svelte/icons/moon";
-  import SearchIcon from "lucide-svelte/icons/search";
   import Sun from "lucide-svelte/icons/sun";
   import { toggleMode } from "mode-watcher";
   import type {
@@ -29,7 +27,6 @@
   import { activeSyncTracks } from "../studio/sync-status";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
-  import { useStudioWorkspace } from "../studio/workspace";
 
   export let projects: ProjectSummary[] = [];
   export let snapshot: ProjectSnapshot | undefined;
@@ -40,15 +37,11 @@
   export let onSelectProject: (id: string) => void | Promise<void>;
   export let onAddProject: (path?: string) => void | Promise<void>;
 
-  type SidebarTab = "workspace" | "search";
-
   const SIDEBAR_WIDTH_STORAGE_KEY = "beancount-studio:sidebar-width";
-  const SIDEBAR_TAB_STORAGE_KEY = "beancount-studio:sidebar-tab";
   const DEFAULT_SIDEBAR_WIDTH = 256;
   const MIN_SIDEBAR_WIDTH = 220;
   const MAX_SIDEBAR_WIDTH = 520;
 
-  let tab: SidebarTab = readStoredSidebarTab();
   let enteringPath = false;
   let addingProject = false;
   let path = "";
@@ -61,7 +54,6 @@
   let previousBodyCursor = "";
   let previousBodyUserSelect = "";
   let projectOptions: FilterCommandOption[] = [];
-  const { ledgerSidebarMode } = useStudioWorkspace();
 
   $: sidebarWidthStyle = `--sidebar-width: ${sidebarWidth}px;`;
   $: projectOptions = projects.map<FilterCommandOption>((project) => ({
@@ -72,7 +64,6 @@
   }));
   $: if (typeof localStorage !== "undefined") {
     localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(sidebarWidth));
-    localStorage.setItem(SIDEBAR_TAB_STORAGE_KEY, tab);
   }
   const projectPathForm = createFormConfig<{ path: string }>({
     id: "add-project-path",
@@ -154,15 +145,6 @@
     projectActionError = null;
   }
 
-  function readStoredSidebarTab(): SidebarTab {
-    if (typeof localStorage === "undefined") return "workspace";
-    const stored = localStorage.getItem(SIDEBAR_TAB_STORAGE_KEY);
-    if (stored === "workspace" || stored === "search") {
-      return stored;
-    }
-    return "workspace";
-  }
-
   function readStoredSidebarWidth() {
     if (typeof localStorage === "undefined") return DEFAULT_SIDEBAR_WIDTH;
     const storedValue = Number.parseInt(
@@ -239,50 +221,13 @@
           <div
             class="flex min-h-0 flex-1 flex-col group-data-[collapsible=icon]:hidden"
           >
-            <Sidebar.Header class="gap-3">
+            <Sidebar.Header>
               <StudioShellHeader
                 projectName={snapshot?.project.name ?? "Loading project"}
-                onOpenLedgerSettings={() => (tab = "workspace")}
               />
-              {#if $ledgerSidebarMode !== "settings"}
-                <div
-                  class="grid w-full grid-cols-2 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
-                >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class={tab === "workspace"
-                      ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                      : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
-                    aria-label="Workspace"
-                    title="Workspace"
-                    onclick={() => (tab = "workspace")}
-                    ><LayoutPanelLeft /></Button
-                  >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class={tab === "search"
-                      ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                      : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
-                    aria-label="Search"
-                    title="Search"
-                    onclick={() => (tab = "search")}><SearchIcon /></Button
-                  >
-                </div>
-              {/if}
             </Sidebar.Header>
             <Sidebar.Content class="px-2 pb-3">
-              {#if tab === "search"}
-                <div
-                  data-slot="search-tab"
-                  class="flex min-h-0 flex-1 flex-col"
-                >
-                  <slot name="search"></slot>
-                </div>
-              {:else}
-                <slot name="workspace"></slot>
-              {/if}
+              <slot name="workspace"></slot>
             </Sidebar.Content>
           </div>
           <Sidebar.Footer
