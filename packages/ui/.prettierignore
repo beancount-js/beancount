@@ -1,2 +1,4 @@
 storybook-static/
 .svelte-kit/
+playwright-report/
+test-results/

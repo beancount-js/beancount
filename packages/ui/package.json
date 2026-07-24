@@ -10,6 +10,8 @@
     "test-storybook": "vitest run --project storybook",
     "test-visual": "pnpm build-storybook && playwright test",
     "test-visual:update": "tsx scripts/visual-baseline.ts",
+    "fava-reference:capture": "tsx scripts/fava-reference/capture.ts",
+    "fava-reference:verify": "tsx scripts/fava-reference/verify.ts",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "check-boundaries": "node ./scripts/check-boundaries.mjs",
     "fmt": "prettier . --write",

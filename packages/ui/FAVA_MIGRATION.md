@@ -59,9 +59,9 @@ additional manual pauses. Return to GPT-5.6 Sol for the final parity audit.
 | --- | ----------------------------------------------------------------- | ----------- | ----------------------------------------------- |
 | F01 | Resume UI ownership guidance and isolate normal root checks       | Done        | Root/UI/Form guidance and root negative filters |
 | F02 | Create and verify the pinned `fava-reference` workspace           | Done        | Workspace `fava-reference`, parent `191dae81`   |
-| F03 | Port Visual Delta and Storybook status badges                     | In progress | Current phase                                   |
-| F04 | Add protected Fava capture matrix, manifest, and overwrite guards | Not started | —                                               |
-| F05 | Repair the `SearchFilterBar` empty-focus browser story            | Not started | Existing 1/171 failure                          |
+| F03 | Port Visual Delta and Storybook status badges                     | Done        | Change `a3d69779`; 61 addon tests               |
+| F04 | Add protected Fava capture matrix, manifest, and overwrite guards | Done        | 15 pinned captures; manifest digest gate        |
+| F05 | Repair the `SearchFilterBar` empty-focus browser story            | In progress | Existing 1/171 failure                          |
 | F06 | Consolidate Forms implementation, tests, and stories into UI      | Not started | —                                               |
 | F07 | Reduce `@beancount-js/forms` to a forwarding compatibility facade | Not started | —                                               |
 | F08 | Run UI, Forms-facade, and original-Fava compatibility gates       | Not started | —                                               |
@@ -179,3 +179,13 @@ change IDs here at the end of each committed slice.
   copy has parent `191dae81`. UI boundary checks passed, documentation and
   package metadata passed Prettier, and Turbo's dry run contained no
   `@beancount-js/ui#checks` task.
+- 2026-07-24 — Visual harness slice (`a3d69779`): ported the local Visual
+  Delta addon and Storybook tag badges from the pinned harness reference.
+  Addon tests passed 61/61, UI unit tests passed 18/18, Svelte and boundary
+  checks passed, Storybook built, and the empty visual-regression lane exited
+  cleanly with one intentional skip.
+- 2026-07-24 — Frozen Fava reference slice: built ignored artifacts in the
+  pinned workspace, captured all 15 matrix routes at 1280 × 900 and device
+  scale factor 3, and recorded Studio revision `191dae81`, sample fixture
+  digest, and per-image SHA-256 digests. `pnpm fava-reference:verify` and the
+  protected-story index audit passed.
