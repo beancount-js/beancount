@@ -1,40 +1,34 @@
 <script module lang="ts">
   import { defineMeta } from "@storybook/addon-svelte-csf";
   import { expect, userEvent, within } from "storybook/test";
-  import { FormField, type FormCustomRenderer } from "@beancount-js/forms";
-  import {
-    accountField,
-    type SourceFormContext,
-  } from "../../ingestion/source-form-config";
+  import FormField from "./FormField.svelte";
   import AccountComboField from "./AccountComboField.svelte";
+  import type { FormCustomRenderer } from "./types";
 
   type AccountRoot = { sourceAccount: string };
 
-  const context: SourceFormContext = {
+  const context = {
     accounts: ["Assets:Cash", "Assets:Current", "Expenses:Groceries"],
   };
-
-  const field = accountField<AccountRoot>({
+  const field = {
     id: "source-account",
     label: "Source account",
     placeholder: "Select an account",
-    get: (root) => root.sourceAccount,
-    set: (root, sourceAccount) => ({ ...root, sourceAccount }),
-  });
+  };
   const AccountField = AccountComboField as FormCustomRenderer<
     AccountRoot,
-    SourceFormContext,
+    typeof context,
     string
   >;
 
   const { Story } = defineMeta({
-    title: "Fava/Forms/Account Combo Field",
+    title: "UI Forms/Account Combo Field",
     component: AccountComboField,
     parameters: {
       docs: {
         description: {
           component:
-            "Fava's ingestion-form adapter for a searchable account value. It uses the shared Filter Command Picker within a centered structured-form row. Use it only where the ingestion context supplies accounts; see the [Form guidance](?path=/docs/ui-forms-guidance--docs) for the picker and row rules.",
+            "A reusable ingestion-account selector that wraps a searchable picker inside a centered form row. Applications provide account options, current value, and update callbacks through `FormFieldRenderArgs`.",
         },
       },
     },
@@ -43,10 +37,6 @@
 
 <script lang="ts">
   let root = $state<AccountRoot>({ sourceAccount: "" });
-
-  function update(value: string) {
-    root = field.set?.(root, value, context) ?? root;
-  }
 </script>
 
 <Story
@@ -73,9 +63,11 @@
           issues={[]}
           view="edit"
           readonly={false}
-          {update}
+          update={(value) => {
+            root = { sourceAccount: value };
+          }}
           updateRoot={(value) => {
-            root = value;
+            root = value as AccountRoot;
           }}
         />
       </FormField>
@@ -98,7 +90,7 @@
           issues={[]}
           view="readonly"
           readonly={true}
-          {update}
+          update={() => {}}
           updateRoot={() => {}}
         />
       </FormField>

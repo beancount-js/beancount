@@ -7,7 +7,7 @@ import {
   type FormCustomRenderer,
 } from "@beancount-js/forms";
 import type { EditableIngestionSource } from "./source-form";
-import AccountComboField from "../components/form/AccountComboField.svelte";
+import { AccountComboField } from "@beancount-js/ui/forms";
 import MerchantComboField from "../components/form/MerchantComboField.svelte";
 import SecretField from "../components/form/SecretField.svelte";
 import SwitchField from "../components/form/SwitchField.svelte";

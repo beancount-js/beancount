@@ -1,8 +1,6 @@
 <script lang="ts">
-  import {
-    FilterCommandPicker,
-    type FormFieldRenderArgs,
-  } from "@beancount-js/forms";
+  import FilterCommandPicker from "./FilterCommandPicker.svelte";
+  import type { FormFieldRenderArgs } from "./types";
 
   type AccountContext = {
     accounts?: string[];

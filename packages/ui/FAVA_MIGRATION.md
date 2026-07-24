@@ -218,6 +218,20 @@ is `visual-approved`.
   `test-storybook`, `pnpm --filter @beancount-js/fava-beta check`,
   `check:svelte5`, `lint`, and `build` pass after this migration.
 
+#### C014 — `form/AccountComboField.svelte`
+
+- Status: **Done**. Presentation ownership is now in
+  `@beancount-js/ui/forms/AccountComboField.svelte`; the component consumes
+  app-owned account context and preserves the existing searchable-select behavior,
+  including placeholder-first selection and empty-value mapping.
+- Beta adapter: `packages/fava-beta/src/ingestion/source-form-config.ts` now
+  imports `AccountComboField` from `@beancount-js/ui/forms`; local duplicate
+  component and story files under `packages/fava-beta/src/components/form/` were
+  removed.
+- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
+  `pnpm --filter @beancount-js/fava-beta check`, `check:svelte5`, `lint`, and
+  `build` pass after this migration.
+
 #### C001 — `ContentScrollArea.svelte`
 
 - Original reference: `packages/fava/src/components/ContentScrollArea.svelte`;
@@ -259,7 +273,7 @@ is `visual-approved`.
 | C011 | `ComboBox.svelte`                 | Done        |
 | C012 | `MerchantPicker.svelte`           | Done        |
 | C013 | `LocalMerchantMatchPicker.svelte` | Done        |
-| C014 | `form/AccountComboField.svelte`   | Not started |
+| C014 | `form/AccountComboField.svelte`   | Done        |
 | C015 | `form/MerchantComboField.svelte`  | Not started |
 | C016 | `form/SecretField.svelte`         | Not started |
 | C017 | `form/SwitchField.svelte`         | Not started |
