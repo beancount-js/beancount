@@ -1,10 +1,11 @@
-# Fava component ownership status
+# Historical Fava component ownership audit
 
-The UI-package copy migration is paused.
+This paused-state audit was superseded when UI migration resumed on 2026-07-24.
 
-Keep Fava routes, adapters, and current direct imports where they are for now.
-
-- `@beancount-js/ui` is not receiving new component migrations at this time.
-- Keep reusable form ownership in `packages/forms`.
-- Keep feature-specific visuals and behavior in `packages/fava`.
-- Resume UI-package catalog migration only with explicit direction.
+- This `packages/fava` tree remains unchanged as the comparison application.
+- Protected captures use the full repository pinned at `191dae81` through the
+  `fava-reference` Jujutsu workspace, preventing active UI changes from
+  contaminating reference output.
+- New integration work belongs in `packages/fava-beta`; reusable presentation
+  and Forms implementations belong in `packages/ui`.
+- Current status is tracked in `packages/ui/FAVA_MIGRATION.md`.

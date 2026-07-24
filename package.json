@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "checks": "turbo run checks",
+    "checks": "turbo run checks --filter='!@beancount-js/ui'",
+    "checks:ui": "pnpm --filter @beancount-js/ui checks",
     "dev": "turbo run dev --filter=@beancount-js/fava",
     "storybook": "pnpm --filter @beancount-js/ui storybook",
     "build-storybook": "pnpm --filter @beancount-js/ui build-storybook",

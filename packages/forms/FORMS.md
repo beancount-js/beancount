@@ -2,20 +2,20 @@
 
 > Local copy of the CV Studio forms contract for Beancount JS Studio.
 > Origin: `~/code/cv/spec/src/30-domain-contracts/forms-and-shared-ui.md`
-> Canonical implementation surface in this repo: `@beancount-js/forms`
-> (`packages/forms/src`).
+> Canonical implementation surface in this repo: `@beancount-js/ui/forms`
+> (`packages/ui/src/components/forms`).
 >
-> Where the origin text refers to `@cvstudio/ui` or `@cvstudio/forms`, use
-> `@beancount-js/forms` in this repository. `@beancount-js/ui/forms` is
-> part of the paused migration and should remain unchanged unless explicitly resumed.
+> `@beancount-js/forms` is a temporary implementation-free compatibility facade
+> for the frozen Fava reference. Where the origin text refers to `@cvstudio/ui`
+> or `@cvstudio/forms`, use `@beancount-js/ui/forms` in new code.
 
 The shared form and UI contract keeps Studio, applications, docs, and task editors visually and behaviorally consistent.
 
 ## Shared form pattern
 
-Use `@beancount-js/forms` primitives before creating new local form controls in
-Studio or feature packages. Existing Fava imports remain in place during this
-paused state; add new reusable form work to `@beancount-js/forms`.
+Use `@beancount-js/ui/forms` primitives before creating new local form controls
+in Studio or feature packages. Existing original-Fava imports remain unchanged
+through the compatibility facade; add reusable form work only to UI.
 
 Default editable forms should be minimal and row-based:
 

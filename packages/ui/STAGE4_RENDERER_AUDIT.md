@@ -1,7 +1,9 @@
-# UI renderer audit status
+# Historical UI renderer audit
 
-The design-system renderer migration is paused.
+This paused-state audit was superseded when UI migration resumed on 2026-07-24.
 
-- No new Fava visual copy should be moved into `packages/ui` while this pause is in effect.
-- Keep existing `@beancount-js/ui` renderer sources and discovery settings unchanged.
-- Continue using `packages/fava` for application adapters and `packages/forms` for form reuse.
+- `packages/fava` is now the immutable comparison source.
+- Reusable renderers move into UI and are integrated through
+  `packages/fava-beta`.
+- Current phases and component evidence are tracked in
+  `packages/ui/FAVA_MIGRATION.md`.

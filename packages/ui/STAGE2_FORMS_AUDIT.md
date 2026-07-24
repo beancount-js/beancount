@@ -1,7 +1,8 @@
-# UI Forms audit status
+# Historical UI Forms audit
 
-The UI migration is paused.
+This paused-state audit was superseded when UI migration resumed on 2026-07-24.
 
-- Do not add new form exports, stories, or compatibility changes in `packages/ui`.
-- Existing `@beancount-js/ui/forms` imports and source are preserved.
-- New reusable form work should use `@beancount-js/forms` and `packages/fava` local feature ownership.
+- The active contract remains `packages/forms/FORMS.md`.
+- The canonical implementation is now `@beancount-js/ui/forms`.
+- The consolidation and compatibility-facade work is tracked in
+  `packages/ui/FAVA_MIGRATION.md`.

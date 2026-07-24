@@ -22,9 +22,14 @@
 
 ## Shared forms
 
-- UI-package migration for form code is paused. Keep existing `@beancount-js/ui` form imports and surface as-is.
-- For new or changed reusable form behavior, use `packages/forms/FORMS.md` as the active contract and implement in `@beancount-js/forms`.
-- Do not move or add form work to `packages/ui` until explicitly resumed.
+- UI-package work has resumed. `packages/ui` / `@beancount-js/ui` is the
+  canonical implementation and public surface for reusable presentation and
+  form components.
+- `packages/forms/FORMS.md` remains the active form behavior contract. Implement
+  that contract in `@beancount-js/ui/forms`.
+- `@beancount-js/forms` is a temporary implementation-free compatibility
+  facade for the frozen Fava reference. Do not add source behavior, stories, or
+  dependencies there.
 - Keep one `max-content minmax(0, 1fr)` label/value grid per form scope, visible single separators, title-only collapsible headers, and left-rail disclosure.
 - Use `FormField as="div" align="center"` for pill/button controls, date pickers, and searchable pickers in row layouts.
 - Use centered alignment for text rows when they are mixed with pills.
@@ -33,7 +38,7 @@
 
 ## Searchable pickers
 
-- Use `FilterCommandPicker` from `@beancount-js/forms` for searchable select controls.
+- Use `FilterCommandPicker` from `@beancount-js/ui/forms` for searchable select controls.
 - Wrap each picker in `FormField as="div" align="center"`, and use `fullWidth` in forms and sidebars.
 - For user-entered values not present in options, use `allowCustom={true}`.
 - Use `multiple` + `values` + `onValuesChange` for multi-select; use `value` + `onChange` for single-select.
@@ -41,6 +46,17 @@
 
 ## UI catalog and Storybook
 
-- Keep the current `@beancount-js/ui` surface and wiring in place. No new shared components, stories, exports, or catalog wiring should be added in this repo phase.
-- Fava feature UI and local adapters stay in `packages/fava`; reusable form work stays in `packages/forms`.
-- If explicit user instruction resumes UI-package maintenance, apply the package-local guidance and run `pnpm --filter @beancount-js/ui checks` for that change.
+- The resumed migration is tracked in `packages/ui/FAVA_MIGRATION.md`.
+- `packages/fava` is the immutable comparison application. Migration commits
+  must not edit it; protected captures run from the pinned `fava-reference`
+  Jujutsu workspace.
+- `packages/fava-beta` is the integration target once the harness and Forms
+  foundation are complete. It may keep application adapters, routes, stores,
+  ledger derivation, persistence, APIs, and CodeMirror integration; reusable
+  presentation belongs in `packages/ui`.
+- Run `pnpm --filter @beancount-js/ui checks` for every UI slice. UI and
+  Fava Beta are intentionally excluded from the ordinary root `pnpm checks`
+  aggregate while migration is in progress.
+- Manual validation pauses occur only after the visual-reference harness, after
+  the Forms consolidation, and after the final parity audit. Component slices
+  use automated gates and do not wait for per-component approval.

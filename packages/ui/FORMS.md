@@ -1,7 +1,11 @@
 # Forms And Shared UI
 
-UI-package forms guidance is historical and archived.
+UI Forms is the canonical implementation surface for the active contract in
+`packages/forms/FORMS.md`.
 
-- The migration is paused. `packages/ui` should not receive new form surfaces, stories, or import changes.
-- The active reusable form contract is `packages/forms/FORMS.md`.
-- Keep existing `@beancount-js/ui/forms` usage in place unless explicitly resumed.
+- Implement reusable form behavior in `packages/ui/src/components/forms`.
+- Preserve deliberate `@beancount-js/ui/forms` and component-subpath exports.
+- Keep `packages/forms` implementation-free; it exists only to forward legacy
+  imports while the frozen Fava reference remains runnable.
+- Follow the Storybook, visual evidence, and validation rules in
+  `packages/ui/AGENTS.md` and `packages/ui/FAVA_MIGRATION.md`.

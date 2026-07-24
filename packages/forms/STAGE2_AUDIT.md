@@ -1,10 +1,10 @@
-# Forms migration status
+# Historical Forms migration status
 
-The UI-package migration is paused as of 2026-07-22.
+The paused state recorded on 2026-07-22 was superseded when UI migration
+resumed on 2026-07-24.
 
-Current active form guidance lives in `packages/forms/FORMS.md`.
-
-- Keep existing `@beancount-js/ui/forms` components in place.
-- Do not add reusable form work to `packages/ui` or add new UI-package imports for forms.
-- Add new reusable form work to `@beancount-js/forms` and reuse existing Fava-local work for product-specific UI patterns.
-- Resume only when explicit project authorization explicitly reopens the UI migration.
+- Active behavior guidance remains in `packages/forms/FORMS.md`.
+- Canonical implementation and Storybook ownership moves to
+  `@beancount-js/ui/forms`.
+- This package becomes an implementation-free compatibility facade after the
+  consolidation tracked in `packages/ui/FAVA_MIGRATION.md`.
