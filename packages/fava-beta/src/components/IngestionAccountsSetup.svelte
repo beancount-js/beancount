@@ -56,7 +56,7 @@
   import type { IngestionConfigResponse } from "../ingestion/types";
   import { useCtx } from "../stores/format";
   import { urlForAccount } from "../helpers";
-  import ComboBox from "./ComboBox.svelte";
+  import { ComboBox } from "@beancount-js/ui/forms";
 
   type DiscoveredAccount = {
     id: string;
@@ -1788,7 +1788,7 @@
                       items={accountItems}
                       value={sourceAccounts[account.id] ?? ""}
                       placeholder="Select account"
-                      onValueChange={(value) =>
+                      onValueChange={(value: string) =>
                         setSourceAccount(account.id, value)}
                     />
                   </label>

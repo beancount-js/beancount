@@ -177,6 +177,19 @@ is `visual-approved`.
   `svelte-check` pass. Focused `@beancount-js/fava-beta` `lint`,
   `check`, `check:svelte5`, `test --run`, and `build` pass after migration.
 
+#### C011 — `ComboBox.svelte`
+
+- Status: **Done**. The reusable combo/filter control now lives in
+  `@beancount-js/ui/forms/ComboBox.svelte`, which already includes a Storybook
+  story and interaction tests.
+- Beta adapter: `packages/fava-beta/src/components/ComboBox.svelte` and
+  `packages/fava-beta/src/components/ComboBox.stories.svelte` were removed.
+  `IngestionAccountsSetup.svelte` now imports `ComboBox` from
+  `@beancount-js/ui/forms`, while preserving local account-list application
+  state and option mapping.
+- Validation: `pnpm --filter @beancount-js/fava-beta check`,
+  `check:svelte5`, `lint`, and `build` pass after consuming the shared control.
+
 #### C001 — `ContentScrollArea.svelte`
 
 - Original reference: `packages/fava/src/components/ContentScrollArea.svelte`;
@@ -215,7 +228,7 @@ is `visual-approved`.
 
 | ID   | Fava source or surface            | Status      |
 | ---- | --------------------------------- | ----------- |
-| C011 | `ComboBox.svelte`                 | Not started |
+| C011 | `ComboBox.svelte`                 | Done        |
 | C012 | `MerchantPicker.svelte`           | Not started |
 | C013 | `LocalMerchantMatchPicker.svelte` | Not started |
 | C014 | `form/AccountComboField.svelte`   | Not started |

@@ -18,6 +18,7 @@ export { default as ReviewDiff } from "./ReviewDiff.svelte";
 export { default as DatePicker } from "./DatePicker.svelte";
 export { default as JsonBackedForm } from "./JsonBackedForm.svelte";
 export { default as SearchFilterBar } from "./SearchFilterBar.svelte";
+export { default as ComboBox } from "./ComboBox.svelte";
 export type {
   SearchFilterExample,
   SearchFilterField,
@@ -63,6 +64,7 @@ export type {
   UnifiedDiffSegment,
   UnifiedDiffSegmentType,
 } from "./review-diff";
+export type { ComboBoxGroup, ComboBoxOption } from "./ComboBox.svelte";
 export type {
   FormConfig,
   FormCustomRenderer,
