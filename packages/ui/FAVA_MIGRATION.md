@@ -202,6 +202,22 @@ is `visual-approved`.
 - Validation: `pnpm --filter @beancount-js/fava-beta check`,
   `check:svelte5`, `lint`, and `build` pass after this migration.
 
+#### C013 — `LocalMerchantMatchPicker.svelte`
+
+- Status: **Done**. Presentation ownership is now in
+  `@beancount-js/ui/forms/LocalMerchantMatchPicker.svelte` as a form-level
+  wrapper around shared `MerchantPicker`; the Beta adapter in
+  `packages/fava-beta/src/components/LocalMerchantMatchPicker.svelte` retains
+  API fetching and brand-match action behavior, then passes ranked merchants and
+  load messages into the shared picker control.
+- Beta adapter: `packages/fava-beta/src/components/LocalMerchantMatchPicker.svelte`
+  now uses app-owned merchant loading, brand-match action handling, and local
+  error reporting while rendering the shared UI control with a preconfigured
+  `Existing merchant` form field.
+- Validation: `pnpm --filter @beancount-js/ui check-boundaries`,
+  `test-storybook`, `pnpm --filter @beancount-js/fava-beta check`,
+  `check:svelte5`, `lint`, and `build` pass after this migration.
+
 #### C001 — `ContentScrollArea.svelte`
 
 - Original reference: `packages/fava/src/components/ContentScrollArea.svelte`;
@@ -242,7 +258,7 @@ is `visual-approved`.
 | ---- | --------------------------------- | ----------- |
 | C011 | `ComboBox.svelte`                 | Done        |
 | C012 | `MerchantPicker.svelte`           | Done        |
-| C013 | `LocalMerchantMatchPicker.svelte` | Not started |
+| C013 | `LocalMerchantMatchPicker.svelte` | Done        |
 | C014 | `form/AccountComboField.svelte`   | Not started |
 | C015 | `form/MerchantComboField.svelte`  | Not started |
 | C016 | `form/SecretField.svelte`         | Not started |
