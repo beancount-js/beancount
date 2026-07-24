@@ -260,6 +260,19 @@ is `visual-approved`.
   `pnpm --filter @beancount-js/fava-beta check`,
   `check:svelte5`, `lint`, and `build` pass after this migration.
 
+#### C018 — `AccountBulkActionSheet.svelte`
+
+- Status: **Done**. `@beancount-js/ui/tables/AccountBulkActionSheet.svelte`
+  now owns the presentational bulk-action sheet UI. `packages/fava-beta/src/components/AccountBulkActionSheet.svelte`
+  is now a thin adapter that supplies record-driven options/summaries, validates
+  ledger patches, and delegates user-facing rendering to the shared component.
+- Beta adapter updates: the local duplicate story
+  `packages/fava-beta/src/components/AccountBulkActionSheet.stories.svelte` was
+  removed; Beta call sites continue to use
+  `packages/fava-beta/src/components/AccountBulkActionSheet.svelte` without change.
+- Validation: `pnpm --filter @beancount-js/fava-beta check`, `check:svelte5`,
+  `lint`, and `build` pass after this migration.
+
 #### C016 — `form/SecretField.svelte`
 
 - Status: **Done**. `@beancount-js/ui/forms/SecretField.svelte` now owns
@@ -320,7 +333,7 @@ is `visual-approved`.
 | C015 | `form/MerchantComboField.svelte`  | Done        |
 | C016 | `form/SecretField.svelte`         | Done        |
 | C017 | `form/SwitchField.svelte`         | Done        |
-| C018 | `AccountBulkActionSheet.svelte`   | Not started |
+| C018 | `AccountBulkActionSheet.svelte`   | Done        |
 | C019 | `MerchantEditSheet.svelte`        | Not started |
 | C020 | `JournalEditorSheet.svelte`       | Not started |
 | C021 | `JournalRecordRouteSheet.svelte`  | Not started |

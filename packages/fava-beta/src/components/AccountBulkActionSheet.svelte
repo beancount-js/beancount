@@ -1,19 +1,8 @@
 <script lang="ts">
-  import {
-    FilterCommandPicker,
-    FormField,
-    FormSectionHeader,
-  } from "@beancount-js/forms";
-  import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
-  import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
-  import CircleAlert from "lucide-svelte/icons/circle-alert";
-  import X from "lucide-svelte/icons/x";
-  import * as Alert from "$lib/components/ui/alert";
-  import { Button } from "$lib/components/ui/button";
-  import * as Sheet from "$lib/components/ui/sheet";
-  import * as Tooltip from "$lib/components/ui/tooltip";
-  import { useContext } from "../context";
+  import type { JournalRecord } from "./journal-table/model";
+  import AccountBulkActionSheet from "@beancount-js/ui/tables/AccountBulkActionSheet.svelte";
   import { LedgerSource } from "../core/ledger";
+  import { useContext } from "../context";
   import {
     accountsInRecords,
     applyPatchesToContents,
@@ -22,7 +11,6 @@
     type AccountReplacePatch,
   } from "../lib/account-bulk-replace";
   import { buildDuplicateDeletePatches } from "../lib/journal-duplicates";
-  import type { JournalRecord } from "./journal-table/model";
   import { useStudioWorkspace } from "../studio/workspace";
 
   type Props = {
@@ -44,18 +32,11 @@
   const { accounts, ledgerSource } = useContext();
   const { snapshot, saveFile } = useStudioWorkspace();
 
-  const sectionTitleClass =
-    "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
-
   let fromAccount = $state("");
   let toAccount = $state("");
-  let openSections = $state<Record<string, boolean>>({
-    replace: true,
-    duplicates: true,
-  });
   let applying = $state(false);
   let errors = $state<string[]>([]);
-  let sheetTitleEl = $state<HTMLElement | null>(null);
+  let status = $state("");
 
   const fromOptions = $derived(
     accountsInRecords(records).map((account) => ({
@@ -81,36 +62,13 @@
 
   const duplicatePlan = $derived(buildDuplicateDeletePatches(records));
 
-  const canApply = $derived(
-    Boolean(fromAccount) &&
-      Boolean(toAccount) &&
-      fromAccount !== toAccount &&
-      preview.changedCount > 0 &&
-      !applying,
-  );
-
-  const canDeleteDuplicates = $derived(
-    duplicatePlan.deleteCount > 0 && !applying,
-  );
-
-  const sectionsCollapsedAll = $derived(
-    Object.values(openSections).every((sectionOpen) => sectionOpen === false),
-  );
-
-  function isSectionOpen(id: string) {
-    return openSections[id] !== false;
-  }
-
-  function toggleSection(id: string) {
-    openSections = { ...openSections, [id]: !isSectionOpen(id) };
-  }
-
-  function toggleCollapseAll() {
-    const next = !sectionsCollapsedAll;
-    openSections = Object.fromEntries(
-      Object.keys(openSections).map((key) => [key, !next]),
-    );
-  }
+  let wasOpen = false;
+  $effect(() => {
+    if (open && !wasOpen) {
+      seedForm();
+    }
+    wasOpen = open;
+  });
 
   function seedForm() {
     const scoped = accountsInRecords(records);
@@ -120,41 +78,29 @@
         : (scoped[0] ?? "");
     toAccount = "";
     errors = [];
-    applying = false;
-    openSections = { replace: true, duplicates: true };
+    status = "";
   }
 
-  function resetForm() {
+  function clearForm() {
     fromAccount = "";
     toAccount = "";
     errors = [];
+    status = "";
     applying = false;
-    openSections = { replace: true, duplicates: true };
   }
 
-  let wasOpen = false;
-  $effect(() => {
-    const isOpen = open;
-    if (isOpen && !wasOpen) {
-      seedForm();
-    }
-    wasOpen = isOpen;
-  });
-
-  function handleOpenChange(next: boolean) {
-    open = next;
-    if (!next) {
-      resetForm();
-      onClosed?.();
-    }
+  function handleClosed() {
+    clearForm();
+    onClosed?.();
   }
 
   async function applyPatches(
-    patches: AccountReplacePatch[],
+    patches: readonly AccountReplacePatch[],
     failureMessage: string,
   ) {
     applying = true;
     errors = [];
+    status = "";
     try {
       const currentSnapshot = $snapshot;
       if (!currentSnapshot) {
@@ -195,21 +141,33 @@
         await saveFile(path, contents);
       }
 
-      handleOpenChange(false);
+      open = false;
+      status = "Applied.";
       onApplied?.();
     } catch (error) {
       errors = [error instanceof Error ? error.message : failureMessage];
+      status = "";
     } finally {
       applying = false;
     }
   }
 
-  async function applyReplace() {
-    if (!canApply) return;
+  async function applyReplace({
+    fromAccount: nextFrom,
+    toAccount: nextTo,
+  }: {
+    fromAccount: string;
+    toAccount: string;
+  }) {
+    if (!canApply(nextFrom, nextTo)) return;
     const confirmed = window.confirm(
-      `Replace ${fromAccount} → ${toAccount} in ${preview.changedCount} record${preview.changedCount === 1 ? "" : "s"}?`,
+      `Replace ${nextFrom} → ${nextTo} in ${preview.changedCount} record${
+        preview.changedCount === 1 ? "" : "s"
+      }?`,
     );
     if (!confirmed) return;
+    fromAccount = nextFrom;
+    toAccount = nextTo;
     await applyPatches(
       preview.patches,
       "Unable to replace accounts in the selection.",
@@ -217,9 +175,13 @@
   }
 
   async function applyDeleteDuplicates() {
-    if (!canDeleteDuplicates) return;
+    if (!canDeleteDuplicates()) return;
     const confirmed = window.confirm(
-      `Delete ${duplicatePlan.deleteCount} duplicate record${duplicatePlan.deleteCount === 1 ? "" : "s"} and keep ${duplicatePlan.keepCount} original${duplicatePlan.keepCount === 1 ? "" : "s"}?`,
+      `Delete ${duplicatePlan.deleteCount} duplicate record${
+        duplicatePlan.deleteCount === 1 ? "" : "s"
+      } and keep ${duplicatePlan.keepCount} original${
+        duplicatePlan.keepCount === 1 ? "" : "s"
+      }?`,
     );
     if (!confirmed) return;
     await applyPatches(
@@ -227,231 +189,55 @@
       "Unable to delete duplicates in the selection.",
     );
   }
+
+  function canApply(nextFrom: string, nextTo: string) {
+    return (
+      Boolean(nextFrom) &&
+      Boolean(nextTo) &&
+      nextFrom !== nextTo &&
+      preview.changedCount > 0 &&
+      !applying
+    );
+  }
+
+  function canDeleteDuplicates() {
+    return duplicatePlan.deleteCount > 0 && !applying;
+  }
+
+  function applyReplacement({
+    fromAccount: nextFrom,
+    toAccount: nextTo,
+  }: {
+    fromAccount: string;
+    toAccount: string;
+  }) {
+    void applyReplace({ fromAccount: nextFrom, toAccount: nextTo });
+  }
 </script>
 
-<Sheet.Root {open} onOpenChange={handleOpenChange}>
-  <Sheet.Content
-    side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
-    data-account-bulk-action-sheet
-    onOpenAutoFocus={(event) => {
-      event.preventDefault();
-      sheetTitleEl?.focus();
-    }}
-  >
-    <Sheet.Header
-      class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left"
-    >
-      <div class="flex min-w-0 flex-1 items-center gap-1.5">
-        <Sheet.Title
-          bind:ref={sheetTitleEl}
-          tabindex={-1}
-          class="account-bulk-sheet-title min-w-0 truncate leading-none outline-none"
-        >
-          Bulk actions
-        </Sheet.Title>
-        <span
-          class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-          >{records.length}</span
-        >
-      </div>
-      <Sheet.Description class="sr-only">
-        Bulk actions on {records.length} selected record{records.length === 1
-          ? ""
-          : "s"}.
-      </Sheet.Description>
-      <div class="ml-auto flex shrink-0 items-center gap-1">
-        <Tooltip.Root>
-          <Tooltip.Trigger>
-            {#snippet child({ props })}
-              <Button
-                {...props}
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="size-8"
-                aria-label={sectionsCollapsedAll
-                  ? "Expand all"
-                  : "Collapse all"}
-                onclick={toggleCollapseAll}
-              >
-                {#if sectionsCollapsedAll}
-                  <ChevronsUpDown class="size-4" aria-hidden="true" />
-                {:else}
-                  <ChevronsDownUp class="size-4" aria-hidden="true" />
-                {/if}
-              </Button>
-            {/snippet}
-          </Tooltip.Trigger>
-          <Tooltip.Content>
-            {sectionsCollapsedAll ? "Expand all" : "Collapse all"}
-          </Tooltip.Content>
-        </Tooltip.Root>
-        <Tooltip.Root>
-          <Tooltip.Trigger>
-            {#snippet child({ props })}
-              <Sheet.Close
-                {...props}
-                class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="Close"
-              >
-                <X class="size-4" />
-                <span class="sr-only">Close</span>
-              </Sheet.Close>
-            {/snippet}
-          </Tooltip.Trigger>
-          <Tooltip.Content>Close</Tooltip.Content>
-        </Tooltip.Root>
-      </div>
-    </Sheet.Header>
-
-    <div class="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-      {#if errors.length}
-        <Alert.Root variant="destructive" class="mb-3">
-          <CircleAlert />
-          <Alert.Title>Could not apply bulk action</Alert.Title>
-          <Alert.Description class="whitespace-pre-wrap"
-            >{errors.join("\n")}</Alert.Description
-          >
-        </Alert.Root>
-      {/if}
-
-      <div class="account-bulk-form flex min-w-0 flex-col gap-6 pl-6">
-        <section class="flex flex-col gap-2">
-          <FormSectionHeader
-            title="Replace"
-            titleClass={sectionTitleClass}
-            editable={false}
-            movable={false}
-            removable={false}
-            titleToggleable={true}
-            open={isSectionOpen("replace")}
-            onToggle={() => toggleSection("replace")}
-          />
-          {#if isSectionOpen("replace")}
-            <div class="account-bulk-section-body">
-              <div class="beancount-structured-form">
-                <FormField
-                  label="Account is"
-                  as="div"
-                  align="center"
-                  controlId="account-bulk-from"
-                >
-                  <FilterCommandPicker
-                    fullWidth
-                    label="Account"
-                    ariaLabel="Account to replace"
-                    placeholder="Filter accounts…"
-                    value={fromAccount}
-                    options={fromOptions}
-                    onChange={(next) => {
-                      fromAccount = next;
-                    }}
-                  />
-                </FormField>
-                <FormField
-                  label="Replace with"
-                  as="div"
-                  align="center"
-                  controlId="account-bulk-to"
-                >
-                  <FilterCommandPicker
-                    fullWidth
-                    allowCustom={true}
-                    label="Replacement account"
-                    ariaLabel="Replacement account"
-                    placeholder="Filter or type an account…"
-                    value={toAccount}
-                    options={toOptions}
-                    onChange={(next) => {
-                      toAccount = next;
-                    }}
-                  />
-                </FormField>
-              </div>
-              {#if fromAccount && toAccount && fromAccount !== toAccount}
-                <p class="text-xs text-muted-foreground">
-                  {preview.changedCount} record{preview.changedCount === 1
-                    ? ""
-                    : "s"} will be updated{#if preview.skipped.length}
-                    ; {preview.skipped.length} skipped{/if}.
-                </p>
-              {/if}
-              <Button
-                type="button"
-                disabled={!canApply}
-                onclick={() => void applyReplace()}
-              >
-                {applying ? "Applying…" : "Apply"}
-              </Button>
-            </div>
-          {/if}
-        </section>
-
-        <section class="flex flex-col gap-2">
-          <FormSectionHeader
-            title="Delete duplicates"
-            titleClass={sectionTitleClass}
-            editable={false}
-            movable={false}
-            removable={false}
-            titleToggleable={true}
-            open={isSectionOpen("duplicates")}
-            onToggle={() => toggleSection("duplicates")}
-          />
-          {#if isSectionOpen("duplicates")}
-            <div class="account-bulk-section-body">
-              <p class="text-xs text-muted-foreground">
-                {#if duplicatePlan.groups.length === 0}
-                  No duplicates found in the selection. Matching uses
-                  raw_fingerprint when present, otherwise date, amount, payee,
-                  flag, narration, and sorted posting amounts.
-                {:else}
-                  {duplicatePlan.groups.length} duplicate group{duplicatePlan
-                    .groups.length === 1
-                    ? ""
-                    : "s"} · {duplicatePlan.deleteCount} record{duplicatePlan.deleteCount ===
-                  1
-                    ? ""
-                    : "s"} will be deleted · {duplicatePlan.keepCount} kept{#if duplicatePlan.skipped.length}
-                    ; {duplicatePlan.skipped.length} skipped (no source){/if}.
-                {/if}
-              </p>
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={!canDeleteDuplicates}
-                onclick={() => void applyDeleteDuplicates()}
-              >
-                {applying ? "Deleting…" : "Delete duplicates"}
-              </Button>
-            </div>
-          {/if}
-        </section>
-      </div>
-    </div>
-  </Sheet.Content>
-</Sheet.Root>
-
-<style>
-  .account-bulk-form :global(.beancount-structured-form) {
-    min-width: 0;
-  }
-
-  .account-bulk-section-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding-left: 0.5rem;
-    min-width: 0;
-  }
-
-  :global(.account-bulk-sheet-title),
-  .account-bulk-form :global(.beancount-form-section-title-toggle),
-  .account-bulk-form :global(.beancount-form-section-title-row h3) {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-</style>
+<AccountBulkActionSheet
+  bind:open
+  recordCount={records.length}
+  bind:fromAccount
+  bind:toAccount
+  {fromOptions}
+  {toOptions}
+  replacement={{
+    changedCount: preview.changedCount,
+    skippedCount: preview.skipped.length ? preview.skipped.length : undefined,
+  }}
+  duplicates={{
+    groupCount: duplicatePlan.groups.length,
+    deleteCount: duplicatePlan.deleteCount,
+    keepCount: duplicatePlan.keepCount,
+    skippedCount: duplicatePlan.skipped.length
+      ? duplicatePlan.skipped.length
+      : undefined,
+  }}
+  {applying}
+  {errors}
+  {status}
+  onApplyReplacement={applyReplacement}
+  onDeleteDuplicates={applyDeleteDuplicates}
+  onClosed={handleClosed}
+/>
