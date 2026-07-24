@@ -89,7 +89,7 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 | C003 | `Search.svelte` / `SearchFilterBar` certification   | Done        |
 | C004 | `tree-table/IntervalTreeTable.svelte` certification | Done        |
 | C005 | `StudioShellHeader.svelte`                          | Done        |
-| C006 | `FavaNavigation.svelte`                             | Not started |
+| C006 | `FavaNavigation.svelte`                             | In progress |
 | C007 | `Nav.svelte`                                        | Not started |
 | C008 | `PagePagination.svelte`                             | Not started |
 | C009 | `AccountLink.svelte`                                | Not started |
