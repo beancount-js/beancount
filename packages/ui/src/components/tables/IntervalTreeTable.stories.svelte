@@ -143,7 +143,7 @@
   const { Story } = defineMeta({
     title: "Tables/Interval Tree Table",
     component: IntervalTreeTable,
-    tags: ["visual-pending"],
+    tags: ["visual-ready"],
     parameters: {
       docs: {
         description: {

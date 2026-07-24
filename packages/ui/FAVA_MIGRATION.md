@@ -26,6 +26,29 @@ This file is the source of truth for moving reusable Fava presentation into
 - Protected references use a 1280 × 900 CSS viewport, device scale factor 3,
   light mode, `en-GB`, `Europe/London`, and reduced motion.
 
+### Current Visual Delta contract
+
+The harness refresh re-read the canonical addon documentation and exported
+contracts before changing host configuration. The source snapshot is
+`/Users/stevejuma/ui/packages/storybook-addon-visual-delta` at
+`7da0aff00fbc9288a138c8dae7f45a3d5f299f72` at validation time
+(2026-07-24). This revision records provenance rather than pinning the addon.
+Before Storybook dev/build, UI checks, visual tests, or the Visual Delta CLI,
+the host requires a clean canonical checkout and refreshes the portable
+workspace package from that directory. The local package then loads the
+refreshed TypeScript/TSX source exports through `workspace:*`, keeping one
+Storybook and Playwright dependency graph.
+
+| Previous host responsibility                 | Current contract                                                                                                                        |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Local preset bridge and Vite source alias    | Bare `storybook-addon-visual-delta` registration; Storybook 10 loads package manager/preview exports and the preset supplies host hooks |
+| Host `/visual-baselines` static mapping      | Preset `staticDirs` owns the committed snapshot mount                                                                                   |
+| Host middleware/update argv                  | Preset middleware and packaged `visual-delta` CLI                                                                                       |
+| Handwritten Playwright config                | `defineVisualPlaywrightConfig()` plus `.visual-delta/playwright.json`; the package resolves the visual server from the Storybook port   |
+| Existing-baseline custom suite               | `defineVisualSuite({ includeStory })`, restricted to review-tagged stories outside approved update runs                                 |
+| Pending/approved-only status badges          | Mutually exclusive pending, ready, approved, and failed badges; automated pass becomes ready and human acceptance becomes approved      |
+| Reference gallery self-comparison parameters | Reference stories render the immutable originals only and remain `skip-visual`                                                          |
+
 ## Status and validation rules
 
 - Task status is one of `Not started`, `In progress`, `Blocked`, or `Done`.
@@ -35,8 +58,9 @@ This file is the source of truth for moving reusable Fava presentation into
 - Component work advances automatically after interaction, accessibility,
   package, and visual-delta checks pass. A comparable component must be at or
   below 0.1% difference.
-- Passing component stories remain `visual-pending` until the final manual
-  parity audit. `visual-approved` is applied only as a final reviewed batch.
+- Baseline creation or rewriting sets `visual-pending`. Passing automated
+  comparison advances a story to `visual-ready`; only explicit human
+  acceptance applies `visual-approved`. Review tags stay mutually exclusive.
 - A component is `Done` when UI owns its public presentation, Fava Beta consumes
   it through an adapter, the legacy Beta component is removed, and automated
   evidence is recorded.
@@ -48,11 +72,11 @@ the migration records the evidence packet below and waits for explicit human
 acceptance before it starts the following stage. Component tasks do not add
 per-component pauses.
 
-| Gate | Trigger                              | Required manual review                                                                                                              | Disposition                                                                          |
-| ---- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| G01  | Storybook/reference harness complete | Visual Delta status treatment, protected-reference overwrite guard, and one representative reference capture                        | Accepted by the subsequent continuation directive on 2026-07-24                      |
-| G02  | Forms merge complete                 | Forms catalog, legacy-facade compatibility, and original-Fava compatibility evidence                                                | Accepted by the subsequent continuation directive on 2026-07-24                      |
-| G03  | Final parity audit complete          | All `visual-pending` stories, unresolved visual sidecars, representative desktop and responsive routes, and the final diff manifest | Pending — stop before applying `visual-approved` or declaring the migration complete |
+| Gate | Trigger                              | Required manual review                                                                                                                                | Disposition                                                                          |
+| ---- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| G01  | Storybook/reference harness complete | Visual Delta status treatment, protected-reference overwrite guard, and one representative reference capture                                          | Accepted by the subsequent continuation directive on 2026-07-24                      |
+| G02  | Forms merge complete                 | Forms catalog, legacy-facade compatibility, and original-Fava compatibility evidence                                                                  | Accepted by the subsequent continuation directive on 2026-07-24                      |
+| G03  | Final parity audit complete          | All `visual-ready` or `visual-pending` stories, unresolved visual sidecars, representative desktop and responsive routes, and the final diff manifest | Pending — stop before applying `visual-approved` or declaring the migration complete |
 
 G01 and G02 were already complete when this explicit gate policy was added; the
 recorded continuation is their transition evidence, not a substitute for the
@@ -61,18 +85,18 @@ G02, hand component iteration to GPT-5.6 Terra. Return to GPT-5.6 Sol for G03.
 
 ## Foundation ledger
 
-| ID  | Task                                                              | Status | Evidence                                        |
-| --- | ----------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| F01 | Resume UI ownership guidance and isolate normal root checks       | Done   | Root/UI/Form guidance and root negative filters |
-| F02 | Create and verify the pinned `fava-reference` workspace           | Done   | Workspace `fava-reference`, parent `191dae81`   |
-| F03 | Port Visual Delta and Storybook status badges                     | Done   | Change `a3d69779`; 61 addon tests               |
-| F04 | Add protected Fava capture matrix, manifest, and overwrite guards | Done   | 15 pinned captures; manifest digest gate        |
-| F05 | Repair the `SearchFilterBar` empty-focus browser story            | Done   | 2/2 focused browser stories; 7/7 syntax tests   |
-| F06 | Consolidate Forms implementation, tests, and stories into UI      | Done   | UI owns the complete catalog and runtime        |
-| F07 | Reduce `@beancount-js/forms` to a forwarding compatibility facade | Done   | 22 checked TypeScript forwarders; no Svelte/CSS |
-| F08 | Run UI, Forms-facade, and original-Fava compatibility gates       | Done   | UI checks; 188 Fava tests; build; 18 subpaths   |
-| F09 | Manual Forms validation and GPT-5.6 Terra handoff                 | Done   | Accepted by continuation on 2026-07-24          |
-| F10 | Bootstrap Fava Beta as the mutable integration application        | Done   | Clone, Beta gates, root exclusion, build        |
+| ID  | Task                                                              | Status | Evidence                                                                         |
+| --- | ----------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------- |
+| F01 | Resume UI ownership guidance and isolate normal root checks       | Done   | Root/UI/Form guidance and root negative filters                                  |
+| F02 | Create and verify the pinned `fava-reference` workspace           | Done   | Workspace `fava-reference`, parent `191dae81`                                    |
+| F03 | Port Visual Delta and Storybook status badges                     | Done   | Initial `a3d69779`; refresh `mrwmkrvx`; 111 addon tests and 8 visual comparisons |
+| F04 | Add protected Fava capture matrix, manifest, and overwrite guards | Done   | 15 pinned captures; manifest digest gate                                         |
+| F05 | Repair the `SearchFilterBar` empty-focus browser story            | Done   | 2/2 focused browser stories; 7/7 syntax tests                                    |
+| F06 | Consolidate Forms implementation, tests, and stories into UI      | Done   | UI owns the complete catalog and runtime                                         |
+| F07 | Reduce `@beancount-js/forms` to a forwarding compatibility facade | Done   | 22 checked TypeScript forwarders; no Svelte/CSS                                  |
+| F08 | Run UI, Forms-facade, and original-Fava compatibility gates       | Done   | UI checks; 188 Fava tests; build; 18 subpaths                                    |
+| F09 | Manual Forms validation and GPT-5.6 Terra handoff                 | Done   | Accepted by continuation on 2026-07-24                                           |
+| F10 | Bootstrap Fava Beta as the mutable integration application        | Done   | Clone, Beta gates, root exclusion, build                                         |
 
 ## Component migration order
 
@@ -95,6 +119,11 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 | C009 | `AccountLink.svelte`                                | Not started |
 | C010 | `CycleSelect.svelte`                                | Not started |
 
+Current Storybook review state: C001–C005 are `visual-ready` after passing
+their configured 0.1% automated comparisons. C006 remains `visual-pending`
+while its separate manual-review checkpoint is unresolved. No migration story
+is `visual-approved`.
+
 #### C001 — `ContentScrollArea.svelte`
 
 - Original reference: `packages/fava/src/components/ContentScrollArea.svelte`;
@@ -102,7 +131,7 @@ Beta adapter, delta, validation commands, and committed change when it becomes
   balance sheet, and trial balance.
 - UI export: the existing
   `@beancount-js/ui/layout/ContentScrollArea.svelte`, with the colocated
-  `Layout/Content Scroll Area` story retained and marked `visual-pending`.
+  `Layout/Content Scroll Area` story retained and marked `visual-ready`.
 - Beta adapter: six direct imports in `AccountDetails`, `FinancialDashboard`,
   `PresetQueryView`, `Query`, `StatementReport`, and `TrialBalance`; the local
   Beta wrapper and duplicate story are removed.
@@ -119,7 +148,7 @@ Beta adapter, delta, validation commands, and committed change when it becomes
   consumes `@beancount-js/ui/app-shell`; Fava-specific project, navigation,
   ingestion, and AI slots remain application-owned.
 - UI export: `@beancount-js/ui/app-shell`, with the existing `Layout/App Shell`
-  story marked `visual-pending` and given a protected Storybook baseline.
+  story marked `visual-ready` and given a protected Storybook baseline.
 - Beta adapter: the unchanged `packages/fava-beta/src/components/StudioShell.svelte`
   imports the same UI export; no local AppShell duplicate exists to remove.
 - Visual delta: `packages/fava-beta/e2e/visual-parity.spec.ts` compares the
@@ -209,11 +238,42 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 | C069 | `IngestionSourcesPreview.svelte`         | Not started |
 | C070 | `RulesSettings.svelte`                   | Not started |
 
+## Current manual-review checkpoint
+
+2026-07-24 — the Visual Delta harness refresh is complete and paused for
+manual review. Review the new `visual-ready` badge/filter, the Visual Delta
+panel and Testing Module, the eight enrolled C001–C005 stories, and the Fava
+Reference gallery without self-comparison images. The gallery remains an
+immutable `skip-visual` source of original captures.
+
+C006 remains separately paused and `visual-pending`; none of its unfinished
+source, fixtures, or baselines were included in the harness-refresh change.
+Do not resume C006 or later component work until this review is accepted.
+
 ## Validation log
 
 Record commands, outcomes, reference manifests, visual sidecars, and Jujutsu
 change IDs here at the end of each committed slice.
 
+- 2026-07-24 — Visual Delta refresh (`mrwmkrvx`): refreshed from the clean
+  canonical source directory, observed at revision
+  `7da0aff00fbc9288a138c8dae7f45a3d5f299f72`, and added guarded pre-run
+  synchronization so future harness entry points cannot silently use a stale
+  copy. A raw cross-repository package link was rejected during validation
+  because Node resolved the source repository's Playwright runtime alongside
+  Beancount's. The portable workspace mirror retains a single dependency
+  graph. The host now uses bare
+  addon registration, preset-owned baseline serving and middleware, the
+  packaged CLI, `defineVisualPlaywrightConfig`, and a review-tag-filtered
+  `defineVisualSuite`. The latest source now owns Storybook 10 package
+  registration and Storybook-relative visual-server selection, so the earlier
+  local preset, source alias, and fixed-port workaround were removed. The
+  canonical addon typecheck/build and all 111 tests pass. UI
+  formatting, boundaries, Svelte diagnostics, 18 unit tests, 188 Storybook
+  tests, and the production Storybook build pass. The static index contains 188
+  stories but enrolls only eight `visual-ready` stories; all eight comparisons
+  pass at the configured 0.1% threshold, while all 17 protected Fava reference
+  stories remain skipped.
 - 2026-07-24 — Governance/reference slice: created the clean
   `fava-reference` workspace at
   `/Users/stevejuma/code/beancount-js-studio-fava-reference`; its empty working

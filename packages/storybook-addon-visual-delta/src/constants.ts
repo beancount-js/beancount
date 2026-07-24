@@ -1,6 +1,14 @@
+import type { VisualDeltaModes } from "./shared/modes.js";
+
+export type {
+  VisualDeltaModeDef,
+  VisualDeltaModes,
+} from "./shared/modes.js";
+
 export const ADDON_ID = "visual-delta";
 export const PANEL_ID = `${ADDON_ID}/panel`;
 export const TOOL_ID = `${ADDON_ID}/tool/review-layout`;
+export const HIGHLIGHT_IGNORE_TOOL_ID = `${ADDON_ID}/tool/highlight-ignore`;
 export const REVIEW_LAYOUT_STATE_ID = `${ADDON_ID}/review-layout`;
 export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;
 export const STATUS_TYPE_ID_VISUAL = `${ADDON_ID}/visual`;
@@ -30,6 +38,8 @@ export const EVENTS = {
   RUN_UNTIL_STEP: `${ADDON_ID}/run-until-step`,
   /** Preview → manager: play is parked at an interaction step. */
   VISUAL_CAPTURE_PARKED: `${ADDON_ID}/visual-capture-parked`,
+  /** Manager → preview: toggle highlight of ignore regions. */
+  SET_HIGHLIGHT_IGNORE: `${ADDON_ID}/set-highlight-ignore`,
 } as const;
 
 export type AlignMode = "viewport" | "canvas";
@@ -81,6 +91,8 @@ export type VisualDeltaImage = {
   deviceScaleFactor?: number;
   /** CSS viewport used to capture this PNG. */
   viewport?: { width: number; height: number };
+  /** Mode name when this image comes from `parameters.visualDelta.modes`. */
+  mode?: string;
 };
 
 /** Opt-in mid-play capture (sibling PNG; primary `images` stay end-of-play). */
@@ -90,15 +102,27 @@ export type VisualDeltaInteraction = {
   src: string;
 };
 
+/** CSF / params image entry before `normalizeImages` (allows legacy placement). */
+export type VisualDeltaImageInput = Omit<
+  Partial<VisualDeltaImage>,
+  "placement"
+> & {
+  src: string;
+  placement?: PlacementMode | "beside" | "over";
+};
+
 export type VisualDeltaParams = {
-  images?:
-    | string
-    | Array<string | (Partial<VisualDeltaImage> & { src: string })>;
+  images?: string | Array<string | VisualDeltaImageInput>;
   /**
    * Opted-in play-step captures. Created from the Visual Delta Interactions tab;
    * compared by Playwright in addition to the primary end-of-play baseline.
    */
   interactions?: VisualDeltaInteraction[];
+  /**
+   * Named globals combos (Chromatic-style modes). Modes with `src` become
+   * gallery baselines; selecting a mode applies `globals` via the manager API.
+   */
+  modes?: VisualDeltaModes;
   anchor?: string;
   offsetX?: number;
   offsetY?: number;
@@ -107,8 +131,31 @@ export type VisualDeltaParams = {
   placement?: PlacementMode | "beside" | "over";
   opacity?: number;
   colorInversion?: boolean;
+  /** Live Diff / suite pass threshold as a percent of differing pixels. */
   passThresholdPercent?: number;
+  /**
+   * pixelmatch color threshold in `[0, 1]` (Chromatic `diffThreshold`).
+   * Default `0.2` for Live Diff.
+   */
+  diffThreshold?: number;
+  /** Include anti-aliased pixels in the Live Diff pixelmatch. */
+  diffIncludeAntiAliasing?: boolean;
+  /** Extra settle delay (ms) before Live Diff / Chromium subject capture. */
+  delay?: number;
+  /**
+   * CSS selectors whose painted regions are ignored during Live Diff capture
+   * (plus built-in `data-visual-delta-ignore` / Chromatic ignore markers).
+   */
+  ignoreSelectors?: string[];
+  /**
+   * When true, HTML Live Diff captures the viewport/canvas clip instead of
+   * the story subject element.
+   */
+  cropToViewport?: boolean;
 };
+
+/** Default pixelmatch threshold for Live Diff (Chromatic default is ~0.063). */
+export const DEFAULT_DIFF_THRESHOLD = 0.2;
 
 export const DEFAULT_PASS_THRESHOLD_PERCENT = 0.1;
 export const DEFAULT_PLACEMENT: PlacementMode = "right";
@@ -169,12 +216,28 @@ export const VISUAL_DELTA_CREATE_INTERACTION_PATH =
   "/__visual-delta/create-interaction-baseline";
 /** Storybook-dev middleware that runs the Playwright visual suite. */
 export const VISUAL_DELTA_RUN_PATH = "/__visual-delta/run-tests";
+/**
+ * Storybook-dev middleware that replays / continues an in-flight (or recent)
+ * visual run as NDJSON — used to recover after manager HMR.
+ */
+export const VISUAL_DELTA_RUN_EVENTS_PATH = "/__visual-delta/run-events";
+/** Lightweight JSON phase/progress for remount recovery. */
+export const VISUAL_DELTA_RUN_STATUS_PATH = "/__visual-delta/run-status";
 /** Storybook-dev middleware that cancels an in-flight visual run. */
 export const VISUAL_DELTA_CANCEL_PATH = "/__visual-delta/cancel-tests";
 /** Storybook-dev middleware that sets visual review tags on a story. */
 export const VISUAL_DELTA_REVIEW_PATH = "/__visual-delta/review-status";
 /** Storybook-dev middleware that adds or removes `skip-visual` on a story. */
 export const VISUAL_DELTA_SKIP_VISUAL_PATH = "/__visual-delta/skip-visual";
+/** Storybook-dev middleware that captures a story subject via Playwright Chromium. */
+export const VISUAL_DELTA_CAPTURE_PATH = "/__visual-delta/capture-subject";
+/** Storybook-dev middleware that returns resolved host options (read-only). */
+export const VISUAL_DELTA_CONFIG_PATH = "/__visual-delta/config";
+/** Storybook-dev middleware that writes host Playwright pass threshold. */
+export const VISUAL_DELTA_PLAYWRIGHT_THRESHOLD_PATH =
+  "/__visual-delta/playwright-threshold";
+/** Storybook-dev middleware that scaffolds portable Playwright entrypoints. */
+export const VISUAL_DELTA_INIT_PATH = "/__visual-delta/init";
 
 /** CSF tag: exclude story from Playwright visual suite / Visual Delta runs. */
 export const SKIP_VISUAL_TAG = "skip-visual";
@@ -183,14 +246,21 @@ export const SKIP_VISUAL_TAG = "skip-visual";
 export const VISUAL_REVIEW_PENDING_TAG = "visual-pending";
 /** CSF tag: baseline has been reviewed and accepted. */
 export const VISUAL_REVIEW_APPROVED_TAG = "visual-approved";
+/** CSF tag: agent/dev marked baseline ready for human review. */
+export const VISUAL_REVIEW_READY_TAG = "visual-ready";
 /** CSF tag: baseline review failed / rejected. */
 export const VISUAL_REVIEW_FAILED_TAG = "visual-failed";
 
-export type VisualReviewStatus = "pending" | "approved" | "failed";
+export type VisualReviewStatus =
+  | "pending"
+  | "approved"
+  | "ready"
+  | "failed";
 
 export const VISUAL_REVIEW_TAGS = [
   VISUAL_REVIEW_PENDING_TAG,
   VISUAL_REVIEW_APPROVED_TAG,
+  VISUAL_REVIEW_READY_TAG,
   VISUAL_REVIEW_FAILED_TAG,
 ] as const;
 
@@ -198,6 +268,7 @@ export function visualReviewTagFor(
   status: VisualReviewStatus,
 ): (typeof VISUAL_REVIEW_TAGS)[number] {
   if (status === "approved") return VISUAL_REVIEW_APPROVED_TAG;
+  if (status === "ready") return VISUAL_REVIEW_READY_TAG;
   if (status === "failed") return VISUAL_REVIEW_FAILED_TAG;
   return VISUAL_REVIEW_PENDING_TAG;
 }
@@ -206,8 +277,10 @@ export function visualReviewStatusFromTags(
   tags: readonly string[] | undefined,
 ): VisualReviewStatus | null {
   if (!tags?.length) return null;
+  // Precedence when multiple review tags leak into CSF.
   if (tags.includes(VISUAL_REVIEW_APPROVED_TAG)) return "approved";
   if (tags.includes(VISUAL_REVIEW_FAILED_TAG)) return "failed";
+  if (tags.includes(VISUAL_REVIEW_READY_TAG)) return "ready";
   if (tags.includes(VISUAL_REVIEW_PENDING_TAG)) return "pending";
   return null;
 }
@@ -215,5 +288,10 @@ export function visualReviewStatusFromTags(
 export function isVisualReviewStatus(
   value: unknown,
 ): value is VisualReviewStatus {
-  return value === "pending" || value === "approved" || value === "failed";
+  return (
+    value === "pending" ||
+    value === "approved" ||
+    value === "ready" ||
+    value === "failed"
+  );
 }

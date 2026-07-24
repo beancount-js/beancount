@@ -3,6 +3,9 @@
 Reimplemented from **`storybook-addon-visual-delta@0.1.5`** (npm tarball).
 Upstream GitHub is unavailable; edit **`src/`** like any other workspace package.
 
+**Chromatic parity:** see [`PARITY.md`](./PARITY.md) for configuration and
+manager-view gaps vs `@chromatic-com/storybook` (local-achievable vs cloud-only).
+
 |                 |                                      |
 | --------------- | ------------------------------------ |
 | Upstream npm    | `storybook-addon-visual-delta@0.1.5` |
@@ -28,12 +31,18 @@ and object-style TypeScript/JavaScript CSF are supported.
 | Owned by the addon package                                                                   | Stays in `@stevejuma/ui` (host)                          |
 | -------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | Panel / Testing Module UI, overlay, Live Diff                                                | Playwright suite `tests/visual/storybook.spec.ts`        |
-| `viteFinal`: middleware (`/__visual-delta/*`), baseline CSF inject, src watch                | `staticDirs` → `/visual-baselines`                       |
+| Preset: `staticDirs`, `viteFinal` (middleware + CSF inject + src watch); package `./manager` + `./preview` auto-loaded by Storybook 10; packaged `visual-delta` CLI + `/playwright` helpers | Committed PNGs + thin Playwright entry (or catalog suite/CLIs) |
 | Preview `runStep` + park / `PLAY_STEPS` channel                                              | CLI pipelines `scripts/ui-generator/pipeline/visual-*`   |
 | Path constants, source patchers, sidecar/index readers, server readiness, and `fetch` client | CLI orchestration under `scripts/ui-generator/pipeline/` |
 | Catalog fixtures + Panel Shell mocks                                                         | Approval gate `VISUAL_UPDATE_APPROVED`                   |
 
-Host `.storybook/main.ts` only registers the local preset and `staticDirs`.
+Host `.storybook/main.ts` registers the local preset (absolute `src/` manager /
+preview for HMR) with catalog overrides (`nested-import` + ui-generator CLIs).
+Portable consumers use `addons: ["storybook-addon-visual-delta"]` (or
+`npx storybook add storybook-addon-visual-delta`) plus `visual-delta init` /
+`defineVisualPlaywrightConfig` / `defineVisualSuite`. The panel empty state
+offers **Set up Visual Delta** when the suite/config is missing
+(`POST /__visual-delta/init`).
 Thin re-exports under `.storybook/visual-delta-middleware.ts` /
 `visual-baseline-*.ts` remain for gradual migration; prefer
 `storybook-addon-visual-delta/node`.
@@ -61,6 +70,11 @@ Storybook title **`Visual Delta/Panel Shell`** mounts an end-to-end panel
 harness (`PanelShell` + in-memory mock `/__visual-delta` backend) so Create /
 Update / Diff / Run / Cancel / Review can be exercised without Playwright.
 Tagged `skip-visual`.
+
+Storybook title **`Visual Delta/Testing Module`** mounts the shared checklist
+via `TestingModuleShell` (global + sidebar context variants). Play covers
+defaults (compare on, baselines/status off, Create missing mode) and scoped
+context-menu parity. Tagged `skip-visual`.
 
 Run via Storybook Vitest / `pnpm test:storybook` (filter the title as needed).
 
@@ -126,8 +140,9 @@ Setup: `src/test/setup.ts` + `src/test/render.tsx`.
   `parameters.visualDelta.images` includes the new `/visual-baselines/…` URL when
   missing. Progress shows in the panel status bar (**Creating…**, spinner +
   clipped last log line; click for the full monospace log popover). Before
-  Playwright starts, a stale listener on static port `6007` is cleared if
-  `/index.json` is unhealthy (avoids `EADDRINUSE` create failures). Create for a
+  Playwright starts, a stale listener on the visual static port
+  (`STORYBOOK_PORT + 1` by default) is cleared if `/index.json` is unhealthy
+  (avoids `EADDRINUSE` create failures). Create for a
   component (or any leaf under it) removes `skip-visual` from every story under
   that Playwright id prefix, rebuilds the static index when needed, captures
   missing PNGs, then wires `visualDelta.images`. When CSF was already wired (no
@@ -146,12 +161,14 @@ Setup: `src/test/setup.ts` + `src/test/render.tsx`.
   story, the baseline gallery (overlay selector), and the placement pad; forces
   center overlay (still draggable). An “Image only” chip marks the mode in the
   toolbar and preview. Persisted as `liveVisible` in localStorage.
-- **Review tags** — When baselines are configured, a button group sets mutually
-  exclusive CSF tags via `/__visual-delta/review-status`: `visual-pending`
-  (orange clock), `visual-approved` (green shield), `visual-failed` (red ✕).
-  Create-baseline also stamps `visual-pending` on newly wired stories that are
-  not already approved. **Rewrite/update** baselines always resets matching
-  stories to `visual-pending` (clears `visual-approved`).
+- **Review tags** — Mutually exclusive CSF tags via `/__visual-delta/review-status`:
+  `visual-pending` (orange clock), `visual-ready` (blue flag), `visual-approved`
+  (green shield), `visual-failed` (red ✕). Accept / Unaccept set approved /
+  pending; the panel pad toggles ready / failed (agents mark `visual-ready`
+  when work is ready for human review). Create-baseline stamps `visual-pending`
+  on newly wired stories that are not already approved. **Rewrite/update**
+  baselines always resets matching stories to `visual-pending` (clears
+  `visual-approved` / `visual-ready`).
 - **skip-visual** — Panel **More** menu: **Skip visual tests** /
   **Include in visual tests** posts to `/__visual-delta/skip-visual` to add or
   remove the CSF tag on the current story. Adding skip clears review tags.
@@ -159,26 +176,28 @@ Setup: `src/test/setup.ts` + `src/test/render.tsx`.
   and Update baselines stay disabled until included again.
 - **Testing module target** — Registers a Storybook `test-provider` that shells
   out to the existing Playwright visual suite (`pnpm test:visual`). Global
-  Testing Module shows Vitest-style checklist rows for **Visual Tests** (compare
-  only) and **Create Baselines** (missing PNGs + story wiring, or rewrite). A
-  single shared status line above the checklist covers both (`Not run` /
-  `Testing... N/M` / `Creating…` / `Updating…`, then
-  `Tests: Ran N · Baselines: …`). Visual Tests shows an orange status chip while
-  running and a failure-count badge beside the chip. Create Baselines is **off by default** (unchecked); enable the row checkbox
-  to use the split status control: default **Create missing**, menu
-  **Rewrite existing** (overwrite PNGs via `/__visual-delta/update-baseline`).
-  Rewrite clears `visual-approved` so the component loses its approved badge
-  and returns to `visual-pending`. Create/rewrite runs against leaf stories
-  currently listed in the sidebar (search/tag filters), one component family
-  at a time. The
-  global module has no extra top border (context-menu actions still keep a
-  divider). The panel split button shows the same visual-run progress while
-  running. Results map to per-story sidebar status dots from compare metrics
-  (sidecar `%` / threshold, or panel live Diff). Ephemeral artifacts: gitignored
-  `*.json` / `*.actual.png` / `*.diff.png` under
-  `tests/visual/storybook.spec.ts-snapshots/`. The panel hydrates its compare
-  view from those artifacts when present. Never writes baselines from Run
-  Visual Tests.
+  Testing Module heading: **Run visual tests** with a streamed single-line
+  status under it (same last-log-line behavior as the panel status bar;
+  idle shows `Not run` / summary) and a **play** split (Create missing /
+  Rewrite existing; **Create missing** default). Checklist: compare (on by
+  default), **Create missing Baselines** / **Update baselines** (off by
+  default), and **Update status** (off by default; pass → `visual-ready`,
+  fail → `visual-failed`). While running, each checked row shows
+  `completed/total` under the checkbox (compare = stories in scope; baselines
+  = component targets; status = result count). The same checklist is used for
+  the sidebar story/component context menu (scoped to that entry). Heading
+  play / Storybook **Run tests** execute checked rows (baselines → compare →
+  status). With nothing checked, play is disabled. Rewrite clears
+  `visual-approved` / `visual-ready`. Global writes use sidebar leaf stories;
+  context menu uses the selected story/component leaves. Results map to
+  sidebar status dots. Ephemeral artifacts: gitignored `*.json` /
+  `*.actual.png` / `*.diff.png` under
+  `tests/visual/storybook.spec.ts-snapshots/`.
+- **Playwright pass threshold** — Package-wide default lives in host
+  `.visual-delta/playwright.json` (`passThresholdPercent`, default 1%).
+  `defineVisualPlaywrightConfig` reads it. Panel Diff Chromium shows a
+  mismatch when local Thresh ≠ Playwright config, with **Update Playwright
+  config** (`POST /__visual-delta/playwright-threshold`).
 - **Capture parity with Playwright** — Live Diff blurs the preview's active
   element and temporarily disables animations/transitions/caret (same prep as
   `tests/visual/storybook.spec.ts`) before `html-to-image` capture, so play

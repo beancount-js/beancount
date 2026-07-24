@@ -93,6 +93,7 @@ const TAG_ICONS: Record<string, string> = {
   "upstream-example": "↑",
   "visual-state": "◉",
   "visual-pending": "⏱",
+  "visual-ready": "⚑",
   "visual-approved": "⛨",
   "visual-failed": "✕",
   "fava-reference-visual": "☰",
@@ -219,6 +220,15 @@ addons.setConfig({
         text: "Pending review",
         style: "orange",
         tooltip: "Baseline exists; awaiting human approval",
+      },
+      display: { sidebar: REVIEW_SIDEBAR_DISPLAY, toolbar: ["docs", "story"] },
+    },
+    {
+      tags: "visual-ready",
+      badge: {
+        text: "Ready",
+        style: "blue",
+        tooltip: "Automated visual checks pass; ready for human review",
       },
       display: { sidebar: REVIEW_SIDEBAR_DISPLAY, toolbar: ["docs", "story"] },
     },

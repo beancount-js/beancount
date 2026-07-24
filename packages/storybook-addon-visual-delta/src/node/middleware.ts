@@ -5,23 +5,36 @@ import path from "node:path";
 import type { Plugin } from "vite";
 import {
   VISUAL_DELTA_CANCEL_PATH,
+  VISUAL_DELTA_CAPTURE_PATH,
+  VISUAL_DELTA_CONFIG_PATH,
   VISUAL_DELTA_CREATE_INTERACTION_PATH,
   VISUAL_DELTA_CREATE_PATH,
+  VISUAL_DELTA_INIT_PATH,
+  VISUAL_DELTA_PLAYWRIGHT_THRESHOLD_PATH,
   VISUAL_DELTA_REVIEW_PATH,
+  VISUAL_DELTA_RUN_EVENTS_PATH,
   VISUAL_DELTA_RUN_PATH,
+  VISUAL_DELTA_RUN_STATUS_PATH,
   VISUAL_DELTA_SKIP_VISUAL_PATH,
   VISUAL_DELTA_UPDATE_PATH,
   isVisualReviewStatus,
   type VisualReviewStatus,
 } from "../constants.js";
-import type { VisualDiffSidecar } from "../visual-diff-sidecar.js";
+import type { VisualDeltaResolvedConfig } from "../shared/config-types.js";
+import {
+  captureSubjectWithChromium,
+  type CaptureSubjectRequest,
+} from "./capture-subject.js";
+import type { CaptureSubjectStreamEvent } from "../shared/capture-subject-types.js";
 import {
   DEFAULT_VISUAL_INTERACTION_UPDATE_ARGS,
-  DEFAULT_VISUAL_SERVER_PORT,
   DEFAULT_VISUAL_TEST_ARGS,
   DEFAULT_VISUAL_UPDATE_ARGS,
+  resolveBaselinePathMode,
   resolveRoot,
   resolveSnapshotDir,
+  resolveStorybookPort,
+  resolveVisualServerPort,
   type VisualDeltaHostOptions,
 } from "./options.js";
 import type { StoryIndexEntry } from "./snapshot-paths.js";
@@ -29,8 +42,33 @@ import {
   patchStorySkipVisual,
   patchStoryVisualReviewStatus,
 } from "./story-source.js";
-import { loadSidecarForStoryId } from "./visual-sidecars.js";
-import { ensurePlaywrightWebServerPort } from "./visual-server.js";
+import {
+  baselinePngExistsForStoryId,
+  loadSidecarForStoryId,
+} from "./visual-sidecars.js";
+import {
+  inspectVisualDeltaOnboarding,
+  runVisualDeltaInit,
+} from "./init-scaffold.js";
+import {
+  readPlaywrightPassThresholdPercent,
+  writePlaywrightPassThresholdPercent,
+} from "./playwright-threshold.js";
+import {
+  beginVisualRunHub,
+  getVisualRunHubStatus,
+  isVisualRunActive,
+  publishVisualRunEvent,
+  resetVisualRunHub,
+  subscribeVisualRunHub,
+  type VisualRunResponse,
+  type VisualRunResultItem,
+  type VisualRunStreamEvent,
+} from "./run-hub.js";
+import {
+  ensurePlaywrightWebServerPort,
+  ensureWarmStaticStorybookServer,
+} from "./visual-server.js";
 
 type UpdateBody = {
   storyId?: string;
@@ -49,10 +87,7 @@ type InteractionUpdateBody = {
 
 type SpawnedVisualCommand = ChildProcess & {
   on: {
-    (
-      event: "error",
-      listener: (error: Error) => void,
-    ): SpawnedVisualCommand;
+    (event: "error", listener: (error: Error) => void): SpawnedVisualCommand;
     (
       event: "close",
       listener: (code: number | null) => void,
@@ -67,46 +102,11 @@ type RunBody = {
   rebuild?: boolean;
 };
 
-export type VisualRunResultItem = {
-  storyId: string;
-  status: "passed" | "failed" | "skipped" | "timedOut";
-  title: string;
-  error?: string;
-  /** Ephemeral metrics written next to the baseline PNG during the run. */
-  sidecar?: VisualDiffSidecar;
-};
-
-export type VisualRunResponse = {
-  ok: boolean;
-  exitCode: number;
-  crashed?: boolean;
-  error?: string;
-  rebuild: boolean;
-  grep?: string;
-  summary: {
-    total: number;
-    passed: number;
-    failed: number;
-    skipped: number;
-  };
-  results: VisualRunResultItem[];
-  logTail: string;
-};
-
-/** NDJSON events streamed while `/__visual-delta/run-tests` is in progress. */
-export type VisualRunStreamEvent =
-  | { type: "start"; total: number }
-  | {
-      type: "progress";
-      completed: number;
-      total: number;
-      passed: number;
-      failed: number;
-      storyId: string;
-      status: "passed" | "failed";
-    }
-  | ({ type: "done" } & VisualRunResponse)
-  | { type: "error"; error: string; crashed?: boolean };
+export type {
+  VisualRunResponse,
+  VisualRunResultItem,
+  VisualRunStreamEvent,
+} from "./run-hub.js";
 
 let activeRun: ChildProcess | null = null;
 
@@ -219,6 +219,10 @@ function parsePlaywrightJson(raw: string): VisualRunResultItem[] {
   return results;
 }
 
+/** Error when refusing `visual-failed` without a committed baseline PNG. */
+export const NO_BASELINE_FAILED_ERROR =
+  "Cannot mark failed — no baseline screenshot";
+
 /** Attach on-disk JSON sidecars produced by the visual suite. */
 export function attachSidecars(
   results: VisualRunResultItem[],
@@ -226,7 +230,7 @@ export function attachSidecars(
   options: VisualDeltaHostOptions = {},
 ): VisualRunResultItem[] {
   const snapshotDir = resolveSnapshotDir(options, packageRoot);
-  const mode = options.baselinePathMode ?? "nested-import";
+  const mode = resolveBaselinePathMode(options);
   return results.map((item) => {
     const sidecar = loadSidecarForStoryId(
       item.storyId,
@@ -234,8 +238,37 @@ export function attachSidecars(
       snapshotDir,
       mode,
     );
-    return sidecar ? { ...item, sidecar } : item;
+    const hasBaseline = baselinePngExistsForStoryId(
+      item.storyId,
+      packageRoot,
+      snapshotDir,
+      mode,
+    );
+    let next: VisualRunResultItem = sidecar
+      ? { ...item, sidecar }
+      : { ...item };
+    if (item.status === "failed" && !hasBaseline) {
+      next = {
+        ...next,
+        missingBaseline: true,
+        error: next.error ?? "No baseline screenshot",
+      };
+    }
+    return next;
   });
+}
+
+function canMarkVisualFailed(
+  root: string,
+  storyId: string,
+  options: VisualDeltaHostOptions,
+): boolean {
+  return baselinePngExistsForStoryId(
+    storyId,
+    root,
+    resolveSnapshotDir(options, root),
+    resolveBaselinePathMode(options),
+  );
 }
 
 function extractJsonDocument(log: string): string | null {
@@ -259,10 +292,11 @@ export function visualTestCommandArgs(
   options: VisualDeltaHostOptions = {},
   grep?: string,
 ): string[] {
+  // List-only: pairing `--reporter=json` on stdout suppresses list lines (or
+  // downgrades to line reporter), so the Testing Module stays at 0/N until done.
   return [
     ...(options.visualTestArgs ?? [...DEFAULT_VISUAL_TEST_ARGS]),
     "--reporter=list",
-    "--reporter=json",
     ...(grep ? ["-g", grep] : []),
   ];
 }
@@ -333,6 +367,11 @@ export function parseListReporterProgress(
 
 function writeNdjson(res: ServerResponse, event: VisualRunStreamEvent) {
   res.write(`${JSON.stringify(event)}\n`);
+}
+
+/** Emit to the reconnectable run hub (and all live NDJSON subscribers). */
+function emitRun(event: VisualRunStreamEvent) {
+  publishVisualRunEvent(event);
 }
 
 function runCommand(
@@ -501,6 +540,11 @@ function beginNdjson(res: ServerResponse) {
   res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
+  // Hint proxies / browsers not to buffer the streamed body.
+  res.setHeader("X-Accel-Buffering", "no");
+  if (typeof res.flushHeaders === "function") {
+    res.flushHeaders();
+  }
 }
 
 async function handleRun(
@@ -508,18 +552,13 @@ async function handleRun(
   res: ServerResponse,
   root: string,
   options: VisualDeltaHostOptions,
+  visualPort: number,
 ) {
-  if (activeRun) {
-    writeJson(res, 409, {
-      ok: false,
-      crashed: true,
-      error: "A visual test run is already in progress",
-      exitCode: 1,
-      rebuild: false,
-      summary: { total: 0, passed: 0, failed: 0, skipped: 0 },
-      results: [],
-      logTail: "",
-    } satisfies VisualRunResponse);
+  // Reconnect after manager HMR while Playwright is still running.
+  // A finished snapshot must not block starting a new run — use GET
+  // `/__visual-delta/run-events` to hydrate recent results instead.
+  if (activeRun || isVisualRunActive()) {
+    subscribeVisualRunHub(res);
     return;
   }
 
@@ -557,25 +596,34 @@ async function handleRun(
   }
 
   const staticIndex = path.join(root, "storybook-static", "index.json");
+  const staticIframe = path.join(root, "storybook-static", "iframe.html");
+  const staticComplete = existsSync(staticIndex) && existsSync(staticIframe);
   const allowRebuild = options.allowRebuild !== false;
-  const rebuild =
-    allowRebuild && (Boolean(body.rebuild) || !existsSync(staticIndex));
+  const rebuild = allowRebuild && (Boolean(body.rebuild) || !staticComplete);
   const grep = grepFromStoryIds(body.storyIds);
   let log = "";
 
-  beginNdjson(res);
+  beginVisualRunHub();
+  subscribeVisualRunHub(res);
 
   try {
     if (rebuild) {
+      const rebuildLine = body.rebuild
+        ? "Rebuilding storybook-static — explicit rebuild requested"
+        : !existsSync(staticIndex)
+          ? "Building storybook-static — index.json missing"
+          : "Rebuilding storybook-static — incomplete (missing iframe.html)";
+      emitRun({ type: "log", line: rebuildLine });
+      log += `${rebuildLine}\n`;
       const built = await runCommand("pnpm", ["build-storybook"], root);
       log += built.log;
       if (built.code !== 0) {
-        writeNdjson(res, {
+        emitRun({
           type: "error",
           error: "build-storybook failed",
           crashed: true,
         });
-        writeNdjson(res, {
+        emitRun({
           type: "done",
           ok: false,
           crashed: true,
@@ -587,30 +635,45 @@ async function handleRun(
           results: [],
           logTail: log.slice(-4000),
         });
-        res.end();
         return;
       }
+    } else if (staticComplete) {
+      emitRun({
+        type: "log",
+        line: "Using existing storybook-static",
+      });
+      log += "Using existing storybook-static\n";
     }
 
     const total = countVisualStories(root, body.storyIds);
-    writeNdjson(res, { type: "start", total });
+    emitRun({ type: "start", total });
 
     const seenIndexes = new Set<number>();
+    const progressResults: VisualRunResultItem[] = [];
     let completed = 0;
     let passed = 0;
     let failed = 0;
     let lineBuf = "";
 
-    await ensurePlaywrightWebServerPort(
-      options.visualServerPort ?? DEFAULT_VISUAL_SERVER_PORT,
-    );
+    const warm = await ensureWarmStaticStorybookServer(root, visualPort);
+    if (warm.message) {
+      emitRun({ type: "log", line: warm.message });
+      log += `${warm.message}\n`;
+    }
+    if (!warm.ok) {
+      await ensurePlaywrightWebServerPort(visualPort);
+    }
 
     const args = visualTestCommandArgs(options, grep);
     const { code, log: runLog } = await runCommand(
       "pnpm",
       args,
       root,
-      { PLAYWRIGHT_UPDATE_SNAPSHOTS: "0" },
+      {
+        PLAYWRIGHT_UPDATE_SNAPSHOTS: "0",
+        // Keep Playwright webServer on the same port the middleware warmed.
+        VISUAL_SERVER_PORT: String(visualPort),
+      },
       (chunk) => {
         lineBuf += chunk;
         const lines = lineBuf.split("\n");
@@ -622,7 +685,12 @@ async function handleRun(
             completed = seenIndexes.size;
             if (item.status === "passed") passed += 1;
             else failed += 1;
-            writeNdjson(res, {
+            progressResults.push({
+              storyId: item.storyId,
+              status: item.status,
+              title: item.storyId,
+            });
+            emitRun({
               type: "progress",
               completed,
               total: total || completed,
@@ -637,25 +705,31 @@ async function handleRun(
     );
     log += runLog;
 
+    // Prefer list-reporter results (live progress). Fall back to a JSON document
+    // in the log when a host still wires `--reporter=json` without a file sink.
     let results: VisualRunResultItem[] = [];
-    const json = extractJsonDocument(runLog);
-    if (json) {
-      try {
-        results = attachSidecars(parsePlaywrightJson(json), root, options);
-      } catch {
-        /* leave empty — UI still shows crash/fail via exit code */
+    if (progressResults.length > 0) {
+      results = attachSidecars(progressResults, root, options);
+    } else {
+      const json = extractJsonDocument(runLog);
+      if (json) {
+        try {
+          results = attachSidecars(parsePlaywrightJson(json), root, options);
+        } catch {
+          /* leave empty — UI still shows crash/fail via exit code */
+        }
       }
     }
 
     const summary = summarize(results);
-    // List-reporter progress is authoritative when the JSON report failed to parse
-    // (dual reporters / interleaved log), so the UI does not show "Ran 0 tests".
+    // List-reporter progress is authoritative when result parsing yielded nothing,
+    // so the UI does not show "Ran 0 tests".
     if (summary.total === 0 && completed > 0) {
       summary.total = completed;
       summary.passed = passed;
       summary.failed = failed;
     }
-    writeNdjson(res, {
+    emitRun({
       type: "done",
       ok: code === 0 && summary.failed === 0,
       exitCode: code,
@@ -667,8 +741,8 @@ async function handleRun(
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    writeNdjson(res, { type: "error", error: message, crashed: true });
-    writeNdjson(res, {
+    emitRun({ type: "error", error: message, crashed: true });
+    emitRun({
       type: "done",
       ok: false,
       crashed: true,
@@ -681,28 +755,40 @@ async function handleRun(
       logTail: log.slice(-4000),
     });
   }
-  res.end();
 }
 
 function handleCancel(res: ServerResponse) {
   if (!activeRun) {
+    resetVisualRunHub();
     writeJson(res, 200, { ok: true, cancelled: false });
     return;
   }
   activeRun.kill("SIGTERM");
   activeRun = null;
+  resetVisualRunHub();
   writeJson(res, 200, { ok: true, cancelled: true });
+}
+
+function handleRunEvents(res: ServerResponse) {
+  subscribeVisualRunHub(res);
+}
+
+function handleRunStatus(res: ServerResponse) {
+  writeJson(res, 200, getVisualRunHubStatus());
 }
 
 type ReviewBody = {
   storyId?: string;
   status?: VisualReviewStatus;
+  /** Batch updates — preferred after a suite run to cut HMR churn. */
+  updates?: Array<{ storyId?: string; status?: VisualReviewStatus }>;
 };
 
 async function handleReviewStatus(
   req: IncomingMessage,
   res: ServerResponse,
   root: string,
+  options: VisualDeltaHostOptions = {},
 ) {
   let body: ReviewBody;
   try {
@@ -715,12 +801,53 @@ async function handleReviewStatus(
     return;
   }
 
+  if (Array.isArray(body.updates)) {
+    if (!body.updates.length) {
+      writeJson(res, 400, { ok: false, error: "updates must not be empty" });
+      return;
+    }
+    let updated = 0;
+    const errors: string[] = [];
+    for (const item of body.updates) {
+      const storyId = item.storyId?.trim();
+      const status = item.status;
+      if (!storyId || !isVisualReviewStatus(status)) {
+        errors.push(`${storyId ?? "(missing)"}: invalid storyId/status`);
+        continue;
+      }
+      if (status === "failed" && !canMarkVisualFailed(root, storyId, options)) {
+        errors.push(`${storyId}: ${NO_BASELINE_FAILED_ERROR}`);
+        continue;
+      }
+      const result = patchStoryVisualReviewStatus({
+        packageRoot: root,
+        storyId,
+        status,
+      });
+      if (result.ok) updated += 1;
+      else errors.push(`${storyId}: ${result.error ?? "update failed"}`);
+    }
+    writeJson(res, 200, { ok: errors.length === 0, updated, errors });
+    return;
+  }
+
   const storyId = body.storyId?.trim();
   const status = body.status;
   if (!storyId || !isVisualReviewStatus(status)) {
     writeJson(res, 400, {
       ok: false,
-      error: 'Provide storyId and status ("pending" | "approved" | "failed")',
+      error:
+        'Provide storyId and status ("pending" | "approved" | "ready" | "failed"), or updates[]',
+    });
+    return;
+  }
+
+  if (status === "failed" && !canMarkVisualFailed(root, storyId, options)) {
+    writeJson(res, 400, {
+      ok: false,
+      storyId,
+      status,
+      error: NO_BASELINE_FAILED_ERROR,
     });
     return;
   }
@@ -772,15 +899,177 @@ async function handleSkipVisual(
   writeJson(res, result.ok ? 200 : 400, result);
 }
 
+function handleConfig(
+  res: ServerResponse,
+  root: string,
+  options: VisualDeltaHostOptions,
+  visualPort: number,
+) {
+  const snapshotDir = resolveSnapshotDir(options, root);
+  const onboardingStatus = inspectVisualDeltaOnboarding(root, snapshotDir);
+  const warnings: string[] = [];
+  if (!existsSync(snapshotDir)) {
+    warnings.push(`snapshotDir does not exist yet: ${snapshotDir}`);
+  }
+  if (!onboardingStatus.ready) {
+    warnings.push(onboardingStatus.hint);
+  }
+  const staticHint =
+    "Preset staticDirs mounts snapshotDir at /visual-baselines (or host maps it).";
+  warnings.push(staticHint);
+  const payload: VisualDeltaResolvedConfig = {
+    ok: true,
+    options: {
+      root,
+      snapshotDir,
+      baselinePathMode: resolveBaselinePathMode(options),
+      visualServerPort: visualPort,
+      allowRebuild: options.allowRebuild !== false,
+      visualUpdateArgs: [
+        ...(options.visualUpdateArgs ?? [...DEFAULT_VISUAL_UPDATE_ARGS]),
+      ],
+      visualInteractionUpdateArgs: [
+        ...(options.visualInteractionUpdateArgs ?? [
+          ...DEFAULT_VISUAL_INTERACTION_UPDATE_ARGS,
+        ]),
+      ],
+      visualTestArgs: [
+        ...(options.visualTestArgs ?? [...DEFAULT_VISUAL_TEST_ARGS]),
+      ],
+      addonSrcDir: options.addonSrcDir?.trim() || null,
+    },
+    playwrightPassThresholdPercent: readPlaywrightPassThresholdPercent(root),
+    onboarding: {
+      suiteReady: onboardingStatus.suiteReady,
+      playwrightConfigReady: onboardingStatus.playwrightConfigReady,
+      snapshotDirExists: onboardingStatus.snapshotDirExists,
+      ready: onboardingStatus.ready,
+      hint: onboardingStatus.hint,
+    },
+    warnings,
+  };
+  writeJson(res, 200, payload);
+}
+
+async function handlePlaywrightThreshold(
+  req: IncomingMessage,
+  res: ServerResponse,
+  root: string,
+) {
+  let body: { passThresholdPercent?: unknown };
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    writeJson(res, 400, {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+  if (
+    typeof body.passThresholdPercent !== "number" ||
+    !Number.isFinite(body.passThresholdPercent)
+  ) {
+    writeJson(res, 400, {
+      ok: false,
+      error: "passThresholdPercent must be a finite number",
+    });
+    return;
+  }
+  try {
+    const written = writePlaywrightPassThresholdPercent(
+      root,
+      body.passThresholdPercent,
+    );
+    writeJson(res, 200, {
+      ok: true,
+      ...written,
+      playwrightPassThresholdPercent: written.passThresholdPercent,
+    });
+  } catch (error) {
+    writeJson(res, 500, {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+function handleInit(
+  req: IncomingMessage,
+  res: ServerResponse,
+  root: string,
+  options: VisualDeltaHostOptions,
+  visualPort: number,
+) {
+  void req;
+  const result = runVisualDeltaInit({
+    packageRoot: root,
+    port: visualPort,
+    force: false,
+  });
+  writeJson(res, 200, {
+    ...result,
+    onboarding: inspectVisualDeltaOnboarding(root, result.snapshotDir),
+  });
+}
+
+async function handleCaptureSubject(req: IncomingMessage, res: ServerResponse) {
+  let body: CaptureSubjectRequest;
+  try {
+    body = await readJsonBody<CaptureSubjectRequest>(req);
+  } catch (error) {
+    writeJson(res, 400, {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+
+  beginNdjson(res);
+  const write = (event: CaptureSubjectStreamEvent) => {
+    res.write(`${JSON.stringify(event)}\n`);
+    const flushable = res as ServerResponse & { flush?: () => void };
+    flushable.flush?.();
+  };
+
+  // Client abort (Diff Stop) closes the request; stop emitting further events.
+  let clientClosed = false;
+  req.on("close", () => {
+    clientClosed = true;
+  });
+
+  write({ type: "start", storyId: body.storyId });
+  try {
+    const result = await captureSubjectWithChromium(body, (progress) => {
+      if (!clientClosed) write({ type: "progress", ...progress });
+    });
+    if (!clientClosed) write({ type: "done", ...result });
+  } catch (error) {
+    if (!clientClosed) {
+      write({
+        type: "error",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  if (!res.writableEnded) res.end();
+}
+
 /**
  * Dev-only Visual Delta endpoints:
  * - POST /__visual-delta/update-baseline — regenerate baselines (overwrite)
  * - POST /__visual-delta/create-baseline — create missing baselines only
  * - POST /__visual-delta/create-interaction-baseline — mid-play step capture
+ * - POST /__visual-delta/capture-subject — Playwright Chromium subject PNG
  * - POST /__visual-delta/run-tests — run Playwright visual suite (no updates)
+ * - GET  /__visual-delta/run-events — replay / continue an in-flight or recent run
+ * - GET  /__visual-delta/run-status — lightweight phase/progress JSON
  * - POST /__visual-delta/cancel-tests — stop an in-flight run
- * - POST /__visual-delta/review-status — set visual-pending / visual-approved tag
+ * - POST /__visual-delta/review-status — set visual review tag (pending/approved/ready/failed)
  * - POST /__visual-delta/skip-visual — add or remove skip-visual on a story
+ * - GET  /__visual-delta/config — resolved host options (read-only)
+ * - POST /__visual-delta/playwright-threshold — write host Playwright pass %
+ * - POST /__visual-delta/init — scaffold portable Playwright suite/config
  */
 export function visualDeltaMiddlewarePlugin(
   options: VisualDeltaHostOptions = {},
@@ -788,9 +1077,52 @@ export function visualDeltaMiddlewarePlugin(
   return {
     name: "visual-delta-middleware",
     configureServer(server) {
+      const root = resolveRoot(options, server.config.root);
+      const storybookPort =
+        typeof server.config.server?.port === "number"
+          ? server.config.server.port
+          : resolveStorybookPort();
+      const visualPort = resolveVisualServerPort(options, storybookPort);
+      // Warm storybook-static (Storybook port + 1 by default) for Testing Module.
+      void ensureWarmStaticStorybookServer(root, visualPort).catch(() => {
+        /* non-fatal — Playwright can still start its own webServer */
+      });
+
       server.middlewares.use(async (req, res, next) => {
         const url = req.url?.split("?")[0] ?? "";
-        const root = resolveRoot(options, server.config.root);
+
+        if (url === VISUAL_DELTA_CONFIG_PATH) {
+          if (req.method !== "GET") {
+            res.statusCode = 405;
+            res.setHeader("Allow", "GET");
+            res.end("Method Not Allowed");
+            return;
+          }
+          handleConfig(res, root, options, visualPort);
+          return;
+        }
+
+        if (url === VISUAL_DELTA_PLAYWRIGHT_THRESHOLD_PATH) {
+          if (req.method !== "POST") {
+            res.statusCode = 405;
+            res.setHeader("Allow", "POST");
+            res.end("Method Not Allowed");
+            return;
+          }
+          await handlePlaywrightThreshold(req, res, root);
+          return;
+        }
+
+        if (url === VISUAL_DELTA_INIT_PATH) {
+          if (req.method !== "POST") {
+            res.statusCode = 405;
+            res.setHeader("Allow", "POST");
+            res.end("Method Not Allowed");
+            return;
+          }
+          handleInit(req, res, root, options, visualPort);
+          return;
+        }
 
         if (url === VISUAL_DELTA_UPDATE_PATH) {
           if (req.method !== "POST") {
@@ -825,6 +1157,17 @@ export function visualDeltaMiddlewarePlugin(
           return;
         }
 
+        if (url === VISUAL_DELTA_CAPTURE_PATH) {
+          if (req.method !== "POST") {
+            res.statusCode = 405;
+            res.setHeader("Allow", "POST");
+            res.end("Method Not Allowed");
+            return;
+          }
+          await handleCaptureSubject(req, res);
+          return;
+        }
+
         if (url === VISUAL_DELTA_REVIEW_PATH) {
           if (req.method !== "POST") {
             res.statusCode = 405;
@@ -832,7 +1175,7 @@ export function visualDeltaMiddlewarePlugin(
             res.end("Method Not Allowed");
             return;
           }
-          await handleReviewStatus(req, res, root);
+          await handleReviewStatus(req, res, root, options);
           return;
         }
 
@@ -854,7 +1197,29 @@ export function visualDeltaMiddlewarePlugin(
             res.end("Method Not Allowed");
             return;
           }
-          await handleRun(req, res, root, options);
+          await handleRun(req, res, root, options, visualPort);
+          return;
+        }
+
+        if (url === VISUAL_DELTA_RUN_EVENTS_PATH) {
+          if (req.method !== "GET") {
+            res.statusCode = 405;
+            res.setHeader("Allow", "GET");
+            res.end("Method Not Allowed");
+            return;
+          }
+          handleRunEvents(res);
+          return;
+        }
+
+        if (url === VISUAL_DELTA_RUN_STATUS_PATH) {
+          if (req.method !== "GET") {
+            res.statusCode = 405;
+            res.setHeader("Allow", "GET");
+            res.end("Method Not Allowed");
+            return;
+          }
+          handleRunStatus(res);
           return;
         }
 

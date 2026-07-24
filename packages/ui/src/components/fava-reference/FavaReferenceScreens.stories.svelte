@@ -17,10 +17,7 @@
 </script>
 
 <script lang="ts">
-  import {
-    favaReferenceUrl,
-    visualDeltaForFavaReference,
-  } from "./fava-reference.js";
+  import { favaReferenceUrl } from "./fava-reference.js";
 </script>
 
 {#snippet reference(id: string, label: string)}
@@ -30,106 +27,55 @@
   </figure>
 {/snippet}
 
-<Story
-  name="Editor"
-  parameters={{ visualDelta: visualDeltaForFavaReference("editor") }}
->
+<Story name="Editor">
   {@render reference("editor", "Editor")}
 </Story>
-<Story
-  name="Dashboard"
-  parameters={{ visualDelta: visualDeltaForFavaReference("dashboard") }}
->
+<Story name="Dashboard">
   {@render reference("dashboard", "Dashboard")}
 </Story>
-<Story
-  name="Journal"
-  parameters={{ visualDelta: visualDeltaForFavaReference("journal") }}
->
+<Story name="Journal">
   {@render reference("journal", "Journal")}
 </Story>
-<Story
-  name="Search sidebar"
-  parameters={{ visualDelta: visualDeltaForFavaReference("search-sidebar") }}
->
+<Story name="Search sidebar">
   {@render reference("search-sidebar", "Search sidebar")}
 </Story>
-<Story
-  name="Income statement"
-  parameters={{ visualDelta: visualDeltaForFavaReference("income-statement") }}
->
+<Story name="Income statement">
   {@render reference("income-statement", "Income statement")}
 </Story>
-<Story
-  name="Balance sheet"
-  parameters={{ visualDelta: visualDeltaForFavaReference("balance-sheet") }}
->
+<Story name="Balance sheet">
   {@render reference("balance-sheet", "Balance sheet")}
 </Story>
-<Story
-  name="Trial balance"
-  parameters={{ visualDelta: visualDeltaForFavaReference("trial-balance") }}
->
+<Story name="Trial balance">
   {@render reference("trial-balance", "Trial balance")}
 </Story>
-<Story
-  name="Account detail"
-  parameters={{ visualDelta: visualDeltaForFavaReference("account-detail") }}
->
+<Story name="Account detail">
   {@render reference("account-detail", "Account detail")}
 </Story>
-<Story
-  name="Account changes"
-  parameters={{ visualDelta: visualDeltaForFavaReference("account-changes") }}
->
+<Story name="Account changes">
   {@render reference("account-changes", "Account changes")}
 </Story>
-<Story
-  name="Holdings"
-  parameters={{ visualDelta: visualDeltaForFavaReference("holdings") }}
->
+<Story name="Holdings">
   {@render reference("holdings", "Holdings")}
 </Story>
-<Story
-  name="Statistics"
-  parameters={{ visualDelta: visualDeltaForFavaReference("statistics") }}
->
+<Story name="Statistics">
   {@render reference("statistics", "Statistics")}
 </Story>
-<Story
-  name="Query"
-  parameters={{ visualDelta: visualDeltaForFavaReference("query") }}
->
+<Story name="Query">
   {@render reference("query", "Query")}
 </Story>
-<Story
-  name="Errors"
-  parameters={{ visualDelta: visualDeltaForFavaReference("errors") }}
->
+<Story name="Errors">
   {@render reference("errors", "Errors")}
 </Story>
-<Story
-  name="Records"
-  parameters={{ visualDelta: visualDeltaForFavaReference("records") }}
->
+<Story name="Records">
   {@render reference("records", "Records")}
 </Story>
-<Story
-  name="Settings"
-  parameters={{ visualDelta: visualDeltaForFavaReference("settings") }}
->
+<Story name="Settings">
   {@render reference("settings", "Settings")}
 </Story>
-<Story
-  name="Settings accounts"
-  parameters={{ visualDelta: visualDeltaForFavaReference("settings-accounts") }}
->
+<Story name="Settings accounts">
   {@render reference("settings-accounts", "Settings accounts")}
 </Story>
-<Story
-  name="Settings rules"
-  parameters={{ visualDelta: visualDeltaForFavaReference("settings-rules") }}
->
+<Story name="Settings rules">
   {@render reference("settings-rules", "Settings rules")}
 </Story>
 

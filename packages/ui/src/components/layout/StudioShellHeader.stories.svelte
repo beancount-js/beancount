@@ -6,7 +6,7 @@
   const { Story } = defineMeta({
     title: "Layout/Studio Shell Header",
     component: StudioShellHeader,
-    tags: ["visual-pending"],
+    tags: ["visual-ready"],
     parameters: {
       docs: {
         description: {

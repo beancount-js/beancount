@@ -11,15 +11,21 @@ import {
 import {
   ActionList,
   Button,
-  IconButton,
   PopoverProvider,
   Separator,
+  ToggleButton,
   Toolbar,
-  TooltipNote,
-  WithTooltip,
 } from "storybook/internal/components";
 import { styled, useTheme } from "storybook/theming";
 import type { VisualReviewStatus } from "../constants.js";
+import {
+  AcceptSplitButton,
+  type AcceptScope,
+} from "../manager/AcceptSplitButton.js";
+import {
+  DiffCaptureSplitButton,
+  type DiffCaptureEngine,
+} from "../manager/DiffCaptureSplitButton.js";
 import { useReviewLayoutToggle } from "../manager/ReviewLayoutTool.js";
 import {
   VisualRunSplitButton,
@@ -28,7 +34,6 @@ import {
 import { ReviewStatusPad } from "./ReviewStatusPad.js";
 import { VISUAL_DELTA_HEADER_HEIGHT } from "./styled.js";
 import {
-  BadgeActionButton,
   VisualStatusBadge,
   type VisualBadgeStatus,
 } from "./VisualStatusBadge.js";
@@ -64,18 +69,27 @@ export const VisualDeltaHeader = memo(function VisualDeltaHeader({
   empty,
   busy,
   storyMissing,
+  isDiffing,
   isRunning,
-  progressLabel,
+  diffProgressLabel,
+  runProgressLabel,
   createLabel,
   reviewStatus,
   skipVisual,
-  onRunDiff,
+  onDiff,
+  onRun,
+  diffEngine,
+  onDiffEngineChange,
   onCreate,
   onUpdateBaselines,
   onResetSettings,
-  onStop,
+  onStopDiff,
+  onStopRun,
   onReviewStatus,
+  onAccept,
+  onUnaccept,
   onToggleSkipVisual,
+  onOpenConfiguration,
   isUpdating,
   onHeightChange,
 }: {
@@ -83,19 +97,29 @@ export const VisualDeltaHeader = memo(function VisualDeltaHeader({
   empty: boolean;
   busy: boolean;
   storyMissing: boolean;
+  isDiffing: boolean;
   isRunning: boolean;
-  progressLabel: string | null;
+  diffProgressLabel: string | null;
+  runProgressLabel: string | null;
   createLabel: string;
   reviewStatus: VisualReviewStatus | null;
   /** Story CSF currently has `skip-visual`. */
   skipVisual: boolean;
-  onRunDiff: (mode: VisualRunMode) => void;
+  onDiff: (engine: DiffCaptureEngine) => void;
+  onRun: (mode: VisualRunMode) => void;
+  /** Selected Diff capture engine (HTML vs Chromium). */
+  diffEngine: DiffCaptureEngine;
+  onDiffEngineChange: (engine: DiffCaptureEngine) => void;
   onCreate: () => void;
   onUpdateBaselines: () => void;
   onResetSettings: () => void;
-  onStop: () => void;
+  onStopDiff: () => void;
+  onStopRun: () => void;
   onReviewStatus: (status: VisualReviewStatus) => void;
+  onAccept: (scope: AcceptScope) => void;
+  onUnaccept: (scope: AcceptScope) => void;
   onToggleSkipVisual: () => void;
+  onOpenConfiguration: () => void;
   isUpdating: boolean;
   /** Reports sticky Pass/Diff toolbar height for accordion offset. */
   onHeightChange?: (height: number) => void;
@@ -129,6 +153,8 @@ export const VisualDeltaHeader = memo(function VisualDeltaHeader({
   const skipActionNote = skipVisual
     ? "Remove skip-visual so Playwright and Visual Delta run this story"
     : "Add skip-visual to exclude this story from Playwright visual runs";
+  /** Prominent header control when there is no baseline, or skip is already on. */
+  const showSkipHeaderButton = empty || skipVisual;
 
   return (
     <HeaderWrap ref={headerRef} data-vd-header="controls">
@@ -138,42 +164,37 @@ export const VisualDeltaHeader = memo(function VisualDeltaHeader({
         aria-label="Visual Delta controls"
       >
         <ControlsGroup>
+          <DiffCaptureSplitButton
+            compact
+            isRunning={isDiffing}
+            progressLabel={diffProgressLabel}
+            disabled={busy && !isDiffing}
+            storyMissing={storyMissing}
+            engine={diffEngine}
+            onEngineChange={onDiffEngineChange}
+            onDiff={onDiff}
+            onStop={onStopDiff}
+          />
           <VisualRunSplitButton
             panel
             compact
             isRunning={isRunning}
-            progressLabel={progressLabel}
+            progressLabel={runProgressLabel}
             disabled={busy && !isRunning}
             storyMissing={storyMissing}
-            diffDisabled={false}
             allowStory
-            onRun={onRunDiff}
-            onStop={onStop}
+            onRun={onRun}
+            onStop={onStopRun}
           />
           {badgeStatus ? (
             <>
               <Separator />
               <VisualStatusBadge status={badgeStatus} />
-              <WithTooltip
-                hasChrome={false}
-                placement="top"
-                trigger="hover"
-                tooltip={<TooltipNote note="Re-run Diff" />}
-              >
-                <BadgeActionButton
-                  type="button"
-                  disabled={busy || storyMissing}
-                  onClick={() => onRunDiff("diff")}
-                  aria-label="Re-run Diff"
-                >
-                  Diff
-                </BadgeActionButton>
-              </WithTooltip>
             </>
           ) : null}
         </ControlsGroup>
         <RightGroup>
-          {empty ? (
+          {empty && !skipVisual ? (
             <Button
               size="small"
               ariaLabel="Create visual baseline"
@@ -182,41 +203,52 @@ export const VisualDeltaHeader = memo(function VisualDeltaHeader({
             >
               {createLabel}
             </Button>
-          ) : (
-            <ReviewStatusPad
-              value={reviewStatus}
-              disabled={busy || storyMissing || skipVisual}
-              onSelect={onReviewStatus}
-            />
-          )}
-          <WithTooltip
-            hasChrome={false}
-            placement="top"
-            trigger="hover"
-            tooltip={
-              <TooltipNote
-                note={
-                  reviewLayoutActive
-                    ? "Exit review layout"
-                    : "Review layout — canvas on top, Visual Delta below"
-                }
-              />
-            }
-          >
-            <IconButton
+          ) : null}
+          {showSkipHeaderButton ? (
+            <Button
               size="small"
-              variant="ghost"
-              padding="small"
-              active={reviewLayoutActive}
-              ariaLabel={reviewLayoutLabel}
-              title={reviewLayoutLabel}
-              onClick={toggleReviewLayout}
+              variant={skipVisual ? "solid" : "ghost"}
+              ariaLabel={skipActionLabel}
+              title={skipActionNote}
+              disabled={busy || storyMissing}
+              onClick={onToggleSkipVisual}
             >
-              {reviewLayoutActive ? <CloseIcon /> : <ExpandIcon />}
-            </IconButton>
-          </WithTooltip>
+              {skipVisual ? <EyeIcon /> : <EyeCloseIcon />}
+              {skipActionLabel}
+            </Button>
+          ) : null}
+          {!empty && !skipVisual ? (
+            <>
+              <AcceptSplitButton
+                busy={busy}
+                disabled={storyMissing || skipVisual}
+                onAccept={onAccept}
+                onUnaccept={onUnaccept}
+              />
+              <ReviewStatusPad
+                value={reviewStatus}
+                disabled={busy || storyMissing || skipVisual}
+                onSelect={onReviewStatus}
+              />
+            </>
+          ) : null}
+          <ToggleButton
+            size="small"
+            variant="ghost"
+            padding="small"
+            pressed={reviewLayoutActive}
+            ariaLabel={reviewLayoutLabel}
+            title={
+              reviewLayoutActive
+                ? "Exit review layout"
+                : "Review layout — canvas on top, Visual Delta below"
+            }
+            onClick={toggleReviewLayout}
+          >
+            {reviewLayoutActive ? <CloseIcon /> : <ExpandIcon />}
+          </ToggleButton>
           <PopoverProvider
-            ariaLabel="More actions"
+            ariaLabel="More Visual Delta actions"
             placement="bottom-end"
             padding={0}
             visible={moreOpen}
@@ -249,22 +281,24 @@ export const VisualDeltaHeader = memo(function VisualDeltaHeader({
                       </ActionList.Action>
                     </ActionList.Item>
                   ) : null}
-                  <ActionList.Item>
-                    <ActionList.Action
-                      ariaLabel={skipActionLabel}
-                      disabled={busy || storyMissing}
-                      title={skipActionNote}
-                      onClick={() => {
-                        setMoreOpen(false);
-                        onToggleSkipVisual();
-                      }}
-                    >
-                      <ActionList.Icon>
-                        {skipVisual ? <EyeIcon /> : <EyeCloseIcon />}
-                      </ActionList.Icon>
-                      <ActionList.Text>{skipActionLabel}</ActionList.Text>
-                    </ActionList.Action>
-                  </ActionList.Item>
+                  {!showSkipHeaderButton ? (
+                    <ActionList.Item>
+                      <ActionList.Action
+                        ariaLabel={skipActionLabel}
+                        disabled={busy || storyMissing}
+                        title={skipActionNote}
+                        onClick={() => {
+                          setMoreOpen(false);
+                          onToggleSkipVisual();
+                        }}
+                      >
+                        <ActionList.Icon>
+                          {skipVisual ? <EyeIcon /> : <EyeCloseIcon />}
+                        </ActionList.Icon>
+                        <ActionList.Text>{skipActionLabel}</ActionList.Text>
+                      </ActionList.Action>
+                    </ActionList.Item>
+                  ) : null}
                   <ActionList.Item>
                     <ActionList.Action
                       ariaLabel={reviewLayoutLabel}
@@ -286,6 +320,20 @@ export const VisualDeltaHeader = memo(function VisualDeltaHeader({
                   </ActionList.Item>
                   <ActionList.Item>
                     <ActionList.Action
+                      ariaLabel="Configuration"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        onOpenConfiguration();
+                      }}
+                    >
+                      <ActionList.Icon>
+                        <EllipsisIcon />
+                      </ActionList.Icon>
+                      <ActionList.Text>Configuration</ActionList.Text>
+                    </ActionList.Action>
+                  </ActionList.Item>
+                  <ActionList.Item>
+                    <ActionList.Action
                       ariaLabel="Reset settings"
                       onClick={() => {
                         setMoreOpen(false);
@@ -302,15 +350,15 @@ export const VisualDeltaHeader = memo(function VisualDeltaHeader({
               </div>
             )}
           >
-            <IconButton
+            <Button
               size="small"
               variant="ghost"
               padding="small"
-              ariaLabel="More actions"
+              ariaLabel="More Visual Delta actions"
               title="More actions"
             >
               <EllipsisIcon />
-            </IconButton>
+            </Button>
           </PopoverProvider>
         </RightGroup>
       </Toolbar>

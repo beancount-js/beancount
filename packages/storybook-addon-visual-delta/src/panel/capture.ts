@@ -125,16 +125,23 @@ function asHtmlElement(
   view: Window | null,
 ): HTMLElement | null {
   if (!node) return null;
-  const Ctor = view?.HTMLElement ?? HTMLElement;
-  return node instanceof Ctor ? node : null;
+  // `Window` typings omit constructor properties; iframe realms expose them.
+  const Ctor =
+    (view as (Window & { HTMLElement?: typeof HTMLElement }) | null)
+      ?.HTMLElement ?? HTMLElement;
+  return node instanceof Ctor ? (node as HTMLElement) : null;
 }
 
 /**
  * Match Playwright visual suite settle: kill animations/transitions, hide caret,
  * and drop play-function focus rings so live Diff matches chrome-free baselines.
+ * Optionally hides ignore-selector regions for the capture duration.
  * Returns a restore function.
  */
-function preparePreviewForVisualCapture(doc: Document): () => void {
+function preparePreviewForVisualCapture(
+  doc: Document,
+  ignoreSelectors: readonly string[] = [],
+): () => void {
   const view = doc.defaultView;
   const style = doc.createElement("style");
   style.setAttribute("data-visual-delta-capture", "1");
@@ -155,8 +162,27 @@ function preparePreviewForVisualCapture(doc: Document): () => void {
   );
   active?.blur();
 
+  const hidden: Array<{ el: HTMLElement; visibility: string }> = [];
+  for (const sel of ignoreSelectors) {
+    let nodes: NodeListOf<Element>;
+    try {
+      nodes = doc.querySelectorAll(sel);
+    } catch {
+      continue;
+    }
+    for (const node of nodes) {
+      const el = asHtmlElement(node, view);
+      if (!el) continue;
+      hidden.push({ el, visibility: el.style.visibility });
+      el.style.visibility = "hidden";
+    }
+  }
+
   return () => {
     style.remove();
+    for (const { el, visibility } of hidden) {
+      el.style.visibility = visibility;
+    }
   };
 }
 
@@ -204,6 +230,15 @@ function resolveCaptureTarget(doc: Document): HTMLElement {
  */
 export async function capturePreviewSubject(options?: {
   pixelRatio?: number;
+  /** Extra settle delay (ms) after animation prep (CSF `delay`). */
+  delay?: number;
+  /** CSS selectors to hide for the capture (CSF `ignoreSelectors` + builtins). */
+  ignoreSelectors?: readonly string[];
+  /**
+   * When true, capture the preview documentElement (viewport) instead of the
+   * story subject (CSF `cropToViewport`).
+   */
+  cropToViewport?: boolean;
 }): Promise<CaptureResult> {
   const iframe = getPreviewIframe();
   if (!iframe) {
@@ -216,12 +251,22 @@ export async function capturePreviewSubject(options?: {
     );
   }
 
-  const restoreCapturePrep = preparePreviewForVisualCapture(doc);
+  const restoreCapturePrep = preparePreviewForVisualCapture(
+    doc,
+    options?.ignoreSelectors ?? [],
+  );
   try {
     await waitTwoFrames();
     await new Promise((r) => setTimeout(r, 50));
+    const delay = options?.delay ?? 0;
+    if (delay > 0) {
+      await new Promise((r) => setTimeout(r, delay));
+    }
 
-    const target = resolveCaptureTarget(doc);
+    const target = options?.cropToViewport
+      ? (asHtmlElement(doc.documentElement, doc.defaultView) ??
+        resolveCaptureTarget(doc))
+      : resolveCaptureTarget(doc);
     const rect = target.getBoundingClientRect();
     const width = Math.max(1, Math.ceil(rect.width));
     const height = Math.max(1, Math.ceil(rect.height));
@@ -363,7 +408,10 @@ export function loadImage(src: string): Promise<{
 }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    // `crossOrigin` on data: URLs can yield an empty decode in Chromium.
+    if (!src.startsWith("data:")) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => {
       const canvas = document.createElement("canvas");
       canvas.width = img.naturalWidth;

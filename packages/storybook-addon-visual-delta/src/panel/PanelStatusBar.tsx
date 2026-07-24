@@ -11,6 +11,7 @@ import {
   ScrollArea,
   useCopyButton,
 } from "storybook/internal/components";
+import { lastMeaningfulLogLine } from "../shared/status-log.js";
 import {
   StatusBar,
   StatusLogBody,
@@ -21,15 +22,7 @@ import {
   StatusSpinner,
 } from "./styled.js";
 
-/** Last non-empty line from a streamed log (for the clipped status label). */
-export function lastMeaningfulLogLine(log: string): string {
-  const lines = log.replace(/\r\n/g, "\n").split("\n");
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const line = lines[i]?.trim();
-    if (line) return line;
-  }
-  return "";
-}
+export { lastMeaningfulLogLine };
 
 /** Nearest ancestor that actually scrolls (Storybook AddonPanel scroller). */
 function findScrollPort(start: HTMLElement | null): HTMLElement | null {
@@ -98,7 +91,7 @@ const StatusLogPopoverContent = memo(function StatusLogPopoverContent({
 
   return (
     <StatusLogShell $hasError={hasError}>
-      {/* IconButton already tooltips from ariaLabel — do not wrap WithTooltip. */}
+      {/* Button tooltips from ariaLabel — do not wrap WithTooltip. */}
       <StatusLogCopyButton
         size="small"
         variant="ghost"
@@ -111,9 +104,11 @@ const StatusLogPopoverContent = memo(function StatusLogPopoverContent({
       >
         {copyChildren}
       </StatusLogCopyButton>
-      <ScrollArea ref={logRef} vertical style={{ height: "100%" }}>
-        <StatusLogBody>{log}</StatusLogBody>
-      </ScrollArea>
+      <div style={{ height: "100%" }}>
+        <ScrollArea ref={logRef} vertical>
+          <StatusLogBody>{log}</StatusLogBody>
+        </ScrollArea>
+      </div>
     </StatusLogShell>
   );
 });

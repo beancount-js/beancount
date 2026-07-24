@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   CheckIcon,
   ChevronSmallDownIcon,
+  PlayHollowIcon,
   StopAltIcon,
   SyncIcon,
 } from "@storybook/icons";
@@ -78,7 +79,7 @@ const MenuButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-function loadMode(): BaselineWriteMode {
+export function loadBaselineWriteMode(): BaselineWriteMode {
   if (typeof localStorage === "undefined") return "create";
   try {
     const raw = localStorage.getItem(MODE_KEY);
@@ -88,7 +89,7 @@ function loadMode(): BaselineWriteMode {
   }
 }
 
-function saveMode(mode: BaselineWriteMode) {
+export function saveBaselineWriteMode(mode: BaselineWriteMode) {
   if (typeof localStorage === "undefined") return;
   try {
     localStorage.setItem(MODE_KEY, mode);
@@ -97,6 +98,7 @@ function saveMode(mode: BaselineWriteMode) {
   }
 }
 
+/** Menu labels for Create missing / Rewrite existing. */
 export function baselineModeLabel(mode: BaselineWriteMode): string {
   return mode === "rewrite" ? "Rewrite existing" : "Create missing";
 }
@@ -105,6 +107,11 @@ export function baselineModeTooltip(mode: BaselineWriteMode): string {
   return mode === "rewrite"
     ? "Overwrite existing baselines (clears approved badges)"
     : "Create missing baselines only";
+}
+
+/** Testing Module row-2 checkbox label driven by write mode. */
+export function baselineWriteRowLabel(mode: BaselineWriteMode): string {
+  return mode === "rewrite" ? "Update baselines" : "Create missing Baselines";
 }
 
 type ChipStatus = "positive" | "negative" | "critical" | "warning" | "unknown";
@@ -138,8 +145,12 @@ const StatusDot = styled.span<{
 });
 
 /**
- * Trailing Testing Module control for Create Baselines: Sync + status + split
- * menu to choose create-missing vs rewrite-existing.
+ * Trailing Testing Module control (global + sidebar context): play/stop +
+ * status + split menu for create-missing vs rewrite-existing.
+ *
+ * With `mainIcon="play"` (Testing Module), main click runs selected actions via
+ * `onRun`. Legacy `writeOnMainClick` still supports a Sync glyph that writes
+ * baselines directly.
  */
 export function VisualBaselineSplitButton({
   status,
@@ -147,6 +158,11 @@ export function VisualBaselineSplitButton({
   disabled,
   ariaLabel,
   tooltip,
+  mode: modeProp,
+  onModeChange,
+  mainIcon = "sync",
+  writeOnMainClick = true,
+  onRun,
   onCreateMissing,
   onRewriteExisting,
   onStop,
@@ -156,21 +172,45 @@ export function VisualBaselineSplitButton({
   disabled?: boolean;
   ariaLabel: string;
   tooltip: string;
-  onCreateMissing: () => void;
-  onRewriteExisting: () => void;
+  /** Controlled write mode; omit to manage selection internally. */
+  mode?: BaselineWriteMode;
+  onModeChange?: (mode: BaselineWriteMode) => void;
+  /** Main-button glyph: play (Testing Module) or sync (legacy write-on-click). */
+  mainIcon?: "play" | "sync";
+  /**
+   * When true (default for Sync), main click runs create/rewrite.
+   * Ignored when `mainIcon` is `play` (uses `onRun` instead).
+   */
+  writeOnMainClick?: boolean;
+  /** Testing Module: run the checked actions (compare / baselines / status). */
+  onRun?: () => void;
+  onCreateMissing?: () => void;
+  onRewriteExisting?: () => void;
   onStop: () => void;
 }) {
-  const [mode, setMode] = useState<BaselineWriteMode>(() => loadMode());
+  const [internalMode, setInternalMode] = useState<BaselineWriteMode>(() =>
+    loadBaselineWriteMode(),
+  );
+  const mode = modeProp ?? internalMode;
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    saveMode(mode);
-  }, [mode]);
+    if (modeProp !== undefined) return;
+    saveBaselineWriteMode(internalMode);
+  }, [modeProp, internalMode]);
 
-  const selectMode = useCallback((next: BaselineWriteMode) => {
-    setMode(next);
-    setMenuOpen(false);
-  }, []);
+  const selectMode = useCallback(
+    (next: BaselineWriteMode) => {
+      if (modeProp === undefined) {
+        setInternalMode(next);
+      } else {
+        saveBaselineWriteMode(next);
+      }
+      onModeChange?.(next);
+      setMenuOpen(false);
+    },
+    [modeProp, onModeChange],
+  );
 
   if (isRunning) {
     return (
@@ -179,8 +219,8 @@ export function VisualBaselineSplitButton({
           size="small"
           variant="ghost"
           padding="small"
-          ariaLabel="Stop baseline write"
-          title="Stop baseline write"
+          ariaLabel={mainIcon === "play" ? "Stop visual run" : "Stop baseline write"}
+          title={mainIcon === "play" ? "Stop visual run" : "Stop baseline write"}
           onClick={onStop}
         >
           <StopAltIcon />
@@ -191,6 +231,7 @@ export function VisualBaselineSplitButton({
   }
 
   const tip = `${tooltip} · ${baselineModeTooltip(mode)}`;
+  const isPlay = mainIcon === "play";
 
   return (
     <Split>
@@ -198,15 +239,30 @@ export function VisualBaselineSplitButton({
         size="small"
         variant="ghost"
         padding="small"
-        ariaLabel={`${ariaLabel}. ${baselineModeLabel(mode)}`}
-        title={tip}
-        disabled={disabled}
+        ariaLabel={
+          isPlay
+            ? `${ariaLabel}. ${baselineModeLabel(mode)}`
+            : `${ariaLabel}. ${baselineModeLabel(mode)}`
+        }
+        title={
+          isPlay
+            ? `${tip}. Runs the checked Testing Module actions.`
+            : writeOnMainClick
+              ? tip
+              : `${tip}. Use Run tests to write baselines when enabled.`
+        }
+        disabled={Boolean(disabled)}
         onClick={() => {
-          if (mode === "rewrite") onRewriteExisting();
-          else onCreateMissing();
+          if (isPlay) {
+            onRun?.();
+            return;
+          }
+          if (!writeOnMainClick) return;
+          if (mode === "rewrite") onRewriteExisting?.();
+          else onCreateMissing?.();
         }}
       >
-        <SyncIcon />
+        {isPlay ? <PlayHollowIcon /> : <SyncIcon />}
         <StatusDot status={status} />
       </MainButton>
       <PopoverProvider
@@ -246,7 +302,7 @@ export function VisualBaselineSplitButton({
           padding="small"
           ariaLabel="Choose Create missing or Rewrite existing"
           title="Choose Create missing or Rewrite existing"
-          disabled={disabled}
+          disabled={Boolean(disabled)}
         >
           <ChevronSmallDownIcon />
         </MenuButton>

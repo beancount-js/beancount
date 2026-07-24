@@ -2,14 +2,20 @@ import { experimental_getStatusStore, type API } from "storybook/manager-api";
 import {
   STATUS_TYPE_ID_VISUAL,
   VISUAL_DELTA_CANCEL_PATH,
+  VISUAL_DELTA_CONFIG_PATH,
   VISUAL_DELTA_CREATE_INTERACTION_PATH,
   VISUAL_DELTA_CREATE_PATH,
+  VISUAL_DELTA_INIT_PATH,
+  VISUAL_DELTA_PLAYWRIGHT_THRESHOLD_PATH,
   VISUAL_DELTA_REVIEW_PATH,
+  VISUAL_DELTA_RUN_EVENTS_PATH,
   VISUAL_DELTA_RUN_PATH,
+  VISUAL_DELTA_RUN_STATUS_PATH,
   VISUAL_DELTA_SKIP_VISUAL_PATH,
   VISUAL_DELTA_UPDATE_PATH,
   type VisualReviewStatus,
 } from "../constants.js";
+import type { VisualDeltaResolvedConfig } from "../shared/config-types.js";
 import {
   PLAYWRIGHT_PASS_THRESHOLD_PERCENT,
   type VisualDiffSidecar,
@@ -21,7 +27,49 @@ export type VisualRunResultItem = {
   title: string;
   error?: string;
   sidecar?: VisualDiffSidecar;
+  /** Set when the story failed because no committed baseline PNG exists. */
+  missingBaseline?: boolean;
 };
+
+/** Middleware / patcher message when refusing visual-failed without a PNG. */
+export const NO_BASELINE_FAILED_ERROR =
+  "Cannot mark failed — no baseline screenshot";
+
+export function isMissingBaselineFailure(item: VisualRunResultItem): boolean {
+  if (item.missingBaseline) return true;
+  const error = item.error?.toLowerCase() ?? "";
+  if (!error) return false;
+  return (
+    error.includes("snapshot doesn't exist") ||
+    error.includes("snapshot does not exist") ||
+    error.includes("no baseline screenshot") ||
+    error.includes(NO_BASELINE_FAILED_ERROR.toLowerCase())
+  );
+}
+
+/**
+ * Map run outcomes to review tags: passed → ready, failed → failed.
+ * Skips skipped / timedOut, and failed stories with no baseline PNG.
+ */
+export function reviewUpdatesFromRunResults(
+  results: VisualRunResultItem[],
+): Array<{ storyId: string; status: VisualReviewStatus }> {
+  return results
+    .filter((item) => item.status === "passed" || item.status === "failed")
+    .filter(
+      (item) => !(item.status === "failed" && isMissingBaselineFailure(item)),
+    )
+    .map((item) => ({
+      storyId: item.storyId,
+      status: (item.status === "passed"
+        ? "ready"
+        : "failed") as VisualReviewStatus,
+    }));
+}
+
+export function isNoBaselineFailedReviewError(error: string): boolean {
+  return error.toLowerCase().includes("no baseline screenshot");
+}
 
 export type VisualRunResponse = {
   ok: boolean;
@@ -38,6 +86,8 @@ export type VisualRunResponse = {
   };
   results: VisualRunResultItem[];
   logTail: string;
+  /** Set when `/run-events` reports no active or recent run. */
+  idle?: boolean;
 };
 
 export type VisualRunProgress = {
@@ -50,10 +100,83 @@ export type VisualRunProgress = {
 };
 
 export type VisualRunStreamEvent =
+  | { type: "idle" }
   | { type: "start"; total: number }
   | ({ type: "progress" } & VisualRunProgress)
+  | { type: "log"; line: string }
   | ({ type: "done" } & VisualRunResponse)
   | { type: "error"; error: string; crashed?: boolean };
+
+const LAST_RUN_STORAGE_KEY = "visual-delta:last-run";
+const STATUS_JOB_STORAGE_KEY = "visual-delta:status-job";
+
+/** Survives manager HMR so Update status / remounts can restore the summary. */
+function persistVisualLastRun(lastRun: VisualLastRunSummary | null) {
+  try {
+    if (typeof sessionStorage === "undefined") return;
+    if (!lastRun) sessionStorage.removeItem(LAST_RUN_STORAGE_KEY);
+    else sessionStorage.setItem(LAST_RUN_STORAGE_KEY, JSON.stringify(lastRun));
+  } catch {
+    /* private mode / quota */
+  }
+}
+
+export function loadPersistedVisualLastRun(): VisualLastRunSummary | null {
+  try {
+    if (typeof sessionStorage === "undefined") return null;
+    const raw = sessionStorage.getItem(LAST_RUN_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as VisualLastRunSummary;
+  } catch {
+    return null;
+  }
+}
+
+export type VisualStatusJob = {
+  updates: Array<{ storyId: string; status: VisualReviewStatus }>;
+};
+
+function persistVisualStatusJob(job: VisualStatusJob | null) {
+  try {
+    if (typeof sessionStorage === "undefined") return;
+    if (!job) sessionStorage.removeItem(STATUS_JOB_STORAGE_KEY);
+    else sessionStorage.setItem(STATUS_JOB_STORAGE_KEY, JSON.stringify(job));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadPersistedVisualStatusJob(): VisualStatusJob | null {
+  try {
+    if (typeof sessionStorage === "undefined") return null;
+    const raw = sessionStorage.getItem(STATUS_JOB_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as VisualStatusJob;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPersistedVisualStatusJob() {
+  persistVisualStatusJob(null);
+}
+
+type LogListener = (line: string) => void;
+const logListeners = new Set<LogListener>();
+
+/** Subscribe to streamed status lines (build reuse / warm server / etc.). */
+export function subscribeVisualRunLog(listener: LogListener) {
+  logListeners.add(listener);
+  return () => {
+    logListeners.delete(listener);
+  };
+}
+
+function emitVisualRunLog(line: string) {
+  for (const listener of logListeners) {
+    listener(line);
+  }
+}
 
 export type VisualRunScope = "story" | "component" | "all";
 
@@ -64,6 +187,8 @@ export type VisualLastRunSummary = {
   scope?: VisualRunScope;
   /** Trailing Playwright / middleware log for the panel status popover. */
   logTail?: string;
+  /** Per-story outcomes for Update status / follow-up actions. */
+  results?: VisualRunResultItem[];
 };
 
 const statusStore = experimental_getStatusStore(STATUS_TYPE_ID_VISUAL);
@@ -100,6 +225,7 @@ export function subscribeVisualLastRun(listener: LastRunListener) {
 
 export function publishVisualLastRun(lastRun: VisualLastRunSummary | null) {
   latestLastRun = lastRun;
+  persistVisualLastRun(lastRun);
   for (const listener of lastRunListeners) {
     listener(lastRun);
   }
@@ -297,6 +423,9 @@ function notifyProgress(
   onProgress?.(progress);
 }
 
+/** Bumped per stream so an aborted HMR fetch does not clear a newer reconnect. */
+let ndjsonStreamGeneration = 0;
+
 async function readNdjsonRun(
   response: Response,
   onProgress?: (progress: VisualRunProgress) => void,
@@ -306,11 +435,13 @@ async function readNdjsonRun(
     throw new Error("Visual run response had no body");
   }
 
+  const generation = ++ndjsonStreamGeneration;
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let final: VisualRunResponse | null = null;
   let streamError: string | undefined;
+  let idle = false;
 
   try {
     while (true) {
@@ -330,6 +461,11 @@ async function readNdjsonRun(
           continue;
         }
 
+        if (event.type === "idle") {
+          idle = true;
+          continue;
+        }
+
         if (event.type === "start") {
           notifyProgress(
             {
@@ -340,6 +476,12 @@ async function readNdjsonRun(
             },
             onProgress,
           );
+          continue;
+        }
+
+        if (event.type === "log") {
+          const line = event.line?.trim();
+          if (line) emitVisualRunLog(line);
           continue;
         }
 
@@ -371,7 +513,21 @@ async function readNdjsonRun(
       }
     }
   } finally {
-    emitVisualRunProgress(null);
+    if (generation === ndjsonStreamGeneration) {
+      emitVisualRunProgress(null);
+    }
+  }
+
+  if (idle && !final) {
+    return {
+      ok: true,
+      idle: true,
+      exitCode: 0,
+      rebuild: false,
+      summary: { total: 0, passed: 0, failed: 0, skipped: 0 },
+      results: [],
+      logTail: "",
+    };
   }
 
   if (final) return final;
@@ -381,6 +537,63 @@ async function readNdjsonRun(
     crashed: true,
     error: streamError ?? "Visual run ended without a result",
     exitCode: 1,
+    rebuild: false,
+    summary: { total: 0, passed: 0, failed: 0, skipped: 0 },
+    results: [],
+    logTail: "",
+  };
+}
+
+export type VisualRunHubStatus = {
+  phase: "idle" | "running" | "done";
+  total: number;
+  completed: number;
+  passed: number;
+  failed: number;
+};
+
+/** Lightweight phase check used before opening a reconnect stream. */
+export async function fetchVisualRunStatus(): Promise<VisualRunHubStatus> {
+  try {
+    const response = await fetch(VISUAL_DELTA_RUN_STATUS_PATH);
+    if (!response.ok) {
+      return { phase: "idle", total: 0, completed: 0, passed: 0, failed: 0 };
+    }
+    return (await response.json()) as VisualRunHubStatus;
+  } catch {
+    return { phase: "idle", total: 0, completed: 0, passed: 0, failed: 0 };
+  }
+}
+
+/**
+ * Reattach to an in-flight or recently finished visual run after manager HMR.
+ * Returns `idle` when there is nothing to recover.
+ */
+export async function reconnectVisualRun(options?: {
+  onProgress?: (progress: VisualRunProgress) => void;
+}): Promise<VisualRunResponse> {
+  const response = await fetch(VISUAL_DELTA_RUN_EVENTS_PATH);
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!response.ok) {
+    return {
+      ok: false,
+      crashed: true,
+      idle: true,
+      error: `Reconnect failed (${response.status})`,
+      exitCode: 1,
+      rebuild: false,
+      summary: { total: 0, passed: 0, failed: 0, skipped: 0 },
+      results: [],
+      logTail: "",
+    };
+  }
+  if (contentType.includes("ndjson") || contentType.includes("x-ndjson")) {
+    return readNdjsonRun(response, options?.onProgress);
+  }
+  return {
+    ok: true,
+    idle: true,
+    exitCode: 0,
     rebuild: false,
     summary: { total: 0, passed: 0, failed: 0, skipped: 0 },
     results: [],
@@ -426,7 +639,39 @@ export type VisualReviewResponse = {
   error?: string;
 };
 
-/** Persist `visual-pending` / `visual-approved` on the story CSF via middleware. */
+/** Read resolved host options + onboarding status. */
+export async function fetchVisualConfig(): Promise<VisualDeltaResolvedConfig> {
+  const response = await fetch(VISUAL_DELTA_CONFIG_PATH);
+  if (!response.ok) {
+    throw new Error(`Config request failed (${response.status})`);
+  }
+  return (await response.json()) as VisualDeltaResolvedConfig;
+}
+
+export type VisualInitResponse = {
+  ok: true;
+  written: string[];
+  skipped: string[];
+  scriptsUpdated: string[];
+  suiteReady: boolean;
+  playwrightConfigReady: boolean;
+  snapshotDir: string;
+  onboarding: VisualDeltaResolvedConfig["onboarding"];
+};
+
+/** Scaffold portable suite / Playwright config / snapshot dir via middleware. */
+export async function postVisualInit(): Promise<VisualInitResponse> {
+  const response = await fetch(VISUAL_DELTA_INIT_PATH, { method: "POST" });
+  const data = (await response.json()) as VisualInitResponse & {
+    error?: string;
+  };
+  if (!response.ok || !data.ok) {
+    throw new Error(data.error || `Init failed (${response.status})`);
+  }
+  return data;
+}
+
+/** Persist visual review tags on the story CSF via middleware. */
 export async function postVisualReviewStatus(body: {
   storyId: string;
   status: VisualReviewStatus;
@@ -443,6 +688,129 @@ export async function postVisualReviewStatus(body: {
     );
   }
   return data;
+}
+
+/**
+ * Stamp CSF review tags from visual run outcomes:
+ * passed → ready, failed → failed. Skips skipped / timedOut and failures
+ * with no committed baseline (those must not become `visual-failed`).
+ * Uses one batched middleware call so HMR lands after the write finishes.
+ */
+export async function postVisualReviewStatusesFromResults(
+  results: VisualRunResultItem[],
+): Promise<{
+  updated: number;
+  errors: string[];
+  skippedMissingBaseline: number;
+}> {
+  const skippedMissingBaseline = results.filter(
+    (item) => item.status === "failed" && isMissingBaselineFailure(item),
+  ).length;
+  const updates = reviewUpdatesFromRunResults(results);
+  if (!updates.length) {
+    return { updated: 0, errors: [], skippedMissingBaseline };
+  }
+
+  persistVisualStatusJob({ updates });
+  try {
+    const response = await fetch(VISUAL_DELTA_REVIEW_PATH, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ updates }),
+    });
+    const data = (await response.json()) as {
+      ok?: boolean;
+      updated?: number;
+      errors?: string[];
+      error?: string;
+    };
+    if (!response.ok && data.updated == null) {
+      throw new Error(
+        data.error || `Review status update failed (${response.status})`,
+      );
+    }
+    clearPersistedVisualStatusJob();
+    const rawErrors = data.errors ?? [];
+    const softSkipped = rawErrors.filter((error) =>
+      isNoBaselineFailedReviewError(error),
+    ).length;
+    const errors = rawErrors.filter(
+      (error) => !isNoBaselineFailedReviewError(error),
+    );
+    return {
+      updated: data.updated ?? 0,
+      errors,
+      skippedMissingBaseline: skippedMissingBaseline + softSkipped,
+    };
+  } catch (error) {
+    // Leave the job in sessionStorage so remount can retry.
+    throw error;
+  }
+}
+
+/** Resume a batched review-status job left behind by manager HMR. */
+export async function resumePersistedVisualStatusJob(): Promise<{
+  updated: number;
+  errors: string[];
+} | null> {
+  const job = loadPersistedVisualStatusJob();
+  if (!job?.updates.length) return null;
+  persistVisualStatusJob(job);
+  try {
+    const response = await fetch(VISUAL_DELTA_REVIEW_PATH, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ updates: job.updates }),
+    });
+    const data = (await response.json()) as {
+      ok?: boolean;
+      updated?: number;
+      errors?: string[];
+      error?: string;
+    };
+    if (!response.ok && data.updated == null) {
+      throw new Error(
+        data.error || `Review status update failed (${response.status})`,
+      );
+    }
+    clearPersistedVisualStatusJob();
+    const rawErrors = data.errors ?? [];
+    return {
+      updated: data.updated ?? 0,
+      errors: rawErrors.filter(
+        (error) => !isNoBaselineFailedReviewError(error),
+      ),
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+
+/** Persist package-wide Playwright pass threshold (%) on the host. */
+export async function postPlaywrightPassThreshold(
+  passThresholdPercent: number,
+): Promise<{ ok: true; playwrightPassThresholdPercent: number }> {
+  const response = await fetch(VISUAL_DELTA_PLAYWRIGHT_THRESHOLD_PATH, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ passThresholdPercent }),
+  });
+  const data = (await response.json()) as {
+    ok?: boolean;
+    error?: string;
+    playwrightPassThresholdPercent?: number;
+    passThresholdPercent?: number;
+  };
+  if (!response.ok || !data.ok) {
+    throw new Error(
+      data.error || `Playwright threshold update failed (${response.status})`,
+    );
+  }
+  const next = data.playwrightPassThresholdPercent ?? data.passThresholdPercent;
+  if (typeof next !== "number") {
+    throw new Error("Playwright threshold response missing percent");
+  }
+  return { ok: true, playwrightPassThresholdPercent: next };
 }
 
 export type VisualSkipVisualResponse = {
@@ -480,6 +848,10 @@ export type VisualCreateProgress = {
   kind: VisualBaselineJobKind;
   error?: string;
   logTail?: string;
+  /** 1-based index of the current component target (multi-target writes). */
+  completed?: number;
+  /** Total component targets in this write job. */
+  total?: number;
 };
 
 type CreateProgressListener = (progress: VisualCreateProgress | null) => void;
@@ -517,6 +889,10 @@ async function postVisualBaselineWrite(
     runningLabel?: string;
     /** Override the success label when the job finishes cleanly. */
     successLabel?: string;
+    /** 1-based index for multi-target Testing Module progress. */
+    completed?: number;
+    /** Total targets for multi-target Testing Module progress. */
+    total?: number;
   },
 ): Promise<VisualCreateResponse> {
   const path =
@@ -527,12 +903,17 @@ async function postVisualBaselineWrite(
   const failVerb =
     kind === "create" ? "Create baselines failed" : "Update baselines failed";
   const exitVerb = kind === "create" ? "Baseline create" : "Baseline update";
+  const fraction = {
+    completed: options?.completed,
+    total: options?.total,
+  };
 
   emitVisualCreateProgress({
     running: true,
     label: runningLabel,
     kind,
     logTail: "",
+    ...fraction,
   });
   try {
     const response = await fetch(path, {
@@ -554,6 +935,7 @@ async function postVisualBaselineWrite(
           label: runningLabel,
           kind,
           logTail: log.slice(-12_000),
+          ...fraction,
         });
       }
       log += decoder.decode();
@@ -576,7 +958,7 @@ async function postVisualBaselineWrite(
     const exitMatch = log.match(/\[exit (\d+)\]/);
     if (exitMatch && exitMatch[1] !== "0") {
       const detail = /Address already in use|was not able to start/i.test(log)
-        ? "Playwright static server failed to start (port 6007 busy or stale)."
+        ? "Playwright static server failed to start (visual port busy or stale)."
         : /No recipe for/i.test(log)
           ? log.match(/No recipe for[^\n]+/)?.[0]
           : undefined;
@@ -617,6 +999,7 @@ async function postVisualBaselineWrite(
       label,
       kind,
       logTail: log || undefined,
+      ...fraction,
     });
     return { ok: true, log };
   } catch (error) {
@@ -633,6 +1016,7 @@ async function postVisualBaselineWrite(
       label: failedLabel,
       kind,
       error: message,
+      ...fraction,
     });
     throw error instanceof Error ? error : new Error(message);
   }
@@ -689,14 +1073,17 @@ export async function postVisualCreateBaselinesForStoryIds(
   const total = targets.length;
   for (let i = 0; i < total; i++) {
     const storyId = targets[i]!;
+    const completed = i + 1;
     const runningLabel =
-      total > 1 ? `Creating… ${i + 1}/${total}` : "Creating…";
+      total > 1 ? `Creating… ${completed}/${total}` : "Creating…";
     const isLast = i === total - 1;
     await postVisualBaselineWrite(
       "create",
       { storyId },
       {
         runningLabel,
+        completed,
+        total,
         successLabel: isLast
           ? total > 1
             ? `Created (${total} components)`
@@ -728,14 +1115,17 @@ export async function postVisualUpdateBaselinesForStoryIds(
   const total = targets.length;
   for (let i = 0; i < total; i++) {
     const storyId = targets[i]!;
+    const completed = i + 1;
     const runningLabel =
-      total > 1 ? `Updating… ${i + 1}/${total}` : "Updating…";
+      total > 1 ? `Updating… ${completed}/${total}` : "Updating…";
     const isLast = i === total - 1;
     await postVisualBaselineWrite(
       "update",
       { storyId },
       {
         runningLabel,
+        completed,
+        total,
         successLabel: isLast
           ? total > 1
             ? `Updated (${total} components)`

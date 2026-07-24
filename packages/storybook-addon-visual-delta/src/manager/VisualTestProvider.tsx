@@ -5,8 +5,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { PlayHollowIcon, StopAltIcon } from "@storybook/icons";
-import { ActionList, Button, Form } from "storybook/internal/components";
 import type { API_HashEntry } from "storybook/internal/types";
 import {
   experimental_getStatusStore,
@@ -16,94 +14,70 @@ import {
   useStorybookApi,
   useStorybookState,
 } from "storybook/manager-api";
-import { styled } from "storybook/theming";
 import {
   PANEL_ID,
   STATUS_TYPE_ID_VISUAL,
   TEST_PROVIDER_ID,
 } from "../constants.js";
-import { VisualBaselineSplitButton } from "./VisualBaselineSplitButton.js";
+import {
+  baselineWriteRowLabel,
+  loadBaselineWriteMode,
+  saveBaselineWriteMode,
+  type BaselineWriteMode,
+} from "./VisualBaselineSplitButton.js";
+import { VisualTestModuleUI } from "./VisualTestModuleUI.js";
 import {
   applyPendingVisualStatuses,
   applyVisualRunResults,
   applyVisualStatuses,
   cancelVisualRun,
   clearVisualStatuses,
+  fetchVisualRunStatus,
   formatVisualProgressLabel,
-  postVisualCreateBaseline,
+  loadPersistedVisualLastRun,
+  loadPersistedVisualStatusJob,
   postVisualCreateBaselinesForStoryIds,
+  postVisualReviewStatusesFromResults,
   postVisualRun,
-  postVisualUpdateBaseline,
   postVisualUpdateBaselinesForStoryIds,
   publishVisualLastRun,
+  reconnectVisualRun,
+  resumePersistedVisualStatusJob,
   subscribeVisualCreateProgress,
   subscribeVisualLastRun,
+  subscribeVisualRunLog,
   subscribeVisualRunProgress,
   visualRunnableStoryIds,
   type VisualCreateProgress,
   type VisualLastRunSummary,
   type VisualRunProgress,
+  type VisualRunResultItem,
   type VisualRunScope,
 } from "./run-visual.js";
+import {
+  appendVisualRunLogLine,
+  formatProgressFraction,
+  lastMeaningfulLogLine,
+} from "../shared/status-log.js";
+import {
+  CREATE_BASELINES_KEY,
+  RUN_VISUAL_KEY,
+  UPDATE_STATUS_KEY,
+  anyModuleActionSelected,
+  loadCreateBaselinesEnabled,
+  loadModuleBaselineWriteMode,
+  loadRunVisualEnabled,
+  loadUpdateStatusEnabled,
+  writeBoolFlag,
+} from "./visual-test-module-prefs.js";
 
 type ChipStatus = "positive" | "negative" | "critical" | "warning" | "unknown";
 
 const statusStore = experimental_getStatusStore(STATUS_TYPE_ID_VISUAL);
 const testProviderStore = experimental_getTestProviderStore(TEST_PROVIDER_ID);
 
-const Container = styled.div({
-  display: "flex",
-  flexDirection: "column",
-  paddingBottom: 1,
-});
-
-/**
- * Testing Module section (global). No top border — Vitest/a11y already provide
- * separators; only the sidebar context menu keeps a divider.
- */
-const ModuleContainer = styled(Container)({
-  paddingTop: 4,
-});
-
-/** Sidebar story/component context menu: divider above visual actions. */
-const ContextMenuContainer = styled(Container)(({ theme }) => ({
-  borderTop: `1px solid ${theme.appBorderColor}`,
-  paddingTop: 4,
-  marginTop: 4,
-}));
-
-const Heading = styled.div({
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "8px 0",
-  gap: 12,
-});
-
-const Info = styled.div({
-  display: "flex",
-  flexDirection: "column",
-  marginLeft: 8,
-  minWidth: 0,
-});
-
-const Title = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s1,
-  color: theme.color.defaultText,
-  minWidth: 0,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-}));
-
-const Description = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s1 - 1,
-  color: theme.textMutedColor,
-  minWidth: 0,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-}));
+/** Deduplicate remount recovery across provider instances after HMR. */
+let visualRecoveryInFlight: Promise<void> | null = null;
 
 /**
  * Same relative copy as Storybook’s Vitest Testing Module
@@ -133,26 +107,64 @@ function RelativeTime({ timestamp }: { timestamp: number }) {
   return <>{days === 1 ? "yesterday" : `${days} days ago`}</>;
 }
 
-/** One shared status line for Visual Tests + Create Baselines. */
-function moduleDescription(
+/**
+ * Live single-line status under the Testing Module title (mirrors the panel
+ * status streamer: last meaningful log line, with coarse fallbacks).
+ */
+export function moduleStreamingDescription(
   isRunning: boolean,
   isWritingBaselines: boolean,
+  isUpdatingStatus: boolean,
+  progress: VisualRunProgress | null,
+  createProgress: VisualCreateProgress | null,
+  statusLog: string | null,
+): string | null {
+  if (isUpdatingStatus) {
+    return lastMeaningfulLogLine(statusLog ?? "") || "Updating review status…";
+  }
+  if (isWritingBaselines) {
+    return (
+      lastMeaningfulLogLine(createProgress?.logTail ?? "") ||
+      createProgress?.label ||
+      "Writing baselines…"
+    );
+  }
+  if (isRunning) {
+    return (
+      lastMeaningfulLogLine(statusLog ?? "") ||
+      formatVisualProgressLabel(progress)
+    );
+  }
+  return null;
+}
+
+/** Idle summary under the Testing Module title. */
+export function moduleDescription(
+  isRunning: boolean,
+  isWritingBaselines: boolean,
+  isUpdatingStatus: boolean,
   progress: VisualRunProgress | null,
   createProgress: VisualCreateProgress | null,
   lastRun: VisualLastRunSummary | null,
+  anyActionSelected: boolean,
+  statusLog: string | null = null,
 ): React.ReactNode {
-  if (isRunning) return formatVisualProgressLabel(progress);
-  if (isWritingBaselines) {
-    return createProgress?.label ?? "Writing baselines…";
-  }
+  if (!anyActionSelected) return "Select at least one action";
+  const streaming = moduleStreamingDescription(
+    isRunning,
+    isWritingBaselines,
+    isUpdatingStatus,
+    progress,
+    createProgress,
+    statusLog,
+  );
+  if (streaming) return streaming;
 
   const parts: React.ReactNode[] = [];
   if (lastRun) {
     const total = Math.max(
       lastRun.summary.total,
-      lastRun.summary.passed +
-        lastRun.summary.failed +
-        lastRun.summary.skipped,
+      lastRun.summary.passed + lastRun.summary.failed + lastRun.summary.skipped,
     );
     parts.push(
       <React.Fragment key="tests">
@@ -183,42 +195,6 @@ function moduleDescription(
     </>
   );
 }
-
-const Actions = styled.div({
-  display: "flex",
-  gap: 4,
-  alignItems: "center",
-  flexShrink: 0,
-});
-
-const StyledActionList = styled(ActionList)({
-  padding: 0,
-});
-
-const TestStatusIcon = styled.div<{
-  status: ChipStatus;
-  isRunning?: boolean;
-}>(({ status, isRunning, theme }) => ({
-  width: 6,
-  height: 6,
-  margin: 4,
-  borderRadius: "50%",
-  background: "var(--status-color)",
-  ...(isRunning
-    ? { animation: `${theme.animation.glow} 1.5s ease-in-out infinite` }
-    : null),
-  ...(status === "positive"
-    ? { "--status-color": theme.color.positive }
-    : null),
-  ...(status === "warning" ? { "--status-color": theme.color.gold } : null),
-  ...(status === "negative"
-    ? { "--status-color": theme.color.negative }
-    : null),
-  ...(status === "critical"
-    ? { "--status-color": theme.color.defaultText }
-    : null),
-  ...(status === "unknown" ? { "--status-color": theme.textMutedColor } : null),
-}));
 
 function openVisualPanel(
   api: ReturnType<typeof useStorybookApi>,
@@ -285,6 +261,31 @@ function sidebarLeafStoryIds(state: {
   return ids;
 }
 
+type VisualStatusByStory = Record<
+  string,
+  Partial<Record<string, { value?: string }>>
+>;
+
+function resultsFromStatusStore(
+  allStatuses: ReturnType<typeof experimental_useStatusStore>,
+  scopeIds?: string[],
+): VisualRunResultItem[] {
+  const allow = scopeIds?.length ? new Set(scopeIds) : null;
+  const results: VisualRunResultItem[] = [];
+  const byStory = allStatuses as VisualStatusByStory;
+  for (const [storyId, byType] of Object.entries(byStory)) {
+    if (allow && !allow.has(storyId)) continue;
+    const status = byType?.[STATUS_TYPE_ID_VISUAL];
+    if (!status) continue;
+    if (status.value === "status-value:success") {
+      results.push({ storyId, status: "passed", title: storyId });
+    } else if (status.value === "status-value:error") {
+      results.push({ storyId, status: "failed", title: storyId });
+    }
+  }
+  return results;
+}
+
 export function VisualTestProviderRender({ entry }: { entry?: API_HashEntry }) {
   const api = useStorybookApi();
   const storybookState = useStorybookState() as {
@@ -295,27 +296,43 @@ export function VisualTestProviderRender({ entry }: { entry?: API_HashEntry }) {
     (state) => state[TEST_PROVIDER_ID] ?? "test-provider-state:pending",
   );
   const allStatuses = experimental_useStatusStore();
-  const [lastRun, setLastRun] = useState<VisualLastRunSummary | null>(null);
+  const [lastRun, setLastRun] = useState<VisualLastRunSummary | null>(() =>
+    loadPersistedVisualLastRun(),
+  );
   const [progress, setProgress] = useState<VisualRunProgress | null>(null);
   const [createProgress, setCreateProgress] =
     useState<VisualCreateProgress | null>(null);
-  const [createBaselinesEnabled, setCreateBaselinesEnabled] = useState(() => {
-    if (typeof localStorage === "undefined") return false;
-    try {
-      return (
-        localStorage.getItem(
-          "storybook-addon-visual-delta/create-baselines-enabled-v1",
-        ) === "1"
-      );
-    } catch {
-      return false;
-    }
-  });
+  const [statusLog, setStatusLog] = useState<string | null>(null);
+  const [statusProgress, setStatusProgress] = useState<{
+    completed: number;
+    total: number;
+  } | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [statusUpdateLabel, setStatusUpdateLabel] = useState<string | null>(
+    null,
+  );
+  const [runVisualEnabled, setRunVisualEnabled] =
+    useState(loadRunVisualEnabled);
+  const [createBaselinesEnabled, setCreateBaselinesEnabled] = useState(
+    loadCreateBaselinesEnabled,
+  );
+  const [updateStatusEnabled, setUpdateStatusEnabled] = useState(
+    loadUpdateStatusEnabled,
+  );
+  const [baselineMode, setBaselineMode] = useState<BaselineWriteMode>(() =>
+    loadModuleBaselineWriteMode(),
+  );
   const isWritingBaselines = Boolean(createProgress?.running);
   const sidebarStoryIds = useMemo(
     () => sidebarLeafStoryIds(storybookState),
     [storybookState.filteredIndex, storybookState.index],
   );
+
+  const anyActionSelected = anyModuleActionSelected({
+    runVisualEnabled,
+    createBaselinesEnabled,
+    updateStatusEnabled,
+  });
 
   const entryStoryIds = useMemo(() => {
     if (!entry) return undefined;
@@ -345,58 +362,169 @@ export function VisualTestProviderRender({ entry }: { entry?: API_HashEntry }) {
   const isRunning = testProviderState === "test-provider-state:running";
   const crashed = testProviderState === "test-provider-state:crashed";
 
-  const run = useCallback(
+  const runCompare = useCallback(
     async (scope: VisualRunScope, ids?: string[]) => {
-      await testProviderStore.runWithState(async () => {
-        const scoped = Array.isArray(ids);
-        const runnable = scoped ? visualRunnableStoryIds(api, ids) : undefined;
-        if (scoped && !runnable?.length) {
-          throw new Error(
-            "No runnable visual stories in this scope (all skip-visual)",
-          );
-        }
-        if (runnable?.length) {
-          applyPendingVisualStatuses(runnable);
-        } else if (!scoped) {
-          clearVisualStatuses();
-        }
-        const data = await postVisualRun({
-          storyIds: runnable,
-          rebuild: false,
-        });
-        if (data.crashed) {
-          const summary: VisualLastRunSummary = {
-            finishedAt: Date.now(),
-            summary: data.summary,
-            error: data.error ?? "Visual test run crashed",
-            scope,
-            logTail: data.logTail,
-          };
-          publishVisualLastRun(summary);
-          throw new Error(data.error ?? "Visual test run crashed");
-        }
-        applyVisualRunResults(runnable, data.results);
-        publishVisualLastRun({
+      const scoped = Array.isArray(ids);
+      const runnable = scoped ? visualRunnableStoryIds(api, ids) : undefined;
+      if (scoped && !runnable?.length) {
+        throw new Error(
+          "No runnable visual stories in this scope (all skip-visual)",
+        );
+      }
+      if (runnable?.length) {
+        applyPendingVisualStatuses(runnable);
+      } else if (!scoped) {
+        clearVisualStatuses();
+      }
+      const data = await postVisualRun({
+        storyIds: runnable,
+        rebuild: false,
+      });
+      if (data.crashed) {
+        const summary: VisualLastRunSummary = {
           finishedAt: Date.now(),
           summary: data.summary,
-          error:
-            data.summary.failed > 0
-              ? `${data.summary.failed} failed`
-              : undefined,
+          error: data.error ?? "Visual test run crashed",
           scope,
           logTail: data.logTail,
-        });
+          results: data.results,
+        };
+        publishVisualLastRun(summary);
+        throw new Error(data.error ?? "Visual test run crashed");
+      }
+      applyVisualRunResults(runnable, data.results);
+      const summary: VisualLastRunSummary = {
+        finishedAt: Date.now(),
+        summary: data.summary,
+        error:
+          data.summary.failed > 0 ? `${data.summary.failed} failed` : undefined,
+        scope,
+        logTail: data.logTail,
+        results: data.results,
+      };
+      publishVisualLastRun(summary);
+      return data.results;
+    },
+    [api],
+  );
+
+  const runCompareRef = useRef(runCompare);
+  runCompareRef.current = runCompare;
+
+  const latestResultsRef = useRef<VisualRunResultItem[] | undefined>(undefined);
+  const allStatusesRef = useRef(allStatuses);
+  allStatusesRef.current = allStatuses;
+  const entryStoryIdsRef = useRef(entryStoryIds);
+  entryStoryIdsRef.current = entryStoryIds;
+  const sidebarStoryIdsRef = useRef(sidebarStoryIds);
+  sidebarStoryIdsRef.current = sidebarStoryIds;
+
+  const runSelectedActions = useCallback(
+    async (scopedIds?: string[]) => {
+      const runVisual = loadRunVisualEnabled();
+      const writeBaselines = loadCreateBaselinesEnabled();
+      const updateStatus = loadUpdateStatusEnabled();
+      if (!runVisual && !writeBaselines && !updateStatus) {
+        return;
+      }
+
+      const scope =
+        scopedIds ??
+        (entryStoryIdsRef.current?.length
+          ? entryStoryIdsRef.current
+          : undefined);
+      const writeTargets = scope?.length ? scope : sidebarStoryIdsRef.current;
+      const compareScope: VisualRunScope = scope?.length
+        ? scope.length === 1
+          ? "story"
+          : "component"
+        : "all";
+
+      await testProviderStore.runWithState(async () => {
+        setStatusLog(null);
+        setStatusProgress(null);
+        if (writeBaselines) {
+          if (!writeTargets.length) {
+            throw new Error(
+              scope?.length
+                ? "No stories in this scope to write baselines for"
+                : "No stories in the sidebar to write baselines for",
+            );
+          }
+          const mode = loadBaselineWriteMode();
+          if (mode === "rewrite") {
+            await postVisualUpdateBaselinesForStoryIds(api, writeTargets);
+          } else {
+            await postVisualCreateBaselinesForStoryIds(api, writeTargets);
+          }
+        }
+
+        let results: VisualRunResultItem[] | undefined;
+        if (runVisual) {
+          results = await runCompareRef.current(
+            compareScope,
+            scope?.length ? scope : undefined,
+          );
+        }
+
+        if (updateStatus) {
+          setIsUpdatingStatus(true);
+          try {
+            const source =
+              results ??
+              (latestResultsRef.current
+                ? scope?.length
+                  ? latestResultsRef.current.filter((item) =>
+                      scope.includes(item.storyId),
+                    )
+                  : latestResultsRef.current
+                : undefined) ??
+              resultsFromStatusStore(allStatusesRef.current, scope);
+            if (!source.length) {
+              throw new Error(
+                "No visual results to update status from — run visual tests first",
+              );
+            }
+            setStatusProgress({ completed: 0, total: source.length });
+            setStatusLog(`Updating review status… 0/${source.length}`);
+            const { updated, errors, skippedMissingBaseline } =
+              await postVisualReviewStatusesFromResults(source);
+            setStatusProgress({
+              completed: source.length,
+              total: source.length,
+            });
+            const parts = [`Updated ${updated} review tags`];
+            if (skippedMissingBaseline) {
+              parts.push(`${skippedMissingBaseline} skipped (no baseline)`);
+            }
+            if (errors.length) {
+              parts.push(`${errors.length} failed`);
+            }
+            const doneLabel = parts.join(" · ");
+            setStatusUpdateLabel(doneLabel);
+            setStatusLog(doneLabel);
+            if (errors.length && updated === 0) {
+              throw new Error(errors[0] ?? "Update status failed");
+            }
+          } finally {
+            setIsUpdatingStatus(false);
+            setStatusProgress(null);
+          }
+        }
       });
     },
     [api],
   );
 
-  const runRef = useRef(run);
-  runRef.current = run;
+  const runSelectedRef = useRef(runSelectedActions);
+  runSelectedRef.current = runSelectedActions;
 
   useEffect(() => {
     return subscribeVisualRunProgress((next) => {
       setProgress(next);
+      if (next) {
+        setStatusLog((prev) => appendVisualRunLogLine(prev, next));
+      }
       if (next?.storyId && next.status) {
         applyVisualStatuses([
           {
@@ -410,66 +538,147 @@ export function VisualTestProviderRender({ entry }: { entry?: API_HashEntry }) {
   }, []);
 
   useEffect(() => {
-    return subscribeVisualLastRun(setLastRun);
+    return subscribeVisualRunLog((line) => {
+      setStatusLog((prev) => (prev ? `${prev}\n${line}` : line));
+    });
   }, []);
 
   useEffect(() => {
-    // Include create + update so Testing Module status covers rewrite too.
-    return subscribeVisualCreateProgress(setCreateProgress);
+    return subscribeVisualLastRun((next) => {
+      setLastRun(next);
+      latestResultsRef.current = next?.results;
+      if (!next) return;
+      const summaryLine = next.error
+        ? `Visual: ${next.error}${next.scope ? ` (${next.scope})` : ""}`
+        : next.summary.failed > 0
+          ? `Visual: ${next.summary.failed} failed · ${next.summary.passed} passed${next.scope ? ` (${next.scope})` : ""}`
+          : `Visual: ${next.summary.passed} passed${next.scope ? ` (${next.scope})` : ""}`;
+      const logTail = next.logTail?.trim();
+      setStatusLog(logTail ? `${logTail}\n${summaryLine}` : summaryLine);
+    });
   }, []);
 
-  const createBaseline = useCallback(async () => {
-    if (!entryStoryIds?.length) return;
-    const runnable = visualRunnableStoryIds(api, entryStoryIds);
-    const storyId = runnable[0] ?? entryStoryIds[0];
-    if (!storyId) return;
-    try {
-      await postVisualCreateBaseline({ storyId });
-    } catch {
-      // Progress/error surfaces via subscribeVisualCreateProgress.
-    }
-  }, [api, entryStoryIds]);
+  useEffect(() => {
+    return subscribeVisualCreateProgress((next) => {
+      setCreateProgress(next);
+      if (next?.running && next.logTail) {
+        setStatusLog(next.logTail);
+      } else if (next && !next.running && (next.label || next.error)) {
+        setStatusLog(next.error ?? next.label);
+      }
+    });
+  }, []);
 
-  const rewriteBaseline = useCallback(async () => {
-    if (!entryStoryIds?.length) return;
-    const runnable = visualRunnableStoryIds(api, entryStoryIds);
-    const storyId = runnable[0] ?? entryStoryIds[0];
-    if (!storyId) return;
-    try {
-      await postVisualUpdateBaseline({ storyId });
-    } catch {
-      // Progress/error surfaces via subscribeVisualCreateProgress.
-    }
-  }, [api, entryStoryIds]);
+  // After manager HMR (e.g. Update status rewriting CSF), reattach to a live
+  // Playwright run and restore / resume review-status work.
+  useEffect(() => {
+    if (entry) return;
+    if (visualRecoveryInFlight) return;
 
-  /** Global Testing Module: create for components currently listed in the sidebar. */
-  const createBaselinesFromSidebar = useCallback(async () => {
-    if (!sidebarStoryIds.length) return;
-    try {
-      await postVisualCreateBaselinesForStoryIds(api, sidebarStoryIds);
-    } catch {
-      // Progress/error surfaces via subscribeVisualCreateProgress.
-    }
-  }, [api, sidebarStoryIds]);
+    let cancelled = false;
+    visualRecoveryInFlight = (async () => {
+      const persisted = loadPersistedVisualLastRun();
+      if (persisted) publishVisualLastRun(persisted);
 
-  const rewriteBaselinesFromSidebar = useCallback(async () => {
-    if (!sidebarStoryIds.length) return;
-    try {
-      await postVisualUpdateBaselinesForStoryIds(api, sidebarStoryIds);
-    } catch {
-      // Progress/error surfaces via subscribeVisualCreateProgress.
-    }
-  }, [api, sidebarStoryIds]);
+      const hub = await fetchVisualRunStatus();
+      if (cancelled) return;
+
+      if (hub.phase === "running") {
+        if (hub.total > 0) {
+          setProgress({
+            completed: hub.completed,
+            total: hub.total,
+            passed: hub.passed,
+            failed: hub.failed,
+          });
+        }
+        await testProviderStore.runWithState(async () => {
+          const data = await reconnectVisualRun();
+          if (cancelled || data.idle) return;
+          applyVisualRunResults(undefined, data.results);
+          publishVisualLastRun({
+            finishedAt: Date.now(),
+            summary: data.summary,
+            error: data.crashed
+              ? (data.error ?? "Visual test run crashed")
+              : data.summary.failed > 0
+                ? `${data.summary.failed} failed`
+                : undefined,
+            logTail: data.logTail,
+            results: data.results,
+          });
+          if (data.crashed) {
+            throw new Error(data.error ?? "Visual test run crashed");
+          }
+        });
+      } else if (hub.phase === "done") {
+        const data = await reconnectVisualRun();
+        if (!cancelled && !data.idle) {
+          applyVisualRunResults(undefined, data.results);
+          publishVisualLastRun({
+            finishedAt: Date.now(),
+            summary: data.summary,
+            error: data.crashed
+              ? (data.error ?? "Visual test run crashed")
+              : data.summary.failed > 0
+                ? `${data.summary.failed} failed`
+                : undefined,
+            logTail: data.logTail,
+            results: data.results,
+          });
+        }
+      }
+
+      if (cancelled || !loadPersistedVisualStatusJob()) return;
+
+      await testProviderStore.runWithState(async () => {
+        setIsUpdatingStatus(true);
+        try {
+          const jobResults = loadPersistedVisualStatusJob()?.updates ?? [];
+          setStatusProgress({
+            completed: 0,
+            total: jobResults.length,
+          });
+          setStatusLog(
+            `Updating review status… 0/${jobResults.length} (resumed)`,
+          );
+          const result = await resumePersistedVisualStatusJob();
+          if (!result || cancelled) return;
+          setStatusProgress({
+            completed: jobResults.length,
+            total: jobResults.length,
+          });
+          const doneLabel = result.errors.length
+            ? `Updated ${result.updated} · ${result.errors.length} failed`
+            : `Updated ${result.updated} review tags`;
+          setStatusUpdateLabel(doneLabel);
+          setStatusLog(doneLabel);
+        } finally {
+          setIsUpdatingStatus(false);
+          setStatusProgress(null);
+        }
+      });
+    })().finally(() => {
+      visualRecoveryInFlight = null;
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [entry]);
 
   useEffect(() => {
     if (entry) return;
     const offRunAll = testProviderStore.onRunAll(() => {
-      void runRef.current("all", undefined);
+      void runSelectedRef.current();
     });
     const offClear = testProviderStore.onClearAll(() => {
       clearVisualStatuses();
       publishVisualLastRun(null);
       setProgress(null);
+      setStatusUpdateLabel(null);
+      setStatusLog(null);
+      setStatusProgress(null);
     });
     const offSelect = statusStore.onSelect((selected) => {
       const storyId = selected[0]?.storyId;
@@ -500,177 +709,118 @@ export function VisualTestProviderRender({ entry }: { entry?: API_HashEntry }) {
       : (lastRun?.summary.failed ?? 0);
   const chipCount = failedCount > 0 ? failedCount : null;
   const hasResults = counts.passed > 0 || counts.failed > 0 || Boolean(lastRun);
-  const description = moduleDescription(
+  const statusLine = moduleDescription(
     isRunning,
     isWritingBaselines,
+    isUpdatingStatus,
     progress,
     createProgress,
     lastRun,
+    anyActionSelected,
+    statusLog,
   );
-
-  // Sidebar context menu: run + create/rewrite for that story/component
-  if (entry) {
-    const canPlay = Boolean(entryStoryIds?.length);
-    const baselineDescription = isWritingBaselines
-      ? (createProgress?.label ?? "Writing…")
-      : createProgress?.error
-        ? "Write failed"
-        : createProgress?.label === "Created" ||
-            createProgress?.label === "Updated"
-          ? createProgress.label
-          : createProgress?.label
-            ? createProgress.label
-            : "Ready";
-    return (
-      <ContextMenuContainer>
-        <Heading>
-          <Info>
-            <Title>Run visual tests</Title>
-            <Description>{description}</Description>
-          </Info>
-          <Actions>
-            {isRunning ? (
-              <Button
-                size="medium"
-                variant="ghost"
-                padding="small"
-                ariaLabel="Stop visual test run"
-                title="Stop visual test run"
-                onClick={() => void cancelVisualRun()}
-              >
-                <StopAltIcon />
-              </Button>
-            ) : (
-              <Button
-                size="medium"
-                variant="ghost"
-                padding="small"
-                ariaLabel="Run visual tests for this item"
-                title="Run visual tests for this item"
-                disabled={!canPlay || isWritingBaselines}
-                onClick={() => {
-                  if (!entryStoryIds?.length) return;
-                  void run(
-                    entry.type === "story" ? "story" : "component",
-                    entryStoryIds,
-                  );
-                }}
-              >
-                <PlayHollowIcon />
-              </Button>
-            )}
-          </Actions>
-        </Heading>
-        <Heading>
-          <Info>
-            <Title>Create / rewrite baselines</Title>
-            <Description>{baselineDescription}</Description>
-          </Info>
-          <Actions>
-            <VisualBaselineSplitButton
-              status={baselineChipStatus(isWritingBaselines, createProgress)}
-              isRunning={isWritingBaselines}
-              ariaLabel={baselineDescription}
-              tooltip={baselineDescription}
-              disabled={!canPlay || isRunning}
-              onCreateMissing={() => void createBaseline()}
-              onRewriteExisting={() => void rewriteBaseline()}
-              onStop={() => void cancelVisualRun()}
-            />
-          </Actions>
-        </Heading>
-      </ContextMenuContainer>
-    );
-  }
+  const compareRowProgress = isRunning
+    ? (formatProgressFraction(progress?.completed, progress?.total) ?? "…")
+    : null;
+  const baselineRowProgress = isWritingBaselines
+    ? (formatProgressFraction(
+        createProgress?.completed,
+        createProgress?.total,
+      ) ??
+      createProgress?.label?.match(/(\d+)\s*\/\s*(\d+)/)?.[0] ??
+      "…")
+    : null;
+  const statusRowProgress = isUpdatingStatus
+    ? (formatProgressFraction(
+        statusProgress?.completed,
+        statusProgress?.total,
+      ) ?? "…")
+    : null;
 
   const baselineStatus = baselineChipStatus(isWritingBaselines, createProgress);
-  const baselineLabel = isWritingBaselines
+  const baselineRowLabel = baselineWriteRowLabel(baselineMode);
+  const baselineChipTooltip = isWritingBaselines
     ? (createProgress?.label ?? "Writing…")
     : createProgress?.error
       ? createProgress.error
       : createProgress?.label
         ? createProgress.label
-        : sidebarStoryIds.length
-          ? "Create or rewrite baselines for stories in the sidebar"
-          : "No stories in the sidebar";
+        : entry
+          ? entryStoryIds?.length
+            ? `${baselineRowLabel} for this ${entry.type === "story" ? "story" : "component"}`
+            : "No stories in this scope"
+          : sidebarStoryIds.length
+            ? `${baselineRowLabel} for stories in the sidebar`
+            : "No stories in the sidebar";
 
-  // Global Testing Module: checklist rows + shared status line
+  const statusChipStatus: ChipStatus = isUpdatingStatus
+    ? "warning"
+    : statusUpdateLabel?.includes("failed")
+      ? "negative"
+      : statusUpdateLabel
+        ? "positive"
+        : "unknown";
+
+  const runnerBusy = isRunning || isWritingBaselines || isUpdatingStatus;
+  const openResults = () => {
+    openVisualPanel(
+      api,
+      statusIds.failedIds[0] ?? statusIds.passedIds[0] ?? entryStoryIds?.[0],
+    );
+  };
+
   return (
-    <ModuleContainer>
-      <Description
-        id="visual-testing-module-description"
-        style={{ margin: "4px 0 4px 8px" }}
-      >
-        {description}
-      </Description>
-      <StyledActionList>
-        <ActionList.Item>
-          <ActionList.Action as="label" readOnly ariaLabel={false}>
-            <ActionList.Icon>
-              <Form.Checkbox name="Visual Tests" checked disabled />
-            </ActionList.Icon>
-            <ActionList.Text>Visual Tests</ActionList.Text>
-          </ActionList.Action>
-          <ActionList.Button
-            ariaLabel={
-              chipCount != null ? `${label} (${chipCount} failed)` : label
-            }
-            tooltip={label}
-            disabled={!hasResults && !crashed && !isRunning}
-            onClick={() => {
-              openVisualPanel(
-                api,
-                statusIds.failedIds[0] ?? statusIds.passedIds[0],
-              );
-            }}
-          >
-            {chipCount}
-            <TestStatusIcon status={chipStatus} isRunning={isRunning} />
-          </ActionList.Button>
-        </ActionList.Item>
-        <ActionList.Item>
-          <ActionList.Action as="label" ariaLabel={false}>
-            <ActionList.Icon>
-              <Form.Checkbox
-                name="Create Baselines"
-                checked={createBaselinesEnabled}
-                disabled={isWritingBaselines}
-                onChange={(event) => {
-                  const next = event.currentTarget.checked;
-                  setCreateBaselinesEnabled(next);
-                  try {
-                    localStorage.setItem(
-                      "storybook-addon-visual-delta/create-baselines-enabled-v1",
-                      next ? "1" : "0",
-                    );
-                  } catch {
-                    /* ignore */
-                  }
-                }}
-              />
-            </ActionList.Icon>
-            <ActionList.Text>Create Baselines</ActionList.Text>
-          </ActionList.Action>
-          <VisualBaselineSplitButton
-            status={baselineStatus}
-            isRunning={isWritingBaselines}
-            ariaLabel={baselineLabel}
-            tooltip={
-              createBaselinesEnabled
-                ? baselineLabel
-                : "Enable Create Baselines to write baselines"
-            }
-            disabled={
-              !createBaselinesEnabled ||
-              (!sidebarStoryIds.length && !isWritingBaselines) ||
-              isRunning
-            }
-            onCreateMissing={() => void createBaselinesFromSidebar()}
-            onRewriteExisting={() => void rewriteBaselinesFromSidebar()}
-            onStop={() => void cancelVisualRun()}
-          />
-        </ActionList.Item>
-      </StyledActionList>
-    </ModuleContainer>
+    <VisualTestModuleUI
+      variant={entry ? "context" : "global"}
+      statusLine={statusLine}
+      runVisualEnabled={runVisualEnabled}
+      createBaselinesEnabled={createBaselinesEnabled}
+      updateStatusEnabled={updateStatusEnabled}
+      baselineMode={baselineMode}
+      runnerBusy={runnerBusy}
+      anyActionSelected={anyActionSelected}
+      compareChipStatus={chipStatus}
+      compareChipLabel={label}
+      compareChipCount={chipCount}
+      compareChipDisabled={!hasResults && !crashed && !isRunning}
+      baselineChipStatus={baselineStatus}
+      baselineChipTooltip={baselineChipTooltip}
+      statusChipStatus={statusChipStatus}
+      statusChipLabel={statusUpdateLabel}
+      compareRowProgress={compareRowProgress}
+      baselineRowProgress={baselineRowProgress}
+      statusRowProgress={statusRowProgress}
+      isWritingBaselines={isWritingBaselines}
+      isUpdatingStatus={isUpdatingStatus}
+      isCompareRunning={isRunning}
+      onRunVisualChange={(next) => {
+        setRunVisualEnabled(next);
+        writeBoolFlag(RUN_VISUAL_KEY, next);
+      }}
+      onCreateBaselinesChange={(next) => {
+        setCreateBaselinesEnabled(next);
+        writeBoolFlag(CREATE_BASELINES_KEY, next);
+      }}
+      onUpdateStatusChange={(next) => {
+        setUpdateStatusEnabled(next);
+        writeBoolFlag(UPDATE_STATUS_KEY, next);
+      }}
+      onBaselineModeChange={(next) => {
+        setBaselineMode(next);
+        saveBaselineWriteMode(next);
+      }}
+      onRun={() => {
+        if (entry) {
+          if (!entryStoryIds?.length) return;
+          void runSelectedRef.current(entryStoryIds);
+          return;
+        }
+        void runSelectedRef.current();
+      }}
+      onStop={() => void cancelVisualRun()}
+      onOpenCompareResults={openResults}
+      onOpenBaselineStatus={openResults}
+      onOpenStatusResults={openResults}
+    />
   );
 }

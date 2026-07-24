@@ -22,6 +22,7 @@ import {
 } from "storybook/manager-api";
 import {
   ADDON_ID,
+  DEFAULT_DIFF_THRESHOLD,
   DEFAULT_PASS_THRESHOLD_PERCENT,
   EVENTS,
   SKIP_VISUAL_TAG,
@@ -33,6 +34,7 @@ import {
   type VisualDeltaInteraction,
   type VisualReviewStatus,
 } from "../constants.js";
+import type { AcceptScope } from "../manager/AcceptSplitButton.js";
 import {
   DEFAULT_ADDON_STATE,
   type VisualDeltaAddonState,
@@ -45,7 +47,10 @@ import {
   clearVisualStatuses,
   componentStoryIdsFor,
   formatVisualProgressLabel,
+  fetchVisualConfig,
+  postPlaywrightPassThreshold,
   postVisualCreateBaseline,
+  postVisualInit,
   postVisualInteractionBaseline,
   postVisualReviewStatus,
   postVisualRun,
@@ -60,7 +65,12 @@ import {
   type VisualCreateProgress,
   type VisualRunProgress,
 } from "../manager/run-visual.js";
+import {
+  loadDiffCaptureEngine,
+  type DiffCaptureEngine,
+} from "../manager/DiffCaptureSplitButton.js";
 import type { VisualRunMode } from "../manager/VisualRunSplitButton.js";
+import { appendVisualRunLogLine } from "../shared/status-log.js";
 import type { DiffResultData } from "../types.js";
 import {
   capturePreviewSubject,
@@ -69,6 +79,7 @@ import {
   maskTransparentRegions,
   withPlaywrightPreviewViewport,
 } from "./capture.js";
+import { postChromiumSubjectCapture } from "./chromium-capture.js";
 import { buildDiffHistogram, buildFocusAssets } from "./diff-assets.js";
 import { DiffResult } from "./DiffResult.js";
 import { useOverlayHidden, useOverlayInfo, useStoryData } from "./hooks.js";
@@ -84,8 +95,11 @@ import {
 import { LiveVisibilityToggle } from "./LiveVisibilityToggle.js";
 import { PanelStatusBar } from "./PanelStatusBar.js";
 import { PlacementPad } from "./PlacementPad.js";
+import { ConfigurationPanel } from "./ConfigurationPanel.js";
+import { ModeSelector } from "./ModeSelector.js";
 import { VisualDeltaHeader } from "./VisualDeltaHeader.js";
 import { baselineUrlForStoryRef } from "../shared/baseline-url.js";
+import { resolveIgnoreSelectors } from "../shared/ignore.js";
 import {
   endPlayDebug,
   gotoPlayStep,
@@ -129,6 +143,9 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
   const {
     images,
     interactions,
+    modes,
+    modeNames,
+    selectedMode,
     index,
     overlayOn,
     storyId,
@@ -136,13 +153,19 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
     colorInversion,
     placement,
     liveVisible,
-    passThresholdPercent,
+    passThresholdByEngine,
+    diffThreshold,
+    diffIncludeAntiAliasing,
+    delay,
+    ignoreSelectors,
+    cropToViewport,
     setIndex,
     setOpacity,
     setColorInversion,
     togglePlacement,
     setLiveVisible,
     setPassThresholdPercent,
+    setSelectedMode,
     hideOverlay,
     showOverlay,
     resetOverlay,
@@ -155,6 +178,7 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
     restorePrimaryBaselines,
     primaryImages,
   } = useStoryData();
+  const [showConfiguration, setShowConfiguration] = useState(false);
   /** Preview decorator hasn't sent INIT_IMAGE for this story yet. */
   const storyReady = Boolean(storyId) && storyId === currentStoryId;
   const loading = !storyReady;
@@ -300,7 +324,22 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
   const { getOverlayInfo } = useOverlayInfo();
   const { waitForOverlayHidden } = useOverlayHidden();
   const [isDiffing, setIsDiffing] = useState(false);
+  const [diffProgressLabel, setDiffProgressLabel] = useState<string | null>(
+    null,
+  );
+  const diffAbortRef = useRef<AbortController | null>(null);
+  const [diffEngine, setDiffEngine] = useState<DiffCaptureEngine>(() =>
+    loadDiffCaptureEngine(),
+  );
+  const passThresholdPercent = passThresholdByEngine[diffEngine];
+  const [playwrightPassThresholdPercent, setPlaywrightPassThresholdPercent] =
+    useState<number | null>(null);
+  const [isUpdatingPlaywrightThreshold, setIsUpdatingPlaywrightThreshold] =
+    useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
+  const [onboardingReady, setOnboardingReady] = useState<boolean | null>(null);
+  const [onboardingHint, setOnboardingHint] = useState<string | null>(null);
+  const [isIniting, setIsIniting] = useState(false);
   const [optimisticReview, setOptimisticReview] =
     useState<VisualReviewStatus | null>(null);
   const [optimisticSkipVisual, setOptimisticSkipVisual] = useState<
@@ -336,7 +375,8 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
     isInteractionJob ||
     isRunningVisual ||
     runProgress != null ||
-    isReviewing;
+    isReviewing ||
+    isIniting;
   const storyEntry = storyId ? api.getData(storyId) : undefined;
   const storyTagsKey = (storyEntry?.tags ?? []).join("\0");
   const reviewFromStory = visualReviewStatusFromTags(storyEntry?.tags);
@@ -352,12 +392,54 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
     setShowDistribution(false);
   }, [storyId, storyTagsKey]);
 
+  useEffect(() => {
+    if (diffEngine !== "chromium") return;
+    let cancelled = false;
+    void fetchVisualConfig()
+      .then((config) => {
+        if (cancelled) return;
+        setPlaywrightPassThresholdPercent(
+          config.playwrightPassThresholdPercent,
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setPlaywrightPassThresholdPercent(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [diffEngine]);
+
+  const playwrightThresholdMismatch =
+    diffEngine === "chromium" &&
+    playwrightPassThresholdPercent != null &&
+    Math.abs(playwrightPassThresholdPercent - passThresholdPercent) > 1e-6;
+
+  const handleUpdatePlaywrightThreshold = useCallback(async () => {
+    setIsUpdatingPlaywrightThreshold(true);
+    try {
+      const result = await postPlaywrightPassThreshold(passThresholdPercent);
+      setPlaywrightPassThresholdPercent(result.playwrightPassThresholdPercent);
+      setUpdateLog(
+        `Playwright config: pass threshold ${result.playwrightPassThresholdPercent}%`,
+      );
+    } catch (error) {
+      setCaptureError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update Playwright threshold",
+      );
+    } finally {
+      setIsUpdatingPlaywrightThreshold(false);
+    }
+  }, [passThresholdPercent]);
+
   const activeSectionId: BaselineSectionId = selectedInteractionId ?? "default";
   const activeDiffMeta = useMemo(() => {
     if (!diffResult) return null;
     const threshold = diffResult.passThresholdPercent ?? 0.1;
     return {
-      status: (diffResult.passed ? "pass" : "fail") as const,
+      status: diffResult.passed ? ("pass" as const) : ("fail" as const),
       stats: `${diffResult.diffPercent.toFixed(4)}% · ${diffResult.diffPixels}/${diffResult.totalPixels} px · <${threshold}%`,
     };
   }, [diffResult]);
@@ -486,7 +568,6 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
         const primary = baselineUrlForStoryRef(
           {
             id: storyId,
-            title: entry && "title" in entry ? String(entry.title) : undefined,
             importPath:
               entry && "importPath" in entry
                 ? String(entry.importPath)
@@ -535,23 +616,25 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
   const baselineStem = baselineSrc?.split("?")[0] ?? "";
   /** True for panel-initiated runs and sidebar / Testing Module runs. */
   const runInFlight = isRunningVisual || runProgress != null;
-  const progressLabel =
-    runInFlight && !isDiffing
-      ? formatVisualProgressLabel(runProgress)
-      : null;
+  const runProgressLabel = runInFlight
+    ? formatVisualProgressLabel(runProgress)
+    : null;
   const statusRunning =
     loading ||
     isCreating ||
     isUpdating ||
     isInteractionJob ||
-    runInFlight;
+    runInFlight ||
+    isDiffing;
   const statusLabel = loading
     ? "Loading…"
-    : statusRunning
-      ? runInFlight
-        ? progressLabel
-        : (baselineJob?.label ?? null)
-      : null;
+    : isDiffing
+      ? (diffProgressLabel ?? "Diffing…")
+      : statusRunning
+        ? runInFlight
+          ? runProgressLabel
+          : (baselineJob?.label ?? null)
+        : null;
 
   useEffect(() => {
     setCaptureError(null);
@@ -568,13 +651,12 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
       setDiffResult(null);
     }
     let cancelled = false;
-    void loadPlaywrightDiffResult(
-      baselineStem,
-      diffEpoch || Date.now(),
-    ).then((result) => {
-      diffResultCacheRef.current.set(baselineStem, result);
-      if (!cancelled) setDiffResult(result);
-    });
+    void loadPlaywrightDiffResult(baselineStem, diffEpoch || Date.now()).then(
+      (result) => {
+        diffResultCacheRef.current.set(baselineStem, result);
+        if (!cancelled) setDiffResult(result);
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -595,13 +677,7 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
       if (next) {
         sawProgress = true;
         setCaptureError(null);
-        const line = next.storyId
-          ? `${next.status === "failed" ? "✘" : "✓"} ${next.storyId} (${next.completed}/${next.total})`
-          : formatVisualProgressLabel(next);
-        setUpdateLog((prev) => {
-          if (!prev || (next.completed === 0 && !next.storyId)) return line;
-          return `${prev}\n${line}`;
-        });
+        setUpdateLog((prev) => appendVisualRunLogLine(prev, next));
         return;
       }
       if (sawProgress) {
@@ -669,156 +745,225 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
     });
   }, [api, currentStoryId, hydrateBaselineImages, revealCenteredOverlay]);
 
-  const handleDiff = useCallback(async () => {
-    if (index === -1 || !images[index]) {
-      setCaptureError("Please select a baseline image first");
-      return;
-    }
-    setIsDiffing(true);
-    setCaptureError(null);
-    setDiffResult(null);
-    try {
-      const currentOverlayInfo = await getOverlayInfo();
-      if (!currentOverlayInfo?.image?.src) {
-        throw new Error(
-          "Unable to get baseline image; make sure an image is selected",
-        );
+  const handleDiff = useCallback(
+    async (engine: DiffCaptureEngine = "html") => {
+      if (index === -1 || !images[index]) {
+        setCaptureError("Please select a baseline image first");
+        return;
       }
-      const baseline = await loadImage(currentOverlayInfo.image.src);
-      const overlayHidden = waitForOverlayHidden();
-      hideOverlay();
-      await overlayHidden;
-      let capture: Awaited<ReturnType<typeof capturePreviewSubject>>;
+      if (!storyId && engine === "chromium") {
+        setCaptureError("No story selected for Chromium Diff");
+        return;
+      }
+      diffAbortRef.current?.abort();
+      const abort = new AbortController();
+      diffAbortRef.current = abort;
+      setIsDiffing(true);
+      setDiffProgressLabel(
+        engine === "chromium" ? "Starting Chromium…" : "Diffing…",
+      );
+      setCaptureError(null);
+      setDiffResult(null);
       try {
+        const currentOverlayInfo = await getOverlayInfo();
+        if (!currentOverlayInfo?.image?.src) {
+          throw new Error(
+            "Unable to get baseline image; make sure an image is selected",
+          );
+        }
+        const baseline = await loadImage(currentOverlayInfo.image.src);
         const selectedImage = images[index];
-        capture = await withPlaywrightPreviewViewport(
-          () =>
-            capturePreviewSubject({
-              pixelRatio: deviceScaleFactorForImage(selectedImage),
-            }),
-          viewportForImage(selectedImage),
+        let actual: Awaited<ReturnType<typeof loadImage>>;
+        let captureTag: string;
+
+        if (engine === "chromium") {
+          const capture = await postChromiumSubjectCapture(
+            {
+              storyId: storyId!,
+              visualCaptureUntil: selectedInteractionId ?? undefined,
+              viewport: viewportForImage(selectedImage),
+              deviceScaleFactor: deviceScaleFactorForImage(selectedImage),
+              delay,
+              ignoreSelectors: resolveIgnoreSelectors(ignoreSelectors),
+              cropToViewport,
+            },
+            {
+              signal: abort.signal,
+              onProgress: (progress) => {
+                setDiffProgressLabel(progress.label);
+              },
+            },
+          );
+          if (abort.signal.aborted) return;
+          setDiffProgressLabel("Comparing…");
+          actual = await loadImage(capture.dataUrl);
+          captureTag = "chromium";
+        } else {
+          const overlayHidden = waitForOverlayHidden();
+          hideOverlay();
+          await overlayHidden;
+          let capture: Awaited<ReturnType<typeof capturePreviewSubject>>;
+          try {
+            capture = await withPlaywrightPreviewViewport(
+              () =>
+                capturePreviewSubject({
+                  pixelRatio: deviceScaleFactorForImage(selectedImage),
+                  delay,
+                  ignoreSelectors: resolveIgnoreSelectors(ignoreSelectors),
+                  cropToViewport,
+                }),
+              viewportForImage(selectedImage),
+            );
+          } finally {
+            showOverlay();
+          }
+          if (abort.signal.aborted) return;
+          setDiffProgressLabel("Comparing…");
+          actual = await loadImage(capture.dataUrl);
+          captureTag = "html-to-image";
+        }
+
+        const width = baseline.width;
+        const height = baseline.height;
+        const baselineData = baseline.imageData.data;
+        const actualData = fitImageData(actual.imageData, width, height);
+        const sizeCore =
+          actual.width === width && actual.height === height
+            ? `${width}×${height}`
+            : `baseline ${width}×${height}, actual ${actual.width}×${actual.height} (padded/cropped)`;
+        const sizeNote = `${captureTag} · ${sizeCore}`;
+        const { baselineForDiff, actualForDiff, ignore } =
+          maskTransparentRegions(baselineData, actualData, width, height);
+        const actualMaskedCanvas = document.createElement("canvas");
+        actualMaskedCanvas.width = width;
+        actualMaskedCanvas.height = height;
+        const actualMaskedCtx = actualMaskedCanvas.getContext("2d");
+        if (!actualMaskedCtx) throw new Error("Unable to get canvas context");
+        const actualMaskedImageData = actualMaskedCtx.createImageData(
+          width,
+          height,
         );
+        actualMaskedImageData.data.set(actualData);
+        for (let p = 0; p < width * height; p++) {
+          if (!ignore[p]) continue;
+          const i = p * 4;
+          actualMaskedImageData.data[i] = 0;
+          actualMaskedImageData.data[i + 1] = 0;
+          actualMaskedImageData.data[i + 2] = 0;
+          actualMaskedImageData.data[i + 3] = 0;
+        }
+        actualMaskedCtx.putImageData(actualMaskedImageData, 0, 0);
+        const actualMaskedDataUrl = actualMaskedCanvas.toDataURL("image/png");
+        const diffData = new Uint8ClampedArray(width * height * 4);
+        const diffPixels = pixelmatch(
+          actualForDiff,
+          baselineForDiff,
+          diffData,
+          width,
+          height,
+          {
+            threshold: diffThreshold ?? DEFAULT_DIFF_THRESHOLD,
+            includeAA: diffIncludeAntiAliasing,
+            alpha: 0.1,
+            diffColor: [255, 0, 0],
+            diffColorAlt: [0, 255, 0],
+          },
+        );
+        const diffCanvas = document.createElement("canvas");
+        diffCanvas.width = width;
+        diffCanvas.height = height;
+        const ctx = diffCanvas.getContext("2d");
+        if (!ctx) throw new Error("Unable to get canvas context");
+        const diffImageData = ctx.createImageData(width, height);
+        diffImageData.data.set(diffData);
+        ctx.putImageData(diffImageData, 0, 0);
+        const { focusDataUrl, changeBounds } = buildFocusAssets(
+          actualMaskedImageData.data,
+          diffData,
+          width,
+          height,
+        );
+        const diffHistogram = buildDiffHistogram(
+          baselineForDiff,
+          actualForDiff,
+          diffData,
+          width,
+          height,
+        );
+        const totalPixels = width * height;
+        const diffPercent = (diffPixels / totalPixels) * 100;
+        const threshold =
+          passThresholdPercent ?? DEFAULT_PASS_THRESHOLD_PERCENT;
+        const passed = diffPercent < threshold;
+        setDiffResult({
+          actualImage: actualMaskedDataUrl,
+          diffImage: diffCanvas.toDataURL("image/png"),
+          baselineImage: baseline.dataUrl,
+          focusImage: focusDataUrl,
+          changeBounds,
+          imageWidth: width,
+          imageHeight: height,
+          diffPixels,
+          totalPixels,
+          diffPercent,
+          passThresholdPercent: threshold,
+          passed,
+          sizeNote,
+          diffHistogram,
+        });
+        if (storyId) {
+          applyVisualStatuses([
+            visualResultFromLiveDiff({
+              storyId,
+              diffPercent,
+              diffPixels,
+              totalPixels,
+              passThresholdPercent: threshold,
+              passed,
+            }),
+          ]);
+        }
+      } catch (error) {
+        if (abort.signal.aborted) return;
+        const message = error instanceof Error ? error.message : "Diff failed";
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        if (/aborted|abort/i.test(message)) return;
+        setCaptureError(message);
       } finally {
-        showOverlay();
+        if (diffAbortRef.current === abort) {
+          diffAbortRef.current = null;
+        }
+        setIsDiffing(false);
+        setDiffProgressLabel(null);
       }
-      const actual = await loadImage(capture.dataUrl);
-      const width = baseline.width;
-      const height = baseline.height;
-      const baselineData = baseline.imageData.data;
-      const actualData = fitImageData(actual.imageData, width, height);
-      const sizeNote =
-        actual.width === width && actual.height === height
-          ? `${width}×${height}`
-          : `baseline ${width}×${height}, actual ${actual.width}×${actual.height} (padded/cropped)`;
-      const { baselineForDiff, actualForDiff, ignore } = maskTransparentRegions(
-        baselineData,
-        actualData,
-        width,
-        height,
-      );
-      const actualMaskedCanvas = document.createElement("canvas");
-      actualMaskedCanvas.width = width;
-      actualMaskedCanvas.height = height;
-      const actualMaskedCtx = actualMaskedCanvas.getContext("2d");
-      if (!actualMaskedCtx) throw new Error("Unable to get canvas context");
-      const actualMaskedImageData = actualMaskedCtx.createImageData(
-        width,
-        height,
-      );
-      actualMaskedImageData.data.set(actualData);
-      for (let p = 0; p < width * height; p++) {
-        if (!ignore[p]) continue;
-        const i = p * 4;
-        actualMaskedImageData.data[i] = 0;
-        actualMaskedImageData.data[i + 1] = 0;
-        actualMaskedImageData.data[i + 2] = 0;
-        actualMaskedImageData.data[i + 3] = 0;
-      }
-      actualMaskedCtx.putImageData(actualMaskedImageData, 0, 0);
-      const actualMaskedDataUrl = actualMaskedCanvas.toDataURL("image/png");
-      const diffData = new Uint8ClampedArray(width * height * 4);
-      const diffPixels = pixelmatch(
-        actualForDiff,
-        baselineForDiff,
-        diffData,
-        width,
-        height,
-        {
-          threshold: 0.2,
-          includeAA: false,
-          alpha: 0.1,
-          diffColor: [255, 0, 0],
-          diffColorAlt: [0, 255, 0],
-        },
-      );
-      const diffCanvas = document.createElement("canvas");
-      diffCanvas.width = width;
-      diffCanvas.height = height;
-      const ctx = diffCanvas.getContext("2d");
-      if (!ctx) throw new Error("Unable to get canvas context");
-      const diffImageData = ctx.createImageData(width, height);
-      diffImageData.data.set(diffData);
-      ctx.putImageData(diffImageData, 0, 0);
-      const { focusDataUrl, changeBounds } = buildFocusAssets(
-        actualMaskedImageData.data,
-        diffData,
-        width,
-        height,
-      );
-      const diffHistogram = buildDiffHistogram(
-        baselineForDiff,
-        actualForDiff,
-        diffData,
-        width,
-        height,
-      );
-      const totalPixels = width * height;
-      const diffPercent = (diffPixels / totalPixels) * 100;
-      const threshold = passThresholdPercent ?? DEFAULT_PASS_THRESHOLD_PERCENT;
-      const passed = diffPercent < threshold;
-      setDiffResult({
-        actualImage: actualMaskedDataUrl,
-        diffImage: diffCanvas.toDataURL("image/png"),
-        baselineImage: baseline.dataUrl,
-        focusImage: focusDataUrl,
-        changeBounds,
-        imageWidth: width,
-        imageHeight: height,
-        diffPixels,
-        totalPixels,
-        diffPercent,
-        passThresholdPercent: threshold,
-        passed,
-        sizeNote,
-        diffHistogram,
-      });
-      if (storyId) {
-        applyVisualStatuses([
-          visualResultFromLiveDiff({
-            storyId,
-            diffPercent,
-            diffPixels,
-            totalPixels,
-            passThresholdPercent: threshold,
-            passed,
-          }),
-        ]);
-      }
-    } catch (error) {
-      setCaptureError(error instanceof Error ? error.message : "Diff failed");
-    } finally {
-      setIsDiffing(false);
-    }
-  }, [
-    index,
-    images,
-    storyId,
-    passThresholdPercent,
-    getOverlayInfo,
-    waitForOverlayHidden,
-    hideOverlay,
-    showOverlay,
-  ]);
+    },
+    [
+      applyVisualStatuses,
+      cropToViewport,
+      delay,
+      diffIncludeAntiAliasing,
+      diffThreshold,
+      getOverlayInfo,
+      hideOverlay,
+      ignoreSelectors,
+      images,
+      index,
+      passThresholdPercent,
+      selectedInteractionId,
+      showOverlay,
+      storyId,
+      waitForOverlayHidden,
+    ],
+  );
+
+  const handleStopDiff = useCallback(() => {
+    diffAbortRef.current?.abort();
+    diffAbortRef.current = null;
+    setIsDiffing(false);
+    setDiffProgressLabel(null);
+  }, []);
 
   const handleUpdateBaselines = useCallback(async () => {
     if (!storyId) {
@@ -848,6 +993,39 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
     }
   }, [storyId]);
 
+  const refreshOnboarding = useCallback(async () => {
+    try {
+      const config = await fetchVisualConfig();
+      setOnboardingReady(config.onboarding.ready);
+      setOnboardingHint(config.onboarding.hint);
+    } catch {
+      setOnboardingReady(null);
+      setOnboardingHint(null);
+    }
+  }, []);
+
+  const handleInitScaffold = useCallback(async () => {
+    setIsIniting(true);
+    setCaptureError(null);
+    try {
+      const result = await postVisualInit();
+      setOnboardingReady(result.onboarding.ready);
+      setOnboardingHint(result.onboarding.hint);
+      const wrote = result.written.length
+        ? `Wrote ${result.written.join(", ")}.`
+        : "Scaffold files already present.";
+      setUpdateLog(
+        `${wrote} ${result.onboarding.ready ? "You can Create visual now." : result.onboarding.hint}`,
+      );
+    } catch (error) {
+      setCaptureError(
+        error instanceof Error ? error.message : "Visual Delta init failed",
+      );
+    } finally {
+      setIsIniting(false);
+    }
+  }, []);
+
   const handleSetReviewStatus = useCallback(
     async (status: VisualReviewStatus) => {
       if (!storyId) {
@@ -862,6 +1040,7 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
         const messages: Record<VisualReviewStatus, string> = {
           pending: "Marked baseline as pending review (visual-pending).",
           approved: "Marked baseline as approved (visual-approved).",
+          ready: "Marked baseline ready for review (visual-ready).",
           failed: "Marked baseline as failed (visual-failed).",
         };
         setUpdateLog(messages[status]);
@@ -876,6 +1055,84 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
       }
     },
     [storyId],
+  );
+
+  const handleAcceptScope = useCallback(
+    async (scope: AcceptScope) => {
+      if (!storyId) {
+        setCaptureError("No story selected");
+        return;
+      }
+      setIsReviewing(true);
+      setCaptureError(null);
+      try {
+        const ids =
+          scope === "component"
+            ? componentStoryIdsFor(api, storyId)
+            : [storyId];
+        for (const id of ids) {
+          await postVisualReviewStatus({ storyId: id, status: "approved" });
+        }
+        setOptimisticReview("approved");
+        setUpdateLog(
+          scope === "component"
+            ? `Accepted ${ids.length} stor${ids.length === 1 ? "y" : "ies"} (visual-approved).`
+            : "Accepted story baseline (visual-approved).",
+        );
+      } catch (error) {
+        setCaptureError(
+          error instanceof Error ? error.message : "Accept failed",
+        );
+      } finally {
+        setIsReviewing(false);
+      }
+    },
+    [api, storyId],
+  );
+
+  const handleUnacceptScope = useCallback(
+    async (scope: AcceptScope) => {
+      if (!storyId) {
+        setCaptureError("No story selected");
+        return;
+      }
+      setIsReviewing(true);
+      setCaptureError(null);
+      try {
+        const ids =
+          scope === "component"
+            ? componentStoryIdsFor(api, storyId)
+            : [storyId];
+        for (const id of ids) {
+          await postVisualReviewStatus({ storyId: id, status: "pending" });
+        }
+        setOptimisticReview("pending");
+        setUpdateLog(
+          scope === "component"
+            ? `Unaccepted ${ids.length} stor${ids.length === 1 ? "y" : "ies"} (visual-pending).`
+            : "Unaccepted story baseline (visual-pending).",
+        );
+      } catch (error) {
+        setCaptureError(
+          error instanceof Error ? error.message : "Unaccept failed",
+        );
+      } finally {
+        setIsReviewing(false);
+      }
+    },
+    [api, storyId],
+  );
+
+  const handleModeChange = useCallback(
+    (mode: string | null) => {
+      setSelectedMode(mode);
+      if (mode == null) return;
+      const globals = modes[mode]?.globals;
+      if (globals && typeof api.updateGlobals === "function") {
+        api.updateGlobals(globals);
+      }
+    },
+    [api, modes, setSelectedMode],
   );
 
   const handleToggleSkipVisual = useCallback(async () => {
@@ -897,9 +1154,7 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
       );
     } catch (error) {
       setCaptureError(
-        error instanceof Error
-          ? error.message
-          : "Failed to update skip-visual",
+        error instanceof Error ? error.message : "Failed to update skip-visual",
       );
     } finally {
       setIsReviewing(false);
@@ -943,6 +1198,7 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
               error: data.error ?? "Visual test run crashed",
               scope,
               logTail: data.logTail,
+              results: data.results,
             });
             throw new Error(data.error ?? "Visual test run crashed");
           }
@@ -956,6 +1212,7 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
                 : undefined,
             scope,
             logTail: data.logTail,
+            results: data.results,
           });
           setDiffEpoch(Date.now());
           if (data.summary.failed > 0) {
@@ -976,18 +1233,20 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
     [api, storyId],
   );
 
-  const handleSplitAction = useCallback(
+  const handleRun = useCallback(
     (mode: VisualRunMode) => {
-      if (mode === "diff") {
-        void handleDiff();
-        return;
-      }
       void handleRunVisual(mode);
     },
-    [handleDiff, handleRunVisual],
+    [handleRunVisual],
   );
 
   const isEmpty = primaryImages.length === 0 && images.length === 0;
+  const needsScaffold = onboardingReady === false;
+
+  useEffect(() => {
+    if (!isEmpty || loading || skipVisual) return;
+    void refreshOnboarding();
+  }, [isEmpty, loading, skipVisual, refreshOnboarding]);
   const badgeStatus = diffResult
     ? diffResult.passed
       ? ("pass" as const)
@@ -1009,10 +1268,16 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
             primaryImages.length > 1 ? (
               <ImageGallery
                 images={primaryImages}
-                selectedIndex={
-                  selectedInteractionId ? 0 : Math.max(0, index)
-                }
+                selectedIndex={selectedInteractionId ? 0 : Math.max(0, index)}
                 onSelect={setIndex}
+              />
+            ) : null}
+            {section.id === "default" ? (
+              <ModeSelector
+                modeNames={modeNames}
+                value={selectedMode}
+                onChange={handleModeChange}
+                disabled={busy}
               />
             ) : null}
             <LiveVisibilityToggle
@@ -1034,7 +1299,7 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
                   size="small"
                   pressed={false}
                   onClick={resetOverlay}
-                  aria-label="Reset overlay position after drag"
+                  ariaLabel={false}
                   title="Reset overlay position after drag"
                 >
                   Reset
@@ -1075,37 +1340,64 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
                 step="0.05"
                 value={passThresholdPercent}
                 onChange={(e) =>
-                  setPassThresholdPercent(parseFloat(e.target.value))
+                  setPassThresholdPercent(
+                    diffEngine,
+                    parseFloat(e.target.value),
+                  )
                 }
               />
               <ValueDisplay>{passThresholdPercent}%</ValueDisplay>
             </InlineControl>
+            {playwrightThresholdMismatch ? (
+              <InlineControl title="Local Diff Chromium thresh differs from package Playwright default">
+                <ValueDisplay>
+                  Playwright {playwrightPassThresholdPercent}% ≠ local{" "}
+                  {passThresholdPercent}%
+                </ValueDisplay>
+                <Button
+                  size="small"
+                  disabled={isUpdatingPlaywrightThreshold || busy}
+                  ariaLabel={false}
+                  onClick={() => void handleUpdatePlaywrightThreshold()}
+                >
+                  {isUpdatingPlaywrightThreshold
+                    ? "Updating…"
+                    : "Update Playwright config"}
+                </Button>
+              </InlineControl>
+            ) : null}
           </ToolbarRow>
           {captureError ? <ErrorText>{captureError}</ErrorText> : null}
         </PanelToolbar>
         {diffResult && images.length > 0 ? (
-          <DiffResult
-            result={diffResult}
-            showHistogram={showDistribution}
-          />
+          <DiffResult result={diffResult} showHistogram={showDistribution} />
         ) : null}
       </>
     ),
     [
+      busy,
       captureError,
       colorInversion,
+      diffEngine,
       diffResult,
+      handleModeChange,
+      handleUpdatePlaywrightThreshold,
       images.length,
       index,
       isSplit,
+      isUpdatingPlaywrightThreshold,
       liveVisible,
+      modeNames,
       opacity,
       overlayOn,
       passThresholdPercent,
       placement,
+      playwrightPassThresholdPercent,
+      playwrightThresholdMismatch,
       primaryImages,
       resetOverlay,
       selectedInteractionId,
+      selectedMode,
       setColorInversion,
       setIndex,
       setLiveVisible,
@@ -1131,10 +1423,10 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
             empty={loading ? false : isEmpty}
             busy={busy || loading}
             storyMissing={!storyId || loading}
-            isRunning={
-              !loading && (isRunningVisual || isDiffing || runProgress != null)
-            }
-            progressLabel={loading ? null : progressLabel}
+            isDiffing={!loading && isDiffing}
+            isRunning={!loading && runInFlight}
+            diffProgressLabel={loading ? null : diffProgressLabel}
+            runProgressLabel={loading ? null : runProgressLabel}
             createLabel={
               isCreating
                 ? (createProgress?.label ?? "Creating…")
@@ -1142,18 +1434,28 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
             }
             reviewStatus={loading ? null : reviewStatus}
             skipVisual={loading ? false : skipVisual}
-            onRunDiff={handleSplitAction}
+            onDiff={(engine) => void handleDiff(engine)}
+            onRun={handleRun}
+            diffEngine={diffEngine}
+            onDiffEngineChange={setDiffEngine}
             onCreate={() => void handleCreateBaselines()}
             onUpdateBaselines={() => void handleUpdateBaselines()}
             onResetSettings={resetSettings}
-            onStop={() => void cancelVisualRun()}
+            onStopDiff={handleStopDiff}
+            onStopRun={() => void cancelVisualRun()}
             onReviewStatus={(status) => void handleSetReviewStatus(status)}
+            onAccept={(scope) => void handleAcceptScope(scope)}
+            onUnaccept={(scope) => void handleUnacceptScope(scope)}
             onToggleSkipVisual={() => void handleToggleSkipVisual()}
+            onOpenConfiguration={() => setShowConfiguration(true)}
             isUpdating={isUpdating}
             onHeightChange={setHeaderStickyTop}
           />
           <PanelBody>
-            {loading ? (
+            {showConfiguration ? (
+              <ConfigurationPanel onClose={() => setShowConfiguration(false)} />
+            ) : null}
+            {!showConfiguration && loading ? (
               <SkeletonRoot
                 role="status"
                 aria-busy="true"
@@ -1162,47 +1464,73 @@ export const Panel = memo(function Panel(props: { active?: boolean }) {
                 <SkeletonBone width="100%" height={180} radius={8} />
                 <SkeletonBone width="40%" height={12} radius={4} />
               </SkeletonRoot>
-            ) : isEmpty && baselineSections.length === 0 ? (
+            ) : null}
+            {!showConfiguration &&
+            !loading &&
+            isEmpty &&
+            baselineSections.length === 0 ? (
               <EmptyTabContent
                 title="Visual Delta"
                 description={
                   skipVisual
-                    ? "This story is tagged skip-visual (excluded from Playwright visual runs). Use More → Include in visual tests to opt in, then Create visual."
-                    : "Capture a Playwright baseline for this story, then compare live canvas to the PNG with overlay and diff tools."
+                    ? "This story is tagged skip-visual (excluded from Playwright visual runs). Use Include in visual tests in the header to opt in, then Create visual."
+                    : needsScaffold
+                      ? (onboardingHint ??
+                        "Set up the Playwright suite and config, then create a baseline for this story.")
+                      : "Capture a Playwright baseline for this story, then compare live canvas to the PNG with overlay and diff tools. Or Skip visual tests from the header if this story should stay out of the suite."
                 }
                 footer={
-                  <Button
-                    size="small"
-                    ariaLabel="Create visual baseline"
-                    disabled={!storyId || busy}
-                    onClick={() => void handleCreateBaselines()}
-                  >
-                    {isCreating
-                      ? (createProgress?.label ?? "Creating…")
-                      : "Create visual"}
-                  </Button>
+                  needsScaffold && !skipVisual ? (
+                    <Button
+                      size="small"
+                      ariaLabel="Set up Visual Delta Playwright suite"
+                      disabled={busy}
+                      onClick={() => void handleInitScaffold()}
+                    >
+                      {isIniting ? "Setting up…" : "Set up Visual Delta"}
+                    </Button>
+                  ) : skipVisual ? (
+                    <Button
+                      size="small"
+                      ariaLabel="Include in visual tests"
+                      disabled={!storyId || busy}
+                      onClick={() => void handleToggleSkipVisual()}
+                    >
+                      Include in visual tests
+                    </Button>
+                  ) : (
+                    <Button
+                      size="small"
+                      ariaLabel="Create visual baseline"
+                      disabled={!storyId || busy}
+                      onClick={() => void handleCreateBaselines()}
+                    >
+                      {isCreating
+                        ? (createProgress?.label ?? "Creating…")
+                        : "Create visual"}
+                    </Button>
+                  )
                 }
               />
-            ) : (
+            ) : null}
+            {!showConfiguration &&
+            !loading &&
+            !(isEmpty && baselineSections.length === 0) ? (
               <BaselineAccordion
                 sections={baselineSections}
                 expandedId={expandedId}
                 busy={busy}
                 showDistribution={showDistribution}
                 onExpand={selectSection}
-                onCreate={(step) =>
-                  void handleCreateInteraction(step, false)
-                }
-                onUpdate={(step) =>
-                  void handleCreateInteraction(step, true)
-                }
+                onCreate={(step) => void handleCreateInteraction(step, false)}
+                onUpdate={(step) => void handleCreateInteraction(step, true)}
                 onUpdateDefault={() => void handleUpdateBaselines()}
                 onToggleDistribution={() =>
                   setShowDistribution((value) => !value)
                 }
                 renderBody={renderSectionBody}
               />
-            )}
+            ) : null}
           </PanelBody>
         </PanelScroll>
         <PanelStatusBar

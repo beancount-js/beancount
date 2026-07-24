@@ -12,17 +12,26 @@
   "license": "MIT",
   "author": "houjinlong <1844041598@qq.com>",
   "type": "module",
+  "bin": {
+    "visual-delta": "./dist/node/cli.js"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./preview": "./src/preview.ts",
     "./preset": "./src/preset.ts",
     "./manager": "./src/manager.tsx",
     "./visual-capture": "./src/shared/visual-capture-step.ts",
+    "./playwright": "./src/playwright/index.ts",
     "./node": {
       "types": "./dist/node/index.d.ts",
       "import": "./dist/node/index.js",
       "default": "./dist/node/index.js"
     },
+    "./src/stories/*": "./src/stories/*",
+    "./src/stories/panel-fixtures": "./src/stories/panel-fixtures.tsx",
+    "./src/stories/PanelShell": "./src/stories/PanelShell.tsx",
+    "./src/stories/TestingModuleShell": "./src/stories/TestingModuleShell.tsx",
+    "./src/stories/mock-visual-backend": "./src/stories/mock-visual-backend.ts",
     "./package.json": "./package.json"
   },
   "files": [
@@ -34,6 +43,7 @@
   ],
   "scripts": {
     "build:node": "tsc -p tsconfig.node-build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node-build.json --noEmit",
     "prepare": "pnpm build:node",
     "prepack": "pnpm build:node",
     "test": "vitest run"
@@ -44,6 +54,7 @@
     "pixelmatch": "^7.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.52.0",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -57,11 +68,15 @@
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
+    "playwright": "*",
     "react": "*",
     "storybook": "*",
     "vite": "*"
   },
   "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    },
     "vite": {
       "optional": true
     }
