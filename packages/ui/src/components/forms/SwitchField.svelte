@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { FormFieldRenderArgs } from "@beancount-js/forms";
-  import { Switch } from "$lib/components/ui/switch";
+  import Switch from "./Switch.svelte";
+  import type { FormFieldRenderArgs } from "./types";
 
   let {
     value,

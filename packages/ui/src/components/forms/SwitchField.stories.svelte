@@ -1,37 +1,32 @@
 <script module lang="ts">
   import { defineMeta } from "@storybook/addon-svelte-csf";
   import { expect, userEvent } from "storybook/test";
-  import { FormField, type FormCustomRenderer } from "@beancount-js/forms";
-  import {
-    switchField,
-    type SourceFormContext,
-  } from "../../ingestion/source-form-config";
+  import FormField from "./FormField.svelte";
   import SwitchField from "./SwitchField.svelte";
+  import type { FormCustomRenderer } from "./types";
 
   type SwitchRoot = { pagination: boolean };
 
-  const context: SourceFormContext = { accounts: [] };
-  const field = switchField<SwitchRoot>({
+  const context = {};
+  const field = {
     id: "cursor-pagination",
     label: "Cursor pagination",
     ariaLabel: "Configure cursor pagination",
-    get: (root) => root.pagination,
-    set: (root, pagination) => ({ ...root, pagination }),
-  });
+  };
   const SwitchFormField = SwitchField as FormCustomRenderer<
     SwitchRoot,
-    SourceFormContext,
+    typeof context,
     boolean
   >;
 
   const { Story } = defineMeta({
-    title: "Fava/Forms/Switch Field",
+    title: "UI Forms/Switch Field",
     component: SwitchField,
     parameters: {
       docs: {
         description: {
           component:
-            "Fava's ingestion-form adapter for an existing local shadcn Switch. It is placed in a centered structured-form row and exposes the correct switch state. New cross-app forms use the shared UI Switch; see the [Form guidance](?path=/docs/ui-forms-guidance--docs).",
+            "A reusable ingestion-form boolean control that renders `Yes`/`No` for read-only views and delegates editable control to the shared `Switch`.",
         },
       },
     },
@@ -40,14 +35,10 @@
 
 <script lang="ts">
   let root = $state<SwitchRoot>({ pagination: false });
-
-  function update(value: boolean) {
-    root = field.set?.(root, value, context) ?? root;
-  }
 </script>
 
 <Story
-  name="Toggles cursor pagination"
+  name="Toggles a boolean setting"
   play={async ({ canvas }) => {
     const toggle = canvas.getByRole("switch", {
       name: "Configure cursor pagination",
@@ -69,9 +60,11 @@
           issues={[]}
           view="edit"
           readonly={false}
-          {update}
+          update={(value) => {
+            root = { pagination: value };
+          }}
           updateRoot={(value) => {
-            root = value;
+            root = value as SwitchRoot;
           }}
         />
       </FormField>
@@ -94,7 +87,7 @@
           issues={[]}
           view="readonly"
           readonly={true}
-          {update}
+          update={() => {}}
           updateRoot={() => {}}
         />
       </FormField>

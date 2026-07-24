@@ -232,6 +232,20 @@ is `visual-approved`.
   `pnpm --filter @beancount-js/fava-beta check`, `check:svelte5`, `lint`, and
   `build` pass after this migration.
 
+#### C017 — `form/SwitchField.svelte`
+
+- Status: **Done**. Presentation ownership is now in
+  `@beancount-js/ui/forms/SwitchField.svelte`; the component wraps the shared
+  `Switch` with read-only text output for immutable views and preserves the Fava
+  form row behavior for editable mode.
+- Beta adapter: `packages/fava-beta/src/ingestion/source-form-config.ts` now
+  imports `SwitchField` from `@beancount-js/ui/forms`; legacy story and local
+  component files under `packages/fava-beta/src/components/form/` were removed.
+- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
+  `pnpm --filter @beancount-js/ui check-boundaries`,
+  `pnpm --filter @beancount-js/fava-beta check`,
+  `check:svelte5`, `lint`, and `build` pass after this migration.
+
 #### C001 — `ContentScrollArea.svelte`
 
 - Original reference: `packages/fava/src/components/ContentScrollArea.svelte`;
@@ -276,7 +290,7 @@ is `visual-approved`.
 | C014 | `form/AccountComboField.svelte`   | Done        |
 | C015 | `form/MerchantComboField.svelte`  | Not started |
 | C016 | `form/SecretField.svelte`         | Not started |
-| C017 | `form/SwitchField.svelte`         | Not started |
+| C017 | `form/SwitchField.svelte`         | Done        |
 | C018 | `AccountBulkActionSheet.svelte`   | Not started |
 | C019 | `MerchantEditSheet.svelte`        | Not started |
 | C020 | `JournalEditorSheet.svelte`       | Not started |
