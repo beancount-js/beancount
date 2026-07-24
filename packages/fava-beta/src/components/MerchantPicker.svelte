@@ -1,25 +1,11 @@
 <script lang="ts">
   import {
-    FilterCommandPicker,
-    type FilterCommandOption,
-    type FilterCommandSearchAction,
-  } from "@beancount-js/forms";
+    MerchantPicker as SharedMerchantPicker,
+    type MerchantPickerEmptyOption,
+    type MerchantPickerMerchant,
+  } from "@beancount-js/ui/forms";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import { rankLocalMerchantMatches } from "../lib/fuzzy-search";
-
-  type Merchant = {
-    merchantId: string;
-    canonicalName: string;
-    domain?: string;
-    description?: string;
-    aliases?: { normalizedValue: string }[];
-    logoUrl?: string;
-  };
-
-  type EmptyOption = {
-    label: string;
-    description: string;
-  };
 
   type Props = {
     projectId: string;
@@ -32,11 +18,11 @@
     label?: string;
     ariaLabel?: string;
     placeholder?: string;
-    emptyOption?: EmptyOption;
+    emptyOption?: MerchantPickerEmptyOption;
     autoAttachExactDomain?: boolean;
     readOnly?: boolean;
     onChange?: (merchantId: string) => void | Promise<void>;
-    onAttach?: (merchant: Merchant) => void;
+    onAttach?: (merchant: MerchantPickerMerchant) => void;
     onError?: (message: string) => void;
   };
 
@@ -59,66 +45,23 @@
     onError,
   }: Props = $props();
 
-  let merchants = $state<Merchant[]>([]);
+  let merchants = $state<MerchantPickerMerchant[]>([]);
   let loadError = $state("");
   let brandMatchBusy = $state(false);
   let lastAutoAttachedId = $state<string | null>(null);
 
   const normalizedDomain = $derived(domain.trim().toLowerCase());
-  const rankedMerchants = $derived(
+  const rankedMerchants = $derived.by(() =>
     rankLocalMerchantMatches(merchants, searchText, domain),
   );
-  const options = $derived.by((): FilterCommandOption[] => {
-    const selectedMerchant = merchants.find(
-      (merchant) => merchant.merchantId === value,
-    );
-    const visibleMerchants = selectedMerchant
-      ? [
-          selectedMerchant,
-          ...rankedMerchants.filter(
-            (merchant) => merchant.merchantId !== selectedMerchant.merchantId,
-          ),
-        ]
-      : rankedMerchants;
-    const items: FilterCommandOption[] = emptyOption
-      ? [
-          {
-            value: "",
-            label: emptyOption.label,
-            description: emptyOption.description,
-          },
-        ]
-      : [];
-
-    if (value && !selectedMerchant) {
-      items.push({
-        value,
-        label: value,
-        description: "Saved merchant is unavailable in this project.",
-      });
-    }
-
-    for (const merchant of visibleMerchants) {
-      items.push({
-        value: merchant.merchantId,
-        label: merchant.canonicalName,
-        description: [merchant.domain, merchant.description]
-          .filter(Boolean)
-          .join("\n"),
-        imageUrl: merchant.logoUrl,
-        keywords: [
-          merchant.canonicalName,
-          ...(merchant.domain ? [merchant.domain] : []),
-          ...(merchant.description ? [merchant.description] : []),
-          ...(merchant.aliases?.map((alias) => alias.normalizedValue) ?? []),
-        ],
-      });
-    }
-    return items;
-  });
 
   function merchantById(id: string) {
     return merchants.find((merchant) => merchant.merchantId === id);
+  }
+
+  function reportError(message: string) {
+    loadError = message;
+    onError?.(message);
   }
 
   function domainFromUrl(inputValue: string) {
@@ -137,15 +80,13 @@
     }
   }
 
-  function brandMatchAction(search: string): FilterCommandSearchAction | null {
+  function brandMatchAction(search: string) {
     const nextDomain = domainFromUrl(search);
     if (
       !projectId ||
-      (!sourceId && !account) ||
+      (!sourceId && !sourceName && !account) ||
       !nextDomain ||
-      merchants.some(
-        (merchant) => merchant.domain?.toLowerCase() === nextDomain,
-      )
+      merchants.some((merchant) => merchant.domain?.toLowerCase() === nextDomain)
     ) {
       return null;
     }
@@ -155,32 +96,10 @@
     };
   }
 
-  function reportError(message: string) {
-    loadError = message;
-    onError?.(message);
-  }
-
-  function attachMerchant(merchant: Merchant) {
+  function attachMerchant(merchant: MerchantPickerMerchant) {
     value = merchant.merchantId;
     void onChange?.(merchant.merchantId);
     onAttach?.(merchant);
-  }
-
-  async function fetchMerchants(nextProjectId: string) {
-    try {
-      const listed = await ingestionJson<Merchant[]>(
-        ingestionPath(nextProjectId, "/merchants"),
-      );
-      if (nextProjectId !== projectId) return;
-      merchants = Array.isArray(listed) ? listed : [];
-      reportError("");
-    } catch (error) {
-      if (nextProjectId !== projectId) return;
-      merchants = [];
-      reportError(
-        error instanceof Error ? error.message : "Failed to load merchants",
-      );
-    }
   }
 
   async function createMerchantFromBrandMatch(url: string) {
@@ -190,7 +109,7 @@
     brandMatchBusy = true;
     reportError("");
     try {
-      const merchant = await ingestionJson<Merchant>(
+      const merchant = await ingestionJson<MerchantPickerMerchant>(
         ingestionPath(requestedProjectId, "/merchants/brand-match"),
         {
           method: "POST",
@@ -221,6 +140,36 @@
     }
   }
 
+  async function fetchMerchants(nextProjectId: string) {
+    try {
+      const listed = await ingestionJson<MerchantPickerMerchant[]>(
+        ingestionPath(nextProjectId, "/merchants"),
+      );
+      if (nextProjectId !== projectId) return;
+      merchants = Array.isArray(listed) ? listed : [];
+      reportError("");
+    } catch (error) {
+      if (nextProjectId !== projectId) return;
+      merchants = [];
+      reportError(
+        error instanceof Error ? error.message : "Failed to load merchants",
+      );
+    }
+  }
+
+  function handleChange(nextValue: string) {
+    if (!nextValue) {
+      value = "";
+      lastAutoAttachedId = null;
+      void onChange?.("");
+      return;
+    }
+    const merchant = merchantById(nextValue);
+    if (!merchant) return;
+    lastAutoAttachedId = null;
+    attachMerchant(merchant);
+  }
+
   $effect(() => {
     if (!projectId) {
       merchants = [];
@@ -244,45 +193,23 @@
     lastAutoAttachedId = match.merchantId;
     attachMerchant(match);
   });
-
-  function handleChange(nextValue: string) {
-    if (!nextValue) {
-      value = "";
-      lastAutoAttachedId = null;
-      void onChange?.("");
-      return;
-    }
-    const merchant = merchantById(nextValue);
-    if (!merchant) return;
-    lastAutoAttachedId = null;
-    attachMerchant(merchant);
-  }
 </script>
 
 <div class="merchant-picker">
-  {#if readOnly}
-    <output
-      >{(options.find((option) => option.value === value)?.label ?? value) ||
-        " "}</output
-    >
-  {:else}
-    <FilterCommandPicker
-      fullWidth
-      {label}
-      {ariaLabel}
-      {placeholder}
-      emptyLabel={merchants.length
-        ? "No matching merchants."
-        : "No saved merchants yet."}
-      stackedOptions
-      {value}
-      {options}
-      searchAction={brandMatchAction}
-      searchActionGroupLabel="Brand Match"
-      onSearchAction={createMerchantFromBrandMatch}
-      onChange={handleChange}
-    />
-  {/if}
+  <SharedMerchantPicker
+    merchants={rankedMerchants}
+    {value}
+    {label}
+    {ariaLabel}
+    {placeholder}
+    {emptyOption}
+    {readOnly}
+    searchAction={brandMatchAction}
+    searchActionGroupLabel="Brand Match"
+    onSearchAction={createMerchantFromBrandMatch}
+    onChange={handleChange}
+    {onAttach}
+  />
   {#if !readOnly && loadError}
     <p class="merchant-picker__error">{loadError}</p>
   {/if}
