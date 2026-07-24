@@ -358,7 +358,7 @@ is `visual-approved`.
 | C021 | `JournalRecordRouteSheet.svelte`  | Done        |
 | C022 | `RuleEditorSheet.svelte`          | Done |
 | C023 | `rules/RuleConditionRow.svelte`   | Done |
-| C024 | `IngestionHeaderActions.svelte`   | Not started |
+| C024 | `IngestionHeaderActions.svelte`   | Done        |
 | C025 | `IngestionMerchantSheet.svelte`   | Not started |
 | C026 | `IngestionProposalSheet.svelte`   | Not started |
 | C027 | `IngestionSourceForm.svelte`      | Not started |

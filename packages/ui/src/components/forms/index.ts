@@ -20,8 +20,23 @@ export { default as JsonBackedForm } from "./JsonBackedForm.svelte";
 export { default as JournalEditorSheet } from "./JournalEditorSheet.svelte";
 export { default as RuleEditorSheet } from "./RuleEditorSheet.svelte";
 export { default as RuleConditionRow } from "./rules/RuleConditionRow.svelte";
+export { default as IngestionHeaderActions } from "./IngestionHeaderActions.svelte";
 export { default as SearchFilterBar } from "./SearchFilterBar.svelte";
 export { default as ComboBox } from "./ComboBox.svelte";
+export type {
+  IngestionHeaderActions as IngestionHeaderActionSet,
+  IngestionEditorHeaderActions,
+  IngestionReviewHeaderActions,
+  IngestionBulkReviewAction,
+  IngestionMerchantsHeaderActions,
+  IngestionManageMerchantsHeaderActions,
+  IngestionHistoryHeaderActions,
+  IngestionAccountsHeaderActions,
+  IngestionRulesHeaderActions,
+  LedgerEditorHeaderActions,
+  ReviewLedgerHeaderActions,
+  AccountActivityHeaderActions,
+} from "./ingestion-header-actions";
 export type {
   SearchFilterExample,
   SearchFilterField,
