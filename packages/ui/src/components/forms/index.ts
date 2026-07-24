@@ -36,6 +36,7 @@ export { default as TagEditor } from "./TagEditor.svelte";
 export { default as AccountPicker } from "./AccountPicker.svelte";
 export { default as MerchantPicker } from "./MerchantPicker.svelte";
 export { default as LocalMerchantMatchPicker } from "./LocalMerchantMatchPicker.svelte";
+export { default as MerchantComboField } from "./MerchantComboField.svelte";
 export { default as SecretField } from "./SecretField.svelte";
 export { default as SwitchField } from "./SwitchField.svelte";
 export { default as CycleSelect } from "./CycleSelect.svelte";

@@ -232,6 +232,20 @@ is `visual-approved`.
   `pnpm --filter @beancount-js/fava-beta check`, `check:svelte5`, `lint`, and
   `build` pass after this migration.
 
+#### C015 — `form/MerchantComboField.svelte`
+
+- Status: **Done**. `@beancount-js/ui/forms/MerchantComboField.svelte`
+  now owns the source-form merchant selector presentation.
+- Beta adapter: `packages/fava-beta/src/ingestion/source-form-config.ts` now
+  imports `MerchantComboField` from `@beancount-js/ui/forms`; `IngestionSourceForm`
+  loads the project merchant catalog from `/merchants` and passes it through
+  `SourceFormContext.merchants` to the shared renderer. The duplicate local
+  `MerchantComboField` component and story were removed.
+- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
+  `pnpm --filter @beancount-js/ui check-boundaries`,
+  `pnpm --filter @beancount-js/fava-beta check`,
+  `check:svelte5`, `lint`, and `build` pass after this migration.
+
 #### C017 — `form/SwitchField.svelte`
 
 - Status: **Done**. Presentation ownership is now in
@@ -240,6 +254,21 @@ is `visual-approved`.
   form row behavior for editable mode.
 - Beta adapter: `packages/fava-beta/src/ingestion/source-form-config.ts` now
   imports `SwitchField` from `@beancount-js/ui/forms`; legacy story and local
+  component files under `packages/fava-beta/src/components/form/` were removed.
+- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
+  `pnpm --filter @beancount-js/ui check-boundaries`,
+  `pnpm --filter @beancount-js/fava-beta check`,
+  `check:svelte5`, `lint`, and `build` pass after this migration.
+
+#### C016 — `form/SecretField.svelte`
+
+- Status: **Done**. `@beancount-js/ui/forms/SecretField.svelte` now owns
+  secret input rendering for both standalone and form-renderer usage, including
+  environment-key placeholders and inline mode display behavior. The shared form
+  version accepts `envPlaceholder` while preserving the existing API that uses
+  `environmentPlaceholder`/`environmentKeys`.
+- Beta adapter: `packages/fava-beta/src/ingestion/source-form-config.ts` now
+  imports `SecretField` from `@beancount-js/ui/forms`; legacy story and local
   component files under `packages/fava-beta/src/components/form/` were removed.
 - Validation: `pnpm --filter @beancount-js/ui test-storybook`,
   `pnpm --filter @beancount-js/ui check-boundaries`,
@@ -288,8 +317,8 @@ is `visual-approved`.
 | C012 | `MerchantPicker.svelte`           | Done        |
 | C013 | `LocalMerchantMatchPicker.svelte` | Done        |
 | C014 | `form/AccountComboField.svelte`   | Done        |
-| C015 | `form/MerchantComboField.svelte`  | Not started |
-| C016 | `form/SecretField.svelte`         | Not started |
+| C015 | `form/MerchantComboField.svelte`  | Done        |
+| C016 | `form/SecretField.svelte`         | Done        |
 | C017 | `form/SwitchField.svelte`         | Done        |
 | C018 | `AccountBulkActionSheet.svelte`   | Not started |
 | C019 | `MerchantEditSheet.svelte`        | Not started |

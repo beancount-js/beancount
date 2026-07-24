@@ -35,6 +35,7 @@
     StructuredForm,
     type FormValidationIssue,
   } from "@beancount-js/forms";
+  import { type MerchantPickerMerchant } from "@beancount-js/ui/forms";
   import {
     type JsonApiLinkedAccount,
     type ProviderCategoryMapping,
@@ -61,6 +62,7 @@
     sourcePaginationForm,
     type SourceFormContext,
   } from "../ingestion/source-form-config";
+  import { ingestionJson, ingestionPath } from "../ingestion/api";
 
   type KeyValue = [string, string];
 
@@ -97,6 +99,32 @@
   const { router } = useNavigation();
 
   let queryDraft: KeyValue[] = $state([]);
+  let merchants = $state<readonly MerchantPickerMerchant[]>([]);
+
+  async function fetchMerchants(nextProjectId: string) {
+    try {
+      const listed = await ingestionJson<readonly MerchantPickerMerchant[]>(
+        ingestionPath(nextProjectId, "/merchants"),
+      );
+      if (nextProjectId !== projectId) return;
+      merchants = (Array.isArray(listed) ? listed : [])
+        .slice()
+        .sort((left, right) =>
+          left.canonicalName.localeCompare(right.canonicalName),
+        );
+    } catch {
+      if (nextProjectId !== projectId) return;
+      merchants = [];
+    }
+  }
+
+  $effect(() => {
+    if (!projectId) {
+      merchants = [];
+      return;
+    }
+    void fetchMerchants(projectId);
+  });
 
   const connector = $derived(
     isConnectorSource(source) ? clientConnector(source.kind) : undefined,
@@ -125,6 +153,7 @@
   const formContext = $derived({
     accounts,
     projectId,
+    merchants,
     envKeys,
     credentialAvailable,
     merchantCredentialAvailable,

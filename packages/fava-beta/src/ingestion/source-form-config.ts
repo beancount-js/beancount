@@ -6,14 +6,19 @@ import {
   textareaField,
   type FormCustomRenderer,
 } from "@beancount-js/forms";
+import { type MerchantPickerMerchant } from "@beancount-js/ui/forms";
 import type { EditableIngestionSource } from "./source-form";
-import { AccountComboField, SwitchField } from "@beancount-js/ui/forms";
-import MerchantComboField from "../components/form/MerchantComboField.svelte";
-import SecretField from "../components/form/SecretField.svelte";
+import {
+  AccountComboField,
+  MerchantComboField,
+  SecretField,
+  SwitchField,
+} from "@beancount-js/ui/forms";
 
 export type SourceFormContext = {
   accounts: string[];
   projectId?: string;
+  merchants?: readonly MerchantPickerMerchant[];
   /** Key names from the project-root `.env` (values never included). */
   envKeys?: string[];
   credentialAvailable?: boolean;
