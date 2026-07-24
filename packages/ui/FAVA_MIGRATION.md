@@ -88,7 +88,7 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 | C002 | `StudioShell.svelte` / `AppShell` certification     | Done        |
 | C003 | `Search.svelte` / `SearchFilterBar` certification   | Done        |
 | C004 | `tree-table/IntervalTreeTable.svelte` certification | Done        |
-| C005 | `StudioShellHeader.svelte`                          | In progress |
+| C005 | `StudioShellHeader.svelte`                          | Done        |
 | C006 | `FavaNavigation.svelte`                             | Not started |
 | C007 | `Nav.svelte`                                        | Not started |
 | C008 | `PagePagination.svelte`                             | Not started |
@@ -288,3 +288,13 @@ change IDs here at the end of each committed slice.
   comparisons now clip tall components to the captured viewport before pixel
   comparison; UI and Beta checks passed, as did 55 files/188 Beta tests and
   all 23 frozen component-parity comparisons.
+- 2026-07-24 — StudioShellHeader migration slice (`mnyxtpllttmk`): replaced
+  Beta's duplicate markup with the UI header while retaining app-owned project,
+  workspace-settings, and local-sidebar state in its adapter. Added the
+  controlled UI baseline and marked the story visual-pending. Frozen parity
+  proves the shared brand, title, and settings-action pixels; the project name
+  remains an app-owned input and intentionally differs from the pinned
+  reference checkout. UI and Beta checks passed, as did Beta's 55-file/188-test
+  suite and all 26 frozen comparisons. The legacy settings navigation E2E has
+  a stale `Import` expectation: it correctly opens settings, but neither
+  original Fava nor Beta's identical `FavaNavigation` renders that action.

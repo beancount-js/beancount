@@ -19,7 +19,10 @@
   } = $props();
 </script>
 
-<div class="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+<div
+  class="flex items-center gap-2 group-data-[collapsible=icon]:hidden"
+  data-studio-shell-header
+>
   <div
     class="grid size-8 place-items-center rounded-md bg-primary font-semibold text-primary-foreground"
     aria-hidden="true"

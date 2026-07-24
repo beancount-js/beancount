@@ -20,6 +20,11 @@ type ReferenceRoute = {
   readySelector?: string;
 };
 
+type ReferenceSurface = ReferenceRoute & {
+  label: string;
+  selector: string;
+};
+
 const contentScrollAreaReferenceRoutes = [
   { id: "account-detail", viewPath: "/account/Assets:Checking" },
   { id: "dashboard", viewPath: "/dashboard" },
@@ -64,6 +69,27 @@ const intervalTreeTableReferenceRoutes: readonly ReferenceRoute[] = [
   },
 ];
 
+const studioShellHeaderReferenceSurfaces: readonly ReferenceSurface[] = [
+  {
+    id: "journal",
+    viewPath: "/journal",
+    label: "brand mark",
+    selector: "[data-studio-shell-header] > div:first-child",
+  },
+  {
+    id: "journal",
+    viewPath: "/journal",
+    label: "product title",
+    selector: "[data-studio-shell-header] > div:nth-child(2) > p:first-child",
+  },
+  {
+    id: "journal",
+    viewPath: "/journal",
+    label: "settings action",
+    selector: "[data-studio-shell-header] [aria-label='Ledger settings']",
+  },
+];
+
 test.use({
   viewport: { width: 1280, height: 900 },
   deviceScaleFactor: 3,
@@ -77,6 +103,23 @@ test.describe("frozen Fava visual parity", () => {
   test.beforeEach(async ({ page }) => {
     await seedLedger(page, sampleLedger);
   });
+
+  async function waitForFontsAfterNavigation(page: Page) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        return;
+      } catch (error) {
+        const isNavigationRace = String(error).includes(
+          "Execution context was destroyed",
+        );
+        if (!isNavigationRace || attempt === 2) throw error;
+        await page.waitForTimeout(100);
+      }
+    }
+  }
 
   async function expectFrozenSurfaceParity(
     page: Page,
@@ -95,9 +138,7 @@ test.describe("frozen Fava visual parity", () => {
     if (reference.readySelector) {
       await expect(page.locator(reference.readySelector)).toBeVisible();
     }
-    await page.evaluate(async () => {
-      await document.fonts.ready;
-    });
+    await waitForFontsAfterNavigation(page);
     await page.waitForTimeout(500);
 
     const surface = page.locator(selector).first();
@@ -214,6 +255,14 @@ test.describe("frozen Fava visual parity", () => {
         reference,
         "[data-interval-tree-table]:visible",
       );
+    });
+  }
+
+  for (const reference of studioShellHeaderReferenceSurfaces) {
+    test(`StudioShellHeader retains ${reference.label} pixels`, async ({
+      page,
+    }) => {
+      await expectFrozenSurfaceParity(page, reference, reference.selector);
     });
   }
 });
