@@ -43,15 +43,21 @@ This file is the source of truth for moving reusable Fava presentation into
 
 ## Manual breaks and model handoff
 
-There are exactly three manual validation breaks:
+There are exactly three manual validation breaks. When a new break is reached,
+the migration records the evidence packet below and waits for explicit human
+acceptance before it starts the following stage. Component tasks do not add
+per-component pauses.
 
-1. after the Storybook/reference harness is complete;
-2. after Forms is consolidated into UI;
-3. after the final parity audit.
+| Gate | Trigger                              | Required manual review                                                                                                              | Disposition                                                                          |
+| ---- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| G01  | Storybook/reference harness complete | Visual Delta status treatment, protected-reference overwrite guard, and one representative reference capture                        | Accepted by the subsequent continuation directive on 2026-07-24                      |
+| G02  | Forms merge complete                 | Forms catalog, legacy-facade compatibility, and original-Fava compatibility evidence                                                | Accepted by the subsequent continuation directive on 2026-07-24                      |
+| G03  | Final parity audit complete          | All `visual-pending` stories, unresolved visual sidecars, representative desktop and responsive routes, and the final diff manifest | Pending — stop before applying `visual-approved` or declaring the migration complete |
 
-The first two foundation phases use GPT-5.6 Sol. After the Forms break, hand
-component iteration to GPT-5.6 Terra. Component tasks do not introduce
-additional manual pauses. Return to GPT-5.6 Sol for the final parity audit.
+G01 and G02 were already complete when this explicit gate policy was added; the
+recorded continuation is their transition evidence, not a substitute for the
+listed review packet. The first two foundation phases use GPT-5.6 Sol. After
+G02, hand component iteration to GPT-5.6 Terra. Return to GPT-5.6 Sol for G03.
 
 ## Foundation ledger
 
@@ -78,7 +84,7 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 
 | ID   | Fava source or surface                              | Status      |
 | ---- | --------------------------------------------------- | ----------- |
-| C001 | `ContentScrollArea.svelte`                          | Not started |
+| C001 | `ContentScrollArea.svelte`                          | In progress |
 | C002 | `StudioShell.svelte` / `AppShell` certification     | Not started |
 | C003 | `Search.svelte` / `SearchFilterBar` certification   | Not started |
 | C004 | `tree-table/IntervalTreeTable.svelte` certification | Not started |

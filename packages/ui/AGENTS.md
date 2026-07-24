@@ -12,9 +12,12 @@ truth for phase status, component order, evidence, and the model handoff.
   comparable.
 - Protected Fava images come only from the clean pinned `fava-reference`
   Jujutsu workspace. Ordinary visual-update commands must never overwrite them.
-- Automated parity at or below 0.1% advances component work without a manual
-  pause. Keep the story `visual-pending` until the final batch audit; apply
-  `visual-approved` only after that audit is manually accepted.
+- Automated parity at or below 0.1% advances component work without a
+  per-component manual pause. The only manual validation gates are after the
+  Storybook/reference harness, the Forms merge, and the final parity audit;
+  their evidence packet and acceptance status belong in
+  `FAVA_MIGRATION.md`. Keep the story `visual-pending` until the final batch
+  audit; apply `visual-approved` only after that audit is manually accepted.
 - Update the migration ledger and commit every verified component slice before
   starting another.
 - Run `pnpm checks` from this package after each UI-scope change.
