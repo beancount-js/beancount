@@ -272,6 +272,15 @@ async function gotoStudio(page: Page, projectId: string, entry: MatrixEntry) {
   }
   // Allow charts / tables a beat to settle before capture.
   await page.waitForTimeout(500);
+  if (entry.clickButton) {
+    await page.getByRole("button", { name: entry.clickButton }).click();
+    if (entry.readySearchbox) {
+      await page
+        .getByRole("searchbox", { name: entry.readySearchbox })
+        .waitFor({ state: "visible", timeout: 30_000 });
+    }
+    await page.waitForTimeout(150);
+  }
 }
 
 function startFava(root: string, port: number): ChildProcess {

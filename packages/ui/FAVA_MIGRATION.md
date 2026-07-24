@@ -86,7 +86,7 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 | ---- | --------------------------------------------------- | ----------- |
 | C001 | `ContentScrollArea.svelte`                          | Done        |
 | C002 | `StudioShell.svelte` / `AppShell` certification     | Done        |
-| C003 | `Search.svelte` / `SearchFilterBar` certification   | In progress |
+| C003 | `Search.svelte` / `SearchFilterBar` certification   | Done        |
 | C004 | `tree-table/IntervalTreeTable.svelte` certification | Not started |
 | C005 | `StudioShellHeader.svelte`                          | Not started |
 | C006 | `FavaNavigation.svelte`                             | Not started |
@@ -270,3 +270,13 @@ change IDs here at the end of each committed slice.
   every frozen route at the 0.1% limit. The baseline helper now preflights
   create-only requests and runs Playwright's success-returning snapshot mode;
   it refuses to overwrite an existing selected baseline.
+- 2026-07-24 — SearchFilterBar certification slice (`ukmsvyzsvzsn`): confirmed
+  that original Fava and Beta both import the public UI Forms export, while
+  `Search.svelte` remains the application-owned route-state adapter. Added the
+  protected interactive `search-sidebar` capture, which opens the Journal
+  sidebar and waits for the labelled ledger search box. Its frozen UI crop and
+  both pending Storybook baselines pass. The parity comparator now crops both
+  full-page captures on the shared device-pixel grid, avoiding Playwright's
+  fractional-locator high-DPR crop artifact while retaining strict 0.1% pixel
+  parity. UI and Beta checks passed, as did Beta's 55-file/188-test suite and
+  all 22 frozen component-parity comparisons.

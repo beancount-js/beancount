@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-24T11:29:26.372Z",
+  "capturedAt": "2026-07-24T14:58:47.231Z",
   "source": {
     "studioRevision": "191dae81ec0a33abb0f6f4cb9299cc3e01bfdc7b",
     "entryFile": "sample.beancount",
@@ -92,6 +92,14 @@
       "outputPath": "fava-reference/screens/records-chromium-darwin.png",
       "bytes": 175007,
       "sha256": "464348f85d422f7e6300952cb965bb64950c142c8d44232719dc9ec4359977fa"
+    },
+    {
+      "id": "search-sidebar",
+      "storyId": "migration-fava-reference-screens--search-sidebar",
+      "viewPath": "/journal",
+      "outputPath": "fava-reference/screens/search-sidebar-chromium-darwin.png",
+      "bytes": 389391,
+      "sha256": "9ed72c55f06295d811c9fbf8bb4890fc9154d58702b1b50779ac5f2fb6d3e7d0"
     },
     {
       "id": "settings",

@@ -10,10 +10,13 @@ const referenceDirectory = resolve(
   "../ui/tests/visual/storybook.spec.ts-snapshots/fava-reference/screens",
 );
 const maxDiffPixelRatio = 0.001;
+const referenceDeviceScaleFactor = 3;
 
 type ReferenceRoute = {
   id: string;
   viewPath: string;
+  clickButton?: string;
+  readySearchbox?: string;
 };
 
 const contentScrollAreaReferenceRoutes = [
@@ -43,6 +46,15 @@ const appShellReferenceRoutes: readonly ReferenceRoute[] = [
   { id: "trial-balance", viewPath: "/trial_balance" },
 ];
 
+const searchFilterBarReferenceRoutes: readonly ReferenceRoute[] = [
+  {
+    id: "search-sidebar",
+    viewPath: "/journal",
+    clickButton: "Show search sidebar",
+    readySearchbox: "Search ledger",
+  },
+];
+
 test.use({
   viewport: { width: 1280, height: 900 },
   deviceScaleFactor: 3,
@@ -63,6 +75,14 @@ test.describe("frozen Fava visual parity", () => {
     selector: string,
   ) {
     await gotoStudio(page, reference.viewPath);
+    if (reference.clickButton) {
+      await page.getByRole("button", { name: reference.clickButton }).click();
+      if (reference.readySearchbox) {
+        await expect(
+          page.getByRole("searchbox", { name: reference.readySearchbox }),
+        ).toBeVisible();
+      }
+    }
     await page.evaluate(async () => {
       await document.fonts.ready;
     });
@@ -73,25 +93,25 @@ test.describe("frozen Fava visual parity", () => {
     const box = await surface.boundingBox();
     expect(box, `${reference.id}: ${selector} bounds`).not.toBeNull();
 
-    const actual = PNG.sync.read(
-      await surface.screenshot({ type: "png", scale: "device" }),
+    // Crop both full-page screenshots on the same device-pixel grid. Locator
+    // screenshots expand fractional CSS bounds differently at high DPR, which
+    // would otherwise create false diffs against the frozen full-page capture.
+    const x = Math.round(box!.x * referenceDeviceScaleFactor);
+    const y = Math.round(box!.y * referenceDeviceScaleFactor);
+    const width = Math.round(box!.width * referenceDeviceScaleFactor);
+    const height = Math.round(box!.height * referenceDeviceScaleFactor);
+    const actualScreen = PNG.sync.read(
+      await page.screenshot({ type: "png", scale: "device" }),
     );
+    const actual = new PNG({ width, height });
+    PNG.bitblt(actualScreen, actual, x, y, width, height, 0, 0);
     const referenceScreen = PNG.sync.read(
       readFileSync(
         resolve(referenceDirectory, `${reference.id}-chromium-darwin.png`),
       ),
     );
-    const expected = new PNG({ width: actual.width, height: actual.height });
-    PNG.bitblt(
-      referenceScreen,
-      expected,
-      Math.round(box!.x * 3),
-      Math.round(box!.y * 3),
-      actual.width,
-      actual.height,
-      0,
-      0,
-    );
+    const expected = new PNG({ width, height });
+    PNG.bitblt(referenceScreen, expected, x, y, width, height, 0, 0);
 
     expect(actual.width, `${reference.id}: screenshot width`).toBe(
       expected.width,
@@ -133,6 +153,12 @@ test.describe("frozen Fava visual parity", () => {
         reference,
         "[data-slot=studio-workspace-header]",
       );
+    });
+  }
+
+  for (const reference of searchFilterBarReferenceRoutes) {
+    test(`SearchFilterBar retains ${reference.id} pixels`, async ({ page }) => {
+      await expectFrozenSurfaceParity(page, reference, ".cv-search-filter-bar");
     });
   }
 });

@@ -49,6 +49,12 @@
   {@render reference("journal", "Journal")}
 </Story>
 <Story
+  name="Search sidebar"
+  parameters={{ visualDelta: visualDeltaForFavaReference("search-sidebar") }}
+>
+  {@render reference("search-sidebar", "Search sidebar")}
+</Story>
+<Story
   name="Income statement"
   parameters={{ visualDelta: visualDeltaForFavaReference("income-statement") }}
 >

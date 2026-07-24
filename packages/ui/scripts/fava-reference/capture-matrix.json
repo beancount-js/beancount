@@ -27,6 +27,15 @@
       "outputPath": "fava-reference/screens/journal-chromium-darwin.png"
     },
     {
+      "id": "search-sidebar",
+      "storyId": "migration-fava-reference-screens--search-sidebar",
+      "viewPath": "/journal",
+      "pageTitle": "Journal search sidebar",
+      "clickButton": "Show search sidebar",
+      "readySearchbox": "Search ledger",
+      "outputPath": "fava-reference/screens/search-sidebar-chromium-darwin.png"
+    },
+    {
       "id": "income-statement",
       "storyId": "migration-fava-reference-screens--income-statement",
       "viewPath": "/income_statement",

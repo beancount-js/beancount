@@ -7,6 +7,7 @@
   const { Story } = defineMeta({
     title: "UI Forms/Search Filter Bar",
     component: SearchFilterBar,
+    tags: ["visual-pending"],
     parameters: {
       docs: {
         description: {
