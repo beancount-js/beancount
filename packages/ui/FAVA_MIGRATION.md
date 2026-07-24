@@ -273,6 +273,25 @@ is `visual-approved`.
 - Validation: `pnpm --filter @beancount-js/fava-beta check`, `check:svelte5`,
   `lint`, and `build` pass after this migration.
 
+#### C019 — `MerchantEditSheet.svelte`
+
+- Status: **Done**. `@beancount-js/ui/forms/MerchantEditSheet.svelte`
+  now owns the merchant editing sheet presentation. It includes details,
+  aliases, provenance, brand sections, and logo metadata rendering, while
+  exposing simple callback props for state changes.
+- Beta adapter: `packages/fava-beta/src/components/MerchantEditSheet.svelte` now
+  owns merchant loading, debounced autosave/validation, persistence, logo
+  refresh, and close behavior, passing mutable state to the shared component.
+- Storybook: added
+  `packages/ui/src/components/forms/MerchantEditSheet.stories.svelte` and tagged it
+  as `visual-pending` while pixel parity remains out of scope for this slice.
+- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
+  `pnpm --filter @beancount-js/ui check-boundaries`,
+  `pnpm --filter @beancount-js/fava-beta check`,
+  `pnpm --filter @beancount-js/fava-beta check:svelte5`,
+  `pnpm --filter @beancount-js/fava-beta lint`,
+  `pnpm --filter @beancount-js/fava-beta build`.
+
 #### C016 — `form/SecretField.svelte`
 
 - Status: **Done**. `@beancount-js/ui/forms/SecretField.svelte` now owns
@@ -334,7 +353,7 @@ is `visual-approved`.
 | C016 | `form/SecretField.svelte`         | Done        |
 | C017 | `form/SwitchField.svelte`         | Done        |
 | C018 | `AccountBulkActionSheet.svelte`   | Done        |
-| C019 | `MerchantEditSheet.svelte`        | Not started |
+| C019 | `MerchantEditSheet.svelte`        | Done        |
 | C020 | `JournalEditorSheet.svelte`       | Not started |
 | C021 | `JournalRecordRouteSheet.svelte`  | Not started |
 | C022 | `RuleEditorSheet.svelte`          | Not started |
