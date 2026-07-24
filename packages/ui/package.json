@@ -95,6 +95,8 @@
     "./dashboard/*.svelte": "./src/components/dashboard/*.svelte",
     "./forms": "./src/components/forms/index.ts",
     "./forms/core": "./src/components/forms/core.ts",
+    "./forms/helpers/account-avatar": "./src/components/forms/account-avatar.ts",
+    "./forms/helpers/appearance-color": "./src/components/forms/appearance-color.ts",
     "./forms/components/*.svelte": "./src/components/forms/*.svelte",
     "./forms/*.svelte": "./src/components/forms/*.svelte",
     "./styles.css": "./src/styles.css",

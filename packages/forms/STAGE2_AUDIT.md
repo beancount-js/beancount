@@ -6,5 +6,7 @@ resumed on 2026-07-24.
 - Active behavior guidance remains in `packages/forms/FORMS.md`.
 - Canonical implementation and Storybook ownership moves to
   `@beancount-js/ui/forms`.
-- This package becomes an implementation-free compatibility facade after the
-  consolidation tracked in `packages/ui/FAVA_MIGRATION.md`.
+- This package is now an implementation-free compatibility facade. Its public
+  package surface and the two historical Fava test-helper paths forward to UI.
+- The completed consolidation and compatibility evidence is tracked in
+  `packages/ui/FAVA_MIGRATION.md`.

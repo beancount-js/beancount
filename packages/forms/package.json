@@ -3,47 +3,36 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "check": "node ./scripts/check-facade.mjs",
+    "checks": "pnpm check"
+  },
   "peerDependencies": {
     "svelte": "^5.0.0"
   },
   "dependencies": {
-    "@beancount-js/filters": "workspace:*",
-    "@codemirror/autocomplete": "^6.18.3",
-    "@codemirror/commands": "^6.7.1",
-    "@codemirror/lang-json": "^6.0.1",
-    "@codemirror/lang-yaml": "^6.1.1",
-    "@codemirror/language": "^6.10.3",
-    "@codemirror/lint": "^6.8.3",
-    "@codemirror/search": "^6.5.8",
-    "@codemirror/state": "^6.4.1",
-    "@codemirror/view": "^6.35.0",
-    "@lezer/highlight": "^1.2.1",
-    "bits-ui": "^1.8.0",
-    "lucide-svelte": "^0.460.1"
-  },
-  "devDependencies": {
-    "@storybook/addon-svelte-csf": "^5.1.2"
+    "@beancount-js/ui": "workspace:*"
   },
   "exports": {
     ".": "./src/index.ts",
     "./core": "./src/core.ts",
-    "./components/StructuredForm.svelte": "./src/components/StructuredForm.svelte",
-    "./components/FormViewRenderer.svelte": "./src/components/FormViewRenderer.svelte",
-    "./components/FormSectionHeader.svelte": "./src/components/FormSectionHeader.svelte",
-    "./components/FormField.svelte": "./src/components/FormField.svelte",
-    "./components/EntryActions.svelte": "./src/components/EntryActions.svelte",
-    "./components/CollapsibleItemList.svelte": "./src/components/CollapsibleItemList.svelte",
-    "./components/FormAddButton.svelte": "./src/components/FormAddButton.svelte",
-    "./components/FormToolbar.svelte": "./src/components/FormToolbar.svelte",
-    "./components/SegmentedControl.svelte": "./src/components/SegmentedControl.svelte",
-    "./components/YamlBackedForm.svelte": "./src/components/YamlBackedForm.svelte",
-    "./components/CodeEditor.svelte": "./src/components/CodeEditor.svelte",
-    "./components/JsonBackedForm.svelte": "./src/components/JsonBackedForm.svelte",
-    "./components/SearchFilterBar.svelte": "./src/components/SearchFilterBar.svelte",
-    "./components/SearchableChoicePicker.svelte": "./src/components/SearchableChoicePicker.svelte",
-    "./components/FilterCommandPicker.svelte": "./src/components/FilterCommandPicker.svelte",
-    "./components/AutocompleteInput.svelte": "./src/components/AutocompleteInput.svelte",
-    "./components/ChipAutocomplete.svelte": "./src/components/ChipAutocomplete.svelte",
-    "./components/TagEditor.svelte": "./src/components/TagEditor.svelte"
+    "./components/StructuredForm.svelte": "./src/components/StructuredForm.ts",
+    "./components/FormViewRenderer.svelte": "./src/components/FormViewRenderer.ts",
+    "./components/FormSectionHeader.svelte": "./src/components/FormSectionHeader.ts",
+    "./components/FormField.svelte": "./src/components/FormField.ts",
+    "./components/EntryActions.svelte": "./src/components/EntryActions.ts",
+    "./components/CollapsibleItemList.svelte": "./src/components/CollapsibleItemList.ts",
+    "./components/FormAddButton.svelte": "./src/components/FormAddButton.ts",
+    "./components/FormToolbar.svelte": "./src/components/FormToolbar.ts",
+    "./components/SegmentedControl.svelte": "./src/components/SegmentedControl.ts",
+    "./components/YamlBackedForm.svelte": "./src/components/YamlBackedForm.ts",
+    "./components/CodeEditor.svelte": "./src/components/CodeEditor.ts",
+    "./components/JsonBackedForm.svelte": "./src/components/JsonBackedForm.ts",
+    "./components/SearchFilterBar.svelte": "./src/components/SearchFilterBar.ts",
+    "./components/SearchableChoicePicker.svelte": "./src/components/SearchableChoicePicker.ts",
+    "./components/FilterCommandPicker.svelte": "./src/components/FilterCommandPicker.ts",
+    "./components/AutocompleteInput.svelte": "./src/components/AutocompleteInput.ts",
+    "./components/ChipAutocomplete.svelte": "./src/components/ChipAutocomplete.ts",
+    "./components/TagEditor.svelte": "./src/components/TagEditor.ts"
   }
 }

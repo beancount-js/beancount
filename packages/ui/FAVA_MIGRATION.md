@@ -62,10 +62,10 @@ additional manual pauses. Return to GPT-5.6 Sol for the final parity audit.
 | F03 | Port Visual Delta and Storybook status badges                     | Done        | Change `a3d69779`; 61 addon tests               |
 | F04 | Add protected Fava capture matrix, manifest, and overwrite guards | Done        | 15 pinned captures; manifest digest gate        |
 | F05 | Repair the `SearchFilterBar` empty-focus browser story            | Done        | 2/2 focused browser stories; 7/7 syntax tests   |
-| F06 | Consolidate Forms implementation, tests, and stories into UI      | In progress | Authority/delta audit next                      |
-| F07 | Reduce `@beancount-js/forms` to a forwarding compatibility facade | Not started | —                                               |
-| F08 | Run UI, Forms-facade, and original-Fava compatibility gates       | Not started | —                                               |
-| F09 | Manual Forms validation and GPT-5.6 Terra handoff                 | Not started | Stop point                                      |
+| F06 | Consolidate Forms implementation, tests, and stories into UI      | Done        | UI owns the complete catalog and runtime        |
+| F07 | Reduce `@beancount-js/forms` to a forwarding compatibility facade | Done        | 22 checked TypeScript forwarders; no Svelte/CSS |
+| F08 | Run UI, Forms-facade, and original-Fava compatibility gates       | Done        | UI checks; 188 Fava tests; build; 18 subpaths   |
+| F09 | Manual Forms validation and GPT-5.6 Terra handoff                 | In progress | Current stop point                              |
 
 ## Component migration order
 
@@ -193,3 +193,14 @@ change IDs here at the end of each committed slice.
   await CodeMirror's debounced completion popup, preserving the real click,
   keyboard, and completion interactions. Both focused browser stories and all
   seven filter-syntax unit tests passed.
+- 2026-07-24 — Forms consolidation slice: confirmed that UI's relocated Forms
+  implementations match the former package behavior and retain its complete
+  Storybook surface, then replaced the old package source with 22 checked
+  TypeScript forwarders. Original Fava remains source-unchanged; its lint,
+  Svelte 5, type, 188-test, and production-build gates pass through the facade.
+  All 18 legacy component subpaths load through Fava's Vite/Svelte pipeline.
+  UI's 18 unit tests, 186 browser stories, Svelte and boundary checks, and
+  production Storybook build pass; a fresh-cache browser run also passes after
+  pinning the late-discovered Luggage icon in Vite's dependency optimizer.
+  Its aggregate formatting gate still reports the unrelated pre-existing
+  `src/core/ledger-data-class.ts` warning.
