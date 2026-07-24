@@ -61,6 +61,55 @@
       },
     },
   ];
+
+  const holdingsColumns = [
+    { id: "account", label: "account", sortable: true },
+    { id: "units", label: "units", sortable: true, align: "right" as const },
+    { id: "cost", label: "cost", sortable: true, align: "right" as const },
+    { id: "price", label: "price", sortable: true, align: "right" as const },
+    {
+      id: "book_value",
+      label: "book_value",
+      sortable: true,
+      align: "right" as const,
+    },
+    {
+      id: "market_value",
+      label: "market_value",
+      sortable: true,
+      align: "right" as const,
+    },
+    {
+      id: "acquisition_date",
+      label: "acquisition_date",
+      sortable: true,
+      align: "right" as const,
+    },
+  ];
+
+  const holdingsRows = [
+    ["Assets:Cash", "70.00"],
+    ["Assets:Checking:Monzo", "7637.59"],
+    ["Assets:Checking:Starling", "17214.19"],
+    ["Liabilities:CreditCard:Amex", "3377.90"],
+    ["Liabilities:CreditCard:Barclays", "2365.62"],
+    ["Liabilities:CreditCard:Mbna", "976.61"],
+    ["Liabilities:CreditCard:Natwest", "-4150.00"],
+    ["Liabilities:CreditCard:PayPal", "-2002.45"],
+    ["Liabilities:Loan:Miriam", "-1000.00"],
+    ["Liabilities:Loan:Novuna", "1896.40"],
+  ].map(([account, amount]) => ({
+    id: account,
+    values: {
+      account,
+      units: amount,
+      cost: "",
+      price: "",
+      book_value: amount,
+      market_value: amount,
+      acquisition_date: "",
+    },
+  }));
 </script>
 
 <script lang="ts">
@@ -152,6 +201,24 @@
         rows={[]}
         emptyLabel="No matching rows."
         error="Unexpected token near FROM"
+      />
+    </div>
+  {/snippet}
+</Story>
+
+<Story name="Holdings results">
+  {#snippet template()}
+    <div style="width: 982px">
+      <QueryResultsTable
+        columns={holdingsColumns}
+        rows={holdingsRows}
+        pagination={{
+          page: 1,
+          pageCount: 2,
+          resultLabel: "Showing 1–10 of 12",
+          pageSize: 10,
+          pageSizes: [10, 25, 50, 100],
+        }}
       />
     </div>
   {/snippet}

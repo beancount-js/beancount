@@ -94,6 +94,7 @@
     "./app-shell": "./src/components/AppShell.svelte",
     "./shadcn/*": "./src/components/shadcn/*/index.ts",
     "./layout/*.svelte": "./src/components/layout/*.svelte",
+    "./pages/*.svelte": "./src/components/pages/*.svelte",
     "./navigation/*.svelte": "./src/components/navigation/*.svelte",
     "./tables/*.svelte": "./src/components/tables/*.svelte",
     "./feedback/*.svelte": "./src/components/feedback/*.svelte",

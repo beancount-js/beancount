@@ -4,13 +4,13 @@
   import CycleSelect from "./CycleSelect.svelte";
 
   const { Story } = defineMeta({
-    title: "Fava/Navigation/Cycle Select",
+    title: "Forms/Cycle Select",
     component: CycleSelect,
     parameters: {
       docs: {
         description: {
           component:
-            "A compact previous/next navigator with a searchable selector for a small ordered set, such as reporting periods. It owns the cycling behaviour; use Filter Command Picker directly for an ordinary searchable choice.",
+            "A compact previous/next navigator with a searchable selector for ordered sets. Use for small scoped option lists where keyboard or click cycling is expected.",
         },
       },
     },
@@ -31,11 +31,15 @@
   name="Cycles reporting periods"
   play={async ({ canvas }) => {
     await userEvent.click(canvas.getByRole("button", { name: "Next period" }));
-    await expect(canvas.getByRole("status")).toHaveTextContent("This month");
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "Viewing: This month",
+    );
     await userEvent.click(
       canvas.getByRole("button", { name: "Previous period" }),
     );
-    await expect(canvas.getByRole("status")).toHaveTextContent("This week");
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "Viewing: This week",
+    );
   }}
 >
   {#snippet template()}

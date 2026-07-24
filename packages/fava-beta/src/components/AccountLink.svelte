@@ -33,7 +33,7 @@
 </script>
 
 <script lang="ts">
-  import { AccountAvatar } from "@beancount-js/forms";
+  import AccountNavigationLink from "@beancount-js/ui/navigation/AccountNavigationLink.svelte";
 
   import { useContext } from "../context";
   import { urlForAccount } from "../helpers";
@@ -43,6 +43,9 @@
   export let account: string;
   export let label: string | undefined = undefined;
   export let avatarSize: "sm" | "md" | "lg" = "sm";
+  export let onclick: ((event: MouseEvent) => void) | undefined = undefined;
+  export let onkeydown: ((event: KeyboardEvent) => void) | undefined =
+    undefined;
 
   const { ledgerData } = useContext();
   const { snapshot } = useStudioWorkspace();
@@ -71,22 +74,19 @@
   }
 </script>
 
-<a
+<AccountNavigationLink
+  {account}
+  label={label ?? account}
   href={urlForAccount(account)}
-  class="inline-flex shrink-0 items-center gap-2 text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-  data-account-link
-  data-merchant-id={appearance?.merchantId}
-  on:click
-  on:keydown
->
-  {#if appearance}
-    <AccountAvatar
-      {account}
-      color={appearance.color}
-      icon={appearance.icon}
-      {merchantLogoUrl}
-      size={avatarSize}
-    />
-  {/if}
-  <span class="whitespace-nowrap">{label ?? account}</span>
-</a>
+  appearance={appearance
+    ? {
+        color: appearance.color,
+        icon: appearance.icon,
+        merchantId: appearance.merchantId,
+        merchantLogoUrl,
+      }
+    : undefined}
+  {avatarSize}
+  {onclick}
+  {onkeydown}
+/>

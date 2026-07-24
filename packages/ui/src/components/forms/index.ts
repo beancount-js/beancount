@@ -34,6 +34,7 @@ export { default as TagEditor } from "./TagEditor.svelte";
 export { default as AccountPicker } from "./AccountPicker.svelte";
 export { default as MerchantPicker } from "./MerchantPicker.svelte";
 export { default as SecretField } from "./SecretField.svelte";
+export { default as CycleSelect } from "./CycleSelect.svelte";
 export { autosizeTextarea } from "./autosize-textarea";
 export {
   accountAvatarFallbackColor,

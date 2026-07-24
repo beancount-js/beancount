@@ -590,8 +590,8 @@
                           <AccountLink
                             account={posting.account}
                             avatarSize="sm"
-                            on:click={stopRowClick}
-                            on:keydown={stopRowKeydown}
+                            onclick={stopRowClick}
+                            onkeydown={stopRowKeydown}
                           />
                         </span>
                       {:else}

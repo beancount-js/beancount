@@ -1,13 +1,5 @@
 <script lang="ts">
-  import * as Select from "$lib/components/ui/select";
-  import * as Table from "$lib/components/ui/table";
-
-  import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
-  import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
-  import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
-  import TriangleAlert from "lucide-svelte/icons/triangle-alert";
   import { derived, writable } from "svelte/store";
-  import { cn } from "$lib/utils";
   import { stringify, useDataset, useLedger, type Columns } from "./helpers";
   import { Inventory } from "@beancount-js/beancount";
   import { useCtx } from "../stores/format";
@@ -27,7 +19,12 @@
   import { type SortOrder, type SortType, sortDataset } from "../grid/sort";
   import { Position } from "@beancount-js/beancount";
   import { runBql } from "@beancount-js/beanquery";
-  import PagePagination from "./PagePagination.svelte";
+  import QueryResultsTable, {
+    type QueryResultCell,
+    type QueryResultColumn,
+    type QueryResultRow,
+    type QueryResultsSortDirection,
+  } from "@beancount-js/ui/tables/QueryResultsTable.svelte";
   import AccountLink from "./AccountLink.svelte";
 
   export let query: string = "";
@@ -108,11 +105,6 @@
   }
 
   const sortOrder = writable<SortType>({});
-  const SORT_CYCLE: Record<SortOrder, SortOrder> = {
-    none: "asc",
-    asc: "desc",
-    desc: "none",
-  };
   let page = 1;
   let pageSize = PAGE_SIZES[0];
 
@@ -142,213 +134,133 @@
   $: pageStart = (page - 1) * pageSize;
   $: pageEnd = Math.min(pageStart + pageSize, $data.length);
   $: visibleRows = $data.slice(pageStart, pageEnd);
+  $: queryColumns = columns.values.map(
+    (column): QueryResultColumn => ({
+      id: column.id,
+      label: column.name,
+      sortable: true,
+      align: column.class.includes("text-right") ? "right" : "left",
+      class: column.class.join(" "),
+      style: column.style,
+    }),
+  );
+  $: columnTypes = Object.fromEntries(
+    columns.values.map((column) => [column.id, column.type]),
+  );
+  $: queryRows = visibleRows.map(
+    (row, index): QueryResultRow => ({
+      id: String(pageStart + index),
+      values: Object.fromEntries(
+        columns.values.map((column) => [column.id, formatCell(row[column.id])]),
+      ),
+    }),
+  );
+  $: activeSort = Object.entries($sortOrder)[0];
+  $: sortColumnId = activeSort?.[0];
+  $: sortDirection = sortDirectionFor(activeSort?.[1]?.order);
 
-  function orderFor(columnId: string): SortOrder {
-    return $sortOrder[columnId]?.order ?? "none";
-  }
-
-  function ariaSortFor(columnId: string) {
-    const order = orderFor(columnId);
+  function sortDirectionFor(
+    order: SortOrder | undefined,
+  ): QueryResultsSortDirection {
     if (order === "asc") return "ascending";
     if (order === "desc") return "descending";
     return "none";
   }
 
-  function cycleSort(columnId: string, type: string) {
-    const order = SORT_CYCLE[orderFor(columnId)];
+  function setSort(columnId: string, direction: QueryResultsSortDirection) {
     page = 1;
-    sortOrder.set(order === "none" ? {} : { [columnId]: { type, order } });
+    sortOrder.set(
+      direction === "none"
+        ? {}
+        : {
+            [columnId]: {
+              type: columns.definition[columnId]?.type ?? "string",
+              order: direction === "ascending" ? "asc" : "desc",
+            },
+          },
+    );
   }
 
-  function setPageSize(value: string | undefined) {
-    const next = Number(value);
+  function setPageSize(next: number) {
     if (!PAGE_SIZES.includes(next)) return;
     pageSize = next;
     page = 1;
   }
+
+  function formatCell(value: unknown): QueryResultCell {
+    if (value instanceof Inventory) {
+      return [...value.values()].map((position) => $ctx.money(position.units));
+    }
+    if (Array.isArray(value)) {
+      return value.map((item) => {
+        if (item instanceof Amount || item instanceof Decimal) {
+          return $ctx.money(item);
+        }
+        if (item instanceof Date || item instanceof DateTime) {
+          return formatDate(item instanceof DateTime ? item.toJSDate() : item);
+        }
+        return stringify(item);
+      });
+    }
+    if (value instanceof Date || value instanceof DateTime) {
+      return formatDate(value instanceof DateTime ? value.toJSDate() : value);
+    }
+    if (value instanceof Amount || value instanceof Decimal) {
+      return value instanceof Decimal && value.eq(0) ? "" : $ctx.money(value);
+    }
+    return stringify(value);
+  }
+
+  function displayValues(value: QueryResultCell): string[] {
+    if (Array.isArray(value)) return value.map(String);
+    return value == null ? ["—"] : [String(value)];
+  }
 </script>
 
-<div class="query-table" data-query-table>
+{#snippet queryChart()}
   {#if chart}
     <div class="mt-4 rounded-xl border bg-card p-3 text-xs shadow-sm">
       <Chart {chart} hideButtons />
     </div>
   {/if}
-  <div class="mt-4 overflow-hidden rounded-xl border bg-card shadow-sm">
-    <Table.Root class="min-w-max font-mono text-xs text-foreground">
-      <Table.Header class="bg-muted text-muted-foreground">
-        <Table.Row class="hover:bg-muted">
-          {#each columns.values as col}
-            {@const order = orderFor(col.id)}
-            <Table.Head
-              aria-sort={ariaSortFor(col.id)}
-              style={col.style}
-              class={"!p-0 " + col.class.join(" ")}
-            >
-              <button
-                type="button"
-                class="inline-flex h-10 w-full items-center gap-1.5 rounded-md px-3 text-left font-sans text-xs font-semibold tracking-wide outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                class:justify-end={col.class.includes("text-right")}
-                aria-label={`Sort by ${col.name}`}
-                onclick={() => cycleSort(col.id, col.type)}
-              >
-                <span class="truncate">{col.name}</span>
-                {#if order === "asc"}
-                  <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
-                {:else if order === "desc"}
-                  <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
-                {:else}
-                  <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
-                {/if}
-              </button>
-            </Table.Head>
-          {/each}
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        {#each visibleRows as row}
-          <Table.Row>
-            {#each columns.values as col}
-              {@const value = row[col.id]}
-              <Table.Cell
-                style={col.style}
-                class={cn(
-                  "font-mono text-xs",
-                  col.class,
-                  col.class.includes("text-right") && "pr-8",
-                )}
-              >
-                {#if col.type === "account" && !Array.isArray(value) && value}
-                  {@const account = String(value)}
-                  <AccountLink {account} avatarSize="sm" />
-                {:else if value instanceof Inventory}
-                  {#each [...value.values()] as position}
-                    <span class="block text-right"
-                      >{$ctx.money(position.units)}</span
-                    >
-                  {/each}
-                {:else if Array.isArray(value)}
-                  {#each value as item, i}
-                    {@const rowval = stringify(item)}
-                    {@const lines = countLines(rowval)}
-                    <div class:border-t={i > 0}>
-                      {#if col.type === "account"}
-                        <AccountLink account={rowval} avatarSize="sm" />
-                      {:else if item instanceof Amount || item instanceof Decimal}
-                        {$ctx.money(item)}
-                      {:else if item instanceof Date || item instanceof DateTime}
-                        {formatDate(
-                          item instanceof DateTime ? item.toJSDate() : item,
-                        )}
-                      {:else}
-                        <span class:whitespace-pre={lines > 1}>{rowval}</span>
-                      {/if}
-                    </div>
-                  {/each}
-                {:else if value instanceof Date || value instanceof DateTime}
-                  {formatDate(
-                    value instanceof DateTime ? value.toJSDate() : value,
-                  )}
-                {:else if value instanceof Amount || value instanceof Decimal}
-                  {value instanceof Decimal && value.eq(0)
-                    ? ""
-                    : $ctx.money(value)}
-                {:else}
-                  {@const rowval = stringify(value)}
-                  <span class:whitespace-pre={countLines(rowval) > 1}
-                    >{rowval}</span
-                  >
-                {/if}
-              </Table.Cell>
-            {/each}
-          </Table.Row>
-        {:else}
-          <Table.Row>
-            <Table.Cell
-              colspan={Math.max(columns.values.length, 1)}
-              class="h-24 text-center font-sans text-sm text-muted-foreground"
-            >
-              No results.
-            </Table.Cell>
-          </Table.Row>
-        {/each}
-      </Table.Body>
-      {#if $queryResult.error}
-        <Table.Footer
-          class="bg-destructive/10 text-destructive"
-          data-query-error-footer
-        >
-          <Table.Row class="hover:bg-transparent">
-            <Table.Cell
-              colspan={Math.max(columns.values.length, 1)}
-              class="px-4 py-3"
-            >
-              <div class="flex items-start gap-2" role="alert">
-                <TriangleAlert
-                  class="mt-0.5 size-4 shrink-0"
-                  aria-hidden="true"
-                />
-                <div class="min-w-0">
-                  <p class="text-xs font-medium">Could not run query</p>
-                  <p
-                    class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90"
-                  >
-                    {$queryResult.error}
-                  </p>
-                </div>
-              </div>
-            </Table.Cell>
-          </Table.Row>
-        </Table.Footer>
+{/snippet}
+
+{#snippet queryCell(
+  _row: QueryResultRow,
+  column: QueryResultColumn,
+  value: QueryResultCell,
+)}
+  {#each displayValues(value) as displayValue, index}
+    <div class:border-t={Array.isArray(value) && index > 0}>
+      {#if columnTypes[column.id] === "account" && displayValue}
+        <AccountLink account={displayValue} avatarSize="sm" />
+      {:else}
+        <span class:whitespace-pre={countLines(displayValue) > 1}>
+          {displayValue}
+        </span>
       {/if}
-    </Table.Root>
-  </div>
-  {#if $data.length > PAGE_SIZES[0]}
-    <div
-      class="mt-3 flex flex-col gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-      data-query-pagination
-    >
-      <span class="text-sm text-muted-foreground"
-        >Showing {pageStart + 1}&ndash;{pageEnd} of {$data.length}</span
-      >
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div class="flex items-center gap-2">
-          <span
-            class="text-sm text-muted-foreground"
-            id="query-table-page-size-label">Rows per page</span
-          >
-          <Select.Root
-            type="single"
-            value={String(pageSize)}
-            onValueChange={setPageSize}
-          >
-            <Select.Trigger
-              aria-labelledby="query-table-page-size-label"
-              class="h-8 w-20 font-mono text-sm tabular-nums"
-              data-query-page-size
-            >
-              {pageSize}
-            </Select.Trigger>
-            <Select.Content>
-              <Select.Group>
-                {#each PAGE_SIZES as size (size)}
-                  <Select.Item value={String(size)} label={`${size} records`}>
-                    {size}
-                  </Select.Item>
-                {/each}
-              </Select.Group>
-            </Select.Content>
-          </Select.Root>
-        </div>
-        {#if pageCount > 1}
-          <PagePagination
-            {page}
-            {pageCount}
-            ariaLabel="Query result pages"
-            onPageChange={(nextPage) => (page = nextPage)}
-          />
-        {/if}
-      </div>
     </div>
-  {/if}
-</div>
+  {/each}
+{/snippet}
+
+<QueryResultsTable
+  columns={queryColumns}
+  rows={queryRows}
+  error={$queryResult.error}
+  {sortColumnId}
+  {sortDirection}
+  onSortChange={setSort}
+  pagination={$data.length > PAGE_SIZES[0]
+    ? {
+        page,
+        pageCount,
+        resultLabel: `Showing ${pageStart + 1}–${pageEnd} of ${$data.length}`,
+        pageSize,
+        pageSizes: PAGE_SIZES,
+      }
+    : undefined}
+  onPageChange={(nextPage) => (page = nextPage)}
+  onPageSizeChange={setPageSize}
+  beforeTable={queryChart}
+  cell={queryCell}
+/>

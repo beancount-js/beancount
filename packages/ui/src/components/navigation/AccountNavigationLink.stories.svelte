@@ -73,3 +73,13 @@
     </div>
   {/snippet}
 </Story>
+
+<Story name="Holdings account">
+  {#snippet template()}
+    <AccountNavigationLink
+      account="Assets:Cash"
+      href="/$project/ledger/$ledger/account/Assets%3ACash/"
+      appearance={{ color: "#c2410c" }}
+    />
+  {/snippet}
+</Story>

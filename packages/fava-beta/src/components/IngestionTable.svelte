@@ -1976,9 +1976,8 @@
                                 <AccountLink
                                   account={posting.account}
                                   avatarSize="sm"
-                                  on:click={(event) => event.stopPropagation()}
-                                  on:keydown={(event) =>
-                                    event.stopPropagation()}
+                                  onclick={(event) => event.stopPropagation()}
+                                  onkeydown={(event) => event.stopPropagation()}
                                 />
                                 {#if posting.source}
                                   {@const rowReconciliations =

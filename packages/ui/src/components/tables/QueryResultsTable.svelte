@@ -1,8 +1,10 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
   import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
   import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
   import TriangleAlert from "lucide-svelte/icons/triangle-alert";
+  import { cn } from "../../lib/utils";
   import PagePagination from "../navigation/PagePagination.svelte";
   import * as Select from "../shadcn/select";
   import * as Table from "../shadcn/table";
@@ -20,6 +22,8 @@
     /** Opt into local, presentation-only sorting for this column. */
     sortable?: boolean;
     align?: "left" | "right";
+    class?: string;
+    style?: string;
   };
 
   export type QueryResultRow = {
@@ -36,7 +40,7 @@
     pageSizes?: readonly number[];
   };
 
-  type SortDirection = "ascending" | "descending" | "none";
+  export type QueryResultsSortDirection = "ascending" | "descending" | "none";
 
   let {
     columns,
@@ -45,8 +49,13 @@
     emptyLabel = "No results.",
     error,
     pagination,
+    sortColumnId,
+    sortDirection = "none",
     onPageChange = () => {},
     onPageSizeChange = () => {},
+    onSortChange,
+    beforeTable,
+    cell,
   }: {
     columns: readonly QueryResultColumn[];
     rows: readonly QueryResultRow[];
@@ -59,17 +68,31 @@
      * component does not know the query's complete dataset.
      */
     pagination?: QueryResultsPagination;
+    /**
+     * Application-controlled sorting. When `onSortChange` is supplied, rows
+     * remain in their provided order so the application can sort the complete
+     * dataset before paging it.
+     */
+    sortColumnId?: string;
+    sortDirection?: QueryResultsSortDirection;
     onPageChange?: (page: number) => void;
     onPageSizeChange?: (pageSize: number) => void;
+    onSortChange?: (
+      columnId: string,
+      direction: QueryResultsSortDirection,
+    ) => void;
+    beforeTable?: Snippet;
+    cell?: Snippet<[QueryResultRow, QueryResultColumn, QueryResultCell]>;
   } = $props();
 
   let sortedColumnId = $state<string>();
-  let sortDirection = $state<SortDirection>("none");
+  let localSortDirection = $state<QueryResultsSortDirection>("none");
 
   const sortedRows = $derived.by(() => {
+    if (onSortChange) return rows;
     const columnId = sortedColumnId;
-    if (!columnId || sortDirection === "none") return rows;
-    const direction = sortDirection === "ascending" ? 1 : -1;
+    if (!columnId || localSortDirection === "none") return rows;
+    const direction = localSortDirection === "ascending" ? 1 : -1;
     return [...rows].sort(
       (a, b) =>
         direction * compareCells(a.values[columnId], b.values[columnId]),
@@ -92,23 +115,30 @@
     return leftValue.localeCompare(rightValue, undefined, { numeric: true });
   }
 
-  function orderFor(column: QueryResultColumn): SortDirection {
-    return column.id === sortedColumnId ? sortDirection : "none";
+  function orderFor(column: QueryResultColumn): QueryResultsSortDirection {
+    if (onSortChange) {
+      return column.id === sortColumnId ? sortDirection : "none";
+    }
+    return column.id === sortedColumnId ? localSortDirection : "none";
   }
 
   function toggleSort(column: QueryResultColumn) {
     if (!column.sortable) return;
-    if (column.id !== sortedColumnId) {
-      sortedColumnId = column.id;
-      sortDirection = "ascending";
-      return;
-    }
-    sortDirection =
-      sortDirection === "ascending"
+    const current = orderFor(column);
+    const next =
+      current === "ascending"
         ? "descending"
-        : sortDirection === "descending"
+        : current === "descending"
           ? "none"
           : "ascending";
+    if (onSortChange) {
+      onSortChange(column.id, next);
+      return;
+    }
+    if (column.id !== sortedColumnId) {
+      sortedColumnId = column.id;
+    }
+    localSortDirection = next;
   }
 
   function setPageSize(value: string | undefined) {
@@ -119,7 +149,8 @@
   }
 </script>
 
-<div class="space-y-3">
+<div class="query-table space-y-3" data-query-table>
+  {@render beforeTable?.()}
   <div
     class="overflow-x-auto rounded-xl border border-border/80 bg-card shadow-sm"
   >
@@ -130,14 +161,20 @@
             {@const order = orderFor(column)}
             <Table.Head
               aria-sort={column.sortable ? order : undefined}
-              class={column.align === "right" ? "p-0 text-right" : "p-0"}
+              style={column.style}
+              class={cn(
+                "p-0",
+                column.align === "right" && "text-right",
+                column.class,
+              )}
             >
               {#if column.sortable}
                 <button
                   type="button"
-                  class={column.align === "right"
-                    ? "inline-flex h-10 w-full items-center justify-end gap-1.5 px-4 font-sans text-xs font-semibold uppercase tracking-wide outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                    : "inline-flex h-10 w-full items-center gap-1.5 px-4 font-sans text-xs font-semibold uppercase tracking-wide outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"}
+                  class={cn(
+                    "inline-flex h-10 w-full items-center gap-1.5 px-4 font-sans text-xs font-semibold uppercase tracking-wide outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+                    column.align === "right" && "justify-end",
+                  )}
                   aria-label={`Sort by ${column.label}`}
                   onclick={() => toggleSort(column)}
                 >
@@ -168,18 +205,25 @@
           <Table.Row>
             {#each columns as column (column.id)}
               <Table.Cell
-                class={column.align === "right"
-                  ? "px-4 py-3 text-right font-mono tabular-nums"
-                  : "px-4 py-3 font-mono"}
+                style={column.style}
+                class={cn(
+                  "px-4 py-3 font-mono",
+                  column.align === "right" && "text-right tabular-nums",
+                  column.class,
+                )}
               >
-                {#each displayCell(row.values[column.id]) as value, index}
-                  <span
-                    class:mt-1={index > 0}
-                    class="block whitespace-pre-wrap"
-                  >
-                    {value}
-                  </span>
-                {/each}
+                {#if cell}
+                  {@render cell(row, column, row.values[column.id])}
+                {:else}
+                  {#each displayCell(row.values[column.id]) as value, index}
+                    <span
+                      class:mt-1={index > 0}
+                      class="block whitespace-pre-wrap"
+                    >
+                      {value}
+                    </span>
+                  {/each}
+                {/if}
               </Table.Cell>
             {/each}
           </Table.Row>
@@ -197,6 +241,7 @@
       {#if error}
         <Table.Footer
           class="border-t border-destructive/45 bg-destructive/10 text-foreground"
+          data-query-error-footer
         >
           <Table.Row class="hover:bg-transparent">
             <Table.Cell colspan={Math.max(columns.length, 1)} class="px-4 py-3">
@@ -222,9 +267,10 @@
       {/if}
     </Table.Root>
   </div>
-  {#if pagination && pagination.pageCount > 1}
+  {#if pagination}
     <div
       class="flex flex-col gap-3 rounded-xl border border-border/80 bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      data-query-pagination
     >
       <span class="text-sm text-muted-foreground">{pagination.resultLabel}</span
       >
@@ -243,6 +289,7 @@
               <Select.Trigger
                 aria-labelledby="query-results-page-size-label"
                 class="h-8 w-20 font-mono text-sm tabular-nums"
+                data-query-page-size
               >
                 {pagination.pageSize}
               </Select.Trigger>
@@ -261,12 +308,14 @@
             </Select.Root>
           </div>
         {/if}
-        <PagePagination
-          page={pagination.page}
-          pageCount={pagination.pageCount}
-          ariaLabel="Query result pages"
-          {onPageChange}
-        />
+        {#if pagination.pageCount > 1}
+          <PagePagination
+            page={pagination.page}
+            pageCount={pagination.pageCount}
+            ariaLabel="Query result pages"
+            {onPageChange}
+          />
+        {/if}
       </div>
     </div>
   {/if}

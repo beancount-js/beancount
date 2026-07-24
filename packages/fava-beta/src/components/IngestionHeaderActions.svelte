@@ -20,7 +20,7 @@
   import Store from "lucide-svelte/icons/store";
   import UnfoldVertical from "lucide-svelte/icons/unfold-vertical";
   import { FormToolbar } from "@beancount-js/forms";
-  import CycleSelect from "./CycleSelect.svelte";
+  import { CycleSelect } from "@beancount-js/ui/forms";
   import { Button } from "$lib/components/ui/button";
   import * as ButtonGroup from "$lib/components/ui/button-group";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";

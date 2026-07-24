@@ -5,6 +5,7 @@
   export type AccountNavigationAppearance = {
     color?: string;
     icon?: string;
+    merchantId?: string;
     merchantLogoUrl?: string;
   };
 
@@ -22,6 +23,8 @@
     avatarSize = "sm",
     disabled = false,
     onSelect,
+    onclick,
+    onkeydown,
   }: {
     account: string;
     label?: string;
@@ -30,9 +33,13 @@
     avatarSize?: "sm" | "md" | "lg";
     disabled?: boolean;
     onSelect?: (account: string) => void;
+    onclick?: (event: MouseEvent) => void;
+    onkeydown?: (event: KeyboardEvent) => void;
   } = $props();
 
   function select(event: MouseEvent): void {
+    onclick?.(event);
+    if (event.defaultPrevented) return;
     if (disabled || !href || onSelect) event.preventDefault();
     if (!disabled) onSelect?.(account);
   }
@@ -45,8 +52,11 @@
   class:opacity-50={disabled}
   aria-disabled={disabled || undefined}
   tabindex={disabled ? -1 : undefined}
+  data-account-link
   data-account-navigation-link={account}
+  data-merchant-id={appearance?.merchantId}
   onclick={select}
+  {onkeydown}
 >
   {#if appearance}
     <AccountAvatar

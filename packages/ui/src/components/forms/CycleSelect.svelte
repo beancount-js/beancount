@@ -1,8 +1,8 @@
 <script lang="ts">
   import ChevronLeft from "lucide-svelte/icons/chevron-left";
   import ChevronRight from "lucide-svelte/icons/chevron-right";
-  import { FilterCommandPicker } from "@beancount-js/forms";
-  import { Button } from "$lib/components/ui/button";
+  import FilterCommandPicker from "./FilterCommandPicker.svelte";
+  import { Button } from "../shadcn/button";
 
   type Option = {
     value: string;

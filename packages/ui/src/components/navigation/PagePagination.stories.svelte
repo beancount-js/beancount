@@ -58,3 +58,16 @@
     />
   {/snippet}
 </Story>
+
+<Story name="Holdings query pages">
+  {#snippet template()}
+    <div style="width: 134px">
+      <PagePagination
+        page={1}
+        pageCount={2}
+        ariaLabel="Query result pages"
+        onPageChange={() => {}}
+      />
+    </div>
+  {/snippet}
+</Story>

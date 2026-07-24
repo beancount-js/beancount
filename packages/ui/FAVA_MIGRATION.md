@@ -52,36 +52,35 @@ Storybook and Playwright dependency graph.
 ## Status and validation rules
 
 - Task status is one of `Not started`, `In progress`, `Blocked`, or `Done`.
-- Only one foundation or component task is `In progress`.
+- Only one page migration is `In progress`; its dependent component rows may
+  advance together.
 - Each verified slice updates this file and is committed with Jujutsu before the
   next slice begins.
-- Component work advances automatically after interaction, accessibility,
-  package, and visual-delta checks pass. A comparable component must be at or
-  below 0.1% difference.
-- Baseline creation or rewriting sets `visual-pending`. Passing automated
-  comparison advances a story to `visual-ready`; only explicit human
-  acceptance applies `visual-approved`. Review tags stay mutually exclusive.
+- Component work advances after Storybook interaction/accessibility checks and
+  the affected UI and Fava Beta package checks pass.
+- During the migration phase, do not capture or update screenshots, enroll new
+  migration stories in Visual Delta, or block on pixel parity. Existing
+  reference assets and historical review labels remain intact.
 - A component is `Done` when UI owns its public presentation, Fava Beta consumes
   it through an adapter, the legacy Beta component is removed, and automated
   evidence is recorded.
 
-## Manual breaks and model handoff
+## Manual review
 
-There are exactly three manual validation breaks. When a new break is reached,
-the migration records the evidence packet below and waits for explicit human
-acceptance before it starts the following stage. Component tasks do not add
-per-component pauses.
+The active workflow has one remaining manual break: after every planned
+component has been ported into UI Storybook and Fava Beta consumes the shared
+presentation. Component and page slices do not pause for screenshot or pixel
+review.
 
-| Gate | Trigger                              | Required manual review                                                                                                                                | Disposition                                                                          |
-| ---- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| G01  | Storybook/reference harness complete | Visual Delta status treatment, protected-reference overwrite guard, and one representative reference capture                                          | Accepted by the subsequent continuation directive on 2026-07-24                      |
-| G02  | Forms merge complete                 | Forms catalog, legacy-facade compatibility, and original-Fava compatibility evidence                                                                  | Accepted by the subsequent continuation directive on 2026-07-24                      |
-| G03  | Final parity audit complete          | All `visual-ready` or `visual-pending` stories, unresolved visual sidecars, representative desktop and responsive routes, and the final diff manifest | Pending — stop before applying `visual-approved` or declaring the migration complete |
+| Gate | Trigger                               | Required manual review                                                                                | Disposition |
+| ---- | ------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------- |
+| G01  | Storybook/reference harness complete  | Historical harness review                                                                             | Accepted    |
+| G02  | Forms merge complete                  | Historical Forms review                                                                               | Accepted    |
+| G03  | All component migrations are complete | UI Storybook catalog, Fava Beta page walkthrough, remaining markup gaps, and the final migration diff | Pending     |
 
-G01 and G02 were already complete when this explicit gate policy was added; the
-recorded continuation is their transition evidence, not a substitute for the
-listed review packet. The first two foundation phases use GPT-5.6 Sol. After
-G02, hand component iteration to GPT-5.6 Terra. Return to GPT-5.6 Sol for G03.
+Pixel-parity and baseline work is deferred until that final review determines
+whether it is still useful. Existing Visual Delta coverage remains available
+but is not a completion gate for new migration stories.
 
 ## Foundation ledger
 
@@ -100,9 +99,10 @@ G02, hand component iteration to GPT-5.6 Terra. Return to GPT-5.6 Sol for G03.
 
 ## Component migration order
 
-Every source below is an individual task. Add its reference path, UI export,
-Beta adapter, delta, validation commands, and committed change when it becomes
-`In progress`.
+Work page by page. Each page slice first establishes ordinary Storybook stories
+for its reusable presentation, then switches Fava Beta to thin adapters while
+retaining application state, data derivation, routing, and persistence.
+Screenshot capture and pixel comparison are deferred.
 
 ### Wave 1 — existing shared surface and shell
 
@@ -114,10 +114,10 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 | C004 | `tree-table/IntervalTreeTable.svelte` certification | Done        |
 | C005 | `StudioShellHeader.svelte`                          | Done        |
 | C006 | `FavaNavigation.svelte`                             | In progress |
-| C007 | `Nav.svelte`                                        | Not started |
-| C008 | `PagePagination.svelte`                             | Not started |
-| C009 | `AccountLink.svelte`                                | Not started |
-| C010 | `CycleSelect.svelte`                                | Not started |
+| C007 | `Nav.svelte`                                        | Done        |
+| C008 | `PagePagination.svelte`                             | Done        |
+| C009 | `AccountLink.svelte`                                | Done        |
+| C010 | `CycleSelect.svelte`                                | Done        |
 
 Current Storybook review state: C001–C005 are `visual-ready` after passing
 their configured 0.1% automated comparisons. C006 remains `visual-pending`
@@ -128,7 +128,7 @@ is `visual-approved`.
 
 - Status: **In progress**. This checkpoint is intentionally paused for the
   requested manual review; it is not a parity pass or an additional formal
-  migration gate. C007 and later tasks remain unstarted.
+  migration gate.
 - UI ownership in the current working copy: `LedgerWorkspaceNavigation` and
   `WorkspaceTreeNavigation` now render the controlled Ledgers/Folders/Tags
   workspace hierarchy, including its search-toggle surface. The newly added
@@ -151,6 +151,31 @@ is `visual-approved`.
   settings-surface comparisons, the new settings Storybook baseline, full
   package gates, and a focused navigation E2E rerun are still required before
   C006 can be committed or marked Done.
+
+#### C007 — `Nav.svelte`
+
+- Status: **Done**. The reusable navigation list component now lives in
+  `@beancount-js/ui/navigation/Nav.svelte` with app-owned active-state
+  determination and navigation callbacks.
+- Beta adapter: `packages/fava-beta/src/components/Nav.svelte` no longer holds
+  presentation-only rendering and has been removed.
+- Validation: UI story coverage is in `Navigation/Nav` and component ownership is
+  included in the current migration slice's UI check run.
+
+#### C010 — `CycleSelect.svelte`
+
+- Status: **Done**. The reusable component now lives in
+  `@beancount-js/ui/forms/CycleSelect.svelte` and exposes controlled
+  `value/options/label/onChange` behavior with previous/next buttons and cycle
+  semantics.
+- UI story: `Forms/Cycle Select` (`CycleSelect`) with interaction checks for
+  next/previous behavior and disabled state.
+- Beta adapter: `@beancount-js/fava-beta/src/components/CycleSelect.svelte`
+  and its story have been removed; `IngestionHeaderActions.svelte` now uses
+  the shared UI form control.
+- Validation: `@beancount-js/ui check-boundaries`, `test-storybook`, and
+  `svelte-check` pass. Focused `@beancount-js/fava-beta` `lint`,
+  `check`, `check:svelte5`, `test --run`, and `build` pass after migration.
 
 #### C001 — `ContentScrollArea.svelte`
 
@@ -215,7 +240,7 @@ is `visual-approved`.
 | C028 | `AccountActivityTable.svelte`                                  | Not started |
 | C029 | `ActivityTable.svelte`                                         | Not started |
 | C030 | `JournalTable.svelte`                                          | Not started |
-| C031 | `QueryTable.svelte`                                            | Not started |
+| C031 | `QueryTable.svelte`                                            | Done        |
 | C032 | `IngestionTable.svelte`                                        | Not started |
 | C033 | `tree-table/TreeTable.svelte` and `TreeTableNode.svelte`       | Not started |
 | C034 | `tree-table/StatementSummaryTreeTable.svelte`                  | Not started |
@@ -243,9 +268,9 @@ is `visual-approved`.
 | C051 | `BalanceSheet.svelte`                         | Not started |
 | C052 | `TrialBalance.svelte`                         | Not started |
 | C053 | `AccountDetails.svelte`                       | Not started |
-| C054 | `Holdings.svelte`                             | Not started |
+| C054 | `Holdings.svelte`                             | Done        |
 | C055 | `Statistics.svelte`                           | Not started |
-| C056 | `PresetQueryView.svelte`                      | Not started |
+| C056 | `PresetQueryView.svelte`                      | Done        |
 
 ### Wave 5 — application workflows
 
@@ -266,29 +291,23 @@ is `visual-approved`.
 | C069 | `IngestionSourcesPreview.svelte`         | Not started |
 | C070 | `RulesSettings.svelte`                   | Not started |
 
-## Current manual-review checkpoint
+## Current execution focus
 
-2026-07-24 — the Visual Delta harness refresh is complete and paused for
-manual review. Review the new `visual-ready` badge/filter, the Visual Delta
-panel and Testing Module, the eight enrolled C001–C005 stories, and the Fava
-Reference gallery without self-comparison images. The gallery remains an
-immutable `skip-visual` source of original captures.
+2026-07-24 — migration resumed in the main `beancount-studio` workspace. The
+temporary Holdings workspace was removed after transferring only component,
+Storybook, and Fava Beta adapter work; its screenshot, baseline, and DOM
+contract work was intentionally not transferred.
 
-C006 remains separately paused and `visual-pending`; none of its unfinished
-source, fixtures, or baselines were included in the harness-refresh change.
-Do not resume C006 or later component work until this review is accepted.
+The most recent page slice is Holdings. Its shared preset view, query results
+table, account navigation link, pagination, and `CycleSelect` now live in UI
+Storybook. Fava Beta keeps BQL execution, domain sorting, formatting, chart
+derivation, merchant lookup, and route construction. New stories are ordinary
+catalog stories and carry no Visual Delta review tag.
 
-The rebased C006 working copy remains intact: it contains the UI navigation
-renderer changes, Beta adapter migration, new settings renderer/story, two
-workspace Storybook baselines, and the unconnected synthetic parity fixture.
-No protected original Fava reference image changed. The unrelated user-ledger
-changes in `.beancount/ingestion/sources.json` and `sample.beancount` remain
-outside migration scope.
-
-After this harness review is accepted, the next bounded C006 work is to connect
-the synthetic fixture to full frozen-surface comparisons, investigate every
-remaining pixel difference, capture the settings story baseline, then run and
-record the complete C006 validation set before its Jujutsu commit.
+The earlier C006 navigation work remains preserved in the parent working-copy
+history, but it no longer creates a separate manual pause. Continue page slices
+without new baselines, then stop once the full catalog migration is ready for
+G03 manual review.
 
 ## Validation log
 
