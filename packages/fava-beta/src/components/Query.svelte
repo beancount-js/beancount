@@ -48,7 +48,7 @@
   import { useContext } from "../context";
   import { classHighlighter } from "../codemirror/extensions/classHighlighter";
   import { onMount, tick } from "svelte";
-  import ContentScrollArea from "./ContentScrollArea.svelte";
+  import ContentScrollArea from "@beancount-js/ui/layout/ContentScrollArea.svelte";
   import X from "lucide-svelte/icons/x";
   const { history } = useNavigation();
   const ledgerData = useLedger();

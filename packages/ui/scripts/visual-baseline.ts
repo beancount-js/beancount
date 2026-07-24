@@ -128,11 +128,22 @@ function main(): void {
 
   const storyIds = selected.map((entry) => entry.id);
   const grep = `(${storyIds.map(escapeRegExp).join("|")})$`;
-  run("pnpm", ["exec", "playwright", "test", "-g", grep], {
-    PLAYWRIGHT_UPDATE_SNAPSHOTS: "1",
-    PLAYWRIGHT_UPDATE_MODE: options.createOnly ? "missing" : "all",
-    VISUAL_UPDATE_STORY_IDS: JSON.stringify(storyIds),
-  });
+  run(
+    "pnpm",
+    [
+      "exec",
+      "playwright",
+      "test",
+      "-g",
+      grep,
+      `--update-snapshots=${options.createOnly ? "missing" : "all"}`,
+    ],
+    {
+      PLAYWRIGHT_UPDATE_SNAPSHOTS: "1",
+      PLAYWRIGHT_UPDATE_MODE: options.createOnly ? "missing" : "all",
+      VISUAL_UPDATE_STORY_IDS: JSON.stringify(storyIds),
+    },
+  );
 }
 
 main();

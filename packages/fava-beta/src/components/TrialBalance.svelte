@@ -7,7 +7,7 @@
   import { useContext } from "../context";
   import type { LedgerData } from "../lib/ledger-data";
   import type { Readable } from "svelte/store";
-  import ContentScrollArea from "./ContentScrollArea.svelte";
+  import ContentScrollArea from "@beancount-js/ui/layout/ContentScrollArea.svelte";
 
   const context = useContext();
 

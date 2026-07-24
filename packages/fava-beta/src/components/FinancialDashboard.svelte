@@ -4,7 +4,7 @@
 
   import { useContext } from "../context";
   import { useCtx } from "../stores/format";
-  import ContentScrollArea from "./ContentScrollArea.svelte";
+  import ContentScrollArea from "@beancount-js/ui/layout/ContentScrollArea.svelte";
   import DashboardDonut from "./dashboard/DashboardDonut.svelte";
   import DashboardFlow from "./dashboard/DashboardFlow.svelte";
   import DashboardLine from "./dashboard/DashboardLine.svelte";

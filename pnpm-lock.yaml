@@ -979,6 +979,12 @@ importers:
       paneforge:
         specifier: ^1.0.0-next.1
         version: 1.0.2(svelte@5.56.3(@typescript-eslint/types@8.61.0))
+      pixelmatch:
+        specifier: ^7.1.0
+        version: 7.2.0
+      pngjs:
+        specifier: ^7.0.0
+        version: 7.0.0
       prettier:
         specifier: 3.3.3
         version: 3.3.3

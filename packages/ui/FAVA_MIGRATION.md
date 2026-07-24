@@ -84,7 +84,7 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 
 | ID   | Fava source or surface                              | Status      |
 | ---- | --------------------------------------------------- | ----------- |
-| C001 | `ContentScrollArea.svelte`                          | In progress |
+| C001 | `ContentScrollArea.svelte`                          | Done        |
 | C002 | `StudioShell.svelte` / `AppShell` certification     | Not started |
 | C003 | `Search.svelte` / `SearchFilterBar` certification   | Not started |
 | C004 | `tree-table/IntervalTreeTable.svelte` certification | Not started |
@@ -94,6 +94,24 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 | C008 | `PagePagination.svelte`                             | Not started |
 | C009 | `AccountLink.svelte`                                | Not started |
 | C010 | `CycleSelect.svelte`                                | Not started |
+
+#### C001 — `ContentScrollArea.svelte`
+
+- Original reference: `packages/fava/src/components/ContentScrollArea.svelte`;
+  protected captures cover account detail, dashboard, query, income statement,
+  balance sheet, and trial balance.
+- UI export: the existing
+  `@beancount-js/ui/layout/ContentScrollArea.svelte`, with the colocated
+  `Layout/Content Scroll Area` story retained and marked `visual-pending`.
+- Beta adapter: six direct imports in `AccountDetails`, `FinancialDashboard`,
+  `PresetQueryView`, `Query`, `StatementReport`, and `TrialBalance`; the local
+  Beta wrapper and duplicate story are removed.
+- Visual delta: `packages/fava-beta/e2e/visual-parity.spec.ts` crops the
+  matching content-scroll surface from each frozen reference and enforces a
+  changed-pixel ratio at or below 0.1%.
+- Validation: `pnpm checks:ui`, `pnpm checks:beta`, `pnpm test:beta`, the
+  six-route frozen parity suite, and the focused Storybook baseline creation
+  and comparison passed. Change `qpqmpquyt`.
 
 ### Wave 2 — forms, pickers, sheets, and workflow controls
 
@@ -220,3 +238,12 @@ change IDs here at the end of each committed slice.
   package identity, isolated port, Beta MCP target, and that formatting-only
   change. `pnpm checks:beta` passed, as did `pnpm test:beta` (55 files, 188
   tests) and `pnpm --filter @beancount-js/fava-beta build`.
+- 2026-07-24 — ContentScrollArea slice (`qpqmpquyt`): switched all six Beta
+  consumers to the existing UI export and removed the duplicate Beta wrapper
+  and story. The Storybook baseline helper now supplies Playwright's explicit
+  snapshot-update mode, so approved create-only runs exit successfully. UI
+  checks passed; Beta checks passed; Beta unit tests passed (55 files, 188
+  tests); and the six frozen surface comparisons passed at the 0.1% limit.
+  The broad Beta E2E suite still has 17 existing state-isolation failures; a
+  representative query-table failure reproduces unchanged in original Fava, so
+  it is not attributed to this slice.

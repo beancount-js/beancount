@@ -17,7 +17,7 @@
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import moment from "moment";
   import { formatDate } from "@beancount-js/parser";
-  import ContentScrollArea from "./ContentScrollArea.svelte";
+  import ContentScrollArea from "@beancount-js/ui/layout/ContentScrollArea.svelte";
   import { useNavigation } from "../router/router";
   const { conversion, interval } = useContext();
   const chartContext = useChartContext();

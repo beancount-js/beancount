@@ -11,7 +11,7 @@
   import * as ScrollArea from "$lib/components/ui/scroll-area";
   import * as Tabs from "$lib/components/ui/tabs";
   import { urlFor } from "../helpers";
-  import ContentScrollArea from "./ContentScrollArea.svelte";
+  import ContentScrollArea from "@beancount-js/ui/layout/ContentScrollArea.svelte";
   import QueryTable from "./QueryTable.svelte";
 
   /**

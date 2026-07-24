@@ -6,6 +6,7 @@
   const { Story } = defineMeta({
     title: "Layout/Content Scroll Area",
     component: ContentScrollArea,
+    tags: ["visual-pending"],
     parameters: {
       docs: {
         description: {

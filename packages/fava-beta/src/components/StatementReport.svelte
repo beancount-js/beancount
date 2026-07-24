@@ -11,7 +11,7 @@
 <script lang="ts">
   import ChartSwitcher from "../charts/ChartSwitcher.svelte";
   import type { FavaChart } from "../charts";
-  import ContentScrollArea from "./ContentScrollArea.svelte";
+  import ContentScrollArea from "@beancount-js/ui/layout/ContentScrollArea.svelte";
   import StatementSummaryTreeTable from "./tree-table/StatementSummaryTreeTable.svelte";
 
   export let charts: FavaChart[] = [];
