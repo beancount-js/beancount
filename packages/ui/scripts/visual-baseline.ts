@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 type StoryIndexEntry = {
@@ -19,6 +19,7 @@ type Options = {
 };
 
 const FAVA_REFERENCE_TAG = "fava-reference-visual";
+const snapshotDirectory = resolve("tests/visual/storybook.spec.ts-snapshots");
 
 function parseArgs(argv: string[]): Options {
   const options: Options = {
@@ -75,6 +76,13 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function hasExistingSnapshot(storyId: string): boolean {
+  if (!existsSync(snapshotDirectory)) return false;
+  return readdirSync(snapshotDirectory).some((entry) =>
+    entry.startsWith(`${storyId}-`),
+  );
+}
+
 function main(): void {
   const options = parseArgs(process.argv.slice(2));
   if (
@@ -108,6 +116,17 @@ function main(): void {
     );
   }
 
+  if (options.createOnly) {
+    const existingSnapshot = selected.find((entry) =>
+      hasExistingSnapshot(entry.id),
+    );
+    if (existingSnapshot) {
+      throw new Error(
+        `${existingSnapshot.id} already has a baseline; create-only refuses to overwrite it.`,
+      );
+    }
+  }
+
   const protectedStory = selected.find((entry) =>
     entry.tags?.includes(FAVA_REFERENCE_TAG),
   );
@@ -130,17 +149,10 @@ function main(): void {
   const grep = `(${storyIds.map(escapeRegExp).join("|")})$`;
   run(
     "pnpm",
-    [
-      "exec",
-      "playwright",
-      "test",
-      "-g",
-      grep,
-      `--update-snapshots=${options.createOnly ? "missing" : "all"}`,
-    ],
+    ["exec", "playwright", "test", "-g", grep, "--update-snapshots=all"],
     {
       PLAYWRIGHT_UPDATE_SNAPSHOTS: "1",
-      PLAYWRIGHT_UPDATE_MODE: options.createOnly ? "missing" : "all",
+      PLAYWRIGHT_UPDATE_MODE: "all",
       VISUAL_UPDATE_STORY_IDS: JSON.stringify(storyIds),
     },
   );

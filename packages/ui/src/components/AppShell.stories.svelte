@@ -6,6 +6,7 @@
   const { Story } = defineMeta({
     title: "Layout/App Shell",
     component: AppShellDemo,
+    tags: ["visual-pending"],
     parameters: {
       docs: {
         description: {

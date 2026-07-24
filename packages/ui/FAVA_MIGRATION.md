@@ -85,7 +85,7 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 | ID   | Fava source or surface                              | Status      |
 | ---- | --------------------------------------------------- | ----------- |
 | C001 | `ContentScrollArea.svelte`                          | Done        |
-| C002 | `StudioShell.svelte` / `AppShell` certification     | In progress |
+| C002 | `StudioShell.svelte` / `AppShell` certification     | Done        |
 | C003 | `Search.svelte` / `SearchFilterBar` certification   | Not started |
 | C004 | `tree-table/IntervalTreeTable.svelte` certification | Not started |
 | C005 | `StudioShellHeader.svelte`                          | Not started |
@@ -112,6 +112,22 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 - Validation: `pnpm checks:ui`, `pnpm checks:beta`, `pnpm test:beta`, the
   six-route frozen parity suite, and the focused Storybook baseline creation
   and comparison passed. Change `qpqmpquyt`.
+
+#### C002 — `StudioShell.svelte` / `AppShell`
+
+- Original reference: `packages/fava/src/components/StudioShell.svelte` already
+  consumes `@beancount-js/ui/app-shell`; Fava-specific project, navigation,
+  ingestion, and AI slots remain application-owned.
+- UI export: `@beancount-js/ui/app-shell`, with the existing `Layout/App Shell`
+  story marked `visual-pending` and given a protected Storybook baseline.
+- Beta adapter: the unchanged `packages/fava-beta/src/components/StudioShell.svelte`
+  imports the same UI export; no local AppShell duplicate exists to remove.
+- Visual delta: `packages/fava-beta/e2e/visual-parity.spec.ts` compares the
+  `studio-workspace-header` surface against all 15 frozen routes at or below
+  0.1%. Route bodies stay out of this shell certification because their
+  components have their own pending migration tasks.
+- Validation: the 15-route AppShell parity suite and focused Storybook baseline
+  creation and comparison passed. Change `tzkqtuvo`.
 
 ### Wave 2 — forms, pickers, sheets, and workflow controls
 
@@ -247,3 +263,10 @@ change IDs here at the end of each committed slice.
   The broad Beta E2E suite still has 17 existing state-isolation failures; a
   representative query-table failure reproduces unchanged in original Fava, so
   it is not attributed to this slice.
+- 2026-07-24 — AppShell certification slice (`tzkqtuvo`): confirmed that both
+  original Fava and Beta consume the public UI AppShell export, while keeping
+  StudioShell's project and workflow integration in the application. Added the
+  AppShell pending Storybook baseline and verified its shared header against
+  every frozen route at the 0.1% limit. The baseline helper now preflights
+  create-only requests and runs Playwright's success-returning snapshot mode;
+  it refuses to overwrite an existing selected baseline.
