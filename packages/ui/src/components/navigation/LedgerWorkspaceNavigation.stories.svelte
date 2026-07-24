@@ -9,6 +9,7 @@
   const { Story } = defineMeta({
     title: "Navigation/Ledger Workspace Navigation",
     component: LedgerWorkspaceNavigation,
+    tags: ["visual-pending"],
     parameters: {
       docs: {
         description: {

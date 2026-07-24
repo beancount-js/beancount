@@ -1,0 +1,3 @@
+option "title" "E2E Test Ledger"
+
+2000-01-01 open Assets:Cash GBP

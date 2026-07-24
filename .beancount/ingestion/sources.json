@@ -1,35 +1,27 @@
 {
-  "version": 2,
-  "brandfetch": {
-    "enabled": false,
-    "apiKeySecretRef": "env:BRANDFETCH_API_KEY",
-    "clientId": "env:BRANDFETCH_CLIENT_ID",
-    "assetMode": "hotlink"
-  },
+  "version": 3,
   "sources": [
     {
-      "id": "lunchflow",
-      "name": "Lunch Flow",
-      "kind": "lunchflow",
+      "id": "monzo",
+      "name": "Monzo Bank",
+      "kind": "monzo",
       "accounts": [],
-      "aiEnabled": false,
-      "setup": "1. Go to [Lunch Flow](https://lunchflow.app/) and create an API key.\n2. Paste the API key and confirm the base URL below, then save the connection.\n3. Open **Settings → Accounts** to load and link the bank accounts you want to import.",
-      "merchantEnrichment": {
-        "enabled": true,
-        "aiEnabled": false,
-        "countryCode": "GB"
-      },
+      "setup": "1. In the [Monzo Developer API Playground](https://developers.monzo.com/), create an access token for your own account and approve access in the Monzo app. The Developer API is for personal use or a small explicitly allowed user set, and access tokens expire after several hours.\n2. Store the token as `MONZO_ACCESS_TOKEN` in the project `.env` (recommended), or paste it below, then save the connection.\n3. To import more than 90 days, set **Initial sync from**, re-authorize, and run the first sync within about five minutes of approval.\n4. Open **Settings → Accounts** to load and link the Monzo accounts you want to import.",
       "config": {
-        "secretRef": "env:LUNCHFLOW_API_KEY",
-        "baseUrl": "https://www.lunchflow.app/api/v1",
+        "secretRef": "env:MONZO_ACCESS_TOKEN",
+        "baseUrl": "https://api.monzo.com",
         "allowedHosts": [
-          "lunchflow.app",
-          "www.lunchflow.app"
+          "api.monzo.com"
         ],
-        "lookbackDays": 7,
-        "includePending": true
+        "lookbackDays": 30
       },
-      "rules": []
+      "rules": [],
+      "providerCategoryMappings": [
+        {
+          "code": "shopping",
+          "account": "Expenses:Food:Coffee"
+        }
+      ]
     }
   ]
 }

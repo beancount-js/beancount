@@ -7,11 +7,11 @@
   import Hash from "lucide-svelte/icons/hash";
   import List from "lucide-svelte/icons/list";
   import ListFilter from "lucide-svelte/icons/list-filter";
+  import SearchIcon from "lucide-svelte/icons/search";
   import Sparkles from "lucide-svelte/icons/sparkles";
   import { Button } from "../shadcn/button";
   import { Input } from "../shadcn/input";
   import FilterCommandPicker from "../forms/FilterCommandPicker.svelte";
-  import SegmentedControl from "../forms/SegmentedControl.svelte";
   import type { FilterCommandOption } from "../forms/picker-options";
   import WorkspaceTreeNavigation, {
     type WorkspaceTreeNavigationItem,
@@ -51,6 +51,8 @@
     title = "Ledgers",
     ledgerCount = ledgerItems.length,
     view = "ledgers",
+    searchOpen = false,
+    treeVariant = "default",
     tagsPresentation = "tree",
     activeLedgerId,
     ledgerExpandedIds = [],
@@ -62,6 +64,7 @@
     resources = [],
     ariaLabel = "Ledger workspace navigation",
     onViewChange,
+    onSearchOpenChange,
     onLedgerSelect,
     onLedgerExpandedIdsChange,
     onFolderSelect,
@@ -73,6 +76,7 @@
     onQueryChange,
     onAccountChange,
     onResourceSelect,
+    searchContent,
   }: {
     /** A ledger tree, usually a ledger file with page destinations as children. */
     ledgerItems: readonly WorkspaceTreeNavigationItem[];
@@ -84,6 +88,10 @@
     /** Count shown in the compact sidebar heading. */
     ledgerCount?: number;
     view?: LedgerWorkspaceView;
+    /** The application owns whether its route-aware search panel is open. */
+    searchOpen?: boolean;
+    /** Selects a compact visual treatment for a mapped ledger sidebar. */
+    treeVariant?: "default" | "ledger";
     tagsPresentation?: LedgerTagsPresentation;
     activeLedgerId?: string;
     ledgerExpandedIds?: readonly string[];
@@ -96,6 +104,7 @@
     resources?: readonly LedgerWorkspaceResource[];
     ariaLabel?: string;
     onViewChange?: (view: LedgerWorkspaceView) => void;
+    onSearchOpenChange?: (open: boolean) => void;
     onLedgerSelect?: (id: string) => void;
     onLedgerExpandedIdsChange?: (ids: string[]) => void;
     onFolderSelect?: (id: string) => void;
@@ -107,6 +116,8 @@
     onQueryChange?: (value: string) => void;
     onAccountChange?: (value: string) => void;
     onResourceSelect?: (id: string) => void;
+    /** Application-owned search UI rendered in place of the workspace tree. */
+    searchContent?: import("svelte").Snippet;
   } = $props();
 
   let ledgerSearch = $state("");
@@ -219,293 +230,358 @@
     >
   </div>
 
-  <SegmentedControl
-    value={view}
-    options={["ledgers", "folders", "tags"]}
-    labels={{ ledgers: "Ledgers", folders: "Folders", tags: "Tags" }}
-    ariaLabel="Ledger navigation views"
-    onChange={(nextView) => onViewChange?.(nextView as LedgerWorkspaceView)}
-  />
-
-  {#if selectedTags.length}
-    <div
-      class="relative flex flex-wrap items-center gap-1.5 rounded-md border border-sidebar-border bg-background/55 py-1.5 pl-2 pr-9 text-xs text-muted-foreground"
-      aria-label="Selected tag filters"
-    >
-      {#each selectedTags as tag (tag.id)}
-        <button
-          type="button"
-          class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[11px] font-semibold leading-none text-primary hover:bg-primary/15"
-          aria-label={`Remove ${tag.label} filter`}
-          onclick={() => toggleTag(tag.id)}
-        >
-          <Hash class="h-3 w-3 shrink-0" aria-hidden="true" />
-          <span class="min-w-0 truncate">{tag.label}</span>
-        </button>
-      {/each}
+  <div
+    class={searchContent
+      ? "grid grid-cols-[repeat(3,minmax(0,1fr))_1.75rem] gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-1"
+      : "grid grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-1"}
+    aria-label="Ledger navigation views"
+  >
+    {#each [{ id: "ledgers", label: "Ledgers" }, { id: "folders", label: "Folders" }, { id: "tags", label: "Tags" }] as workspaceView (workspaceView.id)}
       <Button
         type="button"
         variant="ghost"
-        size="icon-sm"
-        class="absolute right-1.5 top-1/2 size-6 -translate-y-1/2 rounded-full text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
-        aria-label="Clear tag filters"
-        title="Clear tag filters"
-        disabled={!onSelectedTagIdsChange}
-        onclick={() => onSelectedTagIdsChange?.([])}
+        size="sm"
+        class={"h-7 text-xs " +
+          (view === workspaceView.id && !searchOpen
+            ? "border border-sidebar-border bg-background shadow-sm hover:bg-background"
+            : "hover:bg-background")}
+        aria-pressed={view === workspaceView.id && !searchOpen}
+        onclick={() => {
+          onViewChange?.(workspaceView.id as LedgerWorkspaceView);
+          onSearchOpenChange?.(false);
+        }}
       >
-        <span aria-hidden="true">×</span>
+        {workspaceView.label}
       </Button>
-    </div>
-  {/if}
-
-  {#if view === "ledgers"}
-    <div class="flex items-center gap-1">
-      <label class="relative min-w-0 flex-1">
-        <span class="sr-only">Search ledgers</span>
-        <ListFilter
-          class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-          aria-hidden="true"
-        />
-        <Input
-          bind:value={ledgerSearch}
-          placeholder="Search ledgers"
-          class="h-8 bg-sidebar pl-8 text-xs"
-        />
-      </label>
+    {/each}
+    {#if searchContent}
       <Button
         type="button"
         variant="ghost"
-        size="icon-sm"
-        class="size-7"
-        aria-label={visibleLedgerExpandableIds.some(
-          (id) => !ledgerExpandedIds.includes(id),
-        )
-          ? "Expand all ledgers"
-          : "Collapse all ledgers"}
-        title={visibleLedgerExpandableIds.some(
-          (id) => !ledgerExpandedIds.includes(id),
-        )
-          ? "Expand all ledgers"
-          : "Collapse all ledgers"}
-        disabled={!visibleLedgerExpandableIds.length ||
-          !onLedgerExpandedIdsChange}
-        onclick={() =>
-          toggleExpandedItems(
-            visibleLedgerExpandableIds,
-            ledgerExpandedIds,
-            onLedgerExpandedIdsChange,
-          )}
+        size="icon"
+        class={"size-7 " +
+          (searchOpen
+            ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+            : "hover:bg-background")}
+        aria-label={searchOpen ? "Show ledger sidebar" : "Show search sidebar"}
+        aria-pressed={searchOpen}
+        title={searchOpen ? "Show ledgers" : "Search ledgers"}
+        onclick={() => onSearchOpenChange?.(!searchOpen)}
       >
-        {#if visibleLedgerExpandableIds.some((id) => !ledgerExpandedIds.includes(id))}
-          <ChevronsUpDown aria-hidden="true" />
-        {:else}
-          <ChevronsDownUp aria-hidden="true" />
-        {/if}
+        <SearchIcon aria-hidden="true" />
       </Button>
-    </div>
+    {/if}
+  </div>
 
-    <div class="min-h-0 flex-1 overflow-auto pr-1">
-      <WorkspaceTreeNavigation
-        items={visibleLedgerItems}
-        activeId={activeLedgerId}
-        expandedIds={ledgerExpandedIds}
-        ariaLabel="Ledger files"
-        emptyLabel={ledgerSearch.trim()
-          ? "No ledgers match the current filter."
-          : "No ledger files found."}
-        showExpandAll={false}
-        onSelect={onLedgerSelect}
-        onExpandedIdsChange={onLedgerExpandedIdsChange}
-      />
-
-      {#if queryPicker || accountPicker || resources.length}
-        <div
-          class="mt-2 flex flex-col gap-2 border-t border-sidebar-border px-2 pt-3"
-        >
-          <p class="text-xs font-medium uppercase text-muted-foreground">
-            Ledger tools
-          </p>
-          {#if queryPicker || accountPicker}
-            <div class="flex flex-wrap gap-2">
-              {#if queryPicker}
-                <div class="min-w-0 flex-[1_1_8rem]">
-                  <FilterCommandPicker
-                    fullWidth
-                    label={queryPicker.label}
-                    ariaLabel={queryPicker.ariaLabel ?? queryPicker.label}
-                    placeholder={queryPicker.placeholder}
-                    value={queryPicker.value}
-                    options={[...queryPicker.options]}
-                    onChange={(value) => onQueryChange?.(value)}
-                  />
-                </div>
-              {/if}
-              {#if accountPicker}
-                <div class="min-w-0 flex-[1_1_8rem]">
-                  <FilterCommandPicker
-                    fullWidth
-                    label={accountPicker.label}
-                    ariaLabel={accountPicker.ariaLabel ?? accountPicker.label}
-                    placeholder={accountPicker.placeholder}
-                    value={accountPicker.value}
-                    options={[...accountPicker.options]}
-                    onChange={(value) => onAccountChange?.(value)}
-                  />
-                </div>
-              {/if}
-            </div>
-          {/if}
-          {#each resources as resource (resource.id)}
-            {@const Icon = resource.icon ?? Sparkles}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="w-full justify-start"
-              disabled={resource.disabled || !onResourceSelect}
-              onclick={() => onResourceSelect?.(resource.id)}
-            >
-              <Icon class="size-4 shrink-0" aria-hidden="true" />
-              <span class="truncate">{resource.label}</span>
-            </Button>
-          {/each}
-        </div>
-      {/if}
-    </div>
-  {:else if view === "folders"}
-    <div class="flex items-center gap-1">
-      <label class="relative min-w-0 flex-1">
-        <span class="sr-only">Search folders</span>
-        <ListFilter
-          class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-          aria-hidden="true"
-        />
-        <Input
-          bind:value={folderSearch}
-          placeholder="Search folders"
-          class="h-8 bg-sidebar pl-8 text-xs"
-        />
-      </label>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        class="size-7"
-        aria-label={visibleFolderExpandableIds.some(
-          (id) => !folderExpandedIds.includes(id),
-        )
-          ? "Expand all filesystem folders"
-          : "Collapse all filesystem folders"}
-        title={visibleFolderExpandableIds.some(
-          (id) => !folderExpandedIds.includes(id),
-        )
-          ? "Expand all filesystem folders"
-          : "Collapse all filesystem folders"}
-        disabled={!visibleFolderExpandableIds.length ||
-          !onFolderExpandedIdsChange}
-        onclick={() =>
-          toggleExpandedItems(
-            visibleFolderExpandableIds,
-            folderExpandedIds,
-            onFolderExpandedIdsChange,
-          )}
-      >
-        {#if visibleFolderExpandableIds.some((id) => !folderExpandedIds.includes(id))}
-          <ChevronsUpDown aria-hidden="true" />
-        {:else}
-          <ChevronsDownUp aria-hidden="true" />
-        {/if}
-      </Button>
-    </div>
-
-    <div class="min-h-0 flex-1 overflow-auto pr-1">
-      <WorkspaceTreeNavigation
-        items={visibleFolderItems}
-        expandedIds={folderExpandedIds}
-        ariaLabel="Ledger folders"
-        emptyLabel="No folders match the current filter."
-        showExpandAll={false}
-        onSelect={onFolderSelect}
-        onExpandedIdsChange={onFolderExpandedIdsChange}
-      />
-    </div>
+  {#if searchOpen && searchContent}
+    {@render searchContent()}
   {:else}
-    <div class="flex items-center gap-1">
-      <label class="relative min-w-0 flex-1">
-        <span class="sr-only">Search tags</span>
-        <ListFilter
-          class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-          aria-hidden="true"
+    {#if selectedTags.length}
+      <div
+        class="relative flex flex-wrap items-center gap-1.5 rounded-md border border-sidebar-border bg-background/55 py-1.5 pl-2 pr-9 text-xs text-muted-foreground"
+        aria-label="Selected tag filters"
+      >
+        {#each selectedTags as tag (tag.id)}
+          <button
+            type="button"
+            class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[11px] font-semibold leading-none text-primary hover:bg-primary/15"
+            aria-label={`Remove ${tag.label} filter`}
+            onclick={() => toggleTag(tag.id)}
+          >
+            <Hash class="h-3 w-3 shrink-0" aria-hidden="true" />
+            <span class="min-w-0 truncate">{tag.label}</span>
+          </button>
+        {/each}
+        <Button
+          type="button"
+          variant="ghost"
+          size={treeVariant === "ledger" ? "icon" : "icon-sm"}
+          class="absolute right-1.5 top-1/2 size-6 -translate-y-1/2 rounded-full text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
+          aria-label="Clear tag filters"
+          title="Clear tag filters"
+          disabled={!onSelectedTagIdsChange}
+          onclick={() => onSelectedTagIdsChange?.([])}
+        >
+          <span aria-hidden="true">×</span>
+        </Button>
+      </div>
+    {/if}
+
+    {#if view === "ledgers"}
+      <div class="flex items-center gap-1">
+        <label class="relative min-w-0 flex-1">
+          <span class="sr-only">Search ledgers</span>
+          <ListFilter
+            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            bind:value={ledgerSearch}
+            placeholder="Search ledgers"
+            class="h-8 bg-sidebar pl-8 text-xs"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="ghost"
+          size={treeVariant === "ledger" ? "icon" : "icon-sm"}
+          class="size-7"
+          aria-label={visibleLedgerExpandableIds.some(
+            (id) => !ledgerExpandedIds.includes(id),
+          )
+            ? "Expand all ledgers"
+            : "Collapse all ledgers"}
+          title={visibleLedgerExpandableIds.some(
+            (id) => !ledgerExpandedIds.includes(id),
+          )
+            ? "Expand all ledgers"
+            : "Collapse all ledgers"}
+          disabled={!visibleLedgerExpandableIds.length ||
+            !onLedgerExpandedIdsChange}
+          onclick={() =>
+            toggleExpandedItems(
+              visibleLedgerExpandableIds,
+              ledgerExpandedIds,
+              onLedgerExpandedIdsChange,
+            )}
+        >
+          {#if visibleLedgerExpandableIds.some((id) => !ledgerExpandedIds.includes(id))}
+            <ChevronsUpDown aria-hidden="true" />
+          {:else}
+            <ChevronsDownUp aria-hidden="true" />
+          {/if}
+        </Button>
+      </div>
+
+      <div
+        class={treeVariant === "ledger"
+          ? "-mr-2 min-h-0 min-w-0 flex-1"
+          : "min-h-0 flex-1 overflow-auto pr-1"}
+        data-ledger-scroll-area={treeVariant === "ledger" || undefined}
+      >
+        <WorkspaceTreeNavigation
+          items={visibleLedgerItems}
+          activeId={activeLedgerId}
+          expandedIds={ledgerExpandedIds}
+          ariaLabel="Ledger files"
+          emptyLabel={ledgerSearch.trim()
+            ? "No ledgers match the current filter."
+            : "No ledger files found."}
+          showExpandAll={false}
+          variant={treeVariant}
+          onSelect={onLedgerSelect}
+          onExpandedIdsChange={onLedgerExpandedIdsChange}
         />
-        <Input
-          bind:value={tagSearch}
-          placeholder="Search tags"
-          class="h-8 bg-sidebar pl-8 text-xs"
+
+        {#if queryPicker || accountPicker || resources.length}
+          <div
+            class={treeVariant === "ledger"
+              ? "mt-2 flex flex-col gap-2 border-t border-sidebar-border pt-3"
+              : "mt-2 flex flex-col gap-2 border-t border-sidebar-border px-2 pt-3"}
+          >
+            <p
+              class={treeVariant === "ledger"
+                ? "px-2 text-xs font-medium uppercase text-muted-foreground"
+                : "text-xs font-medium uppercase text-muted-foreground"}
+            >
+              Ledger tools
+            </p>
+            {#if queryPicker || accountPicker}
+              <div class="flex flex-wrap gap-2">
+                {#if queryPicker}
+                  <div class="min-w-0 flex-[1_1_8rem]">
+                    <FilterCommandPicker
+                      fullWidth
+                      label={queryPicker.label}
+                      ariaLabel={queryPicker.ariaLabel ?? queryPicker.label}
+                      placeholder={queryPicker.placeholder}
+                      value={queryPicker.value}
+                      options={[...queryPicker.options]}
+                      onChange={(value) => onQueryChange?.(value)}
+                    />
+                  </div>
+                {/if}
+                {#if accountPicker}
+                  <div class="min-w-0 flex-[1_1_8rem]">
+                    <FilterCommandPicker
+                      fullWidth
+                      label={accountPicker.label}
+                      ariaLabel={accountPicker.ariaLabel ?? accountPicker.label}
+                      placeholder={accountPicker.placeholder}
+                      value={accountPicker.value}
+                      options={[...accountPicker.options]}
+                      onChange={(value) => onAccountChange?.(value)}
+                    />
+                  </div>
+                {/if}
+              </div>
+            {/if}
+            {#each resources as resource (resource.id)}
+              {@const Icon = resource.icon ?? Sparkles}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="w-full justify-start"
+                disabled={resource.disabled || !onResourceSelect}
+                onclick={() => onResourceSelect?.(resource.id)}
+              >
+                <Icon class="size-4 shrink-0" aria-hidden="true" />
+                <span class="truncate">{resource.label}</span>
+              </Button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {:else if view === "folders"}
+      <div class="flex items-center gap-1">
+        <label class="relative min-w-0 flex-1">
+          <span class="sr-only">Search folders</span>
+          <ListFilter
+            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            bind:value={folderSearch}
+            placeholder="Search folders"
+            class="h-8 bg-sidebar pl-8 text-xs"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="ghost"
+          size={treeVariant === "ledger" ? "icon" : "icon-sm"}
+          class="size-7"
+          aria-label={visibleFolderExpandableIds.some(
+            (id) => !folderExpandedIds.includes(id),
+          )
+            ? "Expand all filesystem folders"
+            : "Collapse all filesystem folders"}
+          title={visibleFolderExpandableIds.some(
+            (id) => !folderExpandedIds.includes(id),
+          )
+            ? "Expand all filesystem folders"
+            : "Collapse all filesystem folders"}
+          disabled={!visibleFolderExpandableIds.length ||
+            !onFolderExpandedIdsChange}
+          onclick={() =>
+            toggleExpandedItems(
+              visibleFolderExpandableIds,
+              folderExpandedIds,
+              onFolderExpandedIdsChange,
+            )}
+        >
+          {#if visibleFolderExpandableIds.some((id) => !folderExpandedIds.includes(id))}
+            <ChevronsUpDown aria-hidden="true" />
+          {:else}
+            <ChevronsDownUp aria-hidden="true" />
+          {/if}
+        </Button>
+      </div>
+
+      <div
+        class={treeVariant === "ledger"
+          ? "-mr-2 min-h-0 min-w-0 flex-1"
+          : "min-h-0 flex-1 overflow-auto pr-1"}
+        data-folder-scroll-area={treeVariant === "ledger" || undefined}
+      >
+        <WorkspaceTreeNavigation
+          items={visibleFolderItems}
+          expandedIds={folderExpandedIds}
+          ariaLabel="Ledger folders"
+          emptyLabel="No folders match the current filter."
+          showExpandAll={false}
+          variant={treeVariant}
+          onSelect={onFolderSelect}
+          onExpandedIdsChange={onFolderExpandedIdsChange}
         />
-      </label>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        class="size-7 shrink-0 border border-sidebar-border bg-background shadow-sm hover:bg-background"
-        aria-label={tagsPresentation === "tree"
-          ? "Showing tag hierarchy. Switch to flat tags."
-          : "Showing flat tags. Switch to tag hierarchy."}
-        title={tagsPresentation === "tree"
-          ? "Showing tag hierarchy. Switch to flat tags."
-          : "Showing flat tags. Switch to tag hierarchy."}
-        aria-pressed={tagsPresentation === "tree"}
-        disabled={!onTagsPresentationChange}
-        onclick={() =>
-          onTagsPresentationChange?.(
-            tagsPresentation === "tree" ? "flat" : "tree",
-          )}
+      </div>
+    {:else}
+      <div class="flex items-center gap-1">
+        <label class="relative min-w-0 flex-1">
+          <span class="sr-only">Search tags</span>
+          <ListFilter
+            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            bind:value={tagSearch}
+            placeholder="Search tags"
+            class="h-8 bg-sidebar pl-8 text-xs"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          class="size-7 shrink-0 border border-sidebar-border bg-background shadow-sm hover:bg-background"
+          aria-label={tagsPresentation === "tree"
+            ? "Showing tag hierarchy. Switch to flat tags."
+            : "Showing flat tags. Switch to tag hierarchy."}
+          title={tagsPresentation === "tree"
+            ? "Showing tag hierarchy. Switch to flat tags."
+            : "Showing flat tags. Switch to tag hierarchy."}
+          aria-pressed={tagsPresentation === "tree"}
+          disabled={!onTagsPresentationChange}
+          onclick={() =>
+            onTagsPresentationChange?.(
+              tagsPresentation === "tree" ? "flat" : "tree",
+            )}
+        >
+          {#if tagsPresentation === "tree"}
+            <FolderTree aria-hidden="true" />
+          {:else}
+            <List aria-hidden="true" />
+          {/if}
+        </Button>
+      </div>
+
+      <div
+        class={treeVariant === "ledger"
+          ? "-mr-2 min-h-0 min-w-0 flex-1"
+          : "min-h-0 flex-1 overflow-auto pr-1"}
+        data-tags-scroll-area={treeVariant === "ledger" || undefined}
       >
         {#if tagsPresentation === "tree"}
-          <FolderTree aria-hidden="true" />
+          <WorkspaceTreeNavigation
+            items={visibleTagItems}
+            expandedIds={tagExpandedIds}
+            ariaLabel="Ledger tags"
+            emptyLabel="No tags match the current filter."
+            showExpandAll
+            variant={treeVariant}
+            onSelect={toggleTag}
+            onExpandedIdsChange={onTagExpandedIdsChange}
+          />
+        {:else if flatTagItems.length}
+          <div class="grid gap-1 px-2" aria-label="Flat ledger tags">
+            {#each flatTagItems as tag (tag.id)}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="h-8 w-full min-w-0 justify-start gap-2 px-2 text-xs text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
+                aria-pressed={selectedTagIds.includes(tag.id)}
+                title={tag.label}
+                disabled={tag.disabled || !onSelectedTagIdsChange}
+                onclick={() => toggleTag(tag.id)}
+              >
+                <Hash class="size-3.5 shrink-0" aria-hidden="true" />
+                <span class="min-w-0 flex-1 truncate text-left"
+                  >{tag.label}</span
+                >
+                {#if tag.badge}
+                  <span class="text-[10px] tabular-nums">{tag.badge}</span>
+                {/if}
+              </Button>
+            {/each}
+          </div>
         {:else}
-          <List aria-hidden="true" />
+          <p class="px-2 py-1 text-xs text-muted-foreground">
+            No tags match the current filter.
+          </p>
         {/if}
-      </Button>
-    </div>
-
-    <div class="min-h-0 flex-1 overflow-auto pr-1">
-      {#if tagsPresentation === "tree"}
-        <WorkspaceTreeNavigation
-          items={visibleTagItems}
-          expandedIds={tagExpandedIds}
-          ariaLabel="Ledger tags"
-          emptyLabel="No tags match the current filter."
-          showExpandAll
-          onSelect={toggleTag}
-          onExpandedIdsChange={onTagExpandedIdsChange}
-        />
-      {:else if flatTagItems.length}
-        <div class="grid gap-1 px-2" aria-label="Flat ledger tags">
-          {#each flatTagItems as tag (tag.id)}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="h-8 w-full min-w-0 justify-start gap-2 px-2 text-xs text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
-              aria-pressed={selectedTagIds.includes(tag.id)}
-              title={tag.label}
-              disabled={tag.disabled || !onSelectedTagIdsChange}
-              onclick={() => toggleTag(tag.id)}
-            >
-              <Hash class="size-3.5 shrink-0" aria-hidden="true" />
-              <span class="min-w-0 flex-1 truncate text-left">{tag.label}</span>
-              {#if tag.badge}
-                <span class="text-[10px] tabular-nums">{tag.badge}</span>
-              {/if}
-            </Button>
-          {/each}
-        </div>
-      {:else}
-        <p class="px-2 py-1 text-xs text-muted-foreground">
-          No tags match the current filter.
-        </p>
-      {/if}
-    </div>
+      </div>
+    {/if}
   {/if}
 </section>

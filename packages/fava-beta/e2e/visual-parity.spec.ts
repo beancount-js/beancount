@@ -90,6 +90,22 @@ const studioShellHeaderReferenceSurfaces: readonly ReferenceSurface[] = [
   },
 ];
 
+const ledgerWorkspaceNavigationReferenceSurfaces: readonly ReferenceSurface[] =
+  [
+    {
+      id: "journal",
+      viewPath: "/journal",
+      label: "view switcher",
+      selector: "[aria-label='Ledger navigation views']",
+    },
+    {
+      id: "journal",
+      viewPath: "/journal",
+      label: "ledger search input",
+      selector: "input[placeholder='Search ledgers']",
+    },
+  ];
+
 test.use({
   viewport: { width: 1280, height: 900 },
   deviceScaleFactor: 3,
@@ -260,6 +276,14 @@ test.describe("frozen Fava visual parity", () => {
 
   for (const reference of studioShellHeaderReferenceSurfaces) {
     test(`StudioShellHeader retains ${reference.label} pixels`, async ({
+      page,
+    }) => {
+      await expectFrozenSurfaceParity(page, reference, reference.selector);
+    });
+  }
+
+  for (const reference of ledgerWorkspaceNavigationReferenceSurfaces) {
+    test(`LedgerWorkspaceNavigation retains ${reference.label} pixels`, async ({
       page,
     }) => {
       await expectFrozenSurfaceParity(page, reference, reference.selector);

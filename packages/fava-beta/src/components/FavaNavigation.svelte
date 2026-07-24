@@ -1,37 +1,24 @@
 <script lang="ts">
-  import ArrowLeft from "lucide-svelte/icons/arrow-left";
-  import ChevronDown from "lucide-svelte/icons/chevron-down";
-  import ChevronRight from "lucide-svelte/icons/chevron-right";
   import ClipboardList from "lucide-svelte/icons/clipboard-list";
-  import ChevronsDownUp from "lucide-svelte/icons/chevrons-down-up";
-  import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import FileText from "lucide-svelte/icons/file-text";
   import Folder from "lucide-svelte/icons/folder";
-  import FolderTree from "lucide-svelte/icons/folder-tree";
   import Hash from "lucide-svelte/icons/hash";
   import History from "lucide-svelte/icons/history";
   import Landmark from "lucide-svelte/icons/landmark";
   import Palette from "lucide-svelte/icons/palette";
   import BookUser from "lucide-svelte/icons/book-user";
   import Store from "lucide-svelte/icons/store";
-  import List from "lucide-svelte/icons/list";
-  import ListFilter from "lucide-svelte/icons/list-filter";
   import ShieldX from "lucide-svelte/icons/shield-x";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
-  import SearchIcon from "lucide-svelte/icons/search";
   import Wand2 from "lucide-svelte/icons/wand-2";
-  import Sparkles from "lucide-svelte/icons/sparkles";
-  import X from "lucide-svelte/icons/x";
   import { Query } from "@beancount-js/beancount";
-  import {
-    FilterCommandPicker,
-    type FilterCommandOption,
-  } from "@beancount-js/forms";
+  import type { FilterCommandOption } from "@beancount-js/forms";
+  import LedgerSettingsNavigation, {
+    type LedgerSettingsNavigationItem,
+  } from "@beancount-js/ui/navigation/LedgerSettingsNavigation.svelte";
+  import LedgerWorkspaceNavigation from "@beancount-js/ui/navigation/LedgerWorkspaceNavigation.svelte";
+  import type { WorkspaceTreeNavigationItem } from "@beancount-js/ui/navigation/WorkspaceTreeNavigation.svelte";
   import type { ProjectFile } from "@beancount-js/workspace";
-  import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
-  import * as ScrollArea from "$lib/components/ui/scroll-area";
-  import { cn } from "$lib/utils";
   import { useContext } from "../context";
   import { type MenuItem } from "../menu";
   import { useNavigation } from "../router/router";
@@ -51,8 +38,6 @@
     createLedgerTagSummaries,
     createLedgerTagTree,
     filterLedgerFiles,
-    filterLedgerFolderTree,
-    filterLedgerTagsByPathMatch,
     ledgerFileLabel,
     ledgerFolderAncestorIds,
     normalizeLedgerTag,
@@ -84,9 +69,6 @@
   let folderOpenNodes = initialState.folderOpenNodes ?? {};
   let tagOpenNodes = initialState.tagOpenNodes ?? {};
   let expandedFilePaths: Record<string, boolean> = {};
-  let ledgerQuery = "";
-  let folderQuery = "";
-  let tagQuery = "";
   let selectedTags: string[] = [];
   /** Non-settings view to restore when leaving the settings sidebar. */
   let settingsReturnPath: string | undefined;
@@ -132,19 +114,12 @@
   $: menuItems = getMenu();
   $: tagSummaries = createLedgerTagSummaries(files);
   $: filteredByTags = filterLedgerFiles(files, "", selectedTags);
-  $: visibleLedgerFiles = filterLedgerFiles(files, ledgerQuery, selectedTags);
-  $: folderTree = filterLedgerFolderTree(
-    createLedgerFolderTree(filteredByTags),
-    folderQuery,
-  );
+  $: visibleLedgerFiles = filterLedgerFiles(files, "", selectedTags);
+  $: folderTree = createLedgerFolderTree(filteredByTags);
   $: expandableFolderIds = folderTree
     ? collectExpandableLedgerFolderIds(folderTree)
     : [];
-  $: hasCollapsedFolders = expandableFolderIds.some(
-    (id) => !isFolderOpen(id, folderOpenNodes),
-  );
-  $: filteredTags = filterLedgerTagsByPathMatch(tagSummaries, tagQuery);
-  $: tagTree = createLedgerTagTree(filteredTags);
+  $: tagTree = createLedgerTagTree(tagSummaries);
   $: queries = $ledgerSource.directives
     .filter((directive) => directive instanceof Query)
     .map((directive) => ({
@@ -349,27 +324,6 @@
     ledgerSidebarMode.set("settings");
   }
 
-  function expandAllFiles() {
-    expandedFilePaths = Object.fromEntries(
-      visibleLedgerFiles.map((file) => [file.path, true]),
-    );
-  }
-
-  function collapseAllFiles() {
-    expandedFilePaths = Object.fromEntries(
-      visibleLedgerFiles.map((file) => [file.path, false]),
-    );
-  }
-
-  function hasCollapsedFiles() {
-    return visibleLedgerFiles.some((file) => !isFileExpanded(file.path));
-  }
-
-  function toggleAllFiles() {
-    if (hasCollapsedFiles()) expandAllFiles();
-    else collapseAllFiles();
-  }
-
   function isFolderOpen(
     id: string,
     openNodes: Record<string, boolean> = folderOpenNodes,
@@ -385,24 +339,11 @@
     };
   }
 
-  function toggleAllFolders() {
-    folderOpenNodes = Object.fromEntries(
-      expandableFolderIds.map((id) => [id, hasCollapsedFolders]),
-    );
-  }
-
   function isTagOpen(
     tag: string,
     openNodes: Record<string, boolean> = tagOpenNodes,
   ) {
     return openNodes[tag] ?? true;
-  }
-
-  function toggleTag(tag: string) {
-    tagOpenNodes = {
-      ...tagOpenNodes,
-      [tag]: !isTagOpen(tag, tagOpenNodes),
-    };
   }
 
   function tagsEqual(left: string[], right: string[]) {
@@ -424,32 +365,6 @@
     void router.updateState(search ? `${path}?${search}` : path);
   }
 
-  function selectTag(tag: string) {
-    const normalized = normalizeLedgerTag(tag);
-    if (!normalized) return;
-    if (
-      !selectedTags.some(
-        (selected) => selected.toLowerCase() === normalized.toLowerCase(),
-      )
-    ) {
-      selectedTags = [...selectedTags, normalized];
-    }
-    syncSearchTags(selectedTags);
-  }
-
-  function removeTag(tag: string) {
-    const normalized = normalizeLedgerTag(tag).toLowerCase();
-    selectedTags = selectedTags.filter(
-      (selected) => normalizeLedgerTag(selected).toLowerCase() !== normalized,
-    );
-    syncSearchTags(selectedTags);
-  }
-
-  function clearSelectedTags() {
-    selectedTags = [];
-    syncSearchTags([]);
-  }
-
   function navigateToAccount(account: string) {
     if (!account) return;
     router.push(account === "-" ? "/accounts" : `/account/${account}`);
@@ -465,912 +380,330 @@
     router.push(`/resource?path=${encodeURIComponent(path)}`);
   }
 
-  function fileRowStyle(depth: number) {
-    return `padding-left: ${0.25 + Math.max(depth, 0) * 0.875}rem`;
+  const navigationPanelSeparator = "\u0000";
+
+  function navigationPanelId(filePath: string, panelPath: string) {
+    return `${filePath}${navigationPanelSeparator}${panelPath}`;
   }
 
-  function filePanelStyle(depth: number) {
-    return `padding-left: ${2 + Math.max(depth, 0) * 0.875}rem`;
+  function mapLedgerFile(file: ProjectFile): WorkspaceTreeNavigationItem {
+    const active = file.path === $activeFile;
+    return {
+      id: file.path,
+      label: ledgerFileLabel(file),
+      icon: FileText,
+      kind: "ledger-file",
+      active,
+      children: menuItems.map((panel) => ({
+        id: navigationPanelId(file.path, panel.path),
+        label: panel.name,
+        icon: panel.icon,
+        kind: "ledger-panel",
+        active: active && isPanelActive(panel, activeViewPath),
+      })),
+    };
   }
 
-  function folderRowStyle(depth: number) {
-    return `padding-left: ${0.25 + Math.max(depth, 0) * 0.875}rem`;
+  function mapFolderNode(node: LedgerFolderNode): WorkspaceTreeNavigationItem {
+    return {
+      id: node.id,
+      label: node.label,
+      badge: String(node.count),
+      icon: Folder,
+      kind: "ledger-folder",
+      children: [
+        ...node.files.map(mapLedgerFile),
+        ...node.children.map(mapFolderNode),
+      ],
+    };
   }
 
-  function tagRowStyle(depth: number) {
-    return `padding-left: ${0.25 + Math.max(depth, 0) * 0.875}rem`;
+  function mapTagNode(node: LedgerTagTreeNode): WorkspaceTreeNavigationItem {
+    return {
+      id: node.tag,
+      label: node.name,
+      badge: String(node.count),
+      icon: Hash,
+      kind: "ledger-tag",
+      active: selectedTags.includes(node.tag),
+      children: node.children.map(mapTagNode),
+    };
   }
 
-  function indentGuideDepths(depth: number) {
-    return Array.from({ length: Math.max(depth, 0) }, (_, index) => index);
+  function navigationFileIds(
+    items: readonly WorkspaceTreeNavigationItem[],
+  ): string[] {
+    return items.flatMap((item) => [
+      item.id,
+      ...navigationFileIds(item.children ?? []),
+    ]);
   }
 
-  function indentGuideStyle(depth: number) {
-    return `left: ${0.75 + depth * 0.875}rem`;
+  function handleLedgerNavigationSelect(id: string) {
+    const separatorIndex = id.indexOf(navigationPanelSeparator);
+    if (separatorIndex < 0) {
+      selectLedgerFile(id);
+      return;
+    }
+
+    const filePath = id.slice(0, separatorIndex);
+    const panelPath = id.slice(separatorIndex + 1);
+    const panel = menuItems.find((item) => item.path === panelPath);
+    if (panel) openLedgerPanel(filePath, panel);
+  }
+
+  function handleLedgerExpansion(ids: string[]) {
+    const selected = new Set(ids);
+    expandedFilePaths = Object.fromEntries(
+      [...files, ...(review ? [{ path: review.path }] : [])].map((file) => [
+        file.path,
+        selected.has(file.path),
+      ]),
+    );
+  }
+
+  function handleFolderNavigationSelect(id: string) {
+    const folder = findFolderNode(folderTree ?? undefined, id);
+    if (folder) {
+      toggleFolder(folder.id);
+      return;
+    }
+    handleLedgerNavigationSelect(id);
+  }
+
+  function handleFolderExpansion(ids: string[]) {
+    const selected = new Set(ids);
+    folderOpenNodes = Object.fromEntries(
+      expandableFolderIds.map((id) => [id, selected.has(id)]),
+    );
+    handleLedgerExpansion(ids);
+  }
+
+  function findFolderNode(
+    node: LedgerFolderNode | undefined,
+    id: string,
+  ): LedgerFolderNode | undefined {
+    if (!node) return undefined;
+    if (node.id === id) return node;
+    for (const child of node.children) {
+      const match = findFolderNode(child, id);
+      if (match) return match;
+    }
+    return undefined;
+  }
+
+  function activeNavigationItemId() {
+    const selectedFile = selectedLedger?.path;
+    if (!selectedFile) return undefined;
+    const activePanel = menuItems.find((panel) =>
+      isPanelActive(panel, activeViewPath),
+    );
+    return activePanel
+      ? navigationPanelId(selectedFile, activePanel.path)
+      : selectedFile;
+  }
+
+  $: ledgerNavigationItems = [
+    ...visibleLedgerFiles.map(mapLedgerFile),
+    ...(review && !selectedTags.length
+      ? [
+          {
+            id: review.path,
+            label: "Review transactions",
+            badge: String(review.reviewableCount),
+            icon: ClipboardList,
+            kind: "ledger-file",
+            active: review.path === $activeFile,
+            children: menuItems.map((panel) => ({
+              id: navigationPanelId(review.path, panel.path),
+              label: panel.name,
+              icon: panel.icon,
+              kind: "ledger-panel",
+              active:
+                review.path === $activeFile &&
+                isPanelActive(panel, activeViewPath),
+            })),
+          } satisfies WorkspaceTreeNavigationItem,
+        ]
+      : []),
+  ] satisfies WorkspaceTreeNavigationItem[];
+  $: folderNavigationItems = folderTree ? [mapFolderNode(folderTree)] : [];
+  $: tagNavigationItems = tagTree.map(mapTagNode);
+  $: ledgerExpandedIds = navigationFileIds(ledgerNavigationItems).filter((id) =>
+    isFileExpanded(id),
+  );
+  $: folderExpandedIds = [
+    ...expandableFolderIds.filter((id) => isFolderOpen(id)),
+    ...navigationFileIds(folderNavigationItems).filter((id) =>
+      isFileExpanded(id),
+    ),
+  ];
+  $: tagExpandedIds = tagTree
+    .filter((node) => isTagOpen(node.tag))
+    .map((node) => node.tag);
+  $: settingsNavigationItems = [
+    {
+      id: "/import/accounts",
+      label: "Accounts",
+      icon: Landmark,
+      active: isLedgerSettingActive("/import/accounts", activeViewPath),
+      disabled: files.length === 0,
+    },
+    {
+      id: "/import/editor",
+      label: "Bank Sync",
+      icon: RefreshCw,
+      active: isLedgerSettingActive("/import/editor", activeViewPath),
+      expanded: importSettingsOpen,
+      disclosureLabel: "import",
+      disabled: files.length === 0,
+      children: [
+        {
+          id: "/import/history",
+          label: "History",
+          icon: History,
+          active: isLedgerSettingActive("/import/history", activeViewPath),
+          disabled: files.length === 0,
+        },
+        ...(hasActiveReview
+          ? [
+              {
+                id: "/records",
+                label: "Review",
+                icon: ClipboardList,
+                active: isLedgerSettingActive("/records", activeViewPath),
+                groupActive:
+                  isLedgerSettingActive("/records", activeViewPath) ||
+                  isLedgerSettingActive("/import/merchants", activeViewPath),
+                expanded: reviewSettingsOpen,
+                disclosureLabel: "review",
+                badge: String(review!.reviewableCount),
+                badgeTitle: `${review!.reviewableCount} items in active review`,
+                disabled: files.length === 0,
+                children: [
+                  {
+                    id: "/import/merchants",
+                    label: "Merchants",
+                    icon: Store,
+                    active: isLedgerSettingActive(
+                      "/import/merchants",
+                      activeViewPath,
+                    ),
+                    disabled: files.length === 0,
+                  },
+                ],
+              } satisfies LedgerSettingsNavigationItem,
+            ]
+          : []),
+      ],
+    },
+    {
+      id: "/import/manage-merchants",
+      label: "Merchants",
+      icon: BookUser,
+      active: isLedgerSettingActive(
+        "/import/manage-merchants",
+        activeViewPath,
+      ),
+      disabled: files.length === 0,
+    },
+    {
+      id: "/import/brands",
+      label: "Brand match",
+      icon: Palette,
+      active: isLedgerSettingActive("/import/brands", activeViewPath),
+      disabled: files.length === 0,
+    },
+    {
+      id: "/import/rules",
+      label: "Rules",
+      icon: Wand2,
+      active: isLedgerSettingActive("/import/rules", activeViewPath),
+      disabled: files.length === 0,
+    },
+  ] satisfies LedgerSettingsNavigationItem[];
+
+  function handleSettingsNavigationExpansion(id: string, expanded: boolean) {
+    if (id === "/import/editor") importSettingsOpen = expanded;
+    if (id === "/records") reviewSettingsOpen = expanded;
   }
 </script>
 
+{#snippet NavigationSearchContent()}
+  <Search />
+{/snippet}
+
 <div class="flex min-h-0 flex-1 flex-col gap-3">
   {#if $ledgerSidebarMode === "settings"}
-    <div
-      class="flex min-h-0 flex-1 flex-col gap-3"
-      data-ledger-settings-sidebar
-    >
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        class="h-8 w-full justify-start gap-2 px-2 text-left text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
-        aria-label="Back to ledger navigation"
-        onclick={closeLedgerSettings}
-      >
-        <ArrowLeft data-icon="inline-start" />
-        <span class="text-xs font-medium">Back</span>
-      </Button>
-
-      <div class="flex min-h-0 flex-1 flex-col gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          class={cn(
-            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/import/accounts", activeViewPath)
-              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-          )}
-          aria-current={isLedgerSettingActive(
-            "/import/accounts",
-            activeViewPath,
-          )
-            ? "page"
-            : undefined}
-          disabled={files.length === 0}
-          onclick={() => openLedgerSetting("/import/accounts")}
-        >
-          <Landmark data-icon="inline-start" />
-          <span class="min-w-0 flex-1 truncate text-xs font-medium"
-            >Accounts</span
-          >
-        </Button>
-
-        <div class="flex flex-col gap-1">
-          <div
-            class={cn(
-              "flex items-center rounded-md",
-              isLedgerSettingActive("/import/editor", activeViewPath)
-                ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm"
-                : "text-muted-foreground",
-            )}
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              class="ml-1 size-6 shrink-0"
-              aria-label={importSettingsOpen
-                ? "Collapse import navigation"
-                : "Expand import navigation"}
-              aria-expanded={importSettingsOpen}
-              onclick={() => (importSettingsOpen = !importSettingsOpen)}
-            >
-              <ChevronDown
-                class={cn(
-                  "transition-transform",
-                  importSettingsOpen ? "" : "-rotate-90",
-                )}
-              />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent"
-              aria-current={isLedgerSettingActive(
-                "/import/editor",
-                activeViewPath,
-              )
-                ? "page"
-                : undefined}
-              disabled={files.length === 0}
-              onclick={() => openLedgerSetting("/import/editor")}
-            >
-              <RefreshCw data-icon="inline-start" />
-              <span class="min-w-0 flex-1 truncate text-xs font-medium"
-                >Bank Sync</span
-              >
-            </Button>
-          </div>
-
-          {#if importSettingsOpen}
-            <div
-              class="ml-4 flex flex-col gap-1 border-l border-sidebar-border pl-2"
-            >
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                class={cn(
-                  "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-                  isLedgerSettingActive("/import/history", activeViewPath)
-                    ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                    : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-                )}
-                aria-current={isLedgerSettingActive(
-                  "/import/history",
-                  activeViewPath,
-                )
-                  ? "page"
-                  : undefined}
-                disabled={files.length === 0}
-                onclick={() => openLedgerSetting("/import/history")}
-              >
-                <History data-icon="inline-start" />
-                <span class="min-w-0 flex-1 truncate text-xs font-medium"
-                  >History</span
-                >
-              </Button>
-              {#if hasActiveReview}
-                <div class="flex flex-col gap-1">
-                  <div
-                    class={cn(
-                      "flex items-center rounded-md",
-                      isLedgerSettingActive("/records", activeViewPath) ||
-                        isLedgerSettingActive(
-                          "/import/merchants",
-                          activeViewPath,
-                        )
-                        ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      class="ml-1 size-6 shrink-0"
-                      aria-label={reviewSettingsOpen
-                        ? "Collapse review navigation"
-                        : "Expand review navigation"}
-                      aria-expanded={reviewSettingsOpen}
-                      onclick={() => (reviewSettingsOpen = !reviewSettingsOpen)}
-                    >
-                      <ChevronDown
-                        class={cn(
-                          "transition-transform",
-                          reviewSettingsOpen ? "" : "-rotate-90",
-                        )}
-                      />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      class="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent"
-                      aria-current={isLedgerSettingActive(
-                        "/records",
-                        activeViewPath,
-                      )
-                        ? "page"
-                        : undefined}
-                      disabled={files.length === 0}
-                      onclick={() => openLedgerSetting("/records")}
-                    >
-                      <ClipboardList data-icon="inline-start" />
-                      <span class="min-w-0 flex-1 truncate text-xs font-medium"
-                        >Review</span
-                      >
-                      <span
-                        class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-accent px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-                        title={`${review!.reviewableCount} items in active review`}
-                        >{review!.reviewableCount}</span
-                      >
-                    </Button>
-                  </div>
-
-                  {#if reviewSettingsOpen}
-                    <div
-                      class="ml-4 flex flex-col gap-1 border-l border-sidebar-border pl-2"
-                    >
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        class={cn(
-                          "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-                          isLedgerSettingActive(
-                            "/import/merchants",
-                            activeViewPath,
-                          )
-                            ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                            : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-                        )}
-                        aria-current={isLedgerSettingActive(
-                          "/import/merchants",
-                          activeViewPath,
-                        )
-                          ? "page"
-                          : undefined}
-                        disabled={files.length === 0}
-                        onclick={() => openLedgerSetting("/import/merchants")}
-                      >
-                        <Store data-icon="inline-start" />
-                        <span
-                          class="min-w-0 flex-1 truncate text-xs font-medium"
-                          >Merchants</span
-                        >
-                      </Button>
-                    </div>
-                  {/if}
-                </div>
-              {/if}
-            </div>
-          {/if}
-        </div>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          class={cn(
-            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/import/manage-merchants", activeViewPath)
-              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-          )}
-          aria-current={isLedgerSettingActive(
-            "/import/manage-merchants",
-            activeViewPath,
-          )
-            ? "page"
-            : undefined}
-          disabled={files.length === 0}
-          onclick={() => openLedgerSetting("/import/manage-merchants")}
-        >
-          <BookUser data-icon="inline-start" />
-          <span class="min-w-0 flex-1 truncate text-xs font-medium"
-            >Merchants</span
-          >
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          class={cn(
-            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/import/brands", activeViewPath)
-              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-          )}
-          aria-current={isLedgerSettingActive("/import/brands", activeViewPath)
-            ? "page"
-            : undefined}
-          disabled={files.length === 0}
-          onclick={() => openLedgerSetting("/import/brands")}
-        >
-          <Palette data-icon="inline-start" />
-          <span class="min-w-0 flex-1 truncate text-xs font-medium"
-            >Brand match</span
-          >
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          class={cn(
-            "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
-            isLedgerSettingActive("/import/rules", activeViewPath)
-              ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-              : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-          )}
-          aria-current={isLedgerSettingActive("/import/rules", activeViewPath)
-            ? "page"
-            : undefined}
-          disabled={files.length === 0}
-          onclick={() => openLedgerSetting("/import/rules")}
-        >
-          <Wand2 data-icon="inline-start" />
-          <span class="min-w-0 flex-1 truncate text-xs font-medium">Rules</span>
-        </Button>
-      </div>
-    </div>
+    <LedgerSettingsNavigation
+      items={settingsNavigationItems}
+      onBack={closeLedgerSettings}
+      onSelect={openLedgerSetting}
+      onExpandedChange={handleSettingsNavigationExpansion}
+    />
   {:else}
-    <div class="flex items-center justify-between gap-2 px-2">
-      <p class="text-xs font-medium uppercase text-muted-foreground">Ledgers</p>
-      <span
-        class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-accent px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-        >{files.length}</span
-      >
-    </div>
-
-    <div
-      class="grid grid-cols-[repeat(3,minmax(0,1fr))_1.75rem] gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-1"
-      aria-label="Ledger navigation views"
-    >
-      {#each [{ id: "ledgers", label: "Ledgers" }, { id: "folders", label: "Folders" }, { id: "tags", label: "Tags" }] as view (view.id)}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          class={cn(
-            "h-7 text-xs",
-            workspaceView === view.id && !searchOpen
-              ? "border border-sidebar-border bg-background shadow-sm hover:bg-background"
-              : "hover:bg-background",
-          )}
-          aria-pressed={workspaceView === view.id && !searchOpen}
-          onclick={() => {
-            workspaceView = view.id as WorkspaceView;
-            searchOpen = false;
-          }}
-        >
-          {view.label}
-        </Button>
-      {/each}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        class={cn(
-          "size-7",
-          searchOpen
-            ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
-            : "hover:bg-background",
-        )}
-        aria-label={searchOpen ? "Show ledger sidebar" : "Show search sidebar"}
-        aria-pressed={searchOpen}
-        title={searchOpen ? "Show ledgers" : "Search ledgers"}
-        onclick={() => (searchOpen = !searchOpen)}
-      >
-        <SearchIcon data-icon />
-      </Button>
-    </div>
-
-    {#if searchOpen}
-      <Search />
-    {:else}
-      {#if selectedTags.length}
-        <div
-          class="relative flex flex-wrap items-center gap-1.5 rounded-md border border-sidebar-border bg-background/55 py-1.5 pl-2 pr-9 text-xs text-muted-foreground"
-          aria-label="Selected tag filters"
-        >
-          {#each selectedTags as tag (tag)}
-            <button
-              type="button"
-              class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[11px] font-semibold leading-none text-primary hover:bg-primary/15"
-              aria-label={`Remove #${tag} filter`}
-              onclick={() => removeTag(tag)}
-            >
-              <Hash class="h-3 w-3 shrink-0" aria-hidden="true" />
-              <span class="min-w-0 truncate">{tag}</span>
-              <X class="h-3 w-3 shrink-0 opacity-75" aria-hidden="true" />
-            </button>
-          {/each}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="absolute right-1.5 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
-            aria-label="Clear tag filters"
-            title="Clear tag filters"
-            onclick={clearSelectedTags}
-          >
-            <X data-icon />
-          </Button>
-        </div>
-      {/if}
-
-      {#if workspaceView === "ledgers"}
-        <div class="flex items-center gap-1">
-          <label class="relative min-w-0 flex-1">
-            <ListFilter
-              class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              bind:value={ledgerQuery}
-              placeholder="Search ledgers"
-              class="h-8 bg-sidebar pl-8 text-xs"
-            />
-          </label>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="size-7"
-            aria-label={hasCollapsedFiles()
-              ? "Expand all ledgers"
-              : "Collapse all ledgers"}
-            title={hasCollapsedFiles()
-              ? "Expand all ledgers"
-              : "Collapse all ledgers"}
-            disabled={!visibleLedgerFiles.length}
-            onclick={toggleAllFiles}
-          >
-            {#if hasCollapsedFiles()}
-              <ChevronsUpDown data-icon />
-            {:else}
-              <ChevronsDownUp data-icon />
-            {/if}
-          </Button>
-        </div>
-
-        <ScrollArea.Root
-          class="-mr-2 min-h-0 min-w-0 flex-1"
-          data-ledger-scroll-area
-        >
-          <div
-            class="flex min-w-0 flex-col gap-1 overflow-x-hidden pr-4"
-            data-ledger-list
-          >
-            {#each visibleLedgerFiles as file (file.path)}
-              {@render LedgerFileRow({ file, depth: 0 })}
-            {:else}
-              <p class="px-2 text-xs text-muted-foreground">
-                {ledgerQuery.trim() || selectedTags.length
-                  ? "No ledgers match the current filter."
-                  : "No ledger files found."}
-              </p>
-            {/each}
-
-            {#if review && !ledgerQuery.trim() && !selectedTags.length}
-              {@render ReviewLedgerRow({ review })}
-            {/if}
-
-            {#if queries.length || accounts.length || $snapshot?.resources.length}
-              <div
-                class="mt-2 flex flex-col gap-2 border-t border-sidebar-border pt-3"
-              >
-                <p
-                  class="px-2 text-xs font-medium uppercase text-muted-foreground"
-                >
-                  Ledger tools
-                </p>
-                {#if queries.length || accounts.length}
-                  <div class="flex flex-wrap gap-2">
-                    {#if queries.length}
-                      <div class="min-w-0 flex-[1_1_8rem]">
-                        <FilterCommandPicker
-                          fullWidth
-                          label="Query"
-                          ariaLabel="Select query"
-                          placeholder="Filter queries..."
-                          value={$activeRoute.query["qs"] ?? "all"}
-                          options={queryPickerOptions}
-                          onChange={(value) => {
-                            if (value && value !== "all")
-                              navigateToQuery(value);
-                          }}
-                        />
-                      </div>
-                    {/if}
-                    {#if accounts.length}
-                      <div class="min-w-0 flex-[1_1_8rem]">
-                        <FilterCommandPicker
-                          fullWidth
-                          label="Account"
-                          ariaLabel="Select account"
-                          placeholder="Filter accounts..."
-                          value={$activeRoute.params["account"] ?? "all"}
-                          options={accountPickerOptions}
-                          onChange={(value) => {
-                            if (!value || value === "all")
-                              navigateToAccount("-");
-                            else navigateToAccount(value);
-                          }}
-                        />
-                      </div>
-                    {/if}
-                  </div>
-                {/if}
-                {#each $snapshot?.resources ?? [] as resource (resource.path)}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="w-full justify-start"
-                    onclick={() => openResource(resource.path)}
-                  >
-                    <Sparkles data-icon="inline-start" />
-                    <span class="truncate">{resource.path}</span>
-                  </Button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        </ScrollArea.Root>
-      {:else if workspaceView === "folders"}
-        <div class="flex items-center gap-1">
-          <label class="relative min-w-0 flex-1">
-            <ListFilter
-              class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              bind:value={folderQuery}
-              placeholder="Search folders"
-              class="h-8 bg-sidebar pl-8 text-xs"
-            />
-          </label>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="size-7"
-            aria-label={hasCollapsedFolders
-              ? "Expand all filesystem folders"
-              : "Collapse all filesystem folders"}
-            title={hasCollapsedFolders
-              ? "Expand all filesystem folders"
-              : "Collapse all filesystem folders"}
-            disabled={!expandableFolderIds.length}
-            onclick={toggleAllFolders}
-          >
-            {#if hasCollapsedFolders}
-              <ChevronsUpDown data-icon />
-            {:else}
-              <ChevronsDownUp data-icon />
-            {/if}
-          </Button>
-        </div>
-
-        <ScrollArea.Root
-          class="-mr-2 min-h-0 min-w-0 flex-1"
-          data-folder-scroll-area
-        >
-          <div
-            class="flex min-w-0 flex-col gap-1 overflow-x-hidden pr-4"
-            data-folder-list
-          >
-            {#if folderTree}
-              {@render FolderNode({ node: folderTree })}
-            {:else}
-              <p class="px-2 text-xs text-muted-foreground">
-                No folders match the current filter.
-              </p>
-            {/if}
-          </div>
-        </ScrollArea.Root>
-      {:else}
-        <div class="flex items-center gap-1">
-          <label class="relative min-w-0 flex-1">
-            <ListFilter
-              class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              bind:value={tagQuery}
-              placeholder="Search tags"
-              class="h-8 bg-sidebar pl-8 text-xs"
-            />
-          </label>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="size-7 shrink-0 border border-sidebar-border bg-background shadow-sm hover:bg-background"
-            aria-label={tagsViewMode === "tree"
-              ? "Showing tag hierarchy. Switch to flat tags."
-              : "Showing flat tags. Switch to tag hierarchy."}
-            title={tagsViewMode === "tree"
-              ? "Showing tag hierarchy. Switch to flat tags."
-              : "Showing flat tags. Switch to tag hierarchy."}
-            aria-pressed={tagsViewMode === "tree"}
-            onclick={() =>
-              (tagsViewMode = tagsViewMode === "tree" ? "flat" : "tree")}
-          >
-            {#if tagsViewMode === "tree"}
-              <FolderTree data-icon />
-            {:else}
-              <List data-icon />
-            {/if}
-          </Button>
-        </div>
-
-        <ScrollArea.Root
-          class="-mr-2 min-h-0 min-w-0 flex-1"
-          data-tags-scroll-area
-        >
-          <div
-            class="flex min-w-0 flex-col gap-1 overflow-x-hidden pr-4"
-            data-tags-list
-          >
-            {#if tagsViewMode === "tree"}
-              {#each tagTree as node (node.tag)}
-                {@render TagTreeNode({ node })}
-              {:else}
-                <p class="px-2 text-xs text-muted-foreground">
-                  No tags match the current filter.
-                </p>
-              {/each}
-            {:else}
-              {#each filteredTags as tag (tag.tag)}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  class="h-8 w-full min-w-0 justify-start gap-2 px-2 text-xs text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
-                  title={`#${tag.tag}`}
-                  onclick={() => selectTag(tag.tag)}
-                >
-                  <Hash data-icon="inline-start" />
-                  <span class="min-w-0 flex-1 truncate text-left"
-                    >{tag.tag}</span
-                  >
-                  <span class="text-[10px] tabular-nums">{tag.fileCount}</span>
-                </Button>
-              {:else}
-                <p class="px-2 text-xs text-muted-foreground">
-                  No tags match the current filter.
-                </p>
-              {/each}
-            {/if}
-          </div>
-        </ScrollArea.Root>
-      {/if}
-    {/if}
+    <LedgerWorkspaceNavigation
+      ledgerItems={ledgerNavigationItems}
+      folderItems={folderNavigationItems}
+      tagItems={tagNavigationItems}
+      ledgerCount={files.length}
+      view={workspaceView}
+      {searchOpen}
+      treeVariant="ledger"
+      tagsPresentation={tagsViewMode}
+      activeLedgerId={activeNavigationItemId()}
+      {ledgerExpandedIds}
+      {folderExpandedIds}
+      {tagExpandedIds}
+      selectedTagIds={selectedTags}
+      queryPicker={queries.length
+        ? {
+            label: "Query",
+            value: $activeRoute.query["qs"] ?? "all",
+            ariaLabel: "Select query",
+            placeholder: "Filter queries...",
+            options: queryPickerOptions,
+          }
+        : undefined}
+      accountPicker={accounts.length
+        ? {
+            label: "Account",
+            value: $activeRoute.params["account"] ?? "all",
+            ariaLabel: "Select account",
+            placeholder: "Filter accounts...",
+            options: accountPickerOptions,
+          }
+        : undefined}
+      resources={$snapshot?.resources.map((resource) => ({
+        id: resource.path,
+        label: resource.path,
+      })) ?? []}
+      onViewChange={(view) => {
+        workspaceView = view;
+      }}
+      onSearchOpenChange={(open) => {
+        searchOpen = open;
+      }}
+      onLedgerSelect={handleLedgerNavigationSelect}
+      onLedgerExpandedIdsChange={handleLedgerExpansion}
+      onFolderSelect={handleFolderNavigationSelect}
+      onFolderExpandedIdsChange={handleFolderExpansion}
+      onTagSelect={() => {}}
+      onTagExpandedIdsChange={(ids) => {
+        tagOpenNodes = Object.fromEntries(ids.map((id) => [id, true]));
+      }}
+      onSelectedTagIdsChange={syncSearchTags}
+      onTagsPresentationChange={(presentation) => {
+        tagsViewMode = presentation;
+      }}
+      onQueryChange={(value) => {
+        if (value && value !== "all") navigateToQuery(value);
+      }}
+      onAccountChange={(value) => {
+        navigateToAccount(value && value !== "all" ? value : "-");
+      }}
+      onResourceSelect={openResource}
+      searchContent={NavigationSearchContent}
+    />
   {/if}
 </div>
-
-{#snippet LedgerFileRow({ file, depth }: { file: ProjectFile; depth: number })}
-  {@const expanded = isFileExpanded(file.path, expandedFilePaths)}
-  {@const active = file.path === $activeFile}
-  {@const label = ledgerFileLabel(file)}
-  <div class="min-w-0" data-ledger-file-node={file.path}>
-    <div
-      class={cn(
-        "relative flex h-8 min-w-0 items-center rounded-md text-xs font-semibold transition-colors",
-        active
-          ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-          : "border border-transparent text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
-      )}
-      style={fileRowStyle(depth)}
-    >
-      {@render IndentGuides({ depth })}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        class="relative z-10 size-7 shrink-0 rounded-sm p-0 hover:bg-background/70"
-        aria-label={expanded ? `Collapse ${label}` : `Expand ${label}`}
-        aria-expanded={expanded}
-        data-ledger-file-toggle={file.path}
-        onclick={() => toggleLedgerFile(file.path)}
-      >
-        <ChevronRight
-          data-icon
-          class={cn("transition-transform", expanded && "rotate-90")}
-        />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs font-semibold hover:bg-background/70"
-        data-ledger-file-row={file.path}
-        title={file.path}
-        onclick={() => selectLedgerFile(file.path)}
-      >
-        <FileText data-icon="inline-start" />
-        <span class="min-w-0 flex-1 truncate text-left">{label}</span>
-      </Button>
-    </div>
-    {#if expanded}
-      <div class="min-w-0" data-ledger-file-panels={file.path}>
-        {#each menuItems as panel (panel.path)}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            class={cn(
-              "relative h-8 w-full justify-start rounded-md pr-2 text-xs",
-              active && isPanelActive(panel, $activeRoute.path)
-                ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-            )}
-            style={filePanelStyle(depth)}
-            aria-current={active && isPanelActive(panel, $activeRoute.path)
-              ? "page"
-              : undefined}
-            onclick={() => openLedgerPanel(file.path, panel)}
-          >
-            {@render IndentGuides({ depth: depth + 1 })}
-            <svelte:component this={panel.icon} data-icon="inline-start" />
-            <span class="truncate">{panel.name}</span>
-          </Button>
-        {/each}
-      </div>
-    {/if}
-  </div>
-{/snippet}
-
-{#snippet ReviewLedgerRow({
-  review,
-}: {
-  review: NonNullable<typeof $reviewLedger>;
-})}
-  {@const expanded = isFileExpanded(review.path, expandedFilePaths)}
-  {@const active = review.path === $activeFile}
-  <div class="min-w-0" data-review-ledger-node={review.path}>
-    <div
-      class={cn(
-        "relative flex h-8 min-w-0 items-center rounded-md text-xs font-semibold transition-colors",
-        active
-          ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-          : "border border-transparent text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
-      )}
-      style={fileRowStyle(0)}
-    >
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        class="relative z-10 size-7 shrink-0 rounded-sm p-0 hover:bg-transparent"
-        aria-label={expanded
-          ? "Collapse review transactions"
-          : "Expand review transactions"}
-        aria-expanded={expanded}
-        onclick={() => toggleLedgerFile(review.path)}
-      >
-        <ChevronRight
-          data-icon
-          class={cn("transition-transform", expanded && "rotate-90")}
-        />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs font-semibold hover:bg-transparent"
-        title="Active review transactions"
-        onclick={() => {
-          activateLedger(review.path);
-          expandedFilePaths = { ...expandedFilePaths, [review.path]: true };
-          router.push("/journal");
-        }}
-      >
-        <ClipboardList data-icon="inline-start" />
-        <span class="min-w-0 flex-1 truncate text-left"
-          >Review transactions</span
-        >
-        <span class="text-[10px] tabular-nums text-muted-foreground"
-          >{review.reviewableCount}</span
-        >
-      </Button>
-    </div>
-    {#if expanded}
-      <div class="min-w-0" data-review-ledger-panels={review.path}>
-        {#each menuItems as panel (panel.path)}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            class={cn(
-              "relative h-8 w-full justify-start rounded-md pr-2 text-xs",
-              active && isPanelActive(panel, $activeRoute.path)
-                ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
-            )}
-            style={filePanelStyle(0)}
-            aria-current={active && isPanelActive(panel, $activeRoute.path)
-              ? "page"
-              : undefined}
-            onclick={() => openLedgerPanel(review.path, panel)}
-          >
-            <svelte:component this={panel.icon} data-icon="inline-start" />
-            <span class="truncate">{panel.name}</span>
-          </Button>
-        {/each}
-      </div>
-    {/if}
-  </div>
-{/snippet}
-
-{#snippet FolderNode({
-  node,
-  depth = 0,
-}: {
-  node: LedgerFolderNode;
-  depth?: number;
-})}
-  {@const expanded = isFolderOpen(node.id, folderOpenNodes)}
-  <div class="min-w-0" data-ledger-folder-node={node.id}>
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      class="relative h-8 w-full min-w-0 justify-start gap-1 pr-1 text-xs text-sidebar-foreground hover:bg-background hover:text-sidebar-accent-foreground"
-      style={folderRowStyle(depth)}
-      aria-expanded={expanded}
-      title={node.path || "Ledgers"}
-      data-ledger-folder-row={node.path || "ledgers"}
-      onclick={() => toggleFolder(node.id)}
-    >
-      {@render IndentGuides({ depth })}
-      <ChevronRight
-        data-icon="inline-start"
-        class={cn("transition-transform", expanded && "rotate-90")}
-      />
-      <Folder data-icon="inline-start" />
-      <span class="min-w-0 flex-1 truncate text-left">{node.label}</span>
-      <span class="text-[10px] tabular-nums text-muted-foreground"
-        >{node.count}</span
-      >
-    </Button>
-    {#if expanded}
-      <div class="min-w-0" data-ledger-folder-children={node.id}>
-        {#each node.files as file (file.path)}
-          {@render LedgerFileRow({ file, depth: depth + 1 })}
-        {/each}
-        {#each node.children as child (child.id)}
-          {@render FolderNode({ node: child, depth: depth + 1 })}
-        {/each}
-      </div>
-    {/if}
-  </div>
-{/snippet}
-
-{#snippet TagTreeNode({
-  node,
-  depth = 0,
-}: {
-  node: LedgerTagTreeNode;
-  depth?: number;
-})}
-  {@const expanded =
-    node.children.length > 0 && isTagOpen(node.tag, tagOpenNodes)}
-  <div class="min-w-0" data-ledger-tag-node={node.tag}>
-    <div
-      class="relative flex min-w-0 items-center gap-1"
-      style={tagRowStyle(depth)}
-    >
-      {@render IndentGuides({ depth })}
-      {#if node.children.length > 0}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          class="shrink-0 text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
-          aria-label={expanded
-            ? `Collapse ${node.name}`
-            : `Expand ${node.name}`}
-          aria-expanded={expanded}
-          title={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
-          onclick={() => toggleTag(node.tag)}
-        >
-          <ChevronRight
-            data-icon
-            class={cn("transition-transform", expanded && "rotate-90")}
-          />
-        </Button>
-      {/if}
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        class="h-8 min-w-0 flex-1 justify-start gap-2 pr-1 text-xs text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
-        title={`#${node.tag}`}
-        data-ledger-tag-row={node.tag}
-        onclick={() => selectTag(node.tag)}
-      >
-        <Hash data-icon="inline-start" />
-        <span class="min-w-0 flex-1 truncate text-left">{node.name}</span>
-        <span class="text-[10px] tabular-nums">{node.count}</span>
-      </Button>
-    </div>
-    {#if expanded}
-      <div class="min-w-0" data-ledger-tag-children={node.tag}>
-        {#each node.children as child (child.tag)}
-          {@render TagTreeNode({ node: child, depth: depth + 1 })}
-        {/each}
-      </div>
-    {/if}
-  </div>
-{/snippet}
-
-{#snippet IndentGuides({ depth }: { depth: number })}
-  {#each indentGuideDepths(depth) as guideDepth (guideDepth)}
-    <span
-      aria-hidden="true"
-      class="pointer-events-none absolute bottom-0 top-0 w-px bg-sidebar-border/70"
-      style={indentGuideStyle(guideDepth)}
-      data-ledger-indent-guide={guideDepth}
-    ></span>
-  {/each}
-{/snippet}

@@ -124,6 +124,34 @@ their configured 0.1% automated comparisons. C006 remains `visual-pending`
 while its separate manual-review checkpoint is unresolved. No migration story
 is `visual-approved`.
 
+#### C006 — `FavaNavigation.svelte` (manual-review checkpoint)
+
+- Status: **In progress**. This checkpoint is intentionally paused for the
+  requested manual review; it is not a parity pass or an additional formal
+  migration gate. C007 and later tasks remain unstarted.
+- UI ownership in the current working copy: `LedgerWorkspaceNavigation` and
+  `WorkspaceTreeNavigation` now render the controlled Ledgers/Folders/Tags
+  workspace hierarchy, including its search-toggle surface. The newly added
+  `LedgerSettingsNavigation` owns the controlled settings hierarchy, back
+  action, active rows, badges, and disclosures.
+- Beta adapter: `FavaNavigation.svelte` supplies display-ready files, folders,
+  tags, settings destinations, active state, route callbacks, and persisted
+  disclosure state. It retains application-owned route selection, workspace
+  stores, ledger derivation, query/account/resource navigation, and the Search
+  component snippet. The former Beta settings markup has been removed.
+- Visual evidence so far: the frozen original-Fava view switcher and ledger
+  search input both compare at or below 0.1%; two corresponding
+  `LedgerWorkspaceNavigation` Storybook baselines pass and remain
+  `visual-pending`. UI and Beta Svelte checks pass after the settings extraction.
+- Known unfinished parity work: a full sidebar crop currently differs by about
+  4–5%, because Beta discovers eight fixture ledgers while the frozen original
+  reference discovers five. A dedicated, synthetic five-ledger fixture tree is
+  now present under `packages/fava-beta/e2e/fixtures/visual-reference-project`;
+  it has not yet been wired into the frozen parity command. Full workspace and
+  settings-surface comparisons, the new settings Storybook baseline, full
+  package gates, and a focused navigation E2E rerun are still required before
+  C006 can be committed or marked Done.
+
 #### C001 — `ContentScrollArea.svelte`
 
 - Original reference: `packages/fava/src/components/ContentScrollArea.svelte`;
@@ -249,6 +277,18 @@ immutable `skip-visual` source of original captures.
 C006 remains separately paused and `visual-pending`; none of its unfinished
 source, fixtures, or baselines were included in the harness-refresh change.
 Do not resume C006 or later component work until this review is accepted.
+
+The rebased C006 working copy remains intact: it contains the UI navigation
+renderer changes, Beta adapter migration, new settings renderer/story, two
+workspace Storybook baselines, and the unconnected synthetic parity fixture.
+No protected original Fava reference image changed. The unrelated user-ledger
+changes in `.beancount/ingestion/sources.json` and `sample.beancount` remain
+outside migration scope.
+
+After this harness review is accepted, the next bounded C006 work is to connect
+the synthetic fixture to full frozen-surface comparisons, investigate every
+remaining pixel difference, capture the settings story baseline, then run and
+record the complete C006 validation set before its Jujutsu commit.
 
 ## Validation log
 
