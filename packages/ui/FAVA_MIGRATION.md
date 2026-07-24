@@ -85,7 +85,7 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 | ID   | Fava source or surface                              | Status      |
 | ---- | --------------------------------------------------- | ----------- |
 | C001 | `ContentScrollArea.svelte`                          | Done        |
-| C002 | `StudioShell.svelte` / `AppShell` certification     | Not started |
+| C002 | `StudioShell.svelte` / `AppShell` certification     | In progress |
 | C003 | `Search.svelte` / `SearchFilterBar` certification   | Not started |
 | C004 | `tree-table/IntervalTreeTable.svelte` certification | Not started |
 | C005 | `StudioShellHeader.svelte`                          | Not started |
