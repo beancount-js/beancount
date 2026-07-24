@@ -18,6 +18,10 @@ packages/fava/.svelte-kit/
 packages/ui/.svelte-kit/
 packages/fava/build-server/
 packages/fava/build-web/
+packages/fava-beta/.svelte-kit/
+packages/fava-beta/build-server/
+packages/fava-beta/build-web/
+packages/fava-beta/test-results/
 packages/ui/storybook-static/
 packages/ui/playwright-report/
 packages/ui/test-results/

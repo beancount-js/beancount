@@ -1,0 +1,466 @@
+<script lang="ts">
+  import { onDestroy } from "svelte";
+  import ChevronRight from "lucide-svelte/icons/chevron-right";
+  import FolderOpen from "lucide-svelte/icons/folder-open";
+  import Moon from "lucide-svelte/icons/moon";
+  import Sun from "lucide-svelte/icons/sun";
+  import { toggleMode } from "mode-watcher";
+  import type {
+    ProjectSnapshot,
+    ProjectSummary,
+  } from "@beancount-js/workspace";
+  import * as Sidebar from "$lib/components/ui/sidebar";
+  import { Button } from "$lib/components/ui/button";
+  import * as Empty from "$lib/components/ui/empty";
+  import { cn } from "$lib/utils";
+  import {
+    FilterCommandPicker,
+    StructuredForm,
+    createFormConfig,
+    textField,
+    type FilterCommandOption,
+  } from "@beancount-js/forms";
+  import AppShell from "@beancount-js/ui/app-shell";
+  import StudioShellHeader from "./StudioShellHeader.svelte";
+  import IngestionHeaderActions from "./IngestionHeaderActions.svelte";
+  import RouteLoadingSkeleton from "./skeletons/RouteLoadingSkeleton.svelte";
+  import { activeSyncTracks } from "../studio/sync-status";
+  import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
+  import RefreshCw from "lucide-svelte/icons/refresh-cw";
+
+  export let projects: ProjectSummary[] = [];
+  export let snapshot: ProjectSnapshot | undefined;
+  export let isWeb = false;
+  export let status = "";
+  export let pageTitle = "Beancount Studio";
+  export let routePath = "";
+  export let onSelectProject: (id: string) => void | Promise<void>;
+  export let onAddProject: (path?: string) => void | Promise<void>;
+
+  const SIDEBAR_WIDTH_STORAGE_KEY = "beancount-studio:sidebar-width";
+  const DEFAULT_SIDEBAR_WIDTH = 256;
+  const MIN_SIDEBAR_WIDTH = 220;
+  const MAX_SIDEBAR_WIDTH = 520;
+
+  let enteringPath = false;
+  let addingProject = false;
+  let path = "";
+  let projectActionError: string | null = null;
+  let sidebarWidth = readStoredSidebarWidth();
+  let resizing = false;
+  let hoveringResizer = false;
+  let resizeStartX = 0;
+  let resizeStartWidth = DEFAULT_SIDEBAR_WIDTH;
+  let previousBodyCursor = "";
+  let previousBodyUserSelect = "";
+  let projectOptions: FilterCommandOption[] = [];
+
+  $: sidebarWidthStyle = `--sidebar-width: ${sidebarWidth}px;`;
+  $: projectOptions = projects.map<FilterCommandOption>((project) => ({
+    value: project.id,
+    label: project.name,
+    description: project.entryFile,
+    keywords: [project.entryFile],
+  }));
+  $: if (typeof localStorage !== "undefined") {
+    localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(sidebarWidth));
+  }
+  const projectPathForm = createFormConfig<{ path: string }>({
+    id: "add-project-path",
+    fields: [
+      textField({
+        id: "path",
+        label: "Project folder",
+        placeholder: "/path/to/ledger",
+        get: (value) => value.path,
+        set: (value, next) => ({ ...value, path: next }),
+      }),
+    ],
+  });
+
+  async function addProject() {
+    if (addingProject) return;
+    addingProject = true;
+    projectActionError = null;
+    try {
+      if (isWeb) {
+        await onAddProject();
+        return;
+      }
+      const response = await fetch("/api/projects/pick-directory", {
+        method: "POST",
+      });
+      const picked = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        path?: string;
+        error?: string;
+      };
+      if (picked.ok && picked.path) {
+        await onAddProject(picked.path);
+        enteringPath = false;
+        path = "";
+        return;
+      }
+      if (!picked.ok && picked.error === "No directory was selected.") {
+        return;
+      }
+      enteringPath = true;
+      projectActionError =
+        picked.error ??
+        (response.ok
+          ? null
+          : response.statusText || "Could not open folder picker.");
+    } catch (error) {
+      enteringPath = true;
+      projectActionError =
+        error instanceof Error ? error.message : String(error);
+    } finally {
+      addingProject = false;
+    }
+  }
+
+  async function openProject() {
+    await addProject();
+  }
+
+  async function submitPath() {
+    if (!path.trim() || addingProject) return;
+    addingProject = true;
+    projectActionError = null;
+    try {
+      await onAddProject(path.trim());
+      path = "";
+      enteringPath = false;
+    } catch (error) {
+      projectActionError =
+        error instanceof Error ? error.message : String(error);
+    } finally {
+      addingProject = false;
+    }
+  }
+
+  function cancelPathEntry() {
+    enteringPath = false;
+    path = "";
+    projectActionError = null;
+  }
+
+  function readStoredSidebarWidth() {
+    if (typeof localStorage === "undefined") return DEFAULT_SIDEBAR_WIDTH;
+    const storedValue = Number.parseInt(
+      localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY) ?? "",
+      10,
+    );
+    return Number.isFinite(storedValue)
+      ? clampSidebarWidth(storedValue)
+      : DEFAULT_SIDEBAR_WIDTH;
+  }
+
+  function clampSidebarWidth(value: number) {
+    return Math.min(
+      MAX_SIDEBAR_WIDTH,
+      Math.max(MIN_SIDEBAR_WIDTH, Math.round(value)),
+    );
+  }
+
+  function startSidebarResize(event: PointerEvent) {
+    event.preventDefault();
+    resizing = true;
+    resizeStartX = event.clientX;
+    resizeStartWidth = sidebarWidth;
+    previousBodyCursor = document.body.style.cursor;
+    previousBodyUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("pointermove", handleSidebarResizeMove);
+    window.addEventListener("pointerup", stopSidebarResize, { once: true });
+  }
+
+  function handleSidebarResizeMove(event: PointerEvent) {
+    if (!resizing) return;
+    event.preventDefault();
+    sidebarWidth = clampSidebarWidth(
+      resizeStartWidth + event.clientX - resizeStartX,
+    );
+  }
+
+  function stopSidebarResize() {
+    if (!resizing) return;
+    resizing = false;
+    document.body.style.cursor = previousBodyCursor;
+    document.body.style.userSelect = previousBodyUserSelect;
+    window.removeEventListener("pointermove", handleSidebarResizeMove);
+    window.removeEventListener("pointerup", stopSidebarResize);
+  }
+
+  function handleSidebarResizeKeydown(event: KeyboardEvent) {
+    const step = event.shiftKey ? 32 : 16;
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      sidebarWidth = clampSidebarWidth(sidebarWidth - step);
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      sidebarWidth = clampSidebarWidth(sidebarWidth + step);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      sidebarWidth = MIN_SIDEBAR_WIDTH;
+    } else if (event.key === "End") {
+      event.preventDefault();
+      sidebarWidth = MAX_SIDEBAR_WIDTH;
+    }
+  }
+
+  onDestroy(stopSidebarResize);
+</script>
+
+<Sidebar.Provider class="h-screen overflow-hidden" style={sidebarWidthStyle}>
+  <AppShell {pageTitle} hasSidebar>
+    <svelte:fragment slot="sidebar">
+      <Sidebar.Root collapsible="icon" showBorder={false}>
+        <div class="relative flex h-full min-h-0 flex-col">
+          <div
+            class="flex min-h-0 flex-1 flex-col group-data-[collapsible=icon]:hidden"
+          >
+            <Sidebar.Header>
+              <StudioShellHeader
+                projectName={snapshot?.project.name ?? "Loading project"}
+              />
+            </Sidebar.Header>
+            <Sidebar.Content class="px-2 pb-3">
+              <slot name="workspace"></slot>
+            </Sidebar.Content>
+          </div>
+          <Sidebar.Footer
+            class="border-t border-sidebar-border group-data-[collapsible=icon]:hidden"
+          >
+            <FilterCommandPicker
+              label="Project"
+              ariaLabel="Select project"
+              placeholder="Search projects..."
+              emptyLabel="No projects found."
+              fullWidth
+              stackedOptions
+              options={projectOptions}
+              value={snapshot?.project.id ?? ""}
+              onChange={(id) => void onSelectProject(id)}
+            />
+          </Sidebar.Footer>
+
+          <div
+            class="hidden h-full min-h-0 flex-col items-center gap-2 px-1.5 py-2 group-data-[collapsible=icon]:flex"
+          >
+            <Sidebar.Trigger
+              class="size-8"
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              <ChevronRight />
+              <span class="sr-only">Expand sidebar</span>
+            </Sidebar.Trigger>
+            <Sidebar.Trigger
+              class="flex min-h-0 flex-1 items-center justify-center rounded-md border border-transparent px-1 py-2 text-sidebar-foreground hover:border-sidebar-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              aria-label="Expand project rail"
+              title={snapshot?.project.name ?? "Beancount Studio"}
+            >
+              <span
+                class="max-h-full truncate text-[12px] font-semibold [writing-mode:vertical-rl]"
+              >
+                {snapshot?.project.name ?? "Beancount Studio"}
+              </span>
+            </Sidebar.Trigger>
+          </div>
+
+          <div
+            role="slider"
+            tabindex="0"
+            class="absolute -right-1.5 bottom-4 top-4 z-20 hidden w-3 cursor-col-resize items-stretch justify-center rounded-full bg-transparent outline-none group-data-[collapsible=icon]:hidden md:flex"
+            aria-label="Resize sidebar"
+            aria-orientation="vertical"
+            aria-valuemin={MIN_SIDEBAR_WIDTH}
+            aria-valuemax={MAX_SIDEBAR_WIDTH}
+            aria-valuenow={sidebarWidth}
+            title="Resize sidebar"
+            onpointerdown={startSidebarResize}
+            onkeydown={handleSidebarResizeKeydown}
+            onpointerenter={() => (hoveringResizer = true)}
+            onpointerleave={() => (hoveringResizer = false)}
+            onfocus={() => (hoveringResizer = true)}
+            onblur={() => (hoveringResizer = false)}
+          >
+            <span
+              class={cn(
+                "my-2.5 w-px bg-transparent transition-colors",
+                (resizing || hoveringResizer) && "bg-primary/60",
+              )}
+              aria-hidden="true"
+            ></span>
+          </div>
+        </div>
+      </Sidebar.Root>
+    </svelte:fragment>
+    <svelte:fragment slot="mobile-navigation-trigger">
+      <Sidebar.Trigger
+        class="md:hidden"
+        aria-label="Show navigation"
+        title="Show navigation"
+      />
+    </svelte:fragment>
+    <svelte:fragment slot="desktop-sidebar-trigger">
+      <Sidebar.Trigger
+        class="hidden size-8 md:inline-flex"
+        aria-label="Collapse sidebar to project rail"
+        title="Collapse sidebar"
+      />
+    </svelte:fragment>
+    <svelte:fragment slot="title-trailing">
+      {#if $ingestionHeaderActions?.kind === "rules"}
+        <span
+          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          >{$ingestionHeaderActions.ruleCount}</span
+        >
+      {/if}
+      {#if $ingestionHeaderActions?.kind === "manage-merchants"}
+        <span
+          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          >{$ingestionHeaderActions.merchantCount}</span
+        >
+      {/if}
+      {#if $ingestionHeaderActions?.kind === "history"}
+        <span
+          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          >{$ingestionHeaderActions.runCount}</span
+        >
+      {/if}
+      {#if $ingestionHeaderActions?.kind === "review"}
+        <span
+          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          aria-label={`${$ingestionHeaderActions.recordCount} total records`}
+          title={`${$ingestionHeaderActions.recordCount} total records`}
+          >{$ingestionHeaderActions.recordCount}</span
+        >
+      {/if}
+    </svelte:fragment>
+    <svelte:fragment slot="header-leading">
+      {#if $ingestionHeaderActions?.kind === "ledger"}
+        <div
+          data-slot="studio-workspace-header-leading"
+          class="ml-1.5 flex min-w-0 shrink-0 items-center"
+        >
+          <IngestionHeaderActions region="leading" />
+        </div>
+      {/if}
+    </svelte:fragment>
+    <svelte:fragment slot="header-actions">
+      <div
+        data-slot="studio-workspace-header-actions"
+        class="flex min-w-0 flex-1 touch-pan-x items-center gap-2 overflow-x-auto [scrollbar-width:none] sm:flex-none sm:overflow-visible [&::-webkit-scrollbar]:hidden"
+      >
+        <IngestionHeaderActions region="actions" />
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        class="size-8"
+        aria-label="Toggle theme"
+        title="Toggle theme"
+        onclick={toggleMode}
+      >
+        <span class="relative grid place-items-center">
+          <Sun
+            class="transition-[transform,opacity] motion-reduce:transition-none dark:-rotate-90 dark:opacity-0"
+          />
+          <Moon
+            class="absolute rotate-90 opacity-0 transition-[transform,opacity] motion-reduce:transition-none dark:rotate-0 dark:opacity-100"
+          />
+        </span>
+      </Button>
+    </svelte:fragment>
+    <svelte:fragment slot="status">
+      {#if $activeSyncTracks.some((track) => track.job.status === "queued" || track.job.status === "running")}
+        {@const track = $activeSyncTracks.find(
+          (item) =>
+            item.job.status === "queued" || item.job.status === "running",
+        )}
+        {#if track}
+          <div
+            class="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+            role="status"
+            data-ingestion-sync-banner
+          >
+            <RefreshCw
+              class="size-3.5 shrink-0 animate-spin"
+              aria-hidden="true"
+            />
+            <span class="min-w-0 truncate">
+              Syncing {track.sourceName}: {track.job.progress.message}
+            </span>
+          </div>
+        {/if}
+      {/if}
+    </svelte:fragment>
+    {#if snapshot}
+      <slot></slot>
+    {:else if status.startsWith("Loading")}
+      <RouteLoadingSkeleton {routePath} />
+    {:else}
+      <Empty.Root>
+        <Empty.Header>
+          <Empty.Media variant="icon"><FolderOpen /></Empty.Media>
+          <Empty.Title>Open a ledger project</Empty.Title>
+          <Empty.Description>
+            Choose the folder that contains your Beancount entry file to start
+            working.
+          </Empty.Description>
+        </Empty.Header>
+        <Empty.Content>
+          {#if enteringPath}
+            <form
+              class="flex w-full max-w-sm flex-col gap-3"
+              onsubmit={(event) => {
+                event.preventDefault();
+                void submitPath();
+              }}
+            >
+              <StructuredForm
+                config={projectPathForm}
+                value={{ path }}
+                context={undefined}
+                onChange={(value) => {
+                  path = value.path;
+                }}
+              />
+              <div class="flex gap-2">
+                <Button
+                  type="submit"
+                  class="flex-1"
+                  disabled={addingProject || !path.trim()}>Open project</Button
+                ><Button
+                  type="button"
+                  variant="ghost"
+                  disabled={addingProject}
+                  onclick={cancelPathEntry}>Cancel</Button
+                >
+              </div>
+            </form>
+          {:else}
+            <Button disabled={addingProject} onclick={() => void openProject()}>
+              <FolderOpen data-icon="inline-start" />
+              {addingProject ? "Opening folder…" : "Open project"}
+            </Button>
+          {/if}
+          {#if projectActionError}
+            <Empty.Description role="alert" class="text-destructive">
+              {projectActionError}
+            </Empty.Description>
+          {/if}
+          {#if status && !status.startsWith("Add a local")}
+            <Empty.Description role="alert" class="text-destructive">
+              {status}
+            </Empty.Description>
+          {/if}
+        </Empty.Content>
+      </Empty.Root>
+    {/if}
+    <svelte:fragment slot="ai"><slot name="ai"></slot></svelte:fragment>
+  </AppShell>
+</Sidebar.Provider>

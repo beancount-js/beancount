@@ -55,17 +55,18 @@ additional manual pauses. Return to GPT-5.6 Sol for the final parity audit.
 
 ## Foundation ledger
 
-| ID  | Task                                                              | Status      | Evidence                                        |
-| --- | ----------------------------------------------------------------- | ----------- | ----------------------------------------------- |
-| F01 | Resume UI ownership guidance and isolate normal root checks       | Done        | Root/UI/Form guidance and root negative filters |
-| F02 | Create and verify the pinned `fava-reference` workspace           | Done        | Workspace `fava-reference`, parent `191dae81`   |
-| F03 | Port Visual Delta and Storybook status badges                     | Done        | Change `a3d69779`; 61 addon tests               |
-| F04 | Add protected Fava capture matrix, manifest, and overwrite guards | Done        | 15 pinned captures; manifest digest gate        |
-| F05 | Repair the `SearchFilterBar` empty-focus browser story            | Done        | 2/2 focused browser stories; 7/7 syntax tests   |
-| F06 | Consolidate Forms implementation, tests, and stories into UI      | Done        | UI owns the complete catalog and runtime        |
-| F07 | Reduce `@beancount-js/forms` to a forwarding compatibility facade | Done        | 22 checked TypeScript forwarders; no Svelte/CSS |
-| F08 | Run UI, Forms-facade, and original-Fava compatibility gates       | Done        | UI checks; 188 Fava tests; build; 18 subpaths   |
-| F09 | Manual Forms validation and GPT-5.6 Terra handoff                 | In progress | Current stop point                              |
+| ID  | Task                                                              | Status | Evidence                                        |
+| --- | ----------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| F01 | Resume UI ownership guidance and isolate normal root checks       | Done   | Root/UI/Form guidance and root negative filters |
+| F02 | Create and verify the pinned `fava-reference` workspace           | Done   | Workspace `fava-reference`, parent `191dae81`   |
+| F03 | Port Visual Delta and Storybook status badges                     | Done   | Change `a3d69779`; 61 addon tests               |
+| F04 | Add protected Fava capture matrix, manifest, and overwrite guards | Done   | 15 pinned captures; manifest digest gate        |
+| F05 | Repair the `SearchFilterBar` empty-focus browser story            | Done   | 2/2 focused browser stories; 7/7 syntax tests   |
+| F06 | Consolidate Forms implementation, tests, and stories into UI      | Done   | UI owns the complete catalog and runtime        |
+| F07 | Reduce `@beancount-js/forms` to a forwarding compatibility facade | Done   | 22 checked TypeScript forwarders; no Svelte/CSS |
+| F08 | Run UI, Forms-facade, and original-Fava compatibility gates       | Done   | UI checks; 188 Fava tests; build; 18 subpaths   |
+| F09 | Manual Forms validation and GPT-5.6 Terra handoff                 | Done   | Accepted by continuation on 2026-07-24          |
+| F10 | Bootstrap Fava Beta as the mutable integration application        | Done   | Clone, Beta gates, root exclusion, build        |
 
 ## Component migration order
 
@@ -204,3 +205,12 @@ change IDs here at the end of each committed slice.
   pinning the late-discovered Luggage icon in Vite's dependency optimizer.
   Its aggregate formatting gate still reports the unrelated pre-existing
   `src/core/ledger-data-class.ts` warning.
+- 2026-07-24 — Fava Beta bootstrap slice: accepted the Forms review break and
+  created `@beancount-js/fava-beta` as the mutable, full-application baseline.
+  Root `checks` now negatively filters both UI and Beta; its Turbo dry run has
+  no Beta checks task. Dedicated Beta commands use Playwright port 5176. The
+  inherited `ledger-data-class.ts` Prettier-only warning was normalized in Beta
+  so its WIP gate is green; the remaining Fava/Beta source differences are the
+  package identity, isolated port, Beta MCP target, and that formatting-only
+  change. `pnpm checks:beta` passed, as did `pnpm test:beta` (55 files, 188
+  tests) and `pnpm --filter @beancount-js/fava-beta build`.
