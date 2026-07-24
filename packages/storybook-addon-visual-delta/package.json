@@ -1,0 +1,83 @@
+{
+  "name": "storybook-addon-visual-delta",
+  "version": "0.1.5",
+  "private": true,
+  "description": "Local Visual Delta Storybook addon (reimplemented from npm storybook-addon-visual-delta@0.1.5). Overlay / heatmap diff against baseline images.",
+  "keywords": [
+    "storybook-addon",
+    "visual",
+    "overlay",
+    "diff"
+  ],
+  "license": "MIT",
+  "author": "houjinlong <1844041598@qq.com>",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./preview": "./src/preview.ts",
+    "./preset": "./src/preset.ts",
+    "./manager": "./src/manager.tsx",
+    "./visual-capture": "./src/shared/visual-capture-step.ts",
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js",
+      "default": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src/**/*",
+    "dist/**/*",
+    "README.md",
+    "VENDOR.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build:node": "tsc -p tsconfig.node-build.json",
+    "prepare": "pnpm build:node",
+    "prepack": "pnpm build:node",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@storybook/icons": "^2.1.0",
+    "html-to-image": "^1.11.13",
+    "pixelmatch": "^7.1.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.15.30",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "jsdom": "^29.1.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "storybook": "*",
+    "vite": "*"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "storybook": {
+    "displayName": "Visual Delta",
+    "supportedFrameworks": [
+      "react",
+      "vue",
+      "angular",
+      "web-components",
+      "ember",
+      "html",
+      "svelte",
+      "preact",
+      "react-native"
+    ]
+  }
+}

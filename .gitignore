@@ -19,3 +19,5 @@ packages/ui/.svelte-kit/
 packages/fava/build-server/
 packages/fava/build-web/
 packages/ui/storybook-static/
+packages/ui/playwright-report/
+packages/ui/test-results/
