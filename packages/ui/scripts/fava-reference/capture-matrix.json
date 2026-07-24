@@ -64,6 +64,14 @@
       "outputPath": "fava-reference/screens/account-detail-chromium-darwin.png"
     },
     {
+      "id": "account-changes",
+      "storyId": "migration-fava-reference-screens--account-changes",
+      "viewPath": "/account/Expenses?tab=changes",
+      "pageTitle": "Account changes",
+      "readyTextAny": ["Changes (Monthly)"],
+      "outputPath": "fava-reference/screens/account-changes-chromium-darwin.png"
+    },
+    {
       "id": "holdings",
       "storyId": "migration-fava-reference-screens--holdings",
       "viewPath": "/holdings",

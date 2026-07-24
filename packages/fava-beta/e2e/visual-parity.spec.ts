@@ -17,6 +17,7 @@ type ReferenceRoute = {
   viewPath: string;
   clickButton?: string;
   readySearchbox?: string;
+  readySelector?: string;
 };
 
 const contentScrollAreaReferenceRoutes = [
@@ -55,6 +56,14 @@ const searchFilterBarReferenceRoutes: readonly ReferenceRoute[] = [
   },
 ];
 
+const intervalTreeTableReferenceRoutes: readonly ReferenceRoute[] = [
+  {
+    id: "account-changes",
+    viewPath: "/account/Expenses?tab=changes",
+    readySelector: "[data-interval-tree-table]:visible",
+  },
+];
+
 test.use({
   viewport: { width: 1280, height: 900 },
   deviceScaleFactor: 3,
@@ -83,6 +92,9 @@ test.describe("frozen Fava visual parity", () => {
         ).toBeVisible();
       }
     }
+    if (reference.readySelector) {
+      await expect(page.locator(reference.readySelector)).toBeVisible();
+    }
     await page.evaluate(async () => {
       await document.fonts.ready;
     });
@@ -103,15 +115,46 @@ test.describe("frozen Fava visual parity", () => {
     const actualScreen = PNG.sync.read(
       await page.screenshot({ type: "png", scale: "device" }),
     );
-    const actual = new PNG({ width, height });
-    PNG.bitblt(actualScreen, actual, x, y, width, height, 0, 0);
     const referenceScreen = PNG.sync.read(
       readFileSync(
         resolve(referenceDirectory, `${reference.id}-chromium-darwin.png`),
       ),
     );
-    const expected = new PNG({ width, height });
-    PNG.bitblt(referenceScreen, expected, x, y, width, height, 0, 0);
+    // Frozen references are viewport captures. A surface may continue below
+    // that boundary, so compare its visible intersection rather than reading
+    // outside either full-page image.
+    const visibleWidth = Math.min(
+      width,
+      actualScreen.width - x,
+      referenceScreen.width - x,
+    );
+    const visibleHeight = Math.min(
+      height,
+      actualScreen.height - y,
+      referenceScreen.height - y,
+    );
+    expect(
+      visibleWidth,
+      `${reference.id}: visible screenshot width`,
+    ).toBeGreaterThan(0);
+    expect(
+      visibleHeight,
+      `${reference.id}: visible screenshot height`,
+    ).toBeGreaterThan(0);
+
+    const actual = new PNG({ width: visibleWidth, height: visibleHeight });
+    PNG.bitblt(actualScreen, actual, x, y, visibleWidth, visibleHeight, 0, 0);
+    const expected = new PNG({ width: visibleWidth, height: visibleHeight });
+    PNG.bitblt(
+      referenceScreen,
+      expected,
+      x,
+      y,
+      visibleWidth,
+      visibleHeight,
+      0,
+      0,
+    );
 
     expect(actual.width, `${reference.id}: screenshot width`).toBe(
       expected.width,
@@ -159,6 +202,18 @@ test.describe("frozen Fava visual parity", () => {
   for (const reference of searchFilterBarReferenceRoutes) {
     test(`SearchFilterBar retains ${reference.id} pixels`, async ({ page }) => {
       await expectFrozenSurfaceParity(page, reference, ".cv-search-filter-bar");
+    });
+  }
+
+  for (const reference of intervalTreeTableReferenceRoutes) {
+    test(`IntervalTreeTable retains ${reference.id} pixels`, async ({
+      page,
+    }) => {
+      await expectFrozenSurfaceParity(
+        page,
+        reference,
+        "[data-interval-tree-table]:visible",
+      );
     });
   }
 });

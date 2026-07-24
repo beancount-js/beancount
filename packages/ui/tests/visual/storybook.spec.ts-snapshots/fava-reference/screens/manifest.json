@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-24T14:58:47.231Z",
+  "capturedAt": "2026-07-24T15:12:13.976Z",
   "source": {
     "studioRevision": "191dae81ec0a33abb0f6f4cb9299cc3e01bfdc7b",
     "entryFile": "sample.beancount",
@@ -13,6 +13,14 @@
   "deviceScaleFactor": 3,
   "colorScheme": "light",
   "entries": [
+    {
+      "id": "account-changes",
+      "storyId": "migration-fava-reference-screens--account-changes",
+      "viewPath": "/account/Expenses?tab=changes",
+      "outputPath": "fava-reference/screens/account-changes-chromium-darwin.png",
+      "bytes": 438300,
+      "sha256": "4c3b8de74783289767bd96c2086153c30e8ea8c5b0124b26fe7bdaf1623a0d1c"
+    },
     {
       "id": "account-detail",
       "storyId": "migration-fava-reference-screens--account-detail",

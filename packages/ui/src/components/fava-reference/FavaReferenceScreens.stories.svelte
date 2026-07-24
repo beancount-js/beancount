@@ -79,6 +79,12 @@
   {@render reference("account-detail", "Account detail")}
 </Story>
 <Story
+  name="Account changes"
+  parameters={{ visualDelta: visualDeltaForFavaReference("account-changes") }}
+>
+  {@render reference("account-changes", "Account changes")}
+</Story>
+<Story
   name="Holdings"
   parameters={{ visualDelta: visualDeltaForFavaReference("holdings") }}
 >

@@ -87,7 +87,7 @@ Beta adapter, delta, validation commands, and committed change when it becomes
 | C001 | `ContentScrollArea.svelte`                          | Done        |
 | C002 | `StudioShell.svelte` / `AppShell` certification     | Done        |
 | C003 | `Search.svelte` / `SearchFilterBar` certification   | Done        |
-| C004 | `tree-table/IntervalTreeTable.svelte` certification | In progress |
+| C004 | `tree-table/IntervalTreeTable.svelte` certification | Done        |
 | C005 | `StudioShellHeader.svelte`                          | Not started |
 | C006 | `FavaNavigation.svelte`                             | Not started |
 | C007 | `Nav.svelte`                                        | Not started |
@@ -280,3 +280,11 @@ change IDs here at the end of each committed slice.
   fractional-locator high-DPR crop artifact while retaining strict 0.1% pixel
   parity. UI and Beta checks passed, as did Beta's 55-file/188-test suite and
   all 22 frozen component-parity comparisons.
+- 2026-07-24 — IntervalTreeTable certification slice (`yoztzpksmpyq`):
+  confirmed that the Fava tree-table adapter remains responsible for account
+  visibility, dates, formatting, routes, and persisted collapse state while
+  original Fava and Beta both consume the UI table export. Added the protected
+  Account Changes reference and three pending UI visual baselines. Frozen
+  comparisons now clip tall components to the captured viewport before pixel
+  comparison; UI and Beta checks passed, as did 55 files/188 Beta tests and
+  all 23 frozen component-parity comparisons.
