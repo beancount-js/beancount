@@ -6,14 +6,12 @@
     type RuleConditionType,
     type RuleRegistryMeta,
   } from "@beancount-js/beangulp";
-  import {
-    FilterCommandPicker,
-    FormAddButton,
-    type FilterCommandOption,
-  } from "@beancount-js/forms";
-  import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
-  import * as Select from "$lib/components/ui/select";
+  import FilterCommandPicker from "../FilterCommandPicker.svelte";
+  import FormAddButton from "../FormAddButton.svelte";
+  import type { FilterCommandOption } from "../picker-options";
+  import { Button } from "../../shadcn/button";
+  import { Input } from "../../shadcn/input";
+  import * as Select from "../../shadcn/select";
 
   type Props = {
     condition: RuleCondition;

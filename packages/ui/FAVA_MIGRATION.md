@@ -354,10 +354,10 @@ is `visual-approved`.
 | C017 | `form/SwitchField.svelte`         | Done        |
 | C018 | `AccountBulkActionSheet.svelte`   | Done        |
 | C019 | `MerchantEditSheet.svelte`        | Done        |
-| C020 | `JournalEditorSheet.svelte`       | Not started |
-| C021 | `JournalRecordRouteSheet.svelte`  | Not started |
-| C022 | `RuleEditorSheet.svelte`          | Not started |
-| C023 | `rules/RuleConditionRow.svelte`   | Not started |
+| C020 | `JournalEditorSheet.svelte`       | Done        |
+| C021 | `JournalRecordRouteSheet.svelte`  | Done        |
+| C022 | `RuleEditorSheet.svelte`          | Done |
+| C023 | `rules/RuleConditionRow.svelte`   | Done |
 | C024 | `IngestionHeaderActions.svelte`   | Not started |
 | C025 | `IngestionMerchantSheet.svelte`   | Not started |
 | C026 | `IngestionProposalSheet.svelte`   | Not started |
@@ -547,3 +547,65 @@ change IDs here at the end of each committed slice.
   suite and all 26 frozen comparisons. The legacy settings navigation E2E has
   a stale `Import` expectation: it correctly opens settings, but neither
   original Fava nor Beta's identical `FavaNavigation` renders that action.
+- 2026-07-25 — Journal editor migration slice (`wvtppkxy`): migrated
+  `JournalEditorSheet` and `JournalRecordRouteSheet` into the shared UI/fava-beta
+  adapter pattern. `@beancount-js/ui` now owns shared editing presentation for
+  transactions, opens, and additional directive kinds, while fava-beta owns source
+  persistence and route handling.
+  Verification run: `pnpm --filter @beancount-js/ui test-storybook`,
+  `pnpm --filter @beancount-js/ui test-unit`,
+  `pnpm --filter @beancount-js/ui check-boundaries`,
+  `pnpm --filter @beancount-js/ui check` (still fails on unrelated story field typing),
+  `pnpm --filter @beancount-js/fava-beta check`, and
+  `pnpm --filter @beancount-js/fava-beta test:run`.
+
+### C020 — `JournalEditorSheet.svelte`
+
+- Status: **Done.** The reusable `@beancount-js/ui/forms/JournalEditorSheet.svelte`
+  now owns form rendering, interaction states, and directive kind-specific logic.
+  `@beancount-js/fava-beta/src/components/JournalEditorSheet.svelte` is now a thin
+  adapter that:
+  - passes app-owned data (`accounts`, `currencies`, `tags`, and fetched merchants),
+  - owns record-anchor persistence, revision checks, route-key refresh, and autosave,
+  - and delegates shared rendering to the UI component.
+- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
+  `pnpm --filter @beancount-js/ui test-unit`, and
+  `pnpm --filter @beancount-js/ui check-boundaries` pass;
+  `pnpm --filter @beancount-js/fava-beta check` also passes.
+- Note: `pnpm --filter @beancount-js/ui check` remains blocked by pre-existing
+  story fixture typing issues in `AccountComboField.stories.svelte`,
+  `MerchantComboField.stories.svelte`, and `SwitchField.stories.svelte`, not by
+  this migration slice.
+
+### C021 — `JournalRecordRouteSheet.svelte`
+
+- Status: **Done.** The route adapter now consumes the `@beancount-js/fava-beta`
+  adapter-wrapped sheet. Route-aware open/close lifecycle and URL record
+  synchronization remain in place while visual rendering and edit state are
+  delegated to the shared `JournalEditorSheet`.
+- Validation: `pnpm --filter @beancount-js/fava-beta test:run` and
+  `pnpm --filter @beancount-js/fava-beta check` pass.
+
+#### C022 — `RuleEditorSheet.svelte`
+
+- Status: **Done**. Presentation for detection-rule editing now lives in
+  `@beancount-js/ui/forms/RuleEditorSheet.svelte` and is composed from shared
+  `@beancount-js/forms`-sourced rule metadata controls. `@beancount-js/fava-beta/src/components/RuleEditorSheet.svelte`
+  is now an adapter wrapper that retains route/state ownership and passes
+  app-owned persistence callbacks into the shared sheet.
+- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
+  `pnpm --filter @beancount-js/ui test-unit`, and
+  `pnpm --filter @beancount-js/ui check-boundaries` pass.
+
+#### C023 — `rules/RuleConditionRow.svelte`
+
+- Status: **Done**. The reusable condition row control now exists in
+  `@beancount-js/ui/src/components/forms/rules/RuleConditionRow.svelte` and is
+  consumed by the shared `RuleEditorSheet`. The legacy
+  `packages/fava-beta/src/components/rules/RuleConditionRow.svelte` component
+  was moved into UI and removed from Beta.
+- Validation: `pnpm --filter @beancount-js/fava-beta check` and
+  `pnpm --filter @beancount-js/fava-beta test:run` pass.
+- Note: `pnpm --filter @beancount-js/ui check` remains blocked by pre-existing
+  story fixture typing issues in `AccountComboField.stories.svelte`,
+  `MerchantComboField.stories.svelte`, and `SwitchField.stories.svelte`; these are unrelated to this slice.

@@ -1283,9 +1283,18 @@ importers:
 
   packages/ui:
     dependencies:
+      '@beancount-js/beancount':
+        specifier: workspace:*
+        version: link:../beancount
+      '@beancount-js/beangulp':
+        specifier: workspace:*
+        version: link:../beangulp
       '@beancount-js/filters':
         specifier: workspace:*
         version: link:../filters
+      '@beancount-js/parser':
+        specifier: workspace:*
+        version: link:../parser
       '@codemirror/autocomplete':
         specifier: ^6.18.3
         version: 6.20.3
@@ -1346,6 +1355,9 @@ importers:
       lucide-svelte:
         specifier: ^0.460.1
         version: 0.460.1(svelte@5.56.3(@typescript-eslint/types@8.61.0))
+      luxon:
+        specifier: ^3.5.6
+        version: 3.7.2
       paneforge:
         specifier: ^1.0.0-next.1
         version: 1.0.2(svelte@5.56.3(@typescript-eslint/types@8.61.0))

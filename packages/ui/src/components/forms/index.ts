@@ -17,6 +17,9 @@ export { default as CodeHighlighter } from "./CodeHighlighter.svelte";
 export { default as ReviewDiff } from "./ReviewDiff.svelte";
 export { default as DatePicker } from "./DatePicker.svelte";
 export { default as JsonBackedForm } from "./JsonBackedForm.svelte";
+export { default as JournalEditorSheet } from "./JournalEditorSheet.svelte";
+export { default as RuleEditorSheet } from "./RuleEditorSheet.svelte";
+export { default as RuleConditionRow } from "./rules/RuleConditionRow.svelte";
 export { default as SearchFilterBar } from "./SearchFilterBar.svelte";
 export { default as ComboBox } from "./ComboBox.svelte";
 export type {

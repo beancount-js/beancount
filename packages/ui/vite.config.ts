@@ -16,6 +16,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@beancount-js/beancount": fileURLToPath(
+        new URL("../beancount/src/index.ts", import.meta.url),
+      ),
       // UI-owned colocated stories resolve test helpers from the catalog
       // package, which owns the Storybook runtime.
       "storybook/test": storybookTest,
