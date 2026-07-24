@@ -116,17 +116,19 @@
     const editor = canvas.getByRole("searchbox", { name: "Search merchants" });
     await userEvent.click(editor);
     await expect(
-      canvas.getByRole("option", { name: /confidence/i }),
+      await canvas.findByRole("option", { name: /confidence/i }),
     ).toBeVisible();
     await userEvent.type(editor, "stat");
-    await expect(canvas.getByRole("option", { name: /status/i })).toBeVisible();
+    await expect(
+      await canvas.findByRole("option", { name: /status/i }),
+    ).toBeVisible();
     await userEvent.keyboard("{Tab}");
     await expect(
-      canvas.getByRole("option", { name: ": matches" }),
+      await canvas.findByRole("option", { name: ": matches" }),
     ).toBeVisible();
     await userEvent.keyboard("{Enter}");
     await expect(
-      canvas.getByRole("option", { name: /confirmed/i }),
+      await canvas.findByRole("option", { name: /confirmed/i }),
     ).toBeVisible();
     await expect(
       canvas.getByTestId("search-filter-autocomplete-values"),

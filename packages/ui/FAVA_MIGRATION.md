@@ -61,8 +61,8 @@ additional manual pauses. Return to GPT-5.6 Sol for the final parity audit.
 | F02 | Create and verify the pinned `fava-reference` workspace           | Done        | Workspace `fava-reference`, parent `191dae81`   |
 | F03 | Port Visual Delta and Storybook status badges                     | Done        | Change `a3d69779`; 61 addon tests               |
 | F04 | Add protected Fava capture matrix, manifest, and overwrite guards | Done        | 15 pinned captures; manifest digest gate        |
-| F05 | Repair the `SearchFilterBar` empty-focus browser story            | In progress | Existing 1/171 failure                          |
-| F06 | Consolidate Forms implementation, tests, and stories into UI      | Not started | —                                               |
+| F05 | Repair the `SearchFilterBar` empty-focus browser story            | Done        | 2/2 focused browser stories; 7/7 syntax tests   |
+| F06 | Consolidate Forms implementation, tests, and stories into UI      | In progress | Authority/delta audit next                      |
 | F07 | Reduce `@beancount-js/forms` to a forwarding compatibility facade | Not started | —                                               |
 | F08 | Run UI, Forms-facade, and original-Fava compatibility gates       | Not started | —                                               |
 | F09 | Manual Forms validation and GPT-5.6 Terra handoff                 | Not started | Stop point                                      |
@@ -189,3 +189,7 @@ change IDs here at the end of each committed slice.
   scale factor 3, and recorded Studio revision `191dae81`, sample fixture
   digest, and per-image SHA-256 digests. `pnpm fava-reference:verify` and the
   protected-story index audit passed.
+- 2026-07-24 — SearchFilterBar interaction slice: changed the browser story to
+  await CodeMirror's debounced completion popup, preserving the real click,
+  keyboard, and completion interactions. Both focused browser stories and all
+  seven filter-syntax unit tests passed.
