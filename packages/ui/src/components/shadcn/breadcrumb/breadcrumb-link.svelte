@@ -23,7 +23,7 @@
 </script>
 
 {#if asChild}
-  <slot {attrs} />
+  <slot {attrs} data-ui-component="breadcrumb" data-ui-part="breadcrumb-link" />
 {:else}
   <a bind:this={el} {...attrs} {href}>
     <slot {attrs} />

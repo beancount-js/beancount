@@ -16,8 +16,10 @@
   role="link"
   aria-disabled="true"
   aria-current="page"
-  class={cn("font-normal text-foreground", className)}
+  class={cn("cn-breadcrumb-breadcrumb-page-19-1", className)}
   {...$$restProps}
+  data-ui-component="breadcrumb"
+  data-ui-part="breadcrumb-page"
 >
   <slot />
 </span>

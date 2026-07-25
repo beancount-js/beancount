@@ -13,8 +13,10 @@
 
 <AccordionPrimitive.Item
   {value}
-  class={cn("border-b", className)}
+  class={cn("cn-accordion-accordion-item-16-1", className)}
   {...$$restProps}
+  data-ui-component="accordion"
+  data-ui-part="accordion-item"
 >
   <slot />
 </AccordionPrimitive.Item>

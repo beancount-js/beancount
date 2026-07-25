@@ -26,3 +26,5 @@ export {
   Header as TableHeader,
   Row as TableRow,
 };
+
+export { tableTokenNames, type TableToken } from "./table.tokens.js";

@@ -8,6 +8,11 @@
   export { className as class };
 </script>
 
-<div class={cn("text-sm [&_p]:leading-relaxed", className)} {...$$restProps}>
+<div
+  class={cn("cn-alert-alert-description-11-1", className)}
+  {...$$restProps}
+  data-ui-component="alert"
+  data-ui-part="alert-description"
+>
   <slot />
 </div>

@@ -15,9 +15,11 @@
 <li
   role="presentation"
   aria-hidden="true"
-  class={cn("[&>svg]:size-3.5", className)}
+  class={cn("cn-breadcrumb-breadcrumb-separator-18-1", className)}
   bind:this={el}
   {...$$restProps}
+  data-ui-component="breadcrumb"
+  data-ui-part="breadcrumb-separator"
 >
   <slot>
     <ChevronRight tabindex="-1" />

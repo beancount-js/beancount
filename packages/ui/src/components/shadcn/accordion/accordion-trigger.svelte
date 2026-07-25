@@ -13,20 +13,23 @@
   export { className as class };
 </script>
 
-<AccordionPrimitive.Header {level} class="flex">
+<AccordionPrimitive.Header
+  {level}
+  class="cn-accordion-accordion-trigger-16-1"
+  data-ui-component="accordion"
+  data-ui-part="accordion-trigger"
+>
   <AccordionPrimitive.Trigger
     class={cn(
-      "flex flex-1 items-center justify-between py-4 text-sm font-medium transition-all hover:underline",
+      "cn-accordion-accordion-trigger-19-1",
       indicatorPosition === "start"
-        ? "[&>svg]:order-first [&>svg]:-rotate-90 [&[data-state=open]>svg]:rotate-0"
-        : "[&[data-state=open]>svg]:rotate-180",
+        ? "cn-accordion-accordion-trigger-21-1"
+        : "cn-accordion-accordion-trigger-22-1",
       className,
     )}
     {...$$restProps}
   >
     <slot />
-    <ChevronDown
-      class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200"
-    />
+    <ChevronDown class="cn-accordion-accordion-trigger-29-1" />
   </AccordionPrimitive.Trigger>
 </AccordionPrimitive.Header>

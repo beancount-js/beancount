@@ -16,6 +16,8 @@
   class={cn(alertVariants({ variant }), className)}
   {...$$restProps}
   role="alert"
+  data-ui-component="alert"
+  data-ui-part="alert"
 >
   <slot />
 </div>

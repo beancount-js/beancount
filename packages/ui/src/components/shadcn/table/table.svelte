@@ -14,11 +14,13 @@
 
 <ScrollArea.Root
   orientation="horizontal"
-  class="relative w-full min-w-0 max-w-full"
+  class="cn-table-table-17-1"
+  data-ui-component="table"
+  data-ui-part="table"
 >
   <table
     bind:this={ref}
-    class={cn("w-full caption-bottom text-sm", className)}
+    class={cn("cn-table-table-21-1", className)}
     {...restProps}
   >
     {@render children?.()}

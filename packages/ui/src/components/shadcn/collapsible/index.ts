@@ -14,3 +14,8 @@ export {
   Content as CollapsibleContent,
   Trigger as CollapsibleTrigger,
 };
+
+export {
+  collapsibleTokenNames,
+  type CollapsibleToken,
+} from "./collapsible.tokens.js";

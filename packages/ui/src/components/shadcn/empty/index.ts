@@ -19,3 +19,5 @@ export {
   Description as EmptyDescription,
   Content as EmptyContent,
 };
+
+export { emptyTokenNames, type EmptyToken } from "./empty.tokens.js";

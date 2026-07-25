@@ -13,8 +13,10 @@
 
 <tbody
   bind:this={ref}
-  class={cn("[&_tr:last-child]:border-0", className)}
+  class={cn("cn-table-table-body-16-1", className)}
   {...restProps}
+  data-ui-component="table"
+  data-ui-part="table-body"
 >
   {@render children?.()}
 </tbody>

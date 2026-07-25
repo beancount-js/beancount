@@ -13,11 +13,10 @@
 
 <th
   bind:this={ref}
-  class={cn(
-    "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-    className,
-  )}
+  class={cn("cn-table-table-head-17-1", className)}
   {...restProps}
+  data-ui-component="table"
+  data-ui-part="table-head"
 >
   {@render children?.()}
 </th>

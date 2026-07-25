@@ -18,12 +18,10 @@
   bind:this={ref}
   data-slot="empty-media"
   data-variant={variant}
-  class={cn(
-    variant === "icon" &&
-      "flex size-12 items-center justify-center rounded-lg bg-muted [&_svg]:size-6",
-    className,
-  )}
+  class={cn(variant === "icon" && "cn-empty-empty-media-23-1", className)}
   {...restProps}
+  data-ui-component="empty"
+  data-ui-part="empty-media"
 >
   {@render children?.()}
 </div>

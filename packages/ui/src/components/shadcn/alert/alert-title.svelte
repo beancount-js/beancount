@@ -14,8 +14,10 @@
 
 <svelte:element
   this={level}
-  class={cn("mb-1 font-medium leading-none tracking-tight", className)}
+  class={cn("cn-alert-alert-title-17-1", className)}
   {...$$restProps}
+  data-ui-component="alert"
+  data-ui-part="alert-title"
 >
   <slot />
 </svelte:element>

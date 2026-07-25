@@ -13,11 +13,10 @@
 
 <td
   bind:this={ref}
-  class={cn(
-    "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-    className,
-  )}
+  class={cn("cn-table-table-cell-17-1", className)}
   {...restProps}
+  data-ui-component="table"
+  data-ui-part="table-cell"
 >
   {@render children?.()}
 </td>

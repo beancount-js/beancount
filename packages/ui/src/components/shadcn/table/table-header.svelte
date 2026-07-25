@@ -11,6 +11,12 @@
   }: WithElementRef<HTMLAttributes<HTMLTableSectionElement>> = $props();
 </script>
 
-<thead bind:this={ref} class={cn("[&_tr]:border-b", className)} {...restProps}>
+<thead
+  bind:this={ref}
+  class={cn("cn-table-table-header-14-1", className)}
+  {...restProps}
+  data-ui-component="table"
+  data-ui-part="table-header"
+>
   {@render children?.()}
 </thead>

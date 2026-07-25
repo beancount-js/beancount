@@ -11,6 +11,11 @@
   export { className as class };
 </script>
 
-<li bind:this={el} class={cn("inline-flex items-center gap-1.5", className)}>
+<li
+  bind:this={el}
+  class={cn("cn-breadcrumb-breadcrumb-item-14-1", className)}
+  data-ui-component="breadcrumb"
+  data-ui-part="breadcrumb-item"
+>
   <slot />
 </li>

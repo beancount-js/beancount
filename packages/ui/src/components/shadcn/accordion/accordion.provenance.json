@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "component": "accordion",
+  "scope": "shared",
+  "upstream": {
+    "project": "shadcn-svelte",
+    "registry": "https://shadcn-svelte.com/registry",
+    "cliVersion": "1.4.2",
+    "item": "accordion",
+    "fetchedAt": "2026-07-19T18:49:02.491Z",
+    "sourceFiles": [
+      {
+        "path": "src/lib/components/ui/accordion/accordion-content.svelte",
+        "sha256": "2df839064cd07912fd80e876d5be01673166637bc8a1d872f625d9046e1b6369"
+      },
+      {
+        "path": "src/lib/components/ui/accordion/accordion-item.svelte",
+        "sha256": "0bab5a06dfaad61211cbcb35109d89b9939526b351d8cac24c410ed28f709643"
+      },
+      {
+        "path": "src/lib/components/ui/accordion/accordion-trigger.svelte",
+        "sha256": "9cf8be9503214ecd467ff89063d4c4b4326cbc57b1f5336a0638cf39b80f20b3"
+      },
+      {
+        "path": "src/lib/components/ui/accordion/accordion.svelte",
+        "sha256": "bb950cb45d20a612b49d6be9e36fe76b2ed791b82c281a504d334c8ce5f5e940"
+      },
+      {
+        "path": "src/lib/components/ui/accordion/index.ts",
+        "sha256": "14e729a878c52b3ecc5c9b47c9de4fbc00d8e0df3efcda4c5f0638e14efca655"
+      }
+    ],
+    "docsUrl": "https://github.com/huntabyte/shadcn-svelte/blob/bf4f461d88526359d0e96e1950f637912bbeebe7/docs/content/components/accordion.md",
+    "docsFetchedAt": "2026-07-22T09:57:18.316Z",
+    "docsSha256": "54ab5ed974062367cfd7e4b08f3057466d481418fb5e104c79b99d09decf2d1e",
+    "examplesIncluded": ["Preview"],
+    "examplesSkipped": [],
+    "docsCommit": "bf4f461d88526359d0e96e1950f637912bbeebe7",
+    "docsRef": "shadcn-svelte@1.4.2",
+    "docsVendorPath": "vendor/shadcn-svelte-docs"
+  },
+  "converter": {
+    "version": "2.0.0",
+    "irSchemaVersion": 1,
+    "tokenSchemaVersion": 2
+  },
+  "recipe": {
+    "name": "accordion",
+    "version": 1,
+    "tier": "lightCompound"
+  }
+}

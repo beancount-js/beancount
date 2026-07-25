@@ -14,8 +14,10 @@
 <h2
   bind:this={ref}
   data-slot="empty-title"
-  class={cn("text-lg font-semibold tracking-tight", className)}
+  class={cn("cn-empty-empty-title-17-1", className)}
   {...restProps}
+  data-ui-component="empty"
+  data-ui-part="empty-title"
 >
   {@render children?.()}
 </h2>

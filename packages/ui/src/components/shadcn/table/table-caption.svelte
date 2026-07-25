@@ -13,8 +13,10 @@
 
 <caption
   bind:this={ref}
-  class={cn("mt-4 text-sm text-muted-foreground", className)}
+  class={cn("cn-table-table-caption-16-1", className)}
   {...restProps}
+  data-ui-component="table"
+  data-ui-part="table-caption"
 >
   {@render children?.()}
 </caption>

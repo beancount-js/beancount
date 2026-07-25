@@ -13,8 +13,10 @@
 
 <tfoot
   bind:this={ref}
-  class={cn("bg-muted/50 font-medium", className)}
+  class={cn("cn-table-table-footer-16-1", className)}
   {...restProps}
+  data-ui-component="table"
+  data-ui-part="table-footer"
 >
   {@render children?.()}
 </tfoot>

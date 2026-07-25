@@ -23,3 +23,8 @@ export {
   List as BreadcrumbList,
   Page as BreadcrumbPage,
 };
+
+export {
+  breadcrumbTokenNames,
+  type BreadcrumbToken,
+} from "./breadcrumb.tokens.js";

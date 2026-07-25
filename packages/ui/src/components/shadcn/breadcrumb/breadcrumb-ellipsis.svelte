@@ -16,9 +16,14 @@
   bind:this={el}
   role="presentation"
   aria-hidden="true"
-  class={cn("flex h-9 w-9 items-center justify-center", className)}
+  class={cn("cn-breadcrumb-breadcrumb-ellipsis-19-1", className)}
   {...$$restProps}
+  data-ui-component="breadcrumb"
+  data-ui-part="breadcrumb-ellipsis"
 >
-  <DotsHorizontal class="h-4 w-4 outline-none" tabindex="-1" />
+  <DotsHorizontal
+    class="cn-breadcrumb-breadcrumb-ellipsis-22-1"
+    tabindex="-1"
+  />
   <span class="sr-only">More</span>
 </span>

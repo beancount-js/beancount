@@ -15,10 +15,15 @@
 </script>
 
 <AccordionPrimitive.Content
-  class={cn("overflow-hidden text-sm", className)}
+  class={cn("cn-accordion-accordion-content-18-1", className)}
   {...$$restProps}
+  data-ui-component="accordion"
+  data-ui-part="accordion-content"
 >
-  <div class="pb-4 pt-0" transition:transition={transitionConfig}>
+  <div
+    class="cn-accordion-accordion-content-21-1"
+    transition:transition={transitionConfig}
+  >
     <slot />
   </div>
 </AccordionPrimitive.Content>

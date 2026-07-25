@@ -14,11 +14,10 @@
 <div
   bind:this={ref}
   data-slot="empty"
-  class={cn(
-    "flex h-full w-full flex-1 flex-col items-center justify-center gap-6 p-6 text-center",
-    className,
-  )}
+  class={cn("cn-empty-empty-18-1", className)}
   {...restProps}
+  data-ui-component="empty"
+  data-ui-part="empty"
 >
   {@render children?.()}
 </div>

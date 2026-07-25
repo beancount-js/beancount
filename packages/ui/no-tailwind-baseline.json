@@ -3248,36 +3248,6 @@
       "w-full": 2,
       "z-10": 1
     },
-    "src/components/shadcn/accordion/accordion-content.svelte": {
-      "overflow-hidden": 1,
-      "pb-4": 1,
-      "pt-0": 1,
-      "text-sm": 1
-    },
-    "src/components/shadcn/accordion/accordion-item.svelte": {
-      "border-b": 1
-    },
-    "src/components/shadcn/accordion/accordion-trigger.svelte": {
-      "[&[data-state=open]>svg]:rotate-0": 1,
-      "[&[data-state=open]>svg]:rotate-180": 1,
-      "[&>svg]:-rotate-90": 1,
-      "[&>svg]:order-first": 1,
-      "duration-200": 1,
-      "flex": 2,
-      "flex-1": 1,
-      "font-medium": 1,
-      "h-4": 1,
-      "hover:underline": 1,
-      "items-center": 1,
-      "justify-between": 1,
-      "py-4": 1,
-      "shrink-0": 1,
-      "text-muted-foreground": 1,
-      "text-sm": 1,
-      "transition-all": 1,
-      "transition-transform": 1,
-      "w-4": 1
-    },
     "src/components/shadcn/alert-dialog/alert-dialog-content.svelte": {
       "bg-background": 1,
       "data-[state=closed]:animate-out": 1,
@@ -3327,16 +3297,6 @@
       "font-semibold": 1,
       "text-lg": 1
     },
-    "src/components/shadcn/alert/alert-description.svelte": {
-      "[&_p]:leading-relaxed": 1,
-      "text-sm": 1
-    },
-    "src/components/shadcn/alert/alert-title.svelte": {
-      "font-medium": 1,
-      "leading-none": 1,
-      "mb-1": 1,
-      "tracking-tight": 1
-    },
     "src/components/shadcn/alert/index.ts": {
       "[&>svg]:absolute": 1,
       "[&>svg]:left-4": 1,
@@ -3357,38 +3317,6 @@
       "text-foreground": 1,
       "text-sm": 1,
       "w-full": 1
-    },
-    "src/components/shadcn/breadcrumb/breadcrumb-ellipsis.svelte": {
-      "flex": 1,
-      "h-4": 1,
-      "h-9": 1,
-      "items-center": 1,
-      "justify-center": 1,
-      "outline-none": 1,
-      "w-4": 1,
-      "w-9": 1
-    },
-    "src/components/shadcn/breadcrumb/breadcrumb-item.svelte": {
-      "gap-1.5": 1,
-      "inline-flex": 1,
-      "items-center": 1
-    },
-    "src/components/shadcn/breadcrumb/breadcrumb-list.svelte": {
-      "break-words": 1,
-      "flex": 1,
-      "flex-wrap": 1,
-      "gap-1.5": 1,
-      "items-center": 1,
-      "sm:gap-2.5": 1,
-      "text-muted-foreground": 1,
-      "text-sm": 1
-    },
-    "src/components/shadcn/breadcrumb/breadcrumb-page.svelte": {
-      "font-normal": 1,
-      "text-foreground": 1
-    },
-    "src/components/shadcn/breadcrumb/breadcrumb-separator.svelte": {
-      "[&>svg]:size-3.5": 1
     },
     "src/components/shadcn/button-group/button-group-separator.svelte": {
       "bg-border/70": 1,
@@ -3763,55 +3691,6 @@
       "select-none": 1,
       "size-4": 1,
       "text-sm": 1
-    },
-    "src/components/shadcn/empty/empty-content.svelte": {
-      "flex": 1,
-      "flex-col": 1,
-      "gap-4": 1,
-      "items-center": 1,
-      "max-w-sm": 1,
-      "min-w-0": 1,
-      "text-balance": 1,
-      "text-sm": 1,
-      "w-full": 1
-    },
-    "src/components/shadcn/empty/empty-description.svelte": {
-      "text-muted-foreground": 1,
-      "text-sm": 1
-    },
-    "src/components/shadcn/empty/empty-header.svelte": {
-      "flex": 1,
-      "flex-col": 1,
-      "gap-2": 1,
-      "items-center": 1,
-      "max-w-sm": 1,
-      "text-balance": 1
-    },
-    "src/components/shadcn/empty/empty-media.svelte": {
-      "[&_svg]:size-6": 1,
-      "bg-muted": 1,
-      "flex": 1,
-      "items-center": 1,
-      "justify-center": 1,
-      "rounded-lg": 1,
-      "size-12": 1
-    },
-    "src/components/shadcn/empty/empty-title.svelte": {
-      "font-semibold": 1,
-      "text-lg": 1,
-      "tracking-tight": 1
-    },
-    "src/components/shadcn/empty/empty.svelte": {
-      "flex": 1,
-      "flex-1": 1,
-      "flex-col": 1,
-      "gap-6": 1,
-      "h-full": 1,
-      "items-center": 1,
-      "justify-center": 1,
-      "p-6": 1,
-      "text-center": 1,
-      "w-full": 1
     },
     "src/components/shadcn/menubar/menubar-checkbox-item.svelte": {
       "absolute": 1,
@@ -4500,51 +4379,6 @@
       "shrink-0": 1,
       "transition-all": 1,
       "transition-transform": 1
-    },
-    "src/components/shadcn/table/table-body.svelte": {
-      "[&_tr:last-child]:border-0": 1
-    },
-    "src/components/shadcn/table/table-caption.svelte": {
-      "mt-4": 1,
-      "text-muted-foreground": 1,
-      "text-sm": 1
-    },
-    "src/components/shadcn/table/table-cell.svelte": {
-      "[&:has([role=checkbox])]:pr-0": 1,
-      "[&>[role=checkbox]]:translate-y-[2px]": 1,
-      "align-middle": 1,
-      "p-2": 1
-    },
-    "src/components/shadcn/table/table-footer.svelte": {
-      "bg-muted/50": 1,
-      "font-medium": 1
-    },
-    "src/components/shadcn/table/table-head.svelte": {
-      "[&:has([role=checkbox])]:pr-0": 1,
-      "[&>[role=checkbox]]:translate-y-[2px]": 1,
-      "align-middle": 1,
-      "font-medium": 1,
-      "h-10": 1,
-      "px-2": 1,
-      "text-left": 1,
-      "text-muted-foreground": 1
-    },
-    "src/components/shadcn/table/table-header.svelte": {
-      "[&_tr]:border-b": 1
-    },
-    "src/components/shadcn/table/table-row.svelte": {
-      "border-b": 1,
-      "data-[state=selected]:bg-muted": 1,
-      "hover:bg-muted/50": 1,
-      "transition-colors": 1
-    },
-    "src/components/shadcn/table/table.svelte": {
-      "caption-bottom": 1,
-      "max-w-full": 1,
-      "min-w-0": 1,
-      "relative": 1,
-      "text-sm": 1,
-      "w-full": 2
     },
     "src/components/shadcn/tabs/tabs-content.svelte": {
       "focus-visible:outline-none": 1,

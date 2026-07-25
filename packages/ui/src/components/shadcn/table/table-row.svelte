@@ -13,11 +13,10 @@
 
 <tr
   bind:this={ref}
-  class={cn(
-    "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-    className,
-  )}
+  class={cn("cn-table-table-row-17-1", className)}
   {...restProps}
+  data-ui-component="table"
+  data-ui-part="table-row"
 >
   {@render children?.()}
 </tr>

@@ -3,6 +3,7 @@
 @import "@fontsource/source-code-pro/600.css";
 @import "./theme.css";
 @import "./foundation.tokens.css";
+@import "./components/shadcn/native-runtime.css";
 @import "./components/shadcn/button/button.tokens.css";
 @import "./components/shadcn/button/button.css";
 @import "./components/shadcn/badge/badge.tokens.css";
@@ -15,3 +16,15 @@
 @import "./components/shadcn/skeleton/skeleton.css";
 @import "./components/shadcn/textarea/textarea.tokens.css";
 @import "./components/shadcn/textarea/textarea.css";
+@import "./components/shadcn/accordion/accordion.tokens.css";
+@import "./components/shadcn/accordion/accordion.css";
+@import "./components/shadcn/alert/alert.tokens.css";
+@import "./components/shadcn/alert/alert.css";
+@import "./components/shadcn/breadcrumb/breadcrumb.tokens.css";
+@import "./components/shadcn/breadcrumb/breadcrumb.css";
+@import "./components/shadcn/collapsible/collapsible.tokens.css";
+@import "./components/shadcn/collapsible/collapsible.css";
+@import "./components/shadcn/empty/empty.tokens.css";
+@import "./components/shadcn/empty/empty.css";
+@import "./components/shadcn/table/table.tokens.css";
+@import "./components/shadcn/table/table.css";

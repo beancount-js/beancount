@@ -30,3 +30,5 @@ export {
   Description as AlertDescription,
   Title as AlertTitle,
 };
+
+export { alertTokenNames, type AlertToken } from "./alert.tokens.js";

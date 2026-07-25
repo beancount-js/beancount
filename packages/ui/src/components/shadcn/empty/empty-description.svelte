@@ -14,8 +14,10 @@
 <p
   bind:this={ref}
   data-slot="empty-description"
-  class={cn("text-sm text-muted-foreground", className)}
+  class={cn("cn-empty-empty-description-17-1", className)}
   {...restProps}
+  data-ui-component="empty"
+  data-ui-part="empty-description"
 >
   {@render children?.()}
 </p>
