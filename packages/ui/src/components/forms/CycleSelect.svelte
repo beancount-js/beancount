@@ -75,10 +75,16 @@
 </div>
 
 <style>
+  .cn-forms-cycleselect-43-1 {
+    display: inline-flex;
+    width: fit-content;
+    align-items: stretch;
+  }
+
   .cycle-select-picker {
     display: flex;
     min-width: 0;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
   }
 
   .cycle-select-picker :global(.bj-filter-command-picker__trigger),
@@ -92,12 +98,11 @@
   }
 
   .cycle-select-picker :global(.bj-filter-command-picker__trigger) {
-    width: 100%;
+    width: auto;
     height: 2rem;
     min-height: 2rem;
-    min-width: 5rem;
-    max-width: 9rem;
-    flex: 1 1 auto;
+    min-width: 0;
+    flex: 0 0 auto;
     border: 0;
     background: transparent;
     box-shadow: none;
