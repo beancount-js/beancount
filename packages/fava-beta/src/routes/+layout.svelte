@@ -1,4 +1,5 @@
 <script lang="ts">
+  import "@beancount-js/ui/reset.css";
   import "@beancount-js/ui/styles.css";
   import { ModeWatcher } from "mode-watcher";
   import "../style.scss";

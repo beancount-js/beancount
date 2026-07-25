@@ -816,9 +816,6 @@ importers:
       urlpattern-polyfill:
         specifier: ^10.0.0
         version: 10.1.0
-      vaul-svelte:
-        specifier: ^0.3.2
-        version: 0.3.2(svelte@5.56.3(@typescript-eslint/types@8.61.0))
       yaml:
         specifier: ^2.6.1
         version: 2.9.0
@@ -931,18 +928,9 @@ importers:
       '@types/rrule':
         specifier: ^2.2.9
         version: 2.2.9
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
-      bits-ui:
-        specifier: ^1.0.0-next.65
-        version: 1.8.0(svelte@5.56.3(@typescript-eslint/types@8.61.0))
       builtin-modules:
         specifier: ^3.3.0
         version: 3.3.0
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
       dedent:
         specifier: ^1.5.3
         version: 1.7.2
@@ -952,15 +940,6 @@ importers:
       eslint-plugin-svelte:
         specifier: ^3.19.0
         version: 3.19.0(eslint@9.39.4(jiti@1.21.7))(svelte@5.56.3(@typescript-eslint/types@8.61.0))
-      flowbite:
-        specifier: ^2.5.2
-        version: 2.5.2(rollup@4.61.1)
-      flowbite-svelte:
-        specifier: ^0.46.23
-        version: 0.46.23(rollup@4.61.1)(svelte@5.56.3(@typescript-eslint/types@8.61.0))
-      flowbite-svelte-icons:
-        specifier: ^1.6.2
-        version: 1.6.2(svelte@5.56.3(@typescript-eslint/types@8.61.0))(tailwind-merge@2.6.1)(tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0))
       globals:
         specifier: ^15.15.0
         version: 15.15.0
@@ -973,9 +952,6 @@ importers:
       moment:
         specifier: ^2.30.1
         version: 2.30.1
-      paneforge:
-        specifier: ^1.0.0-next.1
-        version: 1.0.2(svelte@5.56.3(@typescript-eslint/types@8.61.0))
       pixelmatch:
         specifier: ^7.1.0
         version: 7.2.0
@@ -988,9 +964,6 @@ importers:
       prettier-plugin-jsdoc:
         specifier: ^1.3.0
         version: 1.8.1(prettier@3.3.3)
-      prettier-plugin-tailwindcss:
-        specifier: ^0.6.9
-        version: 0.6.14(prettier-plugin-jsdoc@1.8.1(prettier@3.3.3))(prettier-plugin-svelte@3.5.2(prettier@3.3.3)(svelte@5.56.3(@typescript-eslint/types@8.61.0)))(prettier@3.3.3)
       sass:
         specifier: ^1.81.0
         version: 1.100.0
@@ -1006,24 +979,6 @@ importers:
       svelte-eslint-parser:
         specifier: ^1.8.0
         version: 1.8.0(svelte@5.56.3(@typescript-eslint/types@8.61.0))
-      svelte-radix:
-        specifier: ^1.1.1
-        version: 1.1.1(svelte@5.56.3(@typescript-eslint/types@8.61.0))
-      tailwind-merge:
-        specifier: ^2.5.4
-        version: 2.6.1
-      tailwind-variants:
-        specifier: ^0.3.0
-        version: 0.3.1(tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0))
-      tailwindcss:
-        specifier: ^3.4.15
-        version: 3.4.19(tsx@4.23.1)(yaml@2.9.0)
-      tailwindcss-animate:
-        specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0))
-      tailwindcss-scoped-preflight:
-        specifier: ^3.4.9
-        version: 3.5.9(postcss@8.5.15)(tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0))
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -1361,12 +1316,6 @@ importers:
       svelte-radix:
         specifier: ^1.1.1
         version: 1.1.1(svelte@5.56.3(@typescript-eslint/types@8.61.0))
-      tailwind-merge:
-        specifier: ^2.5.4
-        version: 2.6.1
-      tailwind-variants:
-        specifier: ^0.3.0
-        version: 0.3.1(tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0))
     devDependencies:
       '@playwright/test':
         specifier: ^1.52.0
@@ -1416,9 +1365,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(@vitest/browser@4.1.10)(vitest@4.1.10)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
       playwright:
         specifier: ^1.52.0
         version: 1.60.0
@@ -1428,9 +1374,6 @@ importers:
       prettier-plugin-svelte:
         specifier: ^3.3.2
         version: 3.5.2(prettier@3.3.3)(svelte@5.56.3(@typescript-eslint/types@8.61.0))
-      prettier-plugin-tailwindcss:
-        specifier: ^0.6.9
-        version: 0.6.14(prettier-plugin-jsdoc@1.8.1(prettier@3.3.3))(prettier-plugin-svelte@3.5.2(prettier@3.3.3)(svelte@5.56.3(@typescript-eslint/types@8.61.0)))(prettier@3.3.3)
       react:
         specifier: ^19.2.7
         version: 19.2.7
@@ -1452,12 +1395,6 @@ importers:
       svelte-check:
         specifier: ^4.6.0
         version: 4.6.0(picomatch@4.0.4)(svelte@5.56.3(@typescript-eslint/types@8.61.0))(typescript@5.9.3)
-      tailwindcss:
-        specifier: ^3.4.15
-        version: 3.4.19(tsx@4.23.1)(yaml@2.9.0)
-      tailwindcss-animate:
-        specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0))
       tsx:
         specifier: ^4.23.1
         version: 4.23.1
@@ -7639,9 +7576,9 @@ snapshots:
       obug: 2.1.4
       std-env: 4.2.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(jsdom@29.1.1)(vite@6.4.3(@types/node@20.19.43)(jiti@1.21.7)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)(tsx@4.23.1)(yaml@2.9.0))
+      vitest: 4.1.10(@types/node@22.20.1)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(jsdom@29.1.1)(vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)(tsx@4.23.1)(yaml@2.9.0))
     optionalDependencies:
-      '@vitest/browser': 4.1.10(vite@6.4.3(@types/node@20.19.43)(jiti@1.21.7)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.10)
+      '@vitest/browser': 4.1.10(vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.10)
 
   '@vitest/expect@2.1.9':
     dependencies:
@@ -8539,12 +8476,6 @@ snapshots:
       tailwind-merge: 2.6.1
       tailwindcss: 3.4.19(tsx@4.22.4)(yaml@2.9.0)
 
-  flowbite-svelte-icons@1.6.2(svelte@5.56.3(@typescript-eslint/types@8.61.0))(tailwind-merge@2.6.1)(tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0)):
-    dependencies:
-      svelte: 5.56.3(@typescript-eslint/types@8.61.0)
-      tailwind-merge: 2.6.1
-      tailwindcss: 3.4.19(tsx@4.23.1)(yaml@2.9.0)
-
   flowbite-svelte@0.46.23(rollup@4.61.1)(svelte@5.56.3(@typescript-eslint/types@8.61.0)):
     dependencies:
       '@floating-ui/dom': 1.7.6
@@ -9436,15 +9367,6 @@ snapshots:
       tsx: 4.22.4
       yaml: 2.9.0
 
-  postcss-load-config@6.0.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.23.1)(yaml@2.9.0):
-    dependencies:
-      lilconfig: 3.1.3
-    optionalDependencies:
-      jiti: 1.21.7
-      postcss: 8.5.15
-      tsx: 4.23.1
-      yaml: 2.9.0
-
   postcss-nested@6.2.0(postcss@8.5.15):
     dependencies:
       postcss: 8.5.15
@@ -9921,28 +9843,14 @@ snapshots:
       tailwind-merge: 2.5.4
       tailwindcss: 3.4.19(tsx@4.22.4)(yaml@2.9.0)
 
-  tailwind-variants@0.3.1(tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0)):
-    dependencies:
-      tailwind-merge: 2.5.4
-      tailwindcss: 3.4.19(tsx@4.23.1)(yaml@2.9.0)
-
   tailwindcss-animate@1.0.7(tailwindcss@3.4.19(tsx@4.22.4)(yaml@2.9.0)):
     dependencies:
       tailwindcss: 3.4.19(tsx@4.22.4)(yaml@2.9.0)
-
-  tailwindcss-animate@1.0.7(tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0)):
-    dependencies:
-      tailwindcss: 3.4.19(tsx@4.23.1)(yaml@2.9.0)
 
   tailwindcss-scoped-preflight@3.5.9(postcss@8.5.15)(tailwindcss@3.4.19(tsx@4.22.4)(yaml@2.9.0)):
     dependencies:
       postcss: 8.5.15
       tailwindcss: 3.4.19(tsx@4.22.4)(yaml@2.9.0)
-
-  tailwindcss-scoped-preflight@3.5.9(postcss@8.5.15)(tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0)):
-    dependencies:
-      postcss: 8.5.15
-      tailwindcss: 3.4.19(tsx@4.23.1)(yaml@2.9.0)
 
   tailwindcss@3.4.19(tsx@4.22.4)(yaml@2.9.0):
     dependencies:
@@ -9964,34 +9872,6 @@ snapshots:
       postcss-import: 15.1.0(postcss@8.5.15)
       postcss-js: 4.1.0(postcss@8.5.15)
       postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.22.4)(yaml@2.9.0)
-      postcss-nested: 6.2.0(postcss@8.5.15)
-      postcss-selector-parser: 6.1.4
-      resolve: 1.22.12
-      sucrase: 3.35.1
-    transitivePeerDependencies:
-      - tsx
-      - yaml
-
-  tailwindcss@3.4.19(tsx@4.23.1)(yaml@2.9.0):
-    dependencies:
-      '@alloc/quick-lru': 5.2.0
-      arg: 5.0.2
-      chokidar: 3.6.0
-      didyoumean: 1.2.2
-      dlv: 1.1.3
-      fast-glob: 3.3.3
-      glob-parent: 6.0.2
-      is-glob: 4.0.3
-      jiti: 1.21.7
-      lilconfig: 3.1.3
-      micromatch: 4.0.8
-      normalize-path: 3.0.0
-      object-hash: 3.0.0
-      picocolors: 1.1.1
-      postcss: 8.5.15
-      postcss-import: 15.1.0(postcss@8.5.15)
-      postcss-js: 4.1.0(postcss@8.5.15)
-      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.23.1)(yaml@2.9.0)
       postcss-nested: 6.2.0(postcss@8.5.15)
       postcss-selector-parser: 6.1.4
       resolve: 1.22.12

@@ -35,6 +35,8 @@ const EXACT_UTILITIES = new Set([
   "whitespace-nowrap",
 ]);
 
+const NATIVE_CLASS_EXEMPTIONS = new Set(["scroll-container"]);
+
 const UTILITY_PREFIX =
   /^(?:accent|align|animate|appearance|aspect|backdrop|basis|bg|blur|border|bottom|box|break|brightness|caption|caret|clear|col|columns|content|contrast|cursor|decoration|delay|divide|drop|duration|ease|end|fill|filter|flex|float|font|gap|grayscale|grid|grow|h|hue|hyphens|indent|inset|invert|isolation|items|justify|leading|left|line|list|m|max-h|max-w|mb|me|min-h|min-w|ml|mr|ms|mt|mx|my|object|opacity|order|origin|outline|overflow|overscroll|p|pb|pe|perspective|pl|place|pointer-events|pr|ps|pt|px|py|resize|right|ring|rotate|rounded|row|saturate|scale|scroll|self|shadow|shrink|size|skew|snap|space|start|stroke|table|text|top|touch|tracking|transition|translate|underline|w|whitespace|will-change|z)-/;
 
@@ -103,6 +105,42 @@ function callExpressionLiterals(source) {
   return values;
 }
 
+function classFunctionLiterals(source) {
+  const values = [];
+  const functionPattern =
+    /\bfunction\s+[A-Za-z_$][\w$]*(?:Class|Classes)\s*\([^)]*\)\s*\{/g;
+
+  for (const match of source.matchAll(functionPattern)) {
+    const bodyOffset = (match.index ?? 0) + match[0].length;
+    let index = bodyOffset;
+    let depth = 1;
+    let quote = "";
+
+    while (index < source.length && depth > 0) {
+      const character = source[index];
+      if (quote) {
+        if (character === "\\") {
+          index += 2;
+          continue;
+        }
+        if (character === quote) quote = "";
+      } else if (character === '"' || character === "'" || character === "`") {
+        quote = character;
+      } else if (character === "{") {
+        depth += 1;
+      } else if (character === "}") {
+        depth -= 1;
+      }
+      index += 1;
+    }
+
+    const body = source.slice(bodyOffset, index - 1);
+    values.push(...stringLiterals(body, bodyOffset));
+  }
+
+  return values;
+}
+
 function classValues(source) {
   const values = [];
 
@@ -124,7 +162,7 @@ function classValues(source) {
   }
 
   for (const match of source.matchAll(
-    /\b(?:base|className|classNames|classes)\s*[:=]\s*(["'`])((?:\\.|(?!\1)[^\\])*)\1/g,
+    /\b(?:base|className|classNames|classes|[A-Za-z_$][\w$]*(?:Class|Classes))\s*[:=]\s*(["'`])((?:\\.|(?!\1)[^\\])*)\1/g,
   )) {
     values.push({
       value: match[2] ?? "",
@@ -136,7 +174,14 @@ function classValues(source) {
     values.push(...stringLiterals(source));
   }
 
+  values.push(
+    ...expressionLiterals(
+      source,
+      /\b[A-Za-z_$][\w$]*(?:Class|Classes)\s*=\s*([^\n;]*(?:\?\?|&&|\|\||\?)[^\n;]+)/g,
+    ),
+  );
   values.push(...callExpressionLiterals(source));
+  values.push(...classFunctionLiterals(source));
 
   return values;
 }
@@ -147,7 +192,13 @@ function stripVariants(token) {
 }
 
 export function isTailwindUtility(token) {
-  if (!token || /^cn-[a-z0-9_-]+$/i.test(token)) return false;
+  if (
+    !token ||
+    /^cn-[a-z0-9_-]+$/i.test(token) ||
+    NATIVE_CLASS_EXEMPTIONS.has(token)
+  ) {
+    return false;
+  }
 
   const normalized = token.replace(/^!/, "").replace(/^-/, "");
   if (normalized === "sr-only" || normalized === "not-sr-only") return false;

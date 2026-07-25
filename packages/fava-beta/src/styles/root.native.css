@@ -11,3 +11,7 @@
 .cn-beta-root-src-main-311-1 {
   overflow: hidden;
 }
+
+.cn-beta-inventory-value {
+  text-align: right;
+}

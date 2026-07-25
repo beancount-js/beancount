@@ -48,7 +48,7 @@
     error?: string;
   };
 
-  const sectionTitleClass = "text-xs font-semibold uppercase tracking-wide";
+  const sectionTitleClass = "cn-form-section-title";
 
   type MetadataRow = { key: string; value: string };
   type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";

@@ -43,7 +43,9 @@
   );
 </script>
 
-<ContentScrollArea contentClass="scroll-container min-h-full">
+<ContentScrollArea
+  contentClass="scroll-container cn-dashboard-scroll-content--full"
+>
   <div class="cn-dashboard-statementreport-47-1">
     <ChartSwitcher
       {charts}
@@ -52,7 +54,7 @@
       {onActiveChartChange}
     >
       {#if chartChildren}
-        {#snippet children(chartId)}
+        {#snippet children(chartId: string)}
           {@render chartChildren(chartId)}
         {/snippet}
       {/if}

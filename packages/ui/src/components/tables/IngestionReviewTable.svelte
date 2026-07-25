@@ -142,15 +142,15 @@
   function statusClass(status: IngestionReviewRow["status"]) {
     switch (status) {
       case "ready":
-        return "bg-emerald-500/15";
+        return "cn-ingestion-row--ready";
       case "held":
-        return "bg-amber-500/20";
+        return "cn-ingestion-row--held";
       case "duplicate":
-        return "bg-rose-500/15";
+        return "cn-ingestion-row--duplicate";
       case "accepted":
-        return "bg-sky-500/15";
+        return "cn-ingestion-row--accepted";
       default:
-        return "bg-violet-500/15";
+        return "cn-ingestion-row--review";
     }
   }
 
@@ -307,7 +307,7 @@
                           >
                         {/if}
                         <span
-                          class={`mt-2 inline-flex min-w-20 justify-center rounded-full px-2 py-0.5 text-xs font-medium text-foreground ${statusClass(row.status)}`}
+                          class={`cn-ingestion-review-status ${statusClass(row.status)}`}
                         >
                           {statusLabel(row)}
                         </span>
@@ -323,7 +323,7 @@
                           >
                         {/if}
                         <span
-                          class={`mt-2 inline-flex min-w-20 justify-center rounded-full px-2 py-0.5 text-xs font-medium text-foreground ${statusClass(row.status)}`}
+                          class={`cn-ingestion-review-status ${statusClass(row.status)}`}
                         >
                           {statusLabel(row)}
                         </span>

@@ -395,7 +395,7 @@ export function useDataset(
   }
   const ctx = useCtx();
   return derived([data, ctx], ([$data, $ctx]) => {
-    const inventoryClass = props.inventoryClass ?? "text-right";
+    const inventoryClass = props.inventoryClass ?? "cn-beta-inventory-value";
     const columnDefs = props.columns ?? [];
     const height = props.height ?? 22;
     const padding = props.padding ?? 0;

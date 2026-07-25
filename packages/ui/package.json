@@ -62,9 +62,7 @@
     "lucide-svelte": "^0.460.1",
     "luxon": "^3.5.6",
     "paneforge": "^1.0.0-next.1",
-    "svelte-radix": "^1.1.1",
-    "tailwind-merge": "^2.5.4",
-    "tailwind-variants": "^0.3.0"
+    "svelte-radix": "^1.1.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
@@ -83,11 +81,9 @@
     "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.10",
     "@vitest/coverage-v8": "^4.1.10",
-    "autoprefixer": "^10.4.20",
     "playwright": "^1.52.0",
     "prettier": "3.3.3",
     "prettier-plugin-svelte": "^3.3.2",
-    "prettier-plugin-tailwindcss": "^0.6.9",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "storybook": "^10.5.2",
@@ -95,8 +91,6 @@
     "storybook-addon-visual-delta": "workspace:*",
     "svelte": "^5.2.7",
     "svelte-check": "^4.6.0",
-    "tailwindcss": "^3.4.15",
-    "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.23.1",
     "typescript": "^5.7.2",
     "vite": "^6.2.2",
@@ -119,7 +113,7 @@
     "./forms/components/*.svelte": "./src/components/forms/*.svelte",
     "./forms/*.svelte": "./src/components/forms/*.svelte",
     "./tokens": "./src/foundation.tokens.ts",
-    "./styles.css": "./src/styles.css",
-    "./tailwind": "./src/tailwind-preset.ts"
+    "./reset.css": "./src/reset.css",
+    "./styles.css": "./src/styles.css"
   }
 }

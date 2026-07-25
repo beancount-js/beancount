@@ -38,6 +38,7 @@ Implementation and styling are owned by `@beancount-js/ui`.
 The package must not import:
 
 - `shadcn-svelte`
+- `tailwindcss`, `tailwind-merge`, or `tailwind-variants`
 - application `$lib` aliases
 - `@beancount-js/forms`
 - Fava or Fava Beta source
@@ -92,9 +93,9 @@ an empty baseline for:
 - `packages/ui/src/components`
 - `packages/fava-beta/src`
 
-Storybook stories and examples may retain Tailwind for demo-only layout. This
-keeps Tailwind development-only in the UI catalog and outside shipped component
-styling.
+Storybook's existing demo-only utility layout is frozen into static catalog CSS.
+The package does not compile Tailwind, and production component styling remains
+native and token-based.
 
 ## API compatibility
 

@@ -49,6 +49,7 @@ test("detects utilities embedded in tailwind-variants recipes", () => {
 test("allows semantic native classes and accessibility helpers", () => {
   assert.equal(isTailwindUtility("cn-panel"), false);
   assert.equal(isTailwindUtility("cn-panel__title"), false);
+  assert.equal(isTailwindUtility("scroll-container"), false);
   assert.equal(isTailwindUtility("sr-only"), false);
   assert.equal(isTailwindUtility("not-sr-only"), false);
   assert.equal(isTailwindUtility("md:flex"), true);
@@ -60,17 +61,22 @@ test("allows semantic native classes and accessibility helpers", () => {
 test("detects class strings in TypeScript component metadata", () => {
   const source = `
     const className = "grid gap-2";
+    const classes = "flex";
+    const classNames = "block";
     const unrelated = "text-not-a-class";
   `;
   const tokens = findTailwindUtilitiesInSource(source, "metadata.ts").map(
     (finding) => finding.token,
   );
 
-  assert.deepEqual(tokens, ["gap-2", "grid"]);
+  assert.deepEqual(tokens, ["gap-2", "grid", "flex", "block"]);
 });
 
 test("detects utilities composed with native class helpers", () => {
   const source = `
+    const sectionTitleClass =
+      "text-xs font-semibold uppercase tracking-wide";
+    const inventoryClass = suppliedClass ?? "text-right";
     const classes = cn(
       "cn-panel flex",
       active && clsx("hover:bg-primary", "rounded-md"),
@@ -79,18 +85,32 @@ test("detects utilities composed with native class helpers", () => {
       base: "cn-button inline-flex",
       variants: { size: { compact: "h-8 px-2" } },
     });
+    function statusPillClass(status) {
+      return status === "ready"
+        ? "bg-emerald-100 text-emerald-800"
+        : "bg-rose-100 text-rose-800";
+    }
   `;
   const tokens = findTailwindUtilitiesInSource(source, "helpers.ts").map(
     (finding) => finding.token,
   );
 
   assert.deepEqual(tokens, [
+    "font-semibold",
+    "text-xs",
+    "tracking-wide",
+    "uppercase",
+    "text-right",
     "flex",
     "hover:bg-primary",
     "rounded-md",
     "inline-flex",
     "h-8",
     "px-2",
+    "bg-emerald-100",
+    "text-emerald-800",
+    "bg-rose-100",
+    "text-rose-800",
   ]);
 });
 

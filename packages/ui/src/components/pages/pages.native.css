@@ -10202,3 +10202,41 @@
   font-size: 0.75rem;
   line-height: 1rem;
 }
+
+.cn-pages-scroll-content--full {
+  min-height: 100%;
+}
+
+.cn-pages-scroll-content--padded {
+  padding: 1rem;
+}
+
+.cn-rules-status--success {
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.cn-rules-status--failed {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.cn-rules-status--default {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.dark .cn-rules-status--success {
+  color: #a7f3d0;
+  background: #022c22;
+}
+
+.dark .cn-rules-status--failed {
+  color: #fecaca;
+  background: #450a0a;
+}
+
+.dark .cn-rules-status--default {
+  color: #fde68a;
+  background: #451a03;
+}

@@ -14,7 +14,7 @@ export type IngestionSample = {
   id: string;
   name: string;
   initials: string;
-  /** Tailwind background class for the initials tile */
+  /** Native accent class for the initials tile. */
   accentClass: string;
   region: string;
   category: string;
@@ -28,14 +28,14 @@ export type IngestionSample = {
 const exampleSource = exampleIngestionConfig.sources[0]!;
 
 /**
- * Accent classes must appear as string literals in this package so Tailwind's
- * content scanner includes them (connector packages are outside `content`).
+ * Connector packages may retain historical styling metadata. The application
+ * maps connector kinds onto its locally owned accent classes.
  */
-function connectorAccentClass(kind: string, fallback: string) {
-  if (kind === "lunchflow") return "bg-orange-600";
-  if (kind === "monzo") return "bg-rose-600";
-  if (kind === "starling") return "bg-violet-700";
-  return fallback;
+function connectorAccentClass(kind: string) {
+  if (kind === "lunchflow") return "connector-accent--lunchflow";
+  if (kind === "monzo") return "connector-accent--monzo";
+  if (kind === "starling") return "connector-accent--starling";
+  return "connector-accent--default";
 }
 
 function connectorSamples(): IngestionSample[] {
@@ -48,10 +48,7 @@ function connectorSamples(): IngestionSample[] {
       id: connector.kind,
       name: connector.name,
       initials: connector.catalog.initials,
-      accentClass: connectorAccentClass(
-        connector.kind,
-        connector.catalog.accentClass,
-      ),
+      accentClass: connectorAccentClass(connector.kind),
       region: connector.catalog.region,
       category: connector.catalog.category,
       description: connector.description,
@@ -90,7 +87,7 @@ export const ingestionSamples: IngestionSample[] = [
     id: "example-bank",
     name: "Example bank",
     initials: "EX",
-    accentClass: "bg-emerald-700",
+    accentClass: "connector-accent--example",
     region: "Global",
     category: "Bank",
     description:

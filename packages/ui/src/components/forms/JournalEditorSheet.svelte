@@ -70,7 +70,7 @@
     onOpenChange,
   }: Props = $props();
 
-  const sectionTitleClass = "text-xs font-semibold uppercase tracking-wide";
+  const sectionTitleClass = "cn-form-section-title";
 
   let formDirective = $state<DirectiveBase | undefined>(undefined);
   let draft = $state<DirectiveDraft>(emptyDraft());

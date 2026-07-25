@@ -1,6 +1,6 @@
 /* Native Beta CodeMirror adapter styles. */
 .cn-beta-codemirror-datepicker-empty {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 /* src/codemirror/extensions/search/FindReplace.svelte :: mx-4 */

@@ -137,7 +137,7 @@
     Object.values(openSections).every((open) => open === false),
   );
   const sectionTitleClass =
-    "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+    "cn-form-section-title cn-form-section-title--muted";
   const sortedMatchingTransactions = $derived.by(() => {
     if (
       !matchingTransactionSortKey ||

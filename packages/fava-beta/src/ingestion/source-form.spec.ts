@@ -164,7 +164,7 @@ describe("ingestion source form draft", () => {
     expect(starling).toMatchObject({
       name: "Starling Bank",
       initials: "ST",
-      accentClass: "bg-violet-700",
+      accentClass: "connector-accent--starling",
       region: "United Kingdom",
       category: "Bank",
       badge: "Beta",
@@ -187,7 +187,7 @@ describe("ingestion source form draft", () => {
     expect(monzo).toMatchObject({
       name: "Monzo Bank",
       initials: "MO",
-      accentClass: "bg-rose-600",
+      accentClass: "connector-accent--monzo",
       region: "United Kingdom",
       category: "Bank",
       badge: "Beta",

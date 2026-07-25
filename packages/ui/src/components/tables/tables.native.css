@@ -6967,3 +6967,42 @@
 .cn-tables-accountbulkactionsheet-109-1 > button.absolute {
   display: none;
 }
+
+.cn-account-cell-childless {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.cn-ingestion-review-status {
+  display: inline-flex;
+  min-width: 5rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  color: var(--foreground);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+}
+
+.cn-ingestion-row--ready {
+  background: rgb(16 185 129 / 15%);
+}
+
+.cn-ingestion-row--held {
+  background: rgb(245 158 11 / 20%);
+}
+
+.cn-ingestion-row--duplicate {
+  background: rgb(244 63 94 / 15%);
+}
+
+.cn-ingestion-row--accepted {
+  background: rgb(14 165 233 / 15%);
+}
+
+.cn-ingestion-row--review {
+  background: rgb(139 92 246 / 15%);
+}

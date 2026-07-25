@@ -50,7 +50,7 @@
   }: Props = $props();
 
   const sectionTitleClass =
-    "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+    "cn-form-section-title cn-form-section-title--muted";
   const actionIcons: Record<RuleActionType, ComponentType> = {
     set_transaction_category: FolderTree,
     set_transaction_tags: Tag,

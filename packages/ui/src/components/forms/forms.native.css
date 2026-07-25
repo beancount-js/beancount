@@ -11965,3 +11965,19 @@
 .cn-forms-ingestionsourcespreview-266-1 p {
   line-height: 1.625;
 }
+
+.cn-form-sheet-body {
+  padding: 1.25rem 1.5rem;
+}
+
+.cn-form-section-title {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.cn-form-section-title--muted {
+  color: var(--muted-foreground);
+}

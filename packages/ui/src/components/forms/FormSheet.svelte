@@ -17,7 +17,7 @@
     titleLeading,
     titleSuffix,
     actions,
-    bodyClass = "px-6 py-5",
+    bodyClass = "cn-form-sheet-body",
     class: className,
     children,
   }: {

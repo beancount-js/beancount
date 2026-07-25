@@ -227,9 +227,9 @@
       minmax(0, 1fr)
     );
     gap: 0.25rem;
-    border: 1px solid hsl(var(--sidebar-border));
+    border: 1px solid var(--sidebar-border);
     border-radius: 0.375rem;
-    background: hsl(var(--sidebar-accent) / 0.5);
+    background: color-mix(in srgb, var(--sidebar-accent) 50%, transparent);
     padding: 0.25rem;
   }
 </style>

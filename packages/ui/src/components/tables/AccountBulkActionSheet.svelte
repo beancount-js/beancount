@@ -63,7 +63,7 @@
   } = $props();
 
   const sectionTitleClass =
-    "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+    "cn-form-section-title cn-form-section-title--muted";
 
   let openSections = $state<Record<"replace" | "duplicates", boolean>>({
     replace: true,

@@ -2,7 +2,7 @@
 
 .setup-inline-link,
 .setup-inline-strong {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   font-weight: 500;
 }
 
@@ -13,9 +13,9 @@
 
 .setup-inline-code {
   border-radius: calc(var(--radius) - 2px);
-  background: hsl(var(--muted));
+  background: var(--muted);
   padding: 0.125rem 0.25rem;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   font-size: 0.75rem;
   line-height: 1rem;
 }
@@ -34,4 +34,21 @@
 
 .setup-list--unordered {
   list-style-type: disc;
+}
+
+.connector-accent--lunchflow {
+  background: #ea580c;
+}
+
+.connector-accent--monzo {
+  background: #e11d48;
+}
+
+.connector-accent--starling {
+  background: #6d28d9;
+}
+
+.connector-accent--example,
+.connector-accent--default {
+  background: #047857;
 }

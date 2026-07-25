@@ -25,7 +25,7 @@
     onNavigate?: (account: string, event: MouseEvent) => void;
   } = $props();
 
-  const childlessClasses = "size-4 shrink-0";
+  const childlessClasses = "cn-account-cell-childless";
 
   function handleClick(event: MouseEvent) {
     event.preventDefault();

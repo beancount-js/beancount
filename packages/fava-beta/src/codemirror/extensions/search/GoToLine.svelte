@@ -6,11 +6,15 @@
   import { Input } from "@beancount-js/ui/shadcn/input";
   import { Button, buttonVariants } from "@beancount-js/ui/shadcn/button";
   import { onMount } from "svelte";
-  import type { WithElementRef } from "bits-ui";
   import * as Tooltip from "@beancount-js/ui/shadcn/tooltip";
 
-  let { ref = $bindable(null), view }: WithElementRef<{ view: EditorView }> =
-    $props();
+  let {
+    ref = $bindable(null),
+    view,
+  }: {
+    ref?: HTMLInputElement | null;
+    view: EditorView;
+  } = $props();
 
   let value: string = $state("");
   function exitSearch() {

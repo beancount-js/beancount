@@ -7,7 +7,6 @@ const sourceRoots = ["src", ".storybook"];
 const sourceExtensions = new Set([".css", ".js", ".mjs", ".svelte", ".ts"]);
 const rootFiles = [
   "package.json",
-  "tailwind.config.ts",
   "tsconfig.json",
   "vite.config.ts",
   "vitest.config.ts",

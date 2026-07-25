@@ -47,7 +47,9 @@
   }
 </script>
 
-<ContentScrollArea contentClass="scroll-container min-h-full p-4">
+<ContentScrollArea
+  contentClass="scroll-container cn-pages-scroll-content--full cn-pages-scroll-content--padded"
+>
   <Tabs.Root
     class="cn-pages-presetqueryview-51-1"
     {value}

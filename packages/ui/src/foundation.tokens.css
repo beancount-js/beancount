@@ -44,23 +44,23 @@
     0 4px 6px -4px rgb(0 0 0 / 0.1);
 
   /* Semantic color aliases */
-  --ui-color-background: hsl(var(--background));
-  --ui-color-foreground: hsl(var(--foreground));
-  --ui-color-surface: hsl(var(--card));
-  --ui-color-surface-foreground: hsl(var(--card-foreground));
-  --ui-color-muted: hsl(var(--muted));
-  --ui-color-muted-foreground: hsl(var(--muted-foreground));
-  --ui-color-primary: hsl(var(--primary));
-  --ui-color-primary-foreground: hsl(var(--primary-foreground));
-  --ui-color-secondary: hsl(var(--secondary));
-  --ui-color-secondary-foreground: hsl(var(--secondary-foreground));
-  --ui-color-accent: hsl(var(--accent));
-  --ui-color-accent-foreground: hsl(var(--accent-foreground));
-  --ui-color-destructive: hsl(var(--destructive));
-  --ui-color-destructive-foreground: hsl(var(--destructive-foreground));
-  --ui-color-border: hsl(var(--border));
-  --ui-color-input: hsl(var(--input));
-  --ui-color-ring: hsl(var(--ring));
+  --ui-color-background: var(--background);
+  --ui-color-foreground: var(--foreground);
+  --ui-color-surface: var(--card);
+  --ui-color-surface-foreground: var(--card-foreground);
+  --ui-color-muted: var(--muted);
+  --ui-color-muted-foreground: var(--muted-foreground);
+  --ui-color-primary: var(--primary);
+  --ui-color-primary-foreground: var(--primary-foreground);
+  --ui-color-secondary: var(--secondary);
+  --ui-color-secondary-foreground: var(--secondary-foreground);
+  --ui-color-accent: var(--accent);
+  --ui-color-accent-foreground: var(--accent-foreground);
+  --ui-color-destructive: var(--destructive);
+  --ui-color-destructive-foreground: var(--destructive-foreground);
+  --ui-color-border: var(--border);
+  --ui-color-input: var(--input);
+  --ui-color-ring: var(--ring);
 
   /* Controls and focus */
   --ui-control-height-xs: 1.75rem;

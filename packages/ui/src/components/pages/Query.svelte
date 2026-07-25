@@ -227,7 +227,9 @@
   });
 </script>
 
-<ContentScrollArea contentClass="scroll-container p-4">
+<ContentScrollArea
+  contentClass="scroll-container cn-pages-scroll-content--padded"
+>
   <div class="beancount-editor">
     <div
       data-error={!!error}

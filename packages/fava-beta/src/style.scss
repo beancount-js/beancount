@@ -1,27 +1,20 @@
-@import "@beancount-js/ui/styles.css";
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @import "./styles/ledger.css";
 @import "./styles/journal-table.css";
 @import "./components/tree-table/tree-table.css";
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  html,
-  body {
-    @apply h-full overflow-hidden;
-  }
-  body {
-    @apply bg-sidebar text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--sidebar);
+  color: var(--foreground);
+}
+
+html {
+  font-family: var(--ui-font-sans);
 }
 
 .tooltip {

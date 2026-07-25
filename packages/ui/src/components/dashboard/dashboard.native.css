@@ -2703,3 +2703,7 @@
 .cn-dashboard-financialdashboard-239-1 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
+
+.cn-dashboard-scroll-content--full {
+  min-height: 100%;
+}

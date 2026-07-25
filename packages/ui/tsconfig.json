@@ -23,7 +23,6 @@
     ".storybook/**/*.ts",
     "src/**/*.ts",
     "src/**/*.svelte",
-    "tailwind.config.ts",
     "vite.config.ts",
     "vitest.config.ts"
   ]

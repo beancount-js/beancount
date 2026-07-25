@@ -87,7 +87,7 @@
   }: Props = $props();
 
   const sectionTitleClass =
-    "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+    "cn-form-section-title cn-form-section-title--muted";
 
   let failedLogo = $state(false);
   let sheetTitleEl = $state<HTMLElement | null>(null);
