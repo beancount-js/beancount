@@ -4,6 +4,7 @@ import {
   navigateTo,
   openEditor,
   restoreSampleLedger,
+  resolveProjectId,
   seedLedger,
   sampleLedger,
   waitForEditorContent,
@@ -230,7 +231,9 @@ test.describe("sample ledger navigation", () => {
       timeout: 15_000,
     });
     const header = page.locator("[data-slot='studio-workspace-header']");
-    await expect(header.getByText("Review imports")).toBeVisible();
+    await expect(
+      header.getByRole("button", { name: "Open active review ledger" }),
+    ).toBeVisible();
     await expect(
       header.getByRole("button", { name: "Select source" }),
     ).toBeVisible();
@@ -251,6 +254,60 @@ test.describe("sample ledger navigation", () => {
     await expect(
       page.getByRole("button", { name: "Fetch transactions" }),
     ).toHaveCount(0);
+    await expect(page.locator("[data-ingestion-review]")).toContainText(
+      "1 ready",
+    );
+    await expect(page.locator("[data-ingestion-review]")).toContainText(
+      "3 need review",
+    );
+    await expect(page.locator("[data-ingestion-review]")).toContainText(
+      "Market Deli",
+    );
+    await expect(page.locator("[data-ingestion-review]")).toContainText(
+      "National Rail",
+    );
+    await expect(page.locator("[data-ingestion-review]")).toContainText(
+      "Spotify",
+    );
+  });
+
+  test("seeded mock provider exposes an active review ledger", async ({
+    page,
+  }) => {
+    const projectId = await resolveProjectId(page);
+    const response = await page.request.get(
+      `/api/projects/${encodeURIComponent(projectId)}/ingestion/review-ledger`,
+    );
+    expect(response.ok()).toBeTruthy();
+    const body = (await response.json()) as {
+      ledger?: {
+        proposalCount: number;
+        reviewableCount: number;
+        runIds: string[];
+        contents: string;
+      };
+    };
+    expect(body.ledger).toMatchObject({
+      proposalCount: 4,
+      reviewableCount: 4,
+      runIds: ["mock-provider-review-2026-07-25"],
+    });
+    expect(body.ledger?.contents).toContain("Chapter House Coffee");
+    expect(body.ledger?.contents).toContain(
+      'studio_review_run_id: "mock-provider-review-2026-07-25"',
+    );
+
+    await gotoStudio(
+      page,
+      "/journal?ledger=.beancount/ingestion/active-review.beancount",
+    );
+    await page.waitForSelector("[data-journal-table]");
+    await expect(page.locator("[data-journal-table]")).toContainText(
+      "Chapter House Coffee",
+    );
+    await expect(page.locator("[data-journal-table]")).toContainText(
+      "Market Deli",
+    );
   });
 
   test("review merchants opens from settings sidebar", async ({ page }) => {

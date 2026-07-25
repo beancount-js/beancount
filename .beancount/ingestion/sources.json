@@ -10,9 +10,7 @@
       "config": {
         "secretRef": "env:MONZO_ACCESS_TOKEN",
         "baseUrl": "https://api.monzo.com",
-        "allowedHosts": [
-          "api.monzo.com"
-        ],
+        "allowedHosts": ["api.monzo.com"],
         "lookbackDays": 30
       },
       "rules": [],
@@ -22,6 +20,40 @@
           "account": "Expenses:Food:Coffee"
         }
       ]
+    },
+    {
+      "id": "mock-provider",
+      "name": "Mock Provider",
+      "kind": "json-api",
+      "sourceAccount": "Assets:Checking:Monzo",
+      "destinationPath": "sample.beancount",
+      "defaultCurrency": "GBP",
+      "allowedAccountRoots": ["Expenses"],
+      "aiEnabled": false,
+      "reviewDateFormat": "YYYY-MM-DD",
+      "setup": "Deterministic local fixture provider used by Fava Beta review screens. The archived run in .beancount/ingestion/runs supplies active review proposals, so the placeholder endpoint is not contacted during normal UI review.",
+      "merchantEnrichment": {
+        "enabled": true,
+        "aiEnabled": false,
+        "countryCode": "GB"
+      },
+      "api": {
+        "endpoint": "http://localhost:5173/__mock-provider/transactions",
+        "allowedHosts": ["localhost"],
+        "secretRef": "env:MOCK_PROVIDER_TOKEN",
+        "recordsPath": "transactions"
+      },
+      "mapping": {
+        "id": "id",
+        "date": "booked_at",
+        "amount": "amount.value",
+        "currency": "amount.currency",
+        "merchant": "merchant.name",
+        "payee": "merchant.name",
+        "narration": "description",
+        "status": "status"
+      },
+      "rules": []
     }
   ]
 }

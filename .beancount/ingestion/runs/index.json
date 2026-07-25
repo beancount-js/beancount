@@ -1,4 +1,23 @@
 {
   "version": 1,
-  "runs": []
+  "runs": [
+    {
+      "id": "mock-provider-review-2026-07-25",
+      "sourceId": "mock-provider",
+      "startedAt": "2026-07-25T09:29:00.000Z",
+      "completedAt": "2026-07-25T09:30:00.000Z",
+      "reviewState": "pending",
+      "summary": {
+        "total": 4,
+        "ready": 1,
+        "needsReview": 2,
+        "accepted": 0,
+        "duplicates": 0,
+        "invalid": 0,
+        "held": 1,
+        "excluded": 0
+      },
+      "updatedAt": "2026-07-25T09:30:00.000Z"
+    }
+  ]
 }

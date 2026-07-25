@@ -430,11 +430,11 @@
             amount: convertPostingAmount(posting.amount),
           }))
         : undefined,
-      imageUrl:
-        !failedLogoIds.has(row.proposal.id) ? merchantLogo(row.proposal) : undefined,
+      imageUrl: !failedLogoIds.has(row.proposal.id)
+        ? merchantLogo(row.proposal)
+        : undefined,
       initial: rowInitial(proposals),
-      selectable:
-        reviewFilter === "pending" ? canBulkApproveRow(row) : true,
+      selectable: reviewFilter === "pending" ? canBulkApproveRow(row) : true,
     };
   }
 
@@ -1728,7 +1728,7 @@
       {:else}
         <IngestionTable
           groups={uiGroups}
-          {uiCounts}
+          counts={uiCounts}
           filter={uiFilter}
           emptyLabel={tableEmptyMessage}
           selectedIds={[...selectedProposalKeys]}

@@ -1,0 +1,370 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-25T09:30:00.000Z",
+  "run": {
+    "id": "mock-provider-review-2026-07-25",
+    "sourceId": "mock-provider",
+    "startedAt": "2026-07-25T09:29:00.000Z",
+    "completedAt": "2026-07-25T09:30:00.000Z",
+    "cursor": "mock-cursor-2026-07-25",
+    "proposals": [
+      {
+        "id": "mock-coffee-2026-07-22",
+        "importId": "mock-provider:txn-coffee-2026-07-22",
+        "sourceRecord": {
+          "id": "txn-coffee-2026-07-22",
+          "booked_at": "2026-07-22",
+          "amount": {
+            "value": "-4.25",
+            "currency": "GBP"
+          },
+          "merchant": {
+            "name": "Chapter House Coffee",
+            "domain": "chapterhouse.example"
+          },
+          "description": "Flat white before standup",
+          "provider_category": "coffee"
+        },
+        "transaction": {
+          "sourceId": "mock-provider",
+          "sourceAccount": "Assets:Checking:Monzo",
+          "externalId": "txn-coffee-2026-07-22",
+          "bookedAt": "2026-07-22",
+          "amount": "-4.25",
+          "currency": "GBP",
+          "merchant": "Chapter House Coffee",
+          "payee": "Chapter House Coffee",
+          "narration": "Flat white before standup",
+          "status": "posted",
+          "fetchedAt": "2026-07-25T09:29:10.000Z",
+          "providerCategory": {
+            "provider": "mock-provider",
+            "code": "coffee",
+            "label": "Coffee shops"
+          },
+          "tags": ["review-fixture"],
+          "links": [],
+          "metadata": {
+            "provider_category": "coffee",
+            "provider_status": "settled"
+          }
+        },
+        "merchantResolution": {
+          "status": "confirmed",
+          "rawLabel": "Chapter House Coffee",
+          "merchant": {
+            "merchantId": "chapter-house-coffee",
+            "canonicalName": "Chapter House Coffee",
+            "aliases": [
+              {
+                "value": "Chapter House Coffee",
+                "normalizedValue": "chapter house coffee",
+                "sourceId": "mock-provider",
+                "confirmedAt": "2026-07-25T09:29:20.000Z"
+              }
+            ],
+            "domain": "chapterhouse.example",
+            "description": "Local cafe fixture",
+            "industry": "Food and drink",
+            "countryCode": "GB",
+            "provenance": [
+              {
+                "source": "manual",
+                "observedAt": "2026-07-25T09:29:20.000Z"
+              }
+            ]
+          },
+          "explanation": "Fixture merchant is pre-confirmed so the review sheet can render merchant evidence."
+        },
+        "suggestions": [
+          {
+            "account": "Expenses:Food:Coffee",
+            "method": "provider",
+            "explanation": "Mock provider category coffee maps to coffee expenses.",
+            "evidence": [
+              {
+                "id": "mock-provider-category-coffee",
+                "kind": "provider",
+                "summary": "Provider category: Coffee shops"
+              }
+            ],
+            "rawScore": 0.96,
+            "scoreKind": "provider-mapping",
+            "hard": true
+          }
+        ],
+        "selectedAccount": "Expenses:Food:Coffee",
+        "status": "ready",
+        "issues": []
+      },
+      {
+        "id": "mock-train-2026-07-23",
+        "importId": "mock-provider:txn-train-2026-07-23",
+        "sourceRecord": {
+          "id": "txn-train-2026-07-23",
+          "booked_at": "2026-07-23",
+          "amount": {
+            "value": "-18.70",
+            "currency": "GBP"
+          },
+          "merchant": {
+            "name": "National Rail"
+          },
+          "description": "Off-peak return",
+          "provider_category": "transport"
+        },
+        "transaction": {
+          "sourceId": "mock-provider",
+          "sourceAccount": "Assets:Checking:Monzo",
+          "externalId": "txn-train-2026-07-23",
+          "bookedAt": "2026-07-23",
+          "amount": "-18.70",
+          "currency": "GBP",
+          "merchant": "National Rail",
+          "payee": "National Rail",
+          "narration": "Off-peak return",
+          "status": "posted",
+          "fetchedAt": "2026-07-25T09:29:11.000Z",
+          "providerCategory": {
+            "provider": "mock-provider",
+            "code": "transport",
+            "label": "Transport"
+          },
+          "tags": ["review-fixture"],
+          "links": [],
+          "metadata": {
+            "provider_category": "transport",
+            "ticket_type": "off-peak"
+          }
+        },
+        "merchantResolution": {
+          "status": "suggested",
+          "rawLabel": "National Rail",
+          "candidates": [
+            {
+              "id": "national-rail",
+              "canonicalName": "National Rail",
+              "domain": "nationalrail.co.uk",
+              "description": "Rail travel",
+              "industry": "Transport",
+              "countryCode": "GB",
+              "rawScore": 0.82,
+              "explanation": "Name match from fixture data.",
+              "provenance": [
+                {
+                  "source": "source",
+                  "provider": "mock-provider",
+                  "observedAt": "2026-07-25T09:29:21.000Z"
+                }
+              ]
+            }
+          ],
+          "explanation": "Suggestion intentionally remains unconfirmed for review."
+        },
+        "suggestions": [
+          {
+            "account": "Expenses:Transport:Train",
+            "method": "provider",
+            "explanation": "Mock provider category transport suggests train travel.",
+            "evidence": [
+              {
+                "id": "mock-provider-category-transport",
+                "kind": "provider",
+                "summary": "Provider category: Transport"
+              }
+            ],
+            "rawScore": 0.74,
+            "scoreKind": "provider-mapping",
+            "support": 1
+          }
+        ],
+        "status": "needs-review",
+        "issues": [
+          "Confirm whether this belongs under train or tube transport."
+        ],
+        "lastAiEnrichment": {
+          "at": "2026-07-25T09:29:40.000Z",
+          "source": "ingest",
+          "ok": true,
+          "calls": [
+            {
+              "id": "mock-ai-category-call",
+              "callId": "call-mock-train",
+              "label": "Categorise mock provider transaction",
+              "prompt": "{\"transactions\":[{\"id\":\"mock-train-2026-07-23\",\"merchant\":\"National Rail\",\"amount\":\"-18.70\"}]}",
+              "response": "{\"suggestions\":[{\"id\":\"mock-train-2026-07-23\",\"account\":\"Expenses:Transport:Train\",\"confidence\":0.74}]}",
+              "ok": true,
+              "at": "2026-07-25T09:29:40.000Z",
+              "itemIds": ["mock-train-2026-07-23"],
+              "batchSize": 1,
+              "durationMs": 80,
+              "promptBytes": 92,
+              "responseBytes": 103
+            }
+          ]
+        }
+      },
+      {
+        "id": "mock-spotify-2026-07-24",
+        "importId": "mock-provider:txn-spotify-2026-07-24",
+        "sourceRecord": {
+          "id": "txn-spotify-2026-07-24",
+          "booked_at": "2026-07-24",
+          "amount": {
+            "value": "-11.99",
+            "currency": "GBP"
+          },
+          "merchant": {
+            "name": "Spotify"
+          },
+          "description": "Monthly subscription",
+          "provider_category": "subscriptions"
+        },
+        "transaction": {
+          "sourceId": "mock-provider",
+          "sourceAccount": "Assets:Checking:Monzo",
+          "externalId": "txn-spotify-2026-07-24",
+          "bookedAt": "2026-07-24",
+          "amount": "-11.99",
+          "currency": "GBP",
+          "merchant": "Spotify",
+          "payee": "Spotify",
+          "narration": "Monthly subscription",
+          "status": "posted",
+          "fetchedAt": "2026-07-25T09:29:12.000Z",
+          "providerCategory": {
+            "provider": "mock-provider",
+            "code": "subscriptions",
+            "label": "Subscriptions"
+          },
+          "tags": ["review-fixture", "subscription"],
+          "links": [],
+          "metadata": {
+            "provider_category": "subscriptions",
+            "plan": "family"
+          }
+        },
+        "merchantResolution": {
+          "status": "unresolved",
+          "rawLabel": "Spotify",
+          "explanation": "Fixture keeps this unresolved so merchant review has pending data."
+        },
+        "suggestions": [
+          {
+            "account": "Expenses:Subscriptions:Spotify",
+            "method": "history",
+            "explanation": "Recurring subscription-like merchant in fixture data.",
+            "evidence": [
+              {
+                "id": "mock-recurring-spotify",
+                "kind": "recurring",
+                "summary": "Monthly subscription pattern",
+                "cadence": "monthly"
+              }
+            ],
+            "rawScore": 0.88,
+            "scoreKind": "recurrence-strength",
+            "support": 3
+          }
+        ],
+        "selectedAccount": "Expenses:Subscriptions:Spotify",
+        "status": "held",
+        "issues": [
+          "Held fixture item used to test review filtering and release actions."
+        ]
+      },
+      {
+        "id": "mock-lunch-2026-07-25",
+        "importId": "mock-provider:txn-lunch-2026-07-25",
+        "sourceRecord": {
+          "id": "txn-lunch-2026-07-25",
+          "booked_at": "2026-07-25",
+          "amount": {
+            "value": "-9.80",
+            "currency": "GBP"
+          },
+          "merchant": {
+            "name": "Market Deli"
+          },
+          "description": "Lunch meal deal",
+          "provider_category": "food"
+        },
+        "transaction": {
+          "sourceId": "mock-provider",
+          "sourceAccount": "Assets:Checking:Monzo",
+          "externalId": "txn-lunch-2026-07-25",
+          "bookedAt": "2026-07-25",
+          "amount": "-9.80",
+          "currency": "GBP",
+          "merchant": "Market Deli",
+          "payee": "Market Deli",
+          "narration": "Lunch meal deal",
+          "status": "posted",
+          "fetchedAt": "2026-07-25T09:29:13.000Z",
+          "providerCategory": {
+            "provider": "mock-provider",
+            "code": "food",
+            "label": "Food and dining"
+          },
+          "tags": ["review-fixture"],
+          "links": [],
+          "metadata": {
+            "provider_category": "food",
+            "receipt": "mock-receipt-001"
+          }
+        },
+        "merchantResolution": {
+          "status": "unresolved",
+          "rawLabel": "Market Deli",
+          "explanation": "No merchant profile exists yet."
+        },
+        "suggestions": [
+          {
+            "account": "Expenses:Food:Lunch",
+            "method": "ai",
+            "explanation": "Narration and provider category look like lunch.",
+            "evidence": [
+              {
+                "id": "mock-ai-lunch",
+                "kind": "ai",
+                "summary": "AI fixture categorisation"
+              }
+            ],
+            "rawScore": 0.67,
+            "scoreKind": "ai-advisory"
+          }
+        ],
+        "status": "needs-review",
+        "issues": ["AI confidence is below the automatic ready threshold."]
+      }
+    ],
+    "audit": {
+      "ai": [
+        {
+          "id": "mock-run-ai-audit",
+          "callId": "call-mock-provider-batch",
+          "label": "Categorise mock provider review batch",
+          "prompt": "{\"transactions\":[\"mock-train-2026-07-23\",\"mock-lunch-2026-07-25\"]}",
+          "response": "{\"review\":[{\"id\":\"mock-train-2026-07-23\",\"account\":\"Expenses:Transport:Train\"},{\"id\":\"mock-lunch-2026-07-25\",\"account\":\"Expenses:Food:Lunch\"}]}",
+          "ok": true,
+          "at": "2026-07-25T09:29:45.000Z",
+          "itemIds": ["mock-train-2026-07-23", "mock-lunch-2026-07-25"],
+          "batchSize": 2,
+          "durationMs": 140,
+          "promptBytes": 76,
+          "responseBytes": 150
+        }
+      ]
+    },
+    "summary": {
+      "total": 4,
+      "ready": 1,
+      "needsReview": 2,
+      "accepted": 0,
+      "duplicates": 0,
+      "invalid": 0,
+      "held": 1,
+      "excluded": 0
+    }
+  }
+}
