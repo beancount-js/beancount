@@ -37,6 +37,7 @@ const restartWatchPaths = [
   path.join(visualDeltaRoot, "src/shared"),
   path.join(visualDeltaRoot, "src/preset.ts"),
   path.join(visualDeltaRoot, "src/node"),
+  path.join(root, ".storybook/visual-delta-preset.ts"),
   path.join(root, ".storybook/manager.ts"),
   path.join(root, ".storybook/manager-stacked-badges.ts"),
 ];

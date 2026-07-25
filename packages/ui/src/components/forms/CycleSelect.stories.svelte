@@ -21,6 +21,8 @@
     { value: "month", label: "This month" },
     { value: "quarter", label: "This quarter" },
   ];
+
+  const singlePeriod = [{ value: "week", label: "This week" }];
 </script>
 
 <script lang="ts">
@@ -54,6 +56,12 @@
       "Viewing: This week",
     );
   }}
+
+  parameters={{
+    visualDelta: {"images":["/visual-baselines/forms-cycle-select--cycles-reporting-periods-chromium-darwin.png"],"opacity":0.5,"colorInversion":false,"align":"canvas","placement":"right","passThresholdPercent":0.1},
+  }}
+
+  tags={["visual-approved"]}
 >
   {#snippet template()}
     <div class="flex max-w-sm flex-col gap-3">
@@ -72,13 +80,36 @@
   {/snippet}
 </Story>
 
-<Story name="Disables unavailable navigation">
+<Story
+  name="Disables unavailable navigation"
+  play={async ({ canvas, canvasElement }) => {
+    await expect(
+      canvas.getByRole("button", { name: "Previous period" }),
+    ).toBeDisabled();
+    await expect(
+      canvas.getByRole("button", { name: "Next period" }),
+    ).toBeDisabled();
+
+    const trigger = canvas.getByRole("button", { name: "Select period" });
+    await expect(trigger).toBeEnabled();
+    await userEvent.click(trigger);
+
+    const page = within(canvasElement.ownerDocument.body);
+    await expect(page.getByRole("option", { name: "This week" })).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+  }}
+
+  parameters={{
+    visualDelta: {"images":["/visual-baselines/forms-cycle-select--disables-unavailable-navigation-chromium-darwin.png"],"opacity":0.5,"colorInversion":false,"align":"canvas","placement":"right","passThresholdPercent":0.1},
+  }}
+
+  tags={["visual-approved"]}
+>
   {#snippet template()}
     <CycleSelect
       value="week"
-      options={periods}
+      options={singlePeriod}
       label="Period"
-      disabled
       onChange={() => {}}
     />
   {/snippet}

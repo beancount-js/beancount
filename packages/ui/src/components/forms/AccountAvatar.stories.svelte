@@ -16,7 +16,13 @@
   });
 </script>
 
-<Story name="Shows fallback, configured, and merchant appearances">
+<Story name="Shows fallback, configured, and merchant appearances"
+  parameters={{
+    visualDelta: {"images":["/visual-baselines/ui-forms-account-avatar--shows-fallback-configured-and-merchant-appearances-chromium-darwin.png"],"opacity":0.5,"colorInversion":false,"align":"canvas","placement":"right","passThresholdPercent":0.1},
+  }}
+
+  tags={["visual-approved"]}
+>
   {#snippet template()}
     <div class="flex flex-wrap items-center gap-6">
       <div class="flex items-center gap-2">
