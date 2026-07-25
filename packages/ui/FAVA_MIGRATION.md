@@ -29,15 +29,12 @@ This file is the source of truth for moving reusable Fava presentation into
 ### Current Visual Delta contract
 
 The harness refresh re-read the canonical addon documentation and exported
-contracts before changing host configuration. The source snapshot is
-`/Users/stevejuma/ui/packages/storybook-addon-visual-delta` at
-`7da0aff00fbc9288a138c8dae7f45a3d5f299f72` at validation time
-(2026-07-24). This revision records provenance rather than pinning the addon.
-Before Storybook dev/build, UI checks, visual tests, or the Visual Delta CLI,
-the host requires a clean canonical checkout and refreshes the portable
-workspace package from that directory. The local package then loads the
-refreshed TypeScript/TSX source exports through `workspace:*`, keeping one
-Storybook and Playwright dependency graph.
+contracts before changing host configuration. The source package is
+`/Users/stevejuma/ui/packages/storybook-addon-visual-delta`; the host consumes
+that directory directly through a `link:` dependency instead of maintaining a
+mirrored workspace copy. The source package must keep its built `dist` exports
+current for Node and Playwright entry points, while Storybook still loads the
+manager and preview source exports from the linked package.
 
 | Previous host responsibility                 | Current contract                                                                                                                        |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -635,10 +632,10 @@ review of the completed catalog and the documented frozen-reference exception.
   unchanged when the env var is unset. Automated validation was not run in this
   continuation.
 
-- 2026-07-25 - Updated `pnpm test:ui:c006` so the focused UI visual command
-  explicitly runs `pnpm sync-visual-delta-source` before Playwright, matching
-  the broad visual lane's source-sync prerequisite. Automated validation was not
-  run in this continuation.
+- 2026-07-25 - Updated `pnpm test:ui:c006` so the focused UI visual command runs
+  Playwright against the directly linked Visual Delta source package, removing
+  the previous source-sync prerequisite. Automated validation was not run in
+  this continuation.
 
 - 2026-07-25 - Added `pnpm test:c006` as the root aggregate evidence command for
   the paused navigation checkpoint. It runs the focused UI visual C006 story
@@ -904,11 +901,8 @@ change IDs here at the end of each committed slice.
 - 2026-07-24 — Visual Delta refresh (`mrwmkrvx`): refreshed from the clean
   canonical source directory, observed at revision
   `7da0aff00fbc9288a138c8dae7f45a3d5f299f72`, and added guarded pre-run
-  synchronization so future harness entry points cannot silently use a stale
-  copy. A raw cross-repository package link was rejected during validation
-  because Node resolved the source repository's Playwright runtime alongside
-  Beancount's. The portable workspace mirror retains a single dependency
-  graph. The host now uses bare
+  synchronization so future harness entry points could not silently use a stale
+  copy. The host now uses bare
   addon registration, preset-owned baseline serving and middleware, the
   packaged CLI, `defineVisualPlaywrightConfig`, and a review-tag-filtered
   `defineVisualSuite`. The latest source now owns Storybook 10 package
