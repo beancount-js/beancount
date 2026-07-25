@@ -71,9 +71,7 @@
     onClosed?: () => void;
     onUpdated?: () => void;
     onStatus?: (message: string) => void;
-    onOpenReview?: (
-      tx: MerchantReviewCluster["transactions"][number],
-    ) => void;
+    onOpenReview?: (tx: MerchantReviewCluster["transactions"][number]) => void;
     onUpdateMerchant?: (
       request: MerchantSheetUpdatePayload,
     ) => Promise<void> | void;
@@ -388,20 +386,18 @@
 <Sheet.Root bind:open>
   <Sheet.Content
     side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
+    class="cn-forms-ingestionmerchantsheet-391-1"
     data-ingestion-merchant-sheet
     onOpenAutoFocus={(event) => {
       event.preventDefault();
       sheetTitleEl?.focus();
     }}
   >
-    <Sheet.Header
-      class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left sm:text-left"
-    >
+    <Sheet.Header class="cn-forms-ingestionmerchantsheet-399-1">
       <Sheet.Title
         bind:ref={sheetTitleEl}
         tabindex={-1}
-        class="merchant-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
+        class="cn-forms-ingestionmerchantsheet-404-1 merchant-sheet-title"
       >
         {readOnly ? "Merchant details" : "Review Merchant"}
       </Sheet.Title>
@@ -410,7 +406,7 @@
           ? "View accepted merchant details for this active ingest."
           : "Confirm or correct this merchant across matching pending imports."}
       </Sheet.Description>
-      <div class="ml-auto flex shrink-0 items-center gap-1">
+      <div class="cn-forms-ingestionmerchantsheet-413-1">
         <Tooltip.Root>
           <Tooltip.Trigger>
             {#snippet child({ props })}
@@ -419,7 +415,7 @@
                 type="button"
                 variant="ghost"
                 size="icon"
-                class="size-8"
+                class="cn-forms-ingestionmerchantsheet-422-1"
                 aria-label={sectionsCollapsedAll
                   ? "Expand all"
                   : "Collapse all"}
@@ -428,9 +424,15 @@
                 }}
               >
                 {#if sectionsCollapsedAll}
-                  <ChevronsUpDown class="size-4" aria-hidden="true" />
+                  <ChevronsUpDown
+                    class="cn-forms-ingestionmerchantsheet-431-1"
+                    aria-hidden="true"
+                  />
                 {:else}
-                  <ChevronsDownUp class="size-4" aria-hidden="true" />
+                  <ChevronsDownUp
+                    class="cn-forms-ingestionmerchantsheet-433-1"
+                    aria-hidden="true"
+                  />
                 {/if}
               </Button>
             {/snippet}
@@ -448,14 +450,14 @@
                   type="button"
                   variant="ghost"
                   size="icon"
-                  class="size-8"
+                  class="cn-forms-ingestionmerchantsheet-451-1"
                   aria-label="Detect merchant"
                   disabled={busy}
                   onclick={(event) => {
                     void detectMerchant();
                   }}
                 >
-                  <Sparkles class="size-4" />
+                  <Sparkles class="cn-forms-ingestionmerchantsheet-458-1" />
                 </Button>
               {/snippet}
             </Tooltip.Trigger>
@@ -467,10 +469,10 @@
             {#snippet child({ props })}
               <Sheet.Close
                 {...props}
-                class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                class="cn-forms-ingestionmerchantsheet-470-1"
                 aria-label="Close"
               >
-                <X class="size-4" />
+                <X class="cn-forms-ingestionmerchantsheet-473-1" />
                 <span class="sr-only">Close</span>
               </Sheet.Close>
             {/snippet}
@@ -480,19 +482,22 @@
       </div>
     </Sheet.Header>
 
-    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+    <div class="cn-forms-ingestionmerchantsheet-483-1">
       {#if errors.length}
-        <Alert.Root variant="destructive" class="mb-5">
+        <Alert.Root
+          variant="destructive"
+          class="cn-forms-ingestionmerchantsheet-485-1"
+        >
           <CircleAlert />
           <Alert.Title>Could not update merchant</Alert.Title>
-          <Alert.Description class="whitespace-pre-wrap"
+          <Alert.Description class="cn-forms-ingestionmerchantsheet-488-1"
             >{errors.join("\n")}</Alert.Description
           >
         </Alert.Root>
       {/if}
 
-      <div class="merchant-form flex min-w-0 flex-col gap-6 pl-6">
-        <section class="flex flex-col gap-2">
+      <div class="cn-forms-ingestionmerchantsheet-494-1 merchant-form">
+        <section class="cn-forms-ingestionmerchantsheet-495-1">
           <FormSectionHeader
             title="Merchant"
             titleClass={sectionTitleClass}
@@ -505,27 +510,27 @@
           />
           {#if isSectionOpen("merchant")}
             <div class="merchant-section-body">
-              <div class="flex items-center gap-3">
+              <div class="cn-forms-ingestionmerchantsheet-508-1">
                 {#if cluster.logoUrl && !failedLogo}
                   <img
-                    class="size-12 shrink-0 rounded-md border object-contain"
+                    class="cn-forms-ingestionmerchantsheet-511-1"
                     src={cluster.logoUrl}
                     alt={`${cluster.displayName} logo`}
                     onerror={() => (failedLogo = true)}
                   />
                 {:else}
                   <div
-                    class="flex size-12 shrink-0 items-center justify-center rounded-md border bg-muted text-sm font-medium text-muted-foreground"
+                    class="cn-forms-ingestionmerchantsheet-518-1"
                     aria-hidden="true"
                   >
                     {cluster.displayName.slice(0, 1).toUpperCase() || "?"}
                   </div>
                 {/if}
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-medium">
+                <div class="cn-forms-ingestionmerchantsheet-524-1">
+                  <p class="cn-forms-ingestionmerchantsheet-525-1">
                     {cluster.displayName}
                   </p>
-                  <p class="truncate text-xs text-muted-foreground">
+                  <p class="cn-forms-ingestionmerchantsheet-528-1">
                     {cluster.pendingCount}
                     {readOnly ? "reviewed" : "pending"}
                     {#if cluster.domain}
@@ -541,7 +546,9 @@
                   as="div"
                   controlId="merchant-cluster-name"
                 >
-                  <output id="merchant-cluster-name" class="truncate"
+                  <output
+                    id="merchant-cluster-name"
+                    class="cn-forms-ingestionmerchantsheet-544-1"
                     >{cluster.displayName}</output
                   >
                 </FormField>
@@ -552,7 +559,7 @@
                 >
                   <output
                     id="merchant-cluster-status"
-                    class="truncate capitalize"
+                    class="cn-forms-ingestionmerchantsheet-555-1"
                     >{cluster.statuses.join(", ") || "unresolved"}</output
                   >
                 </FormField>
@@ -562,7 +569,9 @@
                   controlId="merchant-cluster-domain"
                 >
                   {#if readOnly || (cluster.domain && !correcting)}
-                    <output id="merchant-cluster-domain" class="truncate"
+                    <output
+                      id="merchant-cluster-domain"
+                      class="cn-forms-ingestionmerchantsheet-565-1"
                       >{cluster.domain}</output
                     >
                   {:else}
@@ -621,7 +630,7 @@
               </div>
 
               {#if !readOnly}
-                <div class="mt-3 flex flex-wrap gap-2">
+                <div class="cn-forms-ingestionmerchantsheet-624-1">
                   {#if primaryStatus === "suggested" && candidate}
                     <Button
                       size="sm"
@@ -689,7 +698,7 @@
                       />
                     </FormField>
                   </div>
-                  <div class="mt-3 flex flex-wrap justify-end gap-2">
+                  <div class="cn-forms-ingestionmerchantsheet-692-1">
                     <Button
                       size="sm"
                       disabled={busy || !correctionName.trim()}
@@ -715,7 +724,7 @@
         </section>
 
         {#if cluster.candidates.length}
-          <section class="flex flex-col gap-2">
+          <section class="cn-forms-ingestionmerchantsheet-718-1">
             <FormSectionHeader
               title="Suggestions"
               titleClass={sectionTitleClass}
@@ -727,30 +736,30 @@
               onToggle={() => toggleSection("suggestion")}
             />
             {#if isSectionOpen("suggestion")}
-              <div class="merchant-section-body flex flex-col gap-2">
+              <div
+                class="cn-forms-ingestionmerchantsheet-730-1 merchant-section-body"
+              >
                 {#each cluster.candidates as item (item.id)}
                   <button
                     type="button"
-                    class="flex w-full items-start gap-3 rounded-md border px-3 py-2 text-left text-sm {selectedCandidateId ===
+                    class="cn-forms-ingestionmerchantsheet-734-1 cn-forms-ingestionmerchantsheet-734-9 cn-forms-ingestionmerchantsheet-734-3 cn-forms-ingestionmerchantsheet-734-2 cn-forms-ingestionmerchantsheet-734-6 cn-forms-ingestionmerchantsheet-734-4 cn-forms-ingestionmerchantsheet-734-5 cn-forms-ingestionmerchantsheet-734-7 cn-forms-ingestionmerchantsheet-734-8 border {selectedCandidateId ===
                     item.id
-                      ? 'border-primary bg-accent'
-                      : 'hover:bg-muted/50'}"
+                      ? 'cn-forms-ingestionmerchantsheet-736-1'
+                      : 'cn-forms-ingestionmerchantsheet-737-1'}"
                     onclick={() => (selectedCandidateId = item.id)}
                   >
                     {#if item.logoUrl}
                       <img
-                        class="size-9 shrink-0 rounded-md border object-contain"
+                        class="cn-forms-ingestionmerchantsheet-742-1"
                         src={item.logoUrl}
                         alt=""
                       />
                     {/if}
-                    <span class="min-w-0 flex-1">
-                      <span class="block truncate font-medium"
+                    <span class="cn-forms-ingestionmerchantsheet-747-1">
+                      <span class="cn-forms-ingestionmerchantsheet-748-1"
                         >{item.canonicalName}</span
                       >
-                      <span
-                        class="block truncate text-xs text-muted-foreground"
-                      >
+                      <span class="cn-forms-ingestionmerchantsheet-752-1">
                         {[item.domain, item.industry]
                           .filter(Boolean)
                           .join(" · ") || item.explanation}
@@ -763,7 +772,7 @@
           </section>
         {/if}
 
-        <section class="flex flex-col gap-2">
+        <section class="cn-forms-ingestionmerchantsheet-766-1">
           <FormSectionHeader
             title="Labels"
             titleClass={sectionTitleClass}
@@ -785,9 +794,9 @@
                   >
                     <output
                       id={`merchant-label-${member.normalizedLabel}`}
-                      class="truncate"
+                      class="cn-forms-ingestionmerchantsheet-788-1"
                       >{member.rawLabel}
-                      <span class="tabular-nums text-muted-foreground">
+                      <span class="cn-forms-ingestionmerchantsheet-790-1">
                         · {member.count}</span
                       ></output
                     >
@@ -798,7 +807,7 @@
           {/if}
         </section>
 
-        <section class="flex flex-col gap-2">
+        <section class="cn-forms-ingestionmerchantsheet-801-1">
           <FormSectionHeader
             title="Matching transactions"
             titleClass={sectionTitleClass}
@@ -812,29 +821,27 @@
           {#if isSectionOpen("transactions")}
             <div class="merchant-section-body">
               {#if !cluster.transactions.length}
-                <p class="text-sm text-muted-foreground">
+                <p class="cn-forms-ingestionmerchantsheet-815-1">
                   No matching pending transactions.
                 </p>
               {:else}
-                <div
-                  class="overflow-hidden rounded-xl border bg-card shadow-sm"
-                >
-                  <Table.Root class="min-w-[44rem]">
-                    <Table.Header class="bg-muted/40">
-                      <Table.Row class="hover:bg-transparent">
+                <div class="cn-forms-ingestionmerchantsheet-820-1">
+                  <Table.Root class="cn-forms-ingestionmerchantsheet-822-1">
+                    <Table.Header class="cn-forms-ingestionmerchantsheet-823-1">
+                      <Table.Row class="cn-forms-ingestionmerchantsheet-824-1">
                         {#each MATCHING_TRANSACTION_COLUMNS as column (column.key)}
                           <Table.Head
                             scope="col"
                             aria-sort={matchingTransactionAriaSort(column.key)}
                             class={column.rightAligned
-                              ? "p-0 text-right"
-                              : "p-0"}
+                              ? "cn-forms-ingestionmerchantsheet-830-1"
+                              : "cn-forms-ingestionmerchantsheet-831-1"}
                           >
                             <button
                               type="button"
-                              class="inline-flex h-10 w-full items-center gap-1.5 rounded-md px-4 text-left text-xs font-semibold uppercase tracking-wide outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                              class:justify-end={column.rightAligned}
-                              class:text-right={column.rightAligned}
+                              class="cn-forms-ingestionmerchantsheet-835-1"
+                              class:cn-forms-ingestionmerchantsheet-836-1={column.rightAligned}
+                              class:cn-forms-ingestionmerchantsheet-837-1={column.rightAligned}
                               aria-label={`Sort matching transactions by ${column.label.toLowerCase()}`}
                               onclick={() =>
                                 cycleMatchingTransactionSort(column.key)}
@@ -842,17 +849,17 @@
                               {column.label}
                               {#if matchingTransactionSortKey === column.key && matchingTransactionSortOrder === "asc"}
                                 <ArrowUpNarrowWide
-                                  class="size-3.5"
+                                  class="cn-forms-ingestionmerchantsheet-845-1"
                                   aria-hidden="true"
                                 />
                               {:else if matchingTransactionSortKey === column.key && matchingTransactionSortOrder === "desc"}
                                 <ArrowDownWideNarrow
-                                  class="size-3.5"
+                                  class="cn-forms-ingestionmerchantsheet-850-1"
                                   aria-hidden="true"
                                 />
                               {:else}
                                 <ArrowUpDown
-                                  class="size-3.5 opacity-50"
+                                  class="cn-forms-ingestionmerchantsheet-855-1"
                                   aria-hidden="true"
                                 />
                               {/if}
@@ -864,7 +871,7 @@
                     <Table.Body>
                       {#each visibleMatchingTransactions as tx (tx.proposalId)}
                         <Table.Row
-                          class="cursor-pointer"
+                          class="cn-forms-ingestionmerchantsheet-867-1"
                           role="link"
                           tabindex={0}
                           aria-label={`Open review for ${matchingTransactionLabel(tx)}`}
@@ -873,21 +880,22 @@
                             handleMatchingTransactionKeydown(event, tx)}
                         >
                           <Table.Cell
-                            class="whitespace-nowrap px-4 py-3 text-muted-foreground"
+                            class="cn-forms-ingestionmerchantsheet-876-1"
                             >{tx.bookedAt}</Table.Cell
                           >
-                          <Table.Cell class="min-w-52 px-4 py-3">
-                            <span
-                              class="block truncate font-medium text-foreground"
+                          <Table.Cell
+                            class="cn-forms-ingestionmerchantsheet-879-1"
+                          >
+                            <span class="cn-forms-ingestionmerchantsheet-881-1"
                               >{matchingTransactionLabel(tx)}</span
                             >
                           </Table.Cell>
                           <Table.Cell
-                            class="min-w-64 whitespace-nowrap px-4 py-3 text-muted-foreground"
+                            class="cn-forms-ingestionmerchantsheet-886-1"
                             >{tx.sourceAccount}</Table.Cell
                           >
                           <Table.Cell
-                            class="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-foreground"
+                            class="cn-forms-ingestionmerchantsheet-890-1"
                             >{tx.amount} {tx.currency}</Table.Cell
                           >
                         </Table.Row>
@@ -896,10 +904,10 @@
                   </Table.Root>
                 </div>
                 <div
-                  class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  class="cn-forms-ingestionmerchantsheet-899-1"
                   data-merchant-matching-transaction-pagination
                 >
-                  <span class="text-sm text-muted-foreground"
+                  <span class="cn-forms-ingestionmerchantsheet-902-1"
                     >Showing {matchingTransactionPageStart +
                       1}&ndash;{matchingTransactionPageEnd} of {sortedMatchingTransactions.length}</span
                   >

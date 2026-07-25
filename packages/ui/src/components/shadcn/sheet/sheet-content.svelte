@@ -56,7 +56,10 @@
     data-ui-part="sheet-content"
   >
     {@render children?.()}
-    <SheetPrimitive.Close class="cn-sheet-sheet-content-57-1">
+    <SheetPrimitive.Close
+      class="cn-sheet-sheet-content-57-1"
+      data-ui-part="sheet-close"
+    >
       <X class="cn-sheet-sheet-content-59-1" />
       <span class="sr-only">Close</span>
     </SheetPrimitive.Close>

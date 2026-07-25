@@ -33,26 +33,22 @@
     region?: "leading" | "actions";
     header: IngestionHeaderActions;
   };
-  let {
-    region = "actions",
-    header,
-  }: Props = $props();
+  let { region = "actions", header }: Props = $props();
 </script>
 
 {#if header}
   {#if region === "leading"}
     {#if header.kind === "ledger"}
-      <Menubar.Root
-        class="h-8 space-x-0 rounded-none border-0 bg-transparent p-0 shadow-none"
-      >
+      <Menubar.Root class="cn-forms-ingestionheaderactions-46-1">
         <Menubar.Menu>
-          <Menubar.Trigger
-            class="h-8 cursor-pointer px-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+          <Menubar.Trigger class="cn-forms-ingestionheaderactions-50-1"
             >File</Menubar.Trigger
           >
           <Menubar.Content>
             <Menubar.Sub>
-              <Menubar.SubTrigger class="pl-8">Open source</Menubar.SubTrigger>
+              <Menubar.SubTrigger class="cn-forms-ingestionheaderactions-55-1"
+                >Open source</Menubar.SubTrigger
+              >
               <Menubar.SubContent>
                 {#each header.sources as file (file.path)}
                   <Menubar.CheckboxItem
@@ -75,28 +71,35 @@
           </Menubar.Content>
         </Menubar.Menu>
         <Menubar.Menu>
-          <Menubar.Trigger
-            class="h-8 cursor-pointer px-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+          <Menubar.Trigger class="cn-forms-ingestionheaderactions-79-1"
             >Edit</Menubar.Trigger
           >
           <Menubar.Content>
             <Menubar.Item inset onclick={() => header.onFormat()}>
-              Format <Menubar.Shortcut class="pl-2">⌘ + D</Menubar.Shortcut>
+              Format <Menubar.Shortcut
+                class="cn-forms-ingestionheaderactions-84-1"
+                >⌘ + D</Menubar.Shortcut
+              >
             </Menubar.Item>
             <Menubar.Item inset onclick={() => header.onToggleComment()}>
-              Toggle Comment <Menubar.Shortcut class="pl-2"
+              Toggle Comment <Menubar.Shortcut
+                class="cn-forms-ingestionheaderactions-87-1"
                 >⌘ + /</Menubar.Shortcut
               >
             </Menubar.Item>
             <Menubar.Item onclick={() => header.onUnfoldAll()}>
-              <UnfoldVertical class="mr-2 size-4" /> Open all folds
+              <UnfoldVertical class="cn-forms-ingestionheaderactions-92-1" /> Open
+              all folds
             </Menubar.Item>
             <Menubar.Item onclick={() => header.onFoldAll()}>
-              <FoldVertical class="mr-2 size-4" /> Close all folds
+              <FoldVertical class="cn-forms-ingestionheaderactions-95-1" /> Close
+              all folds
             </Menubar.Item>
             <Menubar.Separator />
             <Menubar.Sub>
-              <Menubar.SubTrigger class="pl-8">Find</Menubar.SubTrigger>
+              <Menubar.SubTrigger class="cn-forms-ingestionheaderactions-99-1"
+                >Find</Menubar.SubTrigger
+              >
               <Menubar.SubContent>
                 <Menubar.Item onclick={() => header.onFind()}
                   >Find...</Menubar.Item
@@ -111,7 +114,8 @@
             </Menubar.Sub>
             <Menubar.Separator />
             <Menubar.Item onclick={() => header.onAskAi()}>
-              <Sparkles class="mr-2 size-4" /> Ask AI about selection
+              <Sparkles class="cn-forms-ingestionheaderactions-114-1" /> Ask AI about
+              selection
             </Menubar.Item>
           </Menubar.Content>
         </Menubar.Menu>
@@ -119,7 +123,7 @@
     {/if}
   {:else}
     <div
-      class="flex w-max flex-nowrap items-center justify-end gap-2 sm:w-auto sm:flex-wrap"
+      class="cn-forms-ingestionheaderactions-122-1"
       data-slot="ingestion-header-actions"
     >
       {#if header.kind === "review"}
@@ -131,7 +135,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-134-1"
                 aria-label="Open active review ledger"
                 disabled={!header.canOpenLedger}
                 onclick={() => header.onOpenLedger()}
@@ -156,7 +160,7 @@
                     {...props}
                     type="button"
                     size="sm"
-                    class="h-8 gap-1.5"
+                    class="cn-forms-ingestionheaderactions-159-1"
                     aria-label={`${bulkAction.label} ${bulkAction.selectedCount} selected item${bulkAction.selectedCount === 1 ? "" : "s"}`}
                     disabled={!bulkAction.canRun || bulkAction.busy}
                     onclick={() => bulkAction.onRun()}
@@ -180,13 +184,16 @@
                     {...props}
                     type="button"
                     size="icon"
-                    class="size-8"
+                    class="cn-forms-ingestionheaderactions-183-1"
                     aria-label={`More ${bulkAction.label.toLowerCase()} actions`}
                     disabled={!bulkAction.canRun ||
                       bulkAction.busy ||
                       !hasEnabledAdditionalAction}
                   >
-                    <ChevronDown class="size-4" aria-hidden="true" />
+                    <ChevronDown
+                      class="cn-forms-ingestionheaderactions-189-1"
+                      aria-hidden="true"
+                    />
                   </Button>
                 {/snippet}
               </DropdownMenu.Trigger>
@@ -210,7 +217,7 @@
                   {...props}
                   type="button"
                   size="sm"
-                  class="h-8"
+                  class="cn-forms-ingestionheaderactions-213-1"
                   aria-label={header.acceptBusy
                     ? "Accepting ready transactions"
                     : header.acceptCount
@@ -251,7 +258,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-254-1"
                 aria-label={header.groupsCollapsedAll
                   ? "Expand all date groups"
                   : "Collapse all date groups"}
@@ -281,7 +288,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-284-1"
                 aria-label="Review merchants"
                 onclick={(event) => {
                   header.onReviewMerchants();
@@ -301,7 +308,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-304-1"
                 aria-label="Open Accounts"
                 onclick={(event) => {
                   header.onOpenAccounts();
@@ -321,7 +328,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-324-1"
                 aria-label="Force re-fetch"
                 title="Prefer Sync on the Accounts screen"
                 disabled={!header.canForceRefetch}
@@ -344,7 +351,7 @@
                   type="button"
                   size="icon"
                   variant="ghost"
-                  class="size-8"
+                  class="cn-forms-ingestionheaderactions-347-1"
                   aria-label="Re-run AI enrichment"
                   title="Re-run AI merchant enrichment and categorisation on current proposals"
                   disabled={!header.canRerunAi || header.aiRerunBusy}
@@ -352,7 +359,11 @@
                     header.onRerunAi();
                   }}
                 >
-                  <Sparkles class={header.aiRerunBusy ? "animate-pulse" : ""} />
+                  <Sparkles
+                    class={header.aiRerunBusy
+                      ? "cn-forms-ingestionheaderactions-355-1"
+                      : ""}
+                  />
                 </Button>
               {/snippet}
             </Tooltip.Trigger>
@@ -371,7 +382,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-374-1"
                 aria-label="Edit sources"
                 onclick={(event) => {
                   header.onEditSources();
@@ -399,7 +410,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-402-1"
                 aria-label={header.groupsCollapsedAll
                   ? "Expand all merchant groups"
                   : "Collapse all merchant groups"}
@@ -437,7 +448,7 @@
                     {...props}
                     type="button"
                     size="sm"
-                    class="h-8 gap-1.5"
+                    class="cn-forms-ingestionheaderactions-440-1"
                     aria-label={`${bulkAction.label} ${bulkAction.selectedCount} selected merchant cluster${bulkAction.selectedCount === 1 ? "" : "s"}`}
                     disabled={!bulkAction.canRun || bulkAction.busy}
                     onclick={() => bulkAction.onRun()}
@@ -461,13 +472,16 @@
                     {...props}
                     type="button"
                     size="icon"
-                    class="size-8"
+                    class="cn-forms-ingestionheaderactions-464-1"
                     aria-label={`More ${bulkAction.label.toLowerCase()} actions`}
                     disabled={!bulkAction.canRun ||
                       bulkAction.busy ||
                       !hasEnabledAdditionalAction}
                   >
-                    <ChevronDown class="size-4" aria-hidden="true" />
+                    <ChevronDown
+                      class="cn-forms-ingestionheaderactions-470-1"
+                      aria-hidden="true"
+                    />
                   </Button>
                 {/snippet}
               </DropdownMenu.Trigger>
@@ -492,7 +506,7 @@
                   type="button"
                   size="icon"
                   variant="ghost"
-                  class="size-8"
+                  class="cn-forms-ingestionheaderactions-495-1"
                   aria-label="Detect merchants"
                   disabled={!header.canDetect || header.detectBusy}
                   onclick={(event) => {
@@ -500,7 +514,9 @@
                   }}
                 >
                   <ScanSearch
-                    class={header.detectBusy ? "animate-pulse" : ""}
+                    class={header.detectBusy
+                      ? "cn-forms-ingestionheaderactions-503-1"
+                      : ""}
                   />
                 </Button>
               {/snippet}
@@ -520,7 +536,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-523-1"
                 aria-label="Review imports"
                 onclick={(event) => {
                   header.onReviewImports();
@@ -540,7 +556,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-543-1"
                 aria-label="Open Accounts"
                 onclick={(event) => {
                   header.onOpenAccounts();
@@ -560,7 +576,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-563-1"
                 aria-label="Edit sources"
                 onclick={(event) => {
                   header.onEditSources();
@@ -589,15 +605,18 @@
                 type="button"
                 size="sm"
                 variant="ghost"
-                class="h-8 gap-1.5 px-2.5"
+                class="cn-forms-ingestionheaderactions-592-1"
                 aria-label="Backfill merchants from ledger"
                 disabled={header.backfillBusy}
                 onclick={(event) => {
                   header.onBackfill();
                 }}
               >
-                <DatabaseZap class="size-4" aria-hidden="true" />
-                <span class="text-sm"
+                <DatabaseZap
+                  class="cn-forms-ingestionheaderactions-599-1"
+                  aria-hidden="true"
+                />
+                <span class="cn-forms-ingestionheaderactions-600-1"
                   >{header.backfillBusy ? "Backfilling…" : "Backfill"}</span
                 >
               </Button>
@@ -625,7 +644,9 @@
               >
                 <RefreshCw
                   data-icon="inline-start"
-                  class={header.syncAllBusy ? "animate-spin" : ""}
+                  class={header.syncAllBusy
+                    ? "cn-forms-ingestionheaderactions-628-1"
+                    : ""}
                 />
                 {header.syncAllBusy ? "Syncing…" : "Sync all"}
               </Button>
@@ -641,7 +662,7 @@
         </Tooltip.Root>
       {:else if header.kind === "rules"}
         {#if header.saveHint}
-          <p class="text-xs text-muted-foreground" role="status">
+          <p class="cn-forms-ingestionheaderactions-644-1" role="status">
             {header.saveHint}
           </p>
         {/if}
@@ -653,7 +674,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-656-1"
                 aria-label="Apply all"
                 disabled={!header.canApplyAll || header.applyBusy}
                 onclick={(event) => {
@@ -674,7 +695,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-677-1"
                 aria-label="Add rule"
                 onclick={(event) => {
                   header.onAddRule();
@@ -696,14 +717,18 @@
                   type="button"
                   size="sm"
                   variant="ghost"
-                  class="h-8 gap-1.5 px-2.5"
+                  class="cn-forms-ingestionheaderactions-699-1"
                   aria-label={`Edit ${header.selectedCount} selected records`}
                   onclick={(event) => {
                     header.onReplace();
                   }}
                 >
-                  <ArrowLeftRight class="size-4" />
-                  <span class="text-sm">Edit ({header.selectedCount})</span>
+                  <ArrowLeftRight
+                    class="cn-forms-ingestionheaderactions-705-1"
+                  />
+                  <span class="cn-forms-ingestionheaderactions-706-1"
+                    >Edit ({header.selectedCount})</span
+                  >
                 </Button>
               {/snippet}
             </Tooltip.Trigger>
@@ -719,7 +744,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-722-1"
                 aria-label={header.headersCollapsedAll
                   ? "Expand all headings"
                   : "Collapse all headings"}
@@ -747,7 +772,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-750-1"
                 aria-label="Save ledger"
                 onclick={(event) => {
                   header.onSave();
@@ -768,7 +793,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-771-1"
                 aria-label={header.headersCollapsedAll
                   ? "Expand all date groups"
                   : "Collapse all date groups"}
@@ -790,7 +815,7 @@
         </Tooltip.Root>
       {:else if header.kind === "editor"}
         {#if header.saveHint}
-          <p class="text-xs text-muted-foreground" role="status">
+          <p class="cn-forms-ingestionheaderactions-793-1" role="status">
             {header.saveHint}
           </p>
         {/if}
@@ -813,7 +838,9 @@
                 >
                   <RefreshCw
                     data-icon="inline-start"
-                    class={header.syncAllBusy ? "animate-spin" : ""}
+                    class={header.syncAllBusy
+                      ? "cn-forms-ingestionheaderactions-816-1"
+                      : ""}
                   />
                   {header.syncAllBusy ? "Syncing…" : "Sync all"}
                 </Button>
@@ -837,7 +864,7 @@
           />
         {/if}
         {#if header.configReady}
-          <div class="flex items-center gap-2">
+          <div class="cn-forms-ingestionheaderactions-840-1">
             <Switch
               id="ingestion-yaml-mode"
               size="sm"
@@ -845,8 +872,9 @@
               aria-label="YAML mode"
               onCheckedChange={header.onYamlMode}
             />
-            <label for="ingestion-yaml-mode" class="text-sm font-semibold"
-              >YAML</label
+            <label
+              for="ingestion-yaml-mode"
+              class="cn-forms-ingestionheaderactions-848-1">YAML</label
             >
           </div>
           {#if !header.yamlMode}
@@ -858,7 +886,7 @@
                     type="button"
                     size="icon"
                     variant="ghost"
-                    class="size-8"
+                    class="cn-forms-ingestionheaderactions-861-1"
                     aria-label={header.previewMode
                       ? "Switch to edit mode"
                       : "Switch to preview mode"}
@@ -891,7 +919,7 @@
                 type="button"
                 size="icon"
                 variant="ghost"
-                class="size-8"
+                class="cn-forms-ingestionheaderactions-894-1"
                 aria-label="Review imports"
                 onclick={(event) => {
                   header.onReviewImports();

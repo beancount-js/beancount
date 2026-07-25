@@ -243,20 +243,18 @@
 <Sheet.Root bind:open>
   <Sheet.Content
     side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
+    class="cn-forms-ruleeditorsheet-246-1"
     data-rule-editor-sheet
     onOpenAutoFocus={(event) => {
       event.preventDefault();
       sheetTitleEl?.focus();
     }}
   >
-    <Sheet.Header
-      class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left sm:text-left"
-    >
+    <Sheet.Header class="cn-forms-ruleeditorsheet-254-1">
       <Sheet.Title
         bind:ref={sheetTitleEl}
         tabindex={-1}
-        class="rule-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
+        class="cn-forms-ruleeditorsheet-259-1 rule-sheet-title"
       >
         {dialogTitle}
       </Sheet.Title>
@@ -264,30 +262,29 @@
         Configure the conditions, actions, and effective date for this detection
         rule.
       </Sheet.Description>
-      <Sheet.Close
-        class="ml-auto inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        aria-label="Close"
-      >
-        <X class="size-4" />
+      <Sheet.Close class="cn-forms-ruleeditorsheet-268-1" aria-label="Close">
+        <X class="cn-forms-ruleeditorsheet-271-1" />
         <span class="sr-only">Close</span>
       </Sheet.Close>
     </Sheet.Header>
 
-    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+    <div class="cn-forms-ruleeditorsheet-276-1">
       {#if errors.length}
-        <Alert.Root variant="destructive" class="mb-5">
+        <Alert.Root
+          variant="destructive"
+          class="cn-forms-ruleeditorsheet-278-1"
+        >
           <Alert.Title>Could not save rule</Alert.Title>
-          <Alert.Description class="whitespace-pre-wrap"
+          <Alert.Description class="cn-forms-ruleeditorsheet-280-1"
             >{errors.join("\n")}</Alert.Description
           >
         </Alert.Root>
       {/if}
 
-      <div class="rule-form flex min-w-0 flex-col gap-6">
-        <div class="flex flex-col gap-1.5">
-          <label
-            for="rule-editor-name"
-            class="text-xs font-medium text-muted-foreground">Rule name</label
+      <div class="cn-forms-ruleeditorsheet-286-1 rule-form">
+        <div class="cn-forms-ruleeditorsheet-287-1">
+          <label for="rule-editor-name" class="cn-forms-ruleeditorsheet-290-1"
+            >Rule name</label
           >
           <Input
             id="rule-editor-name"
@@ -296,7 +293,7 @@
           />
         </div>
 
-        <section class="flex flex-col gap-3 pl-6">
+        <section class="cn-forms-ruleeditorsheet-299-1">
           <FormSectionHeader
             title="If"
             titleClass={sectionTitleClass}
@@ -308,7 +305,7 @@
             onToggle={() => toggleSection("if")}
           />
           {#if isSectionOpen("if")}
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="cn-forms-ruleeditorsheet-311-1">
               {#each conditions as condition, index (condition.id)}
                 <RuleConditionRow
                   {condition}
@@ -318,11 +315,11 @@
                   onRemove={() => removeCondition(index)}
                 />
               {:else}
-                <p class="text-sm text-muted-foreground">
+                <p class="cn-forms-ruleeditorsheet-321-1">
                   No conditions yet. Add one below.
                 </p>
               {/each}
-              <div class="flex flex-wrap gap-4">
+              <div class="cn-forms-ruleeditorsheet-325-1">
                 <FormAddButton label="Add condition" onclick={addCondition} />
                 <FormAddButton
                   label="Add condition group"
@@ -333,7 +330,7 @@
           {/if}
         </section>
 
-        <section class="flex flex-col gap-3 pl-6">
+        <section class="cn-forms-ruleeditorsheet-336-1">
           <FormSectionHeader
             title="Then"
             titleClass={sectionTitleClass}
@@ -345,16 +342,16 @@
             onToggle={() => toggleSection("then")}
           />
           {#if isSectionOpen("then")}
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="cn-forms-ruleeditorsheet-348-1">
               {#each actions as action, index (action.id)}
                 {@const meta = actionMeta(action.actionType)}
                 {@const ActionIcon = actionIcon(action.actionType)}
                 <div
-                  class="flex min-w-0 flex-nowrap items-center gap-2 rounded-md border border-border bg-background p-2"
+                  class="cn-forms-ruleeditorsheet-353-1"
                   data-rule-action-row
                 >
                   <div
-                    class={`min-w-0 ${meta?.type === "function" ? "flex-[1_1_23rem]" : "flex-[1_1_13rem]"}`}
+                    class={`cn-forms-ruleeditorsheet-357-3 ${meta?.type === "function" ? "cn-forms-ruleeditorsheet-357-2" : "cn-forms-ruleeditorsheet-357-1"}`}
                   >
                     <Select.Root
                       type="single"
@@ -365,15 +362,15 @@
                       }}
                     >
                       <Select.Trigger
-                        class="h-9 text-sm"
+                        class="cn-forms-ruleeditorsheet-368-1"
                         aria-label="Action type"
                       >
-                        <div class="flex min-w-0 flex-1 items-center gap-2">
+                        <div class="cn-forms-ruleeditorsheet-371-1">
                           <ActionIcon
-                            class="size-4 shrink-0 text-muted-foreground"
+                            class="cn-forms-ruleeditorsheet-373-1"
                             aria-hidden="true"
                           />
-                          <span class="min-w-0 truncate"
+                          <span class="cn-forms-ruleeditorsheet-376-1"
                             >{meta?.label ?? action.actionType}</span
                           >
                         </div>
@@ -383,12 +380,14 @@
                           {#each registry.executors as executor (executor.key)}
                             {@const ExecutorIcon = actionIcon(executor.key)}
                             <Select.Item value={executor.key}>
-                              <div class="flex min-w-0 items-center gap-2">
+                              <div class="cn-forms-ruleeditorsheet-386-1">
                                 <ExecutorIcon
-                                  class="size-4 shrink-0 text-muted-foreground"
+                                  class="cn-forms-ruleeditorsheet-388-1"
                                   aria-hidden="true"
                                 />
-                                <span class="truncate">{executor.label}</span>
+                                <span class="cn-forms-ruleeditorsheet-391-1"
+                                  >{executor.label}</span
+                                >
                               </div>
                             </Select.Item>
                           {/each}
@@ -398,10 +397,10 @@
                   </div>
 
                   <div
-                    class={`min-w-0 ${meta?.type === "function" ? "flex-[1_1_10rem]" : "flex-[2_1_14rem]"}`}
+                    class={`cn-forms-ruleeditorsheet-401-3 ${meta?.type === "function" ? "cn-forms-ruleeditorsheet-401-1" : "cn-forms-ruleeditorsheet-401-2"}`}
                   >
                     {#if meta?.type === "function"}
-                      <p class="px-1 text-sm text-muted-foreground">
+                      <p class="cn-forms-ruleeditorsheet-404-1">
                         No value required
                       </p>
                     {:else if meta?.type === "select"}
@@ -443,15 +442,15 @@
                     type="button"
                     variant="ghost"
                     size="icon"
-                    class="ml-auto size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    class="cn-forms-ruleeditorsheet-446-1"
                     aria-label="Remove action"
                     onclick={() => removeAction(index)}
                   >
-                    <Trash2 class="size-4" />
+                    <Trash2 class="cn-forms-ruleeditorsheet-450-1" />
                   </Button>
                 </div>
               {:else}
-                <p class="text-sm text-muted-foreground">
+                <p class="cn-forms-ruleeditorsheet-454-1">
                   No actions yet. Add one below.
                 </p>
               {/each}
@@ -460,7 +459,7 @@
           {/if}
         </section>
 
-        <section class="flex flex-col gap-3 pl-6">
+        <section class="cn-forms-ruleeditorsheet-463-1">
           <FormSectionHeader
             title="For"
             titleClass={sectionTitleClass}
@@ -472,8 +471,8 @@
             onToggle={() => toggleSection("for")}
           />
           {#if isSectionOpen("for")}
-            <div class="flex flex-col gap-2.5 text-sm">
-              <label class="flex items-center gap-2">
+            <div class="cn-forms-ruleeditorsheet-475-1">
+              <label class="cn-forms-ruleeditorsheet-476-1">
                 <input
                   type="radio"
                   name="rule-editor-effective-mode"
@@ -483,7 +482,7 @@
                 />
                 All past and future transactions
               </label>
-              <label class="flex items-center gap-2">
+              <label class="cn-forms-ruleeditorsheet-486-1">
                 <input
                   type="radio"
                   name="rule-editor-effective-mode"
@@ -496,7 +495,7 @@
                   <Input
                     type="date"
                     bind:value={effectiveDate}
-                    class="h-8 w-40"
+                    class="cn-forms-ruleeditorsheet-499-1"
                   />
                 {/if}
               </label>
@@ -506,16 +505,10 @@
       </div>
     </div>
 
-    <Sheet.Footer
-      class="flex shrink-0 flex-row items-center justify-end gap-2 border-t border-border px-6 py-3"
-    >
-      <Sheet.Close
-        class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-      >
-        Cancel
-      </Sheet.Close>
+    <Sheet.Footer class="cn-forms-ruleeditorsheet-510-1">
+      <Sheet.Close class="cn-forms-ruleeditorsheet-513-1">Cancel</Sheet.Close>
       <Button type="button" onclick={handleSave}>
-        <Plus class="size-4" aria-hidden="true" />
+        <Plus class="cn-forms-ruleeditorsheet-518-1" aria-hidden="true" />
         {isCreate ? "Create Rule" : "Update Rule"}
       </Button>
     </Sheet.Footer>

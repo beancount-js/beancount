@@ -132,11 +132,8 @@
 })}
   {@const meta = filterMeta(leaf.conditionType)}
   {@const operators = meta?.operators ?? []}
-  <div
-    class="flex min-w-0 flex-nowrap items-center gap-2 rounded-md border border-border bg-background p-2"
-    data-rule-condition-row
-  >
-    <div class="min-w-0 flex-[1_1_11rem]">
+  <div class="cn-forms-rules-ruleconditionrow-136-1" data-rule-condition-row>
+    <div class="cn-forms-rules-ruleconditionrow-139-1">
       <Select.Root
         type="single"
         value={leaf.conditionType}
@@ -145,7 +142,10 @@
           if (next) changeField(leaf, next as RuleConditionType, emit);
         }}
       >
-        <Select.Trigger class="h-9 text-sm" aria-label="Condition field">
+        <Select.Trigger
+          class="cn-forms-rules-ruleconditionrow-148-1"
+          aria-label="Condition field"
+        >
           {meta?.label ?? leaf.conditionType}
         </Select.Trigger>
         <Select.Content>
@@ -156,7 +156,7 @@
       </Select.Root>
     </div>
 
-    <div class="min-w-0 flex-[1_1_9rem]">
+    <div class="cn-forms-rules-ruleconditionrow-159-1">
       <Select.Root
         type="single"
         value={leaf.operator}
@@ -165,7 +165,10 @@
           if (next) changeOperator(leaf, next, emit);
         }}
       >
-        <Select.Trigger class="h-9 text-sm" aria-label="Condition operator">
+        <Select.Trigger
+          class="cn-forms-rules-ruleconditionrow-168-1"
+          aria-label="Condition operator"
+        >
           {operators.find((operator) => operator.value === leaf.operator)
             ?.label ?? leaf.operator}
         </Select.Trigger>
@@ -178,7 +181,7 @@
     </div>
 
     {#if leaf.operator !== "is_null"}
-      <div class="min-w-0 flex-[2_1_12rem]">
+      <div class="cn-forms-rules-ruleconditionrow-181-1">
         {#if meta?.type === "number"}
           <Input
             type="number"
@@ -218,32 +221,27 @@
         {/if}
       </div>
     {:else}
-      <div class="min-w-0 flex-[2_1_12rem] px-1 text-sm text-muted-foreground">
-        is empty
-      </div>
+      <div class="cn-forms-rules-ruleconditionrow-221-1">is empty</div>
     {/if}
 
     <Button
       type="button"
       variant="ghost"
       size="icon"
-      class="ml-auto size-8 shrink-0 text-muted-foreground hover:text-destructive"
+      class="cn-forms-rules-ruleconditionrow-230-1"
       aria-label="Remove condition"
       {disabled}
       onclick={remove}
     >
-      <Trash2 class="size-4" />
+      <Trash2 class="cn-forms-rules-ruleconditionrow-235-1" />
     </Button>
   </div>
 {/snippet}
 
 {#if condition.conditionType === "compound"}
-  <div
-    class="flex min-w-0 flex-col gap-2 rounded-md border border-dashed border-border bg-muted/30 p-3"
-    data-rule-condition-group
-  >
-    <div class="flex items-center gap-2">
-      <div class="min-w-0 flex-1">
+  <div class="cn-forms-rules-ruleconditionrow-242-1" data-rule-condition-group>
+    <div class="cn-forms-rules-ruleconditionrow-245-1">
+      <div class="cn-forms-rules-ruleconditionrow-246-1">
         <Select.Root
           type="single"
           value={condition.operator}
@@ -253,7 +251,7 @@
           }}
         >
           <Select.Trigger
-            class="h-8 max-w-64 text-xs"
+            class="cn-forms-rules-ruleconditionrow-256-1"
             aria-label="Group operator"
           >
             {groupOperatorOptions.find(
@@ -271,16 +269,16 @@
         type="button"
         variant="ghost"
         size="icon"
-        class="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+        class="cn-forms-rules-ruleconditionrow-274-1"
         aria-label="Remove condition group"
         {disabled}
         onclick={onRemove}
       >
-        <Trash2 class="size-4" />
+        <Trash2 class="cn-forms-rules-ruleconditionrow-279-1" />
       </Button>
     </div>
 
-    <div class="flex min-w-0 flex-col gap-2 pl-3">
+    <div class="cn-forms-rules-ruleconditionrow-283-1">
       {#each condition.subConditions ?? [] as sub, index (sub.id)}
         {@render LeafRow({
           leaf: sub,

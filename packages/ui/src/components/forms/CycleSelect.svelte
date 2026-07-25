@@ -40,11 +40,11 @@
   }
 </script>
 
-<div data-slot="cycle-select" class="flex min-w-0 shrink items-center gap-1">
+<div data-slot="cycle-select" class="cn-forms-cycleselect-43-1">
   <Button
     variant="ghost"
     size="icon"
-    class="size-8 overflow-hidden rounded-md"
+    class="cn-forms-cycleselect-47-1"
     aria-label="Previous {label.toLowerCase()}"
     disabled={shiftDisabled}
     onclick={() => shift(-1)}
@@ -65,7 +65,7 @@
   <Button
     variant="ghost"
     size="icon"
-    class="size-8 overflow-hidden rounded-md"
+    class="cn-forms-cycleselect-68-1"
     aria-label="Next {label.toLowerCase()}"
     disabled={shiftDisabled}
     onclick={() => shift(1)}

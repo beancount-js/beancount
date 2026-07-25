@@ -192,7 +192,9 @@
   }
 
   function setupMappingDetails(account: IngestionSetupAccount) {
-    return [account.institutionName, account.currency].filter(Boolean).join(" · ");
+    return [account.institutionName, account.currency]
+      .filter(Boolean)
+      .join(" · ");
   }
 
   function fallbackInitial(label: string) {
@@ -201,10 +203,10 @@
 </script>
 
 <section
-  class="h-full overflow-y-auto p-4 sm:p-6"
+  class="cn-forms-ingestionaccountssetup-204-1"
   data-ingestion-accounts-setup
 >
-  <div class="mx-auto flex w-full max-w-3xl flex-col gap-5">
+  <div class="cn-forms-ingestionaccountssetup-207-1">
     {#if isWeb}
       <Alert.Root>
         <FileCode2 />
@@ -216,7 +218,7 @@
     {:else if loading && !connections.length}
       <AccountsPageSkeleton />
     {:else if !connections.length}
-      <Empty.Root class="min-h-64 border">
+      <Empty.Root class="cn-forms-ingestionaccountssetup-219-1">
         <Empty.Header>
           <Empty.Media variant="icon"><Landmark /></Empty.Media>
           <Empty.Title>No connected providers</Empty.Title>
@@ -228,22 +230,21 @@
         <Empty.Content>
           <Button type="button" onclick={onOpenSources}>
             Open Sources
-            <Link2 class="size-4" aria-hidden="true" />
+            <Link2
+              class="cn-forms-ingestionaccountssetup-231-1"
+              aria-hidden="true"
+            />
           </Button>
         </Empty.Content>
       </Empty.Root>
     {:else}
-      <div class="flex min-w-0 flex-col gap-6">
+      <div class="cn-forms-ingestionaccountssetup-236-1">
         {#each connections as connection (connection.id)}
-          <article
-            class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
-          >
-            <div
-              class="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
-            >
+          <article class="cn-forms-ingestionaccountssetup-239-1">
+            <div class="cn-forms-ingestionaccountssetup-242-1">
               <button
                 type="button"
-                class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left"
+                class="cn-forms-ingestionaccountssetup-246-1"
                 aria-expanded={connection.selected && connection.expanded}
                 aria-label={connection.selected && connection.expanded
                   ? "Collapse connection"
@@ -251,7 +252,7 @@
                 onclick={() => onToggleConnection(connection.id)}
               >
                 <ChevronDown
-                  class="size-4 shrink-0 text-muted-foreground transition-transform {connection.selected &&
+                  class="cn-forms-ingestionaccountssetup-254-2 cn-forms-ingestionaccountssetup-254-1 cn-forms-ingestionaccountssetup-254-3 cn-forms-ingestionaccountssetup-254-4 {connection.selected &&
                   connection.expanded
                     ? ''
                     : '-rotate-90'}"
@@ -259,36 +260,36 @@
                 />
                 {#if connection.logoUrl && !connection.logoFailed}
                   <span
-                    class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted shadow-sm"
+                    class="cn-forms-ingestionaccountssetup-262-1"
                     aria-hidden="true"
                   >
                     <img
-                      class="size-full object-cover"
+                      class="cn-forms-ingestionaccountssetup-266-1"
                       src={connection.logoUrl}
                       alt=""
                     />
                   </span>
                 {:else}
                   <span
-                    class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
+                    class="cn-forms-ingestionaccountssetup-273-1"
                     aria-hidden="true"
                   >
                     {fallbackInitial(connection.name || connection.id)}
                   </span>
                 {/if}
-                <span class="min-w-0 flex-1">
-                  <span class="block truncate text-sm font-semibold">
+                <span class="cn-forms-ingestionaccountssetup-279-1">
+                  <span class="cn-forms-ingestionaccountssetup-280-1">
                     {connection.name || connection.id}
                   </span>
                   <span
-                    class="block truncate text-xs text-muted-foreground {connection.syncing
+                    class="cn-forms-ingestionaccountssetup-284-1 cn-forms-ingestionaccountssetup-284-4 cn-forms-ingestionaccountssetup-284-3 cn-forms-ingestionaccountssetup-284-2 {connection.syncing
                       ? 'animate-pulse'
                       : ''}"
                   >
                     {connection.statusLine}
                   </span>
                   {#if connection.selected && connection.lastSyncLabel}
-                    <span class="block truncate text-xs text-muted-foreground">
+                    <span class="cn-forms-ingestionaccountssetup-291-1">
                       {connection.lastSyncLabel}
                     </span>
                   {/if}
@@ -302,10 +303,13 @@
                       type="button"
                       variant="ghost"
                       size="icon"
-                      class="shrink-0 text-muted-foreground"
+                      class="cn-forms-ingestionaccountssetup-305-1"
                       aria-label={`${connection.name || connection.id} actions`}
                     >
-                      <MoreVertical class="size-4" aria-hidden="true" />
+                      <MoreVertical
+                        class="cn-forms-ingestionaccountssetup-308-1"
+                        aria-hidden="true"
+                      />
                     </Button>
                   {/snippet}
                 </DropdownMenu.Trigger>
@@ -316,25 +320,36 @@
                         connection.updatingLogo}
                       onSelect={() => onUpdateConnectionLogo(connection.id)}
                     >
-                      <ImageUp class="size-3.5" aria-hidden="true" />
-                      {connection.updatingLogo ? "Updating logo…" : "Update logo"}
+                      <ImageUp
+                        class="cn-forms-ingestionaccountssetup-319-1"
+                        aria-hidden="true"
+                      />
+                      {connection.updatingLogo
+                        ? "Updating logo…"
+                        : "Update logo"}
                     </DropdownMenu.Item>
                     <DropdownMenu.Item
                       disabled={!connection.canSync}
                       onSelect={() => onSyncConnection(connection.id)}
                     >
-                      <RefreshCw class="size-3.5" aria-hidden="true" />
+                      <RefreshCw
+                        class="cn-forms-ingestionaccountssetup-326-1"
+                        aria-hidden="true"
+                      />
                       {connection.syncing ? "Syncing…" : "Sync"}
                     </DropdownMenu.Item>
                   </DropdownMenu.Group>
                   <DropdownMenu.Separator />
                   <DropdownMenu.Group>
                     <DropdownMenu.Item
-                      class="text-destructive focus:text-destructive"
+                      class="cn-forms-ingestionaccountssetup-333-1"
                       disabled={connection.saving}
                       onSelect={() => onRemoveConnection(connection.id)}
                     >
-                      <Trash2 class="size-3.5" aria-hidden="true" />
+                      <Trash2
+                        class="cn-forms-ingestionaccountssetup-337-1"
+                        aria-hidden="true"
+                      />
                       Remove connection
                     </DropdownMenu.Item>
                   </DropdownMenu.Group>
@@ -343,43 +358,37 @@
             </div>
 
             {#if connection.selected && connection.expanded}
-              <div class="border-t border-border px-4 pb-4 pt-3">
+              <div class="cn-forms-ingestionaccountssetup-346-1">
                 {#if connection.linkedGroups.length}
-                  <div class="flex flex-col gap-4">
+                  <div class="cn-forms-ingestionaccountssetup-348-1">
                     {#each connection.linkedGroups as group (group.label)}
-                      <section class="overflow-hidden rounded-2xl bg-muted/80">
-                        <div
-                          class="flex items-center justify-between gap-3 px-5 py-4"
-                        >
-                          <p
-                            class="text-sm font-semibold tracking-wide text-foreground"
-                          >
+                      <section class="cn-forms-ingestionaccountssetup-350-1">
+                        <div class="cn-forms-ingestionaccountssetup-352-1">
+                          <p class="cn-forms-ingestionaccountssetup-355-1">
                             {group.label}
-                            <span class="ml-2 text-muted-foreground">
+                            <span class="cn-forms-ingestionaccountssetup-358-1">
                               · {group.accounts.length}
                             </span>
                           </p>
                           {#if group.balance}
-                            <span
-                              class="shrink-0 text-sm font-semibold tabular-nums"
-                            >
+                            <span class="cn-forms-ingestionaccountssetup-364-1">
                               {group.balance}
                             </span>
                           {/if}
                         </div>
                         <ul
-                          class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+                          class="cn-forms-ingestionaccountssetup-371-1"
                           role="list"
                         >
                           {#each group.accounts as account, index (account.id)}
                             <li
-                              class:rounded-b-xl={index ===
+                              class:cn-forms-ingestionaccountssetup-376-1={index ===
                                 group.accounts.length - 1}
-                              class="relative flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
+                              class="cn-forms-ingestionaccountssetup-378-1"
                             >
                               <a
                                 href={account.href}
-                                class="absolute inset-0 z-0 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                class="cn-forms-ingestionaccountssetup-382-1"
                                 aria-label={`Open ${account.sourceAccount}`}
                                 onclick={(event) =>
                                   onOpenLedgerAccount(
@@ -389,47 +398,52 @@
                               >
                               </a>
                               <div
-                                class="pointer-events-none relative z-10 flex min-w-0 flex-1 items-center gap-3"
+                                class="cn-forms-ingestionaccountssetup-392-1"
                               >
                                 <AccountAvatar
                                   account={account.avatar.account}
                                   color={account.avatar.color}
                                   icon={account.avatar.icon}
-                                  merchantLogoUrl={account.avatar.merchantLogoUrl}
+                                  merchantLogoUrl={account.avatar
+                                    .merchantLogoUrl}
                                 />
-                                <span class="min-w-0 flex-1">
+                                <span
+                                  class="cn-forms-ingestionaccountssetup-400-1"
+                                >
                                   <span
-                                    class="block truncate text-sm font-medium"
+                                    class="cn-forms-ingestionaccountssetup-402-1"
                                   >
                                     {account.name}{#if account.institution}<span
-                                        class="ml-2 font-normal text-muted-foreground"
+                                        class="cn-forms-ingestionaccountssetup-405-1"
                                         >•</span
                                       ><span
-                                        class="ml-2 font-normal text-muted-foreground"
+                                        class="cn-forms-ingestionaccountssetup-408-1"
                                         >{account.institution}</span
                                       >{/if}
                                   </span>
                                   <span
-                                    class="block truncate text-xs text-muted-foreground"
+                                    class="cn-forms-ingestionaccountssetup-413-1"
                                   >
                                     {account.typeLabel}
                                   </span>
                                 </span>
                                 {#if account.balance}
                                   <span
-                                    class="shrink-0 text-sm font-semibold tabular-nums"
+                                    class="cn-forms-ingestionaccountssetup-420-1"
                                   >
                                     {account.balance}
                                   </span>
                                 {:else if account.defaultCurrency}
                                   <span
-                                    class="shrink-0 text-xs text-muted-foreground"
+                                    class="cn-forms-ingestionaccountssetup-426-1"
                                   >
                                     {account.defaultCurrency}
                                   </span>
                                 {/if}
                               </div>
-                              <div class="relative z-10 shrink-0">
+                              <div
+                                class="cn-forms-ingestionaccountssetup-432-1"
+                              >
                                 <DropdownMenu.Root>
                                   <DropdownMenu.Trigger>
                                     {#snippet child({ props })}
@@ -438,11 +452,11 @@
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        class="text-muted-foreground"
+                                        class="cn-forms-ingestionaccountssetup-441-1"
                                         aria-label={`${account.name} actions`}
                                       >
                                         <MoreVertical
-                                          class="size-4"
+                                          class="cn-forms-ingestionaccountssetup-445-1"
                                           aria-hidden="true"
                                         />
                                       </Button>
@@ -456,7 +470,7 @@
                                           onEditLinkedAccount(account.id)}
                                       >
                                         <Pencil
-                                          class="size-3.5"
+                                          class="cn-forms-ingestionaccountssetup-459-1"
                                           aria-hidden="true"
                                         />
                                         Edit
@@ -465,13 +479,13 @@
                                     <DropdownMenu.Separator />
                                     <DropdownMenu.Group>
                                       <DropdownMenu.Item
-                                        class="text-destructive focus:text-destructive"
+                                        class="cn-forms-ingestionaccountssetup-468-1"
                                         disabled={connection.saving}
                                         onSelect={() =>
                                           onUnlinkAccount(account.id)}
                                       >
                                         <Trash2
-                                          class="size-3.5"
+                                          class="cn-forms-ingestionaccountssetup-474-1"
                                           aria-hidden="true"
                                         />
                                         Unlink account
@@ -487,44 +501,45 @@
                     {/each}
                   </div>
                 {:else if discovering}
-                  <p class="py-2 text-sm text-muted-foreground">
+                  <p class="cn-forms-ingestionaccountssetup-490-1">
                     Discovering accounts…
                   </p>
                 {:else}
-                  <p class="py-2 text-sm text-muted-foreground">
+                  <p class="cn-forms-ingestionaccountssetup-494-1">
                     No linked accounts yet.
                   </p>
                 {/if}
 
-                <div
-                  class="mt-4 overflow-hidden rounded-2xl border bg-secondary text-secondary-foreground"
-                >
+                <div class="cn-forms-ingestionaccountssetup-500-1">
                   <button
                     type="button"
-                    class="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-background/10"
+                    class="cn-forms-ingestionaccountssetup-504-1"
                     aria-expanded={connection.syncSummaryOpen}
                     onclick={onToggleSyncSummary}
                   >
-                    <span
-                      class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
-                    >
-                      <RefreshCw class="size-4" aria-hidden="true" />
+                    <span class="cn-forms-ingestionaccountssetup-509-1">
+                      <RefreshCw
+                        class="cn-forms-ingestionaccountssetup-511-1"
+                        aria-hidden="true"
+                      />
                     </span>
-                    <span class="min-w-0 flex-1">
-                      <span class="flex flex-wrap items-center gap-2">
-                        <span class="text-sm font-semibold">Sync summary</span>
+                    <span class="cn-forms-ingestionaccountssetup-513-1">
+                      <span class="cn-forms-ingestionaccountssetup-514-1">
+                        <span class="cn-forms-ingestionaccountssetup-515-1"
+                          >Sync summary</span
+                        >
                         <Badge
                           variant={connection.healthErrors > 0
                             ? "destructive"
                             : "secondary"}
-                          class="gap-1.5"
+                          class="cn-forms-ingestionaccountssetup-520-1"
                         >
                           <span
                             class={[
-                              "size-1.5 rounded-full",
+                              "cn-forms-ingestionaccountssetup-524-1",
                               connection.healthErrors > 0
-                                ? "bg-destructive"
-                                : "bg-primary",
+                                ? "cn-forms-ingestionaccountssetup-526-1"
+                                : "cn-forms-ingestionaccountssetup-527-1",
                             ]}
                             aria-hidden="true"
                           ></span>
@@ -534,64 +549,59 @@
                         </Badge>
                       </span>
                     </span>
-                    <span
-                      class="hidden min-w-0 truncate text-right text-xs text-muted-foreground sm:block"
-                    >
+                    <span class="cn-forms-ingestionaccountssetup-538-1">
                       {connection.syncSummaryTimeLabel}
                     </span>
                     <ChevronDown
-                      class="size-4 shrink-0 text-muted-foreground transition-transform {connection.syncSummaryOpen
+                      class="cn-forms-ingestionaccountssetup-543-2 cn-forms-ingestionaccountssetup-543-1 cn-forms-ingestionaccountssetup-543-3 cn-forms-ingestionaccountssetup-543-4 {connection.syncSummaryOpen
                         ? ''
                         : '-rotate-90'}"
                       aria-hidden="true"
                     />
                   </button>
                   {#if connection.syncSummaryOpen}
-                    <div class="grid border-t border-border lg:grid-cols-3">
+                    <div class="cn-forms-ingestionaccountssetup-550-1">
                       <section
-                        class="flex flex-col gap-5 border-b border-border px-5 py-6 lg:border-b-0 lg:border-r"
+                        class="cn-forms-ingestionaccountssetup-552-1"
                         aria-labelledby="sync-summary-accounts"
                       >
-                        <div class="flex items-center gap-3">
-                          <span
-                            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-                          >
-                            <Landmark class="size-5" aria-hidden="true" />
+                        <div class="cn-forms-ingestionaccountssetup-555-1">
+                          <span class="cn-forms-ingestionaccountssetup-557-1">
+                            <Landmark
+                              class="cn-forms-ingestionaccountssetup-559-1"
+                              aria-hidden="true"
+                            />
                           </span>
                           <h3
                             id="sync-summary-accounts"
-                            class="text-sm font-semibold"
+                            class="cn-forms-ingestionaccountssetup-563-1"
                           >
                             Accounts
                           </h3>
                         </div>
-                        <div class="flex items-baseline gap-2">
-                          <span class="text-3xl font-semibold tabular-nums">
+                        <div class="cn-forms-ingestionaccountssetup-568-1">
+                          <span class="cn-forms-ingestionaccountssetup-569-1">
                             {connection.linkedCount} / {connection.totalAccountCount}
                           </span>
-                          <span class="text-base text-muted-foreground">
+                          <span class="cn-forms-ingestionaccountssetup-572-1">
                             linked
                           </span>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="cn-forms-ingestionaccountssetup-576-1">
                           <Progress
                             value={connection.linkedPercent}
                             aria-label={`Linked account progress for ${connection.name}`}
-                            class="h-2 flex-1"
+                            class="cn-forms-ingestionaccountssetup-580-1"
                           />
-                          <span
-                            class="text-xs font-medium tabular-nums text-muted-foreground"
-                          >
+                          <span class="cn-forms-ingestionaccountssetup-583-1">
                             {connection.linkedPercent}%
                           </span>
                         </div>
-                        <dl
-                          class="flex flex-col gap-3 text-xs text-muted-foreground"
-                        >
-                          <div class="flex items-center gap-3">
+                        <dl class="cn-forms-ingestionaccountssetup-589-1">
+                          <div class="cn-forms-ingestionaccountssetup-591-1">
                             <dt>
                               <Link2
-                                class="size-4 text-primary"
+                                class="cn-forms-ingestionaccountssetup-594-1"
                                 aria-hidden="true"
                               />
                             </dt>
@@ -601,10 +611,10 @@
                                 : "—"} need linking
                             </dd>
                           </div>
-                          <div class="flex items-center gap-3">
+                          <div class="cn-forms-ingestionaccountssetup-604-1">
                             <dt>
                               <Landmark
-                                class="size-4 text-primary"
+                                class="cn-forms-ingestionaccountssetup-607-1"
                                 aria-hidden="true"
                               />
                             </dt>
@@ -614,43 +624,41 @@
                       </section>
 
                       <section
-                        class="flex flex-col gap-5 border-b border-border px-5 py-6 lg:border-b-0 lg:border-r"
+                        class="cn-forms-ingestionaccountssetup-617-1"
                         aria-labelledby="sync-summary-transactions"
                       >
-                        <div class="flex items-center gap-3">
-                          <span
-                            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-                          >
-                            <RefreshCw class="size-5" aria-hidden="true" />
+                        <div class="cn-forms-ingestionaccountssetup-620-1">
+                          <span class="cn-forms-ingestionaccountssetup-622-1">
+                            <RefreshCw
+                              class="cn-forms-ingestionaccountssetup-624-1"
+                              aria-hidden="true"
+                            />
                           </span>
                           <h3
                             id="sync-summary-transactions"
-                            class="text-sm font-semibold"
+                            class="cn-forms-ingestionaccountssetup-628-1"
                           >
                             Transactions
                           </h3>
                         </div>
-                        <div class="flex items-baseline gap-2">
-                          <span class="text-3xl font-semibold tabular-nums">
+                        <div class="cn-forms-ingestionaccountssetup-633-1">
+                          <span class="cn-forms-ingestionaccountssetup-634-1">
                             {connection.syncSeen}
                           </span>
-                          <span class="text-base text-muted-foreground">
+                          <span class="cn-forms-ingestionaccountssetup-637-1">
                             seen
                           </span>
                         </div>
                         <Separator />
-                        <div
-                          class="flex items-center gap-3 text-muted-foreground"
-                        >
-                          <span
-                            class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-                          >
-                            <RefreshCw class="size-4" aria-hidden="true" />
+                        <div class="cn-forms-ingestionaccountssetup-643-1">
+                          <span class="cn-forms-ingestionaccountssetup-646-1">
+                            <RefreshCw
+                              class="cn-forms-ingestionaccountssetup-648-1"
+                              aria-hidden="true"
+                            />
                           </span>
-                          <span class="text-xs">
-                            <span
-                              class="font-medium tabular-nums text-foreground"
-                            >
+                          <span class="cn-forms-ingestionaccountssetup-650-1">
+                            <span class="cn-forms-ingestionaccountssetup-652-1">
                               {connection.syncUpdated}
                             </span>
                             updated
@@ -659,43 +667,41 @@
                       </section>
 
                       <section
-                        class="flex flex-col gap-5 px-5 py-6"
+                        class="cn-forms-ingestionaccountssetup-662-1"
                         aria-labelledby="sync-summary-import"
                       >
-                        <div class="flex items-center gap-3">
-                          <span
-                            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-                          >
-                            <Download class="size-5" aria-hidden="true" />
+                        <div class="cn-forms-ingestionaccountssetup-665-1">
+                          <span class="cn-forms-ingestionaccountssetup-667-1">
+                            <Download
+                              class="cn-forms-ingestionaccountssetup-669-1"
+                              aria-hidden="true"
+                            />
                           </span>
                           <h3
                             id="sync-summary-import"
-                            class="text-sm font-semibold"
+                            class="cn-forms-ingestionaccountssetup-673-1"
                           >
                             Import
                           </h3>
                         </div>
-                        <div class="flex items-baseline gap-2">
-                          <span class="text-3xl font-semibold tabular-nums">
+                        <div class="cn-forms-ingestionaccountssetup-678-1">
+                          <span class="cn-forms-ingestionaccountssetup-679-1">
                             {connection.syncImported}
                           </span>
-                          <span class="text-base text-muted-foreground">
+                          <span class="cn-forms-ingestionaccountssetup-682-1">
                             imported
                           </span>
                         </div>
                         <Separator />
-                        <div
-                          class="flex items-center gap-3 text-muted-foreground"
-                        >
-                          <span
-                            class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-                          >
-                            <CircleSlash class="size-4" aria-hidden="true" />
+                        <div class="cn-forms-ingestionaccountssetup-688-1">
+                          <span class="cn-forms-ingestionaccountssetup-691-1">
+                            <CircleSlash
+                              class="cn-forms-ingestionaccountssetup-693-1"
+                              aria-hidden="true"
+                            />
                           </span>
-                          <span class="text-xs">
-                            <span
-                              class="font-medium tabular-nums text-foreground"
-                            >
+                          <span class="cn-forms-ingestionaccountssetup-695-1">
+                            <span class="cn-forms-ingestionaccountssetup-697-1">
                               {connection.syncSkipped}
                             </span>
                             skipped
@@ -707,40 +713,42 @@
                 </div>
 
                 {#if connection.showReviewCta}
-                  <div
-                    class="mt-4 flex flex-col items-center gap-3 rounded-lg border border-border bg-muted/20 px-4 py-6 text-center"
-                  >
-                    <p class="text-sm font-semibold">
+                  <div class="cn-forms-ingestionaccountssetup-711-1">
+                    <p class="cn-forms-ingestionaccountssetup-713-1">
                       Transactions ready to review
                     </p>
                     <Button type="button" onclick={onOpenReviewImports}>
-                      <BookOpen class="size-4" aria-hidden="true" />
+                      <BookOpen
+                        class="cn-forms-ingestionaccountssetup-717-1"
+                        aria-hidden="true"
+                      />
                       Review imports
                     </Button>
                   </div>
                 {/if}
 
                 {#if connection.showSetupCta}
-                  <div
-                    class="mt-4 flex flex-col items-center gap-3 rounded-lg border border-dashed border-border bg-muted/20 px-4 py-6 text-center"
-                  >
+                  <div class="cn-forms-ingestionaccountssetup-725-1">
                     <div>
-                      <p class="text-sm font-semibold">
+                      <p class="cn-forms-ingestionaccountssetup-728-1">
                         New accounts ready to set up
                       </p>
-                      <p class="mt-1 max-w-md text-sm text-muted-foreground">
+                      <p class="cn-forms-ingestionaccountssetup-731-1">
                         {connection.linkedCount} of {connection.totalAccountCount}
-                        accounts linked. Choose Beancount source accounts for
-                        newly imported accounts.
+                        accounts linked. Choose Beancount source accounts for newly
+                        imported accounts.
                       </p>
                     </div>
                     <Button
                       type="button"
-                      class="bg-foreground text-background hover:bg-foreground/90"
+                      class="cn-forms-ingestionaccountssetup-739-1"
                       disabled={saving || discovering}
                       onclick={onOpenSetupSheet}
                     >
-                      <Settings class="size-4" aria-hidden="true" />
+                      <Settings
+                        class="cn-forms-ingestionaccountssetup-743-1"
+                        aria-hidden="true"
+                      />
                       Set Up New Accounts
                     </Button>
                   </div>
@@ -749,23 +757,17 @@
             {/if}
 
             {#if connection.selected && connection.error}
-              <div
-                class="bg-destructive/10 px-3 py-2 text-destructive"
-                role="alert"
-              >
-                <p class="text-xs font-medium">Could not load accounts</p>
-                <p
-                  class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90"
-                >
+              <div class="cn-forms-ingestionaccountssetup-753-1" role="alert">
+                <p class="cn-forms-ingestionaccountssetup-756-1">
+                  Could not load accounts
+                </p>
+                <p class="cn-forms-ingestionaccountssetup-758-1">
                   {connection.error}
                 </p>
               </div>
             {/if}
             {#if connection.selected && connection.status}
-              <p
-                class="border-t border-border px-4 py-3 text-sm text-muted-foreground"
-                role="status"
-              >
+              <p class="cn-forms-ingestionaccountssetup-766-1" role="status">
                 {connection.status}
               </p>
             {/if}
@@ -773,40 +775,43 @@
         {/each}
 
         <section
-          class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
+          class="cn-forms-ingestionaccountssetup-776-1"
           aria-labelledby="other-ledger-accounts"
         >
           <button
             type="button"
-            class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+            class="cn-forms-ingestionaccountssetup-781-1"
             aria-expanded={otherAccountsOpen}
             aria-controls="other-ledger-account-groups"
             onclick={onToggleOtherAccounts}
           >
             <ChevronDown
-              class="size-4 shrink-0 text-muted-foreground transition-transform {otherAccountsOpen
+              class="cn-forms-ingestionaccountssetup-787-2 cn-forms-ingestionaccountssetup-787-1 cn-forms-ingestionaccountssetup-787-3 cn-forms-ingestionaccountssetup-787-4 {otherAccountsOpen
                 ? ''
                 : '-rotate-90'}"
               aria-hidden="true"
             />
             <span
-              class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+              class="cn-forms-ingestionaccountssetup-793-1"
               aria-hidden="true"
             >
-              <Landmark class="size-4" />
+              <Landmark class="cn-forms-ingestionaccountssetup-796-1" />
             </span>
-            <span class="min-w-0 flex-1">
+            <span class="cn-forms-ingestionaccountssetup-798-1">
               <span
                 id="other-ledger-accounts"
-                class="block text-sm font-semibold"
+                class="cn-forms-ingestionaccountssetup-801-1"
               >
                 Other Accounts
               </span>
-              <span class="block text-xs text-muted-foreground">
+              <span class="cn-forms-ingestionaccountssetup-805-1">
                 Ledger accounts not assigned to a sync configuration
               </span>
             </span>
-            <Badge variant="secondary" class="shrink-0 tabular-nums">
+            <Badge
+              variant="secondary"
+              class="cn-forms-ingestionaccountssetup-809-1"
+            >
               {otherAccountCount}
             </Badge>
           </button>
@@ -814,34 +819,32 @@
           {#if otherAccountsOpen && otherAccountGroups.length}
             <div
               id="other-ledger-account-groups"
-              class="border-t border-border px-4 pb-4 pt-3"
+              class="cn-forms-ingestionaccountssetup-817-1"
             >
-              <div class="flex flex-col gap-4">
+              <div class="cn-forms-ingestionaccountssetup-819-1">
                 {#each otherAccountGroups as group (group.label)}
-                  <section class="overflow-hidden rounded-2xl bg-muted/80">
+                  <section class="cn-forms-ingestionaccountssetup-821-1">
                     <button
                       type="button"
-                      class="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-background/30"
+                      class="cn-forms-ingestionaccountssetup-824-1"
                       aria-expanded={group.open}
                       aria-controls={`other-account-group-${group.label}`}
                       onclick={() => onToggleOtherAccountGroup(group.label)}
                     >
-                      <span
-                        class="text-sm font-semibold tracking-wide text-foreground"
-                      >
+                      <span class="cn-forms-ingestionaccountssetup-830-1">
                         {group.label}
-                        <span class="ml-2 text-muted-foreground">
+                        <span class="cn-forms-ingestionaccountssetup-833-1">
                           · {group.accounts.length}
                         </span>
                       </span>
-                      <span class="flex shrink-0 items-center gap-3">
+                      <span class="cn-forms-ingestionaccountssetup-837-1">
                         {#if group.balance}
-                          <span class="text-sm font-semibold tabular-nums">
+                          <span class="cn-forms-ingestionaccountssetup-839-1">
                             {group.balance}
                           </span>
                         {/if}
                         <ChevronDown
-                          class="size-4 text-muted-foreground transition-transform {group.open
+                          class="cn-forms-ingestionaccountssetup-844-1 cn-forms-ingestionaccountssetup-844-2 cn-forms-ingestionaccountssetup-844-3 {group.open
                             ? ''
                             : '-rotate-90'}"
                           aria-hidden="true"
@@ -851,53 +854,53 @@
                     {#if group.open}
                       <ul
                         id={`other-account-group-${group.label}`}
-                        class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+                        class="cn-forms-ingestionaccountssetup-854-1"
                         role="list"
                       >
                         {#each group.accounts as account, index (account.name)}
                           <li
-                            class:rounded-b-xl={index ===
+                            class:cn-forms-ingestionaccountssetup-859-1={index ===
                               group.accounts.length - 1}
-                            class="relative flex items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
+                            class="cn-forms-ingestionaccountssetup-861-1"
                           >
                             <a
                               href={account.href}
-                              class="absolute inset-0 z-0 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              class="cn-forms-ingestionaccountssetup-865-1"
                               aria-label={`Open ${account.name}`}
                               onclick={(event) =>
                                 onOpenLedgerAccount(event, account.name)}
                             >
                             </a>
-                            <div
-                              class="pointer-events-none relative z-10 flex min-w-0 flex-1 items-center gap-3"
-                            >
+                            <div class="cn-forms-ingestionaccountssetup-872-1">
                               <AccountAvatar
                                 account={account.avatar.account}
                                 color={account.avatar.color}
                                 icon={account.avatar.icon}
                                 merchantLogoUrl={account.avatar.merchantLogoUrl}
                               />
-                              <span class="min-w-0 flex-1">
+                              <span
+                                class="cn-forms-ingestionaccountssetup-880-1"
+                              >
                                 <span
-                                  class="block truncate text-sm font-medium"
+                                  class="cn-forms-ingestionaccountssetup-882-1"
                                 >
                                   {account.name}
                                 </span>
                                 <span
-                                  class="block truncate text-xs text-muted-foreground"
+                                  class="cn-forms-ingestionaccountssetup-887-1"
                                 >
                                   Open directive
                                 </span>
                               </span>
                               {#if account.balance}
                                 <span
-                                  class="shrink-0 text-sm font-semibold tabular-nums"
+                                  class="cn-forms-ingestionaccountssetup-894-1"
                                 >
                                   {account.balance}
                                 </span>
                               {/if}
                             </div>
-                            <div class="relative z-10 shrink-0">
+                            <div class="cn-forms-ingestionaccountssetup-900-1">
                               <DropdownMenu.Root>
                                 <DropdownMenu.Trigger>
                                   {#snippet child({ props })}
@@ -906,11 +909,11 @@
                                       type="button"
                                       variant="ghost"
                                       size="icon"
-                                      class="text-muted-foreground"
+                                      class="cn-forms-ingestionaccountssetup-909-1"
                                       aria-label={`${account.name} actions`}
                                     >
                                       <MoreVertical
-                                        class="size-4"
+                                        class="cn-forms-ingestionaccountssetup-913-1"
                                         aria-hidden="true"
                                       />
                                     </Button>
@@ -923,7 +926,7 @@
                                         onEditOtherAccount(account.name)}
                                     >
                                       <Pencil
-                                        class="size-3.5"
+                                        class="cn-forms-ingestionaccountssetup-926-1"
                                         aria-hidden="true"
                                       />
                                       Edit
@@ -941,9 +944,7 @@
               </div>
             </div>
           {:else if otherAccountsOpen}
-            <p
-              class="border-t border-border px-4 py-3 text-sm text-muted-foreground"
-            >
+            <p class="cn-forms-ingestionaccountssetup-945-1">
               All open ledger accounts are assigned to a sync configuration.
             </p>
           {/if}
@@ -952,14 +953,11 @@
     {/if}
 
     {#if pageError && !connections.some((connection) => connection.selected)}
-      <div
-        class="rounded-lg bg-destructive/10 px-3 py-2 text-destructive"
-        role="alert"
-      >
-        <p class="text-xs font-medium">Could not load accounts</p>
-        <p
-          class="mt-0.5 break-words font-mono text-[11px] leading-snug opacity-90"
-        >
+      <div class="cn-forms-ingestionaccountssetup-956-1" role="alert">
+        <p class="cn-forms-ingestionaccountssetup-959-1">
+          Could not load accounts
+        </p>
+        <p class="cn-forms-ingestionaccountssetup-961-1">
           {pageError}
         </p>
       </div>
@@ -968,37 +966,36 @@
 </section>
 
 <Sheet.Root bind:open={setupSheetOpen}>
-  <Sheet.Content
-    side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-xl"
-  >
-    <Sheet.Header class="border-b px-6 py-5 pr-14">
+  <Sheet.Content side="right" class="cn-forms-ingestionaccountssetup-973-1">
+    <Sheet.Header class="cn-forms-ingestionaccountssetup-975-1">
       <Sheet.Title>Set Up New Accounts</Sheet.Title>
       <Sheet.Description>
         Select imported accounts and map each one to a Beancount source account.
       </Sheet.Description>
     </Sheet.Header>
 
-    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+    <div class="cn-forms-ingestionaccountssetup-982-1">
       {#if discovering && unlinkedAccounts.length === 0}
-        <p class="text-sm text-muted-foreground">Discovering accounts…</p>
+        <p class="cn-forms-ingestionaccountssetup-984-1">
+          Discovering accounts…
+        </p>
       {:else if !unlinkedAccounts.length && selectableAccountCount > 0}
-        <p class="text-sm text-muted-foreground">
+        <p class="cn-forms-ingestionaccountssetup-986-1">
           All discovered accounts are already linked.
         </p>
       {:else if !unlinkedAccounts.length}
-        <p class="text-sm text-muted-foreground">No accounts to set up.</p>
+        <p class="cn-forms-ingestionaccountssetup-990-1">
+          No accounts to set up.
+        </p>
       {:else}
-        <ul class="flex flex-col gap-2" role="list">
+        <ul class="cn-forms-ingestionaccountssetup-992-1" role="list">
           {#each unlinkedAccounts as account (account.id)}
             {@const checked = selectedIds.includes(account.id)}
             <li>
-              <label
-                class="flex cursor-pointer items-start gap-3 rounded-lg border border-border px-3 py-2.5"
-              >
+              <label class="cn-forms-ingestionaccountssetup-997-1">
                 <input
                   type="checkbox"
-                  class="mt-1 size-4 shrink-0"
+                  class="cn-forms-ingestionaccountssetup-1001-1"
                   {checked}
                   aria-label={`Select ${account.name}`}
                   onchange={(event) =>
@@ -1007,16 +1004,18 @@
                       event.currentTarget.checked,
                     )}
                 />
-                <span class="min-w-0 flex-1">
-                  <span
-                    class="flex flex-wrap items-center gap-2 text-sm font-medium"
-                  >
+                <span class="cn-forms-ingestionaccountssetup-1010-1">
+                  <span class="cn-forms-ingestionaccountssetup-1012-1">
                     <span>{account.name}</span>
                     {#if account.closed}
-                      <Badge variant="outline" class="shrink-0">Closed</Badge>
+                      <Badge
+                        variant="outline"
+                        class="cn-forms-ingestionaccountssetup-1016-1"
+                        >Closed</Badge
+                      >
                     {/if}
                   </span>
-                  <span class="mt-0.5 block text-xs text-muted-foreground">
+                  <span class="cn-forms-ingestionaccountssetup-1019-1">
                     {detailsFor(account)}
                   </span>
                 </span>
@@ -1026,32 +1025,30 @@
         </ul>
 
         {#if selectedAccounts.length}
-          <div class="mt-5 flex flex-col gap-3">
-            <p
-              class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-            >
+          <div class="cn-forms-ingestionaccountssetup-1029-1">
+            <p class="cn-forms-ingestionaccountssetup-1031-1">
               Map to Beancount accounts
             </p>
-            <ul class="flex flex-col gap-3" role="list">
+            <ul class="cn-forms-ingestionaccountssetup-1035-1" role="list">
               {#each selectedAccounts as account (account.id)}
-                <li
-                  class="flex flex-col gap-1.5 rounded-lg border border-border p-3"
-                >
-                  <div class="min-w-0">
-                    <div
-                      class="flex flex-wrap items-center gap-2 text-sm font-medium"
-                    >
+                <li class="cn-forms-ingestionaccountssetup-1038-1">
+                  <div class="cn-forms-ingestionaccountssetup-1040-1">
+                    <div class="cn-forms-ingestionaccountssetup-1042-1">
                       <span>{account.name}</span>
                       {#if account.closed}
-                        <Badge variant="outline" class="shrink-0">Closed</Badge>
+                        <Badge
+                          variant="outline"
+                          class="cn-forms-ingestionaccountssetup-1046-1"
+                          >Closed</Badge
+                        >
                       {/if}
                     </div>
-                    <p class="text-xs text-muted-foreground">
+                    <p class="cn-forms-ingestionaccountssetup-1049-1">
                       {setupMappingDetails(account)}
                     </p>
                   </div>
-                  <label class="flex flex-col gap-1">
-                    <span class="text-xs font-medium text-muted-foreground">
+                  <label class="cn-forms-ingestionaccountssetup-1053-1">
+                    <span class="cn-forms-ingestionaccountssetup-1054-1">
                       Source account
                     </span>
                     <ComboBox
@@ -1070,7 +1067,7 @@
       {/if}
     </div>
 
-    <Sheet.Footer class="border-t px-6 py-4 sm:gap-2">
+    <Sheet.Footer class="cn-forms-ingestionaccountssetup-1073-1">
       <Button type="button" variant="outline" onclick={onCloseSetupSheet}>
         Cancel
       </Button>

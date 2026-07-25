@@ -15,7 +15,10 @@
   import FormSectionHeader from "./FormSectionHeader.svelte";
   import TagEditor from "./TagEditor.svelte";
   import LocalMerchantMatchPicker from "./LocalMerchantMatchPicker.svelte";
-  import type { FilterCommandOption, FilterCommandSearchAction } from "./picker-options";
+  import type {
+    FilterCommandOption,
+    FilterCommandSearchAction,
+  } from "./picker-options";
   import type { MerchantPickerMerchant } from "./MerchantPicker.svelte";
   import { onDestroy } from "svelte";
   import * as Alert from "../shadcn/alert";
@@ -728,7 +731,7 @@
 <Sheet.Root bind:open>
   <Sheet.Content
     side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
+    class="cn-forms-ingestionproposalsheet-731-1"
     data-ingestion-proposal-sheet
     onOpenAutoFocus={(event) => {
       // Prefer the title over header icon buttons so tooltips don't flash open.
@@ -736,13 +739,11 @@
       sheetTitleEl?.focus();
     }}
   >
-    <Sheet.Header
-      class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left sm:text-left"
-    >
+    <Sheet.Header class="cn-forms-ingestionproposalsheet-740-1">
       <Sheet.Title
         bind:ref={sheetTitleEl}
         tabindex={-1}
-        class="proposal-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
+        class="cn-forms-ingestionproposalsheet-745-1 proposal-sheet-title"
       >
         {readOnly ? "Import proposal audit" : "Review Proposal"}
       </Sheet.Title>
@@ -751,9 +752,11 @@
           ? "Read-only context retained for this import proposal."
           : "Review and edit this import proposal."}
       </Sheet.Description>
-      <div class="ml-auto flex shrink-0 items-center gap-1">
+      <div class="cn-forms-ingestionproposalsheet-754-1">
         {#if saveHint}
-          <p class="text-xs text-muted-foreground" role="status">{saveHint}</p>
+          <p class="cn-forms-ingestionproposalsheet-756-1" role="status">
+            {saveHint}
+          </p>
         {/if}
         {#if canUnaccept}
           <Tooltip.Root>
@@ -764,14 +767,17 @@
                   type="button"
                   size="icon"
                   variant="ghost"
-                  class="size-8"
+                  class="cn-forms-ingestionproposalsheet-767-1"
                   aria-label="Move to pending review"
                   disabled={busy || saving}
                   onclick={(event) => {
                     void setProposalStatus("needs-review");
                   }}
                 >
-                  <Undo2 class="size-4" aria-hidden="true" />
+                  <Undo2
+                    class="cn-forms-ingestionproposalsheet-774-1"
+                    aria-hidden="true"
+                  />
                 </Button>
               {/snippet}
             </Tooltip.Trigger>
@@ -786,14 +792,17 @@
                   type="button"
                   size="icon"
                   variant="ghost"
-                  class="size-8"
+                  class="cn-forms-ingestionproposalsheet-789-1"
                   aria-label="Mark as accepted"
                   disabled={busy || saving}
                   onclick={(event) => {
                     void setProposalStatus("ready");
                   }}
                 >
-                  <CheckCheck class="size-4" aria-hidden="true" />
+                  <CheckCheck
+                    class="cn-forms-ingestionproposalsheet-796-1"
+                    aria-hidden="true"
+                  />
                 </Button>
               {/snippet}
             </Tooltip.Trigger>
@@ -809,7 +818,7 @@
                   type="button"
                   size="icon"
                   variant="ghost"
-                  class="size-8"
+                  class="cn-forms-ingestionproposalsheet-812-1"
                   aria-label="Re-run AI enrichment"
                   disabled={enriching || busy || saving || !canEnrichAi}
                   onclick={(event) => {
@@ -817,7 +826,9 @@
                   }}
                 >
                   <Sparkles
-                    class={enriching ? "animate-pulse" : ""}
+                    class={enriching
+                      ? "cn-forms-ingestionproposalsheet-820-1"
+                      : ""}
                     aria-hidden="true"
                   />
                 </Button>
@@ -836,7 +847,7 @@
                 type="button"
                 variant="ghost"
                 size="icon"
-                class="size-8"
+                class="cn-forms-ingestionproposalsheet-839-1"
                 aria-label={sectionsCollapsedAll
                   ? "Expand all"
                   : "Collapse all"}
@@ -845,9 +856,15 @@
                 }}
               >
                 {#if sectionsCollapsedAll}
-                  <ChevronsUpDown class="size-4" aria-hidden="true" />
+                  <ChevronsUpDown
+                    class="cn-forms-ingestionproposalsheet-848-1"
+                    aria-hidden="true"
+                  />
                 {:else}
-                  <ChevronsDownUp class="size-4" aria-hidden="true" />
+                  <ChevronsDownUp
+                    class="cn-forms-ingestionproposalsheet-850-1"
+                    aria-hidden="true"
+                  />
                 {/if}
               </Button>
             {/snippet}
@@ -861,10 +878,10 @@
             {#snippet child({ props })}
               <Sheet.Close
                 {...props}
-                class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                class="cn-forms-ingestionproposalsheet-864-1"
                 aria-label="Close"
               >
-                <X class="size-4" />
+                <X class="cn-forms-ingestionproposalsheet-867-1" />
                 <span class="sr-only">Close</span>
               </Sheet.Close>
             {/snippet}
@@ -874,19 +891,25 @@
       </div>
     </Sheet.Header>
 
-    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+    <div class="cn-forms-ingestionproposalsheet-877-1">
       {#if errors.length}
-        <Alert.Root variant="destructive" class="mb-5">
+        <Alert.Root
+          variant="destructive"
+          class="cn-forms-ingestionproposalsheet-879-1"
+        >
           <CircleAlert />
           <Alert.Title>Could not update proposal</Alert.Title>
-          <Alert.Description class="whitespace-pre-wrap"
+          <Alert.Description class="cn-forms-ingestionproposalsheet-882-1"
             >{errors.join("\n")}</Alert.Description
           >
         </Alert.Root>
       {/if}
 
-      <div class="proposal-form flex min-w-0 flex-col gap-6 pl-6">
-        <section class="flex flex-col gap-2" aria-label="Workflow">
+      <div class="cn-forms-ingestionproposalsheet-888-1 proposal-form">
+        <section
+          class="cn-forms-ingestionproposalsheet-889-1"
+          aria-label="Workflow"
+        >
           <FormSectionHeader
             title="Workflow"
             titleClass={sectionTitleClass}
@@ -900,13 +923,13 @@
           {#if isSectionOpen("workflow")}
             <div class="proposal-section-body">
               {#if workflowTimestamp}
-                <p class="text-xs text-muted-foreground">
+                <p class="cn-forms-ingestionproposalsheet-903-1">
                   Last run: {workflowTimestamp}
                 </p>
               {/if}
               {#each workflowSteps as step (step.key)}
                 {@const stepDefaultOpen = workflowStepDefaultOpen(step)}
-                <section class="flex flex-col gap-2 pl-6">
+                <section class="cn-forms-ingestionproposalsheet-909-1">
                   <FormSectionHeader
                     title={step.label}
                     editable={false}
@@ -919,18 +942,18 @@
                   >
                     {#snippet actions()}
                       {#if step.ok}
-                        <Check
-                          class="size-4 text-green-600 dark:text-green-500"
-                        />
+                        <Check class="cn-forms-ingestionproposalsheet-923-1" />
                       {:else}
-                        <CircleX class="size-4 text-destructive" />
+                        <CircleX
+                          class="cn-forms-ingestionproposalsheet-926-1"
+                        />
                       {/if}
                     {/snippet}
                   </FormSectionHeader>
                   {#if isDebugOpen(`call:${step.key}`, stepDefaultOpen)}
-                    <div class="flex flex-col gap-3 pl-2">
+                    <div class="cn-forms-ingestionproposalsheet-931-1">
                       {#if step.error}
-                        <section class="flex flex-col gap-2 pl-6">
+                        <section class="cn-forms-ingestionproposalsheet-933-1">
                           <FormSectionHeader
                             title="Error"
                             editable={false}
@@ -942,17 +965,19 @@
                               toggleDebug(`error:${step.key}`, true)}
                           >
                             {#snippet actions()}
-                              <CircleX class="size-3.5 text-destructive" />
+                              <CircleX
+                                class="cn-forms-ingestionproposalsheet-945-1"
+                              />
                             {/snippet}
                           </FormSectionHeader>
                           {#if isDebugOpen(`error:${step.key}`, true)}
                             <pre
-                              class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{step.error}</pre>
+                              class="cn-forms-ingestionproposalsheet-950-1">{step.error}</pre>
                           {/if}
                         </section>
                       {/if}
                       {#if step.prompt}
-                        <section class="flex flex-col gap-2 pl-6">
+                        <section class="cn-forms-ingestionproposalsheet-955-1">
                           <FormSectionHeader
                             title="Prompt"
                             editable={false}
@@ -965,12 +990,12 @@
                           />
                           {#if isDebugOpen(`prompt:${step.key}`, false)}
                             <pre
-                              class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{step.prompt}</pre>
+                              class="cn-forms-ingestionproposalsheet-968-1">{step.prompt}</pre>
                           {/if}
                         </section>
                       {/if}
                       {#if step.response}
-                        <section class="flex flex-col gap-2 pl-6">
+                        <section class="cn-forms-ingestionproposalsheet-973-1">
                           <FormSectionHeader
                             title="Response"
                             editable={false}
@@ -983,7 +1008,7 @@
                           />
                           {#if isDebugOpen(`response:${step.key}`, false)}
                             <pre
-                              class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{step.response}</pre>
+                              class="cn-forms-ingestionproposalsheet-986-1">{step.response}</pre>
                           {/if}
                         </section>
                       {/if}
@@ -992,7 +1017,7 @@
                 </section>
               {/each}
               {#if aiIssues.length}
-                <section class="flex flex-col gap-2 pl-6">
+                <section class="cn-forms-ingestionproposalsheet-995-1">
                   <FormSectionHeader
                     title="Issues"
                     editable={false}
@@ -1003,14 +1028,14 @@
                     onToggle={() => toggleDebug("issues", true)}
                   >
                     {#snippet actions()}
-                      <CircleX class="size-3.5 text-destructive" />
+                      <CircleX class="cn-forms-ingestionproposalsheet-1006-1" />
                     {/snippet}
                   </FormSectionHeader>
                   {#if isDebugOpen("issues", true)}
-                    <div class="flex flex-col gap-2 pl-2">
+                    <div class="cn-forms-ingestionproposalsheet-1010-1">
                       {#each aiIssues as issue (issue)}
                         <pre
-                          class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{issue}</pre>
+                          class="cn-forms-ingestionproposalsheet-1013-1">{issue}</pre>
                       {/each}
                     </div>
                   {/if}
@@ -1020,7 +1045,7 @@
           {/if}
         </section>
 
-        <section class="flex flex-col gap-2">
+        <section class="cn-forms-ingestionproposalsheet-1023-1">
           <FormSectionHeader
             title="Merchant"
             titleClass={sectionTitleClass}
@@ -1033,54 +1058,54 @@
           />
           {#if isSectionOpen("merchant")}
             <div class="proposal-section-body">
-              <div class="flex gap-3">
+              <div class="cn-forms-ingestionproposalsheet-1036-1">
                 {#if merchant?.logoUrl && !failedLogo}
                   <img
-                    class="size-12 rounded-md border object-contain"
+                    class="cn-forms-ingestionproposalsheet-1039-1"
                     src={merchant.logoUrl}
                     alt={`${merchant.canonicalName} logo`}
                     onerror={() => (failedLogo = true)}
                   />
                 {:else}
                   <div
-                    class="flex size-12 shrink-0 items-center justify-center rounded-md border bg-muted text-sm font-medium text-muted-foreground"
+                    class="cn-forms-ingestionproposalsheet-1046-1"
                     aria-hidden="true"
                   >
                     {merchantInitials()}
                   </div>
                 {/if}
-                <div class="flex min-w-0 flex-1 flex-col gap-2">
-                  <p class="truncate font-medium">{title}</p>
-                  <p class="truncate text-xs text-muted-foreground">
+                <div class="cn-forms-ingestionproposalsheet-1052-1">
+                  <p class="cn-forms-ingestionproposalsheet-1053-1">{title}</p>
+                  <p class="cn-forms-ingestionproposalsheet-1054-1">
                     Source: {proposal.transaction?.merchant ??
                       proposal.transaction?.narration ??
                       "—"}
                   </p>
                   {#if merchant?.domain || merchant?.industry}
-                    <p class="truncate text-xs text-muted-foreground">
+                    <p class="cn-forms-ingestionproposalsheet-1060-1">
                       {[merchant?.domain, merchant?.industry]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
                   {/if}
                   {#if merchant?.description}
-                    <p class="line-clamp-3 text-xs text-muted-foreground">
+                    <p class="cn-forms-ingestionproposalsheet-1067-1">
                       {merchant.description}
                     </p>
                   {/if}
                   {#if merchantProvenance()}
-                    <p class="text-xs text-muted-foreground">
+                    <p class="cn-forms-ingestionproposalsheet-1072-1">
                       Provenance: {merchantProvenance()}
                     </p>
                   {/if}
-                  <p class="text-xs text-muted-foreground">
+                  <p class="cn-forms-ingestionproposalsheet-1076-1">
                     {merchantStatus}
                     {#if proposal.merchantResolution?.explanation}
                       · {proposal.merchantResolution.explanation}
                     {/if}
                   </p>
                   {#if !readOnly && merchantStatus === "suggested" && candidate}
-                    <div class="flex flex-wrap gap-2">
+                    <div class="cn-forms-ingestionproposalsheet-1083-1">
                       <Button
                         size="sm"
                         variant="secondary"
@@ -1188,7 +1213,7 @@
                 </div>
               {/if}
               {#if correcting}
-                <div class="flex flex-wrap justify-end gap-2">
+                <div class="cn-forms-ingestionproposalsheet-1191-1">
                   <Button
                     size="sm"
                     disabled={busy || !correctionName.trim()}
@@ -1216,7 +1241,7 @@
           {/if}
         </section>
 
-        <section class="flex flex-col gap-2">
+        <section class="cn-forms-ingestionproposalsheet-1219-1">
           <FormSectionHeader
             title="Transaction"
             titleClass={sectionTitleClass}
@@ -1336,7 +1361,7 @@
                   {:else}
                     <div
                       class={!editable
-                        ? "pointer-events-none opacity-60"
+                        ? "cn-forms-ingestionproposalsheet-1339-1"
                         : undefined}
                     >
                       <TagEditor
@@ -1373,7 +1398,10 @@
         </section>
 
         {#if readOnly}
-          <section class="flex flex-col gap-2" aria-label="Metadata">
+          <section
+            class="cn-forms-ingestionproposalsheet-1376-1"
+            aria-label="Metadata"
+          >
             <FormSectionHeader
               title={`Metadata · ${draft.metadata.length}`}
               titleClass={sectionTitleClass}

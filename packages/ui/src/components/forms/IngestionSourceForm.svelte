@@ -80,11 +80,23 @@
     source: EditableIngestionSource;
     detailsForm: FormConfig<EditableIngestionSource, SourceFormContext>;
     apiForm: FormConfig<EditableIngestionSource, SourceFormContext>;
-    sourcePaginationForm: FormConfig<EditableIngestionSource, SourceFormContext>;
+    sourcePaginationForm: FormConfig<
+      EditableIngestionSource,
+      SourceFormContext
+    >;
     sourceMappingForm: FormConfig<EditableIngestionSource, SourceFormContext>;
-    sourceEnrichmentForm: FormConfig<EditableIngestionSource, SourceFormContext>;
-    sourceEnrichmentDetailsForm: FormConfig<EditableIngestionSource, SourceFormContext>;
-    connectionFieldsForm?: FormConfig<EditableIngestionSource, SourceFormContext>;
+    sourceEnrichmentForm: FormConfig<
+      EditableIngestionSource,
+      SourceFormContext
+    >;
+    sourceEnrichmentDetailsForm: FormConfig<
+      EditableIngestionSource,
+      SourceFormContext
+    >;
+    connectionFieldsForm?: FormConfig<
+      EditableIngestionSource,
+      SourceFormContext
+    >;
     advancedFieldsForm?: FormConfig<EditableIngestionSource, SourceFormContext>;
     providerCategories?: readonly SourceCategory[];
     isConnector?: boolean;
@@ -727,11 +739,14 @@
               <Button
                 type="button"
                 variant="link"
-                class="h-auto gap-1 px-0 text-sm"
+                class="cn-forms-ingestionsourceform-730-1"
                 onclick={openBrandSettings}
               >
                 Manage brand matching
-                <ArrowRight class="size-3.5" aria-hidden="true" />
+                <ArrowRight
+                  class="cn-forms-ingestionsourceform-734-1"
+                  aria-hidden="true"
+                />
               </Button>
             </div>
           {/if}

@@ -76,19 +76,16 @@
       <Button
         {...props}
         variant="outline"
-        class="justify-start font-normal"
+        class="cn-forms-datepicker-79-1"
         aria-label={ariaLabel}
         {disabled}
       >
         <CalendarIcon aria-hidden="true" />
-        <span class:!text-muted-foreground={!value}>{displayValue}</span>
+        <span class:cn-forms-datepicker-84-1={!value}>{displayValue}</span>
       </Button>
     {/snippet}
   </Popover.Trigger>
-  <Popover.Content
-    class="flex w-auto flex-col gap-2 p-2"
-    aria-label="Date options"
-  >
+  <Popover.Content class="cn-forms-datepicker-89-1" aria-label="Date options">
     {#if shortcuts.length}
       <Select.Root
         type="single"
@@ -105,7 +102,7 @@
         </Select.Content>
       </Select.Root>
     {/if}
-    <div class="rounded-md border border-border">
+    <div class="cn-forms-datepicker-108-1">
       <Calendar.Calendar
         type="single"
         {value}

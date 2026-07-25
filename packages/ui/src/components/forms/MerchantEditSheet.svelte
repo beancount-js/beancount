@@ -175,36 +175,31 @@
 <Sheet.Root {open} onOpenChange={handleOpenChange}>
   <Sheet.Content
     side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
+    class="cn-forms-merchanteditsheet-178-1"
     data-merchant-edit-sheet
     onOpenAutoFocus={(event) => {
       event.preventDefault();
       sheetTitleEl?.focus();
     }}
   >
-    <Sheet.Header
-      class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left"
-    >
-      <div class="flex min-w-0 flex-1 items-center gap-2">
+    <Sheet.Header class="cn-forms-merchanteditsheet-186-1">
+      <div class="cn-forms-merchanteditsheet-188-1">
         {#if merchant?.logoUrl && !failedLogo}
           <img
-            class="size-8 shrink-0 rounded-full border object-contain"
+            class="cn-forms-merchanteditsheet-191-1"
             src={merchant.logoUrl}
             alt=""
             onerror={handleLogoError}
           />
         {:else if merchant}
-          <div
-            class="flex size-8 shrink-0 items-center justify-center rounded-full border bg-muted text-xs font-semibold text-muted-foreground"
-            aria-hidden="true"
-          >
+          <div class="cn-forms-merchanteditsheet-198-1" aria-hidden="true">
             {merchantInitial}
           </div>
         {/if}
         <Sheet.Title
           bind:ref={sheetTitleEl}
           tabindex={-1}
-          class="merchant-edit-sheet-title min-w-0 truncate leading-none outline-none"
+          class="cn-forms-merchanteditsheet-207-1 merchant-edit-sheet-title"
         >
           {headerTitle}
         </Sheet.Title>
@@ -212,7 +207,7 @@
       <Sheet.Description class="sr-only">
         Edit saved merchant profile {headerTitle}.
       </Sheet.Description>
-      <div class="ml-auto flex shrink-0 items-center gap-1">
+      <div class="cn-forms-merchanteditsheet-215-1">
         <Tooltip.Root>
           <Tooltip.Trigger>
             {#snippet child({ props })}
@@ -221,7 +216,7 @@
                 type="button"
                 variant="ghost"
                 size="icon"
-                class="size-8"
+                class="cn-forms-merchanteditsheet-224-1"
                 aria-label={sectionsCollapsedAll
                   ? "Expand all"
                   : "Collapse all"}
@@ -230,9 +225,15 @@
                 }}
               >
                 {#if sectionsCollapsedAll}
-                  <ChevronsUpDown class="size-4" aria-hidden="true" />
+                  <ChevronsUpDown
+                    class="cn-forms-merchanteditsheet-233-1"
+                    aria-hidden="true"
+                  />
                 {:else}
-                  <ChevronsDownUp class="size-4" aria-hidden="true" />
+                  <ChevronsDownUp
+                    class="cn-forms-merchanteditsheet-235-1"
+                    aria-hidden="true"
+                  />
                 {/if}
               </Button>
             {/snippet}
@@ -246,10 +247,10 @@
             {#snippet child({ props })}
               <Sheet.Close
                 {...props}
-                class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                class="cn-forms-merchanteditsheet-249-1"
                 aria-label="Close"
               >
-                <X class="size-4" />
+                <X class="cn-forms-merchanteditsheet-252-1" />
                 <span class="sr-only">Close</span>
               </Sheet.Close>
             {/snippet}
@@ -259,22 +260,25 @@
       </div>
     </Sheet.Header>
 
-    <div class="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+    <div class="cn-forms-merchanteditsheet-262-1">
       {#if loadError && !merchant}
-        <Alert.Root variant="destructive" class="mb-3">
+        <Alert.Root
+          variant="destructive"
+          class="cn-forms-merchanteditsheet-264-1"
+        >
           <CircleAlert />
           <Alert.Title>Could not load merchant</Alert.Title>
-          <Alert.Description class="whitespace-pre-wrap"
+          <Alert.Description class="cn-forms-merchanteditsheet-267-1"
             >{loadError}</Alert.Description
           >
         </Alert.Root>
       {/if}
 
       {#if loading && !merchant}
-        <p class="text-sm text-muted-foreground">Loading merchant…</p>
+        <p class="cn-forms-merchanteditsheet-274-1">Loading merchant…</p>
       {:else if merchant}
-        <div class="merchant-edit-form flex min-w-0 flex-col gap-6 pl-6">
-          <section class="flex flex-col gap-2">
+        <div class="cn-forms-merchanteditsheet-276-1 merchant-edit-form">
+          <section class="cn-forms-merchanteditsheet-277-1">
             <FormSectionHeader
               title="Details"
               titleClass={sectionTitleClass}
@@ -301,7 +305,7 @@
             {/if}
           </section>
 
-          <section class="flex flex-col gap-2">
+          <section class="cn-forms-merchanteditsheet-304-1">
             <FormSectionHeader
               title="Aliases"
               titleClass={sectionTitleClass}
@@ -314,16 +318,13 @@
             />
             {#if isSectionOpen("aliases") && merchant.aliases.length}
               <div class="merchant-edit-section-body">
-                <div
-                  class="overflow-hidden rounded-lg border bg-card text-sm shadow-sm"
-                >
+                <div class="cn-forms-merchanteditsheet-318-1">
                   {#each merchant.aliases as alias (alias.normalizedValue + alias.sourceId)}
-                    <div
-                      class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-3 py-2 last:border-b-0"
-                    >
-                      <span class="min-w-0 truncate">{alias.value}</span>
-                      <span
-                        class="truncate text-xs tabular-nums text-muted-foreground"
+                    <div class="cn-forms-merchanteditsheet-322-1">
+                      <span class="cn-forms-merchanteditsheet-324-1"
+                        >{alias.value}</span
+                      >
+                      <span class="cn-forms-merchanteditsheet-326-1"
                         >{alias.sourceId}</span
                       >
                     </div>
@@ -333,7 +334,7 @@
             {/if}
           </section>
 
-          <section class="flex flex-col gap-2">
+          <section class="cn-forms-merchanteditsheet-336-1">
             <FormSectionHeader
               title="Provenance"
               titleClass={sectionTitleClass}
@@ -346,18 +347,13 @@
             />
             {#if isSectionOpen("provenance") && merchant.provenance.length}
               <div class="merchant-edit-section-body">
-                <div
-                  class="overflow-hidden rounded-lg border bg-card text-sm shadow-sm"
-                >
+                <div class="cn-forms-merchanteditsheet-350-1">
                   {#each merchant.provenance as entry, index (`${index}:${entry.source}:${entry.observedAt}`)}
-                    <div
-                      class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-3 py-2 last:border-b-0"
-                    >
-                      <span class="min-w-0 truncate capitalize"
+                    <div class="cn-forms-merchanteditsheet-354-1">
+                      <span class="cn-forms-merchanteditsheet-356-1"
                         >{entry.source}</span
                       >
-                      <span
-                        class="truncate text-xs tabular-nums text-muted-foreground"
+                      <span class="cn-forms-merchanteditsheet-360-1"
                         >{provenanceSecondary(entry)}</span
                       >
                     </div>
@@ -367,7 +363,7 @@
             {/if}
           </section>
 
-          <section class="flex flex-col gap-2">
+          <section class="cn-forms-merchanteditsheet-370-1">
             <FormSectionHeader
               title="Brand"
               titleClass={sectionTitleClass}
@@ -388,7 +384,9 @@
                       align="center"
                       controlId="merchant-brand-provider"
                     >
-                      <output id="merchant-brand-provider" class="truncate"
+                      <output
+                        id="merchant-brand-provider"
+                        class="cn-forms-merchanteditsheet-391-1"
                         >{merchant.brand.provider}</output
                       >
                     </FormField>
@@ -398,7 +396,9 @@
                       align="center"
                       controlId="merchant-brand-id"
                     >
-                      <output id="merchant-brand-id" class="truncate"
+                      <output
+                        id="merchant-brand-id"
+                        class="cn-forms-merchanteditsheet-401-1"
                         >{merchant.brand.brandId ?? "—"}</output
                       >
                     </FormField>
@@ -410,7 +410,7 @@
                     >
                       <output
                         id="merchant-brand-fetched"
-                        class="truncate tabular-nums"
+                        class="cn-forms-merchanteditsheet-413-1"
                         >{formatTimestamp(merchant.brand.fetchedAt)}</output
                       >
                     </FormField>
@@ -422,7 +422,7 @@
                     >
                       <output
                         id="merchant-brand-expires"
-                        class="truncate tabular-nums"
+                        class="cn-forms-merchanteditsheet-425-1"
                         >{formatTimestamp(merchant.brand.expiresAt)}</output
                       >
                     </FormField>
@@ -432,7 +432,9 @@
                       align="center"
                       controlId="merchant-brand-asset"
                     >
-                      <output id="merchant-brand-asset" class="truncate"
+                      <output
+                        id="merchant-brand-asset"
+                        class="cn-forms-merchanteditsheet-435-1"
                         >{merchant.brand.asset
                           ? `${merchant.brand.asset.filename} · ${merchant.brand.asset.size ?? "legacy"}px · ${merchant.brand.asset.mediaType}`
                           : "—"}</output
@@ -469,7 +471,7 @@
       {/if}
 
       {#if status}
-        <p class="mt-3 text-sm text-muted-foreground" role="status">
+        <p class="cn-forms-merchanteditsheet-472-1" role="status">
           {status}
         </p>
       {/if}

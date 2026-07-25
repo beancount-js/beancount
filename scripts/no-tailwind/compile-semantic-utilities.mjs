@@ -95,20 +95,58 @@ function classifyClassLiteral(content, file) {
   );
 }
 
+function normalizeFindingToken(token) {
+  return token.replace(/^[{\"'`]+/, "").replace(/[}\"'`,]+$/, "");
+}
+
+function nearestTokenLine(lines, reportedLine, token) {
+  const reportedIndex = reportedLine - 1;
+  if (lines[reportedIndex]?.includes(token)) return reportedLine;
+
+  let nearest = reportedLine;
+  let distance = Number.POSITIVE_INFINITY;
+  lines.forEach((line, index) => {
+    if (!line.includes(token)) return;
+    const nextDistance = Math.abs(index - reportedIndex);
+    if (nextDistance < distance) {
+      nearest = index + 1;
+      distance = nextDistance;
+    }
+  });
+  return nearest;
+}
+
+function authoredStyleClasses(source) {
+  const classes = new Set();
+  const stylePattern = /<style\b[^>]*>([\s\S]*?)<\/style>/g;
+  const classPattern = /(?:^|[^\\])\.([_a-zA-Z][\w-]*)/g;
+
+  for (const styleMatch of source.matchAll(stylePattern)) {
+    for (const classMatch of styleMatch[1].matchAll(classPattern)) {
+      classes.add(classMatch[1]);
+    }
+  }
+
+  return classes;
+}
+
 export function transformClassContexts({ source, file, family }) {
   const findings = findTailwindUtilitiesInSource(source, file);
   const tokensByLine = new Map();
+  const lines = source.split("\n");
+  const preservedClasses = authoredStyleClasses(source);
 
   for (const finding of findings) {
     if (finding.token === "tailwind-variants") continue;
-    const tokens = tokensByLine.get(finding.line) ?? new Set();
-    tokens.add(finding.token);
-    tokensByLine.set(finding.line, tokens);
+    const token = normalizeFindingToken(finding.token);
+    const lineNumber = nearestTokenLine(lines, finding.line, token);
+    const tokens = tokensByLine.get(lineNumber) ?? new Set();
+    tokens.add(token);
+    tokensByLine.set(lineNumber, tokens);
   }
 
   const mappings = [];
   const groupClasses = new Map();
-  const lines = source.split("\n");
   const familyMarkerPrefix = `cn-${slug(family)}-`;
   const markerStem = sourceMarkerStem(file, family);
 
@@ -146,7 +184,8 @@ export function transformClassContexts({ source, file, family }) {
         (word) =>
           !word.startsWith("cn-") &&
           word !== "sr-only" &&
-          word !== "not-sr-only",
+          word !== "not-sr-only" &&
+          !preservedClasses.has(word),
       );
       if (utilities.length === 0) return literal;
 

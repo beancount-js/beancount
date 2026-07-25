@@ -302,35 +302,35 @@
 <Sheet.Root {open} onOpenChange={handleOpenChange}>
   <Sheet.Content
     side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
+    class="cn-forms-journaleditorsheet-305-1"
     data-journal-editor-sheet
     onOpenAutoFocus={(event) => {
       event.preventDefault();
       sheetTitleEl?.focus();
     }}
   >
-    <Sheet.Header
-      class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left"
-    >
+    <Sheet.Header class="cn-forms-journaleditorsheet-313-1">
       <Sheet.Title
         bind:ref={sheetTitleEl}
         tabindex={-1}
-        class="journal-sheet-title min-w-0 flex-1 truncate leading-none outline-none"
+        class="cn-forms-journaleditorsheet-318-1 journal-sheet-title"
       >
         {title}
       </Sheet.Title>
       <Sheet.Description class="sr-only">
         Edit this ledger record.
       </Sheet.Description>
-      <div class="ml-auto flex shrink-0 items-center gap-1">
+      <div class="cn-forms-journaleditorsheet-325-1">
         {#if saveHint}
-          <p class="text-xs text-muted-foreground" role="status">{saveHint}</p>
+          <p class="cn-forms-journaleditorsheet-327-1" role="status">
+            {saveHint}
+          </p>
         {/if}
         {#if !isYamlOnly}
           <Tooltip.Root>
             <Tooltip.Trigger>
               {#snippet child({ props })}
-                <div {...props} class="flex items-center gap-2">
+                <div {...props} class="cn-forms-journaleditorsheet-333-1">
                   <Switch
                     id="journal-yaml-mode"
                     size="sm"
@@ -339,8 +339,9 @@
                     aria-label="YAML mode"
                     onCheckedChange={onYamlModeChange}
                   />
-                  <label for="journal-yaml-mode" class="text-sm font-semibold"
-                    >YAML</label
+                  <label
+                    for="journal-yaml-mode"
+                    class="cn-forms-journaleditorsheet-342-1">YAML</label
                   >
                 </div>
               {/snippet}
@@ -359,7 +360,7 @@
                   type="button"
                   size="icon"
                   variant="ghost"
-                  class="size-8"
+                  class="cn-forms-journaleditorsheet-362-1"
                   aria-label={sectionsCollapsedAll
                     ? "Expand all"
                     : "Collapse all"}
@@ -372,9 +373,15 @@
                   }}
                 >
                   {#if sectionsCollapsedAll}
-                    <ChevronsUpDown class="size-4" aria-hidden="true" />
+                    <ChevronsUpDown
+                      class="cn-forms-journaleditorsheet-375-1"
+                      aria-hidden="true"
+                    />
                   {:else}
-                    <ChevronsDownUp class="size-4" aria-hidden="true" />
+                    <ChevronsDownUp
+                      class="cn-forms-journaleditorsheet-377-1"
+                      aria-hidden="true"
+                    />
                   {/if}
                 </Button>
               {/snippet}
@@ -389,10 +396,10 @@
             {#snippet child({ props })}
               <Sheet.Close
                 {...props}
-                class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                class="cn-forms-journaleditorsheet-392-1"
                 aria-label="Close"
               >
-                <X class="size-4" />
+                <X class="cn-forms-journaleditorsheet-395-1" />
                 <span class="sr-only">Close</span>
               </Sheet.Close>
             {/snippet}
@@ -402,22 +409,25 @@
       </div>
     </Sheet.Header>
 
-    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+    <div class="cn-forms-journaleditorsheet-405-1">
       {#if errors.length}
-        <Alert.Root variant="destructive" class="mb-5">
+        <Alert.Root
+          variant="destructive"
+          class="cn-forms-journaleditorsheet-407-1"
+        >
           <CircleAlert />
           <Alert.Title>Could not save record</Alert.Title>
-          <Alert.Description class="whitespace-pre-wrap"
+          <Alert.Description class="cn-forms-journaleditorsheet-410-1"
             >{errors.join("\n")}</Alert.Description
           >
         </Alert.Root>
       {/if}
 
       {#if yamlMode || isYamlOnly}
-        <div class="grid gap-2 text-sm font-medium">
+        <div class="cn-forms-journaleditorsheet-417-1">
           <span id="record-source-label">Beancount source</span>
           <div
-            class="beancount-editor min-h-[28rem] overflow-hidden rounded-md border border-input"
+            class="cn-forms-journaleditorsheet-420-1"
             role="textbox"
             aria-labelledby="record-source-label"
             aria-multiline="true"
@@ -431,8 +441,11 @@
           </div>
         </div>
       {:else}
-        <div class="journal-form flex min-w-0 flex-col gap-6 pl-6">
-          <section class="flex flex-col gap-2" aria-label="Details">
+        <div class="cn-forms-journaleditorsheet-434-1 journal-form">
+          <section
+            class="cn-forms-journaleditorsheet-435-1"
+            aria-label="Details"
+          >
             <FormSectionHeader
               title="Details"
               titleClass={sectionTitleClass}
@@ -930,7 +943,7 @@
                     <FormField label="Query" controlId="journal-query">
                       <textarea
                         id="journal-query"
-                        class="flex min-h-[4rem] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        class="cn-forms-journaleditorsheet-933-1"
                         bind:value={draft.query}
                         use:autosizeTextarea={draft.query}
                         oninput={() => scheduleSave()}

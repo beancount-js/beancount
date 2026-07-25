@@ -137,30 +137,38 @@ sources:
   }
 </script>
 
-<div class="h-[42rem] overflow-hidden rounded-lg border border-border">
+<div class="cn-forms-formworkspacedemo-140-1">
   <AppShell pageTitle="Ledger settings" height="container">
     <svelte:fragment slot="header-actions">
-      <output class="text-xs text-muted-foreground">Changes saved</output>
+      <output class="cn-forms-formworkspacedemo-143-1">Changes saved</output>
     </svelte:fragment>
 
-    <section class="h-full overflow-auto p-6" aria-label="Ledger settings form">
-      <div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <section
+      class="cn-forms-formworkspacedemo-146-1"
+      aria-label="Ledger settings form"
+    >
+      <div class="cn-forms-formworkspacedemo-147-1">
         <FormToolbar
           {collapsedAll}
           onToggleCollapse={() => setAllSections(collapsedAll)}
         >
           {#snippet leading()}
-            <span class="text-sm font-medium">Source configuration</span>
+            <span class="cn-forms-formworkspacedemo-153-1"
+              >Source configuration</span
+            >
           {/snippet}
           {#snippet actions()}
-            <output class="text-xs text-muted-foreground">
+            <output class="cn-forms-formworkspacedemo-156-1">
               {sourceCount}
               {sourceCount === 1 ? "source" : "sources"}
             </output>
           {/snippet}
         </FormToolbar>
 
-        <section class="flex flex-col gap-3" aria-label="Connection settings">
+        <section
+          class="cn-forms-formworkspacedemo-163-1"
+          aria-label="Connection settings"
+        >
           <FormSectionHeader
             title="Connection"
             editable={false}
@@ -172,7 +180,7 @@ sources:
           />
 
           {#if connectionOpen}
-            <div class="pl-4">
+            <div class="cn-forms-formworkspacedemo-175-1">
               <div class="beancount-structured-form">
                 <FormField
                   label="Ledger name"
@@ -224,7 +232,7 @@ sources:
         </section>
 
         <section
-          class="flex flex-col gap-3"
+          class="cn-forms-formworkspacedemo-227-1"
           aria-label="Source editing settings"
         >
           <FormSectionHeader
@@ -238,7 +246,7 @@ sources:
           />
 
           {#if sourceEditingOpen}
-            <div class="flex flex-col gap-4 pl-4">
+            <div class="cn-forms-formworkspacedemo-241-1">
               <div class="beancount-structured-form">
                 <FormField label="Edit as YAML" as="div" align="center">
                   {#snippet children()}
@@ -263,13 +271,13 @@ sources:
                     yamlApplied = true;
                   }}
                 />
-                <output class="block text-sm text-muted-foreground">
+                <output class="cn-forms-formworkspacedemo-266-1">
                   {yamlApplied
                     ? "YAML source draft applied"
                     : "YAML source draft not applied"}
                 </output>
               {:else}
-                <p class="text-sm text-muted-foreground">
+                <p class="cn-forms-formworkspacedemo-272-1">
                   Use the structured fields for routine edits, or switch to the
                   authoritative YAML source when the whole draft needs editing.
                 </p>
@@ -278,7 +286,10 @@ sources:
           {/if}
         </section>
 
-        <section class="flex flex-col gap-3" aria-label="Sources settings">
+        <section
+          class="cn-forms-formworkspacedemo-281-1"
+          aria-label="Sources settings"
+        >
           <FormSectionHeader
             title="Sources"
             editable={false}
@@ -290,10 +301,10 @@ sources:
           />
 
           {#if sourcesOpen}
-            <div class="flex flex-col gap-5 pl-10">
+            <div class="cn-forms-formworkspacedemo-293-1">
               {#each sources as source, index (source.id)}
                 <section
-                  class="flex flex-col gap-4"
+                  class="cn-forms-formworkspacedemo-296-1"
                   aria-label={`${source.label} source`}
                 >
                   <FormSectionHeader
@@ -317,7 +328,7 @@ sources:
                   />
 
                   {#if source.open}
-                    <div class="flex flex-col gap-4 pl-6">
+                    <div class="cn-forms-formworkspacedemo-320-1">
                       <div class="beancount-structured-form">
                         <FormField
                           label="Endpoint"
@@ -389,11 +400,9 @@ sources:
                       >
                         {#snippet children()}
                           {#if source.rules.length}
-                            <ul class="flex flex-col gap-2 text-sm">
+                            <ul class="cn-forms-formworkspacedemo-392-1">
                               {#each source.rules as rule}
-                                <li
-                                  class="rounded-md border border-dashed border-border bg-muted/30 px-2.5 py-2"
-                                >
+                                <li class="cn-forms-formworkspacedemo-395-1">
                                   {rule}
                                 </li>
                               {/each}
@@ -405,7 +414,7 @@ sources:
                   {/if}
                 </section>
               {/each}
-              <div class="flex justify-end">
+              <div class="cn-forms-formworkspacedemo-408-1">
                 <FormAddButton label="Add source" onclick={addSource} />
               </div>
             </div>

@@ -146,11 +146,12 @@
   }
 </script>
 
-<div class="flex min-w-0 flex-col gap-8" data-ingestion-sources-preview>
-  <div class="flex min-w-0 flex-col gap-4">
-    <p
-      class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-    >
+<div
+  class="cn-forms-ingestionsourcespreview-149-1"
+  data-ingestion-sources-preview
+>
+  <div class="cn-forms-ingestionsourcespreview-150-1">
+    <p class="cn-forms-ingestionsourcespreview-152-1">
       Your connections · {sources.length}
     </p>
 
@@ -159,60 +160,57 @@
       {@const customSetup = source.setupHtml}
       {@const status = sourceStatus(source)}
       <article
-        class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
+        class="cn-forms-ingestionsourcespreview-162-1"
         data-ingestion-connection-card
       >
-        <div
-          class="group flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
-        >
+        <div class="cn-forms-ingestionsourcespreview-166-1 cn-group">
           <button
             type="button"
-            class="flex min-w-0 flex-1 items-center gap-3 text-left"
+            class="cn-forms-ingestionsourcespreview-170-1"
             aria-expanded={open}
             onclick={() => toggle(source)}
           >
             <ChevronDown
-              class="size-4 shrink-0 text-muted-foreground transition-transform {open
+              class="cn-forms-ingestionsourcespreview-175-2 cn-forms-ingestionsourcespreview-175-1 cn-forms-ingestionsourcespreview-175-3 cn-forms-ingestionsourcespreview-175-4 {open
                 ? ''
                 : '-rotate-90'}"
               aria-hidden="true"
             />
-            {#if source.merchantLogoUrl &&
-              source.merchantId &&
-              !failedMerchantLogoIds.has(source.merchantId)}
+            {#if source.merchantLogoUrl && source.merchantId && !failedMerchantLogoIds.has(source.merchantId)}
               <span
-                class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted shadow-sm"
+                class="cn-forms-ingestionsourcespreview-184-1"
                 aria-hidden="true"
               >
                 <img
-                  class="size-full object-cover"
+                  class="cn-forms-ingestionsourcespreview-188-1"
                   src={source.merchantLogoUrl}
                   alt=""
-                  onerror={() => markMerchantLogoFailed(source.merchantId ?? "")}
+                  onerror={() =>
+                    markMerchantLogoFailed(source.merchantId ?? "")}
                 />
               </span>
             {:else}
               <span
-                class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
+                class="cn-forms-ingestionsourcespreview-196-1"
                 aria-hidden="true"
               >
                 {accountAvatarInitial(source.name)}
               </span>
             {/if}
-            <span class="min-w-0 truncate text-sm font-semibold">
+            <span class="cn-forms-ingestionsourcespreview-202-1">
               {source.name || "Untitled source"}
             </span>
             <Badge
               variant="secondary"
-              class="ml-auto shrink-0 tabular-nums"
+              class="cn-forms-ingestionsourcespreview-207-1"
               aria-label={`${source.accountCount} linked accounts`}
             >
               {source.accountCount}
             </Badge>
           </button>
 
-          <div class="flex shrink-0 items-center gap-3">
-            <span class="hidden text-sm text-muted-foreground sm:block">
+          <div class="cn-forms-ingestionsourcespreview-214-1">
+            <span class="cn-forms-ingestionsourcespreview-215-1">
               {syncLabel(status)}
             </span>
             {#if status.failed}
@@ -220,10 +218,10 @@
             {:else if status.connected}
               <Badge
                 variant="outline"
-                class="gap-1 border-primary/30 bg-primary/10 text-primary"
+                class="cn-forms-ingestionsourcespreview-223-1"
               >
                 <span
-                  class="size-1.5 rounded-full bg-primary"
+                  class="cn-forms-ingestionsourcespreview-226-1"
                   aria-hidden="true"
                 ></span>
                 Connected
@@ -236,14 +234,16 @@
                 type="button"
                 variant="ghost"
                 size="icon"
-                class="size-8"
+                class="cn-forms-ingestionsourcespreview-239-1"
                 aria-label={`Sync ${source.name || "source"}`}
                 disabled={status.syncing}
                 onclick={() => onSync(index)}
               >
                 <RefreshCw
                   data-icon
-                  class={status.syncing ? "animate-spin" : ""}
+                  class={status.syncing
+                    ? "cn-forms-ingestionsourcespreview-246-1"
+                    : ""}
                 />
               </Button>
             {/if}
@@ -251,34 +251,26 @@
         </div>
 
         {#if open}
-          <div
-            class="flex flex-col gap-4 border-t border-border px-4 pb-4 pt-3"
-          >
-            <div
-              class="rounded-lg bg-muted/60 px-3 py-3 text-sm text-muted-foreground"
-            >
-              <p
-                class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
-              >
-                Setup
-              </p>
+          <div class="cn-forms-ingestionsourcespreview-255-1">
+            <div class="cn-forms-ingestionsourcespreview-258-1">
+              <p class="cn-forms-ingestionsourcespreview-261-1">Setup</p>
               {#if customSetup}
-                <div class="space-y-2 [&_p]:leading-relaxed">
+                <div class="cn-forms-ingestionsourcespreview-266-1">
                   {@html customSetup}
                 </div>
               {:else}
-                <ol class="list-decimal space-y-1 pl-4">
+                <ol class="cn-forms-ingestionsourcespreview-270-1">
                   <li>
                     Go to
                     {#if source.setupHref}
                       <a
-                        class="font-medium text-foreground underline underline-offset-2"
+                        class="cn-forms-ingestionsourcespreview-275-1"
                         href={source.setupHref}
                         target="_blank"
                         rel="noreferrer">{source.setupHost}</a
                       >
                     {:else}
-                      <span class="font-medium text-foreground"
+                      <span class="cn-forms-ingestionsourcespreview-281-1"
                         >{source.setupHost}</span
                       >
                     {/if}
@@ -293,12 +285,12 @@
               {/if}
             </div>
 
-            <div class="flex flex-col gap-3">
-              <label class="flex flex-col gap-1.5">
-                <span class="text-xs font-medium text-muted-foreground"
+            <div class="cn-forms-ingestionsourcespreview-296-1">
+              <label class="cn-forms-ingestionsourcespreview-297-1">
+                <span class="cn-forms-ingestionsourcespreview-298-1"
                   >API Key</span
                 >
-                <div class="flex flex-col items-stretch gap-2">
+                <div class="cn-forms-ingestionsourcespreview-301-1">
                   <SegmentedControl
                     value={source.secretMode}
                     options={["env", "inline"]}
@@ -343,8 +335,8 @@
               </label>
 
               {#if source.grouped}
-                <label class="flex flex-col gap-1.5">
-                  <span class="text-xs font-medium text-muted-foreground"
+                <label class="cn-forms-ingestionsourcespreview-346-1">
+                  <span class="cn-forms-ingestionsourcespreview-347-1"
                     >Base URL</span
                   >
                   <Input
@@ -363,23 +355,22 @@
                 </label>
 
                 {#if source.accounts.length}
-                  <div class="flex flex-col gap-1.5">
-                    <span class="text-xs font-medium text-muted-foreground"
+                  <div class="cn-forms-ingestionsourcespreview-366-1">
+                    <span class="cn-forms-ingestionsourcespreview-367-1"
                       >Linked accounts</span
                     >
-                    <ul class="flex flex-col gap-2" role="list">
+                    <ul
+                      class="cn-forms-ingestionsourcespreview-370-1"
+                      role="list"
+                    >
                       {#each source.accounts as account (account.id)}
-                        <li
-                          class="relative rounded-lg border border-border px-3 py-2 text-sm transition-colors even:bg-muted/40 hover:bg-accent/60"
-                        >
+                        <li class="cn-forms-ingestionsourcespreview-373-1">
                           <a
                             href={account.href}
-                            class="absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            class="cn-forms-ingestionsourcespreview-377-1"
                             aria-label={`Open ${account.sourceAccount}`}
                           ></a>
-                          <div
-                            class="pointer-events-none relative z-10 flex min-w-0 items-center gap-3"
-                          >
+                          <div class="cn-forms-ingestionsourcespreview-381-1">
                             <AccountAvatar
                               account={account.sourceAccount}
                               color={account.color}
@@ -387,19 +378,22 @@
                               merchantLogoUrl={account.merchantLogoUrl}
                               size="sm"
                             />
-                            <span class="min-w-0 flex-1">
-                              <span class="block truncate font-medium"
+                            <span
+                              class="cn-forms-ingestionsourcespreview-390-1"
+                            >
+                              <span
+                                class="cn-forms-ingestionsourcespreview-391-1"
                                 >{account.name}</span
                               >
                               <span
-                                class="block truncate text-xs text-muted-foreground"
+                                class="cn-forms-ingestionsourcespreview-395-1"
                               >
                                 {account.sourceAccount}
                               </span>
                             </span>
                             {#if account.defaultCurrency}
                               <span
-                                class="shrink-0 self-center text-xs text-muted-foreground"
+                                class="cn-forms-ingestionsourcespreview-402-1"
                                 >{account.defaultCurrency}</span
                               >
                             {/if}
@@ -414,16 +408,19 @@
                   <Button
                     type="button"
                     variant="link"
-                    class="h-auto justify-start gap-1 px-0 text-sm"
+                    class="cn-forms-ingestionsourcespreview-417-1"
                     onclick={() => onManageAccounts(index)}
                   >
                     Manage accounts
-                    <ArrowRight class="size-3.5" aria-hidden="true" />
+                    <ArrowRight
+                      class="cn-forms-ingestionsourcespreview-421-1"
+                      aria-hidden="true"
+                    />
                   </Button>
                 {/if}
               {:else}
-                <label class="flex flex-col gap-1.5">
-                  <span class="text-xs font-medium text-muted-foreground"
+                <label class="cn-forms-ingestionsourcespreview-425-1">
+                  <span class="cn-forms-ingestionsourcespreview-426-1"
                     >Endpoint</span
                   >
                   <Input
@@ -444,7 +441,7 @@
 
               <Button
                 type="button"
-                class="w-full"
+                class="cn-forms-ingestionsourcespreview-447-1"
                 disabled={saving}
                 onclick={() => void onSave()}
               >
@@ -455,60 +452,62 @@
         {/if}
       </article>
     {:else}
-      <p class="text-sm text-muted-foreground">
+      <p class="cn-forms-ingestionsourcespreview-458-1">
         No connections yet. Connect a sample below or switch to edit mode.
       </p>
     {/each}
   </div>
 
   {#if samples.length}
-    <div class="flex min-w-0 flex-col gap-4" data-ingestion-samples>
-      <p
-        class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-      >
+    <div class="cn-forms-ingestionsourcespreview-465-1" data-ingestion-samples>
+      <p class="cn-forms-ingestionsourcespreview-467-1">
         Available · {samples.length}
       </p>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div class="cn-forms-ingestionsourcespreview-471-1">
         {#each samples as sample (sample.id)}
           <article
-            class="flex min-h-44 flex-col gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:border-foreground/20 hover:bg-muted/40 hover:shadow-md"
+            class="cn-forms-ingestionsourcespreview-474-1"
             data-ingestion-sample-card
           >
-            <div class="flex items-start gap-3">
+            <div class="cn-forms-ingestionsourcespreview-477-1">
               <div
-                class="grid size-9 shrink-0 place-items-center rounded-md text-xs font-semibold text-primary-foreground {sample.accentClass}"
+                class="cn-forms-ingestionsourcespreview-479-1"
                 aria-hidden="true"
               >
                 {sample.initials}
               </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <h3 class="text-sm font-semibold">{sample.name}</h3>
+              <div class="cn-forms-ingestionsourcespreview-484-1">
+                <div class="cn-forms-ingestionsourcespreview-485-1">
+                  <h3 class="cn-forms-ingestionsourcespreview-486-1">
+                    {sample.name}
+                  </h3>
                   {#if sample.badge}
-                    <span
-                      class="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                    <span class="cn-forms-ingestionsourcespreview-489-1"
                       >{sample.badge}</span
                     >
                   {/if}
                 </div>
-                <p class="mt-0.5 text-xs text-muted-foreground">
+                <p class="cn-forms-ingestionsourcespreview-494-1">
                   {sample.region} · {sample.category}
                 </p>
               </div>
             </div>
-            <p class="flex-1 text-sm leading-relaxed text-muted-foreground">
+            <p class="cn-forms-ingestionsourcespreview-499-1">
               {sample.description}
             </p>
-            <div class="flex justify-end">
+            <div class="cn-forms-ingestionsourcespreview-502-1">
               <Button
                 type="button"
                 variant="link"
-                class="h-auto gap-1 px-0 text-sm"
+                class="cn-forms-ingestionsourcespreview-506-1"
                 aria-label={`Connect ${sample.name}`}
                 onclick={() => onConnectSample?.(sample)}
               >
                 Connect
-                <ArrowRight class="size-3.5" aria-hidden="true" />
+                <ArrowRight
+                  class="cn-forms-ingestionsourcespreview-511-1"
+                  aria-hidden="true"
+                />
               </Button>
             </div>
           </article>

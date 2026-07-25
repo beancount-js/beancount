@@ -111,12 +111,15 @@
           style={`--appearance-color: ${currentColor}; --appearance-foreground: ${currentForeground}`}
           aria-hidden="true"
         >
-          <SelectedIcon class="size-5" strokeWidth={1.9} />
+          <SelectedIcon
+            class="cn-forms-iconcolorpicker-114-1"
+            strokeWidth={1.9}
+          />
         </span>
         <span class="beancount-icon-color-picker__trigger-label"
           >Colour and icon</span
         >
-        <Pencil class="size-3.5" aria-hidden="true" />
+        <Pencil class="cn-forms-iconcolorpicker-119-1" aria-hidden="true" />
       </button>
     {/snippet}
   </Popover.Trigger>
@@ -179,7 +182,7 @@
           >
         </div>
         <label class="beancount-icon-color-picker__search">
-          <Search class="size-4" aria-hidden="true" />
+          <Search class="cn-forms-iconcolorpicker-182-1" aria-hidden="true" />
           <span class="sr-only">Search icons</span>
           <input
             bind:value={iconSearch}
@@ -209,7 +212,11 @@
                     : `${option.label} · ${option.category}`}
                   onclick={() => chooseIcon(option.value)}
                 >
-                  <Icon class="size-5" strokeWidth={1.8} aria-hidden="true" />
+                  <Icon
+                    class="cn-forms-iconcolorpicker-212-1"
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  />
                 </button>
               {/each}
             </div>

@@ -111,9 +111,15 @@
   type SourceFormConfig = {
     detailsForm: FormConfig<EditableIngestionSource, SourceFormContext>;
     apiForm: FormConfig<EditableIngestionSource, SourceFormContext>;
-    sourcePaginationForm: FormConfig<EditableIngestionSource, SourceFormContext>;
+    sourcePaginationForm: FormConfig<
+      EditableIngestionSource,
+      SourceFormContext
+    >;
     sourceMappingForm: FormConfig<EditableIngestionSource, SourceFormContext>;
-    sourceEnrichmentForm: FormConfig<EditableIngestionSource, SourceFormContext>;
+    sourceEnrichmentForm: FormConfig<
+      EditableIngestionSource,
+      SourceFormContext
+    >;
     sourceEnrichmentDetailsForm: FormConfig<
       EditableIngestionSource,
       SourceFormContext
@@ -122,10 +128,7 @@
       EditableIngestionSource,
       SourceFormContext
     >;
-    advancedFieldsForm?: FormConfig<
-      EditableIngestionSource,
-      SourceFormContext
-    >;
+    advancedFieldsForm?: FormConfig<EditableIngestionSource, SourceFormContext>;
     providerCategories?: readonly SourceCategory[];
     isConnector?: boolean;
     isGrouped?: boolean;
@@ -228,11 +231,11 @@
 
 <section
   class={previewMode
-    ? "h-full overflow-y-auto p-4 sm:p-6"
-    : "h-full overflow-y-auto p-6 sm:p-8 lg:p-10"}
+    ? "cn-forms-ingestionconfigeditor-231-1"
+    : "cn-forms-ingestionconfigeditor-232-1"}
   data-ingestion-sources-editor
 >
-  <div class="mx-auto flex w-full max-w-3xl flex-col gap-5">
+  <div class="cn-forms-ingestionconfigeditor-235-1">
     {#if isWeb}
       <Alert.Root>
         <Alert.Title>Local server required</Alert.Title>
@@ -242,40 +245,42 @@
         >
       </Alert.Root>
     {:else if !config}
-      <Empty.Root class="min-h-48 border">
+      <Empty.Root class="cn-forms-ingestionconfigeditor-245-1">
         <Empty.Header>
           <Empty.Media variant="icon" />
           <Empty.Title>Loading ingestion sources</Empty.Title>
-          <Empty.Description>Fetching ingestion configuration.</Empty.Description>
+          <Empty.Description
+            >Fetching ingestion configuration.</Empty.Description
+          >
         </Empty.Header>
       </Empty.Root>
     {:else}
-      <div class="flex min-w-0 flex-col gap-6">
+      <div class="cn-forms-ingestionconfigeditor-253-1">
         <YamlBackedForm
           yamlMode={false}
           {yamlText}
           {yamlError}
           yamlLabel="Ingestion sources YAML editor"
           yamlApplyLabel="Apply YAML"
-          onYamlChange={onYamlChange}
-          onYamlApply={onYamlApply}
-          onYamlReset={onYamlReset}
+          {onYamlChange}
+          {onYamlApply}
+          {onYamlReset}
         >
-          <div class="flex min-w-0 flex-col gap-8">
+          <div class="cn-forms-ingestionconfigeditor-264-1">
             {#if previewMode}
               <IngestionSourcesPreview
                 sources={previewSources}
                 samples={availableSamples}
                 {envKeys}
                 {saving}
-                onConnectSample={onConnectSample}
-                onManageAccounts={onManageAccounts}
-                onSync={onSync}
-                onSecretModeChange={onSecretModeChange}
-                onSecretValueChange={onSecretValueChange}
-                onBaseUrlChange={onBaseUrlChange}
-                onEndpointChange={onEndpointChange}
-                onSave={onSave}
+                {onConnectSample}
+                {onManageAccounts}
+                {onSync}
+                {onSecretModeChange}
+                {onSecretValueChange}
+                {onBaseUrlChange}
+                {onEndpointChange}
+                {onSave}
               />
             {:else}
               <section>
@@ -285,7 +290,7 @@
                   movable={false}
                   removable={false}
                 />
-                <div class="mt-3 grid gap-3 pl-6">
+                <div class="cn-forms-ingestionconfigeditor-288-1">
                   <div class="beancount-structured-form">
                     <FormField
                       label="Duplicate window (days)"
@@ -365,52 +370,45 @@
                   source={sourceRow.source}
                   detailsForm={sourceRow.sourceFormConfig.detailsForm}
                   apiForm={sourceRow.sourceFormConfig.apiForm}
-                  sourcePaginationForm={
-                    sourceRow.sourceFormConfig.sourcePaginationForm
-                  }
-                  sourceMappingForm={sourceRow.sourceFormConfig.sourceMappingForm}
-                  sourceEnrichmentForm={
-                    sourceRow.sourceFormConfig.sourceEnrichmentForm
-                  }
-                  sourceEnrichmentDetailsForm={
-                    sourceRow.sourceFormConfig.sourceEnrichmentDetailsForm
-                  }
-                  connectionFieldsForm={
-                    sourceRow.sourceFormConfig.connectionFieldsForm
-                  }
-                  advancedFieldsForm={
-                    sourceRow.sourceFormConfig.advancedFieldsForm
-                  }
-                  providerCategories={
-                    sourceRow.sourceFormConfig.providerCategories ?? []
-                  }
+                  sourcePaginationForm={sourceRow.sourceFormConfig
+                    .sourcePaginationForm}
+                  sourceMappingForm={sourceRow.sourceFormConfig
+                    .sourceMappingForm}
+                  sourceEnrichmentForm={sourceRow.sourceFormConfig
+                    .sourceEnrichmentForm}
+                  sourceEnrichmentDetailsForm={sourceRow.sourceFormConfig
+                    .sourceEnrichmentDetailsForm}
+                  connectionFieldsForm={sourceRow.sourceFormConfig
+                    .connectionFieldsForm}
+                  advancedFieldsForm={sourceRow.sourceFormConfig
+                    .advancedFieldsForm}
+                  providerCategories={sourceRow.sourceFormConfig
+                    .providerCategories ?? []}
                   isConnector={sourceRow.sourceFormConfig.isConnector}
                   isGrouped={sourceRow.sourceFormConfig.isGrouped}
                   accounts={sourceRow.accounts}
                   categoryAccounts={sourceRow.categoryAccounts}
                   issues={sourceRow.issues}
                   credentialAvailable={sourceRow.credentialAvailable}
-                  merchantCredentialAvailable={
-                    sourceRow.merchantCredentialAvailable
-                  }
+                  merchantCredentialAvailable={sourceRow.merchantCredentialAvailable}
                   {envKeys}
                   projectId={snapshotProjectId}
-                  merchants={merchants}
+                  {merchants}
                   openSections={sourceRow.openSections}
                   onOpenSectionsChange={(sections) =>
                     onSourceOpenSectionsChange(index, sections)}
                   onChange={(next) => onSourceChange(index, next)}
                   onDuplicate={() => onSourceDuplicate(index)}
                   onRemove={() => onSourceRemove(index)}
-                  onOpenBrandSettings={onOpenBrandSettings}
+                  {onOpenBrandSettings}
                 />
               {:else}
-                <Empty.Root class="min-h-48 border">
+                <Empty.Root class="cn-forms-ingestionconfigeditor-408-1">
                   <Empty.Header>
                     <Empty.Media variant="icon">
                       <button
                         type="button"
-                        class="inline-flex size-full items-center justify-center"
+                        class="cn-forms-ingestionconfigeditor-413-1"
                         aria-label="Add source"
                         onclick={onAddSource}
                       >
@@ -426,7 +424,7 @@
               {/each}
 
               {#if sourceRows.length}
-                <div class="flex justify-end">
+                <div class="cn-forms-ingestionconfigeditor-429-1">
                   <FormAddButton label="Add source" onclick={onAddSource} />
                 </div>
               {/if}
@@ -437,7 +435,7 @@
     {/if}
 
     {#if status}
-      <p class="text-sm text-muted-foreground" role="status">{status}</p>
+      <p class="cn-forms-ingestionconfigeditor-440-1" role="status">{status}</p>
     {/if}
   </div>
 </section>

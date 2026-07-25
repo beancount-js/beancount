@@ -60,26 +60,21 @@
 <Sheet.Root {open} onOpenChange={handleOpenChange}>
   <Sheet.Content
     side="right"
-    class={cn(
-      "flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden",
-      className,
-    )}
+    class={cn("cn-forms-formsheet-64-1", className)}
     onOpenAutoFocus={(event) => {
       event.preventDefault();
       titleElement?.focus();
     }}
   >
-    <Sheet.Header
-      class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left sm:text-left"
-    >
-      <div class="flex min-w-0 flex-1 items-center gap-1.5">
+    <Sheet.Header class="cn-forms-formsheet-73-1">
+      <div class="cn-forms-formsheet-75-1">
         {#if titleLeading}
           {@render titleLeading()}
         {/if}
         <Sheet.Title
           bind:ref={titleElement}
           tabindex={-1}
-          class="form-sheet-title min-w-0 truncate leading-none outline-none"
+          class="cn-forms-formsheet-82-1"
         >
           {title}
         </Sheet.Title>
@@ -88,7 +83,7 @@
         {/if}
       </div>
       <Sheet.Description class="sr-only">{description}</Sheet.Description>
-      <div class="ml-auto flex shrink-0 items-center gap-1">
+      <div class="cn-forms-formsheet-91-1">
         {#if actions}
           {@render actions()}
         {/if}
@@ -97,30 +92,36 @@
             type="button"
             variant="ghost"
             size="icon"
-            class="size-8"
+            class="cn-forms-formsheet-100-1"
             aria-label={collapseLabel}
             title={collapseLabel}
             onclick={onToggleCollapse}
           >
             {#if collapsedAll}
-              <ChevronsUpDown class="size-4" aria-hidden="true" />
+              <ChevronsUpDown
+                class="cn-forms-formsheet-106-1"
+                aria-hidden="true"
+              />
             {:else}
-              <ChevronsDownUp class="size-4" aria-hidden="true" />
+              <ChevronsDownUp
+                class="cn-forms-formsheet-108-1"
+                aria-hidden="true"
+              />
             {/if}
           </Button>
         {/if}
         <Sheet.Close
-          class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="cn-forms-formsheet-113-1"
           aria-label="Close"
           title="Close"
         >
-          <X class="size-4" />
+          <X class="cn-forms-formsheet-117-1" />
           <span class="sr-only">Close</span>
         </Sheet.Close>
       </div>
     </Sheet.Header>
 
-    <div class={cn("min-h-0 flex-1 overflow-y-auto", bodyClass)}>
+    <div class={cn("cn-forms-formsheet-123-1", bodyClass)}>
       {@render children()}
     </div>
   </Sheet.Content>

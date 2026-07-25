@@ -23,19 +23,16 @@
 </script>
 
 {#if changed}
-  <ScrollArea.Root
-    orientation="both"
-    class="h-60 rounded-lg border border-border/80 bg-muted/35"
-  >
+  <ScrollArea.Root orientation="both" class="cn-forms-reviewdiff-28-1">
     <pre
-      class="beancount-review-diff min-w-full p-3 font-mono text-xs leading-5 text-foreground"
+      class="cn-forms-reviewdiff-31-1"
       role="region"
       aria-label={ariaLabel}><code
         >{#each parts as part, partIndex (`${part.type}-${partIndex}`)}{#each part.lines as line, lineIndex (`${line.type}-${lineIndex}`)}<span
               class:beancount-review-diff__line--removed={line.type ===
                 "removed"}
               class:beancount-review-diff__line--added={line.type === "added"}
-              class="beancount-review-diff__line block whitespace-pre-wrap"
+              class="cn-forms-reviewdiff-38-1"
               data-review-diff-line={line.type}
               >{line.type === "removed"
                 ? "− "
@@ -52,10 +49,7 @@
       ></pre>
   </ScrollArea.Root>
 {:else}
-  <section
-    class="rounded-lg border border-dashed border-border/80 bg-muted/20 px-4 py-5 text-sm text-muted-foreground"
-    aria-label={ariaLabel}
-  >
+  <section class="cn-forms-reviewdiff-56-1" aria-label={ariaLabel}>
     {emptyLabel}
   </section>
 {/if}

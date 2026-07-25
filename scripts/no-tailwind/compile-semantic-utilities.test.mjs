@@ -82,3 +82,40 @@ test("replaces utilities in dynamic class expression branches", () => {
   assert.match(transformed.source, /fullHeight \?/);
   assert.equal(transformed.mappings.length, 3);
 });
+
+test("replaces utilities in multiline Svelte class conditionals", () => {
+  const source = `<button
+  class="flex {selected
+    ? 'border-primary bg-accent'
+    : 'hover:bg-muted/50'}"
+></button>`;
+
+  const transformed = transformClassContexts({
+    source,
+    file: "src/components/forms/merchant-sheet.svelte",
+    family: "forms",
+  });
+
+  assert.doesNotMatch(
+    transformed.source,
+    /flex|border-primary|bg-accent|hover:bg-muted/,
+  );
+  assert.match(transformed.source, /selected/);
+});
+
+test("preserves component-authored class hooks", () => {
+  const source = `<div class="merchant-form flex border"></div>
+
+<style>
+  .merchant-form :global(.beancount-form) { min-width: 0; }
+</style>`;
+
+  const transformed = transformClassContexts({
+    source,
+    file: "src/components/forms/merchant-form.svelte",
+    family: "forms",
+  });
+
+  assert.match(transformed.source, /class="cn-forms-[^"]+ merchant-form"/);
+  assert.doesNotMatch(transformed.source, /merchant-form flex|\bborder\b/);
+});
