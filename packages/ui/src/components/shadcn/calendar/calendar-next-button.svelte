@@ -13,7 +13,10 @@
 </script>
 
 {#snippet Fallback()}
-  <ChevronRight />
+  <ChevronRight
+    data-ui-component="calendar"
+    data-ui-part="calendar-next-button"
+  />
 {/snippet}
 
 <CalendarPrimitive.NextButton

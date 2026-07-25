@@ -11,6 +11,8 @@
 
 <MenubarPrimitive.Separator
   bind:ref
-  class={cn("-mx-1 my-1 h-px bg-muted", className)}
+  class={cn("cn-menubar-menubar-separator-14-1", className)}
   {...restProps}
+  data-ui-component="menubar"
+  data-ui-part="menubar-separator"
 />

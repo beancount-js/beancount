@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "component": "calendar",
+  "scope": "shared",
+  "upstream": {
+    "project": "beancount-js-studio",
+    "item": "calendar"
+  },
+  "converter": {
+    "version": "native-semantic-1"
+  }
+}

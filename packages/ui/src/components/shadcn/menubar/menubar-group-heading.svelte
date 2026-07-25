@@ -14,6 +14,12 @@
 
 <MenubarPrimitive.GroupHeading
   bind:ref
-  class={cn("px-2 py-1.5 text-sm font-semibold", inset && "pl-8", className)}
+  class={cn(
+    "cn-menubar-menubar-group-heading-17-1",
+    inset && "cn-menubar-menubar-group-heading-17-2",
+    className,
+  )}
   {...restProps}
+  data-ui-component="menubar"
+  data-ui-part="menubar-group-heading"
 />

@@ -40,7 +40,11 @@
   {@const result = content(context as any)}
   {#if result instanceof RenderComponentConfig}
     {@const { component: Component, props } = result}
-    <Component {...props} />
+    <Component
+      {...props}
+      data-ui-component="data-table"
+      data-ui-part="flex-render"
+    />
   {:else if result instanceof RenderSnippetConfig}
     {@const { snippet, params } = result}
     {@render snippet(params)}

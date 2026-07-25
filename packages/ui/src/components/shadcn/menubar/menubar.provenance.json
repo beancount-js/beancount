@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "component": "menubar",
+  "scope": "shared",
+  "upstream": {
+    "project": "beancount-js-studio",
+    "item": "menubar"
+  },
+  "converter": {
+    "version": "native-semantic-1"
+  }
+}

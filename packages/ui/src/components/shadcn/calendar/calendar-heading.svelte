@@ -11,6 +11,8 @@
 
 <CalendarPrimitive.Heading
   bind:ref
-  class={cn("text-sm font-medium", className)}
+  class={cn("cn-calendar-calendar-heading-14-1", className)}
   {...restProps}
+  data-ui-component="calendar"
+  data-ui-part="calendar-heading"
 />

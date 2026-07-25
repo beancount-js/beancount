@@ -16,15 +16,14 @@
   {value}
   {max}
   data-slot="progress"
-  class={cn(
-    "relative h-2 w-full overflow-hidden rounded-full bg-primary/20",
-    className,
-  )}
+  class={cn("cn-progress-progress-20-1", className)}
   {...restProps}
+  data-ui-component="progress"
+  data-ui-part="progress"
 >
   <div
     data-slot="progress-indicator"
-    class="h-full w-full flex-1 bg-primary transition-all"
+    class="cn-progress-progress-27-1"
     style={`transform: translateX(-${100 - (100 * (value ?? 0)) / (max ?? 100)}%)`}
   ></div>
 </ProgressPrimitive.Root>

@@ -13,8 +13,10 @@
 
 <span
   bind:this={ref}
-  class={cn("ml-auto text-xs tracking-widest text-muted-foreground", className)}
+  class={cn("cn-menubar-menubar-shortcut-16-1", className)}
   {...restProps}
+  data-ui-component="menubar"
+  data-ui-part="menubar-shortcut"
 >
   {@render children?.()}
 </span>

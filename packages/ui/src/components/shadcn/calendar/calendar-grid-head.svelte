@@ -9,4 +9,10 @@
   }: CalendarPrimitive.GridHeadProps = $props();
 </script>
 
-<CalendarPrimitive.GridHead bind:ref class={cn(className)} {...restProps} />
+<CalendarPrimitive.GridHead
+  bind:ref
+  class={cn(className)}
+  {...restProps}
+  data-ui-component="calendar"
+  data-ui-part="calendar-grid-head"
+/>

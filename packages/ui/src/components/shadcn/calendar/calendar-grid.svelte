@@ -11,6 +11,8 @@
 
 <CalendarPrimitive.Grid
   bind:ref
-  class={cn("w-full border-collapse space-y-1", className)}
+  class={cn("cn-calendar-calendar-grid-14-1", className)}
   {...restProps}
+  data-ui-component="calendar"
+  data-ui-part="calendar-grid"
 />

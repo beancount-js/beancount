@@ -11,9 +11,8 @@
 
 <CalendarPrimitive.HeadCell
   bind:ref
-  class={cn(
-    "w-8 rounded-md text-[0.8rem] font-normal text-muted-foreground",
-    className,
-  )}
+  class={cn("cn-calendar-calendar-head-cell-15-1", className)}
   {...restProps}
+  data-ui-component="calendar"
+  data-ui-part="calendar-head-cell"
 />

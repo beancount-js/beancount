@@ -108,7 +108,7 @@ obsolete rendering architecture.
 | --- | --------------------------------------------------------------------- | ----------- |
 | N01 | Define native component ownership and add the Tailwind ratchet        | Done        |
 | N02 | Add framework-independent foundation and component tokens             | Done        |
-| N03 | Normalize UI primitive families to native CSS                         | Not started |
+| N03 | Normalize UI primitive families to native CSS                         | Done        |
 | N04 | Convert shared UI compositions to native CSS                          | Not started |
 | N05 | Move Fava Beta consumers to public UI primitives                      | Not started |
 | N06 | Remove duplicate primitives and obsolete styling dependencies         | Not started |
@@ -119,6 +119,10 @@ and `packages/ui/NATIVE_COMPONENTS.md`.
 
 N02 evidence: `src/foundation.tokens.css`, the typed `./tokens` export, and the
 focused foundation token contract test.
+
+N03 evidence: all 33 existing `src/components/shadcn` families use semantic
+component identities, family token/provenance files, static native CSS, and the
+`native-primitives.spec.ts` architecture contract.
 
 ## Component migration order
 

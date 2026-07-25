@@ -28,4 +28,6 @@
   )}
   bind:ref
   {...restProps}
+  data-ui-component="calendar"
+  data-ui-part="calendar-day"
 />

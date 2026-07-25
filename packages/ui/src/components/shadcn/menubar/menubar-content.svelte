@@ -23,10 +23,9 @@
     {align}
     {alignOffset}
     {side}
-    class={cn(
-      "z-50 min-w-[12rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-md focus:outline-none",
-      className,
-    )}
+    class={cn("cn-menubar-menubar-content-27-1", className)}
     {...restProps}
+    data-ui-component="menubar"
+    data-ui-part="menubar-content"
   />
 </MenubarPrimitive.Portal>

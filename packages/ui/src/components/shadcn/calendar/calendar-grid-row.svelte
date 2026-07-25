@@ -11,6 +11,8 @@
 
 <CalendarPrimitive.GridRow
   bind:ref
-  class={cn("flex", className)}
+  class={cn("cn-calendar-calendar-grid-row-14-1", className)}
   {...restProps}
+  data-ui-component="calendar"
+  data-ui-part="calendar-grid-row"
 />

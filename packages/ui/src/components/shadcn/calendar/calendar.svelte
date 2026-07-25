@@ -25,8 +25,10 @@ get along, so we shut typescript up by casting `value` to `never`.
   bind:ref
   bind:placeholder
   {weekdayFormat}
-  class={cn("p-3", className)}
+  class={cn("cn-calendar-calendar-28-1", className)}
   {...restProps}
+  data-ui-component="calendar"
+  data-ui-part="calendar"
 >
   {#snippet children({ months, weekdays })}
     <Calendar.Header>
@@ -38,7 +40,7 @@ get along, so we shut typescript up by casting `value` to `never`.
       {#each months as month}
         <Calendar.Grid>
           <Calendar.GridHead>
-            <Calendar.GridRow class="flex">
+            <Calendar.GridRow class="cn-calendar-calendar-41-1">
               {#each weekdays as weekday}
                 <Calendar.HeadCell>
                   {weekday.slice(0, 2)}
@@ -48,7 +50,7 @@ get along, so we shut typescript up by casting `value` to `never`.
           </Calendar.GridHead>
           <Calendar.GridBody>
             {#each month.weeks as weekDates}
-              <Calendar.GridRow class="mt-2 w-full">
+              <Calendar.GridRow class="cn-calendar-calendar-51-1">
                 {#each weekDates as date}
                   <Calendar.Cell {date} month={month.value}>
                     <Calendar.Day />

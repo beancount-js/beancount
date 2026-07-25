@@ -49,3 +49,5 @@ export {
   Sub as MenubarSub,
   RadioGroup as MenubarRadioGroup,
 };
+
+export { menubarTokenNames, type MenubarToken } from "./menubar.tokens.js";

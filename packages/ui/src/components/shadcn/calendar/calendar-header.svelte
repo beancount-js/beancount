@@ -15,7 +15,7 @@
   {#if child}
     {@render child({ props })}
   {:else}
-    <div {...props}>
+    <div {...props} data-ui-component="calendar" data-ui-part="calendar-header">
       {@render children?.()}
     </div>
   {/if}
@@ -23,10 +23,7 @@
 
 <CalendarPrimitive.Header
   bind:ref
-  class={cn(
-    "relative flex w-full items-center justify-between pt-1",
-    className,
-  )}
+  class={cn("cn-calendar-calendar-header-27-1", className)}
   {...restProps}
   child={CalendarHeader}
 />

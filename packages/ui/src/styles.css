@@ -62,3 +62,11 @@
 @import "./components/shadcn/toggle-group/toggle-group.css";
 @import "./components/shadcn/sidebar/sidebar.tokens.css";
 @import "./components/shadcn/sidebar/sidebar.css";
+@import "./components/shadcn/calendar/calendar.tokens.css";
+@import "./components/shadcn/calendar/calendar.css";
+@import "./components/shadcn/data-table/data-table.tokens.css";
+@import "./components/shadcn/data-table/data-table.css";
+@import "./components/shadcn/menubar/menubar.tokens.css";
+@import "./components/shadcn/menubar/menubar.css";
+@import "./components/shadcn/progress/progress.tokens.css";
+@import "./components/shadcn/progress/progress.css";

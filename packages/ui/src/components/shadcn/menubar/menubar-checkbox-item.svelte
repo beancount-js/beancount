@@ -24,18 +24,22 @@
   bind:ref
   bind:checked
   bind:indeterminate
-  class={cn(
-    "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:opacity-50",
-    className,
-  )}
+  class={cn("cn-menubar-menubar-checkbox-item-28-1", className)}
   {...restProps}
+  data-ui-component="menubar"
+  data-ui-part="menubar-checkbox-item"
 >
   {#snippet children({ checked, indeterminate })}
-    <span class="absolute left-2 flex size-3.5 items-center justify-center">
+    <span class="cn-menubar-menubar-checkbox-item-34-1">
       {#if indeterminate}
-        <Minus class="size-4" />
+        <Minus class="cn-menubar-menubar-checkbox-item-36-1" />
       {:else}
-        <Check class={cn("size-4", !checked && "text-transparent")} />
+        <Check
+          class={cn(
+            "cn-menubar-menubar-checkbox-item-38-1",
+            !checked && "cn-menubar-menubar-checkbox-item-38-2",
+          )}
+        />
       {/if}
     </span>
     {@render childrenProp?.()}

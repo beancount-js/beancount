@@ -13,16 +13,15 @@
 
 <MenubarPrimitive.RadioItem
   bind:ref
-  class={cn(
-    "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:opacity-50",
-    className,
-  )}
+  class={cn("cn-menubar-menubar-radio-item-17-1", className)}
   {...restProps}
+  data-ui-component="menubar"
+  data-ui-part="menubar-radio-item"
 >
   {#snippet children({ checked })}
-    <span class="absolute left-2 flex size-3.5 items-center justify-center">
+    <span class="cn-menubar-menubar-radio-item-23-1">
       {#if checked}
-        <Circle class="size-2 fill-current" />
+        <Circle class="cn-menubar-menubar-radio-item-25-1" />
       {/if}
     </span>
     {@render childrenProp?.({ checked })}

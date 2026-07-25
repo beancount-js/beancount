@@ -11,9 +11,8 @@
 
 <MenubarPrimitive.Root
   bind:ref
-  class={cn(
-    "flex h-9 items-center space-x-1 rounded-md border bg-background p-1 shadow-sm",
-    className,
-  )}
+  class={cn("cn-menubar-menubar-15-1", className)}
   {...restProps}
+  data-ui-component="menubar"
+  data-ui-part="menubar"
 />

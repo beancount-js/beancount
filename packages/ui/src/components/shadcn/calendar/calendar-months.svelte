@@ -13,11 +13,10 @@
 
 <div
   bind:this={ref}
-  class={cn(
-    "mt-4 flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0",
-    className,
-  )}
+  class={cn("cn-calendar-calendar-months-17-1", className)}
   {...restProps}
+  data-ui-component="calendar"
+  data-ui-part="calendar-months"
 >
   {@render children?.()}
 </div>

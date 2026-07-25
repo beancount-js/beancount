@@ -1,0 +1,6 @@
+:root {
+  --ui-progress-background: var(--ui-color-background);
+  --ui-progress-foreground: var(--ui-color-foreground);
+  --ui-progress-border-color: var(--ui-color-border);
+  --ui-progress-radius: var(--ui-radius-md);
+}

@@ -17,12 +17,14 @@
 <MenubarPrimitive.SubTrigger
   bind:ref
   class={cn(
-    "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-accent data-[state=open]:bg-accent data-[highlighted]:text-accent-foreground data-[state=open]:text-accent-foreground data-[disabled]:opacity-50",
-    inset && "pl-8",
+    "cn-menubar-menubar-sub-trigger-20-1",
+    inset && "cn-menubar-menubar-sub-trigger-21-1",
     className,
   )}
   {...restProps}
+  data-ui-component="menubar"
+  data-ui-part="menubar-sub-trigger"
 >
   {@render children?.()}
-  <ChevronRight class="ml-auto size-4" />
+  <ChevronRight class="cn-menubar-menubar-sub-trigger-27-1" />
 </MenubarPrimitive.SubTrigger>
