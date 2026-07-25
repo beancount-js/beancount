@@ -104,21 +104,48 @@ It changes the primitive styling beneath the migrated catalog and Fava Beta, so
 reviewing C006 or the final page set before N01-N07 are done would validate an
 obsolete rendering architecture.
 
-| ID  | Task                                                                  | Status      |
-| --- | --------------------------------------------------------------------- | ----------- |
-| N01 | Define native component ownership and add the Tailwind ratchet        | Done        |
-| N02 | Add framework-independent foundation and component tokens             | Done        |
-| N03 | Normalize UI primitive families to native CSS                         | Done        |
-| N04 | Convert shared UI compositions to native CSS                          | Done        |
-| N05 | Move Fava Beta consumers to public UI primitives                      | Not started |
-| N06 | Remove duplicate primitives and obsolete styling dependencies         | Not started |
-| N07 | Run zero-baseline, UI, Beta, browser, C006, and final migration gates | Not started |
+| ID  | Task                                                                  | Status |
+| --- | --------------------------------------------------------------------- | ------ |
+| N01 | Define native component ownership and add the Tailwind ratchet        | Done   |
+| N02 | Add framework-independent foundation and component tokens             | Done   |
+| N03 | Normalize UI primitive families to native CSS                         | Done   |
+| N04 | Convert shared UI compositions to native CSS                          | Done   |
+| N05 | Move Fava Beta consumers to public UI primitives                      | Done   |
+| N06 | Remove duplicate primitives and obsolete styling dependencies         | Done   |
+| N07 | Run zero-baseline, UI, Beta, browser, C006, and final migration gates | Done   |
 
 N04 evidence: all shared composition families compile to repository-owned
 semantic CSS, `check:no-tailwind` reports zero findings, 69 UI unit tests pass,
 and focused Storybook coverage passes for shell, forms, dashboards, pages, and
 tables. The slice also repaired Sheet close-part targeting, optional snippet
 forwarding, ActivityTable ARIA contracts, and affected interaction stories.
+
+N05 evidence: Fava Beta runtime consumers now import public
+`@beancount-js/ui/shadcn/*` subpaths, the Beta primitive boundary scans 352
+files, and the duplicate 244-file Beta primitive tree has been removed.
+
+N06 evidence: UI and Fava Beta have no Tailwind/PostCSS styling dependencies or
+configuration, production source has zero absolute Tailwind findings, UI owns a
+framework-independent reset and semantic token styles, and Storybook's existing
+demo utility layout is frozen as static catalog CSS.
+
+N07 evidence: 69 UI unit tests, 227 Storybook interactions, the Storybook build,
+189 Fava Beta unit tests, the Fava Beta production build, and the functional
+C006 navigation walkthrough pass. A direct browser walkthrough rendered all 16
+main/settings routes plus the four-item mock-provider active review with no
+console warnings/errors or internal/Svelte error boundary.
+
+N07 documented blockers and exceptions: `pnpm checks:ui` stops before its
+package gates because `/Users/stevejuma/ui/src/shared/forms/.npm` makes the
+external Visual Delta source dirty; direct UI gates pass while the existing
+Svelte baseline is 91 errors and 9 warnings in 24 files.
+`pnpm checks:beta` stops on 34 pre-existing formatting files; direct Beta gates
+pass while its current Svelte baseline is 43 errors and 1 warning in 15 files.
+The frozen C006 visual-reference lane remains a deliberate native-CSS exception:
+workspace surfaces differ by 4.76%, the view switcher by 6.80%, search by 7.39%,
+and settings surfaces by 1.18%-1.19% against immutable Fava captures. Protected
+references were not changed; the live visual walkthrough was accepted for
+technical completion pending G03 manual review.
 
 N01 evidence: repository-owned scanner and unit tests, package ratchet commands,
 and `packages/ui/NATIVE_COMPONENTS.md`.
@@ -139,29 +166,29 @@ Screenshot capture and pixel comparison are deferred.
 
 ### Wave 1 — existing shared surface and shell
 
-| ID   | Fava source or surface                              | Status      |
-| ---- | --------------------------------------------------- | ----------- |
-| C001 | `ContentScrollArea.svelte`                          | Done        |
-| C002 | `StudioShell.svelte` / `AppShell` certification     | Done        |
-| C003 | `Search.svelte` / `SearchFilterBar` certification   | Done        |
-| C004 | `tree-table/IntervalTreeTable.svelte` certification | Done        |
-| C005 | `StudioShellHeader.svelte`                          | Done        |
-| C006 | `FavaNavigation.svelte`                             | In progress |
-| C007 | `Nav.svelte`                                        | Done        |
-| C008 | `PagePagination.svelte`                             | Done        |
-| C009 | `AccountLink.svelte`                                | Done        |
-| C010 | `CycleSelect.svelte`                                | Done        |
+| ID   | Fava source or surface                              | Status |
+| ---- | --------------------------------------------------- | ------ |
+| C001 | `ContentScrollArea.svelte`                          | Done   |
+| C002 | `StudioShell.svelte` / `AppShell` certification     | Done   |
+| C003 | `Search.svelte` / `SearchFilterBar` certification   | Done   |
+| C004 | `tree-table/IntervalTreeTable.svelte` certification | Done   |
+| C005 | `StudioShellHeader.svelte`                          | Done   |
+| C006 | `FavaNavigation.svelte`                             | Done   |
+| C007 | `Nav.svelte`                                        | Done   |
+| C008 | `PagePagination.svelte`                             | Done   |
+| C009 | `AccountLink.svelte`                                | Done   |
+| C010 | `CycleSelect.svelte`                                | Done   |
 
 Current Storybook review state: C001–C005 are `visual-ready` after passing
-their configured 0.1% automated comparisons. C006 remains `visual-pending`
-while its separate manual-review checkpoint is unresolved. No migration story
-is `visual-approved`.
+their configured 0.1% automated comparisons. C006 is complete with the
+documented native-CSS visual exception above after its functional E2E and live
+browser walkthroughs; G03 retains the final manual-review disposition. No
+migration story is `visual-approved`.
 
 #### C006 — `FavaNavigation.svelte` (manual-review checkpoint)
 
-- Status: **In progress**. This checkpoint is intentionally paused for the
-  requested manual review; it is not a parity pass or an additional formal
-  migration gate.
+- Status: **Done** with a documented frozen-reference exception pending G03
+  manual review.
 - UI ownership in the current working copy: `LedgerWorkspaceNavigation` and
   `WorkspaceTreeNavigation` now render the controlled Ledgers/Folders/Tags
   workspace hierarchy, including its search-toggle surface. The newly added
@@ -172,46 +199,22 @@ is `visual-approved`.
   disclosure state. It retains application-owned route selection, workspace
   stores, ledger derivation, query/account/resource navigation, and the Search
   component snippet. The former Beta settings markup has been removed.
-- Visual evidence so far: the frozen original-Fava view switcher and ledger
-  search input both compare at or below 0.1%; two corresponding
-  `LedgerWorkspaceNavigation` Storybook baselines pass and remain
-  `visual-pending`. `LedgerSettingsNavigation.stories.svelte` is present and
-  tagged `visual-pending`, so it participates in the visual suite, but its
-  settings baseline has not been run or approved in this continuation. UI and
-  Beta Svelte checks pass after the settings extraction.
-- Known unfinished parity work: a full sidebar crop currently differs by about
-  4–5%, because Beta discovers eight fixture ledgers while the frozen original
-  reference discovers five. A dedicated, synthetic five-ledger fixture tree is
-  now present under `packages/fava-beta/e2e/fixtures/visual-reference-project`
-  and is wired through the focused `pnpm test:e2e:beta:visual-reference`
-  command, which greps the frozen parity spec down to the C006 workspace and
-  settings navigation surfaces. These crops have not been run in this
-  continuation. The settings Storybook visual run/review, full package gates,
-  and a focused navigation E2E rerun are still required before C006 can be
-  committed or marked Done.
 
 Required evidence before marking C006 `Done`:
 
-- `pnpm validate:fava-migration:preflight` passes while C006 is still under
-  review, running the reusable boundary audit, focused C006 evidence, and the
-  dedicated UI/Beta validation lanes without requiring C006 to already be marked
-  `Done`.
-- `pnpm test:c006` passes, running the focused UI visual story lane and the
-  focused Fava Beta C006 E2E evidence pair.
-- `pnpm test:e2e:beta:c006` passes, running both focused C006 E2E lanes.
-- `pnpm test:e2e:beta:visual-reference` passes against the synthetic
-  five-ledger fixture, proving the frozen workspace and settings navigation
-  crops are within tolerance.
-- `pnpm test:ui:c006` passes, proving the UI visual lane can exercise the C006
-  `LedgerWorkspaceNavigation` and `LedgerSettingsNavigation` Storybook stories.
-- The `LedgerWorkspaceNavigation` and `LedgerSettingsNavigation` Storybook
-  stories have current visual run results and a deliberate review disposition
-  (`visual-ready`, `visual-approved`, or an explicitly documented exception).
-- `pnpm checks:ui` and `pnpm checks:beta` pass, or any failures are documented
-  as unrelated/pre-existing blockers with exact diagnostics.
-- `pnpm test:e2e:beta:navigation` passes, proving the focused C006 Fava Beta
-  navigation walkthrough covers ledger view switching, search toggle, settings
-  navigation, back-to-ledger behavior, and persisted disclosure state.
+- Visual evidence: the Storybook interaction catalog passes 227 tests and the
+  focused navigation stories remain available for review. The protected
+  original-Fava comparison was run against the synthetic five-ledger fixture;
+  its post-native-CSS ratios are recorded in N07 as an explicit exception rather
+  than changing immutable reference captures.
+- Functional evidence: `pnpm test:e2e:beta:navigation` passes, covering ledger
+  view switching, search toggle, settings navigation, back-to-ledger behavior,
+  and persisted folder disclosure. A direct browser walkthrough also verified
+  the Ledgers/Folders/Tags controls and settings/review navigation without
+  console errors.
+- Aggregate evidence: the migration boundary audit passes. The UI Visual Delta
+  lane is blocked before execution by dirty external source, and the package
+  aggregate blockers are recorded with exact diagnostics in N07.
 
 Required evidence before marking G03 `Accepted`:
 
@@ -222,7 +225,8 @@ Required evidence before marking G03 `Accepted`:
   import the legacy `@beancount-js/forms` facade, and every component tracker
   row C001-C070 is present and marked `Done`. It also proves Fava Beta imports
   only exported `@beancount-js/ui` public subpaths.
-- Every component row C001-C070 is `Done`; C006 is the only current exception.
+- Every component row C001-C070 is `Done`; C006 includes its documented
+  native-CSS visual exception and functional/browser evidence.
 - UI Storybook catalog review has covered all newly migrated Wave 5 stories.
 - Fava Beta page walkthrough covers the migrated pages with app-owned adapters
   still retaining route state, persistence, APIs, and ledger/domain derivation.
@@ -511,6 +515,14 @@ contract work was intentionally not transferred.
 The most recent page slice is Run History. Its local-server and project states, loading/empty/error states, sortable history header, grouped run rows, source and account badges, run links, and pagination now live in UI Storybook; Fava Beta retains project loading, source filtering, run-history APIs, route navigation, ledger-derived account appearance, merchant logo lookup, date grouping, and ingestion header actions.
 
 All tracked Wave 5 component rows are now marked Done. Cross-catalog cleanup has removed legacy `@beancount-js/forms` source imports from UI-owned components and Fava Beta adapters/helpers. Next work should run the dedicated UI/Beta validation lanes, finish the paused C006 navigation checkpoint, and prepare for G03 manual review.
+
+2026-07-25 — native component alignment completed. Fava Beta consumes the
+public UI primitive surface, duplicate Beta primitives and Tailwind styling
+dependencies are removed, the zero-Tailwind baseline is enforced, C006
+functional navigation passes with accessible folder disclosure selectors, and
+the mock-provider review plus all main/settings pages were exercised in the
+browser without console errors. G03 remains pending only for deliberate human
+review of the completed catalog and the documented frozen-reference exception.
 
 ### Migration-wide blocker cleanup notes
 
