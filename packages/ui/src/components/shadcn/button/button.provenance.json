@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "component": "button",
+  "scope": "shared",
+  "upstream": {
+    "project": "shadcn-svelte",
+    "registry": "https://shadcn-svelte.com/registry",
+    "cliVersion": "1.4.2",
+    "item": "button",
+    "fetchedAt": "2026-07-19T13:38:53.325Z",
+    "sourceFiles": [
+      {
+        "path": "src/lib/components/ui/button/button.svelte",
+        "sha256": "3100b55fd19e87386b3d8320a937da79253744869ac93b29302103b9d7a3e175"
+      },
+      {
+        "path": "src/lib/components/ui/button/index.ts",
+        "sha256": "0f6b6f040d92b4153821d3f9b4d6b9cbc567247e4fda913e64c1d0fcc4a2f386"
+      }
+    ],
+    "docsUrl": "https://github.com/huntabyte/shadcn-svelte/blob/bf4f461d88526359d0e96e1950f637912bbeebe7/docs/content/components/button.md",
+    "docsFetchedAt": "2026-07-22T09:57:18.196Z",
+    "docsSha256": "26ef62f25e0f196d368cd3812563b9adb86449b8d029934d147cb744920ebbe7",
+    "examplesIncluded": [
+      "Preview",
+      "Size",
+      "Default",
+      "Outline",
+      "Secondary",
+      "Ghost",
+      "Destructive",
+      "Link",
+      "Icon",
+      "With Icon",
+      "Rounded",
+      "Spinner"
+    ],
+    "examplesSkipped": [
+      {
+        "name": "Button Group",
+        "reason": "missing-family",
+        "detail": "Catalog is missing family \"button-group\""
+      }
+    ],
+    "docsCommit": "bf4f461d88526359d0e96e1950f637912bbeebe7",
+    "docsRef": "shadcn-svelte@1.4.2",
+    "docsVendorPath": "vendor/shadcn-svelte-docs"
+  },
+  "converter": {
+    "version": "1.0.0",
+    "irSchemaVersion": 1,
+    "tokenSchemaVersion": 2
+  },
+  "recipe": {
+    "name": "button",
+    "version": 1
+  }
+}

@@ -3,3 +3,5 @@
 @import "@fontsource/source-code-pro/600.css";
 @import "./theme.css";
 @import "./foundation.tokens.css";
+@import "./components/shadcn/button/button.tokens.css";
+@import "./components/shadcn/button/button.css";

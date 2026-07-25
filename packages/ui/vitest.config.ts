@@ -19,6 +19,7 @@ export default mergeConfig(
             environment: "node",
             include: [
               "src/foundation.tokens.spec.ts",
+              "src/components/shadcn/native-primitives.spec.ts",
               "src/components/forms/**/*.spec.ts",
               "src/components/dashboard/**/*.spec.ts",
             ],
