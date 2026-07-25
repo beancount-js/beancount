@@ -308,7 +308,7 @@
     {onAddProject}
   >
     <svelte:fragment slot="workspace"><FavaNavigation /></svelte:fragment>
-    <div class="h-full min-w-0 overflow-hidden" use:routerLink>
+    <div class="cn-beta-root-src-main-311-1" use:routerLink>
       <View />
     </div>
     <JournalRecordRouteSheet />

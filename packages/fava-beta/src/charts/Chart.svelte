@@ -108,9 +108,9 @@
   }
 </script>
 
-<div class="flex-row">
-  <div class="flex justify-between pb-2">
-    <div class="mr-1">
+<div class="cn-beta-charts-src-charts-chart-111-1">
+  <div class="cn-beta-charts-src-charts-chart-112-1">
+    <div class="cn-beta-charts-src-charts-chart-113-1">
       {#if chart.type === "barchart" || chart.type === "linechart"}
         <ChartLegend legend={$legend} toggled={chartToggledCurrencies} />
       {:else if hierarchyCurrencies.length > 0}
@@ -125,14 +125,14 @@
         />
       {/if}
     </div>
-    <div class="flex">
+    <div class="cn-beta-charts-src-charts-chart-128-1">
       {#if !hideButtons}
         <Select.Root
           type="single"
           value={$conversion}
           onValueChange={updateConversion}
         >
-          <Select.Trigger class="mr-1 w-[150px]">
+          <Select.Trigger class="cn-beta-charts-src-charts-chart-135-1">
             {conversionLabel($conversion) || "At Cost"}
           </Select.Trigger>
           <Select.Content>
@@ -146,7 +146,7 @@
           value={$interval}
           onValueChange={updateInterval}
         >
-          <Select.Trigger class="mr-1 w-auto">
+          <Select.Trigger class="cn-beta-charts-src-charts-chart-149-1">
             {intervalLabel($interval) || "Monthly"}
           </Select.Trigger>
           <Select.Content>
@@ -178,7 +178,7 @@
 
   <span class="spacer"></span>
 </div>
-<div bind:clientWidth={width} class="w-full">
+<div bind:clientWidth={width} class="cn-beta-charts-src-charts-chart-181-1">
   {#if width}
     {#if chart.type === "barchart"}
       <BarChart {chart} {width} {legend} />

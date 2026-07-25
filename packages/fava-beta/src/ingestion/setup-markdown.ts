@@ -12,15 +12,15 @@ function formatInline(value: string) {
   let text = escapeHtml(value);
   text = text.replace(
     /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
-    '<a href="$2" target="_blank" rel="noreferrer" class="font-medium text-foreground underline underline-offset-2">$1</a>',
+    '<a href="$2" target="_blank" rel="noreferrer" class="setup-inline-link">$1</a>',
   );
   text = text.replace(
     /\*\*([^*]+)\*\*/g,
-    '<strong class="font-medium text-foreground">$1</strong>',
+    '<strong class="setup-inline-strong">$1</strong>',
   );
   text = text.replace(
     /`([^`]+)`/g,
-    '<code class="rounded bg-muted px-1 py-0.5 text-xs text-foreground">$1</code>',
+    '<code class="setup-inline-code">$1</code>',
   );
   return text;
 }
@@ -50,7 +50,7 @@ export function renderSetupMarkdown(markdown: string): string {
     }
     const tag = listType;
     blocks.push(
-      `<${tag} class="list-${tag === "ol" ? "decimal" : "disc"} space-y-1 pl-4">${listItems
+      `<${tag} class="setup-list setup-list--${tag === "ol" ? "ordered" : "unordered"}">${listItems
         .map((item) => `<li>${formatInline(item)}</li>`)
         .join("")}</${tag}>`,
     );

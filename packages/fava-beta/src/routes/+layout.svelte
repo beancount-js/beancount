@@ -2,6 +2,7 @@
   import "@beancount-js/ui/styles.css";
   import { ModeWatcher } from "mode-watcher";
   import "../style.scss";
+  import "../styles/beta-native.css";
 
   let { children } = $props();
 </script>

@@ -33,6 +33,11 @@
   $: useHighligter(contentEl);
 </script>
 
-<ScrollArea.Root orientation="horizontal" class="w-full">
-  <pre class="whitespace-pre-wrap text-left" bind:this={contentEl}></pre>
+<ScrollArea.Root
+  orientation="horizontal"
+  class="cn-beta-codemirror-src-codemirror-extensions-highlighter-36-1"
+>
+  <pre
+    class="cn-beta-codemirror-src-codemirror-extensions-highlighter-37-1"
+    bind:this={contentEl}></pre>
 </ScrollArea.Root>

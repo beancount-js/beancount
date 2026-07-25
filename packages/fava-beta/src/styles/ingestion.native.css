@@ -1,0 +1,37 @@
+/* Native Beta ingestion adapter styles. */
+
+.setup-inline-link,
+.setup-inline-strong {
+  color: hsl(var(--foreground));
+  font-weight: 500;
+}
+
+.setup-inline-link {
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+}
+
+.setup-inline-code {
+  border-radius: calc(var(--radius) - 2px);
+  background: hsl(var(--muted));
+  padding: 0.125rem 0.25rem;
+  color: hsl(var(--foreground));
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.setup-list {
+  padding-left: 1rem;
+}
+
+.setup-list > li + li {
+  margin-top: 0.25rem;
+}
+
+.setup-list--ordered {
+  list-style-type: decimal;
+}
+
+.setup-list--unordered {
+  list-style-type: disc;
+}

@@ -215,9 +215,9 @@
   });
 </script>
 
-<div class="flex h-full min-h-0 flex-col">
-  <div class="editor-scroll-host min-h-0 flex-1 overflow-hidden">
-    <div class="beancount-editor relative">
+<div class="cn-beta-components-editor-218-1">
+  <div class="cn-beta-components-editor-219-1 editor-scroll-host">
+    <div class="cn-beta-components-editor-220-1 beancount-editor">
       <Editor
         bind:this={editor}
         {source}

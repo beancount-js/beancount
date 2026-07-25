@@ -42,14 +42,16 @@
   });
 </script>
 
-<div class="mx-4 flex flex-col py-2">
-  <div class="mx-auto flex w-full gap-2">
+<div class="cn-beta-codemirror-src-codemirror-extensions-search-gotoline-45-1">
+  <div
+    class="cn-beta-codemirror-src-codemirror-extensions-search-gotoline-46-1"
+  >
     <Input
       onkeydown={keydown}
       type="text"
       bind:value
       bind:ref
-      class="h-8 focus-visible:ring-2"
+      class="cn-beta-codemirror-src-codemirror-extensions-search-gotoline-52-1"
       placeholder="Go to line"
     />
     <Tooltip.Provider>

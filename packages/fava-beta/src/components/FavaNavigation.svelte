@@ -598,10 +598,7 @@
       id: "/import/manage-merchants",
       label: "Merchants",
       icon: BookUser,
-      active: isLedgerSettingActive(
-        "/import/manage-merchants",
-        activeViewPath,
-      ),
+      active: isLedgerSettingActive("/import/manage-merchants", activeViewPath),
       disabled: files.length === 0,
     },
     {
@@ -630,7 +627,7 @@
   <Search />
 {/snippet}
 
-<div class="flex min-h-0 flex-1 flex-col gap-3">
+<div class="cn-beta-components-favanavigation-633-1">
   {#if $ledgerSidebarMode === "settings"}
     <LedgerSettingsNavigation
       items={settingsNavigationItems}

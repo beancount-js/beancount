@@ -213,26 +213,25 @@
   onDestroy(stopSidebarResize);
 </script>
 
-<Sidebar.Provider class="h-screen overflow-hidden" style={sidebarWidthStyle}>
+<Sidebar.Provider
+  class="cn-beta-components-studioshell-216-1"
+  style={sidebarWidthStyle}
+>
   <AppShell {pageTitle} hasSidebar>
     <svelte:fragment slot="sidebar">
       <Sidebar.Root collapsible="icon" showBorder={false}>
-        <div class="relative flex h-full min-h-0 flex-col">
-          <div
-            class="flex min-h-0 flex-1 flex-col group-data-[collapsible=icon]:hidden"
-          >
+        <div class="cn-beta-components-studioshell-220-1">
+          <div class="cn-beta-components-studioshell-222-1">
             <Sidebar.Header>
               <StudioShellHeader
                 projectName={snapshot?.project.name ?? "Loading project"}
               />
             </Sidebar.Header>
-            <Sidebar.Content class="px-2 pb-3">
+            <Sidebar.Content class="cn-beta-components-studioshell-229-1">
               <slot name="workspace"></slot>
             </Sidebar.Content>
           </div>
-          <Sidebar.Footer
-            class="border-t border-sidebar-border group-data-[collapsible=icon]:hidden"
-          >
+          <Sidebar.Footer class="cn-beta-components-studioshell-234-1">
             <FilterCommandPicker
               label="Project"
               ariaLabel="Select project"
@@ -246,11 +245,9 @@
             />
           </Sidebar.Footer>
 
-          <div
-            class="hidden h-full min-h-0 flex-col items-center gap-2 px-1.5 py-2 group-data-[collapsible=icon]:flex"
-          >
+          <div class="cn-beta-components-studioshell-250-1">
             <Sidebar.Trigger
-              class="size-8"
+              class="cn-beta-components-studioshell-253-1"
               aria-label="Expand sidebar"
               title="Expand sidebar"
             >
@@ -258,13 +255,11 @@
               <span class="sr-only">Expand sidebar</span>
             </Sidebar.Trigger>
             <Sidebar.Trigger
-              class="flex min-h-0 flex-1 items-center justify-center rounded-md border border-transparent px-1 py-2 text-sidebar-foreground hover:border-sidebar-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              class="cn-beta-components-studioshell-261-1"
               aria-label="Expand project rail"
               title={snapshot?.project.name ?? "Beancount Studio"}
             >
-              <span
-                class="max-h-full truncate text-[12px] font-semibold [writing-mode:vertical-rl]"
-              >
+              <span class="cn-beta-components-studioshell-266-1">
                 {snapshot?.project.name ?? "Beancount Studio"}
               </span>
             </Sidebar.Trigger>
@@ -273,7 +268,7 @@
           <div
             role="slider"
             tabindex="0"
-            class="absolute -right-1.5 bottom-4 top-4 z-20 hidden w-3 cursor-col-resize items-stretch justify-center rounded-full bg-transparent outline-none group-data-[collapsible=icon]:hidden md:flex"
+            class="cn-beta-components-studioshell-276-1"
             aria-label="Resize sidebar"
             aria-orientation="vertical"
             aria-valuemin={MIN_SIDEBAR_WIDTH}
@@ -289,8 +284,9 @@
           >
             <span
               class={cn(
-                "my-2.5 w-px bg-transparent transition-colors",
-                (resizing || hoveringResizer) && "bg-primary/60",
+                "cn-beta-components-studioshell-292-1",
+                (resizing || hoveringResizer) &&
+                  "cn-beta-components-studioshell-293-1",
               )}
               aria-hidden="true"
             ></span>
@@ -300,40 +296,37 @@
     </svelte:fragment>
     <svelte:fragment slot="mobile-navigation-trigger">
       <Sidebar.Trigger
-        class="md:hidden"
+        class="cn-beta-components-studioshell-303-1"
         aria-label="Show navigation"
         title="Show navigation"
       />
     </svelte:fragment>
     <svelte:fragment slot="desktop-sidebar-trigger">
       <Sidebar.Trigger
-        class="hidden size-8 md:inline-flex"
+        class="cn-beta-components-studioshell-310-1"
         aria-label="Collapse sidebar to project rail"
         title="Collapse sidebar"
       />
     </svelte:fragment>
     <svelte:fragment slot="title-trailing">
       {#if $ingestionHeaderActions?.kind === "rules"}
-        <span
-          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+        <span class="cn-beta-components-studioshell-318-1"
           >{$ingestionHeaderActions.ruleCount}</span
         >
       {/if}
       {#if $ingestionHeaderActions?.kind === "manage-merchants"}
-        <span
-          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+        <span class="cn-beta-components-studioshell-324-1"
           >{$ingestionHeaderActions.merchantCount}</span
         >
       {/if}
       {#if $ingestionHeaderActions?.kind === "history"}
-        <span
-          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+        <span class="cn-beta-components-studioshell-330-1"
           >{$ingestionHeaderActions.runCount}</span
         >
       {/if}
       {#if $ingestionHeaderActions?.kind === "review"}
         <span
-          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          class="cn-beta-components-studioshell-336-1"
           aria-label={`${$ingestionHeaderActions.recordCount} total records`}
           title={`${$ingestionHeaderActions.recordCount} total records`}
           >{$ingestionHeaderActions.recordCount}</span
@@ -344,7 +337,7 @@
       {#if $ingestionHeaderActions?.kind === "ledger"}
         <div
           data-slot="studio-workspace-header-leading"
-          class="ml-1.5 flex min-w-0 shrink-0 items-center"
+          class="cn-beta-components-studioshell-347-1"
         >
           <IngestionHeaderActions region="leading" />
         </div>
@@ -353,25 +346,21 @@
     <svelte:fragment slot="header-actions">
       <div
         data-slot="studio-workspace-header-actions"
-        class="flex min-w-0 flex-1 touch-pan-x items-center gap-2 overflow-x-auto [scrollbar-width:none] sm:flex-none sm:overflow-visible [&::-webkit-scrollbar]:hidden"
+        class="cn-beta-components-studioshell-356-1"
       >
         <IngestionHeaderActions region="actions" />
       </div>
       <Button
         variant="ghost"
         size="icon"
-        class="size-8"
+        class="cn-beta-components-studioshell-363-1"
         aria-label="Toggle theme"
         title="Toggle theme"
         onclick={toggleMode}
       >
-        <span class="relative grid place-items-center">
-          <Sun
-            class="transition-[transform,opacity] motion-reduce:transition-none dark:-rotate-90 dark:opacity-0"
-          />
-          <Moon
-            class="absolute rotate-90 opacity-0 transition-[transform,opacity] motion-reduce:transition-none dark:rotate-0 dark:opacity-100"
-          />
+        <span class="cn-beta-components-studioshell-368-1">
+          <Sun class="cn-beta-components-studioshell-370-1" />
+          <Moon class="cn-beta-components-studioshell-373-1" />
         </span>
       </Button>
     </svelte:fragment>
@@ -383,15 +372,15 @@
         )}
         {#if track}
           <div
-            class="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+            class="cn-beta-components-studioshell-386-1"
             role="status"
             data-ingestion-sync-banner
           >
             <RefreshCw
-              class="size-3.5 shrink-0 animate-spin"
+              class="cn-beta-components-studioshell-391-1"
               aria-hidden="true"
             />
-            <span class="min-w-0 truncate">
+            <span class="cn-beta-components-studioshell-394-1">
               Syncing {track.sourceName}: {track.job.progress.message}
             </span>
           </div>
@@ -415,7 +404,7 @@
         <Empty.Content>
           {#if enteringPath}
             <form
-              class="flex w-full max-w-sm flex-col gap-3"
+              class="cn-beta-components-studioshell-418-1"
               onsubmit={(event) => {
                 event.preventDefault();
                 void submitPath();
@@ -429,10 +418,10 @@
                   path = value.path;
                 }}
               />
-              <div class="flex gap-2">
+              <div class="cn-beta-components-studioshell-432-1">
                 <Button
                   type="submit"
-                  class="flex-1"
+                  class="cn-beta-components-studioshell-435-1"
                   disabled={addingProject || !path.trim()}>Open project</Button
                 ><Button
                   type="button"
@@ -449,12 +438,18 @@
             </Button>
           {/if}
           {#if projectActionError}
-            <Empty.Description role="alert" class="text-destructive">
+            <Empty.Description
+              role="alert"
+              class="cn-beta-components-studioshell-452-1"
+            >
               {projectActionError}
             </Empty.Description>
           {/if}
           {#if status && !status.startsWith("Add a local")}
-            <Empty.Description role="alert" class="text-destructive">
+            <Empty.Description
+              role="alert"
+              class="cn-beta-components-studioshell-457-1"
+            >
               {status}
             </Empty.Description>
           {/if}

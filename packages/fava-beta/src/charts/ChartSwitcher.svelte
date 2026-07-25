@@ -15,14 +15,21 @@
   }
 </script>
 
-<Tabs.Root value={activeChart.name} class="w-full" onValueChange={handleChange}>
+<Tabs.Root
+  value={activeChart.name}
+  class="cn-beta-charts-src-charts-chartswitcher-18-1"
+  onValueChange={handleChange}
+>
   {#each charts as chart}
     <Tabs.Content value={chart.name}>
       <Chart {chart} />
     </Tabs.Content>
   {/each}
-  <ScrollArea.Root orientation="horizontal" class="w-full">
-    <div class="mx-auto w-max pb-2 pt-2">
+  <ScrollArea.Root
+    orientation="horizontal"
+    class="cn-beta-charts-src-charts-chartswitcher-24-1"
+  >
+    <div class="cn-beta-charts-src-charts-chartswitcher-25-1">
       <Tabs.List>
         {#each charts as chart}
           <Tabs.Trigger value={chart.name}>{chart.name || "All"}</Tabs.Trigger>

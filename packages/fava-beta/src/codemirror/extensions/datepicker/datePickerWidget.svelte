@@ -56,14 +56,17 @@
       buttonVariants({
         variant: "ghost",
         size: "xs",
-        class: "inline-block py-0",
+        class:
+          "cn-beta-codemirror-src-codemirror-extensions-datepicker-datepickerwidget-59-1",
       }),
       !value && "text-muted-foreground",
     )}
   >
     <CalendarIcon />
   </Popover.Trigger>
-  <Popover.Content class="flex w-auto flex-col space-y-2 p-2">
+  <Popover.Content
+    class="cn-beta-codemirror-src-codemirror-extensions-datepicker-datepickerwidget-66-1"
+  >
     <Select.Root
       type="single"
       value={valueString}
@@ -82,7 +85,9 @@
         {/each}
       </Select.Content>
     </Select.Root>
-    <div class="rounded-md border">
+    <div
+      class="cn-beta-codemirror-src-codemirror-extensions-datepicker-datepickerwidget-85-1"
+    >
       <Calendar type="single" bind:value {onValueChange} />
     </div>
   </Popover.Content>

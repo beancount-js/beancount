@@ -40,10 +40,13 @@
         {#if color}
           <span
             style="background-color: {color}"
-            class="mr-1 size-3 rounded-full"
+            class="cn-beta-charts-src-charts-chartlegend-43-1"
           ></span>
         {/if}
-        <span class:line-through={$active !== item}>{item}</span>
+        <span
+          class:cn-beta-charts-src-charts-chartlegend-46-1={$active !== item}
+          >{item}</span
+        >
       </ToggleGroup.Item>
     {/each}
   </ToggleGroup.Root>
@@ -59,10 +62,14 @@
         {#if color}
           <span
             style="background-color: {color}"
-            class="mr-1 size-3 rounded-full"
+            class="cn-beta-charts-src-charts-chartlegend-62-1"
           ></span>
         {/if}
-        <span class:line-through={$toggled?.includes(item)}>{item}</span>
+        <span
+          class:cn-beta-charts-src-charts-chartlegend-65-1={$toggled?.includes(
+            item,
+          )}>{item}</span
+        >
       </ToggleGroup.Item>
     {/each}
   </ToggleGroup.Root>

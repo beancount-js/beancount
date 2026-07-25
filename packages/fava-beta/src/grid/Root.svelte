@@ -43,38 +43,42 @@
 </script>
 
 {#if !$sortedData.length}
-  <Alert.Root variant="default" class="mt-4 border-solid text-xs">
-    <Alert.Description class="whitespace-pre-wrap">No records</Alert.Description
+  <Alert.Root variant="default" class="cn-beta-grid-src-grid-root-46-1">
+    <Alert.Description class="cn-beta-grid-src-grid-root-47-1"
+      >No records</Alert.Description
     >
   </Alert.Root>
 {:else}
-  <ScrollArea.Root orientation="horizontal" class="w-full max-w-full">
-    <div class="bean-table flex-table text-xs">
+  <ScrollArea.Root
+    orientation="horizontal"
+    class="cn-beta-grid-src-grid-root-51-1"
+  >
+    <div class="cn-beta-grid-src-grid-root-52-1">
       <VirtualList
         height={Math.min(height, maxHeight)}
         width="max-content"
         itemCount={$sortedData.length}
         itemSize={getSize}
       >
-        <div
-          class="head sticky top-0 z-10 border-b border-l border-t border-solid"
-          slot="header"
-        >
-          <div class="grid-row" use:useSortableTable={sortOrder}>
+        <div class="cn-beta-grid-src-grid-root-60-1" slot="header">
+          <div
+            class="cn-beta-grid-src-grid-root-63-1"
+            use:useSortableTable={sortOrder}
+          >
             {#each columns as col}
               {#if col.sortable}
                 <span
                   data-sort={col.type}
                   data-sort-name={col.id}
                   style={styles[col.id]}
-                  class={"border-r " + col.class || ""}
+                  class={"cn-beta-grid-src-grid-root-70-1" + col.class || ""}
                 >
                   <slot name="header" column={col}>{col.name}</slot>
                 </span>
               {:else}
                 <span
                   style={styles[col.id]}
-                  class={"border-r " + col.class || ""}
+                  class={"cn-beta-grid-src-grid-root-77-1" + col.class || ""}
                 >
                   <slot name="header" column={col}>{col.name}</slot>
                 </span>
@@ -82,7 +86,13 @@
             {/each}
           </div>
         </div>
-        <div slot="item" let:index let:style class="align-middle" {style}>
+        <div
+          slot="item"
+          let:index
+          let:style
+          class="cn-beta-grid-src-grid-root-85-1"
+          {style}
+        >
           <slot
             name="row"
             height={rowHeight}
@@ -94,10 +104,10 @@
           >
             <div style={`line-height: ${rowHeight - 4}px`}>
               <div
-                class="border-b border-l"
+                class="cn-beta-grid-src-grid-root-97-1"
                 style={`height: ${getSize(index, false)}px`}
               >
-                <div class="grid-row h-full">
+                <div class="cn-beta-grid-src-grid-root-100-1">
                   {#each model as column, i}
                     <slot
                       name="cell"

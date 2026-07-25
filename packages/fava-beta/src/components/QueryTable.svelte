@@ -219,7 +219,7 @@
 
 {#snippet queryChart()}
   {#if chart}
-    <div class="mt-4 rounded-xl border bg-card p-3 text-xs shadow-sm">
+    <div class="cn-beta-components-querytable-222-1">
       <Chart {chart} hideButtons />
     </div>
   {/if}
@@ -231,11 +231,17 @@
   value: QueryResultCell,
 )}
   {#each displayValues(value) as displayValue, index}
-    <div class:border-t={Array.isArray(value) && index > 0}>
+    <div
+      class:cn-beta-components-querytable-234-1={Array.isArray(value) &&
+        index > 0}
+    >
       {#if columnTypes[column.id] === "account" && displayValue}
         <AccountLink account={displayValue} avatarSize="sm" />
       {:else}
-        <span class:whitespace-pre={countLines(displayValue) > 1}>
+        <span
+          class:cn-beta-components-querytable-238-1={countLines(displayValue) >
+            1}
+        >
           {displayValue}
         </span>
       {/if}

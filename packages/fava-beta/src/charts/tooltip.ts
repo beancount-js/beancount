@@ -7,7 +7,7 @@ const tooltip = (() => {
   return () => {
     if (value === null) {
       value = document.createElement("div");
-      value.className = "tooltip font-mono";
+      value.className = "cn-beta-charts-src-charts-tooltip-10-1";
       value.dataset.chartTooltip = "";
       document.body.appendChild(value);
     }
@@ -29,7 +29,7 @@ export const domHelpers = {
   /** Create a <em> element with the given content. */
   em: (content: string): HTMLElement => {
     const em = document.createElement("span");
-    em.className = "opacity-50";
+    em.className = "cn-beta-charts-src-charts-tooltip-32-1";
     em.textContent = content;
     return em;
   },

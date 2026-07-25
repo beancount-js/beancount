@@ -251,23 +251,23 @@
   }
 </script>
 
-<div class="h-full overflow-y-auto p-3 sm:p-5">
-  <div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
+<div class="cn-beta-components-accountactivitytable-254-1">
+  <div class="cn-beta-components-accountactivitytable-255-1">
     <ToggleGroup.Root
       type="single"
       value={timeframe}
       aria-label="Activity timeframe"
-      class="!gap-0 self-start rounded-lg bg-muted p-1"
+      class="cn-beta-components-accountactivitytable-260-1"
       onValueChange={setTimeframe}
     >
       <ToggleGroup.Item
         value="transactions"
-        class="!h-7 !min-w-0 !px-6 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+        class="cn-beta-components-accountactivitytable-265-1"
         >Transactions</ToggleGroup.Item
       >
       <ToggleGroup.Item
         value="upcoming"
-        class="!h-7 !min-w-0 !px-6 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+        class="cn-beta-components-accountactivitytable-270-1"
         >Upcoming</ToggleGroup.Item
       >
     </ToggleGroup.Root>
@@ -276,14 +276,14 @@
       <div
         data-activity-selection-banner
         role="status"
-        class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+        class="cn-beta-components-accountactivitytable-279-1"
       >
         {#if allMatchingSelected}
           All {allRecords.length}
           account activity records selected.
           <button
             type="button"
-            class="font-medium text-primary underline-offset-2 hover:underline"
+            class="cn-beta-components-accountactivitytable-286-1"
             onclick={clearSelection}
           >
             Clear selection
@@ -292,7 +292,7 @@
           All {visibleRecords.length} records on this page are selected.
           <button
             type="button"
-            class="font-medium text-primary underline-offset-2 hover:underline"
+            class="cn-beta-components-accountactivitytable-295-1"
             onclick={selectAllRecords}
           >
             Select all {allRecords.length} account activity records
@@ -302,9 +302,7 @@
     {/if}
 
     {#if !visibleRecords.length}
-      <div
-        class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-      >
+      <div class="cn-beta-components-accountactivitytable-306-1">
         {emptyMessage}
       </div>
     {:else}
@@ -321,16 +319,14 @@
     {/if}
 
     {#if pages.length > 1}
-      <div
-        class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <span class="text-sm text-muted-foreground"
+      <div class="cn-beta-components-accountactivitytable-325-1">
+        <span class="cn-beta-components-accountactivitytable-327-1"
           >{page} of {pages.length}</span
         >
-        <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-          <div class="hidden items-center gap-2 sm:flex">
+        <div class="cn-beta-components-accountactivitytable-330-1">
+          <div class="cn-beta-components-accountactivitytable-331-1">
             <span
-              class="text-sm text-muted-foreground"
+              class="cn-beta-components-accountactivitytable-333-1"
               id={`account-activity-table-page-size-label`}>Page size</span
             >
             <Select.Root
@@ -345,7 +341,7 @@
               <Select.Trigger
                 id={`account-activity-table-page-size`}
                 aria-labelledby={`account-activity-table-page-size-label`}
-                class="h-8 w-20 font-mono text-sm tabular-nums"
+                class="cn-beta-components-accountactivitytable-348-1"
               >
                 {pageSize}
               </Select.Trigger>

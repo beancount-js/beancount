@@ -129,7 +129,9 @@
   const replaceAllMatches = () => replaceAll(view);
 </script>
 
-<div class="mx-4 flex flex-col py-2">
+<div
+  class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-132-1"
+>
   <ToggleGroup.Root
     type="multiple"
     value={values()}
@@ -139,12 +141,14 @@
     <ToggleGroup.Item
       value="case"
       aria-label="Match Case"
-      class="!hover:border-none"
+      class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-142-1"
     >
       <Tooltip.Provider>
         <Tooltip.Root>
           <Tooltip.Trigger>
-            <CaseSensitive class="size-4" />
+            <CaseSensitive
+              class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-147-1"
+            />
           </Tooltip.Trigger>
           <Tooltip.Content>
             <p>Case Sensitive</p>
@@ -156,7 +160,9 @@
       <Tooltip.Provider>
         <Tooltip.Root>
           <Tooltip.Trigger>
-            <WholeWord class="size-4" />
+            <WholeWord
+              class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-159-1"
+            />
           </Tooltip.Trigger>
           <Tooltip.Content>
             <p>Whole Word</p>
@@ -172,7 +178,9 @@
       <Tooltip.Provider>
         <Tooltip.Root>
           <Tooltip.Trigger>
-            <Regex class="size-4" />
+            <Regex
+              class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-175-1"
+            />
           </Tooltip.Trigger>
           <Tooltip.Content>
             <p>Regex</p>
@@ -181,8 +189,12 @@
       </Tooltip.Provider>
     </ToggleGroup.Item>
   </ToggleGroup.Root>
-  <div class="flex items-center">
-    <div class="p-1">
+  <div
+    class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-184-1"
+  >
+    <div
+      class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-185-1"
+    >
       <Tooltip.Provider>
         <Tooltip.Root>
           <Tooltip.Trigger
@@ -201,15 +213,19 @@
         </Tooltip.Root>
       </Tooltip.Provider>
     </div>
-    <div class="w-full">
-      <div class="mx-auto flex w-full gap-2 py-2">
+    <div
+      class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-204-1"
+    >
+      <div
+        class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-205-1"
+      >
         <Input
           type="text"
           onkeydown={keydown}
           onkeyup={handleSearch}
           bind:value={searchValue}
           placeholder="Find"
-          class="h-8 focus-visible:ring-2"
+          class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-212-1"
         />
         <Tooltip.Provider>
           <Tooltip.Root>
@@ -265,14 +281,16 @@
         </Tooltip.Provider>
       </div>
       {#if isReplace}
-        <div class="mx-auto flex w-full gap-2 py-2">
+        <div
+          class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-268-1"
+        >
           <Input
             type="text"
             onkeydown={keydown}
             onkeyup={handleSearch}
             bind:value={replaceValue}
             placeholder="Replace"
-            class="h-8 focus-visible:ring-2"
+            class="cn-beta-codemirror-src-codemirror-extensions-search-findreplace-275-1"
           />
           <Tooltip.Provider>
             <Tooltip.Root>

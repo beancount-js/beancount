@@ -27,7 +27,7 @@ const accountSnippet = createRawSnippet<[DirectiveBase]>((getDirective) => {
           ? `<span><strong>${directive.payee}</strong> <span>${directive.narration}</span></span>`
           : `<span>${directive.narration}</span>`;
       } else if (directive instanceof Open || directive instanceof Balance) {
-        return `<a href="${urlForAccount(directive.account)}" class="hover:font-semibold">${directive.account}</a>`;
+        return `<a href="${urlForAccount(directive.account)}" class="cn-beta-components-journal-table-columns-30-1">${directive.account}</a>`;
       }
       return "<span></span>";
     },

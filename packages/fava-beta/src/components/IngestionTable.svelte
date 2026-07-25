@@ -1500,29 +1500,24 @@
   }
 </script>
 
-<div
-  class="h-full overflow-auto p-3 pb-[calc(60px+env(safe-area-inset-bottom))] sm:p-5"
-  data-ingestion-review
->
-  <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
+<div class="cn-beta-components-ingestiontable-1504-1" data-ingestion-review>
+  <div class="cn-beta-components-ingestiontable-1507-1">
     {#if isWeb}
-      <div
-        class="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-sm"
-      >
+      <div class="cn-beta-components-ingestiontable-1510-1">
         Remote API ingestion is available only when this project is opened
         through the local Beancount Studio server.
       </div>
     {:else if !project}
-      <div class="rounded-md border p-4 text-sm text-muted-foreground">
+      <div class="cn-beta-components-ingestiontable-1516-1">
         Open a project to configure ingestion.
       </div>
     {/if}
 
     {#if syncing}
       {#if syncJob?.kind === "ai-rerun"}
-        <div class="flex flex-col gap-2">
+        <div class="cn-beta-components-ingestiontable-1523-1">
           <Progress value={aiRerunProgressValue} />
-          <p class="text-center text-sm tabular-nums text-muted-foreground">
+          <p class="cn-beta-components-ingestiontable-1525-1">
             {aiRerunProgressCaption}
           </p>
         </div>
@@ -1538,28 +1533,22 @@
       {/if}
     {/if}
 
-    {#if status}<p class="text-sm text-muted-foreground">{status}</p>{/if}
+    {#if status}<p class="cn-beta-components-ingestiontable-1541-1">
+        {status}
+      </p>{/if}
 
     {#if (loading || !loadedProjectId) && !activeRuns.length && !isWeb && project}
       <ReviewImportsSkeleton />
     {:else if activeRuns.length}
-      <div
-        class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div class="flex flex-wrap items-center gap-2" role="status">
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300"
-          >
+      <div class="cn-beta-components-ingestiontable-1547-1">
+        <div class="cn-beta-components-ingestiontable-1549-1" role="status">
+          <span class="cn-beta-components-ingestiontable-1551-1">
             <span class="tabular-nums">{ready.length}</span> ready
           </span>
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-700 dark:text-violet-300"
-          >
+          <span class="cn-beta-components-ingestiontable-1556-1">
             <span class="tabular-nums">{pending.length}</span> need review
           </span>
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-2.5 py-1 text-xs font-medium text-rose-700 dark:text-rose-300"
-          >
+          <span class="cn-beta-components-ingestiontable-1561-1">
             <span class="tabular-nums">{duplicates}</span> duplicates
           </span>
         </div>
@@ -1567,40 +1556,34 @@
           type="single"
           value={reviewFilter}
           aria-label="Review content filter"
-          class="grid w-full grid-cols-3 !gap-0 rounded-lg bg-muted p-1 sm:flex sm:w-auto sm:self-start"
+          class="cn-beta-components-ingestiontable-1570-1"
           data-ingestion-review-filter
           onValueChange={setReviewFilter}
         >
           <ToggleGroup.Item
             value="pending"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:!px-3"
+            class="cn-beta-components-ingestiontable-1576-1"
           >
             Review
-            <span
-              class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
-            >
+            <span class="cn-beta-components-ingestiontable-1580-1">
               {pending.length}
             </span>
           </ToggleGroup.Item>
           <ToggleGroup.Item
             value="accepted"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:!px-3"
+            class="cn-beta-components-ingestiontable-1587-1"
           >
             Ready
-            <span
-              class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
-            >
+            <span class="cn-beta-components-ingestiontable-1591-1">
               {ready.length}
             </span>
           </ToggleGroup.Item>
           <ToggleGroup.Item
             value="reconciliation"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:!px-3"
+            class="cn-beta-components-ingestiontable-1598-1"
           >
             Reconcile
-            <span
-              class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
-            >
+            <span class="cn-beta-components-ingestiontable-1602-1">
               {reconciliationCount}
             </span>
           </ToggleGroup.Item>
@@ -1742,13 +1725,13 @@
           <div
             data-review-selection-banner
             role="status"
-            class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+            class="cn-beta-components-ingestiontable-1745-1"
           >
             {#if allMatchingSelected}
               All {actionableRows.length} matching review items selected.
               <button
                 type="button"
-                class="font-medium text-primary underline-offset-2 hover:underline"
+                class="cn-beta-components-ingestiontable-1751-1"
                 onclick={clearSelectedRows}
               >
                 Clear selection
@@ -1758,7 +1741,7 @@
               selected.
               <button
                 type="button"
-                class="font-medium text-primary underline-offset-2 hover:underline"
+                class="cn-beta-components-ingestiontable-1761-1"
                 onclick={selectAllMatchingRows}
               >
                 Select all {actionableRows.length} matching items
@@ -1770,21 +1753,21 @@
 
       {#if !showingReconciliation && pages.length > 1}
         <div
-          class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+          class="cn-beta-components-ingestiontable-1773-1"
           data-review-import-pagination
         >
-          <span class="text-sm text-muted-foreground"
+          <span class="cn-beta-components-ingestiontable-1776-1"
             >Page {page} of {pages.length}</span
           >
-          <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-            <div class="hidden items-center gap-2 sm:flex">
+          <div class="cn-beta-components-ingestiontable-1779-1">
+            <div class="cn-beta-components-ingestiontable-1780-1">
               <label
-                class="text-sm text-muted-foreground"
+                class="cn-beta-components-ingestiontable-1782-1"
                 for="ingestion-review-page-size">Records per page</label
               >
               <select
                 id="ingestion-review-page-size"
-                class="h-8 rounded-md border bg-background px-2 text-sm"
+                class="cn-beta-components-ingestiontable-1787-1"
                 value={pageSize}
                 onchange={(event) =>
                   updateRoute({
@@ -1809,7 +1792,7 @@
         </div>
       {/if}
     {:else if !isWeb && project}
-      <Empty.Root class="min-h-64 border">
+      <Empty.Root class="cn-beta-components-ingestiontable-1812-1">
         <Empty.Header>
           <Empty.Media variant="icon"><Landmark /></Empty.Media>
           {#if config?.sources.length}
@@ -1828,12 +1811,18 @@
           {#if config?.sources.length}
             <Button type="button" onclick={openAccounts}>
               Open Accounts
-              <Link2 class="size-4" aria-hidden="true" />
+              <Link2
+                class="cn-beta-components-ingestiontable-1831-1"
+                aria-hidden="true"
+              />
             </Button>
           {:else}
             <Button type="button" onclick={openSources}>
               Open Sources
-              <Link2 class="size-4" aria-hidden="true" />
+              <Link2
+                class="cn-beta-components-ingestiontable-1836-1"
+                aria-hidden="true"
+              />
             </Button>
           {/if}
         </Empty.Content>

@@ -43,7 +43,7 @@
 </script>
 
 <Accordion.Root
-  class="flex w-full flex-col gap-3 pt-3"
+  class="cn-beta-components-querybox-46-1"
   type="multiple"
   value={[...values]}
   onValueChange={handleChange}
@@ -51,29 +51,31 @@
   {#each queries as query}
     <Accordion.Item
       value={query.hash}
-      class={cn(
-        "overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm data-[state=open]:bg-muted/50",
-        { "ring-1 ring-primary/30": selected === query.hash },
-      )}
+      class={cn("cn-beta-components-querybox-55-1", {
+        "cn-beta-components-querybox-56-1": selected === query.hash,
+      })}
       data-query-history-item
     >
       <div
-        class="group flex min-h-14 items-stretch gap-3 transition-colors hover:bg-muted/50"
+        class="cn-beta-components-querybox-61-1 cn-group"
         data-query-history-header
       >
-        <div class="flex min-w-0 flex-1">
+        <div class="cn-beta-components-querybox-64-1">
           <Accordion.Trigger
             indicatorPosition="start"
-            class="h-full w-full min-w-0 gap-3 py-0 pl-4 text-left text-xs hover:no-underline"
+            class="cn-beta-components-querybox-67-1"
             data-query-history-trigger
           >
-            <span class="min-w-0 flex-1" data-query-history-label>
+            <span
+              class="cn-beta-components-querybox-70-1"
+              data-query-history-label
+            >
               <Highlighter code={query.query} parser={bqlLanguage.parser} />
             </span>
           </Accordion.Trigger>
         </div>
         <div
-          class="flex shrink-0 items-center gap-1 pr-4"
+          class="cn-beta-components-querybox-76-1"
           data-query-history-actions
         >
           <Button
@@ -96,8 +98,8 @@
           </Button>
         </div>
       </div>
-      <Accordion.Content class="border-t bg-muted/20 [&>div]:p-0">
-        <div class="px-4 pb-4">
+      <Accordion.Content class="cn-beta-components-querybox-99-1">
+        <div class="cn-beta-components-querybox-100-1">
           {#if isOpen[query.hash]}
             <QueryTable query={query.query} />
           {/if}

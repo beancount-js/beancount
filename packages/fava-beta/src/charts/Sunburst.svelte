@@ -71,7 +71,7 @@
         on:focus={() => {
           current = d;
         }}
-        class:fill-muted={current &&
+        class:cn-beta-charts-src-charts-sunburst-74-1={current &&
           !current.data.account.startsWith(d.data.account)}
         fill-rule="evenodd"
         fill={$sunburstScale(d.data.account)}

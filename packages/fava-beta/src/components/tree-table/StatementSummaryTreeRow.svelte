@@ -40,37 +40,40 @@
 
 <li>
   <div
-    class="grid min-h-12 items-center border-t border-border/70 text-sm transition-colors hover:bg-muted/65"
+    class="cn-beta-components-tree-table-statementsummarytreerow-43-1"
     style={`grid-template-columns: ${gridTemplate}`}
     data-statement-summary-tree-row
   >
     <div
-      class="flex min-w-0 items-center gap-1 py-2 pr-4"
+      class="cn-beta-components-tree-table-statementsummarytreerow-48-1"
       style={`padding-left: ${0.9 + depth * 1.2}rem`}
     >
       {#if hasChildren}
         <button
           type="button"
-          class="grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+          class="cn-beta-components-tree-table-statementsummarytreerow-54-1"
           aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${node.account}`}
           aria-expanded={!isCollapsed}
           onclick={() => toggle(node.account)}
         >
           <ChevronDown
-            class={`size-3 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
+            class={`cn-beta-components-tree-table-statementsummarytreerow-60-2 cn-beta-components-tree-table-statementsummarytreerow-60-3 ${isCollapsed ? "cn-beta-components-tree-table-statementsummarytreerow-60-1" : ""}`}
           />
         </button>
       {:else}
-        <span class="size-4 shrink-0" aria-hidden="true"></span>
+        <span
+          class="cn-beta-components-tree-table-statementsummarytreerow-64-1"
+          aria-hidden="true"
+        ></span>
       {/if}
       <AccountLink account={node.account} label={name} avatarSize="sm" />
     </div>
     <span
-      class="grid place-items-center py-2 pl-4 pr-2"
+      class="cn-beta-components-tree-table-statementsummarytreerow-69-1"
       data-statement-weight-meter-column
     >
       <span
-        class:invisible={!displayAmount}
+        class:cn-beta-components-tree-table-statementsummarytreerow-73-1={!displayAmount}
         class="weight-meter"
         style={`--meter-color: ${branchColor}`}
         data-statement-weight-meter
@@ -83,7 +86,7 @@
     </span>
     <span
       class:dimmed={!displayAmount}
-      class="px-4 text-right font-mono text-[13px] tabular-nums"
+      class="cn-beta-components-tree-table-statementsummarytreerow-86-1"
       data-statement-weight
       >{displayAmount ? `${weight.toFixed(1)}%` : "—"}</span
     >
@@ -91,17 +94,19 @@
       {@const value = (shownBalance[currency] ?? 0) * multiplier * invert}
       <span
         class:dimmed={!value}
-        class="px-4 text-right font-mono text-[13px] tabular-nums"
+        class="cn-beta-components-tree-table-statementsummarytreerow-94-1"
       >
         {value ? $ctx.num(value, currency) : "—"}
       </span>
     {/each}
     <span
       class:dimmed={!otherBalances.length}
-      class="px-4 py-2 text-right font-mono text-[13px] tabular-nums"
+      class="cn-beta-components-tree-table-statementsummarytreerow-101-1"
     >
       {#each otherBalances as [currency, value]}
-        <span class="block" title={currencyName(currency)}
+        <span
+          class="cn-beta-components-tree-table-statementsummarytreerow-104-1"
+          title={currencyName(currency)}
           >{$ctx.amount(value * multiplier * invert, currency)}</span
         >
       {:else}

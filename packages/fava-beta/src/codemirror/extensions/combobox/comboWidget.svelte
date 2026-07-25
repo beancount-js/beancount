@@ -48,35 +48,44 @@
           <Button
             variant="ghost"
             size="icon"
-            class="cm-account-combo__trigger size-5 text-muted-foreground hover:text-foreground"
+            class="cn-beta-codemirror-src-codemirror-extensions-combobox-combowidget-51-1 cm-account-combo__trigger"
             {...props}
             role="combobox"
             aria-expanded={open}
             aria-label={`Change account ${value}`}
             title="Change account"
           >
-            <Edit class="size-3" />
+            <Edit
+              class="cn-beta-codemirror-src-codemirror-extensions-combobox-combowidget-58-1"
+            />
             <span class="sr-only">{value}</span>
           </Button>
         {/snippet}
       </Popover.Trigger>
-      <Popover.Content class="w-max p-0 text-xs" align="start" sideOffset={4}>
+      <Popover.Content
+        class="cn-beta-codemirror-src-codemirror-extensions-combobox-combowidget-63-1"
+        align="start"
+        sideOffset={4}
+      >
         <Command.Root>
           <Command.Input placeholder="Search accounts..." />
           <Command.List>
             <Command.Empty>No accounts found.</Command.Empty>
             <Command.Group>
-              <ScrollArea class="h-[200px]">
+              <ScrollArea
+                class="cn-beta-codemirror-src-codemirror-extensions-combobox-combowidget-69-1"
+              >
                 {#each options as item (item.value)}
                   <Command.Item
                     value={item.value}
-                    class="w-full font-mono text-xs"
+                    class="cn-beta-codemirror-src-codemirror-extensions-combobox-combowidget-73-1"
                     onSelect={() => selectItem(item.value)}
                   >
                     <Check
                       class={cn(
-                        "mr-2 size-4",
-                        value !== item.value && "text-transparent",
+                        "cn-beta-codemirror-src-codemirror-extensions-combobox-combowidget-78-1",
+                        value !== item.value &&
+                          "cn-beta-codemirror-src-codemirror-extensions-combobox-combowidget-79-1",
                       )}
                     />
                     {item.label}
