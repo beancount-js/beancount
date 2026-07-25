@@ -12,7 +12,7 @@
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
   import Wand2 from "lucide-svelte/icons/wand-2";
   import { Query } from "@beancount-js/beancount";
-  import type { FilterCommandOption } from "@beancount-js/forms";
+  import type { FilterCommandOption } from "@beancount-js/ui/forms";
   import LedgerSettingsNavigation, {
     type LedgerSettingsNavigationItem,
   } from "@beancount-js/ui/navigation/LedgerSettingsNavigation.svelte";
@@ -430,12 +430,12 @@
     };
   }
 
-  function navigationFileIds(
+  function navigationLedgerFileIds(
     items: readonly WorkspaceTreeNavigationItem[],
   ): string[] {
     return items.flatMap((item) => [
-      item.id,
-      ...navigationFileIds(item.children ?? []),
+      ...(item.kind === "ledger-file" ? [item.id] : []),
+      ...navigationLedgerFileIds(item.children ?? []),
     ]);
   }
 
@@ -455,10 +455,7 @@
   function handleLedgerExpansion(ids: string[]) {
     const selected = new Set(ids);
     expandedFilePaths = Object.fromEntries(
-      [...files, ...(review ? [{ path: review.path }] : [])].map((file) => [
-        file.path,
-        selected.has(file.path),
-      ]),
+      allLedgerPaths.map((path) => [path, selected.has(path)]),
     );
   }
 
@@ -529,13 +526,13 @@
   ] satisfies WorkspaceTreeNavigationItem[];
   $: folderNavigationItems = folderTree ? [mapFolderNode(folderTree)] : [];
   $: tagNavigationItems = tagTree.map(mapTagNode);
-  $: ledgerExpandedIds = navigationFileIds(ledgerNavigationItems).filter((id) =>
-    isFileExpanded(id),
+  $: ledgerExpandedIds = navigationLedgerFileIds(ledgerNavigationItems).filter(
+    (id) => isFileExpanded(id, expandedFilePaths),
   );
   $: folderExpandedIds = [
-    ...expandableFolderIds.filter((id) => isFolderOpen(id)),
-    ...navigationFileIds(folderNavigationItems).filter((id) =>
-      isFileExpanded(id),
+    ...expandableFolderIds.filter((id) => isFolderOpen(id, folderOpenNodes)),
+    ...navigationLedgerFileIds(folderNavigationItems).filter((id) =>
+      isFileExpanded(id, expandedFilePaths),
     ),
   ];
   $: tagExpandedIds = tagTree

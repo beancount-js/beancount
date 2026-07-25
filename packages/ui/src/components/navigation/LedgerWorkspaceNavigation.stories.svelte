@@ -142,10 +142,31 @@
     ).not.toBeInTheDocument();
     await userEvent.clear(ledgerSearch);
 
+    await expect(
+      canvas.getByRole("button", { name: "Expand shared-2026.beancount" }),
+    ).toHaveAttribute("aria-expanded", "false");
     await userEvent.click(
       canvas.getByRole("button", { name: "Expand shared-2026.beancount" }),
     );
-    const sharedJournal = canvas.getByRole("button", { name: "Journal" });
+    await expect(
+      canvas.getByRole("button", { name: "Collapse shared-2026.beancount" }),
+    ).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Collapse shared-2026.beancount" }),
+    );
+    await expect(
+      canvas.getByRole("button", { name: "Expand shared-2026.beancount" }),
+    ).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Expand shared-2026.beancount" }),
+    );
+    const sharedLedgerItem = canvasElement.querySelector<HTMLElement>(
+      '[data-workspace-tree-item="shared"]',
+    );
+    if (!sharedLedgerItem) throw new Error("Shared ledger item not found.");
+    const sharedJournal = within(sharedLedgerItem).getByRole("button", {
+      name: "Journal",
+    });
     await userEvent.click(sharedJournal);
     await expect(sharedJournal).toHaveAttribute("aria-current", "page");
 
@@ -153,6 +174,22 @@
     await expect(
       canvas.getByRole("navigation", { name: "Ledger folders" }),
     ).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "Collapse ledgers" }),
+    ).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Collapse ledgers" }),
+    );
+    await expect(
+      canvas.queryByRole("button", { name: /personal-2026/ }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.getByRole("button", { name: "Expand ledgers" }),
+    ).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(canvas.getByRole("button", { name: "Expand ledgers" }));
+    await expect(
+      canvas.getByRole("button", { name: "Collapse ledgers" }),
+    ).toHaveAttribute("aria-expanded", "true");
 
     await userEvent.click(canvas.getByRole("button", { name: "Tags" }));
     await userEvent.click(canvas.getByRole("button", { name: /^home/ }));
