@@ -6,7 +6,7 @@ test("replaces only class-context utility literals with semantic markers", () =>
   const source = `<script>
   const label = "hidden";
 </script>
-<button class="group flex items-center gap-2" aria-label={label}>
+<button class="group flex items-center gap-2 border data-[state=open]:fade-in-0" aria-label={label}>
   Save
 </button>`;
 
@@ -25,6 +25,8 @@ test("replaces only class-context utility literals with semantic markers", () =>
     "flex",
     "items-center",
     "gap-2",
+    "border",
+    "data-[state=open]:fade-in-0",
   ]);
 });
 

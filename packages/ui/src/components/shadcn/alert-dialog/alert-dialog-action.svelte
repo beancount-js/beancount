@@ -14,4 +14,6 @@
   bind:ref
   class={cn(buttonVariants(), className)}
   {...restProps}
+  data-ui-component="alert-dialog"
+  data-ui-part="alert-dialog-action"
 />

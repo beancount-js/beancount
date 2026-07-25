@@ -64,6 +64,13 @@ export function transformClassContexts({ source, file, family }) {
   const mappings = [];
   const groupClasses = new Map();
   const lines = source.split("\n");
+  const familyMarkerPrefix = `cn-${slug(family)}-`;
+
+  lines.forEach((line, index) => {
+    if (line.includes(familyMarkerPrefix) && !tokensByLine.has(index + 1)) {
+      tokensByLine.set(index + 1, new Set());
+    }
+  });
 
   for (const [lineNumber, tokens] of tokensByLine) {
     const index = lineNumber - 1;
@@ -74,14 +81,27 @@ export function transformClassContexts({ source, file, family }) {
       const quote = literal[0];
       const content = literal.slice(1, -1);
       const words = content.split(/\s+/).filter(Boolean);
-      const utilities = words.filter(
+      const existingMarker = words.find((word) =>
+        word.startsWith(familyMarkerPrefix),
+      );
+      const confirmedUtilities = words.filter(
         (word) => tokens.has(word) || semanticGroupClass(word),
       );
 
+      if (confirmedUtilities.length === 0 && !existingMarker) return literal;
+
+      const utilities = words.filter(
+        (word) =>
+          !word.startsWith("cn-") &&
+          word !== "sr-only" &&
+          word !== "not-sr-only",
+      );
       if (utilities.length === 0) return literal;
 
       occurrence += 1;
-      const marker = `cn-${slug(family)}-${slug(basename(file))}-${lineNumber}-${occurrence}`;
+      const marker =
+        existingMarker ??
+        `cn-${slug(family)}-${slug(basename(file))}-${lineNumber}-${occurrence}`;
       const semanticGroups = [];
 
       for (const utility of utilities) {
@@ -94,7 +114,9 @@ export function transformClassContexts({ source, file, family }) {
       }
 
       mappings.push({ marker, utilities });
-      const remaining = words.filter((word) => !utilities.includes(word));
+      const remaining = words.filter(
+        (word) => word !== marker && !utilities.includes(word),
+      );
       return `${quote}${[marker, ...semanticGroups, ...remaining].join(" ")}${quote}`;
     });
 
@@ -149,7 +171,10 @@ function injectDataIdentity(source, family, part) {
   const markupStart = scriptEnd >= 0 ? scriptEnd + "</script>".length : 0;
   const tagPattern = /<(?!\/|!|style\b|script\b)([A-Za-z][A-Za-z0-9_.:-]*)\b/g;
   tagPattern.lastIndex = markupStart;
-  const match = tagPattern.exec(source);
+  let match = tagPattern.exec(source);
+  while (match?.[1].endsWith("Portal")) {
+    match = tagPattern.exec(source);
+  }
   if (!match) return source;
 
   let cursor = match.index + match[0].length;
@@ -371,6 +396,13 @@ export function migrateFamilies({ families }) {
       const familyDirectory = join(uiRoot, "src/components/shadcn", family);
       const mappings = [];
       const groupClasses = new Map();
+      const cssPath = join(familyDirectory, `${family}.css`);
+      let existingCss = "";
+      try {
+        existingCss = readFileSync(cssPath, "utf8");
+      } catch {
+        existingCss = "";
+      }
       const sourceFiles = readdirSync(familyDirectory)
         .filter(
           (name) =>
@@ -411,7 +443,12 @@ export function migrateFamilies({ families }) {
       });
 
       for (const [path, source] of pendingWrites) writeFileSync(path, source);
-      writeFileSync(join(familyDirectory, `${family}.css`), css);
+      writeFileSync(
+        cssPath,
+        mappings.length > 0 && existingCss
+          ? `${existingCss.trimEnd()}\n\n${css}`
+          : css || existingCss,
+      );
       importReferenceMetadata(family, familyDirectory);
 
       for (const importPath of [

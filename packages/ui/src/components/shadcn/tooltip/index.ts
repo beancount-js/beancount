@@ -16,3 +16,5 @@ export {
   Trigger as TooltipTrigger,
   Provider as TooltipProvider,
 };
+
+export { tooltipTokenNames, type TooltipToken } from "./tooltip.tokens.js";

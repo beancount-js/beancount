@@ -12,7 +12,9 @@
 
 <AlertDialogPrimitive.Title
   bind:ref
-  class={cn("text-lg font-semibold", className)}
+  class={cn("cn-alert-dialog-alert-dialog-title-15-1", className)}
   {level}
   {...restProps}
+  data-ui-component="alert-dialog"
+  data-ui-part="alert-dialog-title"
 />

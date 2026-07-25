@@ -1,0 +1,175 @@
+/* Generated once from the former utility recipes; no Tailwind runtime is required. */
+
+@keyframes enter {
+  from {
+    opacity: var(--ui-runtime-enter-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-enter-translate-x, 0),
+        var(--ui-runtime-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1)
+      )
+      rotate(var(--ui-runtime-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--ui-runtime-exit-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-exit-translate-x, 0),
+        var(--ui-runtime-exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1)
+      )
+      rotate(var(--ui-runtime-exit-rotate, 0));
+  }
+}
+
+.cn-popover-popover-content-23-1 {
+  z-index: 50;
+}
+
+.cn-popover-popover-content-23-1 {
+  width: 18rem;
+}
+
+.cn-popover-popover-content-23-1 {
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.cn-popover-popover-content-23-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--popover) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-popover-popover-content-23-1 {
+  padding: 1rem;
+}
+
+.cn-popover-popover-content-23-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--popover-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-popover-popover-content-23-1 {
+  --ui-runtime-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --ui-runtime-shadow-colored: 0 4px 6px -1px var(--ui-runtime-shadow-color),
+    0 2px 4px -2px var(--ui-runtime-shadow-color);
+  box-shadow: var(--ui-runtime-ring-offset-shadow, 0 0 #0000),
+    var(--ui-runtime-ring-shadow, 0 0 #0000), var(--ui-runtime-shadow);
+}
+
+.cn-popover-popover-content-23-1 {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.cn-popover-popover-content-23-1[data-state="open"] {
+  animation-name: enter;
+  animation-duration: 150ms;
+  --ui-runtime-enter-opacity: initial;
+  --ui-runtime-enter-scale: initial;
+  --ui-runtime-enter-rotate: initial;
+  --ui-runtime-enter-translate-x: initial;
+  --ui-runtime-enter-translate-y: initial;
+}
+
+.cn-popover-popover-content-23-1[data-state="closed"] {
+  animation-name: exit;
+  animation-duration: 150ms;
+  --ui-runtime-exit-opacity: initial;
+  --ui-runtime-exit-scale: initial;
+  --ui-runtime-exit-rotate: initial;
+  --ui-runtime-exit-translate-x: initial;
+  --ui-runtime-exit-translate-y: initial;
+}
+
+/* Generated once from the former utility recipes; no Tailwind runtime is required. */
+
+@keyframes enter {
+  from {
+    opacity: var(--ui-runtime-enter-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-enter-translate-x, 0),
+        var(--ui-runtime-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1)
+      )
+      rotate(var(--ui-runtime-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--ui-runtime-exit-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-exit-translate-x, 0),
+        var(--ui-runtime-exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1)
+      )
+      rotate(var(--ui-runtime-exit-rotate, 0));
+  }
+}
+
+.cn-popover-popover-content-23-1 {
+  border-width: 1px;
+}
+
+.cn-popover-popover-content-23-1[data-state="closed"] {
+  --ui-runtime-exit-opacity: 0;
+}
+
+.cn-popover-popover-content-23-1[data-state="open"] {
+  --ui-runtime-enter-opacity: 0;
+}
+
+.cn-popover-popover-content-23-1[data-state="closed"] {
+  --ui-runtime-exit-scale: 0.95;
+}
+
+.cn-popover-popover-content-23-1[data-state="open"] {
+  --ui-runtime-enter-scale: 0.95;
+}
+
+.cn-popover-popover-content-23-1[data-side="bottom"] {
+  --ui-runtime-enter-translate-y: -0.5rem;
+}
+
+.cn-popover-popover-content-23-1[data-side="left"] {
+  --ui-runtime-enter-translate-x: 0.5rem;
+}
+
+.cn-popover-popover-content-23-1[data-side="right"] {
+  --ui-runtime-enter-translate-x: -0.5rem;
+}
+
+.cn-popover-popover-content-23-1[data-side="top"] {
+  --ui-runtime-enter-translate-y: 0.5rem;
+}

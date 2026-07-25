@@ -6,27 +6,25 @@ const shadcnRoot = new URL("./", import.meta.url);
 const nativeFamilies = [
   "accordion",
   "alert",
+  "alert-dialog",
   "badge",
   "breadcrumb",
   "button",
   "collapsible",
+  "dialog",
   "empty",
   "input",
+  "popover",
   "separator",
   "skeleton",
+  "sheet",
   "table",
   "textarea",
+  "tooltip",
 ] as const;
 
 function read(relativePath: string) {
   return readFileSync(fileURLToPath(new URL(relativePath, shadcnRoot)), "utf8");
-}
-
-function tokenExportName(family: string) {
-  const [first, ...rest] = family.split("-");
-  return `${first}${rest
-    .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
-    .join("")}TokenNames`;
 }
 
 describe("native primitive families", () => {
@@ -50,12 +48,27 @@ describe("native primitive families", () => {
         expect(components).toContain(`data-ui-component="${family}"`);
       }
       expect(components).not.toMatch(/tailwind-variants|\btv\(/);
+      for (const literal of components.matchAll(/(["'`])((?:(?!\1).)*)\1/g)) {
+        const words = literal[2].split(/\s+/).filter(Boolean);
+        if (!words.some((word) => word.startsWith("cn-"))) continue;
+        expect(
+          words.filter(
+            (word) =>
+              !word.startsWith("cn-") &&
+              word !== "sr-only" &&
+              word !== "not-sr-only",
+          ),
+        ).toEqual([]);
+      }
       expect(`${styles}\n${tokenCss}`).not.toMatch(
         /--tw-|--spacing(?:\s|:)|--text-(?:xs|sm|base|lg|xl)(?:\s|:)/,
       );
       expect(tokenCss).toContain(`--ui-${family}-`);
-      expect(tokenTypes).toContain(tokenExportName(family));
-      expect(index).toContain(tokenExportName(family));
+      const tokenExport = tokenTypes.match(
+        /export const ([A-Za-z0-9_]+TokenNames)/,
+      )?.[1];
+      expect(tokenExport).toBeTruthy();
+      expect(index).toContain(tokenExport);
       expect(JSON.parse(provenance)).toMatchObject({
         schemaVersion: 1,
         component: family,

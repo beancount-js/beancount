@@ -15,3 +15,5 @@ export {
   Trigger as PopoverTrigger,
   Close as PopoverClose,
 };
+
+export { popoverTokenNames, type PopoverToken } from "./popover.tokens.js";

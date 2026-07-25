@@ -13,11 +13,10 @@
 
 <div
   bind:this={ref}
-  class={cn(
-    "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
-    className,
-  )}
+  class={cn("cn-sheet-sheet-footer-17-1", className)}
   {...restProps}
+  data-ui-component="sheet"
+  data-ui-part="sheet-footer"
 >
   {@render children?.()}
 </div>

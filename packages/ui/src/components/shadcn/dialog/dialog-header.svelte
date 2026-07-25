@@ -13,8 +13,10 @@
 
 <div
   bind:this={ref}
-  class={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)}
+  class={cn("cn-dialog-dialog-header-16-1", className)}
   {...restProps}
+  data-ui-component="dialog"
+  data-ui-part="dialog-header"
 >
   {@render children?.()}
 </div>

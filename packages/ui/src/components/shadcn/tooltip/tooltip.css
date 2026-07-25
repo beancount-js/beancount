@@ -1,0 +1,168 @@
+/* Generated once from the former utility recipes; no Tailwind runtime is required. */
+
+@keyframes enter {
+  from {
+    opacity: var(--ui-runtime-enter-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-enter-translate-x, 0),
+        var(--ui-runtime-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1)
+      )
+      rotate(var(--ui-runtime-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--ui-runtime-exit-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-exit-translate-x, 0),
+        var(--ui-runtime-exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1)
+      )
+      rotate(var(--ui-runtime-exit-rotate, 0));
+  }
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  z-index: 50;
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  overflow: hidden;
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--primary) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--primary-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  animation-name: enter;
+  animation-duration: 150ms;
+  --ui-runtime-enter-opacity: initial;
+  --ui-runtime-enter-scale: initial;
+  --ui-runtime-enter-rotate: initial;
+  --ui-runtime-enter-translate-x: initial;
+  --ui-runtime-enter-translate-y: initial;
+}
+
+.cn-tooltip-tooltip-content-17-1[data-state="closed"] {
+  animation-name: exit;
+  animation-duration: 150ms;
+  --ui-runtime-exit-opacity: initial;
+  --ui-runtime-exit-scale: initial;
+  --ui-runtime-exit-rotate: initial;
+  --ui-runtime-exit-translate-x: initial;
+  --ui-runtime-exit-translate-y: initial;
+}
+
+/* Generated once from the former utility recipes; no Tailwind runtime is required. */
+
+@keyframes enter {
+  from {
+    opacity: var(--ui-runtime-enter-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-enter-translate-x, 0),
+        var(--ui-runtime-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1)
+      )
+      rotate(var(--ui-runtime-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--ui-runtime-exit-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-exit-translate-x, 0),
+        var(--ui-runtime-exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1)
+      )
+      rotate(var(--ui-runtime-exit-rotate, 0));
+  }
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  --ui-runtime-enter-opacity: 0;
+}
+
+.cn-tooltip-tooltip-content-17-1 {
+  --ui-runtime-enter-scale: 0.95;
+}
+
+.cn-tooltip-tooltip-content-17-1[data-state="closed"] {
+  --ui-runtime-exit-opacity: 0;
+}
+
+.cn-tooltip-tooltip-content-17-1[data-state="closed"] {
+  --ui-runtime-exit-scale: 0.95;
+}
+
+.cn-tooltip-tooltip-content-17-1[data-side="bottom"] {
+  --ui-runtime-enter-translate-y: -0.5rem;
+}
+
+.cn-tooltip-tooltip-content-17-1[data-side="left"] {
+  --ui-runtime-enter-translate-x: 0.5rem;
+}
+
+.cn-tooltip-tooltip-content-17-1[data-side="right"] {
+  --ui-runtime-enter-translate-x: -0.5rem;
+}
+
+.cn-tooltip-tooltip-content-17-1[data-side="top"] {
+  --ui-runtime-enter-translate-y: 0.5rem;
+}

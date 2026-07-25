@@ -1,0 +1,346 @@
+/* Generated once from the former utility recipes; no Tailwind runtime is required. */
+
+@keyframes enter {
+  from {
+    opacity: var(--ui-runtime-enter-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-enter-translate-x, 0),
+        var(--ui-runtime-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1)
+      )
+      rotate(var(--ui-runtime-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--ui-runtime-exit-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-exit-translate-x, 0),
+        var(--ui-runtime-exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1)
+      )
+      rotate(var(--ui-runtime-exit-rotate, 0));
+  }
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  position: fixed;
+}
+
+.cn-alert-dialog-alert-dialog-overlay-15-1 {
+  position: fixed;
+}
+
+.cn-alert-dialog-alert-dialog-overlay-15-1 {
+  inset: 0px;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  left: 50%;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  top: 50%;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  z-index: 50;
+}
+
+.cn-alert-dialog-alert-dialog-overlay-15-1 {
+  z-index: 50;
+}
+
+.cn-alert-dialog-alert-dialog-footer-17-1 {
+  display: flex;
+}
+
+.cn-alert-dialog-alert-dialog-header-16-1 {
+  display: flex;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  display: grid;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  width: 100%;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  max-width: 32rem;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  --ui-runtime-translate-x: -50%;
+  transform: translate(
+      var(--ui-runtime-translate-x),
+      var(--ui-runtime-translate-y)
+    )
+    rotate(var(--ui-runtime-rotate)) skewX(var(--ui-runtime-skew-x))
+    skewY(var(--ui-runtime-skew-y)) scaleX(var(--ui-runtime-scale-x))
+    scaleY(var(--ui-runtime-scale-y));
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  --ui-runtime-translate-y: -50%;
+  transform: translate(
+      var(--ui-runtime-translate-x),
+      var(--ui-runtime-translate-y)
+    )
+    rotate(var(--ui-runtime-rotate)) skewX(var(--ui-runtime-skew-x))
+    skewY(var(--ui-runtime-skew-y)) scaleX(var(--ui-runtime-scale-x))
+    scaleY(var(--ui-runtime-scale-y));
+}
+
+.cn-alert-dialog-alert-dialog-footer-17-1-col {
+  flex-direction: column;
+}
+
+.cn-alert-dialog-alert-dialog-header-16-1-col {
+  flex-direction: column;
+}
+
+.cn-alert-dialog-alert-dialog-header-16-1 {
+  flex-direction: column;
+}
+
+.cn-alert-dialog-alert-dialog-footer-17-1-col-reverse {
+  flex-direction: column-reverse;
+}
+
+.cn-alert-dialog-alert-dialog-header-16-1-col-reverse {
+  flex-direction: column-reverse;
+}
+
+.cn-alert-dialog-alert-dialog-footer-17-1 {
+  flex-direction: column-reverse;
+}
+
+.cn-alert-dialog-alert-dialog-header-16-1-reverse {
+  flex-direction: column-reverse;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  gap: 1rem;
+}
+
+.cn-alert-dialog-alert-dialog-header-16-1 > :not([hidden]) ~ :not([hidden]) {
+  --ui-runtime-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--ui-runtime-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--ui-runtime-space-y-reverse));
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--background) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-alert-dialog-alert-dialog-overlay-15-1 {
+  background-color: rgb(0 0 0 / 0.8);
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  padding: 1.5rem;
+}
+
+.cn-alert-dialog-alert-dialog-header-16-1 {
+  text-align: center;
+}
+
+.cn-alert-dialog-alert-dialog-title-15-1 {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.cn-alert-dialog-alert-dialog-description-14-1 {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.cn-alert-dialog-alert-dialog-title-15-1 {
+  font-weight: 600;
+}
+
+.cn-alert-dialog-alert-dialog-description-14-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--muted-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  --ui-runtime-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --ui-runtime-shadow-colored: 0 10px 15px -3px var(--ui-runtime-shadow-color),
+    0 4px 6px -4px var(--ui-runtime-shadow-color);
+  box-shadow: var(--ui-runtime-ring-offset-shadow, 0 0 #0000),
+    var(--ui-runtime-ring-shadow, 0 0 #0000), var(--ui-runtime-shadow);
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  transition-duration: 200ms;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  animation-duration: 200ms;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1[data-state="open"] {
+  animation-name: enter;
+  animation-duration: 150ms;
+  --ui-runtime-enter-opacity: initial;
+  --ui-runtime-enter-scale: initial;
+  --ui-runtime-enter-rotate: initial;
+  --ui-runtime-enter-translate-x: initial;
+  --ui-runtime-enter-translate-y: initial;
+}
+
+.cn-alert-dialog-alert-dialog-overlay-15-1[data-state="open"] {
+  animation-name: enter;
+  animation-duration: 150ms;
+  --ui-runtime-enter-opacity: initial;
+  --ui-runtime-enter-scale: initial;
+  --ui-runtime-enter-rotate: initial;
+  --ui-runtime-enter-translate-x: initial;
+  --ui-runtime-enter-translate-y: initial;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1[data-state="closed"] {
+  animation-name: exit;
+  animation-duration: 150ms;
+  --ui-runtime-exit-opacity: initial;
+  --ui-runtime-exit-scale: initial;
+  --ui-runtime-exit-rotate: initial;
+  --ui-runtime-exit-translate-x: initial;
+  --ui-runtime-exit-translate-y: initial;
+}
+
+.cn-alert-dialog-alert-dialog-overlay-15-1[data-state="closed"] {
+  animation-name: exit;
+  animation-duration: 150ms;
+  --ui-runtime-exit-opacity: initial;
+  --ui-runtime-exit-scale: initial;
+  --ui-runtime-exit-rotate: initial;
+  --ui-runtime-exit-translate-x: initial;
+  --ui-runtime-exit-translate-y: initial;
+}
+
+.cn-alert-dialog-alert-dialog-footer-17-1 {
+  flex-direction: row;
+}
+
+.cn-alert-dialog-alert-dialog-footer-17-1 {
+  justify-content: flex-end;
+}
+
+.cn-alert-dialog-alert-dialog-footer-17-1 > :not([hidden]) ~ :not([hidden]) {
+  --ui-runtime-space-x-reverse: 0;
+  margin-right: calc(0.5rem * var(--ui-runtime-space-x-reverse));
+  margin-left: calc(0.5rem * calc(1 - var(--ui-runtime-space-x-reverse)));
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  border-radius: var(--radius);
+}
+
+.cn-alert-dialog-alert-dialog-header-16-1 {
+  text-align: left;
+}
+
+/* Generated once from the former utility recipes; no Tailwind runtime is required. */
+
+@keyframes enter {
+  from {
+    opacity: var(--ui-runtime-enter-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-enter-translate-x, 0),
+        var(--ui-runtime-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1)
+      )
+      rotate(var(--ui-runtime-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--ui-runtime-exit-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-exit-translate-x, 0),
+        var(--ui-runtime-exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1)
+      )
+      rotate(var(--ui-runtime-exit-rotate, 0));
+  }
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1 {
+  border-width: 1px;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1[data-state="closed"] {
+  --ui-runtime-exit-opacity: 0;
+}
+
+.cn-alert-dialog-alert-dialog-overlay-15-1[data-state="closed"] {
+  --ui-runtime-exit-opacity: 0;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1[data-state="open"] {
+  --ui-runtime-enter-opacity: 0;
+}
+
+.cn-alert-dialog-alert-dialog-overlay-15-1[data-state="open"] {
+  --ui-runtime-enter-opacity: 0;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1[data-state="closed"] {
+  --ui-runtime-exit-scale: 0.95;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1[data-state="open"] {
+  --ui-runtime-enter-scale: 0.95;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1[data-state="closed"] {
+  --ui-runtime-exit-translate-x: -50%;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1[data-state="closed"] {
+  --ui-runtime-exit-translate-y: -48%;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1[data-state="open"] {
+  --ui-runtime-enter-translate-x: -50%;
+}
+
+.cn-alert-dialog-alert-dialog-content-24-1[data-state="open"] {
+  --ui-runtime-enter-translate-y: -48%;
+}

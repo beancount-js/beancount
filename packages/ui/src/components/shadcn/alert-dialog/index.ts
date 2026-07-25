@@ -38,3 +38,8 @@ export {
   Content as AlertDialogContent,
   Description as AlertDialogDescription,
 };
+
+export {
+  alert_dialogTokenNames,
+  type AlertDialogToken,
+} from "./alert-dialog.tokens.js";
