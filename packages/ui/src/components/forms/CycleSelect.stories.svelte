@@ -33,13 +33,11 @@
     await userEvent.click(canvas.getByRole("button", { name: "Period" }));
     const page = within(canvasElement.ownerDocument.body);
     const options = page.getAllByRole("option");
-    const optionGroup = options.at(0)?.parentElement;
-    await expect(optionGroup).not.toBeNull();
+    const rowGap =
+      options[1]!.getBoundingClientRect().top -
+      options[0]!.getBoundingClientRect().bottom;
     await expect(
-      Number.parseFloat(
-        canvasElement.ownerDocument.defaultView!.getComputedStyle(optionGroup!)
-          .gap,
-      ),
+      Math.round(rowGap),
     ).toBeGreaterThanOrEqual(4);
     await userEvent.keyboard("{Escape}");
 

@@ -173,6 +173,10 @@
   user-select: none;
 }
 
+.bj-filter-command-picker__group-items > div + div .bj-filter-command-picker__item {
+  margin-top: 0.25rem;
+}
+
 .bj-filter-command-picker__item-label {
   min-width: 0;
   overflow: hidden;
