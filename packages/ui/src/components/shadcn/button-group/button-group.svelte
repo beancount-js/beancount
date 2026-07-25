@@ -15,11 +15,10 @@
   bind:this={ref}
   role="group"
   data-slot="button-group"
-  class={cn(
-    "flex w-fit items-stretch [&>button:first-child]:rounded-r-none [&>button:last-child]:rounded-l-none [&>button]:relative [&>button]:focus-visible:z-10",
-    className,
-  )}
+  class={cn("cn-button-group-button-group-19-1", className)}
   {...restProps}
+  data-ui-component="button-group"
+  data-ui-part="button-group"
 >
   {@render children?.()}
 </div>

@@ -19,15 +19,15 @@
   data-slot="switch"
   data-size={size}
   class={cn(
-    "peer relative inline-flex shrink-0 items-center rounded-full border outline-none transition-all",
-    "shadow-xs focus-visible:ring-3 focus-visible:border-ring focus-visible:ring-ring/50",
-    "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 aria-invalid:ring-3",
-    "data-[state=checked]:border-primary data-[state=checked]:bg-primary",
-    "data-[state=unchecked]:border-border data-[state=unchecked]:bg-muted-foreground/25",
-    "dark:data-[state=unchecked]:bg-input/80",
-    "data-disabled:cursor-not-allowed data-disabled:opacity-50",
-    "after:absolute after:-inset-x-3 after:-inset-y-2",
-    "group/switch data-[size=default]:h-[18.4px] data-[size=sm]:h-[14px] data-[size=default]:w-[32px] data-[size=sm]:w-[24px]",
+    "cn-switch-switch-22-1 cn-peer",
+    "cn-switch-switch-23-1",
+    "cn-switch-switch-24-1",
+    "cn-switch-switch-25-1",
+    "cn-switch-switch-26-1",
+    "cn-switch-switch-27-1",
+    "cn-switch-switch-28-1",
+    "cn-switch-switch-29-1",
+    "cn-switch-switch-30-1 cn-group-switch",
     className,
   )}
   {...restProps}
@@ -35,11 +35,13 @@
   <SwitchPrimitive.Thumb
     data-slot="switch-thumb"
     class={cn(
-      "pointer-events-none block rounded-full bg-background ring-0 transition-transform",
-      "dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground",
-      "group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3",
-      "data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0",
-      "rtl:data-[state=checked]:translate-x-[calc(-100%+2px)]",
+      "cn-switch-switch-38-1",
+      "cn-switch-switch-39-1",
+      "cn-switch-switch-40-1",
+      "cn-switch-switch-41-1",
+      "cn-switch-switch-42-1",
     )}
+    data-ui-component="switch"
+    data-ui-part="switch"
   />
 </SwitchPrimitive.Root>

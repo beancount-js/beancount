@@ -172,11 +172,7 @@ function injectDataIdentity(source, family, part) {
   const tagPattern = /<(?!\/|!|style\b|script\b)([A-Za-z][A-Za-z0-9_.:-]*)\b/g;
   tagPattern.lastIndex = markupStart;
   let match = tagPattern.exec(source);
-  while (
-    match?.[1].endsWith("Portal") ||
-    match?.[1].endsWith(".Root") ||
-    match?.[1] === "Root"
-  ) {
+  while (match?.[1].endsWith("Portal") || match?.[1] === "Dialog.Root") {
     match = tagPattern.exec(source);
   }
   if (!match) return source;

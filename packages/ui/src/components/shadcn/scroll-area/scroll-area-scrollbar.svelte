@@ -18,20 +18,20 @@
   bind:ref
   {orientation}
   class={cn(
-    "flex touch-none select-none transition-colors",
-    orientation === "vertical" &&
-      "h-full w-2.5 border-l border-l-transparent p-px",
-    orientation === "horizontal" &&
-      "h-2.5 w-full border-t border-t-transparent p-px",
+    "cn-scroll-area-scroll-area-scrollbar-21-1",
+    orientation === "vertical" && "cn-scroll-area-scroll-area-scrollbar-23-1",
+    orientation === "horizontal" && "cn-scroll-area-scroll-area-scrollbar-25-1",
     className,
   )}
   {...restProps}
+  data-ui-component="scroll-area"
+  data-ui-part="scroll-area-scrollbar"
 >
   {@render children?.()}
   <ScrollAreaPrimitive.Thumb
     class={cn(
-      "relative rounded-full bg-border",
-      orientation === "vertical" && "flex-1",
+      "cn-scroll-area-scroll-area-scrollbar-33-1",
+      orientation === "vertical" && "cn-scroll-area-scroll-area-scrollbar-34-1",
     )}
   />
 </ScrollAreaPrimitive.Scrollbar>

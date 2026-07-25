@@ -15,9 +15,8 @@
   bind:ref
   data-slot="button-group-separator"
   {orientation}
-  class={cn(
-    "relative self-stretch bg-border/70 data-[orientation=horizontal]:mx-px data-[orientation=vertical]:my-px data-[orientation=vertical]:h-auto data-[orientation=horizontal]:w-auto",
-    className,
-  )}
+  class={cn("cn-button-group-button-group-separator-19-1", className)}
   {...restProps}
+  data-ui-component="button-group"
+  data-ui-part="button-group-separator"
 />

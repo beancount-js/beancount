@@ -24,11 +24,13 @@
 <ScrollAreaPrimitive.Root
   bind:ref
   {...restProps}
-  class={cn("relative overflow-hidden", className)}
+  class={cn("cn-scroll-area-scroll-area-27-1", className)}
 >
   <ScrollAreaPrimitive.Viewport
-    class="h-full w-full rounded-[inherit]"
+    class="cn-scroll-area-scroll-area-30-1"
     tabindex={0}
+    data-ui-component="scroll-area"
+    data-ui-part="scroll-area"
   >
     {@render children?.()}
   </ScrollAreaPrimitive.Viewport>

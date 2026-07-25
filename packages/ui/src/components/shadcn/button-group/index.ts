@@ -8,3 +8,8 @@ export {
   Root as ButtonGroup,
   Separator as ButtonGroupSeparator,
 };
+
+export {
+  button_groupTokenNames,
+  type ButtonGroupToken,
+} from "./button-group.tokens.js";

@@ -40,6 +40,6 @@ get along, so we shut typescript up by casting `value` to `never`.
 <ToggleGroupPrimitive.Root
   bind:value={value as never}
   bind:ref
-  class={cn("flex items-center justify-center gap-1", className)}
+  class={cn("cn-toggle-group-toggle-group-43-1", className)}
   {...restProps}
 />

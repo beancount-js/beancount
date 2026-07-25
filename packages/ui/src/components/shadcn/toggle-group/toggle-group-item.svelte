@@ -27,4 +27,6 @@
   )}
   {value}
   {...restProps}
+  data-ui-component="toggle-group"
+  data-ui-part="toggle-group-item"
 />

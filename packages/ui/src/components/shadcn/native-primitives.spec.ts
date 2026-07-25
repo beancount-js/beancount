@@ -10,6 +10,7 @@ const nativeFamilies = [
   "badge",
   "breadcrumb",
   "button",
+  "button-group",
   "collapsible",
   "command",
   "dialog",
@@ -18,6 +19,8 @@ const nativeFamilies = [
   "input",
   "pagination",
   "popover",
+  "resizable",
+  "scroll-area",
   "select",
   "separator",
   "skeleton",
@@ -26,6 +29,9 @@ const nativeFamilies = [
   "tabs",
   "textarea",
   "tooltip",
+  "switch",
+  "toggle",
+  "toggle-group",
 ] as const;
 
 function read(relativePath: string) {

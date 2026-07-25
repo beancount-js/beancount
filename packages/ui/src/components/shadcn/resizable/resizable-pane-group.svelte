@@ -11,8 +11,10 @@
 
 <ResizablePrimitive.PaneGroup
   {direction}
-  class={cn("flex h-full w-full data-[direction=vertical]:flex-col", className)}
+  class={cn("cn-resizable-resizable-pane-group-14-1", className)}
   {...$$restProps}
+  data-ui-component="resizable"
+  data-ui-part="resizable-pane-group"
 >
   <slot />
 </ResizablePrimitive.PaneGroup>

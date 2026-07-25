@@ -48,3 +48,15 @@
 @import "./components/shadcn/tabs/tabs.css";
 @import "./components/shadcn/pagination/pagination.tokens.css";
 @import "./components/shadcn/pagination/pagination.css";
+@import "./components/shadcn/button-group/button-group.tokens.css";
+@import "./components/shadcn/button-group/button-group.css";
+@import "./components/shadcn/resizable/resizable.tokens.css";
+@import "./components/shadcn/resizable/resizable.css";
+@import "./components/shadcn/scroll-area/scroll-area.tokens.css";
+@import "./components/shadcn/scroll-area/scroll-area.css";
+@import "./components/shadcn/switch/switch.tokens.css";
+@import "./components/shadcn/switch/switch.css";
+@import "./components/shadcn/toggle/toggle.tokens.css";
+@import "./components/shadcn/toggle/toggle.css";
+@import "./components/shadcn/toggle-group/toggle-group.tokens.css";
+@import "./components/shadcn/toggle-group/toggle-group.css";
