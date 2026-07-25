@@ -115,7 +115,11 @@
   </div>
 
   {#if contributions.length}
-    <div class="bj-statement-summary-contribution-bar" role="img" aria-label={`${title} category contributions`}>
+    <div
+      class="bj-statement-summary-contribution-bar"
+      role="img"
+      aria-label={`${title} category contributions`}
+    >
       {#each contributions as contribution (contribution.id)}
         <span
           style={`width: ${contribution.percentage}%; background: ${contribution.color}`}
@@ -159,7 +163,10 @@
                 : "Collapse all accounts"}
               onclick={toggleAll}
             >
-              <ChevronsUpDown class="size-3" aria-hidden="true" />
+              <ChevronsUpDown
+                class="cn-tables-statementsummarytreetable-162-1"
+                aria-hidden="true"
+              />
             </button>
           {/if}
           Account
@@ -343,11 +350,11 @@
     outline: none;
   }
 
-  .bj-statement-summary-muted {
+  :global(.bj-statement-summary-muted) {
     color: var(--muted-foreground);
   }
 
-  .bj-statement-summary-table > li > div {
+  :global(.bj-statement-summary-table > li > div) {
     display: grid;
     grid-template-columns:
       minmax(16rem, 2fr) 4.5rem 5.5rem repeat(
@@ -358,8 +365,8 @@
     border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   }
 
-  .bj-statement-summary-table > li > div > span,
-  .bj-statement-summary-table > li > div > div {
+  :global(.bj-statement-summary-table > li > div > span),
+  :global(.bj-statement-summary-table > li > div > div) {
     padding: 0.5rem 1rem;
     text-align: right;
     font-family: var(--font-mono, ui-monospace, monospace);

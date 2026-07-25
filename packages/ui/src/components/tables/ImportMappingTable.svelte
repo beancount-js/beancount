@@ -81,17 +81,11 @@
   }
 </script>
 
-<section class="flex min-w-0 flex-col gap-4" aria-label="Import mapping">
-  <header
-    class="flex flex-col gap-3 rounded-xl border border-border/80 bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-  >
-    <div class="min-w-0">
-      <p
-        class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-      >
-        Import file
-      </p>
-      <h2 class="mt-1 truncate text-sm font-semibold text-foreground">
+<section class="cn-tables-importmappingtable-84-1" aria-label="Import mapping">
+  <header class="cn-tables-importmappingtable-86-1">
+    <div class="cn-tables-importmappingtable-88-1">
+      <p class="cn-tables-importmappingtable-90-1">Import file</p>
+      <h2 class="cn-tables-importmappingtable-94-1">
         {fileName}
       </h2>
     </div>
@@ -123,10 +117,8 @@
     {/if}
   </header>
 
-  <div class="min-w-0 rounded-xl border border-border/80 bg-card shadow-sm">
-    <div
-      class="flex flex-col gap-3 border-b border-border p-3 sm:flex-row sm:items-center sm:justify-between"
-    >
+  <div class="cn-tables-importmappingtable-126-1">
+    <div class="cn-tables-importmappingtable-128-1">
       <Tabs.Root value={activeTab} onValueChange={changeTab}>
         <Tabs.List aria-label="Import mapping rows">
           <Tabs.Trigger value="categorized">
@@ -139,30 +131,28 @@
           {/if}
         </Tabs.List>
       </Tabs.Root>
-      <p class="text-xs text-muted-foreground">
+      <p class="cn-tables-importmappingtable-142-1">
         Choose an account for each imported row.
       </p>
     </div>
 
-    <div class="max-h-[34rem] overflow-auto">
-      <Table.Root class="min-w-[52rem] text-sm">
-        <Table.Header class="sticky top-0 z-10 bg-muted text-muted-foreground">
-          <Table.Row class="hover:bg-muted">
+    <div class="cn-tables-importmappingtable-147-1">
+      <Table.Root class="cn-tables-importmappingtable-148-1">
+        <Table.Header class="cn-tables-importmappingtable-149-1">
+          <Table.Row class="cn-tables-importmappingtable-150-1">
             {#if onOpenSource}
-              <Table.Head class="w-12 px-3 py-3">
+              <Table.Head class="cn-tables-importmappingtable-152-1">
                 <span class="sr-only">Source</span>
               </Table.Head>
             {/if}
-            <Table.Head
-              class="min-w-64 px-4 py-3 text-xs font-semibold uppercase tracking-wide"
-            >
+            <Table.Head class="cn-tables-importmappingtable-157-1">
               Account
             </Table.Head>
             {#each columns as column (column.id)}
               <Table.Head
                 class={column.align === "right"
-                  ? "px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide"
-                  : "px-4 py-3 text-xs font-semibold uppercase tracking-wide"}
+                  ? "cn-tables-importmappingtable-164-1"
+                  : "cn-tables-importmappingtable-165-1"}
               >
                 {column.label}
               </Table.Head>
@@ -173,12 +163,12 @@
           {#each rows as row (row.id)}
             <Table.Row>
               {#if onOpenSource}
-                <Table.Cell class="px-3 py-2">
+                <Table.Cell class="cn-tables-importmappingtable-176-1">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    class="h-8 px-2 text-xs"
+                    class="cn-tables-importmappingtable-181-1"
                     aria-label={`Edit source for ${row.label}`}
                     onclick={() => onOpenSource(row)}
                   >
@@ -186,8 +176,8 @@
                   </Button>
                 </Table.Cell>
               {/if}
-              <Table.Cell class="min-w-64 px-4 py-2 align-top">
-                <div class="flex min-w-56 flex-col gap-1">
+              <Table.Cell class="cn-tables-importmappingtable-189-1">
+                <div class="cn-tables-importmappingtable-190-1">
                   <FilterCommandPicker
                     value={row.account}
                     options={accountOptions}
@@ -196,7 +186,7 @@
                     onChange={(account) => onAccountChange(row, account)}
                   />
                   {#if row.accountHint}
-                    <p class="text-xs leading-snug text-muted-foreground">
+                    <p class="cn-tables-importmappingtable-199-1">
                       {row.accountHint}
                     </p>
                   {/if}
@@ -205,8 +195,8 @@
               {#each columns as column (column.id)}
                 <Table.Cell
                   class={column.align === "right"
-                    ? "px-4 py-3 text-right font-mono tabular-nums"
-                    : "px-4 py-3 font-mono"}
+                    ? "cn-tables-importmappingtable-208-1"
+                    : "cn-tables-importmappingtable-209-1"}
                 >
                   {displayCell(row.values[column.id])}
                 </Table.Cell>
@@ -216,7 +206,7 @@
             <Table.Row>
               <Table.Cell
                 colspan={columns.length + (onOpenSource ? 2 : 1)}
-                class="h-28 px-4 text-center text-sm text-muted-foreground"
+                class="cn-tables-importmappingtable-219-1"
               >
                 {emptyLabel}
               </Table.Cell>

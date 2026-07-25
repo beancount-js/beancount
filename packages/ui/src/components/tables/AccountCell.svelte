@@ -55,15 +55,9 @@
       onclick={handleClick}
     >
       {#if isCollapsed}
-        <ChevronRight
-          class="h-3 w-3"
-          aria-hidden="true"
-        />
+        <ChevronRight class="cn-tables-accountcell-59-1" aria-hidden="true" />
       {:else}
-        <ChevronDown
-          class="h-3 w-3"
-          aria-hidden="true"
-        />
+        <ChevronDown class="cn-tables-accountcell-64-1" aria-hidden="true" />
       {/if}
     </button>
   {:else}
@@ -71,7 +65,7 @@
   {/if}
   <span class="account">
     {#if href}
-      <a href={href} onclick={navigate}>{label}</a>
+      <a {href} onclick={navigate}>{label}</a>
     {:else}
       {label}
     {/if}

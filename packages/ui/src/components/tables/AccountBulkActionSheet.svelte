@@ -106,26 +106,23 @@
   <Sheet.Root {open} onOpenChange={handleOpenChange}>
     <Sheet.Content
       side="right"
-      class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
+      class="cn-tables-accountbulkactionsheet-109-1"
       data-account-bulk-action-sheet
       onOpenAutoFocus={(event) => {
         event.preventDefault();
         sheetTitleEl?.focus();
       }}
     >
-      <Sheet.Header
-        class="flex h-11 shrink-0 flex-row items-center gap-2 space-y-0 border-b border-border px-3 text-left"
-      >
-        <div class="flex min-w-0 flex-1 items-center gap-1.5">
+      <Sheet.Header class="cn-tables-accountbulkactionsheet-117-1">
+        <div class="cn-tables-accountbulkactionsheet-119-1">
           <Sheet.Title
             bind:ref={sheetTitleEl}
             tabindex={-1}
-            class="account-bulk-sheet-title min-w-0 truncate leading-none outline-none"
+            class="cn-tables-accountbulkactionsheet-123-1 account-bulk-sheet-title"
           >
             Bulk actions
           </Sheet.Title>
-          <span
-            class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+          <span class="cn-tables-accountbulkactionsheet-128-1"
             >{recordCount}</span
           >
         </div>
@@ -134,7 +131,7 @@
             ? ""
             : "s"}.
         </Sheet.Description>
-        <div class="ml-auto flex shrink-0 items-center gap-1">
+        <div class="cn-tables-accountbulkactionsheet-137-1">
           <Tooltip.Root>
             <Tooltip.Trigger>
               {#snippet child({ props })}
@@ -143,16 +140,22 @@
                   type="button"
                   variant="ghost"
                   size="icon"
-                  class="size-8"
+                  class="cn-tables-accountbulkactionsheet-146-1"
                   aria-label={sectionsCollapsedAll
                     ? "Expand all"
                     : "Collapse all"}
                   onclick={toggleCollapseAll}
                 >
                   {#if sectionsCollapsedAll}
-                    <ChevronsUpDown class="size-4" aria-hidden="true" />
+                    <ChevronsUpDown
+                      class="cn-tables-accountbulkactionsheet-153-1"
+                      aria-hidden="true"
+                    />
                   {:else}
-                    <ChevronsDownUp class="size-4" aria-hidden="true" />
+                    <ChevronsDownUp
+                      class="cn-tables-accountbulkactionsheet-155-1"
+                      aria-hidden="true"
+                    />
                   {/if}
                 </Button>
               {/snippet}
@@ -166,10 +169,13 @@
               {#snippet child({ props })}
                 <Sheet.Close
                   {...props}
-                  class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  class="cn-tables-accountbulkactionsheet-169-1"
                   aria-label="Close"
                 >
-                  <X class="size-4" aria-hidden="true" />
+                  <X
+                    class="cn-tables-accountbulkactionsheet-172-1"
+                    aria-hidden="true"
+                  />
                   <span class="sr-only">Close</span>
                 </Sheet.Close>
               {/snippet}
@@ -179,25 +185,28 @@
         </div>
       </Sheet.Header>
 
-      <div class="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+      <div class="cn-tables-accountbulkactionsheet-182-1">
         {#if errors.length}
-          <Alert.Root variant="destructive" class="mb-3">
+          <Alert.Root
+            variant="destructive"
+            class="cn-tables-accountbulkactionsheet-184-1"
+          >
             <CircleAlert />
             <Alert.Title>Could not apply bulk action</Alert.Title>
-            <Alert.Description class="whitespace-pre-wrap"
+            <Alert.Description class="cn-tables-accountbulkactionsheet-187-1"
               >{errors.join("\n")}</Alert.Description
             >
           </Alert.Root>
         {/if}
 
         {#if status}
-          <p class="mb-3 text-sm text-muted-foreground" role="status">
+          <p class="cn-tables-accountbulkactionsheet-194-1" role="status">
             {status}
           </p>
         {/if}
 
-        <div class="account-bulk-form flex min-w-0 flex-col gap-6 pl-6">
-          <section class="flex flex-col gap-2">
+        <div class="cn-tables-accountbulkactionsheet-199-1 account-bulk-form">
+          <section class="cn-tables-accountbulkactionsheet-200-1">
             <FormSectionHeader
               title="Replace"
               titleClass={sectionTitleClass}
@@ -250,7 +259,7 @@
                   </FormField>
                 </div>
                 {#if fromAccount && toAccount && fromAccount !== toAccount}
-                  <p class="text-xs text-muted-foreground">
+                  <p class="cn-tables-accountbulkactionsheet-253-1">
                     {replacement.changedCount} record{replacement.changedCount ===
                     1
                       ? ""
@@ -269,7 +278,7 @@
             {/if}
           </section>
 
-          <section class="flex flex-col gap-2">
+          <section class="cn-tables-accountbulkactionsheet-272-1">
             <FormSectionHeader
               title="Delete duplicates"
               titleClass={sectionTitleClass}
@@ -282,7 +291,7 @@
             />
             {#if isSectionOpen("duplicates")}
               <div class="account-bulk-section-body">
-                <p class="text-xs text-muted-foreground">
+                <p class="cn-tables-accountbulkactionsheet-285-1">
                   {#if duplicates.groupCount === 0}
                     No duplicates found in the selection. Matching uses a source
                     fingerprint when present, otherwise the record identity and

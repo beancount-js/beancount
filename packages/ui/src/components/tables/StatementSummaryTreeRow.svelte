@@ -19,13 +19,19 @@
     depth?: number;
   } = $props();
 
-  const { values: directValues, otherValues: directOtherValues, collapsedValues: directCollapsedValues, collapsedOtherValues: directCollapsedOtherValues, collapsedWeight: directCollapsedWeight } = node;
+  let directValues = $derived(node.values);
+  let directOtherValues = $derived(node.otherValues);
+  let directCollapsedValues = $derived(node.collapsedValues);
+  let directCollapsedOtherValues = $derived(node.collapsedOtherValues);
+  let directCollapsedWeight = $derived(node.collapsedWeight);
   const weightBars = [0, 1, 2, 3, 4];
 
   let hasChildren = $derived(node.children?.length > 0);
   let isCollapsed = $derived(collapsedIds.has(node.id));
   let shownValues = $derived(
-    isCollapsed && directCollapsedValues !== undefined ? directCollapsedValues : directValues,
+    isCollapsed && directCollapsedValues !== undefined
+      ? directCollapsedValues
+      : directValues,
   );
   let shownOtherValues = $derived(
     isCollapsed && directCollapsedOtherValues !== undefined
@@ -33,7 +39,9 @@
       : directOtherValues,
   );
   let shownWeight = $derived(
-    isCollapsed && directCollapsedWeight !== undefined ? directCollapsedWeight : node.weight,
+    isCollapsed && directCollapsedWeight !== undefined
+      ? directCollapsedWeight
+      : node.weight,
   );
   let hasWeight = $derived(
     typeof shownWeight === "string" &&
@@ -50,46 +58,47 @@
 
 <li>
   <div
-    class="grid min-h-12 items-center border-t border-border/70 text-sm transition-colors hover:bg-muted/65"
+    class="cn-tables-statementsummarytreerow-53-1"
     data-statement-summary-tree-row
   >
     <div
-      class="flex min-w-0 items-center gap-1 py-2 pr-4"
+      class="cn-tables-statementsummarytreerow-57-1"
       style={`padding-left: ${0.9 + depth * 1.2}rem`}
     >
       {#if hasChildren}
         <button
           type="button"
-          class="grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+          class="cn-tables-statementsummarytreerow-63-1"
           aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${node.label}`}
           aria-expanded={!isCollapsed}
           onclick={() => onToggle(node.id)}
         >
           <ChevronDown
-            class={`size-3 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
+            class={`cn-tables-statementsummarytreerow-69-2 cn-tables-statementsummarytreerow-69-3 ${isCollapsed ? "cn-tables-statementsummarytreerow-69-1" : ""}`}
           />
         </button>
       {:else}
-        <span class="size-4 shrink-0" aria-hidden="true"></span>
+        <span class="cn-tables-statementsummarytreerow-73-1" aria-hidden="true"
+        ></span>
       {/if}
       {#if node.href}
         <a
           href={node.href}
-          class="min-w-0 truncate text-primary hover:underline"
+          class="cn-tables-statementsummarytreerow-78-1"
           onclick={navigate}
         >
           {node.label}
         </a>
       {:else}
-        <span class="min-w-0 truncate">{node.label}</span>
+        <span class="cn-tables-statementsummarytreerow-84-1">{node.label}</span>
       {/if}
     </div>
     <span
-      class="grid place-items-center py-2 pl-4 pr-2"
+      class="cn-tables-statementsummarytreerow-88-1"
       data-statement-weight-meter-column
     >
       <span
-        class:invisible={!hasWeight}
+        class:cn-tables-statementsummarytreerow-92-1={!hasWeight}
         class="weight-meter"
         data-statement-weight-meter
         aria-hidden="true"
@@ -101,25 +110,30 @@
     </span>
     <span
       class:bj-statement-summary-muted={!hasWeight}
-      class="px-4 text-right font-mono text-[13px] tabular-nums"
-      data-statement-weight
-      >{displayWeight}</span
+      class="cn-tables-statementsummarytreerow-104-1"
+      data-statement-weight>{displayWeight}</span
     >
     {#each columns as column (column.id)}
       {@const value = shownValues[column.id] ?? "—"}
       <span
         class:bj-statement-summary-muted={value === "—"}
-        class="px-4 text-right font-mono text-[13px] tabular-nums"
+        class="cn-tables-statementsummarytreerow-112-1"
       >
         {value}
       </span>
     {/each}
-    <span class="px-4 py-2 text-right font-mono text-[13px] tabular-nums" class:bj-statement-summary-muted={shownOtherValues?.length === 0}>
+    <span
+      class="cn-tables-statementsummarytreerow-117-1"
+      class:bj-statement-summary-muted={shownOtherValues?.length === 0}
+    >
       {#each shownOtherValues ?? [] as value (value.label)}
-        <span class="block" title={value.title}>{value.value}</span>
+        <span
+          class="cn-tables-statementsummarytreerow-119-1"
+          title={value.title}>{value.value}</span
+        >
       {/each}
       {#if (shownOtherValues?.length ?? 0) === 0}
-        <span class="text-muted-foreground">—</span>
+        <span class="cn-tables-statementsummarytreerow-122-1">—</span>
       {/if}
     </span>
   </div>
@@ -140,7 +154,6 @@
 </li>
 
 <style>
-  .dimmed,
   .bj-statement-summary-muted {
     color: var(--muted-foreground);
   }

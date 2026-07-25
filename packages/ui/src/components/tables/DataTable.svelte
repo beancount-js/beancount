@@ -25,7 +25,7 @@
   });
 </script>
 
-<div class="overflow-hidden rounded-md border">
+<div class="cn-tables-datatable-28-1">
   <Table.Root>
     <Table.Header>
       {#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
@@ -57,7 +57,7 @@
         </Table.Row>
       {:else}
         <Table.Row>
-          <Table.Cell colspan={columns.length} class="h-24 text-center">
+          <Table.Cell colspan={columns.length} class="cn-tables-datatable-60-1">
             {emptyLabel}
           </Table.Cell>
         </Table.Row>

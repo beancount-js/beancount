@@ -162,24 +162,16 @@
   }
 </script>
 
-<section class="flex w-full flex-col gap-4" aria-label={ariaLabel}>
-  <header
-    class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-  >
-    <div class="flex flex-wrap items-center gap-2" role="status">
-      <span
-        class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-foreground"
-      >
+<section class="cn-tables-ingestionreviewtable-165-1" aria-label={ariaLabel}>
+  <header class="cn-tables-ingestionreviewtable-167-1">
+    <div class="cn-tables-ingestionreviewtable-169-1" role="status">
+      <span class="cn-tables-ingestionreviewtable-171-1">
         <span class="tabular-nums">{counts.ready}</span> ready
       </span>
-      <span
-        class="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-foreground"
-      >
+      <span class="cn-tables-ingestionreviewtable-176-1">
         <span class="tabular-nums">{counts.review}</span> need review
       </span>
-      <span
-        class="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-2.5 py-1 text-xs font-medium text-foreground"
-      >
+      <span class="cn-tables-ingestionreviewtable-181-1">
         <span class="tabular-nums">{counts.duplicates}</span> duplicates
       </span>
     </div>
@@ -196,37 +188,37 @@
   </header>
 
   <div
-    class="review-grid review-grid--header items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+    class="cn-tables-ingestionreviewtable-199-1 review-grid review-grid--header"
   >
     <input
       type="checkbox"
       checked={allSelected}
       use:setIndeterminate={someSelected}
-      class="size-4 rounded border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      class="cn-tables-ingestionreviewtable-205-1"
       aria-label="Select visible review items"
       disabled={!selectableIds.length}
       onchange={(event) =>
         toggleAll((event.currentTarget as HTMLInputElement).checked)}
     />
     <span>Proposal</span>
-    <span class="text-right">Amount</span>
+    <span class="cn-tables-ingestionreviewtable-212-1">Amount</span>
   </div>
 
   {#if groups.length}
-    <div class="flex flex-col gap-3">
+    <div class="cn-tables-ingestionreviewtable-216-1">
       {#each groups as group (group.id)}
         {@const expanded = expandedGroupIds.has(group.id)}
         {@const selection = groupSelection(group)}
         {@const groupRows = selectableRows(group)}
-        <section class="overflow-hidden rounded-2xl bg-muted/80">
+        <section class="cn-tables-ingestionreviewtable-221-1">
           <div
-            class="review-grid review-grid--header items-center gap-3 px-5 py-4"
+            class="cn-tables-ingestionreviewtable-223-1 review-grid review-grid--header"
           >
             <input
               type="checkbox"
               checked={selection === "checked"}
               use:setIndeterminate={selection === "indeterminate"}
-              class="size-4 rounded border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              class="cn-tables-ingestionreviewtable-229-1"
               aria-label={`Select actionable items from ${group.label}`}
               disabled={!groupRows.length}
               onchange={(event) =>
@@ -237,28 +229,26 @@
             />
             <button
               type="button"
-              class="col-span-2 flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+              class="cn-tables-ingestionreviewtable-240-1"
               aria-expanded={expanded}
               aria-controls={`${group.id}-rows`}
               aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
               onclick={() => toggleDisclosure(group.id)}
             >
-              <span
-                class="truncate text-sm font-semibold tracking-wide text-foreground"
-              >
+              <span class="cn-tables-ingestionreviewtable-247-1">
                 {group.label}
-                <span class="ml-2 text-muted-foreground"
+                <span class="cn-tables-ingestionreviewtable-250-1"
                   >· {group.rows.length}</span
                 >
               </span>
               <span
-                class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground group-hover:bg-accent group-hover:text-accent-foreground"
+                class="cn-tables-ingestionreviewtable-255-1"
                 aria-hidden="true"
               >
                 {#if expanded}
-                  <ChevronUp class="size-4" />
+                  <ChevronUp class="cn-tables-ingestionreviewtable-259-1" />
                 {:else}
-                  <ChevronDown class="size-4" />
+                  <ChevronDown class="cn-tables-ingestionreviewtable-261-1" />
                 {/if}
               </span>
             </button>
@@ -267,17 +257,17 @@
           {#if expanded}
             <div
               id={`${group.id}-rows`}
-              class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+              class="cn-tables-ingestionreviewtable-270-1"
             >
               {#each group.rows as row (row.id)}
                 {@const selectable = row.selectable !== false}
                 <div
-                  class="review-grid review-grid--row items-center gap-3 border-b px-[15px] py-4 last:border-b-0 hover:bg-accent/60"
+                  class="cn-tables-ingestionreviewtable-275-1 review-grid review-grid--row"
                 >
                   <input
                     type="checkbox"
                     checked={selectedIdSet.has(row.id)}
-                    class="size-4 rounded border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    class="cn-tables-ingestionreviewtable-280-1"
                     aria-label={`Select ${row.title}`}
                     disabled={!selectable}
                     onchange={(event) =>
@@ -286,16 +276,16 @@
                         (event.currentTarget as HTMLInputElement).checked,
                       )}
                   />
-                  <div class="flex min-w-0 items-center gap-3">
+                  <div class="cn-tables-ingestionreviewtable-289-1">
                     {#if row.imageUrl}
                       <img
-                        class="size-10 shrink-0 rounded-full border object-contain"
+                        class="cn-tables-ingestionreviewtable-292-1"
                         src={row.imageUrl}
                         alt=""
                       />
                     {:else}
                       <div
-                        class="flex size-10 shrink-0 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                        class="cn-tables-ingestionreviewtable-298-1"
                         aria-hidden="true"
                       >
                         {row.initial ?? row.title.slice(0, 1).toUpperCase()}
@@ -304,17 +294,15 @@
                     {#if onOpenRow}
                       <button
                         type="button"
-                        class="min-w-0 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        class="cn-tables-ingestionreviewtable-307-1"
                         aria-label={`Review ${row.title}`}
                         onclick={() => onOpenRow(row)}
                       >
-                        <span
-                          class="block break-words text-sm font-semibold sm:truncate"
+                        <span class="cn-tables-ingestionreviewtable-312-1"
                           >{row.title}</span
                         >
                         {#if row.detail}
-                          <span
-                            class="mt-1 block truncate text-xs text-muted-foreground"
+                          <span class="cn-tables-ingestionreviewtable-317-1"
                             >{row.detail}</span
                           >
                         {/if}
@@ -325,14 +313,12 @@
                         </span>
                       </button>
                     {:else}
-                      <div class="min-w-0">
-                        <span
-                          class="block break-words text-sm font-semibold sm:truncate"
+                      <div class="cn-tables-ingestionreviewtable-328-1">
+                        <span class="cn-tables-ingestionreviewtable-330-1"
                           >{row.title}</span
                         >
                         {#if row.detail}
-                          <span
-                            class="mt-1 block truncate text-xs text-muted-foreground"
+                          <span class="cn-tables-ingestionreviewtable-335-1"
                             >{row.detail}</span
                           >
                         {/if}
@@ -344,29 +330,25 @@
                       </div>
                     {/if}
                   </div>
-                  <div class="min-w-0 text-right">
+                  <div class="cn-tables-ingestionreviewtable-347-1">
                     {#if row.postings?.length}
                       {#each row.postings as posting (posting.account)}
-                        <div
-                          class="grid min-w-0 grid-cols-[minmax(0,1fr)_8rem] items-center gap-3"
-                        >
-                          <span
-                            class="truncate text-left font-mono text-xs text-muted-foreground"
+                        <div class="cn-tables-ingestionreviewtable-351-1">
+                          <span class="cn-tables-ingestionreviewtable-354-1"
                             >{posting.account}</span
                           >
-                          <span class="text-sm font-semibold tabular-nums"
+                          <span class="cn-tables-ingestionreviewtable-357-1"
                             >{posting.amount}</span
                           >
                         </div>
                       {/each}
                     {:else}
                       {#if row.account}
-                        <span
-                          class="block truncate font-mono text-xs text-muted-foreground"
+                        <span class="cn-tables-ingestionreviewtable-365-1"
                           >{row.account}</span
                         >
                       {/if}
-                      <span class="text-sm font-semibold tabular-nums"
+                      <span class="cn-tables-ingestionreviewtable-369-1"
                         >{row.amount ?? "—"}</span
                       >
                     {/if}
@@ -379,9 +361,7 @@
       {/each}
     </div>
   {:else}
-    <div
-      class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-    >
+    <div class="cn-tables-ingestionreviewtable-383-1">
       {emptyLabel}
     </div>
   {/if}

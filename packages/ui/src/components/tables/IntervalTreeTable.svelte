@@ -132,28 +132,26 @@
   }
 </script>
 
-<div
-  data-interval-tree-table
-  class="overflow-x-auto rounded-xl border border-border/80 bg-card shadow-sm"
->
-  <Table.Root aria-label={ariaLabel} class="min-w-[48rem]">
+<div data-interval-tree-table class="cn-tables-intervaltreetable-137-1">
+  <Table.Root aria-label={ariaLabel} class="cn-tables-intervaltreetable-139-1">
     <Table.Header>
-      <Table.Row class="bg-muted/65 hover:bg-muted/65">
-        <Table.Head
-          class="min-w-64 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em]"
-        >
-          <span class="flex items-center gap-2">
+      <Table.Row class="cn-tables-intervaltreetable-141-1">
+        <Table.Head class="cn-tables-intervaltreetable-143-1">
+          <span class="cn-tables-intervaltreetable-145-1">
             {#if collapsibleIds.length}
               <button
                 type="button"
-                class="grid size-4 place-items-center rounded-sm text-muted-foreground hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="cn-tables-intervaltreetable-149-1"
                 aria-label={allCollapsed
                   ? "Expand all accounts"
                   : "Collapse all accounts"}
                 aria-pressed={allCollapsed}
                 onclick={toggleAll}
               >
-                <ChevronsUpDown class="size-3" aria-hidden="true" />
+                <ChevronsUpDown
+                  class="cn-tables-intervaltreetable-156-1"
+                  aria-hidden="true"
+                />
               </button>
             {/if}
             Account
@@ -161,13 +159,13 @@
         </Table.Head>
         {#each columns as column (column.id)}
           <Table.Head
-            class="min-w-44 px-4 py-2 text-right text-xs font-semibold uppercase tracking-[0.12em]"
+            class="cn-tables-intervaltreetable-164-1"
             title={column.title}
           >
             {#if column.href}
               <a
                 href={column.href}
-                class="text-primary hover:underline"
+                class="cn-tables-intervaltreetable-170-1"
                 onclick={(event) => navigateColumn(column, event)}
               >
                 {column.label}
@@ -183,40 +181,51 @@
       {#each visibleNodes as { node, depth, hasChildren } (node.id)}
         {@const isCollapsed = collapsedIds.has(node.id)}
         <Table.Row>
-          <Table.Cell class="px-4 py-2 align-top">
+          <Table.Cell class="cn-tables-intervaltreetable-186-1">
             <div
-              class="flex min-w-0 items-center gap-2"
+              class="cn-tables-intervaltreetable-188-1"
               style={`padding-left: ${depth * 1.25}rem`}
             >
               {#if hasChildren}
                 <button
                   type="button"
-                  class="grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  class="cn-tables-intervaltreetable-194-1"
                   aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${node.label}`}
                   aria-expanded={!isCollapsed}
                   onclick={() => toggle(node.id)}
                 >
                   {#if isCollapsed}
-                    <ChevronRight class="size-3" aria-hidden="true" />
+                    <ChevronRight
+                      class="cn-tables-intervaltreetable-200-1"
+                      aria-hidden="true"
+                    />
                   {:else}
-                    <ChevronDown class="size-3" aria-hidden="true" />
+                    <ChevronDown
+                      class="cn-tables-intervaltreetable-202-1"
+                      aria-hidden="true"
+                    />
                   {/if}
                 </button>
               {:else}
-                <span class="size-4 shrink-0" aria-hidden="true"></span>
+                <span
+                  class="cn-tables-intervaltreetable-206-1"
+                  aria-hidden="true"
+                ></span>
               {/if}
               {#if accountCell}
                 {@render accountCell(node)}
               {:else if node.href}
                 <a
                   href={node.href}
-                  class="min-w-0 truncate font-medium text-primary hover:underline"
+                  class="cn-tables-intervaltreetable-213-1"
                   onclick={(event) => navigate(node, event)}
                 >
                   {node.label}
                 </a>
               {:else}
-                <span class="min-w-0 truncate font-medium">{node.label}</span>
+                <span class="cn-tables-intervaltreetable-219-1"
+                  >{node.label}</span
+                >
               {/if}
             </div>
           </Table.Cell>
@@ -230,14 +239,17 @@
                   }
                 : cell}
             <Table.Cell
-              class={`px-4 py-2 text-right font-mono text-xs tabular-nums ${displayedCell?.dimmed ? "opacity-55" : ""}`}
+              class={`cn-tables-intervaltreetable-233-3 cn-tables-intervaltreetable-233-4 cn-tables-intervaltreetable-233-5 cn-tables-intervaltreetable-233-2 cn-tables-intervaltreetable-233-6 tabular-nums ${displayedCell?.dimmed ? "cn-tables-intervaltreetable-233-1" : ""}`}
             >
               {#each displayedCell?.values ?? [] as amount, index (index)}
-                <span class="block whitespace-nowrap" title={amount.title}>
+                <span
+                  class="cn-tables-intervaltreetable-236-1"
+                  title={amount.title}
+                >
                   {amount.value}
                   {#if amount.difference}
                     <span
-                      class={`ml-1 text-[0.9em] ${amount.difference.tone === "positive" ? "text-emerald-700 dark:text-emerald-300" : "text-destructive"}`}
+                      class={`cn-tables-intervaltreetable-240-4 cn-tables-intervaltreetable-240-5 ${amount.difference.tone === "positive" ? "cn-tables-intervaltreetable-240-3 cn-tables-intervaltreetable-240-1" : "cn-tables-intervaltreetable-240-2"}`}
                       title={amount.difference.title}
                     >
                       {amount.difference.value}
@@ -245,7 +257,7 @@
                   {/if}
                 </span>
               {:else}
-                <span class="text-muted-foreground">—</span>
+                <span class="cn-tables-intervaltreetable-248-1">—</span>
               {/each}
             </Table.Cell>
           {/each}

@@ -32,11 +32,16 @@
     formatBalance: (value: number, currency: string) => string;
     formatAmount: (value: number, currency: string) => string;
     formatDiff: (value: number, currency: string) => string;
-    onToggle: (account: string, event: MouseEvent, children: readonly UiTreeTableNode[]) => void;
+    onToggle: (
+      account: string,
+      event: MouseEvent,
+      children: readonly UiTreeTableNode[],
+    ) => void;
   } = $props();
 
   const fallbackLabel = (account: string) => account;
-  const defaultFormat = (value: number, currency: string) => `${value} ${currency}`;
+  const defaultFormat = (value: number, currency: string) =>
+    `${value} ${currency}`;
 
   function accountLabel(account: string) {
     return (toAccountLabel ?? fallbackLabel)(account);
@@ -54,19 +59,17 @@
     return (formatDiff ?? defaultFormat)(value, currency);
   }
 
-  let {
-    account,
-    children,
-    balance,
-    balanceChildren,
-    cost,
-    costChildren,
-  } = node;
+  let { account, children, balance, balanceChildren, cost, costChildren } =
+    node;
 
   let hasBalance = $derived(!isEmptyRecord(balance));
   let isCollapsed = $derived(collapsed.has(account));
   let shownBalance = $derived(
-    isCollapsed && hasBalance ? balanceChildren : hasBalance ? balance : balanceChildren,
+    isCollapsed && hasBalance
+      ? balanceChildren
+      : hasBalance
+        ? balance
+        : balanceChildren,
   );
   let shownCost = $derived(
     isCollapsed && hasBalance ? costChildren : hasBalance ? cost : costChildren,
@@ -90,7 +93,7 @@
 <li>
   <p>
     <AccountCell
-      account={account}
+      {account}
       accountLabel={accountLabel(account)}
       {depth}
       {hasChildren}
@@ -126,7 +129,7 @@
           {#if currentBalance}
             {amountFormatter(invert * currentBalance, currentCurrency)}
           {:else}
-            <span class="text-muted-foreground">—</span>
+            <span class="cn-tables-treetablenode-129-1">—</span>
           {/if}
         </span>
         {#if cost_num && currentBalance - cost_num}
@@ -148,7 +151,7 @@
       {#each visibleChildren as child (child.account)}
         <svelte:self
           node={child}
-          invert={invert}
+          {invert}
           depth={depth + 1}
           {operatingCurrency}
           {currencyName}

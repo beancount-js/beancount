@@ -149,22 +149,23 @@
   }
 </script>
 
-<div class="query-table space-y-3" data-query-table>
+<div class="cn-tables-queryresultstable-152-1" data-query-table>
   {@render beforeTable?.()}
-  <div
-    class="overflow-x-auto rounded-xl border border-border/80 bg-card shadow-sm"
-  >
-    <Table.Root aria-label={ariaLabel} class="min-w-max font-mono text-xs">
-      <Table.Header class="bg-muted/65 text-muted-foreground">
-        <Table.Row class="hover:bg-muted/65">
+  <div class="cn-tables-queryresultstable-155-1">
+    <Table.Root
+      aria-label={ariaLabel}
+      class="cn-tables-queryresultstable-157-1"
+    >
+      <Table.Header class="cn-tables-queryresultstable-158-1">
+        <Table.Row class="cn-tables-queryresultstable-159-1">
           {#each columns as column (column.id)}
             {@const order = orderFor(column)}
             <Table.Head
               aria-sort={column.sortable ? order : undefined}
               style={column.style}
               class={cn(
-                "p-0",
-                column.align === "right" && "text-right",
+                "cn-tables-queryresultstable-166-1",
+                column.align === "right" && "cn-tables-queryresultstable-167-1",
                 column.class,
               )}
             >
@@ -172,27 +173,33 @@
                 <button
                   type="button"
                   class={cn(
-                    "inline-flex h-10 w-full items-center gap-1.5 px-4 font-sans text-xs font-semibold uppercase tracking-wide outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-                    column.align === "right" && "justify-end",
+                    "cn-tables-queryresultstable-175-1",
+                    column.align === "right" &&
+                      "cn-tables-queryresultstable-176-1",
                   )}
                   aria-label={`Sort by ${column.label}`}
                   onclick={() => toggleSort(column)}
                 >
                   <span>{column.label}</span>
                   {#if order === "ascending"}
-                    <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                    <ArrowUpNarrowWide
+                      class="cn-tables-queryresultstable-183-1"
+                      aria-hidden="true"
+                    />
                   {:else if order === "descending"}
-                    <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                    <ArrowDownWideNarrow
+                      class="cn-tables-queryresultstable-185-1"
+                      aria-hidden="true"
+                    />
                   {:else}
                     <ArrowUpDown
-                      class="size-3.5 opacity-50"
+                      class="cn-tables-queryresultstable-188-1"
                       aria-hidden="true"
                     />
                   {/if}
                 </button>
               {:else}
-                <span
-                  class="inline-flex h-10 items-center px-4 font-sans text-xs font-semibold uppercase tracking-wide"
+                <span class="cn-tables-queryresultstable-195-1"
                   >{column.label}</span
                 >
               {/if}
@@ -207,8 +214,9 @@
               <Table.Cell
                 style={column.style}
                 class={cn(
-                  "px-4 py-3 font-mono",
-                  column.align === "right" && "text-right tabular-nums",
+                  "cn-tables-queryresultstable-210-1",
+                  column.align === "right" &&
+                    "cn-tables-queryresultstable-211-1",
                   column.class,
                 )}
               >
@@ -217,8 +225,8 @@
                 {:else}
                   {#each displayCell(row.values[column.id]) as value, index}
                     <span
-                      class:mt-1={index > 0}
-                      class="block whitespace-pre-wrap"
+                      class:cn-tables-queryresultstable-220-1={index > 0}
+                      class="cn-tables-queryresultstable-221-1"
                     >
                       {value}
                     </span>
@@ -231,7 +239,7 @@
           <Table.Row>
             <Table.Cell
               colspan={Math.max(columns.length, 1)}
-              class="h-24 text-center font-sans text-sm text-muted-foreground"
+              class="cn-tables-queryresultstable-234-1"
             >
               {emptyLabel}
             </Table.Cell>
@@ -240,23 +248,24 @@
       </Table.Body>
       {#if error}
         <Table.Footer
-          class="border-t border-destructive/45 bg-destructive/10 text-foreground"
+          class="cn-tables-queryresultstable-243-1"
           data-query-error-footer
         >
-          <Table.Row class="hover:bg-transparent">
-            <Table.Cell colspan={Math.max(columns.length, 1)} class="px-4 py-3">
-              <div class="flex items-start gap-2" role="alert">
+          <Table.Row class="cn-tables-queryresultstable-246-1">
+            <Table.Cell
+              colspan={Math.max(columns.length, 1)}
+              class="cn-tables-queryresultstable-247-1"
+            >
+              <div class="cn-tables-queryresultstable-248-1" role="alert">
                 <TriangleAlert
-                  class="mt-0.5 size-4 shrink-0"
+                  class="cn-tables-queryresultstable-250-1"
                   aria-hidden="true"
                 />
                 <div>
-                  <p class="font-sans text-xs font-semibold">
+                  <p class="cn-tables-queryresultstable-254-1">
                     Could not run query
                   </p>
-                  <p
-                    class="mt-1 break-words font-mono text-[11px] leading-snug"
-                  >
+                  <p class="cn-tables-queryresultstable-258-1">
                     {error}
                   </p>
                 </div>
@@ -268,17 +277,15 @@
     </Table.Root>
   </div>
   {#if pagination}
-    <div
-      class="flex flex-col gap-3 rounded-xl border border-border/80 bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-      data-query-pagination
-    >
-      <span class="text-sm text-muted-foreground">{pagination.resultLabel}</span
+    <div class="cn-tables-queryresultstable-272-1" data-query-pagination>
+      <span class="cn-tables-queryresultstable-275-1"
+        >{pagination.resultLabel}</span
       >
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div class="cn-tables-queryresultstable-277-1">
         {#if pagination.pageSize && pagination.pageSizes?.length}
-          <div class="flex items-center gap-2">
+          <div class="cn-tables-queryresultstable-279-1">
             <span
-              class="text-sm text-muted-foreground"
+              class="cn-tables-queryresultstable-281-1"
               id="query-results-page-size-label">Rows per page</span
             >
             <Select.Root
@@ -288,7 +295,7 @@
             >
               <Select.Trigger
                 aria-labelledby="query-results-page-size-label"
-                class="h-8 w-20 font-mono text-sm tabular-nums"
+                class="cn-tables-queryresultstable-291-1"
                 data-query-page-size
               >
                 {pagination.pageSize}

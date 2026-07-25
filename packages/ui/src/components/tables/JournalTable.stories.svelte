@@ -97,7 +97,9 @@
     );
     await expect(canvas.getByText("1 record selected")).toBeVisible();
 
-    await userEvent.click(canvas.getByRole("button", { name: "Edit Coffee Shop" }));
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Edit Coffee Shop" }),
+    );
     await expect(canvas.getByText("Opened Coffee Shop")).toBeVisible();
   }}
 >
@@ -129,7 +131,7 @@
 <Story
   name="Shows an empty upcoming filter"
   play={async ({ canvas }) => {
-    await userEvent.click(canvas.getByRole("button", { name: "Upcoming" }));
+    await userEvent.click(canvas.getByRole("radio", { name: "Upcoming" }));
     await expect(
       canvas.getByText("No upcoming records in this journal view."),
     ).toBeVisible();
@@ -150,7 +152,9 @@
 <Story
   name="Collapses a date group"
   play={async ({ canvas }) => {
-    await userEvent.click(canvas.getByRole("button", { name: /18 July 2026/ }));
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Collapse 18 July 2026" }),
+    );
     await expect(canvas.queryByText("Start balance")).not.toBeInTheDocument();
   }}
 >

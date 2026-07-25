@@ -157,9 +157,9 @@
   }
 </script>
 
-<section class="w-full" aria-label={ariaLabel}>
+<section class="cn-tables-ledgeractivitytable-160-1" aria-label={ariaLabel}>
   {#if timeframes.length > 1}
-    <div class="mb-3">
+    <div class="cn-tables-ledgeractivitytable-162-1">
       <SegmentedControl
         value={timeframe ?? timeframes[0]!.id}
         options={timeframes.map(({ id }) => id)}
@@ -171,46 +171,44 @@
       />
     </div>
   {/if}
-  <div
-    class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm"
-  >
+  <div class="cn-tables-ledgeractivitytable-175-1">
     <div
       class={selectable
-        ? "activity-grid activity-grid--selectable items-center gap-4 bg-muted/65 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-        : "activity-grid activity-grid--read-only items-center gap-4 bg-muted/65 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground"}
+        ? "cn-tables-ledgeractivitytable-179-1 activity-grid activity-grid--selectable"
+        : "cn-tables-ledgeractivitytable-180-1 activity-grid activity-grid--read-only"}
     >
       {#if selectable}
         <input
           type="checkbox"
           checked={allSelected}
           use:setIndeterminate={someSelected}
-          class="size-4 shrink-0 rounded border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="cn-tables-ledgeractivitytable-187-1"
           aria-label="Select all visible records"
           onchange={(event) =>
             toggleAll((event.currentTarget as HTMLInputElement).checked)}
         />
       {/if}
       <span>Date and record</span>
-      <span class="text-right">{amountHeading}</span>
+      <span class="cn-tables-ledgeractivitytable-194-1">{amountHeading}</span>
     </div>
 
     {#if groups.length}
-      <div class="divide-y divide-border/80">
+      <div class="cn-tables-ledgeractivitytable-198-1">
         {#each groups as group (group.id)}
           {@const expanded = expandedGroupIds.has(group.id)}
           {@const groupState = groupSelection(group)}
           <section>
             <div
               class={selectable
-                ? "activity-grid activity-grid--selectable items-center gap-4 bg-card px-5 py-3"
-                : "activity-grid activity-grid--read-only items-center gap-4 bg-card px-5 py-3"}
+                ? "cn-tables-ledgeractivitytable-205-1 activity-grid activity-grid--selectable"
+                : "cn-tables-ledgeractivitytable-206-1 activity-grid activity-grid--read-only"}
             >
               {#if selectable}
                 <input
                   type="checkbox"
                   checked={groupState === "checked"}
                   use:setIndeterminate={groupState === "indeterminate"}
-                  class="size-4 shrink-0 rounded border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  class="cn-tables-ledgeractivitytable-213-1"
                   aria-label={`Select records on ${group.date}`}
                   onchange={(event) =>
                     toggleGroup(
@@ -221,24 +219,26 @@
               {/if}
               <button
                 type="button"
-                class="flex min-w-0 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                class="cn-tables-ledgeractivitytable-224-1"
                 aria-expanded={expanded}
                 aria-controls={`${group.id}-details`}
                 onclick={() => toggleGroupDisclosure(group.id)}
               >
                 {#if expanded}
                   <ChevronDown
-                    class="size-4 shrink-0 text-muted-foreground"
+                    class="cn-tables-ledgeractivitytable-231-1"
                     aria-hidden="true"
                   />
                 {:else}
                   <ChevronRight
-                    class="size-4 shrink-0 text-muted-foreground"
+                    class="cn-tables-ledgeractivitytable-236-1"
                     aria-hidden="true"
                   />
                 {/if}
-                <span class="truncate text-sm font-semibold">{group.date}</span>
-                <span class="text-xs text-muted-foreground"
+                <span class="cn-tables-ledgeractivitytable-240-1"
+                  >{group.date}</span
+                >
+                <span class="cn-tables-ledgeractivitytable-241-1"
                   >{group.records.length} record{group.records.length === 1
                     ? ""
                     : "s"}</span
@@ -246,7 +246,7 @@
               </button>
               {#if group.balance}
                 <span
-                  class="text-right font-mono text-xs tabular-nums text-muted-foreground"
+                  class="cn-tables-ledgeractivitytable-249-1"
                   aria-label={`${balanceDescription}: ${group.balance}`}
                   >{group.balance}</span
                 >
@@ -256,31 +256,28 @@
             </div>
 
             {#if expanded}
-              <div id={`${group.id}-details`} class="border-t border-border/70">
+              <div
+                id={`${group.id}-details`}
+                class="cn-tables-ledgeractivitytable-259-1"
+              >
                 {#if group.summary}
                   <div
-                    class="grid gap-x-4 gap-y-2 border-b border-dashed border-border/80 px-5 py-4 text-sm sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+                    class="cn-tables-ledgeractivitytable-262-1"
                     aria-label={`Balance summary for ${group.date}`}
                   >
                     <span>Start balance</span>
-                    <span
-                      class="hidden self-center border-t border-dashed border-border/80 sm:block"
-                    ></span>
-                    <span class="text-right font-semibold tabular-nums">
+                    <span class="cn-tables-ledgeractivitytable-267-1"></span>
+                    <span class="cn-tables-ledgeractivitytable-269-1">
                       {group.summary.start}
                     </span>
                     <span>Net cash flow</span>
-                    <span
-                      class="hidden self-center border-t border-dashed border-border/80 sm:block"
-                    ></span>
-                    <span class="text-right font-semibold tabular-nums">
+                    <span class="cn-tables-ledgeractivitytable-274-1"></span>
+                    <span class="cn-tables-ledgeractivitytable-276-1">
                       {group.summary.change}
                     </span>
                     <span>Final balance</span>
-                    <span
-                      class="hidden self-center border-t border-dashed border-border/80 sm:block"
-                    ></span>
-                    <span class="text-right font-bold tabular-nums">
+                    <span class="cn-tables-ledgeractivitytable-281-1"></span>
+                    <span class="cn-tables-ledgeractivitytable-283-1">
                       {group.summary.final}
                     </span>
                   </div>
@@ -289,15 +286,15 @@
                   {#each group.records as record (record.id)}
                     <li
                       class={selectable
-                        ? "activity-grid activity-grid--selectable items-start gap-4 px-5 py-3 transition-colors hover:bg-muted/45"
-                        : "activity-grid activity-grid--read-only items-start gap-4 px-5 py-3 transition-colors hover:bg-muted/45"}
+                        ? "cn-tables-ledgeractivitytable-292-1 activity-grid activity-grid--selectable"
+                        : "cn-tables-ledgeractivitytable-293-1 activity-grid activity-grid--read-only"}
                     >
                       {#if selectable}
                         <input
                           type="checkbox"
                           checked={selectedIdSet.has(record.id)}
                           aria-label={`Select ${record.description}`}
-                          class="mt-0.5 size-4 shrink-0 rounded border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          class="cn-tables-ledgeractivitytable-300-1"
                           onchange={(event) =>
                             toggleRecord(
                               record.id,
@@ -308,44 +305,41 @@
                       {#if onOpenRecord}
                         <button
                           type="button"
-                          class="min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          class="cn-tables-ledgeractivitytable-311-1"
                           onclick={() => onOpenRecord(record)}
                         >
                           {@render ActivityRecord(record, true)}
                         </button>
                       {:else}
-                        <div class="min-w-0">
+                        <div class="cn-tables-ledgeractivitytable-317-1">
                           {@render ActivityRecord(record)}
                         </div>
                       {/if}
                       {#if record.postings?.length}
-                        <div class="flex min-w-0 flex-col gap-1 text-right">
+                        <div class="cn-tables-ledgeractivitytable-322-1">
                           {#each record.postings as posting, index (`${record.id}-${posting.id ?? posting.account}-${index}`)}
-                            <div
-                              class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3"
-                            >
+                            <div class="cn-tables-ledgeractivitytable-325-1">
                               {#if posting.href}
                                 <a
                                   href={posting.href}
-                                  class="truncate text-left text-xs text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  class="cn-tables-ledgeractivitytable-330-1"
                                   >{posting.account}</a
                                 >
                               {:else}
                                 <span
-                                  class="truncate text-left text-xs text-muted-foreground"
+                                  class="cn-tables-ledgeractivitytable-335-1"
                                   title={posting.account}
                                   >{posting.account}</span
                                 >
                               {/if}
-                              <span
-                                class="font-mono text-sm font-semibold tabular-nums"
+                              <span class="cn-tables-ledgeractivitytable-341-1"
                                 >{posting.amount ?? "—"}</span
                               >
                             </div>
                           {/each}
                         </div>
                       {:else}
-                        <div class="text-right font-mono text-sm tabular-nums">
+                        <div class="cn-tables-ledgeractivitytable-348-1">
                           {record.amount}
                         </div>
                       {/if}
@@ -358,7 +352,7 @@
         {/each}
       </div>
     {:else}
-      <div class="px-5 py-12 text-center text-sm text-muted-foreground">
+      <div class="cn-tables-ledgeractivitytable-361-1">
         {emptyMessage}
       </div>
     {/if}
@@ -367,39 +361,34 @@
 
 {#snippet ActivityRecord(record: LedgerActivityRecord, interactive = false)}
   {@const avatar = avatarFor(record)}
-  <span class="flex min-w-0 items-start gap-2">
+  <span class="cn-tables-ledgeractivitytable-370-1">
     {#if avatar.imageUrl}
       <img
         src={avatar.imageUrl}
         alt={avatar.alt ?? ""}
-        class="mt-0.5 size-10 shrink-0 rounded-full border border-border/70 object-contain"
+        class="cn-tables-ledgeractivitytable-375-1"
       />
     {:else}
-      <span
-        class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full border border-border/70 bg-muted text-sm font-semibold text-muted-foreground"
-        aria-hidden="true"
-      >
+      <span class="cn-tables-ledgeractivitytable-379-1" aria-hidden="true">
         {#if avatar.fallback}
           {avatar.fallback.slice(0, 1).toUpperCase()}
         {:else}
-          <FileText class="size-4" />
+          <FileText class="cn-tables-ledgeractivitytable-385-1" />
         {/if}
       </span>
     {/if}
-    <span class="min-w-0">
+    <span class="cn-tables-ledgeractivitytable-389-1">
       <span
-        class={`block truncate text-sm font-medium ${interactive ? "hover:underline" : ""}`}
+        class={`cn-tables-ledgeractivitytable-391-2 cn-tables-ledgeractivitytable-391-5 cn-tables-ledgeractivitytable-391-4 cn-tables-ledgeractivitytable-391-3 ${interactive ? "cn-tables-ledgeractivitytable-391-1" : ""}`}
       >
         {record.description}
       </span>
       {#if record.account}
-        <span
-          class="mt-0.5 block truncate font-mono text-xs text-muted-foreground"
-          >{record.account}</span
+        <span class="cn-tables-ledgeractivitytable-397-1">{record.account}</span
         >
       {/if}
       {#if record.detail}
-        <span class="mt-1 block truncate text-xs text-muted-foreground">
+        <span class="cn-tables-ledgeractivitytable-402-1">
           {record.detail}
         </span>
       {/if}

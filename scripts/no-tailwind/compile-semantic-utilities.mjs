@@ -576,8 +576,7 @@ export function migrateFamilies({ families }) {
             (name.endsWith(".svelte") || name.endsWith(".ts")) &&
             !name.includes(".stories.") &&
             !name.includes(".spec.") &&
-            !name.endsWith(".tokens.ts") &&
-            name !== "index.ts",
+            !name.endsWith(".tokens.ts"),
         )
         .sort();
       const pendingWrites = new Map();

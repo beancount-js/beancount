@@ -66,7 +66,11 @@
   );
   const isWider = $derived(operatingCurrency.length > 1);
 
-  function toggle(account: string, event: MouseEvent, children: readonly UiTreeTableNode[]) {
+  function toggle(
+    account: string,
+    event: MouseEvent,
+    children: readonly UiTreeTableNode[],
+  ) {
     const next = new Set(collapsedIds);
     const isCollapsed = next.has(account);
     if (isCollapsed) {
@@ -106,7 +110,7 @@
 </script>
 
 <ol
-  class="flex-table tree-table-new hierarchy-tree-table statement-tree-table font-mono text-sm text-foreground"
+  class="cn-tables-treetable-109-1 tree-table-new hierarchy-tree-table statement-tree-table"
   class:wider={isWider}
   data-statement-tree-table
   aria-label={ariaLabel}
@@ -142,7 +146,7 @@
     />
   {/each}
 </ol>
-<div class="p-2"></div>
+<div class="cn-tables-treetable-145-1"></div>
 
 <style>
   :global(.tree-table-new p) {

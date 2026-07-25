@@ -93,10 +93,14 @@
 <Story
   name="Selects records and opens details"
   play={async ({ canvas }) => {
-    await userEvent.click(canvas.getByRole("checkbox", { name: "Select Groceries" }));
+    await userEvent.click(
+      canvas.getByRole("checkbox", { name: "Select Groceries" }),
+    );
     await expect(canvas.getByText("1 record selected")).toBeVisible();
 
-    await userEvent.click(canvas.getByRole("button", { name: "Edit Groceries" }));
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Edit Groceries" }),
+    );
     await expect(canvas.getByText("Opened Groceries")).toBeVisible();
   }}
 >
@@ -128,7 +132,9 @@
 <Story
   name="Collapses a date group"
   play={async ({ canvas }) => {
-    await userEvent.click(canvas.getByRole("button", { name: /18 July 2026/ }));
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Collapse 18 July 2026" }),
+    );
     await expect(canvas.queryByText("Start balance")).not.toBeInTheDocument();
   }}
 >

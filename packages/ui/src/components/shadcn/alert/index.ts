@@ -1,16 +1,18 @@
-import { type VariantProps, tv } from "tailwind-variants";
+import {
+  createVariants,
+  type VariantProps,
+} from "../../../lib/semantic-variants.js";
 
 import Root from "./alert.svelte";
 import Description from "./alert-description.svelte";
 import Title from "./alert-title.svelte";
 
-export const alertVariants = tv({
-  base: "[&>svg]:text-foreground relative w-full rounded-lg border px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg~*]:pl-7",
+export const alertVariants = createVariants({
+  base: "cn-alert-shadcn-alert-index-8-1",
   variants: {
     variant: {
-      default: "bg-background text-foreground",
-      destructive:
-        "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+      default: "cn-alert-shadcn-alert-index-11-1",
+      destructive: "cn-alert-shadcn-alert-index-13-1",
     },
   },
   defaultVariants: {

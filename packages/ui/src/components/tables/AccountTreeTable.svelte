@@ -93,27 +93,26 @@
   }
 </script>
 
-<div
-  class="overflow-x-auto rounded-xl border border-border/80 bg-card shadow-sm"
->
-  <Table.Root aria-label={ariaLabel} class="min-w-[36rem]">
+<div class="cn-tables-accounttreetable-97-1">
+  <Table.Root aria-label={ariaLabel} class="cn-tables-accounttreetable-99-1">
     <Table.Header>
-      <Table.Row class="bg-muted/65 hover:bg-muted/65">
-        <Table.Head
-          class="min-w-64 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em]"
-        >
-          <span class="flex items-center gap-2">
+      <Table.Row class="cn-tables-accounttreetable-101-1">
+        <Table.Head class="cn-tables-accounttreetable-103-1">
+          <span class="cn-tables-accounttreetable-105-1">
             {#if collapsibleIds.length}
               <button
                 type="button"
-                class="grid size-4 place-items-center rounded-sm text-muted-foreground hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="cn-tables-accounttreetable-109-1"
                 aria-label={allCollapsed
                   ? "Expand all accounts"
                   : "Collapse all accounts"}
                 aria-pressed={allCollapsed}
                 onclick={toggleAll}
               >
-                <ChevronsUpDown class="size-3" aria-hidden="true" />
+                <ChevronsUpDown
+                  class="cn-tables-accounttreetable-116-1"
+                  aria-hidden="true"
+                />
               </button>
             {/if}
             Account
@@ -121,7 +120,7 @@
         </Table.Head>
         {#each columns as column (column.id)}
           <Table.Head
-            class="min-w-32 px-4 py-2 text-right text-xs font-semibold uppercase tracking-[0.12em]"
+            class="cn-tables-accounttreetable-124-1"
             title={column.title}
           >
             {column.label}
@@ -133,45 +132,54 @@
       {#each visibleNodes as { node, depth, hasChildren } (node.id)}
         {@const isCollapsed = collapsedIds.has(node.id)}
         <Table.Row>
-          <Table.Cell class="px-4 py-2">
+          <Table.Cell class="cn-tables-accounttreetable-136-1">
             <div
-              class="flex min-w-0 items-center gap-2"
+              class="cn-tables-accounttreetable-138-1"
               style={`padding-left: ${depth * 1.25}rem`}
             >
               {#if hasChildren}
                 <button
                   type="button"
-                  class="grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  class="cn-tables-accounttreetable-144-1"
                   aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${node.label}`}
                   aria-expanded={!isCollapsed}
                   onclick={() => toggle(node.id)}
                 >
                   {#if isCollapsed}
-                    <ChevronRight class="size-3" aria-hidden="true" />
+                    <ChevronRight
+                      class="cn-tables-accounttreetable-150-1"
+                      aria-hidden="true"
+                    />
                   {:else}
-                    <ChevronDown class="size-3" aria-hidden="true" />
+                    <ChevronDown
+                      class="cn-tables-accounttreetable-152-1"
+                      aria-hidden="true"
+                    />
                   {/if}
                 </button>
               {:else}
-                <span class="size-4 shrink-0" aria-hidden="true"></span>
+                <span
+                  class="cn-tables-accounttreetable-156-1"
+                  aria-hidden="true"
+                ></span>
               {/if}
               {#if node.href}
                 <a
                   href={node.href}
-                  class="min-w-0 truncate font-medium text-primary hover:underline"
+                  class="cn-tables-accounttreetable-161-1"
                   onclick={(event) => navigate(node, event)}
                 >
                   {node.label}
                 </a>
               {:else}
-                <span class="min-w-0 truncate font-medium">{node.label}</span>
+                <span class="cn-tables-accounttreetable-167-1"
+                  >{node.label}</span
+                >
               {/if}
             </div>
           </Table.Cell>
           {#each columns as column (column.id)}
-            <Table.Cell
-              class="px-4 py-2 text-right font-mono text-xs tabular-nums"
-            >
+            <Table.Cell class="cn-tables-accounttreetable-173-1">
               {formatValue(node.values[column.id], column, node)}
             </Table.Cell>
           {/each}
