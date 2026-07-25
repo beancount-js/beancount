@@ -3,7 +3,14 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const shadcnRoot = new URL("./", import.meta.url);
-const nativeFamilies = ["button"] as const;
+const nativeFamilies = [
+  "badge",
+  "button",
+  "input",
+  "separator",
+  "skeleton",
+  "textarea",
+] as const;
 
 function read(relativePath: string) {
   return readFileSync(fileURLToPath(new URL(relativePath, shadcnRoot)), "utf8");

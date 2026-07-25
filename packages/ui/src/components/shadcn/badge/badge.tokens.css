@@ -1,0 +1,11 @@
+:root {
+  --ui-badge-background: var(--ui-color-primary);
+  --ui-badge-foreground: var(--ui-color-primary-foreground);
+  --ui-badge-border-color: transparent;
+  --ui-badge-radius: var(--ui-radius-md);
+  --ui-badge-focus-ring-color: var(--ui-focus-ring-color);
+  --ui-badge-success-background: hsl(var(--success) / 0.15);
+  --ui-badge-success-foreground: hsl(var(--success-foreground));
+  --ui-badge-warning-background: hsl(var(--warning) / 0.15);
+  --ui-badge-warning-foreground: hsl(var(--warning-foreground));
+}

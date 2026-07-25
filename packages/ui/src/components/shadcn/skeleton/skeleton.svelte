@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { WithElementRef, WithoutChildren } from "bits-ui";
   import type { HTMLAttributes } from "svelte/elements";
-  import { cn } from "../../../lib/utils.js";
+  import { omitDataUiComponent } from "../../../lib/data-ui-host.js";
 
   let {
     ref = $bindable(null),
@@ -12,6 +12,8 @@
 
 <div
   bind:this={ref}
-  class={cn("animate-pulse rounded-md bg-primary/10", className)}
-  {...restProps}
+  {...omitDataUiComponent(restProps)}
+  data-ui-component="skeleton"
+  data-slot="skeleton"
+  class={className}
 ></div>

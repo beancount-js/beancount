@@ -1,0 +1,4 @@
+:root {
+  --ui-separator-color: var(--ui-color-border);
+  --ui-separator-thickness: 1px;
+}

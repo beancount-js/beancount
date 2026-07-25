@@ -1,0 +1,96 @@
+:where([data-ui-component="badge"], .cn-badge) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-1);
+  padding: var(--ui-space-0-5) var(--ui-space-2-5);
+  border: 1px solid var(--ui-badge-border-color);
+  border-radius: var(--ui-badge-radius);
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-font-size-xs);
+  font-weight: var(--ui-font-weight-semibold);
+  line-height: var(--ui-line-height-normal);
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    color var(--ui-duration-fast) var(--ui-ease-standard),
+    background-color var(--ui-duration-fast) var(--ui-ease-standard),
+    border-color var(--ui-duration-fast) var(--ui-ease-standard);
+}
+
+:where([data-ui-component="badge"], .cn-badge):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--ui-focus-ring-offset) var(--ui-color-background),
+    0 0 0 calc(var(--ui-focus-ring-offset) + var(--ui-focus-ring-width))
+      var(--ui-badge-focus-ring-color);
+}
+
+:where(
+    [data-ui-component="badge"][data-variant="default"],
+    .cn-badge.cn-badge--default
+  ) {
+  color: var(--ui-badge-foreground);
+  background: var(--ui-badge-background);
+}
+
+:where(
+    [data-ui-component="badge"][data-variant="secondary"],
+    .cn-badge.cn-badge--secondary
+  ) {
+  color: var(--ui-color-secondary-foreground);
+  background: var(--ui-color-secondary);
+}
+
+:where(
+    [data-ui-component="badge"][data-variant="destructive"],
+    .cn-badge.cn-badge--destructive
+  ) {
+  color: var(--ui-color-destructive-foreground);
+  background: var(--ui-color-destructive);
+}
+
+:where(
+    [data-ui-component="badge"][data-variant="success"],
+    .cn-badge.cn-badge--success
+  ) {
+  color: var(--ui-badge-success-foreground);
+  background: var(--ui-badge-success-background);
+  border-color: color-mix(
+    in srgb,
+    var(--ui-badge-success-foreground) 30%,
+    transparent
+  );
+}
+
+:where(
+    [data-ui-component="badge"][data-variant="warning"],
+    .cn-badge.cn-badge--warning
+  ) {
+  color: var(--ui-badge-warning-foreground);
+  background: var(--ui-badge-warning-background);
+  border-color: color-mix(
+    in srgb,
+    var(--ui-badge-warning-foreground) 30%,
+    transparent
+  );
+}
+
+:where(
+    [data-ui-component="badge"][data-variant="outline"],
+    .cn-badge.cn-badge--outline
+  ) {
+  color: var(--ui-color-foreground);
+  background: transparent;
+  border-color: var(--ui-color-border);
+}
+
+:where([data-ui-component="badge"], .cn-badge):is(a):hover {
+  filter: brightness(0.96);
+}
+
+:where([data-ui-component="badge"], .cn-badge) > svg {
+  width: var(--ui-space-3);
+  height: var(--ui-space-3);
+  pointer-events: none;
+}

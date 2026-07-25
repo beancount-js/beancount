@@ -3358,41 +3358,6 @@
       "text-sm": 1,
       "w-full": 1
     },
-    "src/components/shadcn/badge/badge.svelte": {
-      "bg-destructive": 1,
-      "bg-primary": 1,
-      "bg-secondary": 1,
-      "bg-success/15": 1,
-      "bg-warning/15": 1,
-      "border-success/30": 1,
-      "border-transparent": 3,
-      "border-warning/30": 1,
-      "focus:outline-none": 1,
-      "focus:ring-2": 1,
-      "focus:ring-offset-2": 1,
-      "focus:ring-ring": 1,
-      "font-semibold": 1,
-      "hover:bg-destructive/80": 1,
-      "hover:bg-primary/80": 1,
-      "hover:bg-secondary/80": 1,
-      "hover:bg-success/20": 1,
-      "hover:bg-warning/20": 1,
-      "inline-flex": 1,
-      "items-center": 1,
-      "px-2.5": 1,
-      "py-0.5": 1,
-      "rounded-md": 1,
-      "select-none": 1,
-      "tailwind-variants": 1,
-      "text-destructive-foreground": 1,
-      "text-foreground": 1,
-      "text-primary-foreground": 1,
-      "text-secondary-foreground": 1,
-      "text-success-foreground": 1,
-      "text-warning-foreground": 1,
-      "text-xs": 1,
-      "transition-colors": 1
-    },
     "src/components/shadcn/breadcrumb/breadcrumb-ellipsis.svelte": {
       "flex": 1,
       "h-4": 1,
@@ -3848,29 +3813,6 @@
       "text-center": 1,
       "w-full": 1
     },
-    "src/components/shadcn/input/input.svelte": {
-      "bg-transparent": 1,
-      "border-input": 1,
-      "disabled:cursor-not-allowed": 1,
-      "disabled:opacity-50": 1,
-      "file:bg-transparent": 1,
-      "file:border-0": 1,
-      "file:font-medium": 1,
-      "file:text-sm": 1,
-      "flex": 1,
-      "focus-visible:outline-none": 1,
-      "focus-visible:ring-1": 1,
-      "focus-visible:ring-ring": 1,
-      "h-9": 1,
-      "placeholder:text-muted-foreground": 1,
-      "px-3": 1,
-      "py-1": 1,
-      "rounded-md": 1,
-      "shadow-sm": 1,
-      "text-sm": 1,
-      "transition-colors": 1,
-      "w-full": 1
-    },
     "src/components/shadcn/menubar/menubar-checkbox-item.svelte": {
       "absolute": 1,
       "cursor-default": 1,
@@ -4215,14 +4157,6 @@
       "w-full": 1,
       "whitespace-nowrap": 1
     },
-    "src/components/shadcn/separator/separator.svelte": {
-      "bg-border": 1,
-      "h-[1px]": 1,
-      "min-h-full": 1,
-      "shrink-0": 1,
-      "w-[1px]": 1,
-      "w-full": 1
-    },
     "src/components/shadcn/sheet/sheet-content.svelte": {
       "absolute": 1,
       "bg-background": 1,
@@ -4525,11 +4459,6 @@
       "w-full": 2,
       "z-10": 1
     },
-    "src/components/shadcn/skeleton/skeleton.svelte": {
-      "animate-pulse": 1,
-      "bg-primary/10": 1,
-      "rounded-md": 1
-    },
     "src/components/shadcn/switch/switch.svelte": {
       "after:absolute": 1,
       "aria-invalid:border-destructive": 1,
@@ -4656,25 +4585,6 @@
       "text-sm": 1,
       "transition-all": 1,
       "whitespace-nowrap": 1
-    },
-    "src/components/shadcn/textarea/textarea.svelte": {
-      "bg-transparent": 1,
-      "border-input": 1,
-      "disabled:cursor-not-allowed": 1,
-      "disabled:opacity-50": 1,
-      "flex": 1,
-      "focus-visible:outline-none": 1,
-      "focus-visible:ring-1": 1,
-      "focus-visible:ring-ring": 1,
-      "md:text-sm": 1,
-      "min-h-[60px]": 1,
-      "placeholder:text-muted-foreground": 1,
-      "px-3": 1,
-      "py-2": 1,
-      "rounded-md": 1,
-      "shadow-sm": 1,
-      "text-base": 1,
-      "w-full": 1
     },
     "src/components/shadcn/toggle-group/toggle-group.svelte": {
       "flex": 1,

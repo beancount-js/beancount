@@ -1,0 +1,8 @@
+:root {
+  --ui-skeleton-background: color-mix(
+    in srgb,
+    var(--ui-color-primary) 10%,
+    transparent
+  );
+  --ui-skeleton-radius: var(--ui-radius-md);
+}

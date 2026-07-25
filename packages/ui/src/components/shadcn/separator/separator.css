@@ -1,0 +1,14 @@
+[data-ui-component="separator"] {
+  flex-shrink: 0;
+  background: var(--ui-separator-color);
+}
+
+[data-ui-component="separator"][data-orientation="horizontal"] {
+  width: 100%;
+  height: var(--ui-separator-thickness);
+}
+
+[data-ui-component="separator"][data-orientation="vertical"] {
+  width: var(--ui-separator-thickness);
+  min-height: 100%;
+}
