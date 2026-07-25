@@ -11,6 +11,8 @@
 
 <CommandPrimitive.Empty
   bind:ref
-  class={cn("py-6 text-center text-sm", className)}
+  class={cn("cn-command-command-empty-14-1", className)}
   {...restProps}
+  data-ui-component="command"
+  data-ui-part="command-empty"
 />

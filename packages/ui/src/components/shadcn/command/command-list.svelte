@@ -10,7 +10,9 @@
 </script>
 
 <CommandPrimitive.List
-  class={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
+  class={cn("cn-command-command-list-13-1", className)}
   bind:ref
   {...restProps}
+  data-ui-component="command"
+  data-ui-part="command-list"
 />

@@ -14,14 +14,14 @@
 </script>
 
 <CommandPrimitive.Group
-  class={cn("overflow-hidden p-1 text-foreground", className)}
+  class={cn("cn-command-command-group-17-1", className)}
   bind:ref
   {...restProps}
+  data-ui-component="command"
+  data-ui-part="command-group"
 >
   {#if heading}
-    <CommandPrimitive.GroupHeading
-      class="px-2 py-1.5 text-xs font-medium text-muted-foreground"
-    >
+    <CommandPrimitive.GroupHeading class="cn-command-command-group-23-1">
       {heading}
     </CommandPrimitive.GroupHeading>
   {/if}

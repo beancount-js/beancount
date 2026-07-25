@@ -38,3 +38,5 @@ export {
   Shortcut as CommandShortcut,
   Loading as CommandLoading,
 };
+
+export { commandTokenNames, type CommandToken } from "./command.tokens.js";

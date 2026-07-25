@@ -16,6 +16,8 @@
   aria-label="Go to previous page"
   class={cn(buttonVariants({ variant: "ghost" }), className)}
   {...restProps}
+  data-ui-component="pagination"
+  data-ui-part="pagination-previous"
 >
   <ChevronLeft />
 </PaginationPrimitive.PrevButton>

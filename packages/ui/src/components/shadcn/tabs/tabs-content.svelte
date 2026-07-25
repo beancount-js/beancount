@@ -10,12 +10,11 @@
 </script>
 
 <TabsPrimitive.Content
-  class={cn(
-    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-    className,
-  )}
+  class={cn("cn-tabs-tabs-content-14-1", className)}
   {value}
   {...$$restProps}
+  data-ui-component="tabs"
+  data-ui-part="tabs-content"
 >
   <slot />
 </TabsPrimitive.Content>

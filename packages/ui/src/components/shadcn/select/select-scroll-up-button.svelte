@@ -15,8 +15,10 @@
 
 <SelectPrimitive.ScrollUpButton
   bind:ref
-  class={cn("flex cursor-default items-center justify-center py-1", className)}
+  class={cn("cn-select-select-scroll-up-button-18-1", className)}
   {...restProps}
+  data-ui-component="select"
+  data-ui-part="select-scroll-up-button"
 >
-  <ChevronUp class="size-4" />
+  <ChevronUp class="cn-select-select-scroll-up-button-21-1" />
 </SelectPrimitive.ScrollUpButton>

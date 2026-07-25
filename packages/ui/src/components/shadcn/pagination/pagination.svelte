@@ -22,6 +22,8 @@
   {count}
   {perPage}
   {siblingCount}
-  class={cn("mx-auto flex w-full justify-center", className)}
+  class={cn("cn-pagination-pagination-25-1", className)}
   {...restProps}
+  data-ui-component="pagination"
+  data-ui-part="pagination"
 />

@@ -17,12 +17,14 @@
 <DropdownMenuPrimitive.SubTrigger
   bind:ref
   class={cn(
-    "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[state=open]:bg-accent",
-    inset && "pl-8",
+    "cn-dropdown-menu-dropdown-menu-sub-trigger-20-1",
+    inset && "cn-dropdown-menu-dropdown-menu-sub-trigger-21-1",
     className,
   )}
   {...restProps}
+  data-ui-component="dropdown-menu"
+  data-ui-part="dropdown-menu-sub-trigger"
 >
   {@render children?.()}
-  <ChevronRight class="ml-auto size-4" />
+  <ChevronRight class="cn-dropdown-menu-dropdown-menu-sub-trigger-27-1" />
 </DropdownMenuPrimitive.SubTrigger>

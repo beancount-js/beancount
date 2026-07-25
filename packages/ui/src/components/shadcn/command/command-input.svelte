@@ -11,13 +11,15 @@
   }: CommandPrimitive.InputProps = $props();
 </script>
 
-<div class="flex items-center border-b px-3" data-command-input-wrapper="">
-  <Search class="mr-2 size-4 shrink-0 opacity-50" />
+<div
+  class="cn-command-command-input-14-1"
+  data-command-input-wrapper=""
+  data-ui-component="command"
+  data-ui-part="command-input"
+>
+  <Search class="cn-command-command-input-15-1" />
   <CommandPrimitive.Input
-    class={cn(
-      "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
-      className,
-    )}
+    class={cn("cn-command-command-input-18-1", className)}
     bind:ref
     bind:value
     {...restProps}

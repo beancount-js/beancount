@@ -32,3 +32,5 @@ export {
   ScrollDownButton as SelectScrollDownButton,
   ScrollUpButton as SelectScrollUpButton,
 };
+
+export { selectTokenNames, type SelectToken } from "./select.tokens.js";

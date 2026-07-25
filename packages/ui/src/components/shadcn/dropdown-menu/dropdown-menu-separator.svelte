@@ -11,6 +11,8 @@
 
 <DropdownMenuPrimitive.Separator
   bind:ref
-  class={cn("-mx-1 my-1 h-px bg-muted", className)}
+  class={cn("cn-dropdown-menu-dropdown-menu-separator-14-1", className)}
   {...restProps}
+  data-ui-component="dropdown-menu"
+  data-ui-part="dropdown-menu-separator"
 />

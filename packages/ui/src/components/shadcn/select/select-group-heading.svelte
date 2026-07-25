@@ -11,6 +11,8 @@
 
 <SelectPrimitive.GroupHeading
   bind:ref
-  class={cn("px-2 py-1.5 text-sm font-semibold", className)}
+  class={cn("cn-select-select-group-heading-14-1", className)}
   {...restProps}
+  data-ui-component="select"
+  data-ui-part="select-group-heading"
 />

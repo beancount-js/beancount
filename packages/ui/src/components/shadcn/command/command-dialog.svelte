@@ -23,9 +23,14 @@
 </script>
 
 <Dialog.Root bind:open {...restProps}>
-  <Dialog.Content class="overflow-hidden p-0" {portalProps}>
+  <Dialog.Content
+    class="cn-command-command-dialog-26-1"
+    {portalProps}
+    data-ui-component="command"
+    data-ui-part="command-dialog"
+  >
     <Command
-      class="[&_[data-cmdk-group-heading]]:px-2 [&_[data-cmdk-group-heading]]:font-medium [&_[data-cmdk-group]:not([hidden])_~[data-cmdk-group]]:pt-0 [&_[data-cmdk-group]]:px-2 [&_[data-cmdk-input-wrapper]_svg]:h-5 [&_[data-cmdk-input-wrapper]_svg]:w-5 [&_[data-cmdk-input]]:h-12 [&_[data-cmdk-item]]:px-2 [&_[data-cmdk-item]]:py-3 [&_[data-cmdk-item]_svg]:h-5 [&_[data-cmdk-item]_svg]:w-5"
+      class="cn-command-command-dialog-28-1"
       {...restProps}
       bind:value
       bind:ref

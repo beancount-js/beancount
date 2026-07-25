@@ -15,8 +15,10 @@
   bind:this={ref}
   aria-hidden="true"
   data-slot="pagination-ellipsis"
-  class={cn("flex size-8 items-center justify-center", className)}
+  class={cn("cn-pagination-pagination-ellipsis-18-1", className)}
   {...restProps}
+  data-ui-component="pagination"
+  data-ui-part="pagination-ellipsis"
 >
   <Ellipsis />
   <span class="sr-only">More pages</span>

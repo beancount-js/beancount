@@ -33,6 +33,8 @@
     className,
   )}
   {...restProps}
+  data-ui-component="pagination"
+  data-ui-part="pagination-link"
 >
   {#if children}
     {@render children()}

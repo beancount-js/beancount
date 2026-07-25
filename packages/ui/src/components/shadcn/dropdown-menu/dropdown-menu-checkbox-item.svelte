@@ -18,16 +18,15 @@
 <DropdownMenuPrimitive.CheckboxItem
   bind:ref
   bind:checked
-  class={cn(
-    "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:opacity-50",
-    className,
-  )}
+  class={cn("cn-dropdown-menu-dropdown-menu-checkbox-item-22-1", className)}
   {...restProps}
+  data-ui-component="dropdown-menu"
+  data-ui-part="dropdown-menu-checkbox-item"
 >
   {#snippet children({ checked })}
-    <span class="absolute left-2 flex size-3.5 items-center justify-center">
+    <span class="cn-dropdown-menu-dropdown-menu-checkbox-item-28-1">
       {#if checked}
-        <Check class="size-4" />
+        <Check class="cn-dropdown-menu-dropdown-menu-checkbox-item-30-1" />
       {/if}
     </span>
     {@render childrenProp?.()}

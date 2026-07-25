@@ -8,4 +8,10 @@
   }: DropdownMenuPrimitive.RadioGroupProps = $props();
 </script>
 
-<DropdownMenuPrimitive.RadioGroup bind:ref bind:value {...restProps} />
+<DropdownMenuPrimitive.RadioGroup
+  bind:ref
+  bind:value
+  {...restProps}
+  data-ui-component="dropdown-menu"
+  data-ui-part="dropdown-menu-radio-group"
+/>

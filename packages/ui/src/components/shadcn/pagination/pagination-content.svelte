@@ -14,8 +14,10 @@
 <ul
   bind:this={ref}
   data-slot="pagination-content"
-  class={cn("flex items-center", className)}
+  class={cn("cn-pagination-pagination-content-17-1", className)}
   {...restProps}
+  data-ui-component="pagination"
+  data-ui-part="pagination-content"
 >
   {@render children?.()}
 </ul>

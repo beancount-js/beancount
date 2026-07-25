@@ -12,6 +12,8 @@
 
 <Separator
   bind:ref
-  class={cn("-mx-1 my-1 h-px bg-muted", className)}
+  class={cn("cn-select-select-separator-15-1", className)}
   {...restProps}
+  data-ui-component="select"
+  data-ui-part="select-separator"
 />

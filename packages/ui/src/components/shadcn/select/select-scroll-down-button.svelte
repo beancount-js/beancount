@@ -15,8 +15,10 @@
 
 <SelectPrimitive.ScrollDownButton
   bind:ref
-  class={cn("flex cursor-default items-center justify-center py-1", className)}
+  class={cn("cn-select-select-scroll-down-button-18-1", className)}
   {...restProps}
+  data-ui-component="select"
+  data-ui-part="select-scroll-down-button"
 >
-  <ChevronDown class="size-4" />
+  <ChevronDown class="cn-select-select-scroll-down-button-21-1" />
 </SelectPrimitive.ScrollDownButton>

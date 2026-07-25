@@ -16,8 +16,10 @@
 
 <span
   bind:this={ref}
-  class={cn("ml-auto text-xs tracking-widest opacity-60", className)}
+  class={cn("cn-dropdown-menu-dropdown-menu-shortcut-19-1", className)}
   {...restProps}
+  data-ui-component="dropdown-menu"
+  data-ui-part="dropdown-menu-shortcut"
 >
   {@render children?.()}
 </span>

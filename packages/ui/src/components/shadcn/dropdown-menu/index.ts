@@ -49,3 +49,8 @@ export {
   CheckboxItem as DropdownMenuCheckboxItem,
   Portal as DropdownMenuPortal,
 };
+
+export {
+  dropdown_menuTokenNames,
+  type DropdownMenuToken,
+} from "./dropdown-menu.tokens.js";

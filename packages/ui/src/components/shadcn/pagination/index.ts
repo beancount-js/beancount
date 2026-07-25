@@ -22,3 +22,8 @@ export {
   Previous as PaginationPrevious,
   Next as PaginationNext,
 };
+
+export {
+  paginationTokenNames,
+  type PaginationToken,
+} from "./pagination.tokens.js";

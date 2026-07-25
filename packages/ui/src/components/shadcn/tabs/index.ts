@@ -16,3 +16,5 @@ export {
   List as TabsList,
   Trigger as TabsTrigger,
 };
+
+export { tabsTokenNames, type TabsToken } from "./tabs.tokens.js";

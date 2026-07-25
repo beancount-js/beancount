@@ -1,0 +1,13 @@
+/**
+ * Default tabs token bindings → theme tokens.
+ * Override --ui-tabs-* on :root or any ancestor (forms pattern).
+ * Do not rebind these names on [data-ui-component="tabs"] hosts — that
+ * blocks ancestor customization.
+ */
+:root {
+  --ui-tabs-background: var(--ui-color-muted);
+  --ui-tabs-foreground: var(--ui-color-foreground);
+  --ui-tabs-border-color: var(--ui-color-border);
+  --ui-tabs-radius: var(--radius-lg, var(--radius));
+  --ui-tabs-focus-ring-color: var(--ui-color-ring);
+}

@@ -9,11 +9,10 @@
 </script>
 
 <TabsPrimitive.List
-  class={cn(
-    "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
-    className,
-  )}
+  class={cn("cn-tabs-tabs-list-13-1", className)}
   {...$$restProps}
+  data-ui-component="tabs"
+  data-ui-part="tabs-list"
 >
   <slot />
 </TabsPrimitive.List>

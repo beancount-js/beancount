@@ -18,8 +18,14 @@
 
 <div
   bind:this={ref}
-  class={cn("px-2 py-1.5 text-sm font-semibold", inset && "pl-8", className)}
+  class={cn(
+    "cn-dropdown-menu-dropdown-menu-label-21-1",
+    inset && "cn-dropdown-menu-dropdown-menu-label-21-2",
+    className,
+  )}
   {...restProps}
+  data-ui-component="dropdown-menu"
+  data-ui-part="dropdown-menu-label"
 >
   {@render children?.()}
 </div>

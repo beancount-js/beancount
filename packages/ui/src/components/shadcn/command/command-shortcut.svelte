@@ -12,9 +12,11 @@
 </script>
 
 <span
-  class={cn("ml-auto text-xs tracking-widest text-muted-foreground", className)}
+  class={cn("cn-command-command-shortcut-15-1", className)}
   {...restProps}
   bind:this={ref}
+  data-ui-component="command"
+  data-ui-part="command-shortcut"
 >
   {@render children?.()}
 </span>

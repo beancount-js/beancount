@@ -11,11 +11,10 @@
 </script>
 
 <CommandPrimitive.Root
-  class={cn(
-    "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
-    className,
-  )}
+  class={cn("cn-command-command-15-1", className)}
   bind:ref
   bind:value
   {...restProps}
+  data-ui-component="command"
+  data-ui-part="command"
 />

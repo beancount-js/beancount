@@ -1,0 +1,77 @@
+/* Generated once from the former utility recipes; no Tailwind runtime is required. */
+
+@keyframes enter {
+  from {
+    opacity: var(--ui-runtime-enter-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-enter-translate-x, 0),
+        var(--ui-runtime-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1)
+      )
+      rotate(var(--ui-runtime-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--ui-runtime-exit-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-exit-translate-x, 0),
+        var(--ui-runtime-exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1)
+      )
+      rotate(var(--ui-runtime-exit-rotate, 0));
+  }
+}
+
+.cn-pagination-pagination-25-1 {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cn-pagination-pagination-content-17-1 {
+  display: flex;
+}
+
+.cn-pagination-pagination-ellipsis-18-1 {
+  display: flex;
+}
+
+.cn-pagination-pagination-25-1 {
+  display: flex;
+}
+
+.cn-pagination-pagination-ellipsis-18-1 {
+  width: 2rem;
+  height: 2rem;
+}
+
+.cn-pagination-pagination-25-1 {
+  width: 100%;
+}
+
+.cn-pagination-pagination-content-17-1 {
+  align-items: center;
+}
+
+.cn-pagination-pagination-ellipsis-18-1 {
+  align-items: center;
+}
+
+.cn-pagination-pagination-ellipsis-18-1 {
+  justify-content: center;
+}
+
+.cn-pagination-pagination-25-1 {
+  justify-content: center;
+}

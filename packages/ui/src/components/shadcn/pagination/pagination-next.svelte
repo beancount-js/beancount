@@ -16,6 +16,8 @@
   aria-label="Go to next page"
   class={cn(buttonVariants({ variant: "ghost" }), className)}
   {...restProps}
+  data-ui-component="pagination"
+  data-ui-part="pagination-next"
 >
   <ChevronRight />
 </PaginationPrimitive.NextButton>
