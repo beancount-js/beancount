@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { transformClassContexts } from "./compile-semantic-utilities.mjs";
+import {
+  removePrefixCollisionRules,
+  rewriteUtilitySelector,
+  transformClassContexts,
+} from "./compile-semantic-utilities.mjs";
 
 test("replaces only class-context utility literals with semantic markers", () => {
   const source = `<script>
@@ -118,4 +122,33 @@ test("preserves component-authored class hooks", () => {
 
   assert.match(transformed.source, /class="cn-forms-[^"]+ merchant-form"/);
   assert.doesNotMatch(transformed.source, /merchant-form flex|\bborder\b/);
+});
+
+test("rewrites only an exact utility class selector", () => {
+  assert.equal(
+    rewriteUtilitySelector({
+      selector: ".grid",
+      utility: "grid",
+      marker: "cn-layout-grid-1-1",
+    }),
+    ".cn-layout-grid-1-1",
+  );
+  assert.equal(
+    rewriteUtilitySelector({
+      selector: ".grid-cols-\\[auto_minmax\\(0\\2c _1fr\\)\\]",
+      utility: "grid",
+      marker: "cn-layout-grid-1-1",
+    }),
+    null,
+  );
+});
+
+test("removes legacy prefix-collision rules only", () => {
+  const css = `.cn-layout-grid-1-1 { display: grid; }
+.cn-layout-grid-1-1-cols-\\[auto_1fr\\] { grid-template-columns: auto 1fr; }`;
+
+  const repaired = removePrefixCollisionRules(css);
+
+  assert.match(repaired, /\.cn-layout-grid-1-1 \{/);
+  assert.doesNotMatch(repaired, /-cols-/);
 });

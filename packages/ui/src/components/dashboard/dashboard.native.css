@@ -498,161 +498,8 @@
   cursor: pointer;
 }
 
-.cn-dashboard-dashboarddonut-95-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-dashboardflow-179-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-dashboardline-342-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-dashboardtreerow-46-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-dashboardtreerow-57-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-dashboardtreerow-80-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-dashboardtreetable-111-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-dashboardtreetable-141-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-dashboardtreetable-148-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-dashboardtreetable-179-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-financialdashboard-239-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-financialdashboard-283-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-financialdashboard-307-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-financialdashboard-323-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-financialdashboard-332-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-financialdashboard-376-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-statementreport-62-1-cols-\[auto_minmax\(0\2c
-  1fr\)_max-content_max-content\] {
-  grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
 .cn-dashboard-dashboardtreetable-111-1 {
   grid-template-columns: auto minmax(0, 1fr) max-content max-content;
-}
-
-.cn-dashboard-dashboarddonut-95-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-dashboardflow-179-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-dashboardline-342-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-dashboardtreerow-46-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-dashboardtreerow-57-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-dashboardtreerow-80-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-dashboardtreetable-111-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-dashboardtreetable-141-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-dashboardtreetable-148-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-dashboardtreetable-179-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-financialdashboard-239-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-financialdashboard-283-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-financialdashboard-307-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-financialdashboard-323-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-financialdashboard-332-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-financialdashboard-376-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.cn-dashboard-statementreport-62-1-cols-\[minmax\(0\2c 1fr\)_auto\] {
-  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .cn-dashboard-financialdashboard-323-1 {
@@ -663,88 +510,8 @@
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.cn-dashboard-dashboardcharttooltip-29-1-col {
-  flex-direction: column;
-}
-
-.cn-dashboard-dashboardsection-34-1-col {
-  flex-direction: column;
-}
-
-.cn-dashboard-dashboardtreerow-51-1-col {
-  flex-direction: column;
-}
-
-.cn-dashboard-dashboardtreetable-72-1-col {
-  flex-direction: column;
-}
-
-.cn-dashboard-dashboardtreetable-92-1-col {
-  flex-direction: column;
-}
-
-.cn-dashboard-dashboardtreetable-144-1-col {
-  flex-direction: column;
-}
-
-.cn-dashboard-financialdashboard-155-1-col {
-  flex-direction: column;
-}
-
-.cn-dashboard-financialdashboard-167-1-col {
-  flex-direction: column;
-}
-
-.cn-dashboard-financialdashboard-252-1-col {
-  flex-direction: column;
-}
-
-.cn-dashboard-financialdashboard-337-1-col {
-  flex-direction: column;
-}
-
 .cn-dashboard-financialdashboard-155-1 {
   flex-direction: column;
-}
-
-.cn-dashboard-dashboardcharttooltip-29-1-wrap {
-  flex-wrap: wrap;
-}
-
-.cn-dashboard-dashboardsection-34-1-wrap {
-  flex-wrap: wrap;
-}
-
-.cn-dashboard-dashboardtreerow-51-1-wrap {
-  flex-wrap: wrap;
-}
-
-.cn-dashboard-dashboardtreetable-72-1-wrap {
-  flex-wrap: wrap;
-}
-
-.cn-dashboard-dashboardtreetable-92-1-wrap {
-  flex-wrap: wrap;
-}
-
-.cn-dashboard-dashboardtreetable-144-1-wrap {
-  flex-wrap: wrap;
-}
-
-.cn-dashboard-financialdashboard-155-1-wrap {
-  flex-wrap: wrap;
-}
-
-.cn-dashboard-financialdashboard-167-1-wrap {
-  flex-wrap: wrap;
-}
-
-.cn-dashboard-financialdashboard-252-1-wrap {
-  flex-wrap: wrap;
-}
-
-.cn-dashboard-financialdashboard-337-1-wrap {
-  flex-wrap: wrap;
 }
 
 .cn-dashboard-financialdashboard-167-1 {
@@ -1075,34 +842,6 @@
   border-width: 1px;
 }
 
-.cn-dashboard-dashboardcharttooltip-21-1-b {
-  border-bottom-width: 1px;
-}
-
-.cn-dashboard-dashboardsection-29-1-b {
-  border-bottom-width: 1px;
-}
-
-.cn-dashboard-dashboardtreetable-137-1-b {
-  border-bottom-width: 1px;
-}
-
-.cn-dashboard-dashboardtreetable-179-1-b {
-  border-bottom-width: 1px;
-}
-
-.cn-dashboard-financialdashboard-220-1-b {
-  border-bottom-width: 1px;
-}
-
-.cn-dashboard-financialdashboard-239-1-b {
-  border-bottom-width: 1px;
-}
-
-.cn-dashboard-statementreport-68-1-b {
-  border-bottom-width: 1px;
-}
-
 .cn-dashboard-financialdashboard-155-1 {
   border-bottom-width: 1px;
 }
@@ -1115,34 +854,6 @@
   border-bottom-width: 1px;
 }
 
-.cn-dashboard-dashboardcharttooltip-21-1-t {
-  border-top-width: 1px;
-}
-
-.cn-dashboard-dashboardsection-29-1-t {
-  border-top-width: 1px;
-}
-
-.cn-dashboard-dashboardtreetable-137-1-t {
-  border-top-width: 1px;
-}
-
-.cn-dashboard-dashboardtreetable-179-1-t {
-  border-top-width: 1px;
-}
-
-.cn-dashboard-financialdashboard-220-1-t {
-  border-top-width: 1px;
-}
-
-.cn-dashboard-financialdashboard-239-1-t {
-  border-top-width: 1px;
-}
-
-.cn-dashboard-statementreport-68-1-t {
-  border-top-width: 1px;
-}
-
 .cn-dashboard-dashboardsection-55-1 {
   border-top-width: 1px;
 }
@@ -1151,103 +862,12 @@
   border-top-width: 1px;
 }
 
-.cn-dashboard-dashboardcharttooltip-21-1-dashed {
-  border-style: dashed;
-}
-
-.cn-dashboard-dashboardsection-29-1-dashed {
-  border-style: dashed;
-}
-
-.cn-dashboard-dashboardtreetable-137-1-dashed {
-  border-style: dashed;
-}
-
-.cn-dashboard-dashboardtreetable-179-1-dashed {
-  border-style: dashed;
-}
-
-.cn-dashboard-financialdashboard-220-1-dashed {
-  border-style: dashed;
-}
-
-.cn-dashboard-financialdashboard-239-1-dashed {
-  border-style: dashed;
-}
-
-.cn-dashboard-statementreport-68-1-dashed {
-  border-style: dashed;
-}
-
 .cn-dashboard-dashboardtreetable-179-1 {
   border-style: dashed;
 }
 
 .cn-dashboard-statementreport-68-1 {
   border-style: dashed;
-}
-
-.cn-dashboard-dashboardcharttooltip-21-1-border {
-  --ui-runtime-border-opacity: 1;
-  border-color: color-mix(
-    in srgb,
-    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-dashboard-dashboardsection-29-1-border {
-  --ui-runtime-border-opacity: 1;
-  border-color: color-mix(
-    in srgb,
-    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-dashboard-dashboardtreetable-137-1-border {
-  --ui-runtime-border-opacity: 1;
-  border-color: color-mix(
-    in srgb,
-    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-dashboard-dashboardtreetable-179-1-border {
-  --ui-runtime-border-opacity: 1;
-  border-color: color-mix(
-    in srgb,
-    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-dashboard-financialdashboard-220-1-border {
-  --ui-runtime-border-opacity: 1;
-  border-color: color-mix(
-    in srgb,
-    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-dashboard-financialdashboard-239-1-border {
-  --ui-runtime-border-opacity: 1;
-  border-color: color-mix(
-    in srgb,
-    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-dashboard-statementreport-68-1-border {
-  --ui-runtime-border-opacity: 1;
-  border-color: color-mix(
-    in srgb,
-    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
-    transparent
-  );
 }
 
 .cn-dashboard-financialdashboard-155-1order {
@@ -1295,34 +915,6 @@
   );
 }
 
-.cn-dashboard-dashboardcharttooltip-21-1-border\/70 {
-  border-color: color-mix(in srgb, var(--border) calc(0.7 * 100%), transparent);
-}
-
-.cn-dashboard-dashboardsection-29-1-border\/70 {
-  border-color: color-mix(in srgb, var(--border) calc(0.7 * 100%), transparent);
-}
-
-.cn-dashboard-dashboardtreetable-137-1-border\/70 {
-  border-color: color-mix(in srgb, var(--border) calc(0.7 * 100%), transparent);
-}
-
-.cn-dashboard-dashboardtreetable-179-1-border\/70 {
-  border-color: color-mix(in srgb, var(--border) calc(0.7 * 100%), transparent);
-}
-
-.cn-dashboard-financialdashboard-220-1-border\/70 {
-  border-color: color-mix(in srgb, var(--border) calc(0.7 * 100%), transparent);
-}
-
-.cn-dashboard-financialdashboard-239-1-border\/70 {
-  border-color: color-mix(in srgb, var(--border) calc(0.7 * 100%), transparent);
-}
-
-.cn-dashboard-statementreport-68-1-border\/70 {
-  border-color: color-mix(in srgb, var(--border) calc(0.7 * 100%), transparent);
-}
-
 .cn-dashboard-dashboardtreerow-46-1 {
   border-color: color-mix(in srgb, var(--border) calc(0.7 * 100%), transparent);
 }
@@ -1345,34 +937,6 @@
 
 .cn-dashboard-statementreport-68-1\/70 {
   border-color: color-mix(in srgb, var(--border) calc(0.7 * 100%), transparent);
-}
-
-.cn-dashboard-dashboardcharttooltip-21-1-border\/80 {
-  border-color: color-mix(in srgb, var(--border) calc(0.8 * 100%), transparent);
-}
-
-.cn-dashboard-dashboardsection-29-1-border\/80 {
-  border-color: color-mix(in srgb, var(--border) calc(0.8 * 100%), transparent);
-}
-
-.cn-dashboard-dashboardtreetable-137-1-border\/80 {
-  border-color: color-mix(in srgb, var(--border) calc(0.8 * 100%), transparent);
-}
-
-.cn-dashboard-dashboardtreetable-179-1-border\/80 {
-  border-color: color-mix(in srgb, var(--border) calc(0.8 * 100%), transparent);
-}
-
-.cn-dashboard-financialdashboard-220-1-border\/80 {
-  border-color: color-mix(in srgb, var(--border) calc(0.8 * 100%), transparent);
-}
-
-.cn-dashboard-financialdashboard-239-1-border\/80 {
-  border-color: color-mix(in srgb, var(--border) calc(0.8 * 100%), transparent);
-}
-
-.cn-dashboard-statementreport-68-1-border\/80 {
-  border-color: color-mix(in srgb, var(--border) calc(0.8 * 100%), transparent);
 }
 
 .cn-dashboard-dashboardcharttooltip-21-1 {

@@ -121,31 +121,11 @@
     scaleY(var(--ui-runtime-scale-y));
 }
 
-.cn-dialog-dialog-footer-17-1-col {
-  flex-direction: column;
-}
-
-.cn-dialog-dialog-header-16-1-col {
-  flex-direction: column;
-}
-
 .cn-dialog-dialog-header-16-1 {
   flex-direction: column;
 }
 
-.cn-dialog-dialog-footer-17-1-col-reverse {
-  flex-direction: column-reverse;
-}
-
-.cn-dialog-dialog-header-16-1-col-reverse {
-  flex-direction: column-reverse;
-}
-
 .cn-dialog-dialog-footer-17-1 {
-  flex-direction: column-reverse;
-}
-
-.cn-dialog-dialog-header-16-1-reverse {
   flex-direction: column-reverse;
 }
 

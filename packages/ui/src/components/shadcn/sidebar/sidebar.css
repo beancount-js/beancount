@@ -323,62 +323,6 @@
   max-width: var(--skeleton-width);
 }
 
-.cn-sidebar-sidebar-content-17-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-footer-17-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-group-17-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-header-17-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-inset-17-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-menu-badge-18-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-menu-button-5-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-menu-skeleton-24-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-menu-sub-18-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-menu-20-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-provider-51-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-31-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-52-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-sidebar-sidebar-97-1-1 {
-  flex: 1 1 0%;
-}
-
 .cn-sidebar-sidebar-content-17-1 {
   flex: 1 1 0%;
 }
@@ -417,62 +361,6 @@
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
-}
-
-.cn-sidebar-sidebar-content-17-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-footer-17-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-group-17-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-header-17-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-inset-17-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-menu-badge-18-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-menu-button-5-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-menu-skeleton-24-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-menu-sub-18-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-menu-20-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-provider-51-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-31-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-52-1-col {
-  flex-direction: column;
-}
-
-.cn-sidebar-sidebar-97-1-col {
-  flex-direction: column;
 }
 
 .cn-sidebar-sidebar-content-17-1 {
@@ -651,33 +539,6 @@
 }
 
 .cn-sidebar-sidebar-separator-16-1 {
-  --ui-runtime-bg-opacity: 1;
-  background-color: color-mix(
-    in srgb,
-    var(--sidebar-border) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-sidebar-sidebar-31-1-border {
-  --ui-runtime-bg-opacity: 1;
-  background-color: color-mix(
-    in srgb,
-    var(--sidebar-border) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-sidebar-sidebar-48-1-border {
-  --ui-runtime-bg-opacity: 1;
-  background-color: color-mix(
-    in srgb,
-    var(--sidebar-border) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-sidebar-sidebar-97-1-border {
   --ui-runtime-bg-opacity: 1;
   background-color: color-mix(
     in srgb,
@@ -1082,17 +943,6 @@
   );
 }
 
-.cn-sidebar-sidebar-60-1\/menu-button:hover
-  ~ .cn-sidebar-sidebar-60-1-hover\/menu-button\:text-sidebar-accent-foreground {
-  --ui-runtime-text-opacity: 1;
-  color: color-mix(
-    in srgb,
-    var(--sidebar-accent-foreground)
-      calc(var(--ui-runtime-text-opacity, 1) * 100%),
-    transparent
-  );
-}
-
 .cn-sidebar-sidebar-provider-51-1:has([data-variant="inset"]) {
   --ui-runtime-bg-opacity: 1;
   background-color: color-mix(
@@ -1109,11 +959,6 @@
 
 .cn-sidebar-sidebar-menu-item-17-1:has([data-sidebar="menu-action"])
   .cn-group-has-\[\[data-sidebar\=menu-action\]\]\/menu-item\:pr-8 {
-  padding-right: 2rem;
-}
-
-.cn-sidebar-sidebar-60-1\/menu-item:has([data-sidebar="menu-action"])
-  .cn-sidebar-sidebar-60-1-has-\[\[data-sidebar\=menu-action\]\]\/menu-item\:pr-8 {
   padding-right: 2rem;
 }
 
@@ -1167,18 +1012,8 @@
   );
 }
 
-.cn-sidebar-sidebar-60-1[data-collapsible="offcanvas"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=offcanvas\]\:left-\[calc\(var\(--sidebar-width\)\*-1\)\] {
-  left: calc(var(--sidebar-width) * -1);
-}
-
 .cn-group[data-collapsible="offcanvas"] .cn-sidebar-sidebar-81-1 {
   left: calc(var(--sidebar-width) * -1);
-}
-
-.cn-sidebar-sidebar-60-1[data-collapsible="offcanvas"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=offcanvas\]\:right-\[calc\(var\(--sidebar-width\)\*-1\)\] {
-  right: calc(var(--sidebar-width) * -1);
 }
 
 .cn-group[data-collapsible="offcanvas"] .cn-sidebar-sidebar-82-1 {
@@ -1189,17 +1024,7 @@
   right: -1rem;
 }
 
-.cn-sidebar-sidebar-60-1[data-side="left"]
-  .cn-sidebar-sidebar-60-1-data-\[side\=left\]\:-right-4 {
-  right: -1rem;
-}
-
 .cn-group[data-side="right"] .cn-sidebar-sidebar-rail-28-1 {
-  left: 0px;
-}
-
-.cn-sidebar-sidebar-60-1[data-side="right"]
-  .cn-sidebar-sidebar-60-1-data-\[side\=right\]\:left-0 {
   left: 0px;
 }
 
@@ -1211,25 +1036,9 @@
   display: none;
 }
 
-.cn-sidebar-sidebar-60-1[data-collapsible="icon"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=icon\]\:hidden {
-  display: none;
-}
-
 .cn-group[data-collapsible="icon"] .cn-sidebar-sidebar-menu-button-5-1 {
   width: 2rem !important;
   height: 2rem !important;
-}
-
-.cn-sidebar-sidebar-60-1[data-collapsible="icon"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=icon\]\:\!size-8 {
-  width: 2rem !important;
-  height: 2rem !important;
-}
-
-.cn-sidebar-sidebar-60-1[data-collapsible="icon"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=icon\]\:w-\[--sidebar-width-icon\] {
-  width: var(--sidebar-width-icon);
 }
 
 .cn-group[data-collapsible="icon"] .cn-sidebar-sidebar-74-1 {
@@ -1240,27 +1049,12 @@
   width: var(--sidebar-width-icon);
 }
 
-.cn-sidebar-sidebar-60-1[data-collapsible="icon"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=icon\]\:w-\[calc\(var\(--sidebar-width-icon\)_\+_theme\(spacing\.4\)\)\] {
-  width: calc(var(--sidebar-width-icon) + 1rem);
-}
-
 .cn-group[data-collapsible="icon"] .cn-sidebar-sidebar-73-1 {
   width: calc(var(--sidebar-width-icon) + 1rem);
 }
 
-.cn-sidebar-sidebar-60-1[data-collapsible="icon"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=icon\]\:w-\[calc\(var\(--sidebar-width-icon\)_\+_theme\(spacing\.4\)_\+2px\)\] {
-  width: calc(var(--sidebar-width-icon) + 1rem + 2px);
-}
-
 .cn-group[data-collapsible="icon"] .cn-sidebar-sidebar-85-1 {
   width: calc(var(--sidebar-width-icon) + 1rem + 2px);
-}
-
-.cn-sidebar-sidebar-60-1[data-collapsible="offcanvas"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=offcanvas\]\:w-0 {
-  width: 0px;
 }
 
 .cn-group[data-collapsible="offcanvas"] .cn-sidebar-sidebar-70-1 {
@@ -1269,30 +1063,6 @@
 
 .cn-group[data-collapsible="offcanvas"] .cn-sidebar-sidebar-rail-31-1 {
   --ui-runtime-translate-x: 0px;
-  transform: translate(
-      var(--ui-runtime-translate-x),
-      var(--ui-runtime-translate-y)
-    )
-    rotate(var(--ui-runtime-rotate)) skewX(var(--ui-runtime-skew-x))
-    skewY(var(--ui-runtime-skew-y)) scaleX(var(--ui-runtime-scale-x))
-    scaleY(var(--ui-runtime-scale-y));
-}
-
-.cn-sidebar-sidebar-60-1[data-collapsible="offcanvas"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=offcanvas\]\:translate-x-0 {
-  --ui-runtime-translate-x: 0px;
-  transform: translate(
-      var(--ui-runtime-translate-x),
-      var(--ui-runtime-translate-y)
-    )
-    rotate(var(--ui-runtime-rotate)) skewX(var(--ui-runtime-skew-x))
-    skewY(var(--ui-runtime-skew-y)) scaleX(var(--ui-runtime-scale-x))
-    scaleY(var(--ui-runtime-scale-y));
-}
-
-.cn-sidebar-sidebar-60-1[data-side="right"]
-  .cn-sidebar-sidebar-60-1-data-\[side\=right\]\:rotate-180 {
-  --ui-runtime-rotate: 180deg;
   transform: translate(
       var(--ui-runtime-translate-x),
       var(--ui-runtime-translate-y)
@@ -1313,59 +1083,20 @@
     scaleY(var(--ui-runtime-scale-y));
 }
 
-.cn-sidebar-sidebar-60-1[data-variant="floating"]
-  .cn-sidebar-sidebar-60-1-data-\[variant\=floating\]\:rounded-lg {
-  border-radius: var(--radius);
-}
-
 .cn-group[data-variant="floating"] .cn-sidebar-sidebar-97-1 {
   border-radius: var(--radius);
 }
 
-.cn-sidebar-sidebar-60-1[data-variant="floating"]
-  .cn-sidebar-sidebar-60-1-data-\[variant\=floating\]\:border {
-  border-width: 1px;
-}
-
 .cn-group[data-variant="floating"] .cn-sidebar-sidebar-97-1 {
   border-width: 1px;
-}
-
-.cn-sidebar-sidebar-60-1[data-side="left"]
-  .cn-sidebar-sidebar-60-1-data-\[side\=left\]\:border-r {
-  border-right-width: 1px;
 }
 
 .cn-group[data-side="left"] .cn-sidebar-sidebar-89-1 {
   border-right-width: 1px;
 }
 
-.cn-sidebar-sidebar-60-1[data-side="right"]
-  .cn-sidebar-sidebar-60-1-data-\[side\=right\]\:border-l {
-  border-left-width: 1px;
-}
-
 .cn-group[data-side="right"] .cn-sidebar-sidebar-89-1 {
   border-left-width: 1px;
-}
-
-.cn-sidebar-sidebar-60-1[data-variant="floating"]
-  .cn-sidebar-sidebar-60-1-data-\[variant\=floating\]\:border-sidebar-border {
-  --ui-runtime-border-opacity: 1;
-  border-color: color-mix(
-    in srgb,
-    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-group[data-variant="floating"] .cn-sidebar-sidebar-97-1-sidebar-border {
-  --ui-runtime-border-opacity: 1;
-  border-color: color-mix(
-    in srgb,
-    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
-    transparent
-  );
 }
 
 .cn-group[data-variant="floating"] .cn-sidebar-sidebar-97-1 {
@@ -1381,28 +1112,8 @@
   padding: 0px !important;
 }
 
-.cn-sidebar-sidebar-60-1[data-collapsible="icon"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=icon\]\:\!p-0 {
-  padding: 0px !important;
-}
-
 .cn-group[data-collapsible="icon"] .cn-sidebar-sidebar-menu-button-5-1 {
   padding: 0.5rem !important;
-}
-
-.cn-sidebar-sidebar-60-1[data-collapsible="icon"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=icon\]\:\!p-2 {
-  padding: 0.5rem !important;
-}
-
-.cn-sidebar-sidebar-60-1[data-variant="floating"]
-  .cn-sidebar-sidebar-60-1-data-\[variant\=floating\]\:shadow {
-  --ui-runtime-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1),
-    0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --ui-runtime-shadow-colored: 0 1px 3px 0 var(--ui-runtime-shadow-color),
-    0 1px 2px -1px var(--ui-runtime-shadow-color);
-  box-shadow: var(--ui-runtime-ring-offset-shadow, 0 0 #0000),
-    var(--ui-runtime-ring-shadow, 0 0 #0000), var(--ui-runtime-shadow);
 }
 
 .cn-group[data-variant="floating"] .cn-sidebar-sidebar-97-1 {
@@ -1419,23 +1130,7 @@
   left: 100%;
 }
 
-.cn-sidebar-sidebar-60-1[data-collapsible="offcanvas"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=offcanvas\]\:after\:left-full::after {
-  content: var(--ui-runtime-content);
-  left: 100%;
-}
-
 .cn-group[data-collapsible="offcanvas"] .cn-sidebar-sidebar-rail-31-1:hover {
-  --ui-runtime-bg-opacity: 1;
-  background-color: color-mix(
-    in srgb,
-    var(--sidebar) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-sidebar-sidebar-60-1[data-collapsible="offcanvas"]
-  .cn-sidebar-sidebar-60-1-data-\[collapsible\=offcanvas\]\:hover\:bg-sidebar:hover {
   --ui-runtime-bg-opacity: 1;
   background-color: color-mix(
     in srgb,
@@ -1454,22 +1149,12 @@
   top: 0.375rem;
 }
 
-.cn-sidebar-sidebar-60-1\/menu-button[data-size="default"]
-  ~ .cn-sidebar-sidebar-60-1-data-\[size\=default\]\/menu-button\:top-1\.5 {
-  top: 0.375rem;
-}
-
 .cn-peer-menu-button[data-size="lg"] ~ .cn-sidebar-sidebar-menu-badge-22-1 {
   top: 0.625rem;
 }
 
 .cn-sidebar-sidebar-menu-button-5-1[data-size="lg"]
   ~ .cn-peer-data-\[size\=lg\]\/menu-button\:top-2\.5 {
-  top: 0.625rem;
-}
-
-.cn-sidebar-sidebar-60-1\/menu-button[data-size="lg"]
-  ~ .cn-sidebar-sidebar-60-1-data-\[size\=lg\]\/menu-button\:top-2\.5 {
   top: 0.625rem;
 }
 
@@ -1482,17 +1167,7 @@
   top: 0.25rem;
 }
 
-.cn-sidebar-sidebar-60-1\/menu-button[data-size="sm"]
-  ~ .cn-sidebar-sidebar-60-1-data-\[size\=sm\]\/menu-button\:top-1 {
-  top: 0.25rem;
-}
-
 .cn-peer[data-variant="inset"] ~ .cn-sidebar-sidebar-inset-18-1 {
-  min-height: calc(100svh - 1rem);
-}
-
-.cn-sidebar-sidebar-60-1[data-variant="inset"]
-  ~ .cn-sidebar-sidebar-60-1-data-\[variant\=inset\]\:min-h-\[calc\(100svh-theme\(spacing\.4\)\)\] {
   min-height: calc(100svh - 1rem);
 }
 
@@ -1508,17 +1183,6 @@
 
 .cn-sidebar-sidebar-menu-button-5-1[data-active="true"]
   ~ .cn-peer-data-\[active\=true\]\/menu-button\:text-sidebar-active-foreground {
-  --ui-runtime-text-opacity: 1;
-  color: color-mix(
-    in srgb,
-    var(--sidebar-accent-foreground)
-      calc(var(--ui-runtime-text-opacity, 1) * 100%),
-    transparent
-  );
-}
-
-.cn-sidebar-sidebar-60-1\/menu-button[data-active="true"]
-  ~ .cn-sidebar-sidebar-60-1-data-\[active\=true\]\/menu-button\:text-sidebar-active-foreground {
   --ui-runtime-text-opacity: 1;
   color: color-mix(
     in srgb,

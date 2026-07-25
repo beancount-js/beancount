@@ -224,30 +224,6 @@
   min-width: 0px;
 }
 
-.cn-layout-resizablesidebar-82-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-layout-studioshellheader-23-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-layout-studioworkspaceshell-93-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-layout-studioworkspaceshell-95-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-layout-studioworkspaceshell-146-1-1 {
-  flex: 1 1 0%;
-}
-
-.cn-layout-studioworkspaceshell-169-1-1 {
-  flex: 1 1 0%;
-}
-
 .cn-layout-studioshellheader-32-1 {
   flex: 1 1 0%;
 }
@@ -274,30 +250,6 @@
 
 .cn-layout-resizablesidebar-90-1 {
   cursor: col-resize;
-}
-
-.cn-layout-resizablesidebar-82-1-col {
-  flex-direction: column;
-}
-
-.cn-layout-studioshellheader-23-1-col {
-  flex-direction: column;
-}
-
-.cn-layout-studioworkspaceshell-93-1-col {
-  flex-direction: column;
-}
-
-.cn-layout-studioworkspaceshell-95-1-col {
-  flex-direction: column;
-}
-
-.cn-layout-studioworkspaceshell-146-1-col {
-  flex-direction: column;
-}
-
-.cn-layout-studioworkspaceshell-169-1-col {
-  flex-direction: column;
 }
 
 .cn-layout-resizablesidebar-82-1 {

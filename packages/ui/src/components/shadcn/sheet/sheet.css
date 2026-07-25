@@ -131,31 +131,11 @@
   width: 75%;
 }
 
-.cn-sheet-sheet-footer-17-1-col {
-  flex-direction: column;
-}
-
-.cn-sheet-sheet-header-16-1-col {
-  flex-direction: column;
-}
-
 .cn-sheet-sheet-header-16-1 {
   flex-direction: column;
 }
 
-.cn-sheet-sheet-footer-17-1-col-reverse {
-  flex-direction: column-reverse;
-}
-
-.cn-sheet-sheet-header-16-1-col-reverse {
-  flex-direction: column-reverse;
-}
-
 .cn-sheet-sheet-footer-17-1 {
-  flex-direction: column-reverse;
-}
-
-.cn-sheet-sheet-header-16-1-reverse {
   flex-direction: column-reverse;
 }
 

@@ -20,8 +20,7 @@ const uiRequire = createRequire(join(uiRoot, "package.json"));
 const tailwindPackage = uiRequire.resolve("tailwindcss/package.json");
 const tailwindRequire = createRequire(tailwindPackage);
 const postcss = tailwindRequire("postcss");
-const escapeClassNameModule = uiRequire("tailwindcss/lib/util/escapeClassName");
-const escapeClassName = escapeClassNameModule.default ?? escapeClassNameModule;
+const selectorParser = tailwindRequire("postcss-selector-parser");
 
 const quotePattern = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g;
 const classDirectivePattern = (token) =>
@@ -319,6 +318,42 @@ function appendWithAncestors(outputRoot, rule) {
   outputRoot.append(node);
 }
 
+export function rewriteUtilitySelector({
+  selector,
+  utility,
+  marker,
+  groupClasses = new Map(),
+}) {
+  let matched = false;
+  const rewritten = selectorParser((root) => {
+    root.walkClasses((node) => {
+      if (node.value === utility) {
+        node.value = marker;
+        matched = true;
+        return;
+      }
+      const semanticGroup = groupClasses.get(node.value);
+      if (semanticGroup) node.value = semanticGroup;
+    });
+  }).processSync(selector);
+
+  return matched ? rewritten : null;
+}
+
+export function removePrefixCollisionRules(css) {
+  const root = postcss.parse(css);
+  root.walkRules((rule) => {
+    if (
+      rule.selectors?.some((selector) =>
+        /\.cn-[A-Za-z0-9-]*-\d+-\d+-/.test(selector),
+      )
+    ) {
+      rule.remove();
+    }
+  });
+  return root.toString();
+}
+
 function compileFamilyCss({
   family,
   mappings,
@@ -373,22 +408,16 @@ function compileFamilyCss({
 
   compiled.walkRules((rule) => {
     for (const [utility, markers] of markerByUtility) {
-      const utilitySelector = `.${escapeClassName(utility)}`;
-      if (!rule.selector.includes(utilitySelector)) continue;
-
       for (const marker of markers) {
         const clone = rule.clone();
-        clone.selector = clone.selector.replaceAll(
-          utilitySelector,
-          `.${marker}`,
-        );
-
-        for (const [groupUtility, semanticClass] of groupClasses) {
-          clone.selector = clone.selector.replaceAll(
-            `.${escapeClassName(groupUtility)}`,
-            `.${semanticClass}`,
-          );
-        }
+        const selector = rewriteUtilitySelector({
+          selector: clone.selector,
+          utility,
+          marker,
+          groupClasses,
+        });
+        if (!selector) continue;
+        clone.selector = selector;
 
         appendWithAncestors(output, clone);
       }
@@ -737,6 +766,21 @@ export function migrateSharedComponents({ categories }) {
   }
 }
 
+function repairGeneratedCss(directory) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      repairGeneratedCss(path);
+      continue;
+    }
+    if (!entry.isFile() || !entry.name.endsWith(".css")) continue;
+
+    const source = readFileSync(path, "utf8");
+    const repaired = removePrefixCollisionRules(source);
+    if (repaired !== source) writeFileSync(path, repaired);
+  }
+}
+
 function parseFamilies(argv) {
   const familyArgument = argv.find((argument) =>
     argument.startsWith("--families="),
@@ -765,11 +809,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const argv = process.argv.slice(2);
   const families = parseFamilies(argv);
   const categories = parseSharedCategories(argv);
-  if (families.length === 0 && categories.length === 0) {
+  const repairCss = argv.includes("--repair-css");
+  if (families.length === 0 && categories.length === 0 && !repairCss) {
     throw new Error(
       "Pass --families=accordion,alert,... or --shared=layout,navigation,...",
     );
   }
   if (families.length > 0) migrateFamilies({ families });
   if (categories.length > 0) migrateSharedComponents({ categories });
+  if (repairCss) repairGeneratedCss(join(uiRoot, "src/components"));
 }

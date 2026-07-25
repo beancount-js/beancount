@@ -91,15 +91,6 @@
   );
 }
 
-.cn-toggle-toggle-10-1-input {
-  --ui-runtime-border-opacity: 1;
-  border-color: color-mix(
-    in srgb,
-    var(--input) calc(var(--ui-runtime-border-opacity, 1) * 100%),
-    transparent
-  );
-}
-
 .cn-toggle-toggle-8-1 {
   background-color: transparent;
 }
