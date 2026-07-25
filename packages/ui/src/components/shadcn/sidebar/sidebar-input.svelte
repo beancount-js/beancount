@@ -15,9 +15,8 @@
   bind:ref
   bind:value
   data-sidebar="input"
-  class={cn(
-    "h-8 w-full bg-background shadow-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-    className,
-  )}
+  class={cn("cn-sidebar-sidebar-input-19-1", className)}
   {...restProps}
+  data-ui-component="sidebar"
+  data-ui-part="sidebar-input"
 />

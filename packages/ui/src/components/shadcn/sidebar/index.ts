@@ -73,3 +73,5 @@ export {
   Trigger,
   useSidebar,
 };
+
+export { sidebarTokenNames, type SidebarToken } from "./sidebar.tokens.js";

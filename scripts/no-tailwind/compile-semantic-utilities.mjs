@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import {
+  existsSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
@@ -169,7 +170,8 @@ function injectDataIdentity(source, family, part) {
 
   const scriptEnd = source.lastIndexOf("</script>");
   const markupStart = scriptEnd >= 0 ? scriptEnd + "</script>".length : 0;
-  const tagPattern = /<(?!\/|!|style\b|script\b)([A-Za-z][A-Za-z0-9_.:-]*)\b/g;
+  const tagPattern =
+    /^[ \t]*<(?!\/|!|style\b|script\b|svelte:)([A-Za-z][A-Za-z0-9_.:-]*)\b/gm;
   tagPattern.lastIndex = markupStart;
   let match = tagPattern.exec(source);
   while (match?.[1].endsWith("Portal") || match?.[1] === "Dialog.Root") {
@@ -353,6 +355,70 @@ function importReferenceMetadata(family, familyDirectory) {
   const tokenTypesPath = join(referenceDirectory, `${family}.tokens.ts`);
   const provenancePath = join(referenceDirectory, `${family}.provenance.json`);
 
+  if (
+    !existsSync(tokenCssPath) ||
+    !existsSync(tokenTypesPath) ||
+    !existsSync(provenancePath)
+  ) {
+    const symbol = family.replaceAll("-", "_");
+    const typeName = family
+      .split("-")
+      .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
+      .join("");
+    writeFileSync(
+      join(familyDirectory, `${family}.tokens.css`),
+      `:root {
+  --ui-${family}-background: var(--ui-color-background);
+  --ui-${family}-foreground: var(--ui-color-foreground);
+  --ui-${family}-border-color: var(--ui-color-border);
+  --ui-${family}-radius: var(--ui-radius-md);
+}
+`,
+    );
+    writeFileSync(
+      join(familyDirectory, `${family}.tokens.ts`),
+      `export const ${symbol}TokenNames = {
+  background: "--ui-${family}-background",
+  foreground: "--ui-${family}-foreground",
+  borderColor: "--ui-${family}-border-color",
+  radius: "--ui-${family}-radius",
+} as const;
+
+export type ${typeName}Token =
+  (typeof ${symbol}TokenNames)[keyof typeof ${symbol}TokenNames];
+`,
+    );
+    writeFileSync(
+      join(familyDirectory, `${family}.provenance.json`),
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          component: family,
+          scope: "shared",
+          upstream: {
+            project: "beancount-js-studio",
+            item: family,
+          },
+          converter: {
+            version: "native-semantic-1",
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    const indexPath = join(familyDirectory, "index.ts");
+    const index = readFileSync(indexPath, "utf8");
+    if (!index.includes(`${family}.tokens.js`)) {
+      writeFileSync(
+        indexPath,
+        `${index.trimEnd()}\n\nexport { ${symbol}TokenNames, type ${typeName}Token } from "./${family}.tokens.js";\n`,
+      );
+    }
+    return;
+  }
+
   for (const path of [tokenCssPath, tokenTypesPath, provenancePath]) {
     readFileSync(path);
   }
@@ -445,9 +511,11 @@ export function migrateFamilies({ families }) {
       for (const [path, source] of pendingWrites) writeFileSync(path, source);
       writeFileSync(
         cssPath,
-        mappings.length > 0 && existingCss
-          ? `${existingCss.trimEnd()}\n\n${css}`
-          : css || existingCss,
+        existingCss && mappings.length === 0
+          ? existingCss
+          : existingCss
+            ? `${existingCss.trimEnd()}\n\n${css}`
+            : css,
       );
       importReferenceMetadata(family, familyDirectory);
 

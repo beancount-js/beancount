@@ -23,6 +23,7 @@ const nativeFamilies = [
   "scroll-area",
   "select",
   "separator",
+  "sidebar",
   "skeleton",
   "sheet",
   "table",

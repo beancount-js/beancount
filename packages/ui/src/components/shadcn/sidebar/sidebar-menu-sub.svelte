@@ -15,11 +15,13 @@
   bind:this={ref}
   data-sidebar="menu-sub"
   class={cn(
-    "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5",
-    "group-data-[collapsible=icon]:hidden",
+    "cn-sidebar-sidebar-menu-sub-18-1",
+    "cn-sidebar-sidebar-menu-sub-19-1",
     className,
   )}
   {...restProps}
+  data-ui-component="sidebar"
+  data-ui-part="sidebar-menu-sub"
 >
   {@render children?.()}
 </ul>

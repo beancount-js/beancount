@@ -13,6 +13,8 @@
 <Separator
   bind:ref
   data-sidebar="separator"
-  class={cn("mx-2 w-auto bg-sidebar-border", className)}
+  class={cn("cn-sidebar-sidebar-separator-16-1", className)}
   {...restProps}
+  data-ui-component="sidebar"
+  data-ui-part="sidebar-separator"
 />

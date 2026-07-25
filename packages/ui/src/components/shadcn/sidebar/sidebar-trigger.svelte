@@ -28,8 +28,10 @@
   data-sidebar="trigger"
   variant="ghost"
   size="icon"
-  class={cn("h-7 w-7", className)}
+  class={cn("cn-sidebar-sidebar-trigger-31-1", className)}
   {...restProps}
+  data-ui-component="sidebar"
+  data-ui-part="sidebar-trigger"
 >
   {#if children}
     {@render children()}

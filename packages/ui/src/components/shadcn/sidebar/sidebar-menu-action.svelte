@@ -37,7 +37,12 @@
 {#if child}
   {@render child({ props: mergedProps })}
 {:else}
-  <button bind:this={ref} {...mergedProps}>
+  <button
+    bind:this={ref}
+    {...mergedProps}
+    data-ui-component="sidebar"
+    data-ui-part="sidebar-menu-action"
+  >
     {@render children?.()}
   </button>
 {/if}

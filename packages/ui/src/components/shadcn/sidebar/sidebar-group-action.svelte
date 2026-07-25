@@ -30,7 +30,12 @@
 {#if child}
   {@render child({ props: propObj })}
 {:else}
-  <button bind:this={ref} {...propObj}>
+  <button
+    bind:this={ref}
+    {...propObj}
+    data-ui-component="sidebar"
+    data-ui-part="sidebar-group-action"
+  >
     {@render children?.()}
   </button>
 {/if}

@@ -21,14 +21,19 @@
 <div
   bind:this={ref}
   data-sidebar="menu-skeleton"
-  class={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
+  class={cn("cn-sidebar-sidebar-menu-skeleton-24-1", className)}
   {...restProps}
+  data-ui-component="sidebar"
+  data-ui-part="sidebar-menu-skeleton"
 >
   {#if showIcon}
-    <Skeleton class="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />
+    <Skeleton
+      class="cn-sidebar-sidebar-menu-skeleton-28-1"
+      data-sidebar="menu-skeleton-icon"
+    />
   {/if}
   <Skeleton
-    class="h-4 max-w-[--skeleton-width] flex-1"
+    class="cn-sidebar-sidebar-menu-skeleton-31-1"
     data-sidebar="menu-skeleton-text"
     style="--skeleton-width: {width};"
   />

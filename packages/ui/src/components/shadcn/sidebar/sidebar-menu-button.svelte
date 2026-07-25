@@ -1,18 +1,20 @@
 <script lang="ts" module>
-  import { tv, type VariantProps } from "tailwind-variants";
+  import {
+    createVariants,
+    type VariantProps,
+  } from "../../../lib/semantic-variants.js";
 
-  export const sidebarMenuButtonVariants = tv({
-    base: "peer/menu-button ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-active active:text-sidebar-active-foreground data-[active=true]:bg-sidebar-active data-[active=true]:text-sidebar-active-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none transition-[width,height,padding] focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:font-medium group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+  export const sidebarMenuButtonVariants = createVariants({
+    base: "cn-sidebar-sidebar-menu-button-5-1 cn-peer-menu-button",
     variants: {
       variant: {
-        default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-        outline:
-          "bg-background hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shadow-[0_0_0_1px_var(--sidebar-border)] hover:shadow-[0_0_0_1px_var(--sidebar-accent)]",
+        default: "cn-sidebar-sidebar-menu-button-8-1",
+        outline: "cn-sidebar-sidebar-menu-button-10-1",
       },
       size: {
-        default: "h-8 text-sm",
-        sm: "h-7 text-xs",
-        lg: "h-12 text-sm group-data-[collapsible=icon]:!p-0",
+        default: "cn-sidebar-sidebar-menu-button-13-1",
+        sm: "cn-sidebar-sidebar-menu-button-14-1",
+        lg: "cn-sidebar-sidebar-menu-button-15-1",
       },
     },
     defaultVariants: {
@@ -79,7 +81,12 @@
   {#if child}
     {@render child({ props: mergedProps })}
   {:else}
-    <button bind:this={ref} {...mergedProps}>
+    <button
+      bind:this={ref}
+      {...mergedProps}
+      data-ui-component="sidebar"
+      data-ui-part="sidebar-menu-button"
+    >
       {@render children?.()}
     </button>
   {/if}

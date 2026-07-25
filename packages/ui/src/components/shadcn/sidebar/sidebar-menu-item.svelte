@@ -14,8 +14,10 @@
 <li
   bind:this={ref}
   data-sidebar="menu-item"
-  class={cn("group/menu-item relative", className)}
+  class={cn("cn-sidebar-sidebar-menu-item-17-1 cn-group-menu-item", className)}
   {...restProps}
+  data-ui-component="sidebar"
+  data-ui-part="sidebar-menu-item"
 >
   {@render children?.()}
 </li>

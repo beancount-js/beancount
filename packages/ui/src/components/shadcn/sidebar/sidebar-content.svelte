@@ -14,8 +14,10 @@
 <div
   bind:this={ref}
   data-sidebar="content"
-  class={cn("flex min-h-0 flex-1 flex-col gap-2 overflow-hidden", className)}
+  class={cn("cn-sidebar-sidebar-content-17-1", className)}
   {...restProps}
+  data-ui-component="sidebar"
+  data-ui-part="sidebar-content"
 >
   {@render children?.()}
 </div>

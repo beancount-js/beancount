@@ -14,8 +14,10 @@
 <div
   bind:this={ref}
   data-sidebar="group"
-  class={cn("relative flex w-full min-w-0 flex-col p-2", className)}
+  class={cn("cn-sidebar-sidebar-group-17-1", className)}
   {...restProps}
+  data-ui-component="sidebar"
+  data-ui-part="sidebar-group"
 >
   {@render children?.()}
 </div>

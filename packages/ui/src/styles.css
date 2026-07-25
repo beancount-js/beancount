@@ -60,3 +60,5 @@
 @import "./components/shadcn/toggle/toggle.css";
 @import "./components/shadcn/toggle-group/toggle-group.tokens.css";
 @import "./components/shadcn/toggle-group/toggle-group.css";
+@import "./components/shadcn/sidebar/sidebar.tokens.css";
+@import "./components/shadcn/sidebar/sidebar.css";
