@@ -36,10 +36,10 @@
       {#if item.color}
         <span
           style={`background-color: ${item.color}`}
-          class="mr-1 size-3 rounded-full"
+          class="cn-charts-chartlegend-39-1"
         ></span>
       {/if}
-      <span class:line-through={!selected}>{item.label}</span>
+      <span class:cn-charts-chartlegend-42-1={!selected}>{item.label}</span>
     </ToggleGroup.Item>
   {/each}
 {/snippet}

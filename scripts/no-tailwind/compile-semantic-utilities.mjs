@@ -636,13 +636,13 @@ export function migrateFamilies({ families }) {
   }
 }
 
-function collectProductionSources(directory) {
+function collectProductionSources(directory, { recursive = true } = {}) {
   const sources = [];
 
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) {
-      sources.push(...collectProductionSources(path));
+      if (recursive) sources.push(...collectProductionSources(path));
       continue;
     }
     if (!entry.isFile()) continue;
@@ -672,7 +672,10 @@ export function migrateSharedComponents({ categories }) {
 
   try {
     for (const category of categories) {
-      const categoryDirectory = join(uiRoot, "src/components", category);
+      const isRootCategory = category === "root";
+      const categoryDirectory = isRootCategory
+        ? join(uiRoot, "src/components")
+        : join(uiRoot, "src/components", category);
       if (!existsSync(categoryDirectory)) {
         throw new Error(`Unknown shared component category: ${category}`);
       }
@@ -680,12 +683,16 @@ export function migrateSharedComponents({ categories }) {
       const mappings = [];
       const groupClasses = new Map();
       const pendingWrites = new Map();
-      const cssPath = join(categoryDirectory, `${category}.native.css`);
+      const cssPath = isRootCategory
+        ? join(categoryDirectory, "root.native.css")
+        : join(categoryDirectory, `${category}.native.css`);
       const existingCss = existsSync(cssPath)
         ? readFileSync(cssPath, "utf8")
         : "";
 
-      for (const path of collectProductionSources(categoryDirectory)) {
+      for (const path of collectProductionSources(categoryDirectory, {
+        recursive: !isRootCategory,
+      })) {
         const file = relative(uiRoot, path);
         const transformed = transformClassContexts({
           source: readFileSync(path, "utf8"),
@@ -716,7 +723,10 @@ export function migrateSharedComponents({ categories }) {
             : css,
       );
 
-      const statement = `@import "./components/${category}/${category}.native.css";`;
+      const importPath = isRootCategory
+        ? "./components/root.native.css"
+        : `./components/${category}/${category}.native.css`;
+      const statement = `@import "${importPath}";`;
       if (!styles.includes(statement)) {
         styles = `${styles.trimEnd()}\n${statement}\n`;
       }

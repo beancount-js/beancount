@@ -150,21 +150,17 @@
 </script>
 
 <ContentScrollArea contentClass="scroll-container">
-  <main class="mx-auto w-full max-w-[1440px] px-4 pb-7 pt-5 md:px-6 lg:px-8">
-    <header
-      class="mb-6 flex flex-col gap-4 border-b border-border/80 pb-5 lg:flex-row lg:items-center lg:justify-between"
-    >
+  <main class="cn-dashboard-financialdashboard-153-1">
+    <header class="cn-dashboard-financialdashboard-155-1">
       <div>
-        <p
-          class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
-        >
+        <p class="cn-dashboard-financialdashboard-159-1">
           {eyebrow}
         </p>
-        <h1 class="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+        <h1 class="cn-dashboard-financialdashboard-163-1">
           {title}
         </h1>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="cn-dashboard-financialdashboard-167-1">
         {#if periodOptions.length && period}
           <Select.Root
             type="single"
@@ -174,7 +170,7 @@
             }}
           >
             <Select.Trigger
-              class="h-8 w-36 text-xs font-medium"
+              class="cn-dashboard-financialdashboard-177-1"
               aria-label="Dashboard period"
             >
               {optionLabel(period, periodOptions)}
@@ -200,7 +196,7 @@
             }}
           >
             <Select.Trigger
-              class="h-8 w-24 text-xs font-medium"
+              class="cn-dashboard-financialdashboard-203-1"
               aria-label="Display currency"
             >
               {optionLabel(currency, currencyOptions)}
@@ -216,9 +212,7 @@
             </Select.Content>
           </Select.Root>
         {:else if currency}
-          <span
-            class="rounded-md border border-border bg-muted/55 px-3 py-2 font-mono text-xs text-foreground"
-          >
+          <span class="cn-dashboard-financialdashboard-220-1">
             {currency}
           </span>
         {/if}
@@ -236,20 +230,18 @@
     </header>
 
     <section
-      class="mb-6 grid gap-px overflow-hidden rounded-xl border border-border/80 bg-border/80 sm:grid-cols-2 xl:grid-cols-4"
+      class="cn-dashboard-financialdashboard-239-1"
       aria-label="Period summary"
     >
       {#each metrics as metric (metric.id)}
-        <article class="bg-card px-5 py-4">
-          <p
-            class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
-          >
+        <article class="cn-dashboard-financialdashboard-243-1">
+          <p class="cn-dashboard-financialdashboard-245-1">
             {metric.label}
           </p>
           <p
             class:positive={metric.tone === "positive"}
             class:negative={metric.tone === "negative"}
-            class="mt-2 flex items-center gap-1.5 font-mono text-xl font-semibold tabular-nums text-foreground"
+            class="cn-dashboard-financialdashboard-252-1"
           >
             {#if metric.trend === "up"}
               <span aria-hidden="true">↗</span>
@@ -262,11 +254,11 @@
             <p
               class:positive={metric.tone === "positive"}
               class:negative={metric.tone === "negative"}
-              class="mt-1 font-mono text-xs tabular-nums"
+              class="cn-dashboard-financialdashboard-265-1"
             >
               {metric.changeLabel}
               {#if metric.changeDescription}
-                <span class="font-sans text-muted-foreground">
+                <span class="cn-dashboard-financialdashboard-269-1">
                   {metric.changeDescription}
                 </span>
               {/if}
@@ -274,13 +266,13 @@
           {/if}
         </article>
       {:else}
-        <p class="bg-card px-5 py-4 text-sm text-muted-foreground">
+        <p class="cn-dashboard-financialdashboard-277-1">
           No summary is available for this period.
         </p>
       {/each}
     </section>
 
-    <div class="grid gap-6">
+    <div class="cn-dashboard-financialdashboard-283-1">
       <DashboardSection
         id="financial-dashboard-cash-flow"
         title="Cash flow"
@@ -303,9 +295,7 @@
         open={sectionOpen.outflows}
         onOpenChange={(open) => setSectionOpen("outflows", open)}
       >
-        <div
-          class="grid divide-y divide-border/80 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)] lg:divide-x lg:divide-y-0"
-        >
+        <div class="cn-dashboard-financialdashboard-307-1">
           <DashboardDonut
             categories={outflows}
             {valueFormatter}
@@ -313,51 +303,45 @@
           />
           <ScrollArea.Root
             orientation="horizontal"
-            class="w-full min-w-0 max-w-full"
+            class="cn-dashboard-financialdashboard-316-1"
           >
             <div
-              class="p-4 sm:p-5 lg:min-w-[32rem]"
+              class="cn-dashboard-financialdashboard-319-1"
               data-dashboard-outflow-table
             >
-              <div
-                class="mb-2 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b border-border/80 px-2 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:grid-cols-[minmax(0,1fr)_5.5rem_9rem] lg:gap-4"
-              >
+              <div class="cn-dashboard-financialdashboard-323-1">
                 <span>Category</span>
-                <span class="hidden text-right lg:block">Share</span>
-                <span class="text-right">Value</span>
+                <span class="cn-dashboard-financialdashboard-326-1">Share</span>
+                <span class="cn-dashboard-financialdashboard-327-1">Value</span>
               </div>
               {#each outflows as category (category.id)}
                 <button
                   type="button"
-                  class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-md px-2 py-2.5 text-left text-sm transition-colors hover:bg-muted/65 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-70 lg:grid-cols-[minmax(0,1fr)_5.5rem_9rem] lg:gap-4"
+                  class="cn-dashboard-financialdashboard-332-1"
                   disabled={!onOutflowSelect}
                   onclick={() => onOutflowSelect?.(category)}
                 >
-                  <span
-                    class="col-span-2 flex min-w-0 items-center gap-2 lg:col-span-1"
-                  >
+                  <span class="cn-dashboard-financialdashboard-337-1">
                     <span
-                      class="size-2.5 shrink-0 rounded-full"
+                      class="cn-dashboard-financialdashboard-340-1"
                       style={`background: ${category.color}`}
                       aria-hidden="true"
                     ></span>
-                    <span class="break-words font-medium text-foreground">
+                    <span class="cn-dashboard-financialdashboard-344-1">
                       {category.label}
                     </span>
                   </span>
-                  <span
-                    class="font-mono text-xs tabular-nums text-muted-foreground lg:text-right"
-                  >
-                    <span class="lg:hidden">Share </span>{category.shareLabel}
+                  <span class="cn-dashboard-financialdashboard-349-1">
+                    <span class="cn-dashboard-financialdashboard-351-1"
+                      >Share
+                    </span>{category.shareLabel}
                   </span>
-                  <span
-                    class="text-right font-mono text-sm tabular-nums text-foreground"
-                  >
+                  <span class="cn-dashboard-financialdashboard-354-1">
                     {category.valueLabel ?? valueFormatter(category.value)}
                   </span>
                 </button>
               {:else}
-                <p class="px-2 py-6 text-sm text-muted-foreground">
+                <p class="cn-dashboard-financialdashboard-360-1">
                   No outflows match this period.
                 </p>
               {/each}
@@ -373,7 +357,7 @@
         open={sectionOpen["balance-sheet"]}
         onOpenChange={(open) => setSectionOpen("balance-sheet", open)}
       >
-        <div class="grid gap-8 p-4 sm:p-6">
+        <div class="cn-dashboard-financialdashboard-376-1">
           {#each accountGroups as group (group.id)}
             <DashboardTreeTable
               nodes={group.nodes}
@@ -387,7 +371,7 @@
                 : undefined}
             />
           {:else}
-            <p class="text-sm text-muted-foreground">
+            <p class="cn-dashboard-financialdashboard-390-1">
               No balance-sheet accounts match this period.
             </p>
           {/each}
@@ -402,24 +386,20 @@
         onOpenChange={(open) => setSectionOpen("net-worth", open)}
       >
         {#if netWorth}
-          <div
-            class="border-b border-border/80 px-5 py-4 sm:flex sm:items-end sm:justify-between"
-          >
+          <div class="cn-dashboard-financialdashboard-406-1">
             <div>
-              <p
-                class="font-mono text-2xl font-semibold tabular-nums text-foreground"
-              >
+              <p class="cn-dashboard-financialdashboard-410-1">
                 {netWorth.valueLabel}
               </p>
             </div>
             <p
               class:positive={netWorth.trendTone === "positive"}
               class:negative={netWorth.trendTone === "negative"}
-              class="mt-2 font-mono text-sm tabular-nums sm:mt-0 sm:text-right"
+              class="cn-dashboard-financialdashboard-418-1"
             >
               {netWorth.changeLabel}
               {#if netWorth.changeDescription}
-                <span class="block font-sans text-xs text-muted-foreground">
+                <span class="cn-dashboard-financialdashboard-422-1">
                   {netWorth.changeDescription}
                 </span>
               {/if}
@@ -432,7 +412,7 @@
             {valueFormatter}
           />
         {:else}
-          <p class="p-5 text-sm text-muted-foreground">
+          <p class="cn-dashboard-financialdashboard-435-1">
             No net-worth trend is available for this period.
           </p>
         {/if}

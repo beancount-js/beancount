@@ -11,26 +11,21 @@
   };
 </script>
 
-<div class="h-[42rem] overflow-hidden rounded-lg border border-border">
+<div class="cn-root-appshelldemo-14-1">
   <AppShell pageTitle={activeView} height="container" hasSidebar>
     <svelte:fragment slot="sidebar">
-      <aside
-        aria-label="Ledger navigation"
-        class="flex h-full w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-3 text-sidebar-foreground"
-      >
-        <div class="border-b border-sidebar-border pb-3">
-          <p class="text-sm font-semibold">Northstar Ledger</p>
-          <p class="mt-1 text-xs text-muted-foreground">
-            personal-2026.beancount
-          </p>
+      <aside aria-label="Ledger navigation" class="cn-root-appshelldemo-19-1">
+        <div class="cn-root-appshelldemo-21-1">
+          <p class="cn-root-appshelldemo-22-1">Northstar Ledger</p>
+          <p class="cn-root-appshelldemo-23-1">personal-2026.beancount</p>
         </div>
-        <nav class="mt-4 flex flex-col gap-1" aria-label="Workspace">
+        <nav class="cn-root-appshelldemo-27-1" aria-label="Workspace">
           {#each navigationItems as item}
             <button
               type="button"
               class={activeView === item
-                ? "rounded-md border border-sidebar-border bg-background px-2 py-2 text-left text-sm font-medium shadow-sm"
-                : "rounded-md px-2 py-2 text-left text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}
+                ? "cn-root-appshelldemo-32-1"
+                : "cn-root-appshelldemo-33-1"}
               aria-current={activeView === item ? "page" : undefined}
               onclick={() => selectView(item)}
             >
@@ -38,32 +33,29 @@
             </button>
           {/each}
         </nav>
-        <div class="mt-auto border-t border-sidebar-border pt-3">
-          <p class="px-2 text-xs text-muted-foreground">Last synced just now</p>
+        <div class="cn-root-appshelldemo-41-1">
+          <p class="cn-root-appshelldemo-42-1">Last synced just now</p>
         </div>
       </aside>
     </svelte:fragment>
 
     <svelte:fragment slot="title-trailing">
       {#if activeView === "Transactions"}
-        <span
-          class="ml-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-          >3</span
-        >
+        <span class="cn-root-appshelldemo-50-1">3</span>
       {/if}
     </svelte:fragment>
 
     <svelte:fragment slot="header-actions">
       <button
         type="button"
-        class="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        class="cn-root-appshelldemo-59-1"
         onclick={() => (syncInProgress = !syncInProgress)}
       >
         {syncInProgress ? "Pause sync" : "Sync ledger"}
       </button>
       <button
         type="button"
-        class="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+        class="cn-root-appshelldemo-66-1"
         onclick={() => selectView("Transactions")}
       >
         New transaction
@@ -72,34 +64,29 @@
 
     <svelte:fragment slot="status">
       {#if syncInProgress}
-        <div
-          class="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
-          role="status"
-        >
-          <span class="size-2 animate-pulse rounded-full bg-primary"></span>
+        <div class="cn-root-appshelldemo-76-1" role="status">
+          <span class="cn-root-appshelldemo-79-1"></span>
           Syncing Barclays checking account…
         </div>
       {/if}
     </svelte:fragment>
 
     <section
-      class="h-full overflow-auto p-5"
+      class="cn-root-appshelldemo-86-1"
       aria-label={`${activeView} content`}
     >
-      <p class="text-sm text-muted-foreground">Viewing</p>
-      <h1 class="mt-1 text-xl font-semibold">{activeView}</h1>
-      <div class="mt-5 overflow-hidden rounded-lg border border-border">
-        <div
-          class="grid grid-cols-[8rem_minmax(0,1fr)_7rem] border-b border-border bg-muted px-3 py-2 text-xs font-medium text-muted-foreground"
-        >
+      <p class="cn-root-appshelldemo-89-1">Viewing</p>
+      <h1 class="cn-root-appshelldemo-90-1">{activeView}</h1>
+      <div class="cn-root-appshelldemo-91-1">
+        <div class="cn-root-appshelldemo-93-1">
           <span>Date</span>
           <span>Description</span>
-          <span class="text-right">Amount</span>
+          <span class="cn-root-appshelldemo-97-1">Amount</span>
         </div>
-        <div class="grid grid-cols-[8rem_minmax(0,1fr)_7rem] px-3 py-3 text-sm">
+        <div class="cn-root-appshelldemo-99-1">
           <span>18 Jul 2026</span>
           <span>Groceries</span>
-          <span class="text-right tabular-nums">£42.17</span>
+          <span class="cn-root-appshelldemo-102-1">£42.17</span>
         </div>
       </div>
     </section>

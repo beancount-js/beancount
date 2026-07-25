@@ -229,7 +229,7 @@
     class:positive={resolvedTrendTone === "positive"}
     class:negative={resolvedTrendTone === "negative"}
     class:neutral={resolvedTrendTone === "neutral"}
-    class="relative rounded-md px-5 pb-4 pt-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    class="cn-dashboard-dashboardline-232-1"
     bind:this={chartContainer}
     role="slider"
     tabindex="0"
@@ -250,7 +250,7 @@
     <svg
       bind:this={chartSvg}
       viewBox={`0 0 ${width} ${height}`}
-      class="w-full"
+      class="cn-dashboard-dashboardline-253-1"
       role="img"
       aria-label={chartLabel}
     >
@@ -338,12 +338,10 @@
     />
   </div>
 {:else}
-  <div
-    class="grid min-h-52 place-items-center px-6 text-center text-sm text-muted-foreground"
-  >
+  <div class="cn-dashboard-dashboardline-342-1">
     {emptyLabel}
     {#if orderedPoints.length}
-      <span class="mt-1 block font-mono text-xs text-foreground"
+      <span class="cn-dashboard-dashboardline-346-1"
         >{displayValue(orderedPoints[0])}</span
       >
     {/if}

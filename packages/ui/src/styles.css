@@ -74,3 +74,6 @@
 @import "./components/navigation/navigation.native.css";
 @import "./components/feedback/feedback.native.css";
 @import "./components/forms/forms.native.css";
+@import "./components/root.native.css";
+@import "./components/charts/charts.native.css";
+@import "./components/dashboard/dashboard.native.css";

@@ -25,34 +25,29 @@
   }
 </script>
 
-<section
-  class="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
-  data-dashboard-section
->
+<section class="cn-dashboard-dashboardsection-29-1" data-dashboard-section>
   <button
     type="button"
-    class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+    class="cn-dashboard-dashboardsection-34-1"
     aria-controls={id}
     aria-expanded={open}
     onclick={toggle}
   >
     <span>
       {#if eyebrow}
-        <span
-          class="mb-1 block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"
-        >
+        <span class="cn-dashboard-dashboardsection-42-1">
           {eyebrow}
         </span>
       {/if}
-      <span class="text-base font-semibold text-foreground">{title}</span>
+      <span class="cn-dashboard-dashboardsection-47-1">{title}</span>
     </span>
     <ChevronDown
-      class={`size-4 text-muted-foreground transition-transform ${!open ? "rotate-180" : ""}`}
+      class={`cn-dashboard-dashboardsection-50-2 cn-dashboard-dashboardsection-50-3 cn-dashboard-dashboardsection-50-4 ${!open ? "cn-dashboard-dashboardsection-50-1" : ""}`}
       aria-hidden="true"
     />
   </button>
   {#if open}
-    <div {id} class="border-t border-border/80">
+    <div {id} class="cn-dashboard-dashboardsection-55-1">
       {@render children?.()}
     </div>
   {/if}

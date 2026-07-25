@@ -92,14 +92,14 @@
 </script>
 
 <section
-  class="grid min-h-64 place-items-center p-4"
+  class="cn-dashboard-dashboarddonut-95-1"
   aria-label={ariaLabel}
   data-dashboard-donut
 >
   {#if total}
     <svg
       viewBox="-116 -116 232 232"
-      class="size-56"
+      class="cn-dashboard-dashboarddonut-102-1"
       role="group"
       aria-label={ariaLabel}
     >
@@ -114,7 +114,7 @@
           opacity={activeCategory && activeCategory.id !== arc.category.id
             ? "0.2"
             : "1"}
-          class="cursor-pointer outline-none transition-opacity"
+          class="cn-dashboard-dashboarddonut-117-1"
           role="button"
           tabindex="0"
           aria-label={categoryLabel(arc.category)}
@@ -128,7 +128,7 @@
         text-anchor="middle"
         y="-7"
         fill="var(--muted-foreground)"
-        class="text-[13px] font-semibold"
+        class="cn-dashboard-dashboarddonut-131-1"
       >
         {activeCategory?.label ?? title}
       </text>
@@ -136,13 +136,13 @@
         text-anchor="middle"
         y="16"
         fill="var(--foreground)"
-        class="font-mono text-[13px] font-semibold"
+        class="cn-dashboard-dashboarddonut-139-1"
       >
         {activeCategory?.valueLabel ??
           valueFormatter(activeCategory?.value ?? total)}
       </text>
     </svg>
   {:else}
-    <p class="text-sm text-muted-foreground">{emptyLabel}</p>
+    <p class="cn-dashboard-dashboarddonut-146-1">{emptyLabel}</p>
   {/if}
 </section>

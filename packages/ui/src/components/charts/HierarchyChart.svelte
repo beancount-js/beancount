@@ -177,13 +177,11 @@
   }
 </script>
 
-<section class="flex min-w-0 flex-col gap-3" aria-label={ariaLabel}>
+<section class="cn-charts-hierarchychart-180-1" aria-label={ariaLabel}>
   {#if hasData}
-    <div
-      class="overflow-x-auto rounded-xl border border-border/80 bg-card p-3 shadow-sm"
-    >
+    <div class="cn-charts-hierarchychart-183-1">
       <svg
-        class="block min-w-[36rem]"
+        class="cn-charts-hierarchychart-186-1"
         viewBox={`0 0 ${width} ${height}`}
         role="group"
         aria-label={ariaLabel}
@@ -195,7 +193,7 @@
                 width={Math.max(tile.width - 2 * padding, 0)}
                 height={Math.max(tile.height - 2 * padding, 0)}
                 fill={tile.node.color}
-                class="cursor-pointer outline-none focus:stroke-foreground focus:stroke-2"
+                class="cn-charts-hierarchychart-198-1"
                 role="button"
                 tabindex="0"
                 aria-label={nodeLabel(tile.node)}
@@ -210,7 +208,7 @@
                   y={(tile.height - 2 * padding) / 2}
                   text-anchor="middle"
                   fill="var(--foreground)"
-                  class="pointer-events-none text-[13px] font-semibold"
+                  class="cn-charts-hierarchychart-213-1"
                 >
                   {tile.node.label}
                 </text>
@@ -222,7 +220,7 @@
             <path
               d={arcPath(segment)}
               fill={segment.node.color}
-              class="cursor-pointer outline-none focus:stroke-foreground focus:stroke-2"
+              class="cn-charts-hierarchychart-225-1"
               role="button"
               tabindex="0"
               aria-label={nodeLabel(segment.node)}
@@ -237,7 +235,7 @@
             y={height / 2 - 4}
             text-anchor="middle"
             fill="var(--foreground)"
-            class="text-[13px] font-semibold"
+            class="cn-charts-hierarchychart-240-1"
           >
             {(activeNode ?? root).label}
           </text>
@@ -246,14 +244,14 @@
             y={height / 2 + 16}
             text-anchor="middle"
             fill="var(--muted-foreground)"
-            class="text-[11px]"
+            class="cn-charts-hierarchychart-249-1"
           >
             {(activeNode ?? root).valueLabel ?? totalValue(activeNode ?? root)}
           </text>
         {/if}
       </svg>
     </div>
-    <output class="min-h-5 text-sm text-muted-foreground" aria-live="polite">
+    <output class="cn-charts-hierarchychart-256-1" aria-live="polite">
       {#if activeNode}
         {nodeLabel(activeNode)}
       {:else}
@@ -261,10 +259,8 @@
       {/if}
     </output>
   {:else}
-    <div
-      class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/35 px-5 text-center text-sm text-muted-foreground"
-    >
-      <CircleAlert class="size-5" aria-hidden="true" />
+    <div class="cn-charts-hierarchychart-265-1">
+      <CircleAlert class="cn-charts-hierarchychart-267-1" aria-hidden="true" />
       <p>{emptyLabel}</p>
     </div>
   {/if}

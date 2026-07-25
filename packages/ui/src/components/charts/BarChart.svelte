@@ -156,13 +156,11 @@
   }
 </script>
 
-<section class="flex min-w-0 flex-col gap-3" aria-label={ariaLabel}>
+<section class="cn-charts-barchart-159-1" aria-label={ariaLabel}>
   {#if hasData}
-    <div
-      class="overflow-x-auto rounded-xl border border-border/80 bg-card p-3 shadow-sm"
-    >
+    <div class="cn-charts-barchart-162-1">
       <svg
-        class="block min-w-[36rem]"
+        class="cn-charts-barchart-165-1"
         viewBox={`0 0 ${width} ${height}`}
         role="group"
         aria-label={ariaLabel}
@@ -176,7 +174,7 @@
                 y="4"
                 text-anchor="end"
                 fill="var(--muted-foreground)"
-                class="text-[11px]"
+                class="cn-charts-barchart-179-1"
               >
                 {valueFormatter(tick)}
               </text>
@@ -196,7 +194,7 @@
               y={innerHeight + 26}
               text-anchor="middle"
               fill="var(--muted-foreground)"
-              class="text-[11px]"
+              class="cn-charts-barchart-199-1"
             >
               {group.label}
             </text>
@@ -209,7 +207,7 @@
                   width={usableGroupWidth}
                   height={Math.abs(yFor(segment.end) - yFor(segment.start))}
                   fill={value.color}
-                  class="cursor-pointer outline-none focus:stroke-foreground focus:stroke-2"
+                  class="cn-charts-barchart-212-1"
                   role="button"
                   tabindex="0"
                   aria-label={barLabel(value, group)}
@@ -230,7 +228,7 @@
                     width={barWidth}
                     height={Math.abs(yFor(value.value) - yFor(0))}
                     fill={value.color}
-                    class="cursor-pointer outline-none focus:stroke-foreground focus:stroke-2"
+                    class="cn-charts-barchart-233-1"
                     role="button"
                     tabindex="0"
                     aria-label={barLabel(value, group)}
@@ -258,7 +256,7 @@
         </g>
       </svg>
     </div>
-    <output class="min-h-5 text-sm text-muted-foreground" aria-live="polite">
+    <output class="cn-charts-barchart-261-1" aria-live="polite">
       {#if activeBar}
         {barLabel(activeBar.value, activeBar.group)}
       {:else}
@@ -266,10 +264,8 @@
       {/if}
     </output>
   {:else}
-    <div
-      class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/35 px-5 text-center text-sm text-muted-foreground"
-    >
-      <CircleAlert class="size-5" aria-hidden="true" />
+    <div class="cn-charts-barchart-270-1">
+      <CircleAlert class="cn-charts-barchart-272-1" aria-hidden="true" />
       <p>{emptyLabel}</p>
     </div>
   {/if}

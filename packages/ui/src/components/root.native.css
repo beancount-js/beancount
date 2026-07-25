@@ -1,0 +1,1239 @@
+/* Generated once from the former utility recipes; no Tailwind runtime is required. */
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes enter {
+  from {
+    opacity: var(--ui-runtime-enter-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-enter-translate-x, 0),
+        var(--ui-runtime-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1)
+      )
+      rotate(var(--ui-runtime-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--ui-runtime-exit-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-exit-translate-x, 0),
+        var(--ui-runtime-exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1)
+      )
+      rotate(var(--ui-runtime-exit-rotate, 0));
+  }
+}
+
+.cn-root-appshell-37-1 {
+  margin-left: 0.25rem;
+}
+
+.cn-root-appshell-37-1\.5 {
+  margin-left: 0.375rem;
+}
+
+.cn-root-appshelldemo-50-1 {
+  margin-left: 0.375rem;
+}
+
+.cn-root-appshell-44-1 {
+  margin-left: auto;
+}
+
+.cn-root-appshelldemo-23-1 {
+  margin-top: 0.25rem;
+}
+
+.cn-root-appshelldemo-90-1 {
+  margin-top: 0.25rem;
+}
+
+.cn-root-appshelldemo-27-1 {
+  margin-top: 1rem;
+}
+
+.cn-root-appshelldemo-91-1 {
+  margin-top: 1.25rem;
+}
+
+.cn-root-appshelldemo-41-1 {
+  margin-top: auto;
+}
+
+.cn-root-appshell-19-4 {
+  display: flex;
+}
+
+.cn-root-appshell-24-2 {
+  display: flex;
+}
+
+.cn-root-appshell-27-1 {
+  display: flex;
+}
+
+.cn-root-appshell-31-1 {
+  display: flex;
+}
+
+.cn-root-appshell-44-1 {
+  display: flex;
+}
+
+.cn-root-appshelldemo-19-1 {
+  display: flex;
+}
+
+.cn-root-appshelldemo-27-1 {
+  display: flex;
+}
+
+.cn-root-appshelldemo-76-1 {
+  display: flex;
+}
+
+.cn-root-appshelldemo-50-1 {
+  display: inline-flex;
+}
+
+.cn-root-appshelldemo-93-1 {
+  display: grid;
+}
+
+.cn-root-appshelldemo-99-1 {
+  display: grid;
+}
+
+.cn-root-appshelldemo-79-1 {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.cn-root-appshell-31-1 {
+  height: 2.75rem;
+}
+
+.cn-root-appshelldemo-50-1 {
+  height: 1.25rem;
+}
+
+.cn-root-appshelldemo-14-1 {
+  height: 42rem;
+}
+
+.cn-root-appshell-19-1 {
+  height: 100%;
+}
+
+.cn-root-appshell-27-1 {
+  height: 100%;
+}
+
+.cn-root-appshelldemo-19-1 {
+  height: 100%;
+}
+
+.cn-root-appshelldemo-86-1 {
+  height: 100%;
+}
+
+.cn-root-appshell-19-2 {
+  height: 100vh;
+}
+
+.cn-root-appshell-50-1 {
+  min-height: 0px;
+}
+
+.cn-root-appshelldemo-19-1 {
+  width: 16rem;
+}
+
+.cn-root-appshell-19-7 {
+  width: 100%;
+}
+
+.cn-root-appshell-24-5 {
+  min-width: 0px;
+}
+
+.cn-root-appshell-27-1 {
+  min-width: 0px;
+}
+
+.cn-root-appshell-37-1 {
+  min-width: 0px;
+}
+
+.cn-root-appshell-44-1 {
+  min-width: 0px;
+}
+
+.cn-root-appshell-50-1 {
+  min-width: 0px;
+}
+
+.cn-root-appshelldemo-50-1 {
+  min-width: 1.25rem;
+}
+
+.cn-root-appshell-19-4-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshell-24-2-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshell-27-1-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshell-31-1-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshell-44-1-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshelldemo-19-1-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshelldemo-27-1-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshelldemo-76-1-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshell-24-3 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshell-27-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshell-44-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshell-50-1 {
+  flex: 1 1 0%;
+}
+
+.cn-root-appshell-31-1 {
+  flex-shrink: 0;
+}
+
+.cn-root-appshelldemo-19-1 {
+  flex-shrink: 0;
+}
+
+.cn-root-appshelldemo-50-1 {
+  flex-shrink: 0;
+}
+
+.cn-root-appshelldemo-79-1 {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.cn-root-appshelldemo-93-1-cols-\[8rem_minmax\(0\2c 1fr\)_7rem\] {
+  grid-template-columns: 8rem minmax(0, 1fr) 7rem;
+}
+
+.cn-root-appshelldemo-99-1-cols-\[8rem_minmax\(0\2c 1fr\)_7rem\] {
+  grid-template-columns: 8rem minmax(0, 1fr) 7rem;
+}
+
+.cn-root-appshelldemo-93-1 {
+  grid-template-columns: 8rem minmax(0, 1fr) 7rem;
+}
+
+.cn-root-appshelldemo-99-1 {
+  grid-template-columns: 8rem minmax(0, 1fr) 7rem;
+}
+
+.cn-root-appshell-19-4-col {
+  flex-direction: column;
+}
+
+.cn-root-appshell-24-2-col {
+  flex-direction: column;
+}
+
+.cn-root-appshell-27-1-col {
+  flex-direction: column;
+}
+
+.cn-root-appshell-31-1-col {
+  flex-direction: column;
+}
+
+.cn-root-appshell-44-1-col {
+  flex-direction: column;
+}
+
+.cn-root-appshelldemo-19-1-col {
+  flex-direction: column;
+}
+
+.cn-root-appshelldemo-27-1-col {
+  flex-direction: column;
+}
+
+.cn-root-appshelldemo-76-1-col {
+  flex-direction: column;
+}
+
+.cn-root-appshell-27-1 {
+  flex-direction: column;
+}
+
+.cn-root-appshelldemo-19-1 {
+  flex-direction: column;
+}
+
+.cn-root-appshelldemo-27-1 {
+  flex-direction: column;
+}
+
+.cn-root-appshell-31-1 {
+  align-items: center;
+}
+
+.cn-root-appshell-44-1 {
+  align-items: center;
+}
+
+.cn-root-appshelldemo-50-1 {
+  align-items: center;
+}
+
+.cn-root-appshelldemo-76-1 {
+  align-items: center;
+}
+
+.cn-root-appshell-44-1 {
+  justify-content: flex-end;
+}
+
+.cn-root-appshelldemo-50-1 {
+  justify-content: center;
+}
+
+.cn-root-appshelldemo-27-1 {
+  gap: 0.25rem;
+}
+
+.cn-root-appshell-24-4 {
+  gap: 0.5rem;
+}
+
+.cn-root-appshell-44-1 {
+  gap: 0.5rem;
+}
+
+.cn-root-appshelldemo-76-1 {
+  gap: 0.5rem;
+}
+
+.cn-root-appshelldemo-86-1 {
+  overflow: auto;
+}
+
+.cn-root-appshell-19-5 {
+  overflow: hidden;
+}
+
+.cn-root-appshell-27-1 {
+  overflow: hidden;
+}
+
+.cn-root-appshell-44-1 {
+  overflow: hidden;
+}
+
+.cn-root-appshell-50-1 {
+  overflow: hidden;
+}
+
+.cn-root-appshelldemo-14-1 {
+  overflow: hidden;
+}
+
+.cn-root-appshelldemo-91-1 {
+  overflow: hidden;
+}
+
+.cn-root-appshell-37-1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cn-root-appshelldemo-50-1 {
+  border-radius: 9999px;
+}
+
+.cn-root-appshelldemo-79-1 {
+  border-radius: 9999px;
+}
+
+.cn-root-appshelldemo-14-1 {
+  border-radius: var(--radius);
+}
+
+.cn-root-appshelldemo-91-1 {
+  border-radius: var(--radius);
+}
+
+.cn-root-appshelldemo-32-1 {
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.cn-root-appshelldemo-33-1 {
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.cn-root-appshelldemo-59-1 {
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.cn-root-appshelldemo-66-1 {
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.cn-root-appshell-27-1 {
+  border-radius: calc(var(--radius) + 4px);
+}
+
+.cn-root-appshell-27-1 {
+  border-width: 1px;
+}
+
+.cn-root-appshelldemo-14-1 {
+  border-width: 1px;
+}
+
+.cn-root-appshelldemo-32-1 {
+  border-width: 1px;
+}
+
+.cn-root-appshelldemo-91-1 {
+  border-width: 1px;
+}
+
+.cn-root-appshell-27-1-b {
+  border-bottom-width: 1px;
+}
+
+.cn-root-appshelldemo-14-1-b {
+  border-bottom-width: 1px;
+}
+
+.cn-root-appshelldemo-32-1-b {
+  border-bottom-width: 1px;
+}
+
+.cn-root-appshelldemo-91-1-b {
+  border-bottom-width: 1px;
+}
+
+.cn-root-appshell-31-1 {
+  border-bottom-width: 1px;
+}
+
+.cn-root-appshelldemo-21-1 {
+  border-bottom-width: 1px;
+}
+
+.cn-root-appshelldemo-76-1 {
+  border-bottom-width: 1px;
+}
+
+.cn-root-appshelldemo-93-1 {
+  border-bottom-width: 1px;
+}
+
+.cn-root-appshell-27-1-r {
+  border-right-width: 1px;
+}
+
+.cn-root-appshelldemo-14-1-r {
+  border-right-width: 1px;
+}
+
+.cn-root-appshelldemo-32-1-r {
+  border-right-width: 1px;
+}
+
+.cn-root-appshelldemo-91-1-r {
+  border-right-width: 1px;
+}
+
+.cn-root-appshelldemo-19-1 {
+  border-right-width: 1px;
+}
+
+.cn-root-appshell-27-1-t {
+  border-top-width: 1px;
+}
+
+.cn-root-appshelldemo-14-1-t {
+  border-top-width: 1px;
+}
+
+.cn-root-appshelldemo-32-1-t {
+  border-top-width: 1px;
+}
+
+.cn-root-appshelldemo-91-1-t {
+  border-top-width: 1px;
+}
+
+.cn-root-appshelldemo-41-1 {
+  border-top-width: 1px;
+}
+
+.cn-root-appshell-27-1-border {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-14-1-border {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-32-1-border {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-91-1-border {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshell-27-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshell-31-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-14-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-76-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-91-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-93-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshell-31-1order {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-21-1order {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-76-1order {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-93-1order {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshell-27-1-sidebar-border {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-14-1-sidebar-border {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-32-1-sidebar-border {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-91-1-sidebar-border {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-19-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-21-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-32-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-41-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshell-27-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--background) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-32-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--background) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-50-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--muted) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-93-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--muted) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-50-1\/40 {
+  background-color: color-mix(
+    in srgb,
+    var(--muted) calc(0.4 * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-93-1\/40 {
+  background-color: color-mix(
+    in srgb,
+    var(--muted) calc(0.4 * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-76-1 {
+  background-color: color-mix(
+    in srgb,
+    var(--muted) calc(0.4 * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-66-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--primary) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-79-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--primary) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshell-19-3 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--sidebar) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-19-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--sidebar) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshell-24-6 {
+  padding: 0.5rem;
+}
+
+.cn-root-appshelldemo-19-1 {
+  padding: 0.75rem;
+}
+
+.cn-root-appshelldemo-86-1 {
+  padding: 1.25rem;
+}
+
+.cn-root-appshelldemo-50-1 {
+  padding-left: 0.375rem;
+  padding-right: 0.375rem;
+}
+
+.cn-root-appshelldemo-32-1 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.cn-root-appshelldemo-33-1 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.cn-root-appshelldemo-42-1 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.cn-root-appshelldemo-59-1 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.cn-root-appshelldemo-32-1\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+.cn-root-appshelldemo-33-1\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+.cn-root-appshelldemo-42-1\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+.cn-root-appshelldemo-59-1\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+.cn-root-appshelldemo-66-1 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+.cn-root-appshell-31-1 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.cn-root-appshelldemo-76-1 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.cn-root-appshelldemo-93-1 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.cn-root-appshelldemo-99-1 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.cn-root-appshelldemo-59-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.cn-root-appshelldemo-66-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.cn-root-appshelldemo-32-1 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.cn-root-appshelldemo-33-1 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.cn-root-appshelldemo-76-1 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.cn-root-appshelldemo-93-1 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.cn-root-appshelldemo-99-1 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.cn-root-appshelldemo-21-1 {
+  padding-bottom: 0.75rem;
+}
+
+.cn-root-appshelldemo-41-1 {
+  padding-top: 0.75rem;
+}
+
+.cn-root-appshelldemo-32-1 {
+  text-align: left;
+}
+
+.cn-root-appshelldemo-33-1 {
+  text-align: left;
+}
+
+.cn-root-appshelldemo-97-1 {
+  text-align: right;
+}
+
+.cn-root-appshelldemo-102-1 {
+  text-align: right;
+}
+
+.cn-root-appshelldemo-50-1 {
+  font-size: 11px;
+}
+
+.cn-root-appshell-37-1 {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.cn-root-appshelldemo-22-1 {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.cn-root-appshelldemo-32-1 {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.cn-root-appshelldemo-33-1 {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.cn-root-appshelldemo-89-1 {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.cn-root-appshelldemo-99-1 {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.cn-root-appshelldemo-90-1 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.cn-root-appshelldemo-23-1 {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.cn-root-appshelldemo-42-1 {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.cn-root-appshelldemo-59-1 {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.cn-root-appshelldemo-66-1 {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.cn-root-appshelldemo-76-1 {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.cn-root-appshelldemo-93-1 {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.cn-root-appshelldemo-32-1 {
+  font-weight: 500;
+}
+
+.cn-root-appshelldemo-50-1 {
+  font-weight: 500;
+}
+
+.cn-root-appshelldemo-59-1 {
+  font-weight: 500;
+}
+
+.cn-root-appshelldemo-66-1 {
+  font-weight: 500;
+}
+
+.cn-root-appshelldemo-93-1 {
+  font-weight: 500;
+}
+
+.cn-root-appshell-37-1 {
+  font-weight: 600;
+}
+
+.cn-root-appshelldemo-22-1 {
+  font-weight: 600;
+}
+
+.cn-root-appshelldemo-90-1 {
+  font-weight: 600;
+}
+
+.cn-root-appshelldemo-50-1 {
+  --ui-runtime-numeric-spacing: tabular-nums;
+  font-variant-numeric: var(--ui-runtime-ordinal) var(--ui-runtime-slashed-zero)
+    var(--ui-runtime-numeric-figure) var(--ui-runtime-numeric-spacing)
+    var(--ui-runtime-numeric-fraction);
+}
+
+.cn-root-appshelldemo-102-1 {
+  --ui-runtime-numeric-spacing: tabular-nums;
+  font-variant-numeric: var(--ui-runtime-ordinal) var(--ui-runtime-slashed-zero)
+    var(--ui-runtime-numeric-figure) var(--ui-runtime-numeric-spacing)
+    var(--ui-runtime-numeric-fraction);
+}
+
+.cn-root-appshell-19-6 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-23-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--muted-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-33-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--muted-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-42-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--muted-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-50-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--muted-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-59-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--muted-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-76-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--muted-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-89-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--muted-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-93-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--muted-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-66-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--primary-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-19-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--sidebar-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshell-27-1 {
+  --ui-runtime-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --ui-runtime-shadow-colored: 0 1px 2px 0 var(--ui-runtime-shadow-color);
+  box-shadow: var(--ui-runtime-ring-offset-shadow, 0 0 #0000),
+    var(--ui-runtime-ring-shadow, 0 0 #0000), var(--ui-runtime-shadow);
+}
+
+.cn-root-appshelldemo-32-1 {
+  --ui-runtime-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --ui-runtime-shadow-colored: 0 1px 2px 0 var(--ui-runtime-shadow-color);
+  box-shadow: var(--ui-runtime-ring-offset-shadow, 0 0 #0000),
+    var(--ui-runtime-ring-shadow, 0 0 #0000), var(--ui-runtime-shadow);
+}
+
+.cn-root-appshelldemo-59-1:hover {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--accent) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-66-1:hover {
+  background-color: color-mix(
+    in srgb,
+    var(--primary) calc(0.9 * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-33-1:hover {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--sidebar-accent) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-59-1:hover {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--accent-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshelldemo-33-1:hover {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--sidebar-accent-foreground)
+      calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-root-appshell-27-1:is(.dark *) {
+  --ui-runtime-shadow: 0 2px 8px oklch(0 0 0/0.5);
+  --ui-runtime-shadow-colored: 0 2px 8px var(--ui-runtime-shadow-color);
+  box-shadow: var(--ui-runtime-ring-offset-shadow, 0 0 #0000),
+    var(--ui-runtime-ring-shadow, 0 0 #0000), var(--ui-runtime-shadow);
+}
+
+.cn-root-appshell-44-1 {
+  flex: none;
+}
+
+.cn-root-appshell-24-1 {
+  padding-left: 0px;
+}

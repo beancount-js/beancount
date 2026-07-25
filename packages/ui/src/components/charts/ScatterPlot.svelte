@@ -87,13 +87,11 @@
   }
 </script>
 
-<section class="flex min-w-0 flex-col gap-3" aria-label={ariaLabel}>
+<section class="cn-charts-scatterplot-90-1" aria-label={ariaLabel}>
   {#if hasData}
-    <div
-      class="overflow-x-auto rounded-xl border border-border/80 bg-card p-3 shadow-sm"
-    >
+    <div class="cn-charts-scatterplot-93-1">
       <svg
-        class="block min-w-[36rem]"
+        class="cn-charts-scatterplot-96-1"
         viewBox={`0 0 ${width} ${height}`}
         role="group"
         aria-label={ariaLabel}
@@ -107,7 +105,7 @@
                 y="4"
                 text-anchor="end"
                 fill="var(--muted-foreground)"
-                class="text-[11px]"
+                class="cn-charts-scatterplot-110-1"
               >
                 {category}
               </text>
@@ -121,7 +119,7 @@
               y={innerHeight + 26}
               text-anchor="middle"
               fill="var(--muted-foreground)"
-              class="text-[11px]"
+              class="cn-charts-scatterplot-124-1"
             >
               {label}
             </text>
@@ -132,7 +130,7 @@
               cy={yFor(point.category)}
               r={activePoint?.id === point.id ? 7 : 5}
               fill={point.color}
-              class="cursor-pointer outline-none focus:stroke-foreground focus:stroke-2"
+              class="cn-charts-scatterplot-135-1"
               role="button"
               tabindex="0"
               aria-label={pointLabel(point)}
@@ -145,7 +143,7 @@
         </g>
       </svg>
     </div>
-    <output class="min-h-5 text-sm text-muted-foreground" aria-live="polite">
+    <output class="cn-charts-scatterplot-148-1" aria-live="polite">
       {#if activePoint}
         {pointLabel(activePoint)}
       {:else}
@@ -153,10 +151,8 @@
       {/if}
     </output>
   {:else}
-    <div
-      class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/35 px-5 text-center text-sm text-muted-foreground"
-    >
-      <CircleAlert class="size-5" aria-hidden="true" />
+    <div class="cn-charts-scatterplot-157-1">
+      <CircleAlert class="cn-charts-scatterplot-159-1" aria-hidden="true" />
       <p>{emptyLabel}</p>
     </div>
   {/if}

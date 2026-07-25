@@ -39,17 +39,17 @@
   const normalizedActiveChartId = $derived(
     charts.some((chart) => chart.id === activeChartId) && activeChartId
       ? activeChartId
-      : charts[0]?.id ?? "",
+      : (charts[0]?.id ?? ""),
   );
 </script>
 
 <ContentScrollArea contentClass="scroll-container min-h-full">
-  <div class="p-4">
+  <div class="cn-dashboard-statementreport-47-1">
     <ChartSwitcher
-      charts={charts}
+      {charts}
       activeChartId={normalizedActiveChartId}
       ariaLabel={chartSwitcherAriaLabel}
-      onActiveChartChange={onActiveChartChange}
+      {onActiveChartChange}
     >
       {#if chartChildren}
         {#snippet children(chartId)}
@@ -59,14 +59,12 @@
     </ChartSwitcher>
   </div>
 
-  <div class="grid w-full gap-8 p-4" data-statement-report>
+  <div class="cn-dashboard-statementreport-62-1" data-statement-report>
     {#each sections as section (section.title)}
       {#if sectionChildren}
         {@render sectionChildren(section)}
       {:else}
-        <div
-          class="rounded-md border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground"
-        >
+        <div class="cn-dashboard-statementreport-68-1">
           {section.title}
         </div>
       {/if}

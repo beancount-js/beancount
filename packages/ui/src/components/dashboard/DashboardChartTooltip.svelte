@@ -18,19 +18,17 @@
 
 {#if visible}
   <div
-    class="pointer-events-none absolute min-w-44 -translate-x-1/2 -translate-y-[calc(100%+0.75rem)] rounded-lg border border-border/80 bg-popover px-3 py-2 text-popover-foreground shadow-lg"
+    class="cn-dashboard-dashboardcharttooltip-21-1"
     style={`left: ${x}px; top: ${y}px`}
     data-dashboard-chart-tooltip
     role="status"
     aria-live="polite"
   >
-    <p class="text-xs text-muted-foreground">{title}</p>
-    <p
-      class="mt-1 flex items-baseline justify-between gap-3 font-mono text-sm tabular-nums"
-    >
-      <span class="font-medium text-foreground">{value}</span>
+    <p class="cn-dashboard-dashboardcharttooltip-27-1">{title}</p>
+    <p class="cn-dashboard-dashboardcharttooltip-29-1">
+      <span class="cn-dashboard-dashboardcharttooltip-31-1">{value}</span>
       {#if detail}
-        <span class="text-xs text-muted-foreground">{detail}</span>
+        <span class="cn-dashboard-dashboardcharttooltip-33-1">{detail}</span>
       {/if}
     </p>
   </div>

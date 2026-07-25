@@ -65,21 +65,21 @@
 </script>
 
 <section
-  class="w-full min-w-0"
+  class="cn-dashboard-dashboardtreetable-68-1"
   aria-label={ariaLabel}
   data-dashboard-tree-table
 >
-  <div class="flex items-baseline justify-between gap-4">
-    <h2 class="text-lg font-semibold tracking-tight text-foreground">
+  <div class="cn-dashboard-dashboardtreetable-72-1">
+    <h2 class="cn-dashboard-dashboardtreetable-73-1">
       {title}
-      <span class="font-mono text-base font-medium text-muted-foreground"
+      <span class="cn-dashboard-dashboardtreetable-75-1"
         >· {total ? valueFormatter(total) : "—"}</span
       >
     </h2>
     {#if onViewAll}
       <button
         type="button"
-        class="rounded-sm text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        class="cn-dashboard-dashboardtreetable-82-1"
         onclick={onViewAll}
       >
         {viewAllLabel}
@@ -89,40 +89,37 @@
 
   {#if nodes.length}
     <div
-      class="mt-3 flex h-1.5 w-full overflow-hidden rounded-full bg-muted"
+      class="cn-dashboard-dashboardtreetable-92-1"
       role="img"
       aria-label={`${title} category contributions`}
       data-dashboard-contribution-bar
     >
       {#each contributions as contribution (contribution.id)}
         <span
-          class="h-full first:rounded-l-full last:rounded-r-full"
+          class="cn-dashboard-dashboardtreetable-99-1"
           style={`width: ${contribution.percentage}%; background: ${contribution.color}`}
           title={`${contribution.label}: ${valueFormatter(contribution.value)}`}
         ></span>
       {/each}
     </div>
     <div
-      class="contribution-legend mt-4 gap-x-6 gap-y-2 text-sm text-muted-foreground"
+      class="cn-dashboard-dashboardtreetable-106-1 contribution-legend"
       data-dashboard-contribution-legend
     >
       {#each contributions as contribution (contribution.id)}
-        <span
-          class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_max-content_max-content] items-baseline gap-x-2"
-        >
+        <span class="cn-dashboard-dashboardtreetable-111-1">
           <span
-            class="mt-1 size-2.5 shrink-0 self-start rounded-full"
+            class="cn-dashboard-dashboardtreetable-114-1"
             style={`background: ${contribution.color}`}
             aria-hidden="true"
           ></span>
-          <span class="min-w-0 break-words leading-5">{contribution.label}</span
+          <span class="cn-dashboard-dashboardtreetable-118-1"
+            >{contribution.label}</span
           >
-          <span
-            class="whitespace-nowrap font-mono text-xs tabular-nums text-foreground"
+          <span class="cn-dashboard-dashboardtreetable-121-1"
             >{contribution.percentage.toFixed(1)}%</span
           >
-          <span
-            class="whitespace-nowrap font-mono text-xs tabular-nums text-foreground"
+          <span class="cn-dashboard-dashboardtreetable-125-1"
             >{valueFormatter(contribution.value)}</span
           >
         </span>
@@ -131,35 +128,38 @@
 
     <ScrollArea.Root
       orientation="horizontal"
-      class="mt-4 w-full min-w-0 max-w-full rounded-xl"
+      class="cn-dashboard-dashboardtreetable-134-1"
     >
       <ol
-        class="min-w-[45rem] overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
+        class="cn-dashboard-dashboardtreetable-137-1"
         data-dashboard-tree-rows
       >
         <li
-          class="grid min-h-10 items-center bg-muted/65 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+          class="cn-dashboard-dashboardtreetable-141-1"
           style={`grid-template-columns: ${gridTemplate}`}
         >
-          <span class="flex items-center gap-2 px-4 py-2">
+          <span class="cn-dashboard-dashboardtreetable-144-1">
             {#if collapsibleIds.length}
               <button
                 type="button"
-                class="grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="cn-dashboard-dashboardtreetable-148-1"
                 aria-label={allCollapsed
                   ? "Expand all accounts"
                   : "Collapse all accounts"}
                 aria-pressed={allCollapsed}
                 onclick={toggleAll}
               >
-                <ChevronsUpDown class="size-3" aria-hidden="true" />
+                <ChevronsUpDown
+                  class="cn-dashboard-dashboardtreetable-155-1"
+                  aria-hidden="true"
+                />
               </button>
             {/if}
             Account
           </span>
           <span aria-hidden="true"></span>
-          <span class="px-4 py-2 text-right">Weight</span>
-          <span class="px-4 py-2 text-right">Value</span>
+          <span class="cn-dashboard-dashboardtreetable-161-1">Weight</span>
+          <span class="cn-dashboard-dashboardtreetable-162-1">Value</span>
         </li>
         {#each nodes as node (node.id)}
           <DashboardTreeRow
@@ -175,9 +175,7 @@
       </ol>
     </ScrollArea.Root>
   {:else}
-    <p
-      class="mt-4 grid min-h-40 place-items-center rounded-xl border border-dashed text-sm text-muted-foreground"
-    >
+    <p class="cn-dashboard-dashboardtreetable-179-1">
       {emptyLabel}
     </p>
   {/if}

@@ -26,7 +26,7 @@
 
 <Tabs.Root
   value={activeChartId}
-  class="w-full"
+  class="cn-charts-chartswitcher-29-1"
   onValueChange={(next) => {
     if (next) onActiveChartChange(next);
   }}
@@ -34,8 +34,11 @@
   <Tabs.Content value={activeChartId}>
     {@render children?.(activeChartId)}
   </Tabs.Content>
-  <ScrollArea.Root orientation="horizontal" class="w-full">
-    <div class="mx-auto w-max pb-2 pt-2">
+  <ScrollArea.Root
+    orientation="horizontal"
+    class="cn-charts-chartswitcher-37-1"
+  >
+    <div class="cn-charts-chartswitcher-38-1">
       <Tabs.List aria-label={ariaLabel}>
         {#each charts as chart (chart.id)}
           <Tabs.Trigger value={chart.id}>{chart.label || "All"}</Tabs.Trigger>

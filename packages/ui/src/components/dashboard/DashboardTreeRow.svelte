@@ -43,45 +43,52 @@
 
 <li>
   <div
-    class="grid min-h-12 items-center border-t border-border/70 text-sm transition-colors hover:bg-muted/65"
+    class="cn-dashboard-dashboardtreerow-46-1"
     style={`grid-template-columns: ${gridTemplate}`}
     data-dashboard-tree-row
   >
     <div
-      class="flex min-w-0 items-center gap-1 py-2 pr-4"
+      class="cn-dashboard-dashboardtreerow-51-1"
       style={`padding-left: ${0.9 + depth * 1.2}rem`}
     >
       {#if hasChildren}
         <button
           type="button"
-          class="grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          class="cn-dashboard-dashboardtreerow-57-1"
           aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${node.label}`}
           aria-expanded={!isCollapsed}
           onclick={() => onToggle(node.id)}
         >
           {#if isCollapsed}
-            <ChevronRight class="size-3" aria-hidden="true" />
+            <ChevronRight
+              class="cn-dashboard-dashboardtreerow-63-1"
+              aria-hidden="true"
+            />
           {:else}
-            <ChevronDown class="size-3" aria-hidden="true" />
+            <ChevronDown
+              class="cn-dashboard-dashboardtreerow-65-1"
+              aria-hidden="true"
+            />
           {/if}
         </button>
       {:else}
-        <span class="size-4 shrink-0" aria-hidden="true"></span>
+        <span class="cn-dashboard-dashboardtreerow-69-1" aria-hidden="true"
+        ></span>
       {/if}
       <button
         type="button"
-        class="min-w-0 truncate rounded-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        class="cn-dashboard-dashboardtreerow-73-1"
         onclick={() => onNodeSelect(node)}
       >
         {node.label}
       </button>
     </div>
     <span
-      class="grid place-items-center py-2 pl-4 pr-2"
+      class="cn-dashboard-dashboardtreerow-80-1"
       data-dashboard-weight-meter-column
     >
       <span
-        class:invisible={!amount}
+        class:cn-dashboard-dashboardtreerow-84-1={!amount}
         class="weight-meter"
         style={`--meter-color: ${color}`}
         data-dashboard-weight-meter
@@ -94,13 +101,10 @@
     </span>
     <span
       class:dimmed={!amount}
-      class="px-4 text-right font-mono text-[13px] tabular-nums"
+      class="cn-dashboard-dashboardtreerow-97-1"
       data-dashboard-weight>{amount ? `${weight.toFixed(1)}%` : "—"}</span
     >
-    <span
-      class:dimmed={!amount}
-      class="px-4 text-right font-mono text-[13px] tabular-nums"
-    >
+    <span class:dimmed={!amount} class="cn-dashboard-dashboardtreerow-102-1">
       {amount ? valueFormatter(amount) : "—"}
     </span>
   </div>

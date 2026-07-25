@@ -63,13 +63,11 @@
   }
 </script>
 
-<section class="flex min-w-0 flex-col gap-3" aria-label={ariaLabel}>
+<section class="cn-charts-chartpanel-66-1" aria-label={ariaLabel}>
   {#if hasControls}
-    <div
-      class="flex flex-col gap-3 border-b border-border/70 pb-3 md:flex-row md:items-center md:justify-between"
-    >
+    <div class="cn-charts-chartpanel-69-1">
       {#if legend}
-        <div class="min-w-0 overflow-x-auto pb-0.5">
+        <div class="cn-charts-chartpanel-72-1">
           <ChartLegend
             items={legend.items}
             selection={legend.selection}
@@ -80,7 +78,7 @@
       {/if}
 
       {#if conversion || interval || modes}
-        <div class="flex flex-wrap items-center gap-2 md:justify-end">
+        <div class="cn-charts-chartpanel-83-1">
           {#if conversion}
             <Select.Root
               type="single"
@@ -88,7 +86,7 @@
               onValueChange={(value) => updateSelect(conversion, value)}
             >
               <Select.Trigger
-                class="w-[10rem]"
+                class="cn-charts-chartpanel-91-1"
                 aria-label={conversion.ariaLabel}
               >
                 {conversion.options.find(
@@ -110,7 +108,7 @@
               onValueChange={(value) => updateSelect(interval, value)}
             >
               <Select.Trigger
-                class="w-[8.5rem]"
+                class="cn-charts-chartpanel-113-1"
                 aria-label={interval.ariaLabel}
               >
                 {interval.options.find(

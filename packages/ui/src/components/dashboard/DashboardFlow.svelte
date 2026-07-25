@@ -175,16 +175,14 @@
 </script>
 
 {#if isEmpty}
-  <div
-    class="grid min-h-60 place-items-center px-6 text-center text-sm text-muted-foreground"
-  >
+  <div class="cn-dashboard-dashboardflow-179-1">
     {emptyLabel}
   </div>
 {:else}
-  <div class="overflow-x-auto px-3 py-4">
-    <div class="relative min-w-[720px]" bind:this={chartContainer}>
+  <div class="cn-dashboard-dashboardflow-184-1">
+    <div class="cn-dashboard-dashboardflow-185-1" bind:this={chartContainer}>
       <svg
-        class="w-full"
+        class="cn-dashboard-dashboardflow-187-1"
         viewBox={`0 0 ${width} ${chartHeight}`}
         role="group"
         aria-label={flowAriaLabel}
