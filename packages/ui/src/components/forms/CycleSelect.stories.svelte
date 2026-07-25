@@ -1,6 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from "@storybook/addon-svelte-csf";
-  import { expect, userEvent } from "storybook/test";
+  import { expect, userEvent, within } from "storybook/test";
   import CycleSelect from "./CycleSelect.svelte";
 
   const { Story } = defineMeta({
@@ -29,7 +29,20 @@
 
 <Story
   name="Cycles reporting periods"
-  play={async ({ canvas }) => {
+  play={async ({ canvas, canvasElement }) => {
+    await userEvent.click(canvas.getByRole("button", { name: "Period" }));
+    const page = within(canvasElement.ownerDocument.body);
+    const options = page.getAllByRole("option");
+    const optionGroup = options.at(0)?.parentElement;
+    await expect(optionGroup).not.toBeNull();
+    await expect(
+      Number.parseFloat(
+        canvasElement.ownerDocument.defaultView!.getComputedStyle(optionGroup!)
+          .gap,
+      ),
+    ).toBeGreaterThanOrEqual(4);
+    await userEvent.keyboard("{Escape}");
+
     await userEvent.click(canvas.getByRole("button", { name: "Next period" }));
     await expect(canvas.getByRole("status")).toHaveTextContent(
       "Viewing: This month",
