@@ -109,10 +109,16 @@ obsolete rendering architecture.
 | N01 | Define native component ownership and add the Tailwind ratchet        | Done        |
 | N02 | Add framework-independent foundation and component tokens             | Done        |
 | N03 | Normalize UI primitive families to native CSS                         | Done        |
-| N04 | Convert shared UI compositions to native CSS                          | Not started |
+| N04 | Convert shared UI compositions to native CSS                          | Done        |
 | N05 | Move Fava Beta consumers to public UI primitives                      | Not started |
 | N06 | Remove duplicate primitives and obsolete styling dependencies         | Not started |
 | N07 | Run zero-baseline, UI, Beta, browser, C006, and final migration gates | Not started |
+
+N04 evidence: all shared composition families compile to repository-owned
+semantic CSS, `check:no-tailwind` reports zero findings, 69 UI unit tests pass,
+and focused Storybook coverage passes for shell, forms, dashboards, pages, and
+tables. The slice also repaired Sheet close-part targeting, optional snippet
+forwarding, ActivityTable ARIA contracts, and affected interaction stories.
 
 N01 evidence: repository-owned scanner and unit tests, package ratchet commands,
 and `packages/ui/NATIVE_COMPONENTS.md`.
