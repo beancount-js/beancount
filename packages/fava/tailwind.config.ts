@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-import uiTailwindPreset from "@beancount-js/ui/tailwind";
+import uiTailwindPreset from "@lapis/ui/tailwind";
 
 const config: Config = {
   darkMode: ["class"],

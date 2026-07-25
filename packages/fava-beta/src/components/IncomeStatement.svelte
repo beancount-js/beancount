@@ -22,7 +22,7 @@
   import IncomeStatement, {
     type IncomeStatementChart,
     type IncomeStatementSection,
-  } from "@beancount-js/ui/dashboard/IncomeStatement.svelte";
+  } from "@lapis/ui/dashboard/IncomeStatement.svelte";
 
   const { ledgerData, conversion, interval, ledgerOptions } = useContext();
   const chartContext = useChartContext();

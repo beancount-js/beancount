@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Writable } from "svelte/store";
-  import * as ToggleGroup from "@beancount-js/ui/shadcn/toggle-group";
+  import * as ToggleGroup from "@lapis/ui/shadcn/toggle-group";
 
   /** The chart legend to show. */
   export let legend: [string, string | null][];

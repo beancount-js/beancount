@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ResourceViewerSkeleton from "@beancount-js/ui/feedback/ResourceViewerSkeleton.svelte";
+  import ResourceViewerSkeleton from "@lapis/ui/feedback/ResourceViewerSkeleton.svelte";
 </script>
 
 <ResourceViewerSkeleton {...$$props} />

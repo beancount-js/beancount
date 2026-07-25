@@ -7,4 +7,4 @@ export {
   MINIMUM_APPEARANCE_CONTRAST,
   needsAppearanceContrastCorrection,
   normalizeAppearanceColor,
-} from "@beancount-js/ui/forms/helpers/appearance-color";
+} from "@lapis/ui/forms/helpers/appearance-color";

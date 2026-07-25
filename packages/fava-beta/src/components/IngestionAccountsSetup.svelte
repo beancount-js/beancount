@@ -40,7 +40,7 @@
     type IngestionAccountsOtherAccount,
     type IngestionAccountsOtherGroup,
     type IngestionSetupAccount,
-  } from "@beancount-js/ui/forms/IngestionAccountsSetup.svelte";
+  } from "@lapis/ui/forms/IngestionAccountsSetup.svelte";
 
   type DiscoveredAccount = {
     id: string;

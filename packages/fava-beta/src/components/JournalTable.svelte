@@ -5,7 +5,7 @@
   import JournalTable, {
     type ActivityGroup,
     type ActivityRecord,
-  } from "@beancount-js/ui/tables/JournalTable.svelte";
+  } from "@lapis/ui/tables/JournalTable.svelte";
   import { useContext } from "../context";
   import { useCtx } from "../stores/format";
   import { useNavigation } from "../router/router";

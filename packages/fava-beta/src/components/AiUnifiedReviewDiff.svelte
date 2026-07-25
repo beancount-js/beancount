@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AiUnifiedReviewDiff from "@beancount-js/ui/feedback/AiUnifiedReviewDiff.svelte";
+  import AiUnifiedReviewDiff from "@lapis/ui/feedback/AiUnifiedReviewDiff.svelte";
 
   export let before = "";
   export let after = "";

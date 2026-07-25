@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { MerchantEditSheet as SharedMerchantEditSheet } from "@beancount-js/ui/forms";
+  import { MerchantEditSheet as SharedMerchantEditSheet } from "@lapis/ui/forms";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import {
     editableMerchantFromDetails,
@@ -9,8 +9,8 @@
     type EditableMerchantProfile,
     type MerchantProfileResponse,
   } from "../ingestion/merchant-form-config";
-  import type { FormConfig } from "@beancount-js/ui/forms";
-  import type { MerchantEditProfile } from "@beancount-js/ui/forms";
+  import type { FormConfig } from "@lapis/ui/forms";
+  import type { MerchantEditProfile } from "@lapis/ui/forms";
 
   type Props = {
     open?: boolean;

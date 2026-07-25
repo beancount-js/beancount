@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { DashboardLinePoint } from "@beancount-js/ui/dashboard/DashboardLine.svelte";
+  import type { DashboardLinePoint } from "@lapis/ui/dashboard/DashboardLine.svelte";
   import DashboardLine, {
     type DashboardLinePoint as SharedDashboardLinePoint,
     type DashboardTrendTone,
-  } from "@beancount-js/ui/dashboard/DashboardLine.svelte";
+  } from "@lapis/ui/dashboard/DashboardLine.svelte";
   import type { DashboardPoint } from "./model";
 
   let {

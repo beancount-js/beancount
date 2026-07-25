@@ -12,7 +12,7 @@
     FilterCommandPicker,
     SearchFilterBar,
     type FilterCommandOption,
-  } from "@beancount-js/ui/forms";
+  } from "@lapis/ui/forms";
   import { Decimal } from "@beancount-js/parser";
   import Landmark from "lucide-svelte/icons/landmark";
   import Link2 from "lucide-svelte/icons/link-2";
@@ -64,11 +64,11 @@
     ReconciliationProposalReconciliationsResponse,
   } from "../lib/reconciliation-review-response";
   import type { SortOrder } from "../grid/sort";
-  import * as Alert from "@beancount-js/ui/shadcn/alert";
-  import { Button } from "@beancount-js/ui/shadcn/button";
-  import * as Empty from "@beancount-js/ui/shadcn/empty";
-  import { Progress } from "@beancount-js/ui/shadcn/progress";
-  import * as ToggleGroup from "@beancount-js/ui/shadcn/toggle-group";
+  import * as Alert from "@lapis/ui/shadcn/alert";
+  import { Button } from "@lapis/ui/shadcn/button";
+  import * as Empty from "@lapis/ui/shadcn/empty";
+  import { Progress } from "@lapis/ui/shadcn/progress";
+  import * as ToggleGroup from "@lapis/ui/shadcn/toggle-group";
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
   import IngestionReconciliationPanel from "./IngestionReconciliationPanel.svelte";
   import ReviewImportsSkeleton from "./skeletons/ReviewImportsSkeleton.svelte";
@@ -76,7 +76,7 @@
   import IngestionTable, {
     type IngestionReviewGroup,
     type IngestionReviewRow,
-  } from "@beancount-js/ui/tables/IngestionTable.svelte";
+  } from "@lapis/ui/tables/IngestionTable.svelte";
 
   const PAGE_SIZES = [25, 50, 100];
   const ALL_CONNECTIONS = "__all__";

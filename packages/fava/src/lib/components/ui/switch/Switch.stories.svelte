@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "Fava's local shadcn switch. Shared structured forms use @beancount-js/ui/forms/Switch.svelte during the migration.",
+            "Fava's local shadcn switch. Shared structured forms use @lapis/ui/forms/Switch.svelte during the migration.",
         },
       },
     },

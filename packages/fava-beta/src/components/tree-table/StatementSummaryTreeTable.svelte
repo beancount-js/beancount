@@ -12,7 +12,7 @@
     type StatementSummaryColumn,
     type StatementSummaryContribution,
     type StatementSummaryTreeNode,
-  } from "@beancount-js/ui/tables/StatementSummaryTreeTable.svelte";
+  } from "@lapis/ui/tables/StatementSummaryTreeTable.svelte";
 
   const { currencyName, operatingCurrency } = useContext();
   const ctx = useCtx();

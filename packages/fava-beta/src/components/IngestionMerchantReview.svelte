@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import type { FilterCommandOption } from "@beancount-js/ui/forms";
+  import type { FilterCommandOption } from "@lapis/ui/forms";
   import SharedIngestionMerchantReview, {
     type MerchantReviewSortKey,
     type MerchantReviewSortOrder,
     type MerchantReviewView,
-  } from "@beancount-js/ui/pages/IngestionMerchantReview.svelte";
+  } from "@lapis/ui/pages/IngestionMerchantReview.svelte";
   import type { MerchantReviewCluster } from "@beancount-js/server";
   import {
     checkboxSelectionState,

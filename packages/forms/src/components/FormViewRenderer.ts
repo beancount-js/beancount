@@ -1,1 +1,1 @@
-export { default } from "@beancount-js/ui/forms/FormViewRenderer.svelte";
+export { default } from "@lapis/ui/forms/FormViewRenderer.svelte";

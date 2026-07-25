@@ -1,14 +1,14 @@
 # Fava Beta integration application
 
 `@beancount-js/fava-beta` is the mutable application used to integrate
-normalized components from `@beancount-js/ui`. It begins as a source-equivalent
+normalized components from `@lapis/ui`. It begins as a source-equivalent
 copy of the frozen `@beancount-js/fava` reference application so full-route
 behaviour remains comparable while individual components move.
 
 ## Boundaries
 
 - Do not edit `packages/fava`; it remains the visual and behavioural reference.
-- Reusable presentation belongs in `@beancount-js/ui`. Fava Beta owns routes,
+- Reusable presentation belongs in `@lapis/ui`. Fava Beta owns routes,
   stores, persistence, APIs, ledger derivation, and application adapters.
 - Keep every component migration independently reviewable: replace one Beta
   surface with a UI component, remove the obsolete Beta presentation, and run

@@ -3,10 +3,10 @@
   import ArrowDownToLine from "lucide-svelte/icons/arrow-down-to-line";
   import X from "lucide-svelte/icons/x";
   import { closeGotoLine, dialogEffect, goToLine } from "../gotoline";
-  import { Input } from "@beancount-js/ui/shadcn/input";
-  import { Button, buttonVariants } from "@beancount-js/ui/shadcn/button";
+  import { Input } from "@lapis/ui/shadcn/input";
+  import { Button, buttonVariants } from "@lapis/ui/shadcn/button";
   import { onMount } from "svelte";
-  import * as Tooltip from "@beancount-js/ui/shadcn/tooltip";
+  import * as Tooltip from "@lapis/ui/shadcn/tooltip";
 
   let {
     ref = $bindable(null),

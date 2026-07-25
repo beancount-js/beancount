@@ -1,7 +1,7 @@
 import type {
   SearchFilterSyntax,
   SearchFilterValue,
-} from "@beancount-js/ui/forms";
+} from "@lapis/ui/forms";
 
 export const LEDGER_SEARCH_SORTS = [
   "relevance",

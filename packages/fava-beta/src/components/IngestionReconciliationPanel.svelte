@@ -1,13 +1,13 @@
 <script lang="ts">
   import { accountOpenClose } from "@beancount-js/beancount";
   import { onDestroy } from "svelte";
-  import type { FilterCommandOption } from "@beancount-js/ui/forms";
+  import type { FilterCommandOption } from "@lapis/ui/forms";
   import SharedIngestionReconciliationPanel, {
     type ReconciliationPanelItem,
     type ReconciliationPanelMember,
     type ReconciliationReviewFacetOptions,
     type ReconciliationReviewSearchValues,
-  } from "@beancount-js/ui/pages/IngestionReconciliationPanel.svelte";
+  } from "@lapis/ui/pages/IngestionReconciliationPanel.svelte";
   import type {
     ReconciliationReviewDisplayItem,
     ReconciliationReviewResponse,
@@ -37,7 +37,7 @@
     updateReviewSelection,
   } from "../lib/review-selection";
   import { useNavigation } from "../router/router";
-  import type { BadgeVariant } from "@beancount-js/ui/shadcn/badge";
+  import type { BadgeVariant } from "@lapis/ui/shadcn/badge";
 
   type Review = ReconciliationReviewResponse;
   type ConnectionMerchant = {

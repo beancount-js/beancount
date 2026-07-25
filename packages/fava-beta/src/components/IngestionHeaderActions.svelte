@@ -2,7 +2,7 @@
   import {
     IngestionHeaderActions as SharedIngestionHeaderActions,
     type IngestionHeaderActionSet,
-  } from "@beancount-js/ui/forms";
+  } from "@lapis/ui/forms";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
 
   type Props = {

@@ -8,9 +8,9 @@ const manifest = JSON.parse(
 );
 const violations = [];
 
-if (manifest.dependencies?.["@beancount-js/ui"] !== "workspace:*") {
+if (manifest.dependencies?.["@lapis/ui"] !== "workspace:*") {
   violations.push(
-    "package.json must depend on @beancount-js/ui via workspace:*",
+    "package.json must depend on @lapis/ui via workspace:*",
   );
 }
 
@@ -63,14 +63,14 @@ for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
 }
 
 const rootFacade = await readFile(join(packageRoot, "src/index.ts"), "utf8");
-if (rootFacade.trim() !== 'export * from "@beancount-js/ui/forms";') {
-  violations.push("src/index.ts must only re-export @beancount-js/ui/forms");
+if (rootFacade.trim() !== 'export * from "@lapis/ui/forms";') {
+  violations.push("src/index.ts must only re-export @lapis/ui/forms");
 }
 
 const coreFacade = await readFile(join(packageRoot, "src/core.ts"), "utf8");
-if (coreFacade.trim() !== 'export * from "@beancount-js/ui/forms/core";') {
+if (coreFacade.trim() !== 'export * from "@lapis/ui/forms/core";') {
   violations.push(
-    "src/core.ts must only re-export @beancount-js/ui/forms/core",
+    "src/core.ts must only re-export @lapis/ui/forms/core",
   );
 }
 
@@ -80,7 +80,7 @@ const helperFacades = new Map([
     `export {
   accountAvatarFallbackColor,
   accountAvatarInitial,
-} from "@beancount-js/ui/forms/helpers/account-avatar";`,
+} from "@lapis/ui/forms/helpers/account-avatar";`,
   ],
   [
     "appearance-color.ts",
@@ -93,7 +93,7 @@ const helperFacades = new Map([
   MINIMUM_APPEARANCE_CONTRAST,
   needsAppearanceContrastCorrection,
   normalizeAppearanceColor,
-} from "@beancount-js/ui/forms/helpers/appearance-color";`,
+} from "@lapis/ui/forms/helpers/appearance-color";`,
   ],
 ]);
 for (const [helper, expected] of helperFacades) {
@@ -110,7 +110,7 @@ for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
   const component = subpath.slice("./components/".length, -".svelte".length);
   const expected =
     `export { default } from ` +
-    `"@beancount-js/ui/forms/${component}.svelte";`;
+    `"@lapis/ui/forms/${component}.svelte";`;
   const content = await readFile(join(packageRoot, target), "utf8");
   if (content.trim() !== expected) {
     violations.push(`${target} must only forward ${subpath}`);

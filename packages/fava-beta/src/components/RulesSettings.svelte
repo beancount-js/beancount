@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import SharedRulesSettings from "@beancount-js/ui/pages/RulesSettings.svelte";
+  import SharedRulesSettings from "@lapis/ui/pages/RulesSettings.svelte";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { type DetectionRule } from "@beancount-js/beangulp";

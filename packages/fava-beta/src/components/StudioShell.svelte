@@ -9,9 +9,9 @@
     ProjectSnapshot,
     ProjectSummary,
   } from "@beancount-js/workspace";
-  import * as Sidebar from "@beancount-js/ui/shadcn/sidebar";
-  import { Button } from "@beancount-js/ui/shadcn/button";
-  import * as Empty from "@beancount-js/ui/shadcn/empty";
+  import * as Sidebar from "@lapis/ui/shadcn/sidebar";
+  import { Button } from "@lapis/ui/shadcn/button";
+  import * as Empty from "@lapis/ui/shadcn/empty";
   import { cn } from "$lib/utils";
   import {
     FilterCommandPicker,
@@ -19,8 +19,8 @@
     createFormConfig,
     textField,
     type FilterCommandOption,
-  } from "@beancount-js/ui/forms";
-  import AppShell from "@beancount-js/ui/app-shell";
+  } from "@lapis/ui/forms";
+  import AppShell from "@lapis/ui/app-shell";
   import StudioShellHeader from "./StudioShellHeader.svelte";
   import IngestionHeaderActions from "./IngestionHeaderActions.svelte";
   import RouteLoadingSkeleton from "./skeletons/RouteLoadingSkeleton.svelte";

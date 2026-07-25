@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import DashboardSection from "@beancount-js/ui/dashboard/DashboardSection.svelte";
+  import DashboardSection from "@lapis/ui/dashboard/DashboardSection.svelte";
 
   let {
     id,

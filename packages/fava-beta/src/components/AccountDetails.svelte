@@ -4,7 +4,7 @@
     type AccountDetailsBreadcrumb,
     type AccountDetailsChart,
     type AccountDetailsTab,
-  } from "@beancount-js/ui/pages/AccountDetails.svelte";
+  } from "@lapis/ui/pages/AccountDetails.svelte";
   import { balances } from "../charts/line";
   import { useChartContext } from "../charts/context";
   import { bar } from "../charts/bar";

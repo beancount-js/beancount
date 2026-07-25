@@ -1,4 +1,4 @@
-import type { FormValidationIssue } from "@beancount-js/ui/forms";
+import type { FormValidationIssue } from "@lapis/ui/forms";
 import { isValidAccount } from "@beancount-js/beancount";
 import type {
   BrandfetchEnrichmentConfig,

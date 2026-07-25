@@ -1,5 +1,5 @@
 <script lang="ts">
-  import QueryPageSkeleton from "@beancount-js/ui/feedback/QueryPageSkeleton.svelte";
+  import QueryPageSkeleton from "@lapis/ui/feedback/QueryPageSkeleton.svelte";
 </script>
 
 <QueryPageSkeleton {...$$props} />

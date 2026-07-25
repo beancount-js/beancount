@@ -1,7 +1,7 @@
 <script lang="ts">
   import PresetQueryView, {
     type PresetQuery,
-  } from "@beancount-js/ui/pages/PresetQueryView.svelte";
+  } from "@lapis/ui/pages/PresetQueryView.svelte";
   import { urlFor } from "../helpers";
   import QueryTable from "./QueryTable.svelte";
 

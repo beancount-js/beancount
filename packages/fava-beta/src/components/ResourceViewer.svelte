@@ -2,8 +2,8 @@
   import { onDestroy } from "svelte";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
-  import type { ResourcePreviewItem } from "@beancount-js/ui/feedback/ResourcePreview.svelte";
-  import ResourcePreview from "@beancount-js/ui/feedback/ResourcePreview.svelte";
+  import type { ResourcePreviewItem } from "@lapis/ui/feedback/ResourcePreview.svelte";
+  import ResourcePreview from "@lapis/ui/feedback/ResourcePreview.svelte";
 
   const { router } = useNavigation();
   const { activeRoute } = router;

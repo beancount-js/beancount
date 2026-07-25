@@ -1,7 +1,7 @@
 # Fava to UI migration
 
 This file is the source of truth for moving reusable Fava presentation into
-`@beancount-js/ui` and integrating it through `@beancount-js/fava-beta`.
+`@lapis/ui` and integrating it through `@beancount-js/fava-beta`.
 
 ## Fixed boundaries
 
@@ -118,7 +118,7 @@ tables. The slice also repaired Sheet close-part targeting, optional snippet
 forwarding, ActivityTable ARIA contracts, and affected interaction stories.
 
 N05 evidence: Fava Beta runtime consumers now import public
-`@beancount-js/ui/shadcn/*` subpaths, the Beta primitive boundary scans 352
+`@lapis/ui/shadcn/*` subpaths, the Beta primitive boundary scans 352
 files, and the duplicate 244-file Beta primitive tree has been removed.
 
 N06 evidence: UI and Fava Beta have no Tailwind/PostCSS styling dependencies or
@@ -221,7 +221,7 @@ Required evidence before marking G03 `Accepted`:
   immutable `packages/fava` edits, mutable UI/Beta source/metadata does not
   import the legacy `@beancount-js/forms` facade, and every component tracker
   row C001-C070 is present and marked `Done`. It also proves Fava Beta imports
-  only exported `@beancount-js/ui` public subpaths.
+  only exported `@lapis/ui` public subpaths.
 - Every component row C001-C070 is `Done`; C006 includes its documented
   native-CSS visual exception and functional/browser evidence.
 - UI Storybook catalog review has covered all newly migrated Wave 5 stories.
@@ -236,7 +236,7 @@ Required evidence before marking G03 `Accepted`:
 #### C007 — `Nav.svelte`
 
 - Status: **Done**. The reusable navigation list component now lives in
-  `@beancount-js/ui/navigation/Nav.svelte` with app-owned active-state
+  `@lapis/ui/navigation/Nav.svelte` with app-owned active-state
   determination and navigation callbacks.
 - Beta adapter: `packages/fava-beta/src/components/Nav.svelte` no longer holds
   presentation-only rendering and has been removed.
@@ -246,7 +246,7 @@ Required evidence before marking G03 `Accepted`:
 #### C010 — `CycleSelect.svelte`
 
 - Status: **Done**. The reusable component now lives in
-  `@beancount-js/ui/forms/CycleSelect.svelte` and exposes controlled
+  `@lapis/ui/forms/CycleSelect.svelte` and exposes controlled
   `value/options/label/onChange` behavior with previous/next buttons and cycle
   semantics.
 - UI story: `Forms/Cycle Select` (`CycleSelect`) with interaction checks for
@@ -254,19 +254,19 @@ Required evidence before marking G03 `Accepted`:
 - Beta adapter: `@beancount-js/fava-beta/src/components/CycleSelect.svelte`
   and its story have been removed; `IngestionHeaderActions.svelte` now uses
   the shared UI form control.
-- Validation: `@beancount-js/ui check-boundaries`, `test-storybook`, and
+- Validation: `@lapis/ui check-boundaries`, `test-storybook`, and
   `svelte-check` pass. Focused `@beancount-js/fava-beta` `lint`,
   `check`, `check:svelte5`, `test --run`, and `build` pass after migration.
 
 #### C011 — `ComboBox.svelte`
 
 - Status: **Done**. The reusable combo/filter control now lives in
-  `@beancount-js/ui/forms/ComboBox.svelte`, which already includes a Storybook
+  `@lapis/ui/forms/ComboBox.svelte`, which already includes a Storybook
   story and interaction tests.
 - Beta adapter: `packages/fava-beta/src/components/ComboBox.svelte` and
   `packages/fava-beta/src/components/ComboBox.stories.svelte` were removed.
   `IngestionAccountsSetup.svelte` now imports `ComboBox` from
-  `@beancount-js/ui/forms`, while preserving local account-list application
+  `@lapis/ui/forms`, while preserving local account-list application
   state and option mapping.
 - Validation: `pnpm --filter @beancount-js/fava-beta check`,
   `check:svelte5`, `lint`, and `build` pass after consuming the shared control.
@@ -274,19 +274,19 @@ Required evidence before marking G03 `Accepted`:
 #### C012 — `MerchantPicker.svelte`
 
 - Status: **Done**. Presentation ownership is now in
-  `@beancount-js/ui/forms/MerchantPicker.svelte`; `packages/fava-beta` keeps a
+  `@lapis/ui/forms/MerchantPicker.svelte`; `packages/fava-beta` keeps a
   thin adapter that preserves project lookup, ranking, brand-match action
   handling, error reporting, and route/context usage.
 - Beta adapter: `packages/fava-beta/src/components/MerchantPicker.stories.svelte`
   was removed; `packages/fava-beta/src/components/MerchantPicker.svelte`
-  now composes `SharedMerchantPicker` from `@beancount-js/ui/forms`.
+  now composes `SharedMerchantPicker` from `@lapis/ui/forms`.
 - Validation: `pnpm --filter @beancount-js/fava-beta check`,
   `check:svelte5`, `lint`, and `build` pass after this migration.
 
 #### C013 — `LocalMerchantMatchPicker.svelte`
 
 - Status: **Done**. Presentation ownership is now in
-  `@beancount-js/ui/forms/LocalMerchantMatchPicker.svelte` as a form-level
+  `@lapis/ui/forms/LocalMerchantMatchPicker.svelte` as a form-level
   wrapper around shared `MerchantPicker`; the Beta adapter in
   `packages/fava-beta/src/components/LocalMerchantMatchPicker.svelte` retains
   API fetching and brand-match action behavior, then passes ranked merchants and
@@ -295,54 +295,54 @@ Required evidence before marking G03 `Accepted`:
   now uses app-owned merchant loading, brand-match action handling, and local
   error reporting while rendering the shared UI control with a preconfigured
   `Existing merchant` form field.
-- Validation: `pnpm --filter @beancount-js/ui check-boundaries`,
+- Validation: `pnpm --filter @lapis/ui check-boundaries`,
   `test-storybook`, `pnpm --filter @beancount-js/fava-beta check`,
   `check:svelte5`, `lint`, and `build` pass after this migration.
 
 #### C014 — `AccountPicker.svelte` form renderer
 
 - Status: **Done**. Presentation ownership is now in
-  `@beancount-js/ui/forms/AccountPicker.svelte`; the component consumes
+  `@lapis/ui/forms/AccountPicker.svelte`; the component consumes
   app-owned account context, works as the custom structured-form renderer, and
   preserves the existing searchable-select behavior.
 - Beta adapter: `packages/fava-beta/src/ingestion/source-form-config.ts` now
-  uses `AccountPicker` from `@beancount-js/ui/forms`; the duplicate
+  uses `AccountPicker` from `@lapis/ui/forms`; the duplicate
   account-combo component and stories were removed.
-- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
+- Validation: `pnpm --filter @lapis/ui test-storybook`,
   `pnpm --filter @beancount-js/fava-beta check`, `check:svelte5`, `lint`, and
   `build` pass after this migration.
 
 #### C015 — `form/MerchantComboField.svelte`
 
-- Status: **Done**. `@beancount-js/ui/forms/MerchantComboField.svelte`
+- Status: **Done**. `@lapis/ui/forms/MerchantComboField.svelte`
   now owns the source-form merchant selector presentation.
 - Beta adapter: `packages/fava-beta/src/ingestion/source-form-config.ts` now
-  imports `MerchantComboField` from `@beancount-js/ui/forms`; `IngestionSourceForm`
+  imports `MerchantComboField` from `@lapis/ui/forms`; `IngestionSourceForm`
   loads the project merchant catalog from `/merchants` and passes it through
   `SourceFormContext.merchants` to the shared renderer. The duplicate local
   `MerchantComboField` component and story were removed.
-- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
-  `pnpm --filter @beancount-js/ui check-boundaries`,
+- Validation: `pnpm --filter @lapis/ui test-storybook`,
+  `pnpm --filter @lapis/ui check-boundaries`,
   `pnpm --filter @beancount-js/fava-beta check`,
   `check:svelte5`, `lint`, and `build` pass after this migration.
 
 #### C017 — `form/SwitchField.svelte`
 
 - Status: **Done**. Presentation ownership is now in
-  `@beancount-js/ui/forms/SwitchField.svelte`; the component wraps the shared
+  `@lapis/ui/forms/SwitchField.svelte`; the component wraps the shared
   `Switch` with read-only text output for immutable views and preserves the Fava
   form row behavior for editable mode.
 - Beta adapter: `packages/fava-beta/src/ingestion/source-form-config.ts` now
-  imports `SwitchField` from `@beancount-js/ui/forms`; legacy story and local
+  imports `SwitchField` from `@lapis/ui/forms`; legacy story and local
   component files under `packages/fava-beta/src/components/form/` were removed.
-- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
-  `pnpm --filter @beancount-js/ui check-boundaries`,
+- Validation: `pnpm --filter @lapis/ui test-storybook`,
+  `pnpm --filter @lapis/ui check-boundaries`,
   `pnpm --filter @beancount-js/fava-beta check`,
   `check:svelte5`, `lint`, and `build` pass after this migration.
 
 #### C018 — `AccountBulkActionSheet.svelte`
 
-- Status: **Done**. `@beancount-js/ui/tables/AccountBulkActionSheet.svelte`
+- Status: **Done**. `@lapis/ui/tables/AccountBulkActionSheet.svelte`
   now owns the presentational bulk-action sheet UI. `packages/fava-beta/src/components/AccountBulkActionSheet.svelte`
   is now a thin adapter that supplies record-driven options/summaries, validates
   ledger patches, and delegates user-facing rendering to the shared component.
@@ -355,7 +355,7 @@ Required evidence before marking G03 `Accepted`:
 
 #### C019 — `MerchantEditSheet.svelte`
 
-- Status: **Done**. `@beancount-js/ui/forms/MerchantEditSheet.svelte`
+- Status: **Done**. `@lapis/ui/forms/MerchantEditSheet.svelte`
   now owns the merchant editing sheet presentation. It includes details,
   aliases, provenance, brand sections, and logo metadata rendering, while
   exposing simple callback props for state changes.
@@ -365,8 +365,8 @@ Required evidence before marking G03 `Accepted`:
 - Storybook: added
   `packages/ui/src/components/forms/MerchantEditSheet.stories.svelte` and tagged it
   as `visual-pending` while pixel parity remains out of scope for this slice.
-- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
-  `pnpm --filter @beancount-js/ui check-boundaries`,
+- Validation: `pnpm --filter @lapis/ui test-storybook`,
+  `pnpm --filter @lapis/ui check-boundaries`,
   `pnpm --filter @beancount-js/fava-beta check`,
   `pnpm --filter @beancount-js/fava-beta check:svelte5`,
   `pnpm --filter @beancount-js/fava-beta lint`,
@@ -374,16 +374,16 @@ Required evidence before marking G03 `Accepted`:
 
 #### C016 — `form/SecretField.svelte`
 
-- Status: **Done**. `@beancount-js/ui/forms/SecretField.svelte` now owns
+- Status: **Done**. `@lapis/ui/forms/SecretField.svelte` now owns
   secret input rendering for both standalone and form-renderer usage, including
   environment-key placeholders and inline mode display behavior. The shared form
   version accepts `envPlaceholder` while preserving the existing API that uses
   `environmentPlaceholder`/`environmentKeys`.
 - Beta adapter: `packages/fava-beta/src/ingestion/source-form-config.ts` now
-  imports `SecretField` from `@beancount-js/ui/forms`; legacy story and local
+  imports `SecretField` from `@lapis/ui/forms`; legacy story and local
   component files under `packages/fava-beta/src/components/form/` were removed.
-- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
-  `pnpm --filter @beancount-js/ui check-boundaries`,
+- Validation: `pnpm --filter @lapis/ui test-storybook`,
+  `pnpm --filter @lapis/ui check-boundaries`,
   `pnpm --filter @beancount-js/fava-beta check`,
   `check:svelte5`, `lint`, and `build` pass after this migration.
 
@@ -393,7 +393,7 @@ Required evidence before marking G03 `Accepted`:
   protected captures cover account detail, dashboard, query, income statement,
   balance sheet, and trial balance.
 - UI export: the existing
-  `@beancount-js/ui/layout/ContentScrollArea.svelte`, with the colocated
+  `@lapis/ui/layout/ContentScrollArea.svelte`, with the colocated
   `Layout/Content Scroll Area` story retained and marked `visual-ready`.
 - Beta adapter: six direct imports in `AccountDetails`, `FinancialDashboard`,
   `PresetQueryView`, `Query`, `StatementReport`, and `TrialBalance`; the local
@@ -408,9 +408,9 @@ Required evidence before marking G03 `Accepted`:
 #### C002 — `StudioShell.svelte` / `AppShell`
 
 - Original reference: `packages/fava/src/components/StudioShell.svelte` already
-  consumes `@beancount-js/ui/app-shell`; Fava-specific project, navigation,
+  consumes `@lapis/ui/app-shell`; Fava-specific project, navigation,
   ingestion, and AI slots remain application-owned.
-- UI export: `@beancount-js/ui/app-shell`, with the existing `Layout/App Shell`
+- UI export: `@lapis/ui/app-shell`, with the existing `Layout/App Shell`
   story marked `visual-ready` and given a protected Storybook baseline.
 - Beta adapter: the unchanged `packages/fava-beta/src/components/StudioShell.svelte`
   imports the same UI export; no local AppShell duplicate exists to remove.
@@ -523,13 +523,13 @@ review of the completed catalog and the documented frozen-reference exception.
 ### Migration-wide blocker cleanup notes
 
 - 2026-07-25 - Retargeted remaining Fava Beta adapter imports from the
-  `@beancount-js/forms` compatibility facade to `@beancount-js/ui/forms` in
+  `@beancount-js/forms` compatibility facade to `@lapis/ui/forms` in
   navigation, Studio shell, ingestion table, ingestion form, brand/config
   settings, and merchant sheet adapters. This keeps the facade reserved for the
   frozen Fava reference. Automated validation was not run in this continuation.
 
 - 2026-07-25 - Retargeted Fava Beta ingestion form-config helpers from the
-  `@beancount-js/forms` compatibility facade to `@beancount-js/ui/forms` for
+  `@beancount-js/forms` compatibility facade to `@lapis/ui/forms` for
   config builders, field helpers, and validation issue types. Fava Beta still
   owns source/brand/merchant config construction; UI owns the reusable form
   contract they consume. Automated validation was not run in this continuation.
@@ -556,20 +556,20 @@ review of the completed catalog and the documented frozen-reference exception.
 
 - 2026-07-25 - Removed Fava Beta's stale direct dependency and SSR noExternal
   entry for `@beancount-js/forms` after source imports were retargeted to
-  `@beancount-js/ui/forms`; the compatibility facade remains available for the
+  `@lapis/ui/forms`; the compatibility facade remains available for the
   frozen Fava package. Automated validation was not run in this continuation.
 
 - 2026-07-25 - Updated the UI forms guidance to distinguish the frozen Fava
   reference, which remains on the compatibility facade, from Fava Beta, which
-  now consumes `@beancount-js/ui/forms` through adapters and helpers. Automated
+  now consumes `@lapis/ui/forms` through adapters and helpers. Automated
   validation was not run in this continuation.
 
-- 2026-07-25 - Added `@beancount-js/ui` to Fava Beta's Vite SSR `noExternal`
+- 2026-07-25 - Added `@lapis/ui` to Fava Beta's Vite SSR `noExternal`
   list so the mutable integration app treats the shared UI workspace package as
   local source during SSR, matching the direct Svelte component imports used by
   the migration adapters. Automated validation was not run in this continuation.
 
-- 2026-07-25 - Folded duplicate `@beancount-js/ui/forms` imports in Fava Beta's
+- 2026-07-25 - Folded duplicate `@lapis/ui/forms` imports in Fava Beta's
   ingestion source form-config helper after the compatibility-facade retarget,
   keeping app-owned form configuration on the UI forms public surface.
   Automated validation was not run in this continuation.
@@ -671,13 +671,13 @@ review of the completed catalog and the documented frozen-reference exception.
   completion. Automated validation was not run in this continuation.
 
 - 2026-07-25 - Extended `pnpm audit:fava-migration` to verify every
-  `@beancount-js/ui` import in Fava Beta source is covered by the UI package
+  `@lapis/ui` import in Fava Beta source is covered by the UI package
   export map, including wildcard exports. This keeps migration adapters on the
   public UI surface instead of private source paths. Automated validation was
   not run in this continuation.
 
-- 2026-07-25 - Hardened the `@beancount-js/ui` public-subpath audit to include
-  dynamic `import("@beancount-js/ui/...")` calls as well as static imports,
+- 2026-07-25 - Hardened the `@lapis/ui` public-subpath audit to include
+  dynamic `import("@lapis/ui/...")` calls as well as static imports,
   keeping future lazy-loaded Fava Beta adapters on exported UI surfaces.
   Automated validation was not run in this continuation.
 
@@ -708,7 +708,7 @@ review of the completed catalog and the documented frozen-reference exception.
 - 2026-07-25 - Added UI-package aliases for the migration audit and report
   tools, then routed the root `pnpm audit:fava-migration`,
   `pnpm audit:fava-migration:final`, and `pnpm report:fava-migration` commands
-  through `@beancount-js/ui`. The tools now work from the UI package surface as
+  through `@lapis/ui`. The tools now work from the UI package surface as
   well as the repository root. Automated validation was not run in this
   continuation.
 
@@ -740,7 +740,7 @@ review of the completed catalog and the documented frozen-reference exception.
   validation was not run in this continuation.
 
 - 2026-07-25 - Extended `pnpm audit:fava-migration` to verify the root audit and
-  report commands delegate through the `@beancount-js/ui` package aliases, so
+  report commands delegate through the `@lapis/ui` package aliases, so
   root and UI-package entry points cannot drift silently. Automated validation
   was not run in this continuation.
 
@@ -788,24 +788,24 @@ review of the completed catalog and the documented frozen-reference exception.
 ### C059 progress notes
 
 - 2026-07-25 — Began the editor slice by correcting shared `Editor.svelte`
-  and adding a shared `Highlighter.svelte` in `@beancount-js/ui`, then switched
+  and adding a shared `Highlighter.svelte` in `@lapis/ui`, then switched
   `fava-beta` `Editor.svelte` into a thin adapter that wires app-owned setup,
   save, AI, and header actions into the shared editor.
-- 2026-07-25 — Completed the editor slice migration: `@beancount-js/ui/src/components/pages/Editor.svelte`
+- 2026-07-25 — Completed the editor slice migration: `@lapis/ui/src/components/pages/Editor.svelte`
   and `pages/Highlighter.svelte` now own the editor/highlight presentation and
   callbacks. `packages/fava-beta/src/components/Editor.svelte` is the adapter with
   app-owned state wiring, while `packages/fava-beta/src/components/Highlighter.svelte`
   forwards directly to UI.
-- 2026-07-25 — Completed the Search slice migration: `@beancount-js/ui/src/components/pages/Search.svelte`
+- 2026-07-25 — Completed the Search slice migration: `@lapis/ui/src/components/pages/Search.svelte`
   now owns the search presentation, filter controls, and result grouping; `packages/fava-beta/src/components/Search.svelte`
   remains an application adapter that supplies BQL execution and ledger state transitions.
-- 2026-07-25 — Validation snapshot: `pnpm --filter @beancount-js/ui svelte-check`
+- 2026-07-25 — Validation snapshot: `pnpm --filter @lapis/ui svelte-check`
   and `pnpm --filter @beancount-js/fava-beta check` still report pre-existing
   migration-wide type/script failures unrelated to C059, but there are no C059
   file-level diagnostics after the type fixes above.
 - 2026-07-25 — Completed `C062` (`IngestionBrandSettings.svelte`) as a
   UI ownership slice: presentation now lives in
-  `@beancount-js/ui/src/components/forms/IngestionBrandSettings.svelte` with the
+  `@lapis/ui/src/components/forms/IngestionBrandSettings.svelte` with the
   existing `fava-beta` component reworked to adapter wiring, including load,
   validation issue mapping, save debouncing, and save/load routing.
 
@@ -827,19 +827,19 @@ review of the completed catalog and the documented frozen-reference exception.
 
 - 2026-07-25 — `IngestionConfigEditor.svelte` now acts as a thinner app
   adapter in `fava-beta`, moving preview rendering details into
-  `@beancount-js/ui/src/components/forms/IngestionSourcesPreview.svelte` and
+  `@lapis/ui/src/components/forms/IngestionSourcesPreview.svelte` and
   adapting config-derived state and callbacks (secret mode/value/base URL/endpoint
   edits, sync, and account-management navigation). Legacy inline preview markup is
   removed from the beta component.
 - 2026-07-25 — Completed `C063` migration: `fava-beta` `IngestionConfigEditor.svelte`
-  now renders a thin adapter over `@beancount-js/ui/src/components/forms/IngestionConfigEditor.svelte`,
+  now renders a thin adapter over `@lapis/ui/src/components/forms/IngestionConfigEditor.svelte`,
   passing app-owned config, preview rows, source-form bundles, per-source callbacks,
   and section-open persistence into the shared editor while retaining all
   persistence, routing, and validation logic in `fava-beta`.
 
 ### C064 progress notes
 
-- 2026-07-25 — Added `@beancount-js/ui/src/components/pages/IngestionMerchantManage.svelte`
+- 2026-07-25 — Added `@lapis/ui/src/components/pages/IngestionMerchantManage.svelte`
   for shared presentation of merchant list/search/pagination and wired
   `packages/fava-beta/src/components/IngestionMerchantManage.svelte` into a thin
   adapter. The adapter now retains route/query ownership, `backfill` actions,
@@ -868,7 +868,7 @@ review of the completed catalog and the documented frozen-reference exception.
 ### C069 progress notes
 
 - 2026-07-25 — Completed the `IngestionSourcesPreview` migration: added
-  `@beancount-js/ui/src/components/forms/IngestionSourcesPreview.svelte`
+  `@lapis/ui/src/components/forms/IngestionSourcesPreview.svelte`
   as a shared preview renderer with callback-driven updates, then switched
   `packages/fava-beta/src/components/IngestionConfigEditor.svelte` to map
   app-owned config, merchant, account appearance, and sync state into this
@@ -878,7 +878,7 @@ review of the completed catalog and the documented frozen-reference exception.
 ### C070 progress notes
 
 - 2026-07-25 — Continued `RulesSettings` migration by moving shared presentation
-  into `@beancount-js/ui/src/components/pages/RulesSettings.svelte` (including
+  into `@lapis/ui/src/components/pages/RulesSettings.svelte` (including
   rule sorting, runs table + pagination, and apply/run preview dialogs) and
   updating `packages/fava-beta/src/components/RulesSettings.svelte` to a thin adapter that retains
   project loading, API calls, save/delete/apply orchestration, and header-action
@@ -886,9 +886,9 @@ review of the completed catalog and the documented frozen-reference exception.
 - 2026-07-25 — Completed C070 after fixing the beta adapter import, editor-close
   state reset, typed Storybook fixtures, and Storybook accessibility issues in
   the rule list/run-history surface. Filtered validation showed no remaining
-  `RulesSettings` diagnostics in `pnpm --filter @beancount-js/ui check`,
+  `RulesSettings` diagnostics in `pnpm --filter @lapis/ui check`,
   `pnpm --filter @beancount-js/fava-beta check`, or
-  `pnpm --filter @beancount-js/ui test-storybook`; broad package checks still
+  `pnpm --filter @lapis/ui test-storybook`; broad package checks still
   fail on unrelated migration-wide forms, dashboard, table, and older adapter
   issues.
 
@@ -918,7 +918,7 @@ change IDs here at the end of each committed slice.
   `/Users/stevejuma/code/beancount-js-studio-fava-reference`; its empty working
   copy has parent `191dae81`. UI boundary checks passed, documentation and
   package metadata passed Prettier, and Turbo's dry run contained no
-  `@beancount-js/ui#checks` task.
+  `@lapis/ui#checks` task.
 - 2026-07-24 — Visual harness slice (`a3d69779`): ported the local Visual
   Delta addon and Storybook tag badges from the pinned harness reference.
   Addon tests passed 61/61, UI unit tests passed 18/18, Svelte and boundary
@@ -936,31 +936,31 @@ change IDs here at the end of each committed slice.
 - 2026-07-25 — Feedback controls slice (`C038`–`C040`): migrated
   `AiUnifiedReviewDiff.svelte` and `ResourceViewer.svelte` to shared UI feedback
   components and adapted `errors/Errors.svelte` to `ValidationErrorTable`.
-  `pnpm --filter @beancount-js/ui check-boundaries` passed for the new
-  presentation ownership work. `pnpm --filter @beancount-js/ui test-storybook` and
+  `pnpm --filter @lapis/ui check-boundaries` passed for the new
+  presentation ownership work. `pnpm --filter @lapis/ui test-storybook` and
   `pnpm --filter @beancount-js/fava-beta check` still fail from pre-existing
   unrelated issues in `ActivityTable.svelte`, `JournalTable.svelte`,
   `tree-table/StatementSummaryTreeTable.svelte`, and several form/types areas.
 - 2026-07-25 — Route-loading skeleton slice (`C041`): migrated `skeletons/*`
   files to adapter entry points that delegate to corresponding
-  `@beancount-js/ui/feedback` components for shared loading surfaces.
+  `@lapis/ui/feedback` components for shared loading surfaces.
 - 2026-07-25 — Statement report slice (`C049`): migrated
   `@beancount-js/fava-beta/src/components/StatementReport.svelte` to a thin adapter around
-  `@beancount-js/ui/dashboard/StatementReport.svelte` that preserves chart
+  `@lapis/ui/dashboard/StatementReport.svelte` that preserves chart
   switching through `lastActiveChartName` and keeps section rows delegated to the
   existing Beta tree-table section adapter.
 - 2026-07-25 — Income statement slice (`C050`): migrated
   `@beancount-js/fava-beta/src/components/IncomeStatement.svelte` to a thin adapter around
-  `@beancount-js/ui/dashboard/IncomeStatement.svelte` with chart-switch persistence local
+  `@lapis/ui/dashboard/IncomeStatement.svelte` with chart-switch persistence local
   to the component and section rendering delegated to the existing Beta
   `StatementSummaryTreeTable` adapter.
 - 2026-07-25 — Balance sheet slice (`C051`): migrated
   `@beancount-js/fava-beta/src/components/BalanceSheet.svelte` to a thin adapter around
-  `@beancount-js/ui/dashboard/BalanceSheet.svelte` with chart switching and section
+  `@lapis/ui/dashboard/BalanceSheet.svelte` with chart switching and section
   rendering delegated to the existing Beta `StatementSummaryTreeTable` adapter.
 - 2026-07-25 — Trial balance slice (`C052`): migrated
   `@beancount-js/fava-beta/src/components/TrialBalance.svelte` to a thin adapter around
-  `@beancount-js/ui/dashboard/TrialBalance.svelte`, preserving the account tab
+  `@lapis/ui/dashboard/TrialBalance.svelte`, preserving the account tab
   selection behavior and section rendering through the Beta `StatementSummaryTreeTable` adapter.
 - 2026-07-24 — Forms consolidation slice: confirmed that UI's relocated Forms
   implementations match the former package behavior and retain its complete
@@ -1028,30 +1028,30 @@ change IDs here at the end of each committed slice.
   original Fava nor Beta's identical `FavaNavigation` renders that action.
 - 2026-07-25 — Journal editor migration slice (`wvtppkxy`): migrated
   `JournalEditorSheet` and `JournalRecordRouteSheet` into the shared UI/fava-beta
-  adapter pattern. `@beancount-js/ui` now owns shared editing presentation for
+  adapter pattern. `@lapis/ui` now owns shared editing presentation for
   transactions, opens, and additional directive kinds, while fava-beta owns source
   persistence and route handling.
-  Verification run: `pnpm --filter @beancount-js/ui test-storybook`,
-  `pnpm --filter @beancount-js/ui test-unit`,
-  `pnpm --filter @beancount-js/ui check-boundaries`,
-  `pnpm --filter @beancount-js/ui check` (still fails on unrelated story field typing),
+  Verification run: `pnpm --filter @lapis/ui test-storybook`,
+  `pnpm --filter @lapis/ui test-unit`,
+  `pnpm --filter @lapis/ui check-boundaries`,
+  `pnpm --filter @lapis/ui check` (still fails on unrelated story field typing),
   `pnpm --filter @beancount-js/fava-beta check`, and
   `pnpm --filter @beancount-js/fava-beta test:run`.
 
 ### C020 — `JournalEditorSheet.svelte`
 
-- Status: **Done.** The reusable `@beancount-js/ui/forms/JournalEditorSheet.svelte`
+- Status: **Done.** The reusable `@lapis/ui/forms/JournalEditorSheet.svelte`
   now owns form rendering, interaction states, and directive kind-specific logic.
   `@beancount-js/fava-beta/src/components/JournalEditorSheet.svelte` is now a thin
   adapter that:
   - passes app-owned data (`accounts`, `currencies`, `tags`, and fetched merchants),
   - owns record-anchor persistence, revision checks, route-key refresh, and autosave,
   - and delegates shared rendering to the UI component.
-- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
-  `pnpm --filter @beancount-js/ui test-unit`, and
-  `pnpm --filter @beancount-js/ui check-boundaries` pass;
+- Validation: `pnpm --filter @lapis/ui test-storybook`,
+  `pnpm --filter @lapis/ui test-unit`, and
+  `pnpm --filter @lapis/ui check-boundaries` pass;
   `pnpm --filter @beancount-js/fava-beta check` also passes.
-- Note: `pnpm --filter @beancount-js/ui check` remains blocked by pre-existing
+- Note: `pnpm --filter @lapis/ui check` remains blocked by pre-existing
   story fixture typing issues in `MerchantComboField.stories.svelte` and
   `SwitchField.stories.svelte`, not by this migration slice.
 
@@ -1067,41 +1067,41 @@ change IDs here at the end of each committed slice.
 #### C022 — `RuleEditorSheet.svelte`
 
 - Status: **Done**. Presentation for detection-rule editing now lives in
-  `@beancount-js/ui/forms/RuleEditorSheet.svelte` and is composed from shared
-  `@beancount-js/ui/forms` rule metadata controls. `@beancount-js/fava-beta/src/components/RuleEditorSheet.svelte`
+  `@lapis/ui/forms/RuleEditorSheet.svelte` and is composed from shared
+  `@lapis/ui/forms` rule metadata controls. `@beancount-js/fava-beta/src/components/RuleEditorSheet.svelte`
   is now an adapter wrapper that retains route/state ownership and passes
   app-owned persistence callbacks into the shared sheet.
-- Validation: `pnpm --filter @beancount-js/ui test-storybook`,
-  `pnpm --filter @beancount-js/ui test-unit`, and
-  `pnpm --filter @beancount-js/ui check-boundaries` pass.
+- Validation: `pnpm --filter @lapis/ui test-storybook`,
+  `pnpm --filter @lapis/ui test-unit`, and
+  `pnpm --filter @lapis/ui check-boundaries` pass.
 
 #### C023 — `rules/RuleConditionRow.svelte`
 
 - Status: **Done**. The reusable condition row control now exists in
-  `@beancount-js/ui/src/components/forms/rules/RuleConditionRow.svelte` and is
+  `@lapis/ui/src/components/forms/rules/RuleConditionRow.svelte` and is
   consumed by the shared `RuleEditorSheet`. The legacy
   `packages/fava-beta/src/components/rules/RuleConditionRow.svelte` component
   was moved into UI and removed from Beta.
 - Validation: `pnpm --filter @beancount-js/fava-beta check` and
   `pnpm --filter @beancount-js/fava-beta test:run` pass.
-- Note: `pnpm --filter @beancount-js/ui check` remains blocked by pre-existing
+- Note: `pnpm --filter @lapis/ui check` remains blocked by pre-existing
   story fixture typing issues in `MerchantComboField.stories.svelte` and
   `SwitchField.stories.svelte`; these are unrelated to this slice.
 - 2026-07-25 — Dashboard components slice (`C042`–`C047`): migrated
-  `@beancount-js/fava-beta` dashboard adapters to shared `@beancount-js/ui`
+  `@beancount-js/fava-beta` dashboard adapters to shared `@lapis/ui`
   implementations for donut, flow, line, section, tree table/row, and chart
   tooltip surfaces. App callbacks and route/selection behavior were preserved.
 - 2026-07-25 — Financial dashboard slice (`C048`): migrated
   `@beancount-js/fava-beta/src/components/FinancialDashboard.svelte` to a thin
   adapter that derives shared dashboard data from `createDashboardData` and routes
-  period/currency/valuation/account interactions through `@beancount-js/ui/dashboard/FinancialDashboard.svelte`.
+  period/currency/valuation/account interactions through `@lapis/ui/dashboard/FinancialDashboard.svelte`.
 
 - 2026-07-25 — Account details slice (`C053`): migrated
   `@beancount-js/fava-beta/src/components/AccountDetails.svelte` to a thin adapter around
-  `@beancount-js/ui/pages/AccountDetails.svelte`. The shared shell now owns breadcrumb,
+  `@lapis/ui/pages/AccountDetails.svelte`. The shared shell now owns breadcrumb,
   chart-switcher, and tab presentation. The adapter keeps ledger derivation, query
   routing, tab state persistence, and local account-tree conversion intact.
 - 2026-07-25 — Statistics slice (`C055`): migrated
   `@beancount-js/fava-beta/src/components/Statistics.svelte` to a shared
-  `@beancount-js/ui/pages/Statistics.svelte` adapter. The adapter retains application-owned
+  `@lapis/ui/pages/Statistics.svelte` adapter. The adapter retains application-owned
   query execution and keeps results rendered through existing `QueryTable` composition.

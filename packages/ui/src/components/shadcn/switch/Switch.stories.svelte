@@ -10,7 +10,7 @@
       docs: {
         description: {
           component:
-            "UI-owned shadcn switch. Shared structured forms use @beancount-js/ui/forms/Switch.svelte during the migration.",
+            "UI-owned shadcn switch. Shared structured forms use @lapis/ui/forms/Switch.svelte during the migration.",
         },
       },
     },

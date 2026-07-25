@@ -20,7 +20,7 @@
     textField,
     type FilterCommandOption,
   } from "@beancount-js/forms";
-  import AppShell from "@beancount-js/ui/app-shell";
+  import AppShell from "@lapis/ui/app-shell";
   import StudioShellHeader from "./StudioShellHeader.svelte";
   import IngestionHeaderActions from "./IngestionHeaderActions.svelte";
   import RouteLoadingSkeleton from "./skeletons/RouteLoadingSkeleton.svelte";

@@ -3,7 +3,7 @@
   import { debounceWithDelay } from "../hooks/debounce";
   import { useNavigation } from "../router/router";
   import type { MerchantIdentity } from "@beancount-js/beangulp";
-  import SharedIngestionMerchantManage from "@beancount-js/ui/pages/IngestionMerchantManage.svelte";
+  import SharedIngestionMerchantManage from "@lapis/ui/pages/IngestionMerchantManage.svelte";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionJson, ingestionPath } from "../ingestion/api";

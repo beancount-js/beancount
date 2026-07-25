@@ -6,7 +6,7 @@
   import { Custom, isDirective } from "@beancount-js/beancount";
   import ValidationErrorTable, {
     type ValidationErrorRow,
-  } from "@beancount-js/ui/feedback/ValidationErrorTable.svelte";
+  } from "@lapis/ui/feedback/ValidationErrorTable.svelte";
 
   const { ledgerData, predicate } = useContext();
   const filterVisitor = new BeancountFilter();

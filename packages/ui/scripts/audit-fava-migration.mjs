@@ -216,13 +216,13 @@ const mismatchedUiImplementations = Object.entries(
 ).filter(([script, command]) => uiPackageJson.scripts?.[script] !== command);
 const expectedRootDelegates = {
   "audit:fava-migration":
-    "pnpm --filter @beancount-js/ui audit:fava-migration",
+    "pnpm --filter @lapis/ui audit:fava-migration",
   "audit:fava-migration:final":
-    "pnpm --filter @beancount-js/ui audit:fava-migration:final",
+    "pnpm --filter @lapis/ui audit:fava-migration:final",
   "report:fava-migration":
-    "pnpm --filter @beancount-js/ui report:fava-migration",
+    "pnpm --filter @lapis/ui report:fava-migration",
   "report:fava-migration:json":
-    "pnpm --filter @beancount-js/ui report:fava-migration:json",
+    "pnpm --filter @lapis/ui report:fava-migration:json",
 };
 const mismatchedRootDelegates = Object.entries(expectedRootDelegates).filter(
   ([script, command]) => rootPackageJson.scripts?.[script] !== command,
@@ -268,7 +268,7 @@ if (
 }
 
 function uiExportSubpath(specifier) {
-  const suffix = specifier.slice("@beancount-js/ui".length);
+  const suffix = specifier.slice("@lapis/ui".length);
   return suffix ? `.${suffix}` : ".";
 }
 
@@ -298,7 +298,7 @@ for (const filePath of codeFiles.filter((filePath) =>
 if (uiImportHits.length > 0) {
   fail(
     [
-      "Fava Beta imports unexported @beancount-js/ui subpaths:",
+      "Fava Beta imports unexported @lapis/ui subpaths:",
       ...uiImportHits.map(
         (hit) => `  - ${relative(hit.filePath)}: ${hit.specifier}`,
       ),

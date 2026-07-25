@@ -15,7 +15,7 @@
   import StatementReport, {
     type StatementReportChart,
     type StatementReportSection,
-  } from "@beancount-js/ui/dashboard/StatementReport.svelte";
+  } from "@lapis/ui/dashboard/StatementReport.svelte";
   import StatementSummaryTreeTable from "./tree-table/StatementSummaryTreeTable.svelte";
   
   export let charts: FavaChart[] = [];

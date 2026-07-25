@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PagePagination from "@beancount-js/ui/navigation/PagePagination.svelte";
+  import PagePagination from "@lapis/ui/navigation/PagePagination.svelte";
 
   let {
     page,

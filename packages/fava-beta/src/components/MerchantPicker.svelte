@@ -3,7 +3,7 @@
     MerchantPicker as SharedMerchantPicker,
     type MerchantPickerEmptyOption,
     type MerchantPickerMerchant,
-  } from "@beancount-js/ui/forms";
+  } from "@lapis/ui/forms";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import { rankLocalMerchantMatches } from "../lib/fuzzy-search";
 

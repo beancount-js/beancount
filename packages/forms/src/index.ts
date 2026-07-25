@@ -1,1 +1,1 @@
-export * from "@beancount-js/ui/forms";
+export * from "@lapis/ui/forms";

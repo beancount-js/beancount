@@ -5,7 +5,7 @@
     type IngestionRunAuditAiCall,
     type IngestionRunAuditDateGroup,
     type IngestionRunAuditRow,
-  } from "@beancount-js/ui/pages/IngestionRunAudit.svelte";
+  } from "@lapis/ui/pages/IngestionRunAudit.svelte";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type { ImportProposal, IngestionRun } from "../ingestion/types";
   import { useNavigation } from "../router/router";

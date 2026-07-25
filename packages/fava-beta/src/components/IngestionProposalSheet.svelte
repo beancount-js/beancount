@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { IngestionProposalSheet } from "@beancount-js/ui/forms";
+  import { IngestionProposalSheet } from "@lapis/ui/forms";
   import type {
     FilterCommandSearchAction,
     MerchantPickerMerchant,
-  } from "@beancount-js/ui/forms";
+  } from "@lapis/ui/forms";
   import { useContext } from "../context";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type {

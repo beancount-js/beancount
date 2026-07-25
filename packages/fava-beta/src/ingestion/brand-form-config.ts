@@ -3,7 +3,7 @@ import {
   textField,
   textareaField,
   type FormConfig,
-} from "@beancount-js/ui/forms";
+} from "@lapis/ui/forms";
 import type { BrandfetchEnrichmentConfig } from "@beancount-js/server";
 import {
   secretField,

@@ -38,7 +38,7 @@
     "@beancount-js/filters": "workspace:*",
     "@beancount-js/parser": "workspace:*",
     "@beancount-js/server": "workspace:*",
-    "@beancount-js/ui": "workspace:*",
+    "@lapis/ui": "workspace:*",
     "@beancount-js/web": "workspace:*",
     "@beancount-js/workspace": "workspace:*",
     "@codemirror/lang-sql": "^6.8.0",

@@ -83,7 +83,7 @@ export default defineConfig({
       "@beancount-js/filters",
       "@beancount-js/parser",
       "@beancount-js/server",
-      "@beancount-js/ui",
+      "@lapis/ui",
       "@beancount-js/web",
       "@beancount-js/workspace",
       "rrule",

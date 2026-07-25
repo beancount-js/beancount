@@ -1,1 +1,1 @@
-export { default } from "@beancount-js/ui/forms/StructuredForm.svelte";
+export { default } from "@lapis/ui/forms/StructuredForm.svelte";

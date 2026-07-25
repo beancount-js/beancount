@@ -1,4 +1,4 @@
 export {
   accountAvatarFallbackColor,
   accountAvatarInitial,
-} from "@beancount-js/ui/forms/helpers/account-avatar";
+} from "@lapis/ui/forms/helpers/account-avatar";

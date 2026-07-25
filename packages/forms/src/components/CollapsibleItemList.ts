@@ -1,1 +1,1 @@
-export { default } from "@beancount-js/ui/forms/CollapsibleItemList.svelte";
+export { default } from "@lapis/ui/forms/CollapsibleItemList.svelte";

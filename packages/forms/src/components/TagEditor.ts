@@ -1,1 +1,1 @@
-export { default } from "@beancount-js/ui/forms/TagEditor.svelte";
+export { default } from "@lapis/ui/forms/TagEditor.svelte";

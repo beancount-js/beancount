@@ -1,14 +1,14 @@
 # Native component architecture
 
 This document defines the target architecture for locally owned
-`@beancount-js/ui` primitives and composed presentation.
+`@lapis/ui` primitives and composed presentation.
 
 `packages/ui/FAVA_MIGRATION.md` remains the progress and validation ledger.
 This file is the stable implementation contract.
 
 ## Objective
 
-- Own primitive Svelte source and styling in `@beancount-js/ui`.
+- Own primitive Svelte source and styling in `@lapis/ui`.
 - Keep shadcn as source provenance and compatibility naming, not as a runtime
   or build dependency.
 - Use native CSS, semantic theme tokens, and component-scoped `--ui-*` tokens.
@@ -33,7 +33,7 @@ src/components/shadcn/<family>/
 
 The `./shadcn/*` public export remains during this migration. The name records
 the component API's provenance and avoids an unrelated package-wide rename.
-Implementation and styling are owned by `@beancount-js/ui`.
+Implementation and styling are owned by `@lapis/ui`.
 
 The package must not import:
 

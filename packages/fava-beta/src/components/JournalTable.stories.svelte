@@ -19,8 +19,8 @@
 
 <script lang="ts">
   import { setContext } from "svelte";
-  import { Button } from "@beancount-js/ui/shadcn/button";
-  import * as Tooltip from "@beancount-js/ui/shadcn/tooltip";
+  import { Button } from "@lapis/ui/shadcn/button";
+  import * as Tooltip from "@lapis/ui/shadcn/tooltip";
   import { ContextKey, createContext } from "../context";
   import { LedgerSource } from "../core/ledger";
   import { RouterKey, createRouter } from "../router/router";

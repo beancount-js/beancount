@@ -37,7 +37,7 @@ for (const path of sources) {
 
 if (violations.length > 0) {
   console.error(
-    "Fava Beta runtime code must import primitives from @beancount-js/ui:",
+    "Fava Beta runtime code must import primitives from @lapis/ui:",
   );
   violations.forEach((violation) => console.error(`- ${violation}`));
   process.exit(1);

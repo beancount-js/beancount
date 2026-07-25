@@ -24,9 +24,9 @@
 </script>
 
 <script lang="ts">
-  import { IngestionSourceForm } from "@beancount-js/ui/forms";
-  import type { FormValidationIssue } from "@beancount-js/ui/forms";
-  import type { MerchantPickerMerchant } from "@beancount-js/ui/forms";
+  import { IngestionSourceForm } from "@lapis/ui/forms";
+  import type { FormValidationIssue } from "@lapis/ui/forms";
+  import type { MerchantPickerMerchant } from "@lapis/ui/forms";
   import {
     clientConnector,
     isConnectorSource,

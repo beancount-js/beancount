@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DetectionRule, RuleRegistryMeta } from "@beancount-js/beangulp";
-  import { RuleEditorSheet as SharedRuleEditorSheet } from "@beancount-js/ui/forms";
+  import { RuleEditorSheet as SharedRuleEditorSheet } from "@lapis/ui/forms";
 
   type Props = {
     open?: boolean;

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { format as formatSql } from "sql-formatter";
-  import Query from "@beancount-js/ui/pages/Query.svelte";
-  import type { QueryHistory as QueryHistoryItem } from "@beancount-js/ui/navigation/QueryBox.svelte";
+  import Query from "@lapis/ui/pages/Query.svelte";
+  import type { QueryHistory as QueryHistoryItem } from "@lapis/ui/navigation/QueryBox.svelte";
   import QueryTable from "./QueryTable.svelte";
   import { useNavigation } from "../router/router";
   import { useLedger } from "./helpers";

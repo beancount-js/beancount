@@ -11,7 +11,7 @@
     "svelte": "^5.0.0"
   },
   "dependencies": {
-    "@beancount-js/ui": "workspace:*"
+    "@lapis/ui": "workspace:*"
   },
   "exports": {
     ".": "./src/index.ts",

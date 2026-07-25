@@ -15,13 +15,13 @@
   import { useCtx } from "../stores/format";
   import { urlForAccount } from "../helpers";
   import { useNavigation } from "../router/router";
-  import * as Select from "@beancount-js/ui/shadcn/select";
-  import * as ToggleGroup from "@beancount-js/ui/shadcn/toggle-group";
+  import * as Select from "@lapis/ui/shadcn/select";
+  import * as ToggleGroup from "@lapis/ui/shadcn/toggle-group";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { useLedger } from "./helpers";
   import PagePagination from "./PagePagination.svelte";
-  import AccountActivityTable from "@beancount-js/ui/tables/AccountActivityTable.svelte";
+  import AccountActivityTable from "@lapis/ui/tables/AccountActivityTable.svelte";
   import AccountBulkActionSheet from "./AccountBulkActionSheet.svelte";
   import {
     filterJournalGroupsByTimeframe,

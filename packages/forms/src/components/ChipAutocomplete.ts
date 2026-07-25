@@ -1,1 +1,1 @@
-export { default } from "@beancount-js/ui/forms/ChipAutocomplete.svelte";
+export { default } from "@lapis/ui/forms/ChipAutocomplete.svelte";

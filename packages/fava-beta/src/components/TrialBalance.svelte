@@ -20,7 +20,7 @@
   import TrialBalance, {
     type TrialBalanceChart,
     type TrialBalanceSection,
-  } from "@beancount-js/ui/dashboard/TrialBalance.svelte";
+  } from "@lapis/ui/dashboard/TrialBalance.svelte";
 
   const context = useContext();
 

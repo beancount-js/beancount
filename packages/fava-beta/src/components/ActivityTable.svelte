@@ -13,7 +13,7 @@
     type ActivityGroup,
     type ActivityPosting,
     type ActivityRecord,
-  } from "@beancount-js/ui/tables/ActivityTable.svelte";
+  } from "@lapis/ui/tables/ActivityTable.svelte";
   import {
     buildJournalMerchantLogoMaps,
     journalMerchantLogoFromReviewCluster,

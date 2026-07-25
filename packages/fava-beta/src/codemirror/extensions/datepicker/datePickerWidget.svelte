@@ -7,10 +7,10 @@
     today,
   } from "@internationalized/date";
   import { cn } from "$lib/utils.js";
-  import { buttonVariants } from "@beancount-js/ui/shadcn/button";
-  import { Calendar } from "@beancount-js/ui/shadcn/calendar";
-  import * as Popover from "@beancount-js/ui/shadcn/popover";
-  import * as Select from "@beancount-js/ui/shadcn/select";
+  import { buttonVariants } from "@lapis/ui/shadcn/button";
+  import { Calendar } from "@lapis/ui/shadcn/calendar";
+  import * as Popover from "@lapis/ui/shadcn/popover";
+  import * as Select from "@lapis/ui/shadcn/select";
 
   let {
     value: initialValue,

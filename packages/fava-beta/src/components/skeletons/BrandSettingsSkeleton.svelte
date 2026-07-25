@@ -1,5 +1,5 @@
 <script lang="ts">
-  import BrandSettingsSkeleton from "@beancount-js/ui/feedback/BrandSettingsSkeleton.svelte";
+  import BrandSettingsSkeleton from "@lapis/ui/feedback/BrandSettingsSkeleton.svelte";
 </script>
 
 <BrandSettingsSkeleton {...$$props} />

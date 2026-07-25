@@ -1,6 +1,6 @@
 <script lang="ts">
   import { syntaxHighlighting } from "@codemirror/language";
-  import Search, { type SearchResultGroup } from "@beancount-js/ui/pages/Search.svelte";
+  import Search, { type SearchResultGroup } from "@lapis/ui/pages/Search.svelte";
   import { get } from "svelte/store";
   import { useContext } from "../context";
   import { useNavigation } from "../router/router";
@@ -18,7 +18,7 @@
   } from "../lib/ledger-search-state";
   import { journalRecords, type JournalRecord } from "./journal-table/model";
   import { formatDate } from "@beancount-js/parser";
-  import type { FilterCommandOption } from "@beancount-js/ui/forms";
+  import type { FilterCommandOption } from "@lapis/ui/forms";
 
   const RESULT_LIMIT = 50;
 

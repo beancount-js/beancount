@@ -2,7 +2,7 @@
   import { urlForAccount } from "../../helpers";
   import DashboardFlow, {
     type DashboardFlowCategory,
-  } from "@beancount-js/ui/dashboard/DashboardFlow.svelte";
+  } from "@lapis/ui/dashboard/DashboardFlow.svelte";
   import {
     dashboardFlowDeficitAccount,
     dashboardFlowSurplusAccount,

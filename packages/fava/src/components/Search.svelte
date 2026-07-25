@@ -3,7 +3,7 @@
     FilterCommandPicker,
     type FilterCommandOption,
   } from "@beancount-js/forms";
-  import { SearchFilterBar } from "@beancount-js/ui/forms";
+  import { SearchFilterBar } from "@lapis/ui/forms";
   import { syntaxHighlighting } from "@codemirror/language";
   import ChevronRightIcon from "lucide-svelte/icons/chevron-right";
   import ChevronsDownUpIcon from "lucide-svelte/icons/chevrons-down-up";

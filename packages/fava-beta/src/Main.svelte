@@ -34,7 +34,7 @@
   import AiDock from "./components/AiDock.svelte";
   import ResourceViewer from "./components/ResourceViewer.svelte";
   import View from "./router/View.svelte";
-  import * as Tooltip from "@beancount-js/ui/shadcn/tooltip";
+  import * as Tooltip from "@lapis/ui/shadcn/tooltip";
   import {
     createStudioWorkspace,
     setStudioWorkspace,

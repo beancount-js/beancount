@@ -4,7 +4,7 @@ import {
   textareaField,
   type FormConfig,
   type FormValidationIssue,
-} from "@beancount-js/ui/forms";
+} from "@lapis/ui/forms";
 import type {
   MerchantAlias,
   MerchantBrandData,

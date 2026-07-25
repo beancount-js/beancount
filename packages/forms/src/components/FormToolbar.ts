@@ -1,1 +1,1 @@
-export { default } from "@beancount-js/ui/forms/FormToolbar.svelte";
+export { default } from "@lapis/ui/forms/FormToolbar.svelte";

@@ -10,7 +10,7 @@ import {
   SwitchField,
   type FormCustomRenderer,
   type MerchantPickerMerchant,
-} from "@beancount-js/ui/forms";
+} from "@lapis/ui/forms";
 import type { EditableIngestionSource } from "./source-form";
 
 export type SourceFormContext = {

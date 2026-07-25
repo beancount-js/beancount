@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { type PresetQuery } from "@beancount-js/ui/pages/PresetQueryView.svelte";
-  import Statistics from "@beancount-js/ui/pages/Statistics.svelte";
+  import { type PresetQuery } from "@lapis/ui/pages/PresetQueryView.svelte";
+  import Statistics from "@lapis/ui/pages/Statistics.svelte";
   import { urlFor } from "../helpers";
   import QueryTable from "./QueryTable.svelte";
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DashboardChartTooltip from "@beancount-js/ui/dashboard/DashboardChartTooltip.svelte";
+  import DashboardChartTooltip from "@lapis/ui/dashboard/DashboardChartTooltip.svelte";
 
   let {
     detail = "",

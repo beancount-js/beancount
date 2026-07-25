@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { IngestionBrandSettings } from "@beancount-js/ui/forms";
-  import { type FormValidationIssue } from "@beancount-js/ui/forms";
+  import { IngestionBrandSettings } from "@lapis/ui/forms";
+  import { type FormValidationIssue } from "@lapis/ui/forms";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionJson, ingestionPath } from "../ingestion/api";

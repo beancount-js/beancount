@@ -1,7 +1,7 @@
 import {
   renderComponent,
   renderSnippet,
-} from "@beancount-js/ui/shadcn/data-table";
+} from "@lapis/ui/shadcn/data-table";
 import {
   isDirective,
   Posting,

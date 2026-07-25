@@ -4,7 +4,7 @@
   import {
     JournalEditorSheet as SharedJournalEditorSheet,
     type MerchantPickerMerchant,
-  } from "@beancount-js/ui/forms";
+  } from "@lapis/ui/forms";
   import { useContext } from "../context";
   import {
     findDirectiveByRecordAnchor,

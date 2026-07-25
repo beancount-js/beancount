@@ -7,7 +7,7 @@
   import { getCollapsed, useGetNotShown } from "./helpers";
   import { useCollapseAccount, useInvertAccount } from "../../stores/account";
   import { urlForAccount } from "../../helpers";
-  import TreeTable from "@beancount-js/ui/tables/TreeTable.svelte";
+  import TreeTable from "@lapis/ui/tables/TreeTable.svelte";
 
   type UiTreeTableNode = {
     readonly account: string;

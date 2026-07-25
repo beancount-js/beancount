@@ -33,7 +33,7 @@
 </script>
 
 <script lang="ts">
-  import AccountNavigationLink from "@beancount-js/ui/navigation/AccountNavigationLink.svelte";
+  import AccountNavigationLink from "@lapis/ui/navigation/AccountNavigationLink.svelte";
 
   import { useContext } from "../context";
   import { urlForAccount } from "../helpers";

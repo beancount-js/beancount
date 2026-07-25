@@ -1,7 +1,7 @@
 <script lang="ts">
   import Chart from "../charts/Chart.svelte";
-  import * as Tabs from "@beancount-js/ui/shadcn/tabs";
-  import * as ScrollArea from "@beancount-js/ui/shadcn/scroll-area";
+  import * as Tabs from "@lapis/ui/shadcn/tabs";
+  import * as ScrollArea from "@lapis/ui/shadcn/scroll-area";
   import type { FavaChart } from ".";
   import { useContext } from "../context";
 

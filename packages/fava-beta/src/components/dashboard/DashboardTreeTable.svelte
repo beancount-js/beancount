@@ -1,6 +1,6 @@
 <script lang="ts">
   import { urlForAccount } from "../../helpers";
-  import DashboardTreeTable from "@beancount-js/ui/dashboard/DashboardTreeTable.svelte";
+  import DashboardTreeTable from "@lapis/ui/dashboard/DashboardTreeTable.svelte";
   import { dashboardCategoryColor } from "./model";
   import type { AccountTreeNode } from "../../lib/models";
 

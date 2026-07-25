@@ -1,6 +1,6 @@
 <script lang="ts">
-  import "@beancount-js/ui/reset.css";
-  import "@beancount-js/ui/styles.css";
+  import "@lapis/ui/reset.css";
+  import "@lapis/ui/styles.css";
   import { ModeWatcher } from "mode-watcher";
   import "../style.scss";
   import "../styles/beta-native.css";

@@ -11,7 +11,7 @@
     type FinancialDashboardNetWorth,
     type FinancialDashboardOutflow,
     type FinancialDashboardOption,
-  } from "@beancount-js/ui/dashboard/FinancialDashboard.svelte";
+  } from "@lapis/ui/dashboard/FinancialDashboard.svelte";
   import {
     createDashboardData,
     dashboardCategoryColor,

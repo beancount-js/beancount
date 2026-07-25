@@ -20,7 +20,7 @@
   import BalanceSheet, {
     type BalanceSheetChart,
     type BalanceSheetSection,
-  } from "@beancount-js/ui/dashboard/BalanceSheet.svelte";
+  } from "@lapis/ui/dashboard/BalanceSheet.svelte";
 
   const { ledgerData, conversion, interval, ledgerOptions } = useContext();
 

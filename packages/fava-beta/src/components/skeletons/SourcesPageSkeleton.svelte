@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SourcesPageSkeleton from "@beancount-js/ui/feedback/SourcesPageSkeleton.svelte";
+  import SourcesPageSkeleton from "@lapis/ui/feedback/SourcesPageSkeleton.svelte";
 </script>
 
 <SourcesPageSkeleton {...$$props} />

@@ -12,12 +12,12 @@
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
   import Wand2 from "lucide-svelte/icons/wand-2";
   import { Query } from "@beancount-js/beancount";
-  import type { FilterCommandOption } from "@beancount-js/ui/forms";
+  import type { FilterCommandOption } from "@lapis/ui/forms";
   import LedgerSettingsNavigation, {
     type LedgerSettingsNavigationItem,
-  } from "@beancount-js/ui/navigation/LedgerSettingsNavigation.svelte";
-  import LedgerWorkspaceNavigation from "@beancount-js/ui/navigation/LedgerWorkspaceNavigation.svelte";
-  import type { WorkspaceTreeNavigationItem } from "@beancount-js/ui/navigation/WorkspaceTreeNavigation.svelte";
+  } from "@lapis/ui/navigation/LedgerSettingsNavigation.svelte";
+  import LedgerWorkspaceNavigation from "@lapis/ui/navigation/LedgerWorkspaceNavigation.svelte";
+  import type { WorkspaceTreeNavigationItem } from "@lapis/ui/navigation/WorkspaceTreeNavigation.svelte";
   import type { ProjectFile } from "@beancount-js/workspace";
   import { useContext } from "../context";
   import { type MenuItem } from "../menu";

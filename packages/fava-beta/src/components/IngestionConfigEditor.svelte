@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type FormValidationIssue } from "@beancount-js/ui/forms";
+  import { type FormValidationIssue } from "@lapis/ui/forms";
   import type { JsonApiLinkedAccount } from "@beancount-js/beangulp";
   import { onDestroy } from "svelte";
   import { useContext } from "../context";
@@ -52,7 +52,7 @@
   import {
     IngestionConfigEditor,
     sourceFormSectionIds,
-  } from "@beancount-js/ui/forms";
+  } from "@lapis/ui/forms";
   import {
     sourceApiForm,
     sourceApiGroupedForm,

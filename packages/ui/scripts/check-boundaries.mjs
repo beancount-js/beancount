@@ -61,7 +61,7 @@ for (const file of files) {
 
 if (violations.length) {
   console.error(
-    "@beancount-js/ui must not resolve Fava/forms compatibility source or SvelteKit application aliases:\n" +
+    "@lapis/ui must not resolve Fava/forms compatibility source or SvelteKit application aliases:\n" +
       violations.join("\n"),
   );
   process.exitCode = 1;

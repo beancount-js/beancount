@@ -1,1 +1,1 @@
-export { default } from "@beancount-js/ui/forms/YamlBackedForm.svelte";
+export { default } from "@lapis/ui/forms/YamlBackedForm.svelte";

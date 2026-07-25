@@ -24,7 +24,7 @@
     type QueryResultColumn,
     type QueryResultRow,
     type QueryResultsSortDirection,
-  } from "@beancount-js/ui/tables/QueryResultsTable.svelte";
+  } from "@lapis/ui/tables/QueryResultsTable.svelte";
   import AccountLink from "./AccountLink.svelte";
 
   export let query: string = "";

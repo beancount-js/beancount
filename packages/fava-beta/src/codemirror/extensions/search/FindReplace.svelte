@@ -10,7 +10,7 @@
     replaceAll,
   } from "@codemirror/search";
   import { EditorView, runScopeHandlers } from "@codemirror/view";
-  import * as ToggleGroup from "@beancount-js/ui/shadcn/toggle-group";
+  import * as ToggleGroup from "@lapis/ui/shadcn/toggle-group";
   import CaseSensitive from "lucide-svelte/icons/case-sensitive";
   import Regex from "lucide-svelte/icons/regex";
   import WholeWord from "lucide-svelte/icons/whole-word";
@@ -24,11 +24,11 @@
   import ReplaceAll from "lucide-svelte/icons/replace-all";
 
   import X from "lucide-svelte/icons/x";
-  import * as Tooltip from "@beancount-js/ui/shadcn/tooltip";
+  import * as Tooltip from "@lapis/ui/shadcn/tooltip";
 
   import { debounceWithDelay } from "../../../hooks/debounce";
-  import { Input } from "@beancount-js/ui/shadcn/input";
-  import { buttonVariants } from "@beancount-js/ui/shadcn/button";
+  import { Input } from "@lapis/ui/shadcn/input";
+  import { buttonVariants } from "@lapis/ui/shadcn/button";
 
   export let view: EditorView;
 

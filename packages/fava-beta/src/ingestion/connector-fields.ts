@@ -2,7 +2,7 @@ import {
   createFormConfig,
   textField,
   type FormConfig,
-} from "@beancount-js/ui/forms";
+} from "@lapis/ui/forms";
 import type { ConnectorFieldSpec } from "@beancount-js/beangulp";
 import type { EditableIngestionSource } from "./source-form";
 import {

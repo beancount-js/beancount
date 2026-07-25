@@ -7,7 +7,7 @@
     type IntervalTreeCell,
     type IntervalTreeColumn,
     type IntervalTreeNode,
-  } from "@beancount-js/ui/tables/IntervalTreeTable.svelte";
+  } from "@lapis/ui/tables/IntervalTreeTable.svelte";
   import { urlForAccount } from "../../helpers";
   import { useCurrentTimeFilterDateFormat } from "../../stores/format";
   import { getCollapsed, useGetNotShown, isEmpty } from "./helpers";

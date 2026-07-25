@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { JournalRecord } from "./journal-table/model";
-  import AccountBulkActionSheet from "@beancount-js/ui/tables/AccountBulkActionSheet.svelte";
+  import AccountBulkActionSheet from "@lapis/ui/tables/AccountBulkActionSheet.svelte";
   import { LedgerSource } from "../core/ledger";
   import { useContext } from "../context";
   import {

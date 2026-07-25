@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DashboardTreeRow from "@beancount-js/ui/dashboard/DashboardTreeRow.svelte";
+  import DashboardTreeRow from "@lapis/ui/dashboard/DashboardTreeRow.svelte";
   import { dashboardCategoryColor } from "./model";
   import type { AccountTreeNode } from "../../lib/models";
 

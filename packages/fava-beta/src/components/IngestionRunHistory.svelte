@@ -7,7 +7,7 @@
     type IngestionRunHistoryRow,
     type IngestionRunHistorySortKey,
     type IngestionRunHistorySortOrder,
-  } from "@beancount-js/ui/pages/IngestionRunHistory.svelte";
+  } from "@lapis/ui/pages/IngestionRunHistory.svelte";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type {
     IngestionConfigResponse,

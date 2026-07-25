@@ -16,7 +16,7 @@
   import { foldMetadata } from "../codemirror/beancount/foldMetadata";
   import { foldAll } from "../codemirror/extensions/foldAll";
   import { showGotoLine } from "../codemirror/extensions/gotoline";
-  import Editor from "@beancount-js/ui/pages/Editor.svelte";
+  import Editor from "@lapis/ui/pages/Editor.svelte";
   import { useContext } from "../context";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";

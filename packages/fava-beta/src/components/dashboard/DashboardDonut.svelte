@@ -2,7 +2,7 @@
   import { urlForAccount } from "../../helpers";
   import DashboardDonut, {
     type DashboardDonutCategory,
-  } from "@beancount-js/ui/dashboard/DashboardDonut.svelte";
+  } from "@lapis/ui/dashboard/DashboardDonut.svelte";
   import type { DashboardCategory } from "./model";
 
   let {

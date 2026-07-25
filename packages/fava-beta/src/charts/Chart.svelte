@@ -1,6 +1,6 @@
 <script lang="ts">
   import { writable } from "svelte/store";
-  import * as Select from "@beancount-js/ui/shadcn/select";
+  import * as Select from "@lapis/ui/shadcn/select";
 
   import {
     barChartMode,
@@ -10,12 +10,12 @@
     lineChartMode,
   } from "../stores/chart";
 
-  import UiChartLegend from "@beancount-js/ui/charts/ChartLegend.svelte";
-  import UiChartModeSwitch from "@beancount-js/ui/charts/ChartModeSwitch.svelte";
+  import UiChartLegend from "@lapis/ui/charts/ChartLegend.svelte";
+  import UiChartModeSwitch from "@lapis/ui/charts/ChartModeSwitch.svelte";
   import UiHierarchyChart, {
     type HierarchyChartMode as UiHierarchyChartMode,
     type HierarchyChartNode as UiHierarchyChartNode,
-  } from "@beancount-js/ui/charts/HierarchyChart.svelte";
+  } from "@lapis/ui/charts/HierarchyChart.svelte";
   import ChartLegend from "./ChartLegend.svelte";
   import BarChart from "./BarChart.svelte";
   import LineChart from "./LineChart.svelte";

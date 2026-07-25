@@ -4,7 +4,7 @@
     FilterCommandPicker,
     type FilterCommandOption,
   } from "@beancount-js/forms";
-  import { SearchFilterBar } from "@beancount-js/ui/forms";
+  import { SearchFilterBar } from "@lapis/ui/forms";
   import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
   import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
   import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";

@@ -2,7 +2,7 @@ import type { MerchantReviewCluster } from "@beancount-js/server";
 import type {
   SearchFilterSyntax,
   SearchFilterValue,
-} from "@beancount-js/ui/forms";
+} from "@lapis/ui/forms";
 import { MERCHANT_CLUSTER_STATUS_OPTIONS } from "./ingestion-merchant-search-state";
 
 const TEXT_OPERATORS = [":", "=", "!=", ">", ">=", "<", "<=", "~", "!~"];

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import AiDock from "@beancount-js/ui/feedback/AiDock.svelte";
+  import AiDock from "@lapis/ui/feedback/AiDock.svelte";
   import {
     applyAgentEvent,
     newLedgerChatSession,

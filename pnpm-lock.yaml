@@ -371,7 +371,7 @@ importers:
       '@beancount-js/server':
         specifier: workspace:*
         version: link:../server
-      '@beancount-js/ui':
+      '@lapis/ui':
         specifier: workspace:*
         version: link:../ui
       '@beancount-js/web':
@@ -720,7 +720,7 @@ importers:
       '@beancount-js/server':
         specifier: workspace:*
         version: link:../server
-      '@beancount-js/ui':
+      '@lapis/ui':
         specifier: workspace:*
         version: link:../ui
       '@beancount-js/web':
@@ -1067,7 +1067,7 @@ importers:
 
   packages/forms:
     dependencies:
-      '@beancount-js/ui':
+      '@lapis/ui':
         specifier: workspace:*
         version: link:../ui
       svelte:
