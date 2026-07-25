@@ -97,6 +97,26 @@ but is not a completion gate for new migration stories.
 | F09 | Manual Forms validation and GPT-5.6 Terra handoff                 | Done   | Accepted by continuation on 2026-07-24                                           |
 | F10 | Bootstrap Fava Beta as the mutable integration application        | Done   | Clone, Beta gates, root exclusion, build                                         |
 
+## Native component alignment
+
+The final G03 review is deferred until this cross-cutting alignment is complete.
+It changes the primitive styling beneath the migrated catalog and Fava Beta, so
+reviewing C006 or the final page set before N01-N07 are done would validate an
+obsolete rendering architecture.
+
+| ID  | Task                                                                  | Status      |
+| --- | --------------------------------------------------------------------- | ----------- |
+| N01 | Define native component ownership and add the Tailwind ratchet        | Done        |
+| N02 | Add framework-independent foundation and component tokens             | Not started |
+| N03 | Normalize UI primitive families to native CSS                         | Not started |
+| N04 | Convert shared UI compositions to native CSS                          | Not started |
+| N05 | Move Fava Beta consumers to public UI primitives                      | Not started |
+| N06 | Remove duplicate primitives and obsolete styling dependencies         | Not started |
+| N07 | Run zero-baseline, UI, Beta, browser, C006, and final migration gates | Not started |
+
+N01 evidence: repository-owned scanner and unit tests, package ratchet commands,
+and `packages/ui/NATIVE_COMPONENTS.md`.
+
 ## Component migration order
 
 Work page by page. Each page slice first establishes ordinary Storybook stories
@@ -390,83 +410,83 @@ Required evidence before marking G03 `Accepted`:
 
 ### Wave 2 — forms, pickers, sheets, and workflow controls
 
-| ID   | Fava source or surface            | Status      |
-| ---- | --------------------------------- | ----------- |
-| C011 | `ComboBox.svelte`                 | Done        |
-| C012 | `MerchantPicker.svelte`           | Done        |
-| C013 | `LocalMerchantMatchPicker.svelte` | Done        |
-| C014 | `form/AccountComboField.svelte`   | Done        |
-| C015 | `form/MerchantComboField.svelte`  | Done        |
-| C016 | `form/SecretField.svelte`         | Done        |
-| C017 | `form/SwitchField.svelte`         | Done        |
-| C018 | `AccountBulkActionSheet.svelte`   | Done        |
-| C019 | `MerchantEditSheet.svelte`        | Done        |
-| C020 | `JournalEditorSheet.svelte`       | Done        |
-| C021 | `JournalRecordRouteSheet.svelte`  | Done        |
-| C022 | `RuleEditorSheet.svelte`          | Done |
-| C023 | `rules/RuleConditionRow.svelte`   | Done |
-| C024 | `IngestionHeaderActions.svelte`   | Done        |
-| C025 | `IngestionMerchantSheet.svelte`   | Done        |
-| C026 | `IngestionProposalSheet.svelte`   | Done        |
-| C027 | `IngestionSourceForm.svelte`      | Done        |
+| ID   | Fava source or surface            | Status |
+| ---- | --------------------------------- | ------ |
+| C011 | `ComboBox.svelte`                 | Done   |
+| C012 | `MerchantPicker.svelte`           | Done   |
+| C013 | `LocalMerchantMatchPicker.svelte` | Done   |
+| C014 | `form/AccountComboField.svelte`   | Done   |
+| C015 | `form/MerchantComboField.svelte`  | Done   |
+| C016 | `form/SecretField.svelte`         | Done   |
+| C017 | `form/SwitchField.svelte`         | Done   |
+| C018 | `AccountBulkActionSheet.svelte`   | Done   |
+| C019 | `MerchantEditSheet.svelte`        | Done   |
+| C020 | `JournalEditorSheet.svelte`       | Done   |
+| C021 | `JournalRecordRouteSheet.svelte`  | Done   |
+| C022 | `RuleEditorSheet.svelte`          | Done   |
+| C023 | `rules/RuleConditionRow.svelte`   | Done   |
+| C024 | `IngestionHeaderActions.svelte`   | Done   |
+| C025 | `IngestionMerchantSheet.svelte`   | Done   |
+| C026 | `IngestionProposalSheet.svelte`   | Done   |
+| C027 | `IngestionSourceForm.svelte`      | Done   |
 
 ### Wave 3 — tables, feedback, and loading states
 
-| ID   | Fava source or surface                                         | Status      |
-| ---- | -------------------------------------------------------------- | ----------- |
-| C028 | `AccountActivityTable.svelte`                                  | Done        |
-| C029 | `ActivityTable.svelte`                                         | Done |
-| C030 | `JournalTable.svelte`                                          | Done        |
-| C031 | `QueryTable.svelte`                                            | Done        |
-| C032 | `IngestionTable.svelte`                                        | Done        |
-| C033 | `tree-table/TreeTable.svelte` and `TreeTableNode.svelte`       | Done        |
-| C034 | `tree-table/StatementSummaryTreeTable.svelte`                  | Done        |
-| C035 | `tree-table/StatementSummaryTreeRow.svelte`                    | Done        |
-| C036 | `tree-table/AccountCell.svelte` and `AccountCellHeader.svelte` | Done        |
-| C037 | `tree-table/Diff.svelte`                                       | Done        |
-| C038 | `AiUnifiedReviewDiff.svelte`                                   | Done        |
-| C039 | `ResourceViewer.svelte`                                        | Done        |
-| C040 | `errors/Errors.svelte`                                         | Done        |
-| C041 | `skeletons/*` route loading surfaces                           | Done |
+| ID   | Fava source or surface                                         | Status |
+| ---- | -------------------------------------------------------------- | ------ |
+| C028 | `AccountActivityTable.svelte`                                  | Done   |
+| C029 | `ActivityTable.svelte`                                         | Done   |
+| C030 | `JournalTable.svelte`                                          | Done   |
+| C031 | `QueryTable.svelte`                                            | Done   |
+| C032 | `IngestionTable.svelte`                                        | Done   |
+| C033 | `tree-table/TreeTable.svelte` and `TreeTableNode.svelte`       | Done   |
+| C034 | `tree-table/StatementSummaryTreeTable.svelte`                  | Done   |
+| C035 | `tree-table/StatementSummaryTreeRow.svelte`                    | Done   |
+| C036 | `tree-table/AccountCell.svelte` and `AccountCellHeader.svelte` | Done   |
+| C037 | `tree-table/Diff.svelte`                                       | Done   |
+| C038 | `AiUnifiedReviewDiff.svelte`                                   | Done   |
+| C039 | `ResourceViewer.svelte`                                        | Done   |
+| C040 | `errors/Errors.svelte`                                         | Done   |
+| C041 | `skeletons/*` route loading surfaces                           | Done   |
 
 ### Wave 4 — charts, dashboard, and reports
 
-| ID   | Fava source or surface                        | Status      |
-| ---- | --------------------------------------------- | ----------- |
-| C042 | `dashboard/DashboardDonut.svelte`             | Done        |
-| C043 | `dashboard/DashboardFlow.svelte`              | Done        |
-| C044 | `dashboard/DashboardLine.svelte`              | Done        |
-| C045 | `dashboard/DashboardSection.svelte`           | Done        |
-| C046 | `dashboard/DashboardTreeTable.svelte` and row | Done        |
-| C047 | `dashboard/DashboardChartTooltip.svelte`      | Done        |
-| C048 | `FinancialDashboard.svelte`                   | Done        |
-| C049 | `StatementReport.svelte`                      | Done        |
-| C050 | `IncomeStatement.svelte`                      | Done        |
-| C051 | `BalanceSheet.svelte`                         | Done        |
-| C052 | `TrialBalance.svelte`                         | Done        |
-| C053 | `AccountDetails.svelte`                       | Done        |
-| C054 | `Holdings.svelte`                             | Done        |
-| C055 | `Statistics.svelte`                           | Done        |
-| C056 | `PresetQueryView.svelte`                      | Done        |
+| ID   | Fava source or surface                        | Status |
+| ---- | --------------------------------------------- | ------ |
+| C042 | `dashboard/DashboardDonut.svelte`             | Done   |
+| C043 | `dashboard/DashboardFlow.svelte`              | Done   |
+| C044 | `dashboard/DashboardLine.svelte`              | Done   |
+| C045 | `dashboard/DashboardSection.svelte`           | Done   |
+| C046 | `dashboard/DashboardTreeTable.svelte` and row | Done   |
+| C047 | `dashboard/DashboardChartTooltip.svelte`      | Done   |
+| C048 | `FinancialDashboard.svelte`                   | Done   |
+| C049 | `StatementReport.svelte`                      | Done   |
+| C050 | `IncomeStatement.svelte`                      | Done   |
+| C051 | `BalanceSheet.svelte`                         | Done   |
+| C052 | `TrialBalance.svelte`                         | Done   |
+| C053 | `AccountDetails.svelte`                       | Done   |
+| C054 | `Holdings.svelte`                             | Done   |
+| C055 | `Statistics.svelte`                           | Done   |
+| C056 | `PresetQueryView.svelte`                      | Done   |
 
 ### Wave 5 — application workflows
 
-| ID   | Fava source or surface                   | Status      |
-| ---- | ---------------------------------------- | ----------- |
-| C057 | `QueryBox.svelte` and `Query.svelte`     | Done        |
-| C058 | `Search.svelte` application adapter      | Done        |
-| C059 | `Editor.svelte` and `Highlighter.svelte` | Done |
-| C060 | `AiDock.svelte`                          | Done        |
-| C061 | `IngestionAccountsSetup.svelte`          | Done        |
-| C062 | `IngestionBrandSettings.svelte`          | Done        |
-| C063 | `IngestionConfigEditor.svelte`           | Done        |
-| C064 | `IngestionMerchantManage.svelte`         | Done        |
-| C065 | `IngestionMerchantReview.svelte`         | Done        |
-| C066 | `IngestionReconciliationPanel.svelte`    | Done        |
-| C067 | `IngestionRunAudit.svelte`               | Done        |
-| C068 | `IngestionRunHistory.svelte`             | Done        |
-| C069 | `IngestionSourcesPreview.svelte`         | Done |
-| C070 | `RulesSettings.svelte`                   | Done |
+| ID   | Fava source or surface                   | Status |
+| ---- | ---------------------------------------- | ------ |
+| C057 | `QueryBox.svelte` and `Query.svelte`     | Done   |
+| C058 | `Search.svelte` application adapter      | Done   |
+| C059 | `Editor.svelte` and `Highlighter.svelte` | Done   |
+| C060 | `AiDock.svelte`                          | Done   |
+| C061 | `IngestionAccountsSetup.svelte`          | Done   |
+| C062 | `IngestionBrandSettings.svelte`          | Done   |
+| C063 | `IngestionConfigEditor.svelte`           | Done   |
+| C064 | `IngestionMerchantManage.svelte`         | Done   |
+| C065 | `IngestionMerchantReview.svelte`         | Done   |
+| C066 | `IngestionReconciliationPanel.svelte`    | Done   |
+| C067 | `IngestionRunAudit.svelte`               | Done   |
+| C068 | `IngestionRunHistory.svelte`             | Done   |
+| C069 | `IngestionSourcesPreview.svelte`         | Done   |
+| C070 | `RulesSettings.svelte`                   | Done   |
 
 ## Current execution focus
 

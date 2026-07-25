@@ -24,10 +24,12 @@
     "report:fava-migration:json": "node ./scripts/report-fava-migration.mjs --json",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "check-boundaries": "node ./scripts/check-boundaries.mjs",
+    "check:no-tailwind": "node ../../scripts/no-tailwind/check-no-tailwind-utilities.mjs --baseline ./no-tailwind-baseline.json src/components",
+    "test:no-tailwind": "node --test ../../scripts/no-tailwind/no-tailwind-utilities.test.mjs",
     "fmt": "prettier . --write",
     "fmt:check": "prettier . --check",
     "prechecks": "pnpm sync-visual-delta-source",
-    "checks": "pnpm fmt:check && pnpm check-boundaries && pnpm check && pnpm test-unit && pnpm test-storybook && pnpm build-storybook"
+    "checks": "pnpm fmt:check && pnpm check-boundaries && pnpm test:no-tailwind && pnpm check:no-tailwind && pnpm check && pnpm test-unit && pnpm test-storybook && pnpm build-storybook"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
