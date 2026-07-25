@@ -53,6 +53,7 @@ test("allows semantic native classes and accessibility helpers", () => {
   assert.equal(isTailwindUtility("not-sr-only"), false);
   assert.equal(isTailwindUtility("md:flex"), true);
   assert.equal(isTailwindUtility("-mx-2"), true);
+  assert.equal(isTailwindUtility("after:-inset-2"), true);
   assert.equal(isTailwindUtility("[grid-template-columns:1fr_auto]"), true);
 });
 
@@ -66,6 +67,31 @@ test("detects class strings in TypeScript component metadata", () => {
   );
 
   assert.deepEqual(tokens, ["gap-2", "grid"]);
+});
+
+test("detects utilities composed with native class helpers", () => {
+  const source = `
+    const classes = cn(
+      "cn-panel flex",
+      active && clsx("hover:bg-primary", "rounded-md"),
+    );
+    const variants = createVariants({
+      base: "cn-button inline-flex",
+      variants: { size: { compact: "h-8 px-2" } },
+    });
+  `;
+  const tokens = findTailwindUtilitiesInSource(source, "helpers.ts").map(
+    (finding) => finding.token,
+  );
+
+  assert.deepEqual(tokens, [
+    "flex",
+    "hover:bg-primary",
+    "rounded-md",
+    "inline-flex",
+    "h-8",
+    "px-2",
+  ]);
 });
 
 test("ratchet permits removals and rejects additions by file and token", () => {

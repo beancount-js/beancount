@@ -68,6 +68,41 @@ function expressionLiterals(source, expressionPattern) {
   return values;
 }
 
+function callExpressionLiterals(source) {
+  const values = [];
+  const callPattern = /\b(?:cn|clsx|createVariants)\s*\(/g;
+
+  for (const match of source.matchAll(callPattern)) {
+    const expressionOffset = (match.index ?? 0) + match[0].length;
+    let index = expressionOffset;
+    let depth = 1;
+    let quote = "";
+
+    while (index < source.length && depth > 0) {
+      const character = source[index];
+      if (quote) {
+        if (character === "\\") {
+          index += 2;
+          continue;
+        }
+        if (character === quote) quote = "";
+      } else if (character === '"' || character === "'" || character === "`") {
+        quote = character;
+      } else if (character === "(") {
+        depth += 1;
+      } else if (character === ")") {
+        depth -= 1;
+      }
+      index += 1;
+    }
+
+    const expression = source.slice(expressionOffset, index - 1);
+    values.push(...stringLiterals(expression, expressionOffset));
+  }
+
+  return values;
+}
+
 function classValues(source) {
   const values = [];
 
@@ -101,6 +136,8 @@ function classValues(source) {
     values.push(...stringLiterals(source));
   }
 
+  values.push(...callExpressionLiterals(source));
+
   return values;
 }
 
@@ -116,7 +153,10 @@ export function isTailwindUtility(token) {
   if (normalized === "sr-only" || normalized === "not-sr-only") return false;
   if (normalized.startsWith("[")) return true;
 
-  const candidate = stripVariants(normalized);
+  const candidate = stripVariants(normalized)
+    .replace(/^!/, "")
+    .replace(/^-/, "");
+  if (candidate.startsWith("[")) return true;
   return EXACT_UTILITIES.has(candidate) || UTILITY_PREFIX.test(candidate);
 }
 

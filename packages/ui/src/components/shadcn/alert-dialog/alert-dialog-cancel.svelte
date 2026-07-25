@@ -12,7 +12,11 @@
 
 <AlertDialogPrimitive.Cancel
   bind:ref
-  class={cn(buttonVariants({ variant: "outline" }), "mt-2 sm:mt-0", className)}
+  class={cn(
+    buttonVariants({ variant: "outline" }),
+    "cn-alert-dialog-shadcn-alert-dialog-alert-dialog-cancel-15-1",
+    className,
+  )}
   {...restProps}
   data-ui-component="alert-dialog"
   data-ui-part="alert-dialog-cancel"

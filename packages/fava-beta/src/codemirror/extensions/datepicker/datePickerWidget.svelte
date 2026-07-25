@@ -59,7 +59,7 @@
         class:
           "cn-beta-codemirror-src-codemirror-extensions-datepicker-datepickerwidget-59-1",
       }),
-      !value && "text-muted-foreground",
+      !value && "cn-beta-codemirror-datepicker-empty",
     )}
   >
     <CalendarIcon />

@@ -44,7 +44,12 @@
 
 <svelte:window onkeydown={sidebar.handleShortcutKeydown} />
 
-<Tooltip.Provider delayDuration={0} ignoreNonKeyboardFocus>
+<Tooltip.Provider
+  delayDuration={0}
+  ignoreNonKeyboardFocus
+  data-ui-component="sidebar"
+  data-ui-part="sidebar-provider"
+>
   <div
     style="--sidebar-width: {SIDEBAR_WIDTH}; --sidebar-width-icon: {SIDEBAR_WIDTH_ICON}; {style}"
     class={cn(

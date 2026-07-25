@@ -13,17 +13,17 @@
 <CalendarPrimitive.Day
   class={cn(
     buttonVariants({ variant: "ghost" }),
-    "size-8 p-0 font-normal",
+    "cn-calendar-shadcn-calendar-calendar-day-16-1",
     // Today
-    "[&[data-today]:not([data-selected])]:bg-accent [&[data-today]:not([data-selected])]:text-accent-foreground",
+    "cn-calendar-shadcn-calendar-calendar-day-18-1",
     // Selected
-    "data-[selected]:bg-primary data-[selected]:text-primary-foreground data-[selected]:opacity-100 data-[selected]:hover:bg-primary data-[selected]:hover:text-primary-foreground data-[selected]:focus:bg-primary data-[selected]:focus:text-primary-foreground",
+    "cn-calendar-shadcn-calendar-calendar-day-20-1",
     // Disabled
-    "data-[disabled]:text-muted-foreground data-[disabled]:opacity-50",
+    "cn-calendar-shadcn-calendar-calendar-day-22-1",
     // Unavailable
-    "data-[unavailable]:text-destructive-foreground data-[unavailable]:line-through",
+    "cn-calendar-shadcn-calendar-calendar-day-24-1",
     // Outside months
-    "data-[outside-month]:pointer-events-none data-[outside-month]:text-muted-foreground data-[outside-month]:opacity-50 [&[data-outside-month][data-selected]]:bg-accent/50 [&[data-outside-month][data-selected]]:text-muted-foreground [&[data-outside-month][data-selected]]:opacity-30",
+    "cn-calendar-shadcn-calendar-calendar-day-26-1",
     className,
   )}
   bind:ref

@@ -52,11 +52,11 @@
                   variant: "ghost",
                   size: "sm",
                 }),
-                "w-full justify-start border group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                "cn-navigation-sidebarnavigation-55-1",
                 active
-                  ? "border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                  : "border-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                item.disabled && "pointer-events-none opacity-50",
+                  ? "cn-navigation-sidebarnavigation-57-1"
+                  : "cn-navigation-sidebarnavigation-58-1",
+                item.disabled && "cn-navigation-sidebarnavigation-59-1",
               )}
               onclick={(event) => navigate(item, event)}
             >

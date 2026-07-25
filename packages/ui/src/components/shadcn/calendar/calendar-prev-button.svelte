@@ -23,7 +23,7 @@
   bind:ref
   class={cn(
     buttonVariants({ variant: "outline" }),
-    "size-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+    "cn-calendar-shadcn-calendar-calendar-prev-button-26-1",
     className,
   )}
   {...restProps}

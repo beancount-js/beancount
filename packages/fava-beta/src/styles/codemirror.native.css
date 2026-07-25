@@ -1,4 +1,8 @@
 /* Native Beta CodeMirror adapter styles. */
+.cn-beta-codemirror-datepicker-empty {
+  color: hsl(var(--muted-foreground));
+}
+
 /* src/codemirror/extensions/search/FindReplace.svelte :: mx-4 */
 .cn-beta-codemirror-src-codemirror-extensions-search-findreplace-132-1 {
   margin-left: 1rem;

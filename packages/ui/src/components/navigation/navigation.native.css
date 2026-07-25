@@ -4541,3 +4541,149 @@
 .cn-navigation-savedqueryhistory-87-1:hover {
   text-decoration-line: none;
 }
+
+/* Generated once from the former utility recipes; no Tailwind runtime is required. */
+
+@keyframes enter {
+  from {
+    opacity: var(--ui-runtime-enter-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-enter-translate-x, 0),
+        var(--ui-runtime-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1),
+        var(--ui-runtime-enter-scale, 1)
+      )
+      rotate(var(--ui-runtime-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--ui-runtime-exit-opacity, 1);
+    transform: translate3d(
+        var(--ui-runtime-exit-translate-x, 0),
+        var(--ui-runtime-exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1),
+        var(--ui-runtime-exit-scale, 1)
+      )
+      rotate(var(--ui-runtime-exit-rotate, 0));
+  }
+}
+
+.cn-navigation-sidebarnavigation-59-1 {
+  pointer-events: none;
+}
+
+.cn-navigation-sidebarnavigation-55-1 {
+  width: 100%;
+}
+
+.cn-navigation-sidebarnavigation-55-1 {
+  justify-content: flex-start;
+}
+
+.cn-navigation-sidebarnavigation-55-1 {
+  border-width: 1px;
+}
+
+.cn-navigation-sidebarnavigation-57-1 {
+  --ui-runtime-border-opacity: 1;
+  border-color: color-mix(
+    in srgb,
+    var(--sidebar-border) calc(var(--ui-runtime-border-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-navigation-sidebarnavigation-58-1 {
+  border-color: transparent;
+}
+
+.cn-navigation-sidebarnavigation-57-1 {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--background) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-navigation-sidebarnavigation-57-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--sidebar-accent-foreground)
+      calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-navigation-sidebarnavigation-58-1 {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--sidebar-foreground) calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-navigation-sidebarnavigation-59-1 {
+  opacity: 0.5;
+}
+
+.cn-navigation-sidebarnavigation-57-1 {
+  --ui-runtime-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --ui-runtime-shadow-colored: 0 1px 2px 0 var(--ui-runtime-shadow-color);
+  box-shadow: var(--ui-runtime-ring-offset-shadow, 0 0 #0000),
+    var(--ui-runtime-ring-shadow, 0 0 #0000), var(--ui-runtime-shadow);
+}
+
+.cn-navigation-sidebarnavigation-57-1:hover {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--background) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-navigation-sidebarnavigation-58-1:hover {
+  --ui-runtime-bg-opacity: 1;
+  background-color: color-mix(
+    in srgb,
+    var(--sidebar-accent) calc(var(--ui-runtime-bg-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.cn-navigation-sidebarnavigation-58-1:hover {
+  --ui-runtime-text-opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--sidebar-accent-foreground)
+      calc(var(--ui-runtime-text-opacity, 1) * 100%),
+    transparent
+  );
+}
+
+.group[data-collapsible="icon"] .cn-navigation-sidebarnavigation-55-1 {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.group[data-collapsible="icon"] .cn-navigation-sidebarnavigation-55-1 {
+  justify-content: center;
+}
+
+.group[data-collapsible="icon"] .cn-navigation-sidebarnavigation-55-1 {
+  padding-left: 0px;
+  padding-right: 0px;
+}
