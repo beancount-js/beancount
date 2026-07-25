@@ -20,7 +20,6 @@
     /** Application-owned query result for the active preset. */
     children?: Snippet<[PresetQuery]>;
   } = $props();
-
 </script>
 
 <PresetQueryView
@@ -30,9 +29,9 @@
   {queryHref}
   {onValueChange}
 >
-  {#if children}
-    {#snippet children(query)}
+  {#snippet children(query)}
+    {#if children}
       {@render children(query)}
-    {/snippet}
-  {/if}
+    {/if}
+  {/snippet}
 </PresetQueryView>

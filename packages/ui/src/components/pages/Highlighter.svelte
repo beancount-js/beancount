@@ -45,10 +45,10 @@
   });
 </script>
 
-<ScrollArea.Root orientation="horizontal" class="w-full">
+<ScrollArea.Root orientation="horizontal" class="cn-pages-highlighter-48-1">
   <pre
     bind:this={output}
-    class="beancount-highlighter whitespace-pre-wrap text-left"
+    class="cn-pages-highlighter-51-1 beancount-highlighter"
     role="region"
     aria-label={ariaLabel}></pre>
 </ScrollArea.Root>

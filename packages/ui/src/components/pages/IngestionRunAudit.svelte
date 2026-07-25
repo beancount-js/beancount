@@ -103,117 +103,121 @@
   }
 </script>
 
-<section class="h-full overflow-auto p-3 sm:p-5" data-ingestion-run-audit>
-  <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
+<section class="cn-pages-ingestionrunaudit-106-1" data-ingestion-run-audit>
+  <div class="cn-pages-ingestionrunaudit-107-1">
     {#if isWeb}
-      <div class="rounded-md border p-4 text-sm text-muted-foreground">
+      <div class="cn-pages-ingestionrunaudit-109-1">
         Import audit history is available when Studio has access to the project
         folder.
       </div>
     {:else if !hasProject}
-      <div class="rounded-md border p-4 text-sm text-muted-foreground">
+      <div class="cn-pages-ingestionrunaudit-114-1">
         Open a project to view this import run.
       </div>
     {:else}
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <Button type="button" variant="outline" size="sm" onclick={onBackToHistory}>
+      <div class="cn-pages-ingestionrunaudit-118-1">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onclick={onBackToHistory}
+        >
           <ArrowLeft data-icon="inline-start" />
           Import history
         </Button>
         {#if hasRun && runId}
-          <span class="text-xs tabular-nums text-muted-foreground">
+          <span class="cn-pages-ingestionrunaudit-124-1">
             Run {runId}
           </span>
         {/if}
       </div>
 
       {#if status}
-        <p
-          class="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-          role="status"
-        >
+        <p class="cn-pages-ingestionrunaudit-132-1" role="status">
           {status}
         </p>
       {/if}
 
       {#if loading}
-        <div class="rounded-xl border p-6 text-sm text-muted-foreground">
+        <div class="cn-pages-ingestionrunaudit-140-1">
           Loading import audit...
         </div>
       {:else if hasRun}
-        <section class="rounded-2xl border bg-card px-5 py-4 shadow-sm">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="min-w-0">
-              <p class="truncate text-base font-semibold">{sourceId}</p>
-              <p class="mt-1 text-sm text-muted-foreground">
+        <section class="cn-pages-ingestionrunaudit-144-1">
+          <div class="cn-pages-ingestionrunaudit-145-1">
+            <div class="cn-pages-ingestionrunaudit-146-1">
+              <p class="cn-pages-ingestionrunaudit-147-1">{sourceId}</p>
+              <p class="cn-pages-ingestionrunaudit-148-1">
                 Completed {completedAtLabel}
               </p>
             </div>
-            <span class="text-sm tabular-nums text-muted-foreground">
+            <span class="cn-pages-ingestionrunaudit-152-1">
               {totalProposals} proposal{totalProposals === 1 ? "" : "s"}
             </span>
           </div>
           {#if summaryLine}
-            <p class="mt-3 text-sm text-muted-foreground">{summaryLine}</p>
+            <p class="cn-pages-ingestionrunaudit-157-1">{summaryLine}</p>
           {/if}
         </section>
 
         {#if aiCalls.length}
-          <section class="overflow-hidden rounded-2xl border bg-card shadow-sm">
-            <div class="flex items-center justify-between gap-3 px-5 py-4">
+          <section class="cn-pages-ingestionrunaudit-162-1">
+            <div class="cn-pages-ingestionrunaudit-163-1">
               <div>
-                <h2 class="text-sm font-semibold">AI call audit</h2>
-                <p class="mt-1 text-xs text-muted-foreground">
-                  {aiCalls.length} call{aiCalls.length === 1 ? "" : "s"} captured for this run.
+                <h2 class="cn-pages-ingestionrunaudit-165-1">AI call audit</h2>
+                <p class="cn-pages-ingestionrunaudit-166-1">
+                  {aiCalls.length} call{aiCalls.length === 1 ? "" : "s"} captured
+                  for this run.
                 </p>
               </div>
             </div>
-            <div class="border-t px-5 py-4">
-              <div class="flex flex-col gap-3">
+            <div class="cn-pages-ingestionrunaudit-171-1">
+              <div class="cn-pages-ingestionrunaudit-172-1">
                 {#each aiCalls as call (`${call.id}:${call.at}`)}
-                  <details class="rounded-xl border bg-muted/30 px-4 py-3">
-                    <summary class="cursor-pointer text-sm font-medium">
-                      <span class="inline-flex items-center gap-2">
+                  <details class="cn-pages-ingestionrunaudit-174-1">
+                    <summary class="cn-pages-ingestionrunaudit-175-1">
+                      <span class="cn-pages-ingestionrunaudit-176-1">
                         {#if call.ok}
-                          <Check class="size-4 text-green-600 dark:text-green-500" />
+                          <Check class="cn-pages-ingestionrunaudit-178-1" />
                         {:else}
-                          <CircleX class="size-4 text-destructive" />
+                          <CircleX class="cn-pages-ingestionrunaudit-180-1" />
                         {/if}
                         {call.label}
                       </span>
-                      <span class="ml-2 text-xs font-normal text-muted-foreground">
+                      <span class="cn-pages-ingestionrunaudit-184-1">
                         {call.at}
                         {#if call.batchSize}
-                          · {call.batchSize} item{call.batchSize === 1 ? "" : "s"}
+                          · {call.batchSize} item{call.batchSize === 1
+                            ? ""
+                            : "s"}
                         {/if}
                         {#if call.durationMs !== undefined}
                           · {(call.durationMs / 1000).toFixed(1)}s
                         {/if}
                       </span>
                     </summary>
-                    <div class="mt-3 flex flex-col gap-3">
+                    <div class="cn-pages-ingestionrunaudit-194-1">
                       {#if call.prompt}
                         <div>
-                          <p class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            Prompt
-                          </p>
-                          <pre class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-background p-3 text-xs">{call.prompt}</pre>
+                          <p class="cn-pages-ingestionrunaudit-197-1">Prompt</p>
+                          <pre
+                            class="cn-pages-ingestionrunaudit-200-1">{call.prompt}</pre>
                         </div>
                       {/if}
                       {#if call.response}
                         <div>
-                          <p class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          <p class="cn-pages-ingestionrunaudit-205-1">
                             Response
                           </p>
-                          <pre class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-background p-3 text-xs">{call.response}</pre>
+                          <pre
+                            class="cn-pages-ingestionrunaudit-208-1">{call.response}</pre>
                         </div>
                       {/if}
                       {#if call.error}
                         <div>
-                          <p class="mb-1 text-xs font-medium uppercase tracking-wide text-destructive">
-                            Error
-                          </p>
-                          <pre class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">{call.error}</pre>
+                          <p class="cn-pages-ingestionrunaudit-213-1">Error</p>
+                          <pre
+                            class="cn-pages-ingestionrunaudit-216-1">{call.error}</pre>
                         </div>
                       {/if}
                     </div>
@@ -224,24 +228,27 @@
           </section>
         {/if}
 
-        <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="cn-pages-ingestionrunaudit-227-1">
           <div>
-            <h2 class="text-lg font-semibold">Proposals</h2>
-            <p class="text-sm text-muted-foreground">
+            <h2 class="cn-pages-ingestionrunaudit-229-1">Proposals</h2>
+            <p class="cn-pages-ingestionrunaudit-230-1">
               Select a proposal to inspect its retained workflow and merchant
               context.
             </p>
           </div>
-          <Button type="button" size="sm" variant="ghost" onclick={onToggleAllGroups}>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onclick={onToggleAllGroups}
+          >
             {groupsCollapsedAll ? "Expand dates" : "Collapse dates"}
           </Button>
         </div>
 
-        <div
-          class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-        >
+        <div class="cn-pages-ingestionrunaudit-241-1">
           <span>Date</span>
-          <span class="text-right">Amount</span>
+          <span class="cn-pages-ingestionrunaudit-244-1">Amount</span>
         </div>
 
         {#if !dateGroups.length}
@@ -260,15 +267,13 @@
           {@const groupId = `ingestion-audit-group-${group.key}`}
           {@const summaryId = `ingestion-audit-summary-${group.key}`}
           <section
-            class="overflow-hidden rounded-2xl bg-muted/80"
+            class="cn-pages-ingestionrunaudit-263-1"
             aria-labelledby={groupId}
           >
-            <div
-              class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-4"
-            >
+            <div class="cn-pages-ingestionrunaudit-267-1">
               <button
                 type="button"
-                class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                class="cn-pages-ingestionrunaudit-271-1"
                 aria-expanded={expanded}
                 aria-controls={summaryId}
                 aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
@@ -278,63 +283,67 @@
                   id={groupId}
                   role="heading"
                   aria-level="2"
-                  class="truncate text-sm font-semibold tracking-wide text-foreground"
+                  class="cn-pages-ingestionrunaudit-281-1"
                 >
                   {group.label}
-                  <span class="ml-2 text-muted-foreground">· {group.rows.length}</span>
+                  <span class="cn-pages-ingestionrunaudit-284-1"
+                    >· {group.rows.length}</span
+                  >
                 </span>
               </button>
               <button
                 type="button"
-                class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                class="cn-pages-ingestionrunaudit-289-1"
                 aria-expanded={expanded}
                 aria-controls={summaryId}
                 aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
                 onclick={() => onToggleGroup(group.key)}
               >
                 {#if expanded}
-                  <ChevronUp class="size-4" />
+                  <ChevronUp class="cn-pages-ingestionrunaudit-296-1" />
                 {:else}
-                  <ChevronDown class="size-4" />
+                  <ChevronDown class="cn-pages-ingestionrunaudit-298-1" />
                 {/if}
               </button>
             </div>
 
             {#if expanded}
-              <div
-                id={summaryId}
-                class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
-              >
+              <div id={summaryId} class="cn-pages-ingestionrunaudit-306-1">
                 {#each group.rows as row, index (row.key)}
                   <button
                     type="button"
-                    class:rounded-b-xl={index === group.rows.length - 1}
-                    class="grid w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 text-left outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                    class:cn-pages-ingestionrunaudit-311-1={index ===
+                      group.rows.length - 1}
+                    class="cn-pages-ingestionrunaudit-312-1"
                     aria-label={`Inspect ${row.title}`}
                     onclick={() => onOpenRow(row.key)}
                   >
                     {#if row.logoUrl && !failedLogoIds.has(row.proposalId)}
                       <img
-                        class="size-10 rounded-full border object-contain"
+                        class="cn-pages-ingestionrunaudit-318-1"
                         src={row.logoUrl}
                         alt=""
                         onerror={() => markLogoFailed(row.proposalId)}
                       />
                     {:else}
                       <div
-                        class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                        class="cn-pages-ingestionrunaudit-325-1"
                         aria-hidden="true"
                       >
                         {row.initial}
                       </div>
                     {/if}
-                    <div class="min-w-0">
-                      <div class="truncate text-sm font-semibold">{row.title}</div>
-                      <div class="mt-1 truncate text-xs text-muted-foreground">
+                    <div class="cn-pages-ingestionrunaudit-331-1">
+                      <div class="cn-pages-ingestionrunaudit-332-1">
+                        {row.title}
+                      </div>
+                      <div class="cn-pages-ingestionrunaudit-333-1">
                         {row.detail}
                       </div>
                     </div>
-                    <span class="text-sm font-semibold tabular-nums">{row.amount}</span>
+                    <span class="cn-pages-ingestionrunaudit-337-1"
+                      >{row.amount}</span
+                    >
                   </button>
                 {/each}
               </div>
@@ -344,18 +353,23 @@
 
         {#if pageCount > 1}
           <div
-            class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            class="cn-pages-ingestionrunaudit-347-1"
             data-import-audit-pagination
           >
-            <span class="text-sm text-muted-foreground">Page {page} of {pageCount}</span>
-            <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-              <div class="hidden items-center gap-2 sm:flex">
-                <label class="text-sm text-muted-foreground" for="ingestion-audit-page-size">
+            <span class="cn-pages-ingestionrunaudit-350-1"
+              >Page {page} of {pageCount}</span
+            >
+            <div class="cn-pages-ingestionrunaudit-351-1">
+              <div class="cn-pages-ingestionrunaudit-352-1">
+                <label
+                  class="cn-pages-ingestionrunaudit-353-1"
+                  for="ingestion-audit-page-size"
+                >
                   Records per page
                 </label>
                 <select
                   id="ingestion-audit-page-size"
-                  class="h-8 rounded-md border bg-background px-2 text-sm"
+                  class="cn-pages-ingestionrunaudit-358-1"
                   value={pageSize}
                   onchange={(event) =>
                     onPageSizeChange(
@@ -371,7 +385,7 @@
                 {page}
                 {pageCount}
                 ariaLabel="Import audit pages"
-                onPageChange={onPageChange}
+                {onPageChange}
               />
             </div>
           </div>

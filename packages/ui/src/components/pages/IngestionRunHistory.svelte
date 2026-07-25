@@ -119,28 +119,25 @@
   }
 </script>
 
-<section class="h-full overflow-auto p-3 sm:p-5" data-ingestion-history>
+<section class="cn-pages-ingestionrunhistory-122-1" data-ingestion-history>
   {#if !hasProject}
-    <div class="rounded-md border p-4 text-sm text-muted-foreground">
+    <div class="cn-pages-ingestionrunhistory-124-1">
       Open a project to view import history.
     </div>
   {:else if isWeb}
-    <div class="rounded-md border p-4 text-sm text-muted-foreground">
+    <div class="cn-pages-ingestionrunhistory-128-1">
       Import history is available when Studio has access to the project folder.
     </div>
   {:else}
-    <div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
+    <div class="cn-pages-ingestionrunhistory-132-1">
       {#if status}
-        <p
-          class="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-          role="status"
-        >
+        <p class="cn-pages-ingestionrunhistory-135-1" role="status">
           {status}
         </p>
       {/if}
 
       {#if loading && groups.length === 0}
-        <div class="rounded-xl border p-6 text-sm text-muted-foreground">
+        <div class="cn-pages-ingestionrunhistory-143-1">
           Loading archived runs...
         </div>
       {:else if groups.length === 0}
@@ -153,41 +150,57 @@
           </Empty.Header>
         </Empty.Root>
       {:else}
-        <div
-          class="hidden grid-cols-[minmax(0,1fr)_repeat(4,5rem)] items-center gap-x-6 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid"
-        >
-          <div class="justify-self-start">
+        <div class="cn-pages-ingestionrunhistory-157-1">
+          <div class="cn-pages-ingestionrunhistory-159-1">
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              class="cn-pages-ingestionrunhistory-162-1"
               aria-label={`Sort by date, currently ${sortLabel("date")}`}
               onclick={() => onCycleSort("date")}
             >
               Date
               {#if sortOrders.date === "asc"}
-                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                <ArrowUpNarrowWide
+                  class="cn-pages-ingestionrunhistory-168-1"
+                  aria-hidden="true"
+                />
               {:else if sortOrders.date === "desc"}
-                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                <ArrowDownWideNarrow
+                  class="cn-pages-ingestionrunhistory-170-1"
+                  aria-hidden="true"
+                />
               {:else}
-                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+                <ArrowUpDown
+                  class="cn-pages-ingestionrunhistory-172-1"
+                  aria-hidden="true"
+                />
               {/if}
             </button>
           </div>
           {#each SORT_COLUMNS as column (column.key)}
-            <div class="justify-self-center">
+            <div class="cn-pages-ingestionrunhistory-177-1">
               <button
                 type="button"
-                class="inline-flex items-center justify-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                class="cn-pages-ingestionrunhistory-180-1"
                 aria-label={`Sort by ${column.description}, currently ${sortLabel(column.key)}`}
                 onclick={() => onCycleSort(column.key)}
               >
                 {column.label}
                 {#if sortOrders[column.key] === "asc"}
-                  <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                  <ArrowUpNarrowWide
+                    class="cn-pages-ingestionrunhistory-186-1"
+                    aria-hidden="true"
+                  />
                 {:else if sortOrders[column.key] === "desc"}
-                  <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                  <ArrowDownWideNarrow
+                    class="cn-pages-ingestionrunhistory-188-1"
+                    aria-hidden="true"
+                  />
                 {:else}
-                  <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+                  <ArrowUpDown
+                    class="cn-pages-ingestionrunhistory-190-1"
+                    aria-hidden="true"
+                  />
                 {/if}
               </button>
             </div>
@@ -196,72 +209,76 @@
 
         {#each groups as group (group.key)}
           <section
-            class="overflow-hidden rounded-2xl bg-muted/80"
+            class="cn-pages-ingestionrunhistory-199-1"
             aria-label={`Import runs from ${group.label}`}
           >
-            <div class="px-5 py-4">
-              <h2 class="text-sm font-semibold tracking-wide text-foreground">
+            <div class="cn-pages-ingestionrunhistory-202-1">
+              <h2 class="cn-pages-ingestionrunhistory-203-1">
                 {group.label}
-                <span class="ml-2 text-muted-foreground">· {group.runs.length}</span>
+                <span class="cn-pages-ingestionrunhistory-205-1"
+                  >· {group.runs.length}</span
+                >
               </h2>
             </div>
-            <div class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm">
+            <div class="cn-pages-ingestionrunhistory-208-1">
               {#each group.runs as run, index (run.id)}
                 <div
-                  class:rounded-b-xl={index === group.runs.length - 1}
-                  class="relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-4 py-4 transition-colors last:border-b-0 focus-within:bg-accent focus-within:ring-2 focus-within:ring-ring hover:bg-accent/60 sm:grid-cols-[minmax(0,1fr)_repeat(4,5rem)] sm:gap-x-6"
+                  class:cn-pages-ingestionrunhistory-211-1={index ===
+                    group.runs.length - 1}
+                  class="cn-pages-ingestionrunhistory-212-1"
                 >
                   <a
                     href={run.href}
-                    class="absolute inset-0 z-0 rounded-[inherit] outline-none"
+                    class="cn-pages-ingestionrunhistory-216-1"
                     aria-label={`${run.reviewState === "pending" ? "Review" : "View audit for"} ${run.sourceTitle}`}
                     onclick={(event) => onRunLinkClick(event, run.id)}
                   ></a>
 
-                  <div class="pointer-events-none relative z-10 col-span-2 min-w-0 sm:col-span-1 sm:row-span-2">
-                    <div class="flex min-w-0 items-start gap-3">
+                  <div class="cn-pages-ingestionrunhistory-221-1">
+                    <div class="cn-pages-ingestionrunhistory-222-1">
                       <AccountAvatar
                         account={run.sourceAccount ?? run.sourceTitle}
                         color={run.sourceAccountColor ?? ""}
                         icon={run.sourceAccountIcon ?? ""}
                         merchantLogoUrl={run.accountMerchantLogoUrl}
                       />
-                      <div class="min-w-0 flex-1">
-                        <div class="flex min-w-0 items-center gap-2">
-                          <h3 class="min-w-0 truncate text-sm font-semibold">
+                      <div class="cn-pages-ingestionrunhistory-229-1">
+                        <div class="cn-pages-ingestionrunhistory-230-1">
+                          <h3 class="cn-pages-ingestionrunhistory-231-1">
                             {run.sourceTitle}
                           </h3>
                         </div>
                         {#if run.sourceAccount && run.sourceAccountHref}
                           <a
-                            class="pointer-events-auto relative z-10 mt-1 block truncate text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            class="cn-pages-ingestionrunhistory-237-1"
                             href={run.sourceAccountHref}
-                            title={run.sourceAccount}
-                            >{run.sourceAccount}</a
+                            title={run.sourceAccount}>{run.sourceAccount}</a
                           >
                         {/if}
                       </div>
                     </div>
                   </div>
 
-                  <div class="pointer-events-none relative z-10 order-2 col-span-2 grid min-w-0 grid-cols-[6.75rem_1.25rem_4.5rem] items-center justify-end gap-2 sm:order-none sm:col-span-4 sm:col-start-2 sm:grid-cols-[6.75rem_8rem_4.5rem]">
+                  <div class="cn-pages-ingestionrunhistory-247-1">
                     <span
                       class={`justify-self-start rounded-full px-2 py-0.5 text-xs font-medium ${
                         run.reviewState === "pending"
-                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                          : "bg-muted text-muted-foreground"
+                          ? "cn-pages-ingestionrunhistory-251-1"
+                          : "cn-pages-ingestionrunhistory-252-1"
                       }`}
                     >
-                      {run.reviewState === "pending" ? "Pending review" : "Completed"}
+                      {run.reviewState === "pending"
+                        ? "Pending review"
+                        : "Completed"}
                     </span>
                     <span
-                      class="inline-flex size-5 items-center justify-center justify-self-start overflow-hidden rounded-full border border-border bg-muted text-[0.625rem] font-semibold text-muted-foreground sm:size-auto sm:max-w-32 sm:gap-1 sm:rounded-full sm:px-1 sm:py-0.5 sm:text-xs"
+                      class="cn-pages-ingestionrunhistory-258-1"
                       aria-label={`Source: ${run.sourceName}`}
                       title={`Source: ${run.sourceName}`}
                     >
                       {#if run.sourceMerchantLogoUrl && run.sourceMerchantId && !failedMerchantLogoIds.has(run.sourceMerchantId)}
                         <img
-                          class="size-full object-cover sm:size-3.5 sm:rounded-full"
+                          class="cn-pages-ingestionrunhistory-264-1"
                           src={run.sourceMerchantLogoUrl}
                           alt=""
                           onerror={() =>
@@ -271,32 +288,42 @@
                         />
                       {:else}
                         <span
-                          class="grid size-full place-items-center bg-rose-200 text-rose-800 sm:size-3.5 sm:rounded-full"
+                          class="cn-pages-ingestionrunhistory-274-1"
                           aria-hidden="true"
                         >
                           {accountAvatarInitial(run.sourceName)}
                         </span>
                       {/if}
-                      <span class="hidden min-w-0 truncate sm:inline">{run.sourceName}</span>
+                      <span class="cn-pages-ingestionrunhistory-280-1"
+                        >{run.sourceName}</span
+                      >
                     </span>
-                    <span class="justify-self-end whitespace-nowrap text-xs text-muted-foreground">
+                    <span class="cn-pages-ingestionrunhistory-282-1">
                       {run.completedAtLabel}
                     </span>
                   </div>
 
-                  <div class="pointer-events-none relative z-10 order-3 col-span-2 grid grid-cols-4 gap-3 text-center text-xs text-muted-foreground sm:order-none sm:col-span-4 sm:col-start-2 sm:gap-x-6 sm:text-sm">
+                  <div class="cn-pages-ingestionrunhistory-287-1">
                     <span
-                      class="font-medium tabular-nums text-foreground sm:text-center"
-                      aria-label={`${run.total} proposals`}
-                      >{run.total}</span
+                      class="cn-pages-ingestionrunhistory-289-1"
+                      aria-label={`${run.total} proposals`}>{run.total}</span
                     >
-                    <span class="tabular-nums sm:text-center" aria-label={`${run.accepted} accepted`}>
+                    <span
+                      class="cn-pages-ingestionrunhistory-293-1"
+                      aria-label={`${run.accepted} accepted`}
+                    >
                       {run.accepted}
                     </span>
-                    <span class="tabular-nums sm:text-center" aria-label={`${run.needsReview} need review`}>
+                    <span
+                      class="cn-pages-ingestionrunhistory-296-1"
+                      aria-label={`${run.needsReview} need review`}
+                    >
                       {run.needsReview}
                     </span>
-                    <span class="tabular-nums sm:text-center" aria-label={`${run.duplicates} duplicates`}>
+                    <span
+                      class="cn-pages-ingestionrunhistory-299-1"
+                      aria-label={`${run.duplicates} duplicates`}
+                    >
                       {run.duplicates}
                     </span>
                   </div>
@@ -308,18 +335,23 @@
 
         {#if pageCount > 1}
           <div
-            class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            class="cn-pages-ingestionrunhistory-311-1"
             data-import-history-pagination
           >
-            <span class="text-sm text-muted-foreground">Page {page} of {pageCount}</span>
-            <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-              <div class="hidden items-center gap-2 sm:flex">
-                <label class="text-sm text-muted-foreground" for="history-page-size">
+            <span class="cn-pages-ingestionrunhistory-314-1"
+              >Page {page} of {pageCount}</span
+            >
+            <div class="cn-pages-ingestionrunhistory-315-1">
+              <div class="cn-pages-ingestionrunhistory-316-1">
+                <label
+                  class="cn-pages-ingestionrunhistory-317-1"
+                  for="history-page-size"
+                >
                   Records per page
                 </label>
                 <select
                   id="history-page-size"
-                  class="h-8 rounded-md border bg-background px-2 text-sm"
+                  class="cn-pages-ingestionrunhistory-322-1"
                   value={pageSize}
                   onchange={(event) =>
                     onPageSizeChange(
@@ -336,7 +368,7 @@
                 {pageCount}
                 ariaLabel="Import history pages"
                 disabled={loading}
-                onPageChange={onPageChange}
+                {onPageChange}
               />
             </div>
           </div>

@@ -4,7 +4,12 @@
   import type { Parser } from "@lezer/common";
   import type { Snippet } from "svelte";
   import { EditorState } from "@codemirror/state";
-  import { EditorView, keymap, placeholder, drawSelection } from "@codemirror/view";
+  import {
+    EditorView,
+    keymap,
+    placeholder,
+    drawSelection,
+  } from "@codemirror/view";
   import {
     autocompletion,
     acceptCompletion,
@@ -13,7 +18,13 @@
     completionKeymap,
     completionStatus,
   } from "@codemirror/autocomplete";
-  import { defaultKeymap, history, historyKeymap, indentMore, indentLess } from "@codemirror/commands";
+  import {
+    defaultKeymap,
+    history,
+    historyKeymap,
+    indentMore,
+    indentLess,
+  } from "@codemirror/commands";
   import {
     bracketMatching,
     foldKeymap,
@@ -131,7 +142,9 @@
               editorContents = update.state.doc.toString();
             }
           }),
-          placeholder("...enter a BQL query. 'help' to list available commands"),
+          placeholder(
+            "...enter a BQL query. 'help' to list available commands",
+          ),
           ...createEditorLanguageSupport(),
           ...editorExtensions,
           autocompletion(),
@@ -218,21 +231,15 @@
   <div class="beancount-editor">
     <div
       data-error={!!error}
-      class="query-search-field flex w-full items-center rounded-md border bg-muted/35 shadow-sm transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring data-[error=true]:border-destructive data-[error=true]:bg-destructive/10"
+      class="cn-pages-query-221-1 query-search-field"
       data-query-editor
     >
-      <Search
-        class="ml-3 size-4 shrink-0 text-muted-foreground"
-        aria-hidden="true"
-      />
-      <div
-        use:codeMirror={query}
-        class="cm-code-editor min-w-0 flex-1 py-1 text-sm"
-      ></div>
+      <Search class="cn-pages-query-225-1" aria-hidden="true" />
+      <div use:codeMirror={query} class="cn-pages-query-230-1"></div>
       <Tooltip.Provider>
         <ButtonGroup.Root
           aria-label="Query actions"
-          class="mb-1 mr-1 shrink-0 self-end"
+          class="cn-pages-query-235-1"
           data-query-actions
         >
           <Tooltip.Root>
@@ -243,7 +250,7 @@
                   onclick={formatQuery}
                   size="icon-sm"
                   variant="secondary"
-                  class="size-7 hover:bg-primary/15 hover:text-primary"
+                  class="cn-pages-query-246-1"
                   aria-label="Format query"
                   data-query-format
                 >
@@ -265,7 +272,7 @@
                     onclick={clearEditor}
                     size="icon-sm"
                     variant="secondary"
-                    class="size-7 hover:bg-primary/15 hover:text-primary"
+                    class="cn-pages-query-268-1"
                     aria-label="Clear query"
                     data-query-clear
                   >
@@ -283,7 +290,7 @@
             onclick={executeQuery}
             size="xs"
             variant="secondary"
-            class="h-7 px-2 hover:bg-primary/15 hover:text-primary"
+            class="cn-pages-query-286-1"
             data-query-execute
           >
             Execute
@@ -294,15 +301,16 @@
     </div>
   </div>
   {#if error}
-    <Alert.Root variant="destructive" class="mt-4 font-mono text-xs">
-      <TriangleAlert class="h-4 w-4" />
+    <Alert.Root variant="destructive" class="cn-pages-query-297-1">
+      <TriangleAlert class="cn-pages-query-298-1" />
       <Alert.Title>Error</Alert.Title>
-      <Alert.Description class="whitespace-pre-wrap">{error}</Alert.Description>
+      <Alert.Description class="cn-pages-query-300-1">{error}</Alert.Description
+      >
     </Alert.Root>
   {/if}
   <QueryBox
     {queries}
-    selected={selected}
+    {selected}
     {parser}
     onDelete={(queryItem) => onDelete(queryItem)}
     onCopy={(queryItem) => onCopy(queryItem)}

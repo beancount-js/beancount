@@ -48,10 +48,17 @@
 </script>
 
 <ContentScrollArea contentClass="scroll-container min-h-full p-4">
-  <Tabs.Root class="w-full" {value} onValueChange={changeValue}>
+  <Tabs.Root
+    class="cn-pages-presetqueryview-51-1"
+    {value}
+    onValueChange={changeValue}
+  >
     {#if scrollTabs}
-      <ScrollArea.Root orientation="horizontal" class="w-full">
-        <div class="w-max pr-3">
+      <ScrollArea.Root
+        orientation="horizontal"
+        class="cn-pages-presetqueryview-53-1"
+      >
+        <div class="cn-pages-presetqueryview-54-1">
           <Tabs.List>
             {#each queries as query (query.id)}
               <Tabs.Trigger value={query.id}>{query.name}</Tabs.Trigger>
@@ -69,7 +76,10 @@
 
     {#each queries as query (query.id)}
       <Tabs.Content value={query.id}>
-        <div class:justify-end={alignQueryActionEnd} class="flex">
+        <div
+          class:cn-pages-presetqueryview-72-2={alignQueryActionEnd}
+          class="cn-pages-presetqueryview-72-1"
+        >
           <Button variant="outline" size="sm" href={queryHref(query)}>
             Query
           </Button>

@@ -74,10 +74,7 @@
     failedLogoIds = new Set([...failedLogoIds, merchantId]);
   }
 
-  function handleRowKeydown(
-    event: KeyboardEvent,
-    merchant: MerchantIdentity,
-  ) {
+  function handleRowKeydown(event: KeyboardEvent, merchant: MerchantIdentity) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       onOpenMerchant(merchant);
@@ -108,7 +105,9 @@
   });
   const normalizedPageSize = $derived(() => {
     const options = normalizedPageSizes;
-    return options.includes(pageSize) ? pageSize : options[1] ?? options[0] ?? 25;
+    return options.includes(pageSize)
+      ? pageSize
+      : (options[1] ?? options[0] ?? 25);
   });
   const pages = $derived(() =>
     paginateMerchants(normalizedMerchants, normalizedPageSize),
@@ -126,10 +125,10 @@
 </script>
 
 <section
-  class="h-full overflow-y-auto p-4 sm:p-6"
+  class="cn-pages-ingestionmerchantmanage-129-1"
   data-ingestion-merchant-manage
 >
-  <div class="mx-auto flex w-full max-w-4xl flex-col gap-5">
+  <div class="cn-pages-ingestionmerchantmanage-132-1">
     {#if isWeb}
       <Alert.Root>
         <FileCode2 />
@@ -139,10 +138,14 @@
         >
       </Alert.Root>
     {:else if !hasProject}
-      <p class="text-sm text-muted-foreground">Open a project to manage merchants.</p>
+      <p class="cn-pages-ingestionmerchantmanage-142-1">
+        Open a project to manage merchants.
+      </p>
     {:else}
       {#if status}
-        <p class="text-sm text-muted-foreground" role="status">{status}</p>
+        <p class="cn-pages-ingestionmerchantmanage-145-1" role="status">
+          {status}
+        </p>
       {/if}
 
       {#if loading && !normalizedMerchants.length}
@@ -162,48 +165,46 @@
             showClearAll={Boolean(searchQuery.trim())}
             clearAllDisabled={!searchQuery.trim()}
             onValueChange={onSearchQueryInput}
-            onClearSearch={onClearSearch}
+            {onClearSearch}
             onClearAll={onClearSearch}
           />
         </div>
 
         {#if activeSearch && !normalizedMerchants.length}
-          <div
-            class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-          >
+          <div class="cn-pages-ingestionmerchantmanage-172-1">
             No merchants match this search.
           </div>
         {:else if normalizedMerchants.length}
-          <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div class="cn-pages-ingestionmerchantmanage-177-1">
             {#each visibleMerchants as merchant (merchant.merchantId)}
               <div
                 role="button"
                 tabindex="0"
-                class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                class="cn-pages-ingestionmerchantmanage-182-1"
                 aria-label={`Edit merchant ${merchant.canonicalName}`}
                 onclick={() => openMerchant(merchant)}
                 onkeydown={(event) => handleRowKeydown(event, merchant)}
               >
                 {#if merchant.logoUrl && !failedLogoIds.has(merchant.merchantId)}
                   <img
-                    class="size-10 rounded-full border object-contain"
+                    class="cn-pages-ingestionmerchantmanage-189-1"
                     src={merchant.logoUrl}
                     alt=""
                     onerror={() => markLogoFailed(merchant.merchantId)}
                   />
                 {:else}
                   <div
-                    class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                    class="cn-pages-ingestionmerchantmanage-196-1"
                     aria-hidden="true"
                   >
                     {merchantInitial(merchant)}
                   </div>
                 {/if}
-                <div class="min-w-0">
-                  <div class="truncate text-sm font-semibold">
+                <div class="cn-pages-ingestionmerchantmanage-202-1">
+                  <div class="cn-pages-ingestionmerchantmanage-203-1">
                     {merchant.canonicalName}
                   </div>
-                  <div class="mt-1 truncate text-xs text-muted-foreground">
+                  <div class="cn-pages-ingestionmerchantmanage-206-1">
                     {merchantDetail(merchant)}
                   </div>
                 </div>
@@ -212,35 +213,35 @@
           </div>
 
           <div
-            class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            class="cn-pages-ingestionmerchantmanage-215-1"
             data-merchant-pagination
           >
-            <span class="text-sm text-muted-foreground">
+            <span class="cn-pages-ingestionmerchantmanage-218-1">
               {#if pages.length > 1}
                 Page {currentPage} of {pages.length}
-                <span class="text-muted-foreground/80">
-                  · {normalizedMerchants.length} merchant{normalizedMerchants.length === 1
+                <span class="cn-pages-ingestionmerchantmanage-221-1">
+                  · {normalizedMerchants.length} merchant{normalizedMerchants.length ===
+                  1
                     ? ""
                     : "s"}</span
                 >
               {:else}
-                {normalizedMerchants.length} merchant{normalizedMerchants.length === 1
+                {normalizedMerchants.length} merchant{normalizedMerchants.length ===
+                1
                   ? ""
                   : "s"}
               {/if}
             </span>
-            <div
-              class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
-            >
-              <div class="hidden items-center gap-2 sm:flex">
+            <div class="cn-pages-ingestionmerchantmanage-233-1">
+              <div class="cn-pages-ingestionmerchantmanage-235-1">
                 <label
-                  class="text-sm text-muted-foreground"
+                  class="cn-pages-ingestionmerchantmanage-237-1"
                   for="ingestion-merchant-manage-page-size"
                   >Records per page</label
                 >
                 <select
                   id="ingestion-merchant-manage-page-size"
-                  class="h-8 rounded-md border bg-background px-2 text-sm"
+                  class="cn-pages-ingestionmerchantmanage-243-1"
                   value={normalizedPageSize}
                   onchange={(event) =>
                     onChangePageSize(
@@ -263,7 +264,7 @@
             </div>
           </div>
         {:else}
-          <Empty.Root class="min-h-64 border">
+          <Empty.Root class="cn-pages-ingestionmerchantmanage-266-1">
             <Empty.Header>
               <Empty.Media variant="icon"><Landmark /></Empty.Media>
               <Empty.Title>No saved merchants</Empty.Title>

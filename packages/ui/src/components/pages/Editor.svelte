@@ -313,10 +313,10 @@
   });
 </script>
 
-<div class="flex h-full min-h-0 flex-col">
-  <div class="editor-scroll-host min-h-0 flex-1 overflow-hidden">
-    <div class="beancount-editor relative">
-      <div use:codeMirror={source} class="h-full"></div>
+<div class="cn-pages-editor-316-1">
+  <div class="cn-pages-editor-317-1 editor-scroll-host">
+    <div class="cn-pages-editor-318-1 beancount-editor">
+      <div use:codeMirror={source} class="cn-pages-editor-319-1"></div>
     </div>
   </div>
 </div>

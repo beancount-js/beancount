@@ -89,7 +89,10 @@
     onSearchQueryInput?: (value: string) => void;
     onClearSearch?: () => void;
     onClearAllSearch?: () => void;
-    onFacetChange?: (key: ReconciliationReviewFacetKey, value: string[]) => void;
+    onFacetChange?: (
+      key: ReconciliationReviewFacetKey,
+      value: string[],
+    ) => void;
     onAutoConfirm?: () => void;
     onSetSelectedCandidates?: (
       candidateIds: readonly string[],
@@ -230,7 +233,7 @@
       clearAllDisabled={!activeSearch}
       bind:filtersExpanded
       onValueChange={onSearchQueryInput}
-      onClearSearch={onClearSearch}
+      {onClearSearch}
       onClearAll={onClearAllSearch}
     >
       {#snippet filters()}
@@ -351,13 +354,11 @@
   </div>
 
   {#if activeSearch && !matchedItemCount}
-    <div
-      class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-    >
+    <div class="cn-pages-ingestionreconciliationpanel-355-1">
       No reconciliation matches this search.
     </div>
   {:else if matchedItemCount}
-    <div class="flex justify-end">
+    <div class="cn-pages-ingestionreconciliationpanel-360-1">
       <Button
         type="button"
         size="sm"
@@ -373,13 +374,11 @@
       </Button>
     </div>
 
-    <div
-      class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-    >
+    <div class="cn-pages-ingestionreconciliationpanel-377-1">
       <input
         use:setIndeterminate={masterSelection.indeterminate}
         type="checkbox"
-        class="size-4 rounded border-input text-primary focus:ring-ring"
+        class="cn-pages-ingestionreconciliationpanel-382-1"
         aria-label="Select visible reconciliation matches"
         checked={masterSelection.checked}
         disabled={!visibleActionableIds.length ||
@@ -393,30 +392,29 @@
           )}
       />
       <span>Match</span>
-      <span class="text-right">Actions</span>
+      <span class="cn-pages-ingestionreconciliationpanel-396-1">Actions</span>
     </div>
 
     {#if showSelectionBanner}
       <div
         data-reconciliation-selection-banner
         role="status"
-        class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+        class="cn-pages-ingestionreconciliationpanel-403-1"
       >
         {#if allMatchingSelected}
           All {actionableItemCount} matching reconciliation items selected.
           <button
             type="button"
-            class="font-medium text-primary underline-offset-2 hover:underline"
+            class="cn-pages-ingestionreconciliationpanel-409-1"
             onclick={onClearSelected}
           >
             Clear selection
           </button>
         {:else}
-          All {visibleActionableIds.length} actionable matches on this page are
-          selected.
+          All {visibleActionableIds.length} actionable matches on this page are selected.
           <button
             type="button"
-            class="font-medium text-primary underline-offset-2 hover:underline"
+            class="cn-pages-ingestionreconciliationpanel-419-1"
             onclick={onSelectAllMatching}
           >
             Select all {actionableItemCount} matching items
@@ -425,16 +423,17 @@
       </div>
     {/if}
 
-    <div class="flex flex-col gap-3" data-ingestion-reconciliation>
+    <div
+      class="cn-pages-ingestionreconciliationpanel-428-1"
+      data-ingestion-reconciliation
+    >
       {#each visibleItems as item (item.id)}
         {@const busy = busyCandidateId === item.id}
-        <section class="overflow-hidden rounded-2xl bg-muted/80">
-          <div
-            class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 px-4 py-4 sm:px-5"
-          >
+        <section class="cn-pages-ingestionreconciliationpanel-431-1">
+          <div class="cn-pages-ingestionreconciliationpanel-433-1">
             <input
               type="checkbox"
-              class="mt-0.5 size-4 rounded border-input text-primary focus:ring-ring"
+              class="cn-pages-ingestionreconciliationpanel-437-1"
               aria-label={`Select ${item.kindLabel}`}
               title={item.selectableTitle}
               checked={selectedCandidateIds.has(item.id)}
@@ -448,24 +447,24 @@
                   (event.currentTarget as HTMLInputElement).checked,
                 )}
             />
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
+            <div class="cn-pages-ingestionreconciliationpanel-451-1">
+              <div class="cn-pages-ingestionreconciliationpanel-452-1">
                 <h2
-                  class="text-sm font-semibold tracking-[0.08em] text-muted-foreground [font-variant:all-small-caps]"
+                  class="cn-pages-ingestionreconciliationpanel-454-1"
                   data-reconciliation-kind
                 >
                   {item.kindLabel}
                 </h2>
                 <Badge
                   variant={item.confidenceVariant}
-                  class="rounded-full"
+                  class="cn-pages-ingestionreconciliationpanel-461-1"
                   data-reconciliation-confidence={item.confidence}
                   >{item.confidenceLabel}</Badge
                 >
               </div>
             </div>
             <div
-              class="flex shrink-0 flex-wrap items-center justify-end gap-1"
+              class="cn-pages-ingestionreconciliationpanel-468-1"
               data-reconciliation-actions
             >
               {#if item.decisionState === "confirmed"}
@@ -500,7 +499,8 @@
                     title="Confirm match"
                     data-reconciliation-action="confirm"
                     disabled={busy || actionDisabled}
-                    onclick={() => onConfirm(item.id, item.chosenObservationId ?? "")}
+                    onclick={() =>
+                      onConfirm(item.id, item.chosenObservationId ?? "")}
                   >
                     <Check data-icon />
                   </Button>
@@ -521,24 +521,21 @@
                 {/if}
               {/if}
             </div>
-            <p
-              class="col-span-full text-xs leading-relaxed text-muted-foreground"
-            >
+            <p class="cn-pages-ingestionreconciliationpanel-525-1">
               {item.evidenceSummary}
             </p>
           </div>
 
-          <div
-            class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
-          >
+          <div class="cn-pages-ingestionreconciliationpanel-532-1">
             {#each item.members as member, memberIndex (member.observationId)}
               <div
-                class:rounded-b-xl={memberIndex === item.members.length - 1}
-                class="grid grid-cols-[2.5rem_minmax(0,1fr)_7rem] items-center gap-x-3 gap-y-1 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60 sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem_7rem]"
+                class:cn-pages-ingestionreconciliationpanel-536-1={memberIndex ===
+                  item.members.length - 1}
+                class="cn-pages-ingestionreconciliationpanel-537-1"
                 data-reconciliation-member-row
               >
                 <div
-                  class="col-start-1 row-span-2 row-start-1 sm:row-span-1"
+                  class="cn-pages-ingestionreconciliationpanel-541-1"
                   aria-hidden="true"
                   data-reconciliation-member-avatar
                 >
@@ -550,27 +547,25 @@
                   />
                 </div>
                 <div
-                  class="col-start-2 row-span-2 row-start-1 min-w-0 self-center sm:row-span-1"
+                  class="cn-pages-ingestionreconciliationpanel-553-1"
                   data-reconciliation-member-details
                 >
-                  <div class="break-words text-sm font-semibold sm:truncate">
+                  <div class="cn-pages-ingestionreconciliationpanel-556-1">
                     {member.label}
                   </div>
-                  <div
-                    class="mt-1 break-words text-xs text-muted-foreground sm:truncate"
-                  >
+                  <div class="cn-pages-ingestionreconciliationpanel-560-1">
                     {member.detail}
                   </div>
                 </div>
                 <Badge
                   variant="outline"
-                  class="pointer-events-none col-start-3 row-start-1 max-w-full gap-1 justify-self-center truncate rounded-full bg-card text-[10px] uppercase tracking-wide text-muted-foreground"
+                  class="cn-pages-ingestionreconciliationpanel-567-1"
                   aria-label={`Source ${member.sourceLabel}`}
                   data-reconciliation-member-source
                 >
                   {#if member.sourceMerchantLogoUrl && member.sourceMerchantId && !failedMerchantLogoIds.has(member.sourceMerchantId)}
                     <img
-                      class="size-3.5 rounded-full object-cover"
+                      class="cn-pages-ingestionreconciliationpanel-573-1"
                       src={member.sourceMerchantLogoUrl}
                       alt=""
                       onerror={() =>
@@ -580,7 +575,7 @@
                     />
                   {:else}
                     <span
-                      class="grid size-3.5 shrink-0 place-items-center rounded-full bg-rose-200 text-[0.5rem] font-semibold text-rose-800"
+                      class="cn-pages-ingestionreconciliationpanel-583-1"
                       aria-hidden="true"
                     >
                       {accountAvatarInitial(member.sourceLabel)}
@@ -589,7 +584,7 @@
                   {member.sourceLabel}
                 </Badge>
                 <span
-                  class="col-start-3 row-start-2 justify-self-end text-sm font-semibold tabular-nums sm:col-start-4 sm:row-start-1"
+                  class="cn-pages-ingestionreconciliationpanel-592-1"
                   data-reconciliation-member-amount
                 >
                   {member.amount}&nbsp;{member.currency}
@@ -603,21 +598,21 @@
 
     {#if pageCount > 1}
       <div
-        class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+        class="cn-pages-ingestionreconciliationpanel-606-1"
         data-reconciliation-pagination
       >
-        <span class="text-sm text-muted-foreground"
+        <span class="cn-pages-ingestionreconciliationpanel-609-1"
           >Page {page} of {pageCount}</span
         >
-        <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-          <div class="hidden items-center gap-2 sm:flex">
+        <div class="cn-pages-ingestionreconciliationpanel-612-1">
+          <div class="cn-pages-ingestionreconciliationpanel-613-1">
             <label
-              class="text-sm text-muted-foreground"
+              class="cn-pages-ingestionreconciliationpanel-615-1"
               for="reconciliation-review-page-size">Matches per page</label
             >
             <select
               id="reconciliation-review-page-size"
-              class="h-8 rounded-md border bg-background px-2 text-sm"
+              class="cn-pages-ingestionreconciliationpanel-620-1"
               value={pageSize}
               onchange={(event) =>
                 onPageSizeChange(
@@ -634,20 +629,20 @@
             {pageCount}
             ariaLabel="Reconciliation match pages"
             disabled={actionDisabled}
-            onPageChange={onPageChange}
+            {onPageChange}
           />
         </div>
       </div>
     {/if}
   {/if}
 {:else if reviewLoaded && !error}
-  <div
-    class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-  >
+  <div class="cn-pages-ingestionreconciliationpanel-645-1">
     No reconciliation matches are available.
   </div>
 {:else if error}
-  <p class="text-sm text-destructive" role="status">{error}</p>
+  <p class="cn-pages-ingestionreconciliationpanel-650-1" role="status">
+    {error}
+  </p>
 {/if}
 
 <style>

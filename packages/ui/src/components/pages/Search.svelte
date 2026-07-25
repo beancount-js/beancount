@@ -5,7 +5,11 @@
   import ChevronRightIcon from "lucide-svelte/icons/chevron-right";
   import ChevronsDownUpIcon from "lucide-svelte/icons/chevrons-down-up";
   import ChevronsUpDownIcon from "lucide-svelte/icons/chevrons-up-down";
-  import { SearchFilterBar, type FilterCommandOption, FilterCommandPicker } from "../forms";
+  import {
+    SearchFilterBar,
+    type FilterCommandOption,
+    FilterCommandPicker,
+  } from "../forms";
   import { cn } from "../../lib/utils";
   import { Badge } from "../shadcn/badge";
   import { codeHighlighter } from "../forms/code-highlighter";
@@ -95,7 +99,9 @@
 
   let openGroups = $state<Record<string, boolean>>({});
 
-  const highlightStyle = syntaxHighlighting(codeHighlighter, { fallback: true });
+  const highlightStyle = syntaxHighlighting(codeHighlighter, {
+    fallback: true,
+  });
   const hasResultGroups = $derived(resultGroups.length > 0);
   const hasCollapsedGroups = $derived(
     resultGroups.some((group) => !(openGroups[group.key] ?? true)),
@@ -118,7 +124,7 @@
   }
 </script>
 
-<div class="ledger-search flex min-h-0 flex-1 flex-col">
+<div class="cn-pages-search-121-1 ledger-search">
   <SearchFilterBar
     value={searchState.query}
     placeholder="Search ledger…"
@@ -134,9 +140,9 @@
     editorExtensions={[highlightStyle, ...(editorExtensions ?? [])]}
     {filterSyntax}
     bind:filtersExpanded
-    onValueChange={onValueChange}
-    onClearSearch={onClearSearch}
-    onClearAll={onClearAll}
+    {onValueChange}
+    {onClearSearch}
+    {onClearAll}
   >
     {#if actions}
       {@render actions()}
@@ -275,77 +281,64 @@
     {/if}
   </SearchFilterBar>
 
-  <div class="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+  <div class="cn-pages-search-278-1">
     {#if (activeSearch || hasAmbientFilter) && totalMatches === 0}
-      <p class="px-2 py-3 text-sm text-muted-foreground">
-        No matching directives.
-      </p>
+      <p class="cn-pages-search-280-1">No matching directives.</p>
     {:else if activeSearch || hasAmbientFilter}
-      <div
-        class="sticky top-0 z-10 bg-sidebar px-2 py-2 text-xs font-medium text-muted-foreground"
-      >
+      <div class="cn-pages-search-285-1">
         {totalMatches}
         {totalMatches === 1 ? "match" : "matches"}
         {#if totalMatches > resultLimit}
           · showing first {resultLimit}
         {/if}
       </div>
-      <div class="flex flex-col gap-2" aria-label="Search results">
+      <div class="cn-pages-search-293-1" aria-label="Search results">
         {#each resultGroups as group (group.key)}
           {@const expanded = isGroupOpen(group.key)}
-          <section class="flex min-w-0 flex-col gap-0.5">
+          <section class="cn-pages-search-296-1">
             <button
               type="button"
-              class="relative flex h-8 w-full min-w-0 items-center gap-1 rounded-md border border-transparent px-1 text-left text-sidebar-foreground hover:bg-background"
+              class="cn-pages-search-299-1"
               aria-expanded={expanded}
               aria-label={expanded
                 ? `Collapse ${group.label}`
-              : `Expand ${group.label}`}
+                : `Expand ${group.label}`}
               onclick={() => toggleGroup(group.key)}
             >
               <ChevronRightIcon
                 class={cn(
-                  "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-                  expanded && "rotate-90",
+                  "cn-pages-search-308-1",
+                  expanded && "cn-pages-search-309-1",
                 )}
               />
-              <span class="min-w-0 flex-1 truncate text-xs font-semibold"
-                >{group.label}</span
-              >
-              <Badge
-                variant="secondary"
-                class="h-5 min-w-5 shrink-0 justify-center px-1.5 text-[10px] font-medium"
-              >
+              <span class="cn-pages-search-312-1">{group.label}</span>
+              <Badge variant="secondary" class="cn-pages-search-317-1">
                 {group.records.length}
               </Badge>
             </button>
             {#if expanded}
-              <ul class="ml-6 flex min-w-0 flex-col gap-1.5 pt-0.5">
+              <ul class="cn-pages-search-323-1">
                 {#each group.records as record (record.key)}
                   <li>
                     <button
                       type="button"
-                      class="w-full rounded-md border border-sidebar-border bg-background/55 p-2 text-left transition-colors hover:border-sidebar-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      class="cn-pages-search-328-1"
                       onclick={() => onOpenRecord(record.key)}
                     >
-                      <div
-                        class="flex min-w-0 items-start justify-between gap-2"
-                      >
-                        <div class="min-w-0 flex-1">
-                          <div class="truncate text-xs font-semibold">
+                      <div class="cn-pages-search-332-1">
+                        <div class="cn-pages-search-334-1">
+                          <div class="cn-pages-search-335-1">
                             {record.title}
                           </div>
                           {#if record.detail && record.detail !== record.title}
-                            <div
-                              class="mt-0.5 truncate text-[11px] leading-4 text-muted-foreground"
-                            >
+                            <div class="cn-pages-search-340-1">
                               {record.detail}
                             </div>
                           {/if}
                         </div>
                         <Badge
                           variant="secondary"
-                          class="h-5 shrink-0 px-1.5 text-[10px]"
+                          class="cn-pages-search-348-1"
                         >
                           {record.type}
                         </Badge>

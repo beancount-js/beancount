@@ -54,7 +54,9 @@
     await expect(changesTab).toHaveAttribute("data-state", "active");
     await expect(accountTab).toHaveAttribute("data-state", "inactive");
     await userEvent.click(chartSelector);
-    await expect(canvas.getByText("Active chart: Monthly Changes")).toBeVisible();
+    await expect(
+      canvas.getByText("Active chart: Monthly Changes"),
+    ).toBeVisible();
   }}
 >
   {#snippet template()}
@@ -62,13 +64,15 @@
       <AccountDetails
         account="Expenses:Groceries"
         breadcrumbs={breadcrumbItems}
-        charts={charts}
+        {charts}
         activeChartId={selectedChartId}
         {tabs}
-        activeTab={activeTab}
+        {activeTab}
         onActiveChartChange={(next) => {
           selectedChartId = next;
-          status = `Active chart: ${next}`;
+          const label =
+            charts.find((chart) => chart.id === next)?.label ?? next;
+          status = `Active chart: ${label}`;
         }}
         onActiveTabChange={(next) => {
           activeTab = next;
@@ -76,7 +80,9 @@
         }}
       >
         {#snippet chartChildren(activeChartId)}
-          <div class="rounded-md border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+          <div
+            class="rounded-md border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground"
+          >
             Chart: {activeChartId}
           </div>
         {/snippet}

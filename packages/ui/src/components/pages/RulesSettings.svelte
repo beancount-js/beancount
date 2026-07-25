@@ -210,8 +210,8 @@
   }
 </script>
 
-<section class="h-full overflow-y-auto p-4 sm:p-6" data-rules-settings>
-  <div class="mx-auto flex w-full max-w-4xl flex-col gap-6">
+<section class="cn-pages-rulessettings-213-1" data-rules-settings>
+  <div class="cn-pages-rulessettings-214-1">
     {#if isWeb}
       <Alert.Root>
         <FileCode2 />
@@ -221,7 +221,7 @@
         >
       </Alert.Root>
     {:else if !hasProject}
-      <Empty.Root class="min-h-64 border">
+      <Empty.Root class="cn-pages-rulessettings-224-1">
         <Empty.Header>
           <Empty.Media variant="icon"><ListFilter /></Empty.Media>
           <Empty.Title>Open a project</Empty.Title>
@@ -234,89 +234,102 @@
       {#if loading && !rules.length}
         <RulesPageSkeleton />
       {:else if !rules.length}
-        <Empty.Root class="min-h-48 border">
+        <Empty.Root class="cn-pages-rulessettings-237-1">
           <Empty.Header>
             <Empty.Media variant="icon"><ListFilter /></Empty.Media>
             <Empty.Title>No detection rules yet</Empty.Title>
             <Empty.Description
-              >Add a rule to automatically categorize, tag, or exclude
-              matching transactions.</Empty.Description
+              >Add a rule to automatically categorize, tag, or exclude matching
+              transactions.</Empty.Description
             >
           </Empty.Header>
         </Empty.Root>
       {:else}
-        <div
-          class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 rounded-2xl bg-muted px-4 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-        >
-          <div class="justify-self-start">
+        <div class="cn-pages-rulessettings-249-1">
+          <div class="cn-pages-rulessettings-251-1">
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              class="cn-pages-rulessettings-254-1"
               aria-label={`Sort by rule name, currently ${sortOrders.name}`}
               onclick={() => cycleSort("name")}
             >
               Rule
               {#if sortOrders.name === "asc"}
-                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                <ArrowUpNarrowWide
+                  class="cn-pages-rulessettings-260-1"
+                  aria-hidden="true"
+                />
               {:else if sortOrders.name === "desc"}
-                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                <ArrowDownWideNarrow
+                  class="cn-pages-rulessettings-262-1"
+                  aria-hidden="true"
+                />
               {:else}
-                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+                <ArrowUpDown
+                  class="cn-pages-rulessettings-264-1"
+                  aria-hidden="true"
+                />
               {/if}
             </button>
           </div>
-          <div class="justify-self-end">
+          <div class="cn-pages-rulessettings-268-1">
             <button
               type="button"
-              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              class="cn-pages-rulessettings-271-1"
               aria-label={`Sort by active status, currently ${sortOrders.active}`}
               onclick={() => cycleSort("active")}
             >
               Active
               {#if sortOrders.active === "asc"}
-                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                <ArrowUpNarrowWide
+                  class="cn-pages-rulessettings-277-1"
+                  aria-hidden="true"
+                />
               {:else if sortOrders.active === "desc"}
-                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                <ArrowDownWideNarrow
+                  class="cn-pages-rulessettings-279-1"
+                  aria-hidden="true"
+                />
               {:else}
-                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
+                <ArrowUpDown
+                  class="cn-pages-rulessettings-281-1"
+                  aria-hidden="true"
+                />
               {/if}
             </button>
           </div>
           <div aria-hidden="true"></div>
         </div>
-        <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div class="cn-pages-rulessettings-287-1">
           {#each sortedRules as rule, index (rule.id)}
             {@const summary = summarizeRule(rule)}
             <div
-              class:rounded-b-xl={index === sortedRules.length - 1}
-              class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-accent/60"
+              class:cn-pages-rulessettings-291-1={index ===
+                sortedRules.length - 1}
+              class="cn-pages-rulessettings-292-1"
             >
               <button
                 type="button"
-                class="min-w-0 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                class="cn-pages-rulessettings-296-1"
                 aria-label={`Edit rule ${ruleName(rule)}`}
                 onclick={() => onOpenEdit(rule)}
               >
-                <span class="block truncate text-sm font-semibold"
+                <span class="cn-pages-rulessettings-300-1"
                   >{ruleName(rule)}</span
                 >
-                <span class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                  <span
-                    class="max-w-full truncate rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                    title={summary.if}
-                    ><span class="font-semibold text-foreground/80">IF</span>
+                <span class="cn-pages-rulessettings-303-1">
+                  <span class="cn-pages-rulessettings-305-1" title={summary.if}
+                    ><span class="cn-pages-rulessettings-307-1">IF</span>
                     {summary.if}</span
                   >
                   <span
-                    class="max-w-full truncate rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                    class="cn-pages-rulessettings-311-1"
                     title={summary.then}
-                    ><span class="font-semibold text-foreground/80">THEN</span>
+                    ><span class="cn-pages-rulessettings-313-1">THEN</span>
                     {summary.then}</span
                   >
-                  <span
-                    class="max-w-full truncate rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                    title={summary.for}
-                    ><span class="font-semibold text-foreground/80">FOR</span>
+                  <span class="cn-pages-rulessettings-317-1" title={summary.for}
+                    ><span class="cn-pages-rulessettings-319-1">FOR</span>
                     {summary.for}</span
                   >
                 </span>
@@ -339,34 +352,43 @@
                       type="button"
                       variant="ghost"
                       size="icon"
-                      class="size-8 shrink-0"
+                      class="cn-pages-rulessettings-342-1"
                       aria-label="Rule actions"
                       onclick={(event) => {
                         event.stopPropagation();
                       }}
                     >
-                      <MoreHorizontal class="size-4" />
+                      <MoreHorizontal class="cn-pages-rulessettings-348-1" />
                     </Button>
                   {/snippet}
                 </DropdownMenu.Trigger>
                 <DropdownMenu.Content align="end">
                   <DropdownMenu.Item onSelect={() => onOpenEdit(rule)}>
-                    <Pencil class="size-3.5" aria-hidden="true" />
+                    <Pencil
+                      class="cn-pages-rulessettings-354-1"
+                      aria-hidden="true"
+                    />
                     Edit
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
                     disabled={applyBusy}
                     onSelect={() => onOpenApply(rule)}
                   >
-                    <Play class="size-3.5" aria-hidden="true" />
+                    <Play
+                      class="cn-pages-rulessettings-361-1"
+                      aria-hidden="true"
+                    />
                     Run…
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator />
                   <DropdownMenu.Item
-                    class="text-destructive focus:text-destructive"
+                    class="cn-pages-rulessettings-366-1"
                     onSelect={() => onDeleteRule(rule)}
                   >
-                    <Trash2 class="size-3.5" aria-hidden="true" />
+                    <Trash2
+                      class="cn-pages-rulessettings-369-1"
+                      aria-hidden="true"
+                    />
                     Delete
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>
@@ -376,74 +398,64 @@
         </div>
       {/if}
 
-      <div class="flex flex-col gap-3">
-        <h2
-          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-        >
-          Recent runs
-        </h2>
+      <div class="cn-pages-rulessettings-379-1">
+        <h2 class="cn-pages-rulessettings-381-1">Recent runs</h2>
         {#if !runs.length}
-          <p class="text-sm text-muted-foreground">No rule runs yet.</p>
+          <p class="cn-pages-rulessettings-386-1">No rule runs yet.</p>
         {:else}
           <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
           <div
-            class="overflow-x-auto rounded-xl border bg-card shadow-sm"
+            class="cn-pages-rulessettings-390-1"
             role="region"
             tabindex="0"
             aria-label="Recent rule runs table"
           >
-            <table class="w-full min-w-[48rem] text-left text-sm">
+            <table class="cn-pages-rulessettings-395-1">
               <thead>
-                <tr
-                  class="border-b bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-                >
-                  <th class="px-4 py-2.5 font-semibold">Date/Time</th>
-                  <th class="px-4 py-2.5 font-semibold">Type</th>
-                  <th class="px-4 py-2.5 font-semibold">Target</th>
-                  <th class="px-4 py-2.5 font-semibold">Status</th>
-                  <th class="px-4 py-2.5 font-semibold">Rule</th>
-                  <th class="px-4 py-2.5 text-right font-semibold">Queued</th>
-                  <th class="px-4 py-2.5 text-right font-semibold">Processed</th>
-                  <th class="px-4 py-2.5 text-right font-semibold">Modified</th>
-                  <th class="px-4 py-2.5 text-right font-semibold">Blocked</th>
+                <tr class="cn-pages-rulessettings-398-1">
+                  <th class="cn-pages-rulessettings-400-1">Date/Time</th>
+                  <th class="cn-pages-rulessettings-401-1">Type</th>
+                  <th class="cn-pages-rulessettings-402-1">Target</th>
+                  <th class="cn-pages-rulessettings-403-1">Status</th>
+                  <th class="cn-pages-rulessettings-404-1">Rule</th>
+                  <th class="cn-pages-rulessettings-405-1">Queued</th>
+                  <th class="cn-pages-rulessettings-406-1">Processed</th>
+                  <th class="cn-pages-rulessettings-407-1">Modified</th>
+                  <th class="cn-pages-rulessettings-408-1">Blocked</th>
                 </tr>
               </thead>
               <tbody>
                 {#each runs as run (run.id)}
-                  <tr class="border-b last:border-b-0">
-                    <td
-                      class="whitespace-nowrap px-4 py-2.5 text-muted-foreground"
+                  <tr class="cn-pages-rulessettings-413-1">
+                    <td class="cn-pages-rulessettings-415-1"
                       >{formatDateTime(run.executedAt)}</td
                     >
-                    <td class="px-4 py-2.5 capitalize text-muted-foreground"
+                    <td class="cn-pages-rulessettings-418-1"
                       >{run.executionType}</td
                     >
-                    <td class="px-4 py-2.5 capitalize text-muted-foreground"
+                    <td class="cn-pages-rulessettings-421-1"
                       >{targetLabel(run.target)}</td
                     >
-                    <td class="px-4 py-2.5">
+                    <td class="cn-pages-rulessettings-424-1">
                       <span
                         class={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-medium capitalize",
+                          "cn-pages-rulessettings-427-1",
                           statusPillClass(run.status),
                         )}
                         title={run.errorMessage ?? undefined}>{run.status}</span
                       >
                     </td>
-                    <td
-                      class="min-w-0 max-w-52 truncate px-4 py-2.5 font-medium"
-                      >{run.ruleName}</td
-                    >
-                    <td class="px-4 py-2.5 text-right tabular-nums"
+                    <td class="cn-pages-rulessettings-434-1">{run.ruleName}</td>
+                    <td class="cn-pages-rulessettings-437-1"
                       >{run.transactionsQueued}</td
                     >
-                    <td class="px-4 py-2.5 text-right tabular-nums"
+                    <td class="cn-pages-rulessettings-440-1"
                       >{run.transactionsProcessed}</td
                     >
-                    <td class="px-4 py-2.5 text-right tabular-nums"
+                    <td class="cn-pages-rulessettings-443-1"
                       >{run.transactionsModified}</td
                     >
-                    <td class="px-4 py-2.5 text-right tabular-nums"
+                    <td class="cn-pages-rulessettings-446-1"
                       >{run.transactionsBlocked}</td
                     >
                   </tr>
@@ -453,11 +465,8 @@
           </div>
 
           {#if runsPageCount > 1}
-            <div
-              class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-              data-rule-run-pagination
-            >
-              <span class="text-sm text-muted-foreground"
+            <div class="cn-pages-rulessettings-457-1" data-rule-run-pagination>
+              <span class="cn-pages-rulessettings-460-1"
                 >Page {runsPage} of {runsPageCount}</span
               >
               <PagePagination
@@ -473,13 +482,13 @@
       </div>
     {/if}
 
-    <p class="text-sm text-muted-foreground">{status}</p>
+    <p class="cn-pages-rulessettings-476-1">{status}</p>
   </div>
 </section>
 
 {#if hasProject}
   <Dialog.Root bind:open={applyOpen}>
-    <Dialog.Content class="sm:max-w-xl">
+    <Dialog.Content class="cn-pages-rulessettings-482-1">
       <Dialog.Header>
         <Dialog.Title>Run rules</Dialog.Title>
         <Dialog.Description>
@@ -488,40 +497,37 @@
         </Dialog.Description>
       </Dialog.Header>
 
-      <div class="flex flex-col gap-4">
-        <div class="flex flex-col gap-2">
-          <p class="text-sm font-medium">Apply to</p>
+      <div class="cn-pages-rulessettings-491-1">
+        <div class="cn-pages-rulessettings-492-1">
+          <p class="cn-pages-rulessettings-493-1">Apply to</p>
           <ToggleGroup.Root
             type="single"
             aria-label="Rule run target"
-            class="grid w-full grid-cols-3 !gap-0 rounded-lg bg-muted p-1"
+            class="cn-pages-rulessettings-497-1"
             bind:value={applyTarget}
             disabled={applyBusy}
             onValueChange={handleApplyTargetChange}
           >
             <ToggleGroup.Item
               value="live-ledger"
-              class="!h-8 !min-w-0 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
-              >Live ledger</ToggleGroup.Item
+              class="cn-pages-rulessettings-504-1">Live ledger</ToggleGroup.Item
             >
             <ToggleGroup.Item
               value="pending-imports"
-              class="!h-8 !min-w-0 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+              class="cn-pages-rulessettings-509-1"
               >Pending imports</ToggleGroup.Item
             >
-            <ToggleGroup.Item
-              value="both"
-              class="!h-8 !min-w-0 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            <ToggleGroup.Item value="both" class="cn-pages-rulessettings-514-1"
               >Both</ToggleGroup.Item
             >
           </ToggleGroup.Root>
-          <p class="text-xs text-muted-foreground">
+          <p class="cn-pages-rulessettings-518-1">
             Live ledger is selected by default. Both updates two separate stores
             and is never selected automatically.
           </p>
         </div>
 
-        <div class="rounded-lg border bg-muted/30 px-3 py-2.5 text-sm">
+        <div class="cn-pages-rulessettings-524-1">
           {#if applyPreviewLoading}
             Checking matching transactions…
           {:else if applyPreview}
@@ -539,14 +545,14 @@
               {summary.unique.liveLedger === 1 ? "entry" : "entries"}.
             </p>
             {#if overlapTotal > 0}
-              <p class="mt-1 text-xs text-muted-foreground">
+              <p class="cn-pages-rulessettings-542-1">
                 {overlapTotal} additional {overlapTotal === 1
                   ? "rule match"
                   : "rule matches"} overlap. Rules run in their stored order.
               </p>
             {/if}
             {#if conflictTotal > 0}
-              <p class="mt-1 text-xs text-amber-700 dark:text-amber-400">
+              <p class="cn-pages-rulessettings-549-1">
                 {conflictTotal} conflicting field {conflictTotal === 1
                   ? "write was"
                   : "writes were"} found; the later stored rule wins.

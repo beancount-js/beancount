@@ -55,13 +55,13 @@
   const normalizedActiveChartId = $derived(
     charts.some((chart) => chart.id === activeChartId) && activeChartId
       ? activeChartId
-      : charts[0]?.id ?? "",
+      : (charts[0]?.id ?? ""),
   );
 
   const activeTabOrFirst = $derived(
     tabs.some((tab) => tab.id === activeTab) && activeTab
       ? activeTab
-      : tabs[0]?.id ?? "",
+      : (tabs[0]?.id ?? ""),
   );
 
   function handleTabChange(value: string | undefined) {
@@ -70,8 +70,8 @@
   }
 </script>
 
-<div class="flex h-full min-h-0 flex-col">
-  <Breadcrumb.Root class="w-full shrink-0 p-3">
+<div class="cn-pages-accountdetails-73-1">
+  <Breadcrumb.Root class="cn-pages-accountdetails-74-1">
     <Breadcrumb.List>
       {#each breadcrumbs as breadcrumb, index (breadcrumb.label)}
         <Breadcrumb.Item>
@@ -90,29 +90,32 @@
     </Breadcrumb.List>
   </Breadcrumb.Root>
 
-  <ContentScrollArea class="min-h-0 flex-1" contentClass="scroll-container">
-    <div class="p-2">
+  <ContentScrollArea
+    class="cn-pages-accountdetails-93-1"
+    contentClass="scroll-container"
+  >
+    <div class="cn-pages-accountdetails-94-1">
       <ChartSwitcher
-        charts={charts}
+        {charts}
         activeChartId={normalizedActiveChartId}
         ariaLabel={chartSwitcherAriaLabel}
-        onActiveChartChange={onActiveChartChange}
+        {onActiveChartChange}
       >
-        {#if chartChildren}
-          {#snippet children(chartId)}
+        {#snippet children(chartId)}
+          {#if chartChildren}
             {@render chartChildren(chartId)}
-          {/snippet}
-        {/if}
+          {/if}
+        {/snippet}
       </ChartSwitcher>
     </div>
 
-    <div class="min-w-0 max-w-full p-2">
-      <div class="flex min-w-0 max-w-full">
-        <div class="w-full min-w-0 max-w-full">
+    <div class="cn-pages-accountdetails-109-1">
+      <div class="cn-pages-accountdetails-110-1">
+        <div class="cn-pages-accountdetails-111-1">
           <Tabs.Root
             value={activeTabOrFirst}
             onValueChange={handleTabChange}
-            class="min-w-0 max-w-full pt-2"
+            class="cn-pages-accountdetails-115-1"
           >
             <Tabs.List>
               {#each tabs as tab (tab.id)}
@@ -126,9 +129,7 @@
                   {#if accountChildren}
                     {@render accountChildren()}
                   {:else}
-                    <div
-                      class="rounded-md border border-dashed border-border/80 bg-muted/20 p-4 text-sm text-muted-foreground"
-                    >
+                    <div class="cn-pages-accountdetails-130-1">
                       No account table content is configured for {account}.
                     </div>
                   {/if}
@@ -136,9 +137,7 @@
                   {#if changesChildren}
                     {@render changesChildren()}
                   {:else}
-                    <div
-                      class="rounded-md border border-dashed border-border/80 bg-muted/20 p-4 text-sm text-muted-foreground"
-                    >
+                    <div class="cn-pages-accountdetails-140-1">
                       No changes table is configured.
                     </div>
                   {/if}
@@ -146,16 +145,12 @@
                   {#if balancesChildren}
                     {@render balancesChildren()}
                   {:else}
-                    <div
-                      class="rounded-md border border-dashed border-border/80 bg-muted/20 p-4 text-sm text-muted-foreground"
-                    >
+                    <div class="cn-pages-accountdetails-150-1">
                       No balances table is configured.
                     </div>
                   {/if}
                 {:else}
-                  <div
-                    class="rounded-md border border-dashed border-border/80 bg-muted/20 p-4 text-sm text-muted-foreground"
-                  >
+                  <div class="cn-pages-accountdetails-157-1">
                     No content is configured for {tab.label}.
                   </div>
                 {/if}

@@ -199,22 +199,25 @@
   }
 </script>
 
-<section class="h-full overflow-auto p-3 sm:p-5" data-ingestion-merchant-review>
-  <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
+<section
+  class="cn-pages-ingestionmerchantreview-202-1"
+  data-ingestion-merchant-review
+>
+  <div class="cn-pages-ingestionmerchantreview-203-1">
     {#if isWeb}
-      <div
-        class="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-sm"
-      >
+      <div class="cn-pages-ingestionmerchantreview-206-1">
         Merchant review is available only when this project is opened through
         the local Beancount Studio server.
       </div>
     {:else if !hasProject}
-      <div class="rounded-md border p-4 text-sm text-muted-foreground">
+      <div class="cn-pages-ingestionmerchantreview-212-1">
         Open a project to review merchants.
       </div>
     {:else}
       {#if status}
-        <p class="text-sm text-muted-foreground" role="status">{status}</p>
+        <p class="cn-pages-ingestionmerchantreview-217-1" role="status">
+          {status}
+        </p>
       {/if}
 
       {#if loading && !hasMerchantClusters}
@@ -224,7 +227,7 @@
           type="single"
           value={merchantView}
           aria-label="Merchant review status"
-          class="!gap-0 self-start rounded-lg bg-muted p-1"
+          class="cn-pages-ingestionmerchantreview-227-1"
           data-ingestion-merchant-view
           onValueChange={(value) => {
             if (value === "pending" || value === "reviewed") {
@@ -234,23 +237,19 @@
         >
           <ToggleGroup.Item
             value="pending"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-3 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            class="cn-pages-ingestionmerchantreview-237-1"
           >
             Pending review
-            <span
-              class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
-            >
+            <span class="cn-pages-ingestionmerchantreview-241-1">
               {pendingCount}
             </span>
           </ToggleGroup.Item>
           <ToggleGroup.Item
             value="reviewed"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-3 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            class="cn-pages-ingestionmerchantreview-248-1"
           >
             Reviewed
-            <span
-              class="inline-flex min-w-5 items-center justify-center rounded-full bg-muted-foreground/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none"
-            >
+            <span class="cn-pages-ingestionmerchantreview-252-1">
               {reviewedCount}
             </span>
           </ToggleGroup.Item>
@@ -258,7 +257,7 @@
 
         {#if clusters.length}
           {#if summaryLine}
-            <p class="text-sm text-muted-foreground">{summaryLine}</p>
+            <p class="cn-pages-ingestionmerchantreview-261-1">{summaryLine}</p>
           {/if}
 
           <div
@@ -280,7 +279,7 @@
               bind:filtersExpanded
               {filterSyntax}
               onValueChange={onSearchQueryInput}
-              onClearSearch={onClearSearch}
+              {onClearSearch}
               onClearAll={onClearAllSearch}
             >
               {#snippet filters()}
@@ -327,22 +326,20 @@
           </div>
 
           {#if activeSearch && !matchedClusters.length}
-            <div
-              class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-            >
+            <div class="cn-pages-ingestionmerchantreview-331-1">
               No merchants match this search.
             </div>
           {:else if matchedClusters.length}
             <div
               class={isPendingView
-                ? "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-                : "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"}
+                ? "cn-pages-ingestionmerchantreview-338-1"
+                : "cn-pages-ingestionmerchantreview-339-1"}
             >
               {#if isPendingView}
                 <input
                   use:setIndeterminate={masterSelection.indeterminate}
                   type="checkbox"
-                  class="size-4 rounded border-input text-primary focus:ring-ring"
+                  class="cn-pages-ingestionmerchantreview-345-1"
                   aria-label="Select visible merchant clusters"
                   checked={masterSelection.checked}
                   disabled={!visibleClusterIds.length || detectBusy}
@@ -353,41 +350,53 @@
                     )}
                 />
               {/if}
-              <div class="justify-self-start">
+              <div class="cn-pages-ingestionmerchantreview-356-1">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  class="cn-pages-ingestionmerchantreview-359-1"
                   aria-label={`Sort by merchant, currently ${sortIconLabel("merchant")}`}
                   onclick={() => onCycleSort("merchant")}
                 >
                   Merchant
                   {#if sortOrders.merchant === "asc"}
-                    <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                    <ArrowUpNarrowWide
+                      class="cn-pages-ingestionmerchantreview-365-1"
+                      aria-hidden="true"
+                    />
                   {:else if sortOrders.merchant === "desc"}
-                    <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                    <ArrowDownWideNarrow
+                      class="cn-pages-ingestionmerchantreview-367-1"
+                      aria-hidden="true"
+                    />
                   {:else}
                     <ArrowUpDown
-                      class="size-3.5 opacity-50"
+                      class="cn-pages-ingestionmerchantreview-370-1"
                       aria-hidden="true"
                     />
                   {/if}
                 </button>
               </div>
-              <div class="justify-self-end">
+              <div class="cn-pages-ingestionmerchantreview-376-1">
                 <button
                   type="button"
-                  class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  class="cn-pages-ingestionmerchantreview-379-1"
                   aria-label={`Sort by ${isPendingView ? "pending" : "reviewed"} count, currently ${sortIconLabel("pending")}`}
                   onclick={() => onCycleSort("pending")}
                 >
                   {isPendingView ? "Pending" : "Reviewed"}
                   {#if sortOrders.pending === "asc"}
-                    <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
+                    <ArrowUpNarrowWide
+                      class="cn-pages-ingestionmerchantreview-385-1"
+                      aria-hidden="true"
+                    />
                   {:else if sortOrders.pending === "desc"}
-                    <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
+                    <ArrowDownWideNarrow
+                      class="cn-pages-ingestionmerchantreview-387-1"
+                      aria-hidden="true"
+                    />
                   {:else}
                     <ArrowUpDown
-                      class="size-3.5 opacity-50"
+                      class="cn-pages-ingestionmerchantreview-390-1"
                       aria-hidden="true"
                     />
                   {/if}
@@ -399,13 +408,13 @@
               <div
                 data-merchant-selection-banner
                 role="status"
-                class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+                class="cn-pages-ingestionmerchantreview-402-1"
               >
                 {#if allMatchingSelected}
                   All {matchedClusters.length} matching merchant clusters are selected.
                   <button
                     type="button"
-                    class="font-medium text-primary underline-offset-2 hover:underline"
+                    class="cn-pages-ingestionmerchantreview-408-1"
                     onclick={onClearSelected}
                   >
                     Clear selection
@@ -415,7 +424,7 @@
                   selected.
                   <button
                     type="button"
-                    class="font-medium text-primary underline-offset-2 hover:underline"
+                    class="cn-pages-ingestionmerchantreview-418-1"
                     onclick={onSelectAllMatching}
                   >
                     Select all {matchedClusters.length} matching clusters
@@ -424,18 +433,18 @@
               </div>
             {/if}
 
-            <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
+            <div class="cn-pages-ingestionmerchantreview-427-1">
               {#each visibleClusters as cluster (cluster.id)}
                 {@const confidence = merchantClusterConfidence(cluster)}
                 <div
                   class={isPendingView
-                    ? "grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"
-                    : "border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60"}
+                    ? "cn-pages-ingestionmerchantreview-432-1"
+                    : "cn-pages-ingestionmerchantreview-433-1"}
                 >
                   {#if isPendingView}
                     <input
                       type="checkbox"
-                      class="size-4 rounded border-input text-primary focus:ring-ring"
+                      class="cn-pages-ingestionmerchantreview-438-1"
                       aria-label={`Select ${cluster.displayName}`}
                       checked={selectedClusterIds.has(cluster.id)}
                       disabled={detectBusy}
@@ -448,34 +457,32 @@
                   {/if}
                   <button
                     type="button"
-                    class="grid min-w-0 cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg bg-transparent p-0 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                    class="cn-pages-ingestionmerchantreview-451-1"
                     aria-label={`${isPendingView ? "Review" : "View"} merchant ${cluster.displayName}`}
                     onclick={() => onOpenCluster(cluster)}
                   >
                     {#if cluster.logoUrl && !failedLogoIds.has(cluster.id)}
                       <img
-                        class="size-10 rounded-full border object-contain"
+                        class="cn-pages-ingestionmerchantreview-457-1"
                         src={cluster.logoUrl}
                         alt=""
                         onerror={() => markLogoFailed(cluster.id)}
                       />
                     {:else}
                       <div
-                        class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
+                        class="cn-pages-ingestionmerchantreview-464-1"
                         aria-hidden="true"
                       >
                         {clusterInitial(cluster)}
                       </div>
                     {/if}
-                    <div class="min-w-0">
-                      <div class="truncate text-sm font-semibold">
+                    <div class="cn-pages-ingestionmerchantreview-470-1">
+                      <div class="cn-pages-ingestionmerchantreview-471-1">
                         {cluster.displayName}
                       </div>
-                      <div
-                        class="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
-                      >
-                        <span class="min-w-0 truncate">
-                          <span class="capitalize"
+                      <div class="cn-pages-ingestionmerchantreview-475-1">
+                        <span class="cn-pages-ingestionmerchantreview-477-1">
+                          <span class="cn-pages-ingestionmerchantreview-478-1"
                             >{cluster.statuses[0] ?? "unresolved"}</span
                           >
                           · {clusterDetail(cluster)}
@@ -483,7 +490,7 @@
                         {#if confidence !== undefined}
                           <Badge
                             variant="secondary"
-                            class="shrink-0 px-1.5 py-0 text-[0.65rem] leading-5"
+                            class="cn-pages-ingestionmerchantreview-486-1"
                             title={`AI merchant confidence ${confidence.toFixed(2)}`}
                             >AI {formatAiConfidence(confidence)}</Badge
                           >
@@ -492,8 +499,8 @@
                     </div>
                     <span
                       class={isPendingView
-                        ? "inline-flex min-w-7 justify-center rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-violet-700 dark:text-violet-300"
-                        : "inline-flex min-w-7 justify-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-300"}
+                        ? "cn-pages-ingestionmerchantreview-495-1"
+                        : "cn-pages-ingestionmerchantreview-496-1"}
                       aria-label={`${cluster.pendingCount} ${isPendingView ? "pending" : "reviewed"} transaction${cluster.pendingCount === 1 ? "" : "s"}`}
                     >
                       {cluster.pendingCount}
@@ -505,23 +512,21 @@
 
             {#if pageCount > 1}
               <div
-                class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                class="cn-pages-ingestionmerchantreview-508-1"
                 data-review-merchant-pagination
               >
-                <span class="text-sm text-muted-foreground"
+                <span class="cn-pages-ingestionmerchantreview-511-1"
                   >Page {page} of {pageCount}</span
                 >
-                <div
-                  class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
-                >
-                  <div class="hidden items-center gap-2 sm:flex">
+                <div class="cn-pages-ingestionmerchantreview-515-1">
+                  <div class="cn-pages-ingestionmerchantreview-517-1">
                     <label
-                      class="text-sm text-muted-foreground"
+                      class="cn-pages-ingestionmerchantreview-519-1"
                       for="ingestion-merchant-page-size">Records per page</label
                     >
                     <select
                       id="ingestion-merchant-page-size"
-                      class="h-8 rounded-md border bg-background px-2 text-sm"
+                      class="cn-pages-ingestionmerchantreview-524-1"
                       value={pageSize}
                       onchange={(event) =>
                         onPageSizeChange(
@@ -539,14 +544,14 @@
                     {page}
                     {pageCount}
                     ariaLabel="Review merchant pages"
-                    onPageChange={onPageChange}
+                    {onPageChange}
                   />
                 </div>
               </div>
             {/if}
           {/if}
         {:else}
-          <Empty.Root class="min-h-64 border">
+          <Empty.Root class="cn-pages-ingestionmerchantreview-549-1">
             <Empty.Header>
               <Empty.Media variant="icon"><Landmark /></Empty.Media>
               <Empty.Title>
@@ -563,7 +568,7 @@
           </Empty.Root>
         {/if}
       {:else}
-        <Empty.Root class="min-h-64 border">
+        <Empty.Root class="cn-pages-ingestionmerchantreview-566-1">
           <Empty.Header>
             <Empty.Media variant="icon"><Landmark /></Empty.Media>
             {#if hasSources}
@@ -582,12 +587,18 @@
             {#if hasSources}
               <Button type="button" onclick={onOpenAccounts}>
                 Open Accounts
-                <Link2 class="size-4" aria-hidden="true" />
+                <Link2
+                  class="cn-pages-ingestionmerchantreview-585-1"
+                  aria-hidden="true"
+                />
               </Button>
             {:else}
               <Button type="button" onclick={onOpenSources}>
                 Open Sources
-                <Link2 class="size-4" aria-hidden="true" />
+                <Link2
+                  class="cn-pages-ingestionmerchantreview-590-1"
+                  aria-hidden="true"
+                />
               </Button>
             {/if}
           </Empty.Content>
