@@ -299,16 +299,15 @@ Required evidence before marking G03 `Accepted`:
   `test-storybook`, `pnpm --filter @beancount-js/fava-beta check`,
   `check:svelte5`, `lint`, and `build` pass after this migration.
 
-#### C014 — `form/AccountComboField.svelte`
+#### C014 — `AccountPicker.svelte` form renderer
 
 - Status: **Done**. Presentation ownership is now in
-  `@beancount-js/ui/forms/AccountComboField.svelte`; the component consumes
-  app-owned account context and preserves the existing searchable-select behavior,
-  including placeholder-first selection and empty-value mapping.
+  `@beancount-js/ui/forms/AccountPicker.svelte`; the component consumes
+  app-owned account context, works as the custom structured-form renderer, and
+  preserves the existing searchable-select behavior.
 - Beta adapter: `packages/fava-beta/src/ingestion/source-form-config.ts` now
-  imports `AccountComboField` from `@beancount-js/ui/forms`; local duplicate
-  component and story files under `packages/fava-beta/src/components/form/` were
-  removed.
+  uses `AccountPicker` from `@beancount-js/ui/forms`; the duplicate
+  account-combo component and stories were removed.
 - Validation: `pnpm --filter @beancount-js/ui test-storybook`,
   `pnpm --filter @beancount-js/fava-beta check`, `check:svelte5`, `lint`, and
   `build` pass after this migration.
@@ -429,7 +428,7 @@ Required evidence before marking G03 `Accepted`:
 | C011 | `ComboBox.svelte`                 | Done   |
 | C012 | `MerchantPicker.svelte`           | Done   |
 | C013 | `LocalMerchantMatchPicker.svelte` | Done   |
-| C014 | `form/AccountComboField.svelte`   | Done   |
+| C014 | `AccountPicker.svelte` form renderer | Done   |
 | C015 | `form/MerchantComboField.svelte`  | Done   |
 | C016 | `form/SecretField.svelte`         | Done   |
 | C017 | `form/SwitchField.svelte`         | Done   |
@@ -1053,9 +1052,8 @@ change IDs here at the end of each committed slice.
   `pnpm --filter @beancount-js/ui check-boundaries` pass;
   `pnpm --filter @beancount-js/fava-beta check` also passes.
 - Note: `pnpm --filter @beancount-js/ui check` remains blocked by pre-existing
-  story fixture typing issues in `AccountComboField.stories.svelte`,
-  `MerchantComboField.stories.svelte`, and `SwitchField.stories.svelte`, not by
-  this migration slice.
+  story fixture typing issues in `MerchantComboField.stories.svelte` and
+  `SwitchField.stories.svelte`, not by this migration slice.
 
 ### C021 — `JournalRecordRouteSheet.svelte`
 
@@ -1087,8 +1085,8 @@ change IDs here at the end of each committed slice.
 - Validation: `pnpm --filter @beancount-js/fava-beta check` and
   `pnpm --filter @beancount-js/fava-beta test:run` pass.
 - Note: `pnpm --filter @beancount-js/ui check` remains blocked by pre-existing
-  story fixture typing issues in `AccountComboField.stories.svelte`,
-  `MerchantComboField.stories.svelte`, and `SwitchField.stories.svelte`; these are unrelated to this slice.
+  story fixture typing issues in `MerchantComboField.stories.svelte` and
+  `SwitchField.stories.svelte`; these are unrelated to this slice.
 - 2026-07-25 — Dashboard components slice (`C042`–`C047`): migrated
   `@beancount-js/fava-beta` dashboard adapters to shared `@beancount-js/ui`
   implementations for donut, flow, line, section, tree table/row, and chart

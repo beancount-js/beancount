@@ -58,7 +58,6 @@ export { default as FilterCommandPicker } from "./FilterCommandPicker.svelte";
 export { default as AutocompleteInput } from "./AutocompleteInput.svelte";
 export { default as ChipAutocomplete } from "./ChipAutocomplete.svelte";
 export { default as AccountAvatar } from "./AccountAvatar.svelte";
-export { default as AccountComboField } from "./AccountComboField.svelte";
 export { default as IconColorPicker } from "./IconColorPicker.svelte";
 export { default as TagEditor } from "./TagEditor.svelte";
 export { default as AccountPicker } from "./AccountPicker.svelte";

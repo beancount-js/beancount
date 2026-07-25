@@ -4,7 +4,7 @@ import {
   segmentedField,
   textField,
   textareaField,
-  AccountComboField,
+  AccountPicker,
   MerchantComboField,
   SecretField,
   SwitchField,
@@ -66,7 +66,7 @@ export function accountField<TRoot>(config: {
 }) {
   return customViewField<TRoot, SourceFormContext, string>({
     ...config,
-    component: AccountComboField as FormCustomRenderer<
+    component: AccountPicker as FormCustomRenderer<
       TRoot,
       SourceFormContext,
       string
