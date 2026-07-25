@@ -211,7 +211,7 @@ export async function clearLedger(page: Page) {
 
 export async function openEditor(page: Page) {
   await gotoStudio(page, "/editor");
-  await page.waitForSelector("[data-ledger-file-row]");
+  await page.waitForSelector(".beancount-editor .cm-editor");
 }
 
 export async function waitForEditorContent(

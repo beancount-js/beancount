@@ -87,10 +87,18 @@ test.describe("sample ledger navigation", () => {
       .getByRole("button", { name: "Folders", exact: true })
       .click();
     await expect(page.getByPlaceholder("Search folders")).toBeVisible();
-    const packagesFolder = page.locator('[data-ledger-folder-row="packages"]');
+    const packagesFolder = workspaceSidebar.getByRole("button", {
+      name: "Expand packages",
+      exact: true,
+    });
     await expect(packagesFolder).toBeVisible();
     await packagesFolder.click();
-    await expect(packagesFolder).toHaveAttribute("aria-expanded", "true");
+    await expect(
+      workspaceSidebar.getByRole("button", {
+        name: "Collapse packages",
+        exact: true,
+      }),
+    ).toHaveAttribute("aria-expanded", "true");
 
     await workspaceSidebar
       .getByRole("button", { name: "Tags", exact: true })
@@ -137,7 +145,10 @@ test.describe("sample ledger navigation", () => {
       page.getByRole("button", { name: "Folders", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     await expect(
-      page.locator('[data-ledger-folder-row="packages"]'),
+      page.getByRole("button", {
+        name: "Collapse packages",
+        exact: true,
+      }),
     ).toHaveAttribute("aria-expanded", "true");
   });
 
