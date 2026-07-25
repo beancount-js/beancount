@@ -12,18 +12,10 @@
     FilterCommandPicker,
     SearchFilterBar,
     type FilterCommandOption,
-  } from "@beancount-js/forms";
+  } from "@beancount-js/ui/forms";
   import { Decimal } from "@beancount-js/parser";
-  import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
-  import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
-  import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
-  import ChevronDown from "lucide-svelte/icons/chevron-down";
-  import ChevronUp from "lucide-svelte/icons/chevron-up";
-  import Check from "lucide-svelte/icons/check";
   import Landmark from "lucide-svelte/icons/landmark";
   import Link2 from "lucide-svelte/icons/link-2";
-  import Undo2 from "lucide-svelte/icons/undo-2";
-  import X from "lucide-svelte/icons/x";
   import { useStudioWorkspace } from "../studio/workspace";
   import { useContext } from "../context";
   import { ledgerStemForPath } from "../lib/ledger-route";
@@ -64,7 +56,6 @@
     type IngestionReviewSearchState,
   } from "../lib/ingestion-review-search-state";
   import {
-    checkboxSelectionState,
     pruneReviewSelection,
     updateReviewSelection,
   } from "../lib/review-selection";
@@ -81,17 +72,15 @@
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
   import IngestionReconciliationPanel from "./IngestionReconciliationPanel.svelte";
   import ReviewImportsSkeleton from "./skeletons/ReviewImportsSkeleton.svelte";
-  import AccountLink from "./AccountLink.svelte";
   import { useCtx } from "../stores/format";
+  import IngestionTable, {
+    type IngestionReviewGroup,
+    type IngestionReviewRow,
+  } from "@beancount-js/ui/tables/IngestionTable.svelte";
 
   const PAGE_SIZES = [25, 50, 100];
   const ALL_CONNECTIONS = "__all__";
   const REVIEW_UNCATEGORISED_ACCOUNT = "Review:Uncategorised";
-  const SORT_CYCLE: Record<SortOrder, SortOrder> = {
-    none: "asc",
-    asc: "desc",
-    desc: "none",
-  };
 
   type ReviewFilter = "pending" | "accepted" | "reconciliation";
   type SortKey = "date" | "amount";
@@ -280,6 +269,18 @@
       }));
   });
 
+  const uiFilter = $derived<"review" | "ready">(
+    reviewFilter === "accepted" ? "ready" : "review",
+  );
+  const uiCounts = $derived({
+    review: pending.length,
+    ready: ready.length,
+    duplicates,
+  });
+  const proposalRowsById = $derived(
+    new Map(proposalRows.map((row) => [row.key, row] as const)),
+  );
+
   const sourceOptions = $derived([
     { value: ALL_CONNECTIONS, label: "All connections" },
     ...(config?.sources ?? []).map((source) => ({
@@ -402,8 +403,86 @@
         .map((row) => row.key),
     ),
   );
-  const masterSelection = $derived(
-    checkboxSelectionState(selectedProposalKeys, visibleActionableKeys),
+
+  function reviewToUiRow(row: ProposalRow): IngestionReviewRow {
+    const proposals = row.proposal;
+    const reviewStatus =
+      proposals.status === "ready"
+        ? "ready"
+        : proposals.status === "needs-review"
+          ? "needs-review"
+          : proposals.status === "held"
+            ? "held"
+            : proposals.status === "duplicate"
+              ? "duplicate"
+              : "accepted";
+    const postings = rowPostings(row.proposal);
+    return {
+      id: row.key,
+      title: rowTitle(proposals),
+      detail: rowDetail(proposals),
+      status: reviewStatus,
+      statusLabel: ingestionProposalReviewLabel(proposals),
+      amount: postings.length ? undefined : rowAmount(proposals),
+      postings: postings.length
+        ? postings.map((posting) => ({
+            account: posting.account,
+            amount: convertPostingAmount(posting.amount),
+          }))
+        : undefined,
+      imageUrl:
+        !failedLogoIds.has(row.proposal.id) ? merchantLogo(row.proposal) : undefined,
+      initial: rowInitial(proposals),
+      selectable:
+        reviewFilter === "pending" ? canBulkApproveRow(row) : true,
+    };
+  }
+
+  const uiGroups = $derived(
+    visibleGroups.map(
+      (group): IngestionReviewGroup => ({
+        id: group.key,
+        label: group.label,
+        rows: group.rows.map(reviewToUiRow),
+      }),
+    ),
+  );
+
+  const tableEmptyMessage = $derived(
+    activeSearch
+      ? "No proposals match this search."
+      : reviewFilter === "accepted"
+        ? "No transactions are ready to accept."
+        : pending.length === 0 && ready.length > 0
+          ? "All proposals are ready to accept."
+          : "No proposals pending review in this import run.",
+  );
+
+  function handleIngestionTableSelection(nextIds: readonly string[]) {
+    const next = new Set(nextIds);
+    const nextSelection = new Set(selectedProposalKeys);
+    for (const id of visibleActionableKeys) {
+      nextSelection.delete(id);
+    }
+    for (const id of next) {
+      if (visibleActionableKeys.includes(id)) {
+        nextSelection.add(id);
+      }
+    }
+    selectedProposalKeys = nextSelection;
+  }
+
+  function handleIngestionTableOpen(row: IngestionReviewRow) {
+    const target = proposalRowsById.get(row.id);
+    if (!target) return;
+    openRow(target);
+  }
+
+  function convertPostingAmount(amount: Amount) {
+    return $ctx.money(amount, amount.currency ?? undefined);
+  }
+  const visibleAllSelected = $derived(
+    visibleActionableKeys.every((id) => selectedProposalKeys.has(id)),
   );
   const allMatchingSelected = $derived(
     actionableRows.length > 0 &&
@@ -412,7 +491,7 @@
   const showSelectionBanner = $derived(
     actionableRows.length > visibleActionableKeys.length &&
       visibleActionableKeys.length > 0 &&
-      (masterSelection.checked || allMatchingSelected),
+      (visibleAllSelected || allMatchingSelected),
   );
   const transactionBulkAction = $derived.by(
     (): IngestionBulkReviewAction | undefined => {
@@ -458,15 +537,6 @@
     }
     if (current.length) result.push(current);
     return result;
-  }
-
-  function setIndeterminate(node: HTMLInputElement, value: boolean) {
-    node.indeterminate = value;
-    return {
-      update(next: boolean) {
-        node.indeterminate = next;
-      },
-    };
   }
 
   function canBulkApproveRow(row: ProposalRow) {
@@ -550,10 +620,6 @@
     } catch {
       if (project?.project.id === projectId) reconciliationProposalRows = [];
     }
-  }
-
-  function reconciliationRowsFor(row: ProposalRow) {
-    return reconciliationsByProposal.get(row.key) ?? [];
   }
 
   function reconciliationChanged() {
@@ -657,11 +723,6 @@
       review: value === "pending" ? undefined : value,
       page: "1",
     });
-  }
-
-  function cycleSort(key: SortKey) {
-    sortOrders = { ...sortOrders, [key]: SORT_CYCLE[sortOrders[key]] };
-    if (requestedPage !== 1) updateRoute({ page: "1" });
   }
 
   function compareDateKeys(
@@ -1127,19 +1188,6 @@
     return detail || proposal.issues[0] || "Import proposal";
   }
 
-  function rowStatusClass(proposal: ImportProposal) {
-    switch (proposal.status) {
-      case "ready":
-        return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
-      case "held":
-        return "bg-amber-500/15 text-amber-700 dark:text-amber-300";
-      case "duplicate":
-        return "bg-rose-500/15 text-rose-700 dark:text-rose-300";
-      default:
-        return "bg-violet-500/15 text-violet-700 dark:text-violet-300";
-    }
-  }
-
   function rowAmount(proposal: ImportProposal) {
     const tx = proposal.transaction;
     return tx ? `${tx.amount} ${tx.currency}` : "—";
@@ -1205,13 +1253,6 @@
     return undefined;
   }
 
-  function toggleSummary(groupKey: string) {
-    const next = new Set(expandedGroups);
-    if (next.has(groupKey)) next.delete(groupKey);
-    else next.add(groupKey);
-    expandedGroups = next;
-  }
-
   function openRow(row: ProposalRow) {
     if (
       queryProposalId === row.proposal.id &&
@@ -1253,39 +1294,6 @@
     selectedRow = row;
     sheetOpen = true;
   });
-
-  function markLogoFailed(proposalId: string) {
-    failedLogoIds = new Set([...failedLogoIds, proposalId]);
-  }
-
-  async function unacceptRow(row: ProposalRow, event?: Event) {
-    event?.stopPropagation();
-    event?.preventDefault();
-    if (!project || loading || syncing) return;
-    loading = true;
-    try {
-      const run = await ingestionJson<IngestionRun>(
-        ingestionPath(
-          project.project.id,
-          `/runs/${encodeURIComponent(row.runId)}`,
-        ),
-        {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            proposalId: row.proposal.id,
-            status: "needs-review",
-          }),
-        },
-      );
-      replaceRun(run);
-      status = "Moved proposal back to review.";
-    } catch (error) {
-      status = error instanceof Error ? error.message : String(error);
-    } finally {
-      loading = false;
-    }
-  }
 
   async function approveSelectedProposals() {
     if (!project || bulkUpdating || !selectedProposalRows.length) return;
@@ -1718,57 +1726,17 @@
           onBulkActionChange={setReconciliationBulkAction}
         />
       {:else}
-        <div
-          class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-        >
-          <input
-            use:setIndeterminate={masterSelection.indeterminate}
-            type="checkbox"
-            class="size-4 rounded border-input text-primary focus:ring-ring"
-            aria-label="Select visible review items"
-            checked={masterSelection.checked}
-            disabled={!visibleActionableKeys.length}
-            onchange={(event) =>
-              setSelectedRows(
-                visibleActionableKeys,
-                (event.currentTarget as HTMLInputElement).checked,
-              )}
-          />
-          <div>
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by date"
-              onclick={() => cycleSort("date")}
-            >
-              Date
-              {#if sortOrders.date === "asc"}
-                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
-              {:else if sortOrders.date === "desc"}
-                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
-              {:else}
-                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
-              {/if}
-            </button>
-          </div>
-          <div class="justify-self-end">
-            <button
-              type="button"
-              class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by amount"
-              onclick={() => cycleSort("amount")}
-            >
-              Amount
-              {#if sortOrders.amount === "asc"}
-                <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
-              {:else if sortOrders.amount === "desc"}
-                <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
-              {:else}
-                <ArrowUpDown class="size-3.5 opacity-50" aria-hidden="true" />
-              {/if}
-            </button>
-          </div>
-        </div>
+        <IngestionTable
+          groups={uiGroups}
+          {uiCounts}
+          filter={uiFilter}
+          emptyLabel={tableEmptyMessage}
+          selectedIds={[...selectedProposalKeys]}
+          onSelectedIdsChange={handleIngestionTableSelection}
+          onFilterChange={(next) =>
+            setReviewFilter(next === "review" ? "pending" : "accepted")}
+          onOpenRow={handleIngestionTableOpen}
+        />
 
         {#if showSelectionBanner}
           <div
@@ -1797,252 +1765,6 @@
               </button>
             {/if}
           </div>
-        {/if}
-
-        {#if !dateGroups.length}
-          <div
-            class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-          >
-            {#if activeSearch}
-              No proposals match this search.
-            {:else if reviewFilter === "accepted"}
-              No transactions are ready to accept.
-            {:else if pending.length === 0 && ready.length > 0}
-              All proposals are ready to accept.
-            {:else}
-              No proposals pending review in this import run.
-            {/if}
-          </div>
-        {:else}
-          {#each visibleGroups as group (group.key)}
-            {@const groupActionableKeys = group.rows
-              .filter((row) => actionableKeySet.has(row.key))
-              .map((row) => row.key)}
-            {@const groupSelection = checkboxSelectionState(
-              selectedProposalKeys,
-              groupActionableKeys,
-            )}
-            {@const expanded = expandedGroups.has(group.key)}
-            {@const groupId = `ingestion-group-${group.key}`}
-            {@const summaryId = `ingestion-summary-${group.key}`}
-            <section
-              class="overflow-hidden rounded-2xl bg-muted/80"
-              aria-labelledby={groupId}
-            >
-              <div
-                class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-5 py-4"
-              >
-                <input
-                  use:setIndeterminate={groupSelection.indeterminate}
-                  type="checkbox"
-                  class="size-4 rounded border-input text-primary focus:ring-ring"
-                  aria-label={`Select actionable items from ${group.label}`}
-                  checked={groupSelection.checked}
-                  disabled={!groupActionableKeys.length}
-                  onchange={(event) =>
-                    setSelectedRows(
-                      groupActionableKeys,
-                      (event.currentTarget as HTMLInputElement).checked,
-                    )}
-                />
-                <button
-                  type="button"
-                  class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-expanded={expanded}
-                  aria-controls={summaryId}
-                  aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
-                  onclick={() => toggleSummary(group.key)}
-                >
-                  <span
-                    id={groupId}
-                    role="heading"
-                    aria-level="2"
-                    class="truncate text-sm font-semibold tracking-wide text-foreground"
-                  >
-                    {group.label}
-                    <span class="ml-2 text-muted-foreground"
-                      >· {group.rows.length}</span
-                    >
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  aria-expanded={expanded}
-                  aria-controls={summaryId}
-                  aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
-                  onclick={() => toggleSummary(group.key)}
-                >
-                  {#if expanded}
-                    <ChevronUp class="size-4" />
-                  {:else}
-                    <ChevronDown class="size-4" />
-                  {/if}
-                </button>
-              </div>
-
-              {#if expanded}
-                <div
-                  id={summaryId}
-                  class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
-                >
-                  {#each group.rows as row, index (row.key)}
-                    {@const logo = merchantLogo(row.proposal)}
-                    {@const postings = rowPostings(row.proposal)}
-                    <div
-                      class:rounded-b-xl={index === group.rows.length - 1}
-                      class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60 sm:grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)]"
-                    >
-                      <input
-                        type="checkbox"
-                        class="size-4 rounded border-input text-primary focus:ring-ring"
-                        aria-label={`Select ${rowTitle(row.proposal)}`}
-                        title={actionableKeySet.has(row.key)
-                          ? undefined
-                          : "Choose an account in the review sheet before approving this item"}
-                        checked={selectedProposalKeys.has(row.key)}
-                        disabled={!actionableKeySet.has(row.key)}
-                        onclick={(event) => event.stopPropagation()}
-                        onchange={(event) =>
-                          setSelectedRows(
-                            [row.key],
-                            (event.currentTarget as HTMLInputElement).checked,
-                          )}
-                      />
-                      {#if logo && !failedLogoIds.has(row.proposal.id)}
-                        <img
-                          class="size-10 shrink-0 rounded-full border object-contain"
-                          src={logo}
-                          alt=""
-                          onerror={() => markLogoFailed(row.proposal.id)}
-                        />
-                      {:else}
-                        <div
-                          class="flex size-10 shrink-0 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
-                          aria-hidden="true"
-                        >
-                          {rowInitial(row.proposal)}
-                        </div>
-                      {/if}
-                      <button
-                        type="button"
-                        class="min-w-0 rounded-md border-0 bg-transparent p-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        aria-label={`Review ${rowTitle(row.proposal)}`}
-                        onclick={() => openRow(row)}
-                      >
-                        <div
-                          class="break-words text-sm font-semibold sm:truncate"
-                        >
-                          {rowTitle(row.proposal)}
-                        </div>
-                        <div
-                          class="mt-1 truncate text-xs text-muted-foreground"
-                        >
-                          {rowDetail(row.proposal)}
-                        </div>
-                        <span
-                          class={`mt-2 inline-flex w-20 justify-center rounded-full px-2 py-0.5 text-xs font-medium ${rowStatusClass(
-                            row.proposal,
-                          )}`}
-                        >
-                          {ingestionProposalReviewLabel(row.proposal)}
-                        </span>
-                      </button>
-                      <div
-                        class="col-span-2 col-start-2 flex min-w-0 flex-col gap-1 text-right sm:col-span-1 sm:col-start-4 sm:row-start-1"
-                      >
-                        {#if reviewFilter === "accepted"}
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            class="ml-auto size-8 text-muted-foreground"
-                            aria-label={`Move ${rowTitle(row.proposal)} to review`}
-                            title="Move to review"
-                            disabled={loading || bulkUpdating || syncing}
-                            onclick={(event) => void unacceptRow(row, event)}
-                          >
-                            <Undo2 data-icon />
-                          </Button>
-                        {/if}
-                        {#if postings.length}
-                          {#each postings as posting}
-                            <div
-                              class="grid min-w-0 grid-cols-[minmax(0,1fr)_8rem] items-center gap-3"
-                            >
-                              <span
-                                class="flex min-w-0 items-center gap-1 text-left text-xs"
-                              >
-                                <AccountLink
-                                  account={posting.account}
-                                  avatarSize="sm"
-                                  onclick={(event) => event.stopPropagation()}
-                                  onkeydown={(event) => event.stopPropagation()}
-                                />
-                                {#if posting.source}
-                                  {@const rowReconciliations =
-                                    reconciliationRowsFor(row)}
-                                  {#each rowReconciliations as reconciliation (reconciliation.candidateId)}
-                                    <span
-                                      class="inline-flex shrink-0 items-center gap-0.5 text-emerald-600 dark:text-emerald-400"
-                                      data-reconciliation-row-control
-                                    >
-                                      <span
-                                        role="status"
-                                        aria-label="Reconciliation confirmed"
-                                        title="Reconciliation confirmed; apply it from Reconcile"
-                                      >
-                                        <Check
-                                          class="size-3.5"
-                                          aria-hidden="true"
-                                        />
-                                      </span>
-                                      <Button
-                                        type="button"
-                                        size="icon"
-                                        variant="ghost"
-                                        class="size-5 text-muted-foreground hover:text-destructive"
-                                        aria-label="Clear confirmed reconciliation"
-                                        title="Clear reconciliation decision"
-                                        disabled={Boolean(
-                                          clearingReconciliationCandidateId,
-                                        )}
-                                        onclick={(event) => {
-                                          event.stopPropagation();
-                                          void clearReconciliationDecision(
-                                            reconciliation.candidateId,
-                                          );
-                                        }}
-                                      >
-                                        <X
-                                          class="size-3.5"
-                                          aria-hidden="true"
-                                        />
-                                      </Button>
-                                    </span>
-                                  {/each}
-                                {/if}
-                              </span>
-                              <span class="text-sm font-semibold tabular-nums">
-                                {$ctx.money(
-                                  posting.amount,
-                                  posting.amount.currency ?? undefined,
-                                )}
-                              </span>
-                            </div>
-                          {/each}
-                        {:else}
-                          <span class="text-sm font-semibold tabular-nums">
-                            {rowAmount(row.proposal)}
-                          </span>
-                        {/if}
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-            </section>
-          {/each}
         {/if}
       {/if}
 

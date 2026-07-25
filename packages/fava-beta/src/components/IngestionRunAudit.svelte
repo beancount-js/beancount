@@ -1,20 +1,17 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
-  import ArrowLeft from "lucide-svelte/icons/arrow-left";
-  import Check from "lucide-svelte/icons/check";
-  import ChevronDown from "lucide-svelte/icons/chevron-down";
-  import ChevronUp from "lucide-svelte/icons/chevron-up";
-  import CircleX from "lucide-svelte/icons/circle-x";
-  import { Button } from "$lib/components/ui/button";
-  import * as Empty from "$lib/components/ui/empty";
+  import SharedIngestionRunAudit, {
+    type IngestionRunAuditAiCall,
+    type IngestionRunAuditDateGroup,
+    type IngestionRunAuditRow,
+  } from "@beancount-js/ui/pages/IngestionRunAudit.svelte";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type { ImportProposal, IngestionRun } from "../ingestion/types";
   import { useNavigation } from "../router/router";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
-  import PagePagination from "./PagePagination.svelte";
 
   const PAGE_SIZES = [25, 50, 100];
   const { snapshot } = useStudioWorkspace();
@@ -40,7 +37,6 @@
   let expandedSignature = $state("");
   let selectedRow = $state<ProposalRow | undefined>(undefined);
   let sheetOpen = $state(false);
-  let failedLogoIds = $state(new Set<string>());
 
   const project = $derived($snapshot);
   const runId = $derived($activeRoute.params.runId ?? "");
@@ -90,6 +86,33 @@
     const { summary } = run;
     return `${summary.ready} ready · ${summary.needsReview} need review · ${summary.accepted} accepted · ${summary.duplicates} duplicates`;
   });
+  const uiAiCalls = $derived<IngestionRunAuditAiCall[]>(
+    (run?.audit?.ai ?? []).map((call) => ({
+      id: call.id,
+      at: formatDateTime(call.at),
+      label: call.label,
+      ok: call.ok,
+      batchSize: call.batchSize,
+      durationMs: call.durationMs,
+      prompt: call.prompt,
+      response: call.response,
+      error: call.error,
+    })),
+  );
+  const uiDateGroups = $derived<IngestionRunAuditDateGroup[]>(
+    dateGroups.map((group) => ({
+      key: group.key,
+      label: group.label,
+      rows: group.rows.map(uiRow),
+    })),
+  );
+  const uiVisibleGroups = $derived<IngestionRunAuditDateGroup[]>(
+    visibleGroups.map((group) => ({
+      key: group.key,
+      label: group.label,
+      rows: group.rows.map(uiRow),
+    })),
+  );
 
   function paginateProposalGroups(
     groups: readonly DateGroup[],
@@ -164,14 +187,14 @@
         proposal.transaction?.merchant ??
         proposal.transaction?.payee ??
         proposal.transaction?.narration ??
-        "—"
+        "-"
       );
     }
     return (
       proposal.transaction?.merchant ??
       proposal.transaction?.payee ??
       proposal.transaction?.narration ??
-      "—"
+      "-"
     );
   }
 
@@ -191,7 +214,7 @@
 
   function rowAmount(proposal: ImportProposal) {
     const transaction = proposal.transaction;
-    return transaction ? `${transaction.amount} ${transaction.currency}` : "—";
+    return transaction ? `${transaction.amount} ${transaction.currency}` : "-";
   }
 
   function rowInitial(proposal: ImportProposal) {
@@ -209,6 +232,18 @@
     return undefined;
   }
 
+  function uiRow(row: ProposalRow): IngestionRunAuditRow {
+    return {
+      key: row.key,
+      proposalId: row.proposal.id,
+      title: rowTitle(row.proposal),
+      detail: rowDetail(row.proposal),
+      amount: rowAmount(row.proposal),
+      initial: rowInitial(row.proposal),
+      logoUrl: merchantLogo(row.proposal),
+    };
+  }
+
   function toggleSummary(groupKey: string) {
     const next = new Set(expandedGroups);
     if (next.has(groupKey)) next.delete(groupKey);
@@ -222,23 +257,13 @@
       : new Set();
   }
 
-  function openRow(row: ProposalRow) {
-    updateRoute({ proposalId: row.proposal.id });
+  function openRowKey(rowKey: string) {
+    const row = rows.find((item) => item.key === rowKey);
+    if (row) updateRoute({ proposalId: row.proposal.id });
   }
 
   function closeProposalSheet() {
     if (queryProposalId) updateRoute({ proposalId: undefined });
-  }
-
-  function handleRowKeydown(event: KeyboardEvent, row: ProposalRow) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openRow(row);
-    }
-  }
-
-  function markLogoFailed(proposalId: string) {
-    failedLogoIds = new Set([...failedLogoIds, proposalId]);
   }
 
   $effect(() => {
@@ -268,333 +293,34 @@
   onDestroy(() => ingestionHeaderActions.set(null));
 </script>
 
-<div class="h-full overflow-auto p-3 sm:p-5" data-ingestion-run-audit>
-  <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
-    {#if isWeb}
-      <div class="rounded-md border p-4 text-sm text-muted-foreground">
-        Import audit history is available when Studio has access to the project
-        folder.
-      </div>
-    {:else if !project}
-      <div class="rounded-md border p-4 text-sm text-muted-foreground">
-        Open a project to view this import run.
-      </div>
-    {:else}
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onclick={() => router.push("/import/history")}
-        >
-          <ArrowLeft data-icon="inline-start" />
-          Import history
-        </Button>
-        {#if run}
-          <span class="text-xs tabular-nums text-muted-foreground">
-            Run {run.id}
-          </span>
-        {/if}
-      </div>
-
-      {#if status}
-        <p
-          class="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-        >
-          {status}
-        </p>
-      {/if}
-
-      {#if loading}
-        <div class="rounded-xl border p-6 text-sm text-muted-foreground">
-          Loading import audit…
-        </div>
-      {:else if run}
-        <section class="rounded-2xl border bg-card px-5 py-4 shadow-sm">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="min-w-0">
-              <p class="truncate text-base font-semibold">{run.sourceId}</p>
-              <p class="mt-1 text-sm text-muted-foreground">
-                Completed {formatDateTime(run.completedAt)}
-              </p>
-            </div>
-            <span class="text-sm tabular-nums text-muted-foreground">
-              {run.summary.total} proposal{run.summary.total === 1 ? "" : "s"}
-            </span>
-          </div>
-          <p class="mt-3 text-sm text-muted-foreground">{summaryLine}</p>
-        </section>
-
-        {#if run.audit?.ai.length}
-          <section class="overflow-hidden rounded-2xl border bg-card shadow-sm">
-            <div class="flex items-center justify-between gap-3 px-5 py-4">
-              <div>
-                <h2 class="text-sm font-semibold">AI call audit</h2>
-                <p class="mt-1 text-xs text-muted-foreground">
-                  {run.audit.ai.length} call{run.audit.ai.length === 1
-                    ? ""
-                    : "s"} captured for this run.
-                </p>
-              </div>
-            </div>
-            <div class="border-t px-5 py-4">
-              <div class="flex flex-col gap-3">
-                {#each run.audit.ai as call (`${call.id}:${call.at}`)}
-                  <details class="rounded-xl border bg-muted/30 px-4 py-3">
-                    <summary class="cursor-pointer text-sm font-medium">
-                      <span class="inline-flex items-center gap-2">
-                        {#if call.ok}
-                          <Check
-                            class="size-4 text-green-600 dark:text-green-500"
-                          />
-                        {:else}
-                          <CircleX class="size-4 text-destructive" />
-                        {/if}
-                        {call.label}
-                      </span>
-                      <span
-                        class="ml-2 text-xs font-normal text-muted-foreground"
-                      >
-                        {formatDateTime(call.at)}
-                        {#if call.batchSize}
-                          · {call.batchSize} item{call.batchSize === 1
-                            ? ""
-                            : "s"}
-                        {/if}
-                        {#if call.durationMs !== undefined}
-                          · {(call.durationMs / 1000).toFixed(1)}s
-                        {/if}
-                      </span>
-                    </summary>
-                    <div class="mt-3 flex flex-col gap-3">
-                      {#if call.prompt}
-                        <div>
-                          <p
-                            class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"
-                          >
-                            Prompt
-                          </p>
-                          <pre
-                            class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-background p-3 text-xs">{call.prompt}</pre>
-                        </div>
-                      {/if}
-                      {#if call.response}
-                        <div>
-                          <p
-                            class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"
-                          >
-                            Response
-                          </p>
-                          <pre
-                            class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-background p-3 text-xs">{call.response}</pre>
-                        </div>
-                      {/if}
-                      {#if call.error}
-                        <div>
-                          <p
-                            class="mb-1 text-xs font-medium uppercase tracking-wide text-destructive"
-                          >
-                            Error
-                          </p>
-                          <pre
-                            class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">{call.error}</pre>
-                        </div>
-                      {/if}
-                    </div>
-                  </details>
-                {/each}
-              </div>
-            </div>
-          </section>
-        {/if}
-
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 class="text-lg font-semibold">Proposals</h2>
-            <p class="text-sm text-muted-foreground">
-              Select a proposal to inspect its retained workflow and merchant
-              context.
-            </p>
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onclick={toggleAllGroups}
-          >
-            {groupsCollapsedAll ? "Expand dates" : "Collapse dates"}
-          </Button>
-        </div>
-
-        <div
-          class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-        >
-          <span>Date</span>
-          <span class="text-right">Amount</span>
-        </div>
-
-        {#if !dateGroups.length}
-          <Empty.Root class="border">
-            <Empty.Header>
-              <Empty.Title>No proposals in this run</Empty.Title>
-              <Empty.Description>
-                This archived import did not retain any proposals.
-              </Empty.Description>
-            </Empty.Header>
-          </Empty.Root>
-        {/if}
-
-        {#each visibleGroups as group (group.key)}
-          {@const expanded = expandedGroups.has(group.key)}
-          {@const groupId = `ingestion-audit-group-${group.key}`}
-          {@const summaryId = `ingestion-audit-summary-${group.key}`}
-          <section
-            class="overflow-hidden rounded-2xl bg-muted/80"
-            aria-labelledby={groupId}
-          >
-            <div
-              class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-4"
-            >
-              <button
-                type="button"
-                class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                aria-expanded={expanded}
-                aria-controls={summaryId}
-                aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
-                onclick={() => toggleSummary(group.key)}
-              >
-                <span
-                  id={groupId}
-                  role="heading"
-                  aria-level="2"
-                  class="truncate text-sm font-semibold tracking-wide text-foreground"
-                >
-                  {group.label}
-                  <span class="ml-2 text-muted-foreground"
-                    >· {group.rows.length}</span
-                  >
-                </span>
-              </button>
-              <button
-                type="button"
-                class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                aria-expanded={expanded}
-                aria-controls={summaryId}
-                aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
-                onclick={() => toggleSummary(group.key)}
-              >
-                {#if expanded}
-                  <ChevronUp class="size-4" />
-                {:else}
-                  <ChevronDown class="size-4" />
-                {/if}
-              </button>
-            </div>
-
-            {#if expanded}
-              <div
-                id={summaryId}
-                class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
-              >
-                {#each group.rows as row, index (row.key)}
-                  {@const logo = merchantLogo(row.proposal)}
-                  <div
-                    role="button"
-                    tabindex="0"
-                    class:rounded-b-xl={index === group.rows.length - 1}
-                    class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-                    aria-label={`Inspect ${rowTitle(row.proposal)}`}
-                    onclick={() => openRow(row)}
-                    onkeydown={(event) => handleRowKeydown(event, row)}
-                  >
-                    {#if logo && !failedLogoIds.has(row.proposal.id)}
-                      <img
-                        class="size-10 rounded-full border object-contain"
-                        src={logo}
-                        alt=""
-                        onerror={() => markLogoFailed(row.proposal.id)}
-                      />
-                    {:else}
-                      <div
-                        class="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground"
-                        aria-hidden="true"
-                      >
-                        {rowInitial(row.proposal)}
-                      </div>
-                    {/if}
-                    <div class="min-w-0">
-                      <div class="truncate text-sm font-semibold">
-                        {rowTitle(row.proposal)}
-                      </div>
-                      <div class="mt-1 truncate text-xs text-muted-foreground">
-                        {rowDetail(row.proposal)}
-                      </div>
-                    </div>
-                    <span class="text-sm font-semibold tabular-nums"
-                      >{rowAmount(row.proposal)}</span
-                    >
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </section>
-        {/each}
-
-        {#if pages.length > 1}
-          <div
-            class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-            data-import-audit-pagination
-          >
-            <span class="text-sm text-muted-foreground"
-              >Page {page} of {pages.length}</span
-            >
-            <div
-              class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
-            >
-              <div class="hidden items-center gap-2 sm:flex">
-                <label
-                  class="text-sm text-muted-foreground"
-                  for="ingestion-audit-page-size">Records per page</label
-                >
-                <select
-                  id="ingestion-audit-page-size"
-                  class="h-8 rounded-md border bg-background px-2 text-sm"
-                  value={pageSize}
-                  onchange={(event) =>
-                    updateRoute({
-                      pageSize: (event.currentTarget as HTMLSelectElement)
-                        .value,
-                      page: "1",
-                    })}
-                >
-                  {#each PAGE_SIZES as size (size)}
-                    <option value={size}>{size}</option>
-                  {/each}
-                </select>
-              </div>
-              <PagePagination
-                {page}
-                pageCount={pages.length}
-                ariaLabel="Import audit pages"
-                onPageChange={(nextPage) =>
-                  updateRoute({ page: String(nextPage) })}
-              />
-            </div>
-          </div>
-        {/if}
-      {:else if !status}
-        <Empty.Root class="border">
-          <Empty.Header>
-            <Empty.Title>Import run not found</Empty.Title>
-            <Empty.Description>
-              This run may have been removed from the local archive.
-            </Empty.Description>
-          </Empty.Header>
-        </Empty.Root>
-      {/if}
-    {/if}
-  </div>
-</div>
+<SharedIngestionRunAudit
+  {isWeb}
+  hasProject={Boolean(project)}
+  {loading}
+  {status}
+  hasRun={Boolean(run)}
+  runId={run?.id ?? runId}
+  sourceId={run?.sourceId ?? ""}
+  completedAtLabel={run ? formatDateTime(run.completedAt) : ""}
+  totalProposals={run?.summary.total ?? 0}
+  {summaryLine}
+  aiCalls={uiAiCalls}
+  dateGroups={uiDateGroups}
+  visibleGroups={uiVisibleGroups}
+  expandedGroupKeys={expandedGroups}
+  {groupsCollapsedAll}
+  {page}
+  pageCount={pages.length}
+  {pageSize}
+  pageSizeOptions={PAGE_SIZES}
+  onBackToHistory={() => router.push("/import/history")}
+  onToggleAllGroups={toggleAllGroups}
+  onToggleGroup={toggleSummary}
+  onOpenRow={openRowKey}
+  onPageChange={(nextPage) => updateRoute({ page: String(nextPage) })}
+  onPageSizeChange={(nextSize) =>
+    updateRoute({ pageSize: String(nextSize), page: "1" })}
+/>
 
 {#if selectedRow && project && run}
   {#key selectedRow.key}

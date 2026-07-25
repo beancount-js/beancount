@@ -2,192 +2,117 @@
   import ArrowRight from "lucide-svelte/icons/arrow-right";
   import ChevronDown from "lucide-svelte/icons/chevron-down";
   import RefreshCw from "lucide-svelte/icons/refresh-cw";
-  import {
-    AccountAvatar,
-    accountAvatarInitial,
-    FilterCommandPicker,
-    SegmentedControl,
-  } from "@beancount-js/forms";
-  import { Badge } from "$lib/components/ui/badge";
-  import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
-  import {
-    isConnectorSource,
-    isGroupedSource,
-    sourceBaseUrl,
-    sourceSecretRef,
-  } from "../ingestion/connectors";
-  import {
-    availableIngestionSamples,
-    type IngestionSample,
-  } from "../ingestion/samples";
-  import type { EditableIngestionSource } from "../ingestion/source-form";
-  import {
-    secretDisplayValue,
-    secretMode,
-    secretStoredValue,
-    type SecretMode,
-  } from "../ingestion/secret-ref";
-  import {
-    renderSetupMarkdown,
-    setupHost,
-    setupHref,
-  } from "../ingestion/setup-markdown";
-  import { useContext } from "../context";
-  import { urlForAccount } from "../helpers";
-  import { accountAppearanceStore } from "../lib/account-appearance";
+  import AccountAvatar from "./AccountAvatar.svelte";
+  import FilterCommandPicker from "./FilterCommandPicker.svelte";
+  import SegmentedControl from "./SegmentedControl.svelte";
+  import { accountAvatarInitial } from "./account-avatar";
+  import { Badge } from "../shadcn/badge";
+  import { Button } from "../shadcn/button";
+  import { Input } from "../shadcn/input";
+
+  type SecretMode = "env" | "inline";
+
+  type IngestionSample = {
+    id: string;
+    name: string;
+    initials: string;
+    accentClass: string;
+    region: string;
+    category: string;
+    description: string;
+    badge?: string;
+    provider?: {
+      id: string;
+      baseUrl: string;
+      accountsPath?: string;
+    };
+  };
+
+  type IngestionConnectionStatus = {
+    connected: boolean;
+    lastSyncedAt?: string;
+    syncing?: boolean;
+    failed?: boolean;
+  };
+
+  type IngestionPreviewAccount = {
+    id: string;
+    name: string;
+    sourceAccount: string;
+    defaultCurrency?: string;
+    color?: string;
+    icon?: string;
+    merchantLogoUrl?: string;
+    href: string;
+  };
+
+  type IngestionSourcePreview = {
+    key: string;
+    name: string;
+    accountCount: number;
+    grouped: boolean;
+    accounts: readonly IngestionPreviewAccount[];
+    status: IngestionConnectionStatus;
+    secretMode: SecretMode;
+    secretDisplayValue: string;
+    setupHost: string;
+    setupHref?: string;
+    setupHtml?: string;
+    baseUrl?: string;
+    endpoint?: string;
+    merchantLogoUrl?: string;
+    merchantId?: string;
+  };
 
   let {
     sources,
     samples = [],
     envKeys = [],
-    connectionStatuses = {},
-    merchantsById = {},
-    onChange,
-    onSave,
     onConnectSample,
     onManageAccounts,
+    onSave,
     onSync,
+    onSecretModeChange,
+    onSecretValueChange,
+    onBaseUrlChange,
+    onEndpointChange,
     saving = false,
-    activeLedgerPath,
   }: {
-    sources: EditableIngestionSource[];
-    samples?: IngestionSample[];
-    envKeys?: string[];
-    connectionStatuses?: Record<
-      string,
-      {
-        connected: boolean;
-        lastSyncedAt?: string;
-        syncing?: boolean;
-        failed?: boolean;
-      }
-    >;
-    merchantsById?: Record<
-      string,
-      {
-        merchantId: string;
-        canonicalName: string;
-        logoUrl?: string;
-      }
-    >;
-    onChange: (index: number, next: EditableIngestionSource) => void;
-    onSave: () => void | Promise<void>;
+    sources: readonly IngestionSourcePreview[];
+    samples?: readonly IngestionSample[];
+    envKeys?: readonly string[];
     onConnectSample?: (sample: IngestionSample) => void;
-    onManageAccounts?: (source: EditableIngestionSource) => void;
-    onSync?: (source: EditableIngestionSource) => void;
-    saving?: boolean;
-    /** Ledger selected in the workspace when this source preview was opened. */
-    activeLedgerPath?: string;
+    onManageAccounts?: (index: number) => void;
+    onSave: () => void | Promise<void>;
+    onSync?: (index: number) => void;
+    onSecretModeChange: (index: number, nextMode: SecretMode) => void;
+    onSecretValueChange: (
+      index: number,
+      nextValue: string,
+      mode: SecretMode,
+    ) => void;
+    onBaseUrlChange: (index: number, baseUrl: string) => void;
+    onEndpointChange: (index: number, endpoint: string) => void;
   } = $props();
 
   const envOptions = $derived(
     envKeys.map((key) => ({ value: key, label: key })),
   );
-  const availableSamples = $derived(
-    availableIngestionSamples(sources, samples),
-  );
-  const { ledgerData } = useContext();
-  const accountAppearances = accountAppearanceStore(ledgerData);
 
   let openById = $state<Record<string, boolean>>({});
   let failedMerchantLogoIds = $state(new Set<string>());
 
-  function sourceKey(source: EditableIngestionSource, index: number) {
-    return source.id || `source-${index}`;
+  function sourceKey(source: IngestionSourcePreview) {
+    return source.key;
   }
 
-  function isOpen(source: EditableIngestionSource, index: number) {
-    const key = sourceKey(source, index);
-    return openById[key] ?? false;
+  function isOpen(source: IngestionSourcePreview) {
+    return openById[sourceKey(source)] ?? false;
   }
 
-  function toggle(source: EditableIngestionSource, index: number) {
-    const key = sourceKey(source, index);
-    openById = { ...openById, [key]: !isOpen(source, index) };
-  }
-
-  function withConfig(
-    source: EditableIngestionSource,
-    patch: Record<string, unknown>,
-  ): EditableIngestionSource {
-    return {
-      ...source,
-      config: {
-        ...((source.config as Record<string, unknown> | undefined) ?? {}),
-        ...patch,
-      },
-    };
-  }
-
-  function withApi(
-    source: EditableIngestionSource,
-    patch: Partial<{ endpoint: string; baseUrl: string; secretRef: string }>,
-  ): EditableIngestionSource {
-    return {
-      ...source,
-      api: { ...(source.api ?? { secretRef: "" }), ...patch },
-    };
-  }
-
-  function updateSecret(
-    index: number,
-    source: EditableIngestionSource,
-    secretRef: string,
-  ) {
-    onChange(
-      index,
-      isConnectorSource(source)
-        ? withConfig(source, { secretRef })
-        : withApi(source, { secretRef }),
-    );
-  }
-
-  function updateEndpoint(
-    index: number,
-    source: EditableIngestionSource,
-    endpoint: string,
-  ) {
-    onChange(index, withApi(source, { endpoint }));
-  }
-
-  function updateBaseUrl(
-    index: number,
-    source: EditableIngestionSource,
-    baseUrl: string,
-  ) {
-    onChange(
-      index,
-      isConnectorSource(source)
-        ? withConfig(source, { baseUrl })
-        : withApi(source, { baseUrl }),
-    );
-  }
-
-  function setupHtml(source: EditableIngestionSource) {
-    const markdown = source.setup?.trim();
-    return markdown ? renderSetupMarkdown(markdown) : "";
-  }
-
-  function previewUrl(source: EditableIngestionSource) {
-    return sourceBaseUrl(source) || source.api?.endpoint || "";
-  }
-
-  function sourceStatus(source: EditableIngestionSource) {
-    return connectionStatuses[source.id] ?? { connected: false };
-  }
-
-  function merchantFor(source: EditableIngestionSource) {
-    return source.merchantId ? merchantsById[source.merchantId] : undefined;
-  }
-
-  function accountAppearanceFor(account: string) {
-    return $accountAppearances.get(account);
-  }
-
-  function merchantForAccount(account: string) {
-    const merchantId = accountAppearanceFor(account)?.merchantId;
-    return merchantId ? merchantsById[merchantId] : undefined;
+  function toggle(source: IngestionSourcePreview) {
+    const key = sourceKey(source);
+    openById = { ...openById, [key]: !isOpen(source) };
   }
 
   function markMerchantLogoFailed(merchantId: string) {
@@ -208,12 +133,16 @@
     return new Date(iso).toLocaleDateString();
   }
 
-  function syncLabel(status: ReturnType<typeof sourceStatus>) {
+  function syncLabel(status: IngestionConnectionStatus) {
     if (status.syncing) return "Syncing…";
     if (status.lastSyncedAt) {
       return `Synced ${relativeSyncTime(status.lastSyncedAt)}`;
     }
     return "Not synced yet";
+  }
+
+  function sourceStatus(source: IngestionSourcePreview) {
+    return source.status;
   }
 </script>
 
@@ -225,17 +154,10 @@
       Your connections · {sources.length}
     </p>
 
-    {#each sources as source, index (sourceKey(source, index))}
-      {@const open = isOpen(source, index)}
-      {@const url = previewUrl(source)}
-      {@const host = setupHost(url)}
-      {@const href = setupHref(url)}
-      {@const customSetup = setupHtml(source)}
-      {@const secretRef = sourceSecretRef(source)}
-      {@const mode = secretMode(secretRef)}
-      {@const grouped = isGroupedSource(source)}
+    {#each sources as source, index (sourceKey(source))}
+      {@const open = isOpen(source)}
+      {@const customSetup = source.setupHtml}
       {@const status = sourceStatus(source)}
-      {@const merchant = merchantFor(source)}
       <article
         class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
         data-ingestion-connection-card
@@ -247,7 +169,7 @@
             type="button"
             class="flex min-w-0 flex-1 items-center gap-3 text-left"
             aria-expanded={open}
-            onclick={() => toggle(source, index)}
+            onclick={() => toggle(source)}
           >
             <ChevronDown
               class="size-4 shrink-0 text-muted-foreground transition-transform {open
@@ -255,16 +177,18 @@
                 : '-rotate-90'}"
               aria-hidden="true"
             />
-            {#if merchant?.logoUrl && !failedMerchantLogoIds.has(merchant.merchantId)}
+            {#if source.merchantLogoUrl &&
+              source.merchantId &&
+              !failedMerchantLogoIds.has(source.merchantId)}
               <span
                 class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted shadow-sm"
                 aria-hidden="true"
               >
                 <img
                   class="size-full object-cover"
-                  src={merchant.logoUrl}
+                  src={source.merchantLogoUrl}
                   alt=""
-                  onerror={() => markMerchantLogoFailed(merchant.merchantId)}
+                  onerror={() => markMerchantLogoFailed(source.merchantId ?? "")}
                 />
               </span>
             {:else}
@@ -272,7 +196,7 @@
                 class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-rose-200 text-sm font-semibold text-rose-800"
                 aria-hidden="true"
               >
-                {accountAvatarInitial(source.name || source.id)}
+                {accountAvatarInitial(source.name)}
               </span>
             {/if}
             <span class="min-w-0 truncate text-sm font-semibold">
@@ -281,9 +205,9 @@
             <Badge
               variant="secondary"
               class="ml-auto shrink-0 tabular-nums"
-              aria-label={`${source.accounts?.length ?? 0} linked accounts`}
+              aria-label={`${source.accountCount} linked accounts`}
             >
-              {source.accounts?.length ?? 0}
+              {source.accountCount}
             </Badge>
           </button>
 
@@ -315,7 +239,7 @@
                 class="size-8"
                 aria-label={`Sync ${source.name || "source"}`}
                 disabled={status.syncing}
-                onclick={() => onSync(source)}
+                onclick={() => onSync(index)}
               >
                 <RefreshCw
                   data-icon
@@ -346,15 +270,17 @@
                 <ol class="list-decimal space-y-1 pl-4">
                   <li>
                     Go to
-                    {#if href}
+                    {#if source.setupHref}
                       <a
                         class="font-medium text-foreground underline underline-offset-2"
-                        {href}
+                        href={source.setupHref}
                         target="_blank"
-                        rel="noreferrer">{host}</a
+                        rel="noreferrer">{source.setupHost}</a
                       >
                     {:else}
-                      <span class="font-medium text-foreground">{host}</span>
+                      <span class="font-medium text-foreground"
+                        >{source.setupHost}</span
+                      >
                     {/if}
                     and create an API key.
                   </li>
@@ -374,23 +300,19 @@
                 >
                 <div class="flex flex-col items-stretch gap-2">
                   <SegmentedControl
-                    value={mode}
+                    value={source.secretMode}
                     options={["env", "inline"]}
                     labels={{ env: "Environment", inline: "Inline" }}
                     ariaLabel={`API Key source for ${source.name || "source"}`}
                     onChange={(next) => {
                       const nextMode = next as SecretMode;
-                      if (nextMode === mode) return;
-                      updateSecret(
-                        index,
-                        source,
-                        secretStoredValue(nextMode, ""),
-                      );
+                      if (nextMode === source.secretMode) return;
+                      onSecretModeChange(index, nextMode);
                     }}
                   />
-                  {#if mode === "env"}
+                  {#if source.secretMode === "env"}
                     <FilterCommandPicker
-                      value={secretDisplayValue(secretRef)}
+                      value={source.secretDisplayValue}
                       options={envOptions}
                       allowCustom={true}
                       fullWidth={true}
@@ -399,11 +321,7 @@
                       emptyLabel="No matching .env keys. Type a custom name."
                       ariaLabel={`API Key for ${source.name || "source"}`}
                       onChange={(next) =>
-                        updateSecret(
-                          index,
-                          source,
-                          secretStoredValue(mode, next),
-                        )}
+                        onSecretValueChange(index, next, source.secretMode)}
                     />
                   {:else}
                     <Input
@@ -412,22 +330,19 @@
                       spellcheck={false}
                       aria-label={`API Key for ${source.name || "source"}`}
                       placeholder="Paste API key"
-                      value={secretDisplayValue(secretRef)}
+                      value={source.secretDisplayValue}
                       oninput={(event) =>
-                        updateSecret(
+                        onSecretValueChange(
                           index,
-                          source,
-                          secretStoredValue(
-                            mode,
-                            (event.currentTarget as HTMLInputElement).value,
-                          ),
+                          (event.currentTarget as HTMLInputElement).value,
+                          source.secretMode,
                         )}
                     />
                   {/if}
                 </div>
               </label>
 
-              {#if grouped}
+              {#if source.grouped}
                 <label class="flex flex-col gap-1.5">
                   <span class="text-xs font-medium text-muted-foreground"
                     >Base URL</span
@@ -438,38 +353,27 @@
                     spellcheck={false}
                     aria-label={`Base URL for ${source.name || "source"}`}
                     placeholder="https://api.example.com/v1"
-                    value={sourceBaseUrl(source) ?? ""}
+                    value={source.baseUrl ?? ""}
                     oninput={(event) =>
-                      updateBaseUrl(
+                      onBaseUrlChange(
                         index,
-                        source,
                         (event.currentTarget as HTMLInputElement).value,
                       )}
                   />
                 </label>
 
-                {#if source.accounts?.length}
+                {#if source.accounts.length}
                   <div class="flex flex-col gap-1.5">
                     <span class="text-xs font-medium text-muted-foreground"
                       >Linked accounts</span
                     >
                     <ul class="flex flex-col gap-2" role="list">
                       {#each source.accounts as account (account.id)}
-                        {@const appearance = accountAppearanceFor(
-                          account.sourceAccount,
-                        )}
-                        {@const accountMerchant = merchantForAccount(
-                          account.sourceAccount,
-                        )}
                         <li
                           class="relative rounded-lg border border-border px-3 py-2 text-sm transition-colors even:bg-muted/40 hover:bg-accent/60"
                         >
                           <a
-                            href={urlForAccount(
-                              account.sourceAccount,
-                              undefined,
-                              activeLedgerPath,
-                            )}
+                            href={account.href}
                             class="absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             aria-label={`Open ${account.sourceAccount}`}
                           ></a>
@@ -478,9 +382,9 @@
                           >
                             <AccountAvatar
                               account={account.sourceAccount}
-                              color={appearance?.color}
-                              icon={appearance?.icon}
-                              merchantLogoUrl={accountMerchant?.logoUrl}
+                              color={account.color}
+                              icon={account.icon}
+                              merchantLogoUrl={account.merchantLogoUrl}
                               size="sm"
                             />
                             <span class="min-w-0 flex-1">
@@ -493,11 +397,10 @@
                                 {account.sourceAccount}
                               </span>
                             </span>
-                            {#if account.defaultCurrency ?? source.defaultCurrency}
+                            {#if account.defaultCurrency}
                               <span
                                 class="shrink-0 self-center text-xs text-muted-foreground"
-                                >{account.defaultCurrency ??
-                                  source.defaultCurrency}</span
+                                >{account.defaultCurrency}</span
                               >
                             {/if}
                           </div>
@@ -512,7 +415,7 @@
                     type="button"
                     variant="link"
                     class="h-auto justify-start gap-1 px-0 text-sm"
-                    onclick={() => onManageAccounts(source)}
+                    onclick={() => onManageAccounts(index)}
                   >
                     Manage accounts
                     <ArrowRight class="size-3.5" aria-hidden="true" />
@@ -529,26 +432,25 @@
                     spellcheck={false}
                     aria-label={`Endpoint for ${source.name || "source"}`}
                     placeholder="https://api.example.com/transactions"
-                    value={source.api?.endpoint ?? ""}
+                    value={source.endpoint ?? ""}
                     oninput={(event) =>
-                      updateEndpoint(
+                      onEndpointChange(
                         index,
-                        source,
                         (event.currentTarget as HTMLInputElement).value,
                       )}
                   />
                 </label>
               {/if}
-            </div>
 
-            <Button
-              type="button"
-              class="w-full"
-              disabled={saving}
-              onclick={() => void onSave()}
-            >
-              {saving ? "Saving…" : "Update connection"}
-            </Button>
+              <Button
+                type="button"
+                class="w-full"
+                disabled={saving}
+                onclick={() => void onSave()}
+              >
+                {saving ? "Saving…" : "Update connection"}
+              </Button>
+            </div>
           </div>
         {/if}
       </article>
@@ -559,15 +461,15 @@
     {/each}
   </div>
 
-  {#if availableSamples.length && onConnectSample}
+  {#if samples.length}
     <div class="flex min-w-0 flex-col gap-4" data-ingestion-samples>
       <p
         class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
       >
-        Available · {availableSamples.length}
+        Available · {samples.length}
       </p>
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {#each availableSamples as sample (sample.id)}
+        {#each samples as sample (sample.id)}
           <article
             class="flex min-h-44 flex-col gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:border-foreground/20 hover:bg-muted/40 hover:shadow-md"
             data-ingestion-sample-card
@@ -603,7 +505,7 @@
                 variant="link"
                 class="h-auto gap-1 px-0 text-sm"
                 aria-label={`Connect ${sample.name}`}
-                onclick={() => onConnectSample(sample)}
+                onclick={() => onConnectSample?.(sample)}
               >
                 Connect
                 <ArrowRight class="size-3.5" aria-hidden="true" />
@@ -615,3 +517,9 @@
     </div>
   {/if}
 </div>
+
+<style>
+  :global(.beancount-structured-form) {
+    display: grid;
+  }
+</style>

@@ -1,87 +1,66 @@
 <script lang="ts">
-  import { arc, pie, type PieArcDatum } from "d3-shape";
   import { urlForAccount } from "../../helpers";
+  import DashboardDonut, {
+    type DashboardDonutCategory,
+  } from "@beancount-js/ui/dashboard/DashboardDonut.svelte";
   import type { DashboardCategory } from "./model";
 
-  export let categories: DashboardCategory[] = [];
-  export let currency = "";
-  export let formatter: (value: number, currency: string) => string;
+  let {
+    categories = [],
+    currency = "",
+    formatter = (value, currencyCode) => `${value} ${currencyCode}`,
+    onCategoryFocus = () => {},
+    onCategorySelect = () => {},
+  }: {
+    categories?: readonly DashboardCategory[];
+    currency?: string;
+    /** Render amounts with the app's formatting utility. */
+    formatter?: (value: number, currency: string) => string;
+    /** Report hovered/focused categories without owning routing. */
+    onCategoryFocus?: (category: DashboardCategory) => void;
+    /** Report activated categories so the application can navigate. */
+    onCategorySelect?: (category: DashboardCategory) => void;
+  } = $props();
 
-  let hovered: DashboardCategory | undefined;
+  const uiCategories: DashboardDonutCategory[] = $derived(
+    categories
+      .filter((category) => Number.isFinite(category.value) && category.value > 0)
+      .map((category) => ({
+        id: category.account,
+        label: category.label,
+        value: category.value,
+        valueLabel: formatter(category.value, currency),
+        color: category.color,
+      })),
+  );
 
-  const arcGenerator = arc<PieArcDatum<DashboardCategory>>()
-    .innerRadius(64)
-    .outerRadius(98)
-    .padAngle(0.018)
-    .cornerRadius(4);
+  function withDomainCategory(
+    category: DashboardDonutCategory,
+  ): DashboardCategory | undefined {
+    return categories.find((entry) => entry.account === category.id);
+  }
 
-  $: arcs = pie<DashboardCategory>()
-    .value((entry) => entry.value)
-    .sort(null)(categories);
-  $: total = categories.reduce((sum, entry) => sum + entry.value, 0);
-  $: centerCategory = hovered;
+  function handleCategoryFocus(category: DashboardDonutCategory) {
+    const domainCategory = withDomainCategory(category);
+    if (!domainCategory) return;
+    onCategoryFocus(domainCategory);
+  }
+
+  function handleCategorySelect(category: DashboardDonutCategory) {
+    const domainCategory = withDomainCategory(category);
+    if (!domainCategory) return;
+    onCategorySelect(domainCategory);
+    if (domainCategory.account !== "Other") {
+      window.location.href = urlForAccount(domainCategory.account);
+    }
+  }
 </script>
 
-<div class="grid min-h-64 place-items-center p-4">
-  {#if total}
-    <svg
-      viewBox="-116 -116 232 232"
-      class="size-56"
-      role="group"
-      aria-label="Outflows by account"
-    >
-      {#each arcs as arcDatum (arcDatum.data.account)}
-        <a
-          href={arcDatum.data.account === "Other"
-            ? undefined
-            : urlForAccount(arcDatum.data.account)}
-          class:dimmed={Boolean(
-            hovered && hovered.account !== arcDatum.data.account,
-          )}
-          on:mouseenter={() => (hovered = arcDatum.data)}
-          on:mouseleave={() => (hovered = undefined)}
-          on:focus={() => (hovered = arcDatum.data)}
-          on:blur={() => (hovered = undefined)}
-        >
-          <path d={arcGenerator(arcDatum) ?? ""} fill={arcDatum.data.color}>
-            <title
-              >{`${arcDatum.data.label}: ${formatter(arcDatum.data.value, currency)}`}</title
-            >
-          </path>
-        </a>
-      {/each}
-      <text text-anchor="middle" y="-7" class="donut-label"
-        >{centerCategory?.label ?? "Outflows"}</text
-      >
-      <text text-anchor="middle" y="16" class="donut-value"
-        >{formatter(centerCategory?.value ?? total, currency)}</text
-      >
-    </svg>
-  {:else}
-    <p class="text-sm text-muted-foreground">No outflows in this period.</p>
-  {/if}
-</div>
-
-<style>
-  .donut-label {
-    fill: var(--muted-foreground);
-    font-family: "DM Sans Variable", sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  .donut-value {
-    fill: var(--foreground);
-    font-family: "Source Code Pro", monospace;
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  path {
-    transition: opacity 120ms ease;
-  }
-
-  a.dimmed path {
-    opacity: 0.2;
-  }
-</style>
+<DashboardDonut
+  categories={uiCategories}
+  ariaLabel="Outflows by account"
+  emptyLabel="No outflows in this period."
+  valueFormatter={(value) => formatter(value, currency)}
+  onCategoryFocus={handleCategoryFocus}
+  onCategorySelect={handleCategorySelect}
+/>

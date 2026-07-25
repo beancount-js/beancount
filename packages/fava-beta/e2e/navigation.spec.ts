@@ -73,6 +73,73 @@ test.describe("sample ledger navigation", () => {
     ).toHaveAttribute("aria-current", "page");
   });
 
+  test("C006 navigation walkthrough covers workspace, search, settings, and persisted disclosure", async ({
+    page,
+  }) => {
+    await openEditor(page);
+    await waitForEditorContent(page, "Account Ledger");
+
+    const workspaceSidebar = page.locator("[data-ledger-workspace-sidebar]");
+    await expect(workspaceSidebar).toBeVisible();
+
+    await workspaceSidebar
+      .getByRole("button", { name: "Folders", exact: true })
+      .click();
+    await expect(page.getByPlaceholder("Search folders")).toBeVisible();
+    const packagesFolder = page.locator('[data-ledger-folder-row="packages"]');
+    await expect(packagesFolder).toBeVisible();
+    await packagesFolder.click();
+    await expect(packagesFolder).toHaveAttribute("aria-expanded", "true");
+
+    await workspaceSidebar
+      .getByRole("button", { name: "Tags", exact: true })
+      .click();
+    await expect(
+      page.getByRole("navigation", { name: "Ledger tags" }),
+    ).toBeVisible();
+
+    await workspaceSidebar
+      .getByRole("button", { name: "Ledgers", exact: true })
+      .click();
+    await expect(page.getByPlaceholder("Search ledgers")).toBeVisible();
+
+    await workspaceSidebar
+      .getByRole("button", { name: "Show search sidebar" })
+      .click();
+    await expect(
+      page.getByRole("searchbox", { name: "Search ledger" }),
+    ).toBeVisible();
+    await workspaceSidebar
+      .getByRole("button", { name: "Show ledger sidebar" })
+      .click();
+    await expect(workspaceSidebar).toBeVisible();
+
+    await page.getByRole("button", { name: "Ledger settings" }).click();
+    const settingsSidebar = page.locator("[data-ledger-settings-sidebar]");
+    await expect(settingsSidebar).toBeVisible();
+    await settingsSidebar.getByRole("button", { name: /Accounts/ }).click();
+    await expect(page).toHaveURL(/\/ledger\/.+\/settings\/accounts\/?/);
+    await expect(page.locator("[data-ingestion-accounts-setup]")).toBeVisible();
+    await page
+      .getByRole("button", { name: "Back to ledger navigation" })
+      .click();
+    await expect(settingsSidebar).toHaveCount(0);
+    await expect(page).toHaveURL(/\/ledger\/.+\/editor\/?/);
+
+    await page
+      .locator("[data-ledger-workspace-sidebar]")
+      .getByRole("button", { name: "Folders", exact: true })
+      .click();
+    await page.reload();
+    await expect(page.getByPlaceholder("Search folders")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Folders", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      page.locator('[data-ledger-folder-row="packages"]'),
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
   test("moves Import into the selected ledger settings sidebar", async ({
     page,
   }) => {

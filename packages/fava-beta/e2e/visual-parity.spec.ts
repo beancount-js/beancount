@@ -4,7 +4,13 @@ import { resolve } from "node:path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 
-import { gotoStudio, sampleLedger, seedLedger } from "./helpers";
+import {
+  gotoStudio,
+  readProjectLedger,
+  sampleLedger,
+  seedLedger,
+  writeProjectLedger,
+} from "./helpers";
 
 const referenceDirectory = resolve(
   "../ui/tests/visual/storybook.spec.ts-snapshots/fava-reference/screens",
@@ -47,7 +53,7 @@ const appShellReferenceRoutes: readonly ReferenceRoute[] = [
   { id: "records", viewPath: "/records" },
   { id: "settings", viewPath: "/import/editor" },
   { id: "settings-accounts", viewPath: "/import/accounts" },
-  { id: "settings-rules", viewPath: "/settings/rules" },
+  { id: "settings-rules", viewPath: "/import/rules" },
   { id: "statistics", viewPath: "/statistics" },
   { id: "trial-balance", viewPath: "/trial_balance" },
 ];
@@ -95,6 +101,12 @@ const ledgerWorkspaceNavigationReferenceSurfaces: readonly ReferenceSurface[] =
     {
       id: "journal",
       viewPath: "/journal",
+      label: "workspace sidebar",
+      selector: "[data-ledger-workspace-sidebar]",
+    },
+    {
+      id: "journal",
+      viewPath: "/journal",
       label: "view switcher",
       selector: "[aria-label='Ledger navigation views']",
     },
@@ -103,6 +115,28 @@ const ledgerWorkspaceNavigationReferenceSurfaces: readonly ReferenceSurface[] =
       viewPath: "/journal",
       label: "ledger search input",
       selector: "input[placeholder='Search ledgers']",
+    },
+  ];
+
+const ledgerSettingsNavigationReferenceSurfaces: readonly ReferenceSurface[] =
+  [
+    {
+      id: "settings",
+      viewPath: "/import/editor",
+      label: "settings sidebar",
+      selector: "[data-ledger-settings-sidebar]",
+    },
+    {
+      id: "settings-accounts",
+      viewPath: "/import/accounts",
+      label: "accounts settings sidebar",
+      selector: "[data-ledger-settings-sidebar]",
+    },
+    {
+      id: "settings-rules",
+      viewPath: "/import/rules",
+      label: "rules settings sidebar",
+      selector: "[data-ledger-settings-sidebar]",
     },
   ];
 
@@ -116,8 +150,19 @@ test.use({
 });
 
 test.describe("frozen Fava visual parity", () => {
+  const originalLedgers = new WeakMap<Page, string>();
+
   test.beforeEach(async ({ page }) => {
+    originalLedgers.set(page, await readProjectLedger(page));
     await seedLedger(page, sampleLedger);
+  });
+
+  test.afterEach(async ({ page }) => {
+    const originalLedger = originalLedgers.get(page);
+    if (originalLedger !== undefined) {
+      await writeProjectLedger(page, originalLedger);
+      originalLedgers.delete(page);
+    }
   });
 
   async function waitForFontsAfterNavigation(page: Page) {
@@ -284,6 +329,14 @@ test.describe("frozen Fava visual parity", () => {
 
   for (const reference of ledgerWorkspaceNavigationReferenceSurfaces) {
     test(`LedgerWorkspaceNavigation retains ${reference.label} pixels`, async ({
+      page,
+    }) => {
+      await expectFrozenSurfaceParity(page, reference, reference.selector);
+    });
+  }
+
+  for (const reference of ledgerSettingsNavigationReferenceSurfaces) {
+    test(`LedgerSettingsNavigation retains ${reference.label} pixels`, async ({
       page,
     }) => {
       await expectFrozenSurfaceParity(page, reference, reference.selector);

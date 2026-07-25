@@ -21,6 +21,16 @@ export { default as JournalEditorSheet } from "./JournalEditorSheet.svelte";
 export { default as RuleEditorSheet } from "./RuleEditorSheet.svelte";
 export { default as RuleConditionRow } from "./rules/RuleConditionRow.svelte";
 export { default as IngestionHeaderActions } from "./IngestionHeaderActions.svelte";
+export { default as IngestionMerchantSheet } from "./IngestionMerchantSheet.svelte";
+export { default as IngestionProposalSheet } from "./IngestionProposalSheet.svelte";
+export {
+  default as IngestionSourceForm,
+  sourceFormSectionIds,
+} from "./IngestionSourceForm.svelte";
+export { default as IngestionConfigEditor } from "./IngestionConfigEditor.svelte";
+export { default as IngestionSourcesPreview } from "./IngestionSourcesPreview.svelte";
+export { default as IngestionBrandSettings } from "./IngestionBrandSettings.svelte";
+export { default as IngestionAccountsSetup } from "./IngestionAccountsSetup.svelte";
 export { default as SearchFilterBar } from "./SearchFilterBar.svelte";
 export { default as ComboBox } from "./ComboBox.svelte";
 export type {

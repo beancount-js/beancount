@@ -1,13 +1,28 @@
+<script context="module" lang="ts">
+  import type { AccountTreeNode } from "../lib/models";
+
+  export type StatementSection = {
+    tree: AccountTreeNode;
+    title: string;
+    href?: string;
+  };
+</script>
+
 <script lang="ts">
   import { createNode } from "../core/tree";
-  import type { AccountTreeNode } from "../lib/models";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
+  import Chart from "../charts/Chart.svelte";
   import { bar } from "../charts/bar";
+  import type { FavaChart } from "../charts";
   import { intervalLabel } from "../lib/interval";
   import { useContext } from "../context";
   import { useChartContext } from "../charts/context";
   import { urlForAccount } from "../helpers";
-  import StatementReport from "./StatementReport.svelte";
+  import StatementSummaryTreeTable from "./tree-table/StatementSummaryTreeTable.svelte";
+  import IncomeStatement, {
+    type IncomeStatementChart,
+    type IncomeStatementSection,
+  } from "@beancount-js/ui/dashboard/IncomeStatement.svelte";
 
   const { ledgerData, conversion, interval, ledgerOptions } = useContext();
   const chartContext = useChartContext();
@@ -93,6 +108,54 @@
       href: urlForAccount($ledgerOptions.beancount.name_expenses),
     },
   ];
+
+  const getChartId = (name: string | undefined) => name || "All";
+  let activeChartId = "";
+
+  function handleChartChange(chartId: string) {
+    activeChartId = chartId;
+  }
+
+  let chartOptions: readonly IncomeStatementChart[] = [];
+  $: chartOptions = charts.map((chart) => ({
+    id: getChartId(chart.name),
+    label: chart.name || "All",
+  }));
+
+  $: selectedChartId =
+    chartOptions.some((chart) => chart.id === activeChartId) && activeChartId
+      ? activeChartId
+      : chartOptions[0]?.id ?? "";
+
+  $: chartById =
+    new Map(
+      charts.map((chart) => [getChartId(chart.name), chart]),
+    ) as ReadonlyMap<string, FavaChart>;
+
+  const mapForChart = (chartId: string) => chartById.get(chartId) ?? charts[0];
 </script>
 
-<StatementReport {charts} {sections} />
+<IncomeStatement
+  charts={chartOptions}
+  sections={sections as readonly IncomeStatementSection[]}
+  activeChartId={selectedChartId}
+  onActiveChartChange={handleChartChange}
+  chartSwitcherAriaLabel="Income statement chart"
+>
+  {#snippet chartChildren(chartId)}
+    {#if chartId}
+      {@const chart = mapForChart(chartId)}
+      {#if chart}
+        <Chart {chart} />
+      {/if}
+    {/if}
+  {/snippet}
+  {#snippet sectionChildren(section)}
+    {@const statementSection = section as unknown as StatementSection}
+    <StatementSummaryTreeTable
+      tree={statementSection.tree}
+      title={statementSection.title}
+      href={statementSection.href}
+    />
+  {/snippet}
+</IncomeStatement>

@@ -146,7 +146,9 @@ function currenciesToShow(
   );
 
   // Show all operating currencies that are used in the data.
-  const toShow = $chartContext.currencies.filter((c) => counts.delete(c));
+  const toShow = ($chartContext.currencies ?? []).filter((c) =>
+    counts.delete(c),
+  );
 
   // Also add some of the most common other currencies (up to 5 in total)
   toShow.push(

@@ -1,12 +1,13 @@
 <script lang="ts">
   import { derived } from "svelte/store";
   import { BeancountFilter, ValidationError } from "@beancount-js/beancount";
-  import type { ParseError } from "@beancount-js/parser";
   import { DateTime } from "luxon";
   import { useContext } from "../../context";
-  import { Cell, Grid } from "../../grid";
-  import type { Column } from "../../grid/grid";
   import { Custom, isDirective } from "@beancount-js/beancount";
+  import ValidationErrorTable, {
+    type ValidationErrorRow,
+  } from "@beancount-js/ui/feedback/ValidationErrorTable.svelte";
+
   const { ledgerData, predicate } = useContext();
   const filterVisitor = new BeancountFilter();
 
@@ -17,107 +18,82 @@
     return predicate.accept(filterVisitor, entity, { op: ":" });
   }
 
-  function getLine(error: any) {
+  function getEntity(error: unknown) {
+    if (error instanceof ValidationError) {
+      return error.context.directive?.toString() ?? "-";
+    }
+    const record = error as {
+      position?: { toString: () => string };
+      context?: { toString?: () => string };
+    };
     return (
-      error.line ??
-      error.source?.lineno ??
-      error.context?.directive?.meta?.lineno ??
-      error.context?.lineno ??
+      record.position?.toString() ??
+      record.context?.toString?.() ??
       "-"
     );
   }
 
-  const data = derived([ledgerData, predicate], ([$ledgerData, $predicate]) => {
+  function getLine(error: unknown) {
+    if (typeof error === "string") return "-";
+    const errorRecord = error as {
+      line?: number | string;
+      source?: { lineno?: number | string };
+      context?: {
+        directive?: { toString: () => string; meta?: { lineno?: number | string } };
+        lineno?: number | string;
+      };
+    };
+    return (
+      errorRecord.line ??
+      errorRecord.source?.lineno ??
+      errorRecord.context?.directive?.meta?.lineno ??
+      errorRecord.context?.lineno ??
+      "-"
+    );
+  }
+
+  const rows = derived([ledgerData, predicate], ([$ledgerData, $predicate]) => {
     const epoch = DateTime.fromMillis(0, { zone: "utc" });
     const currentPredicate = $predicate.predicate;
-    if (currentPredicate) {
-      return $ledgerData.errors.filter((error) => {
-        if (error instanceof ValidationError) {
-          const directive = error.context.directive;
-          if (isDirective(directive)) {
-            return matchesPredicate(currentPredicate, directive);
-          }
+    const filtered = $ledgerData.errors.filter((error) => {
+      if (error instanceof ValidationError) {
+        const directive = error.context.directive;
+        if (isDirective(directive)) {
+          return currentPredicate
+            ? matchesPredicate(currentPredicate, directive)
+            : true;
         }
-        if (typeof error === "string") {
-          return matchesPredicate(
+      }
+      if (typeof error === "string") {
+        return currentPredicate
+          ? matchesPredicate(currentPredicate, new Custom(epoch, "error", [error]))
+          : true;
+      }
+      const message = (error as { message?: string })?.message ?? "Validation error";
+      return currentPredicate
+        ? matchesPredicate(
             currentPredicate,
-            new Custom(epoch, "error", [error]),
-          );
-        }
-        return matchesPredicate(
-          currentPredicate,
-          new Custom(epoch, "error", [error.message], { ...error }),
-        );
-      });
-    }
-    return $ledgerData.errors;
-  });
+            new Custom(epoch, "error", [message], { ...(error as object) }),
+          )
+        : true;
+    });
 
-  const model: Column<ValidationError | ParseError | string>[] = [
-    {
-      id: "lineno",
-      name: "Line",
-      sortable: true,
-      type: "text",
-      value: (row: ValidationError | ParseError | string, state?: string) => {
-        const value = typeof row === "string" ? "-" : getLine(row);
-        if (state === "sort") {
-          return +value;
-        }
-        return value;
-      },
-    },
-    {
-      id: "message",
-      name: "Message",
-      sortable: true,
-      type: "text",
-      value: (row: ValidationError | ParseError | string, state?: string) => {
-        const value = typeof row === "string" ? row : row.message;
-        return value;
-      },
-    },
-    {
-      id: "entity",
-      name: "Entity",
-      type: "text",
-      value: (row: ValidationError | ParseError | string, state?: string) => {
-        if (typeof row === "string") {
-          return "-";
-        } else if (row instanceof ValidationError) {
-          return row.context.directive?.toString() ?? "";
-        } else {
-          return row.position?.toString() ?? "-";
-        }
-      },
-    },
-  ];
+    return filtered.map((error, index): ValidationErrorRow => {
+      const line = getLine(error);
+      const message =
+        typeof error === "string"
+          ? error
+          : (error as { message?: string }).message ??
+            "Unknown validation error";
+      return {
+        id: `${line}-${index}`,
+        line,
+        message,
+        entity: getEntity(error),
+        href: line === "-" ? undefined : `/editor?line=${String(line)}`,
+      };
+    });
+  });
 </script>
 
-<div class="p-2">
-  <Grid
-    {data}
-    height={window.innerHeight - 150}
-    padding={window.innerHeight / 2}
-    rowHeight={24}
-    {model}
-  >
-    <svelte:fragment
-      slot="cell"
-      let:column
-      let:style
-      let:value
-      let:height
-      let:index
-    >
-      {#if index === 0}
-        <span {style} class="border-r">
-          <a href={`/editor?line=${value}`}>{value}</a>
-        </span>
-      {:else}
-        <Cell class={column.class} {style} {value} type={column.type} {height}
-        ></Cell>
-      {/if}
-    </svelte:fragment>
-  </Grid>
-</div>
+<ValidationErrorTable errors={$rows} />

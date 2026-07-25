@@ -4,7 +4,7 @@ import {
   textareaField,
   type FormConfig,
   type FormValidationIssue,
-} from "@beancount-js/forms";
+} from "@beancount-js/ui/forms";
 import type {
   MerchantAlias,
   MerchantBrandData,

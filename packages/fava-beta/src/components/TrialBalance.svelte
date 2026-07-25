@@ -1,52 +1,98 @@
+<script context="module" lang="ts">
+  import type { AccountTreeNode } from "../lib/models";
+
+  export type StatementSection = {
+    tree: AccountTreeNode;
+    title: string;
+    href?: string;
+  };
+</script>
+
 <script lang="ts">
   import { createNode } from "../core/tree";
-  import StatementSummaryTreeTable from "./tree-table/StatementSummaryTreeTable.svelte";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
-  import Chart from "../charts/Chart.svelte";
-  import * as Tabs from "$lib/components/ui/tabs";
+  import type { FavaChart } from "../charts";
   import { useContext } from "../context";
-  import type { LedgerData } from "../lib/ledger-data";
+  import StatementSummaryTreeTable from "./tree-table/StatementSummaryTreeTable.svelte";
+  import Chart from "../charts/Chart.svelte";
   import type { Readable } from "svelte/store";
-  import ContentScrollArea from "@beancount-js/ui/layout/ContentScrollArea.svelte";
+  import type { LedgerData } from "../lib/ledger-data";
+  import TrialBalance, {
+    type TrialBalanceChart,
+    type TrialBalanceSection,
+  } from "@beancount-js/ui/dashboard/TrialBalance.svelte";
 
   const context = useContext();
 
   export let ledgerData: Readable<LedgerData> = context.ledgerData;
 
+  const accountOrder = [
+    "Income",
+    "Expenses",
+    "Assets",
+    "Liabilities",
+    "Equity",
+  ] as const;
+
   $: node = createNode($ledgerData.tree, "");
-  $: charts = ["Income", "Expenses", "Assets", "Liabilities", "Equity"].map(
-    (account) => {
-      return {
-        account,
-        data: hierarchyFromParsedData(
-          account,
-          $ledgerData.tree.get(account).toRecord(),
-        ),
-      };
-    },
+  $: charts = accountOrder.map((account) =>
+    hierarchyFromParsedData(account, $ledgerData.tree.get(account).toRecord()),
   );
+
+  $: sections = [
+    {
+      tree: node,
+      title: "Trial Balance",
+    },
+  ];
+
+  const getChartId = (name: string | undefined) => name || "All";
+  let activeChartId = "";
+
+  function handleChartChange(chartId: string) {
+    activeChartId = chartId;
+  }
+
+  let chartOptions: readonly TrialBalanceChart[] = [];
+  $: chartOptions = charts.map((chart) => ({
+    id: getChartId(chart.name),
+    label: chart.name || "All",
+  }));
+
+  $: selectedChartId =
+    chartOptions.some((chart) => chart.id === activeChartId) && activeChartId
+      ? activeChartId
+      : chartOptions[0]?.id ?? "";
+
+  $: chartById =
+    new Map(charts.map((chart) => [getChartId(chart.name), chart])) as ReadonlyMap<
+      string,
+      FavaChart
+    >;
+
+  const mapForChart = (chartId: string) => chartById.get(chartId);
 </script>
 
-<ContentScrollArea contentClass="scroll-container min-h-full">
-  <div class="w-full">
-    <div class="p-4">
-      <Tabs.Root value={charts[0].account} class="">
-        {#each charts as chart}
-          <Tabs.Content value={chart.account}>
-            <Chart chart={chart.data} />
-          </Tabs.Content>
-        {/each}
-        <div class="flex justify-center pt-2">
-          <Tabs.List>
-            {#each charts as chart}
-              <Tabs.Trigger value={chart.account}>{chart.account}</Tabs.Trigger>
-            {/each}
-          </Tabs.List>
-        </div>
-      </Tabs.Root>
-    </div>
-    <div class="w-full p-4">
-      <StatementSummaryTreeTable tree={node} title="Trial Balance" />
-    </div>
-  </div>
-</ContentScrollArea>
+<TrialBalance
+  charts={chartOptions}
+  sections={sections as readonly TrialBalanceSection[]}
+  activeChartId={selectedChartId}
+  onActiveChartChange={handleChartChange}
+  chartSwitcherAriaLabel="Trial balance chart"
+>
+  {#snippet chartChildren(chartId)}
+    {#if chartId}
+      {@const chart = mapForChart(chartId)}
+      {#if chart}
+        <Chart {chart} />
+      {/if}
+    {/if}
+  {/snippet}
+  {#snippet sectionChildren(section)}
+    {@const statementSection = section as unknown as StatementSection}
+    <StatementSummaryTreeTable
+      tree={statementSection.tree}
+      title={statementSection.title}
+    />
+  {/snippet}
+</TrialBalance>

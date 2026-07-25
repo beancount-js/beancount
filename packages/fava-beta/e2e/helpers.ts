@@ -129,6 +129,9 @@ function viewSegmentFromPath(viewPath: string): string {
     "/import/accounts": "settings/accounts",
     "/import/merchants": "settings/merchants",
     "/import/manage-merchants": "settings/manage-merchants",
+    "/import/brands": "settings/brands",
+    "/import/history": "settings/history",
+    "/import/rules": "settings/rules",
   };
   let segment = map[clean];
   if (!segment && clean.startsWith("/account/")) {

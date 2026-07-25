@@ -19,6 +19,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:navigation": "playwright test e2e/navigation.spec.ts --grep C006",
+    "test:e2e:visual-reference": "BEANCOUNT_STUDIO_PROJECT_ROOT=e2e/fixtures/visual-reference-project BEANCOUNT_STUDIO_ENTRY_FILE=sample.beancount playwright test e2e/visual-parity.spec.ts --grep 'Ledger(Workspace|Settings)Navigation'",
+    "test:e2e:c006": "pnpm test:e2e:navigation && pnpm test:e2e:visual-reference",
     "coverage": "vitest run --coverage",
     "parity:check": "pnpm exec tsx ./scripts/parity-check.ts"
   },
@@ -31,7 +34,6 @@
     "@beancount-js/connector-monzo": "workspace:*",
     "@beancount-js/connector-starling": "workspace:*",
     "@beancount-js/filters": "workspace:*",
-    "@beancount-js/forms": "workspace:*",
     "@beancount-js/parser": "workspace:*",
     "@beancount-js/server": "workspace:*",
     "@beancount-js/ui": "workspace:*",

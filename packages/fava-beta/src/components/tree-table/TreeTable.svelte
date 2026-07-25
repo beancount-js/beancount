@@ -1,63 +1,85 @@
 <script lang="ts">
+  import { leaf } from "$lib/accounts";
   import type { DateTime } from "luxon";
-  import { writable } from "svelte/store";
-  import { useCollapseAccount, useInvertAccount } from "../../stores/account";
-  import type { AccountTreeNode } from "../../lib/models";
-  import {
-    getAllNodes,
-    getCollapsed,
-    setTreeTableContext,
-    useGetNotShown,
-  } from "./helpers";
-
-  import TreeTableNode from "./TreeTableNode.svelte";
-  import AccountCellHeader from "./AccountCellHeader.svelte";
   import { useContext } from "../../context";
+  import { useCtx } from "../../stores/format";
+  import type { AccountTreeNode } from "../../lib/models";
+  import { getCollapsed, useGetNotShown } from "./helpers";
+  import { useCollapseAccount, useInvertAccount } from "../../stores/account";
+  import { urlForAccount } from "../../helpers";
+  import TreeTable from "@beancount-js/ui/tables/TreeTable.svelte";
+
+  type UiTreeTableNode = {
+    readonly account: string;
+    readonly balance: Readonly<Record<string, number>>;
+    readonly balanceChildren: Readonly<Record<string, number>>;
+    readonly cost: Readonly<Record<string, number>>;
+    readonly costChildren: Readonly<Record<string, number>>;
+    readonly invert?: number;
+    readonly children: readonly UiTreeTableNode[];
+  };
 
   const { currencyName, operatingCurrency } = useContext();
+  const ctx = useCtx();
   const getNotShown = useGetNotShown();
+  const collapseAccount = useCollapseAccount();
+  const invertAccount = useInvertAccount();
 
   /** The account tree to show. */
   export let tree: AccountTreeNode;
   /** The end date (for closed accounts). */
   export let end: DateTime | null;
 
-  const collapseAccount = useCollapseAccount();
-  const invertAccount = useInvertAccount();
-  const toggled = writable(getCollapsed(tree, $collapseAccount));
-  const notShown = writable(new Set<string>());
-  setTreeTableContext({
-    toggled,
-    notShown,
-    collapseAll: () => {
-      toggled.set(getAllNodes(tree));
-    },
-  });
-  $: $notShown = $getNotShown(tree, end);
+  let hiddenAccounts = new Set<string>();
+  let initialCollapsedIds = new Set<string>();
+  let nodes: readonly UiTreeTableNode[] = [];
+
+  $: hiddenAccounts = $getNotShown(tree, end);
+  $: initialCollapsedIds = new Set(
+    getCollapsed(tree, $collapseAccount).filter(
+      (account) => !hiddenAccounts.has(account),
+    ),
+  );
+  $: nodes =
+    (tree.account === ""
+      ? tree.children
+      : [tree]
+    )
+      .filter((node) => !hiddenAccounts.has(node.account))
+      .map((node) => createUiNode(node, $invertAccount(node.account) ? -1 : 1));
+
+  function createUiNode(
+    source: AccountTreeNode,
+    invert: number,
+  ): UiTreeTableNode {
+    return {
+      account: source.account,
+      balance: source.balance,
+      balanceChildren: source.balanceChildren,
+      cost: source.cost,
+      costChildren: source.costChildren,
+      invert,
+      children: source.children
+        .filter((child) => !hiddenAccounts.has(child.account))
+        .map((child) => createUiNode(child, invert)),
+    };
+  }
+
+  const formatBalance = (value: number, currency: string) => $ctx.num(value, currency);
+  const formatAmount = (value: number, currency: string) =>
+    $ctx.amount(value, currency);
+  const formatDiff = (value: number, currency: string) => $ctx.num(value, currency);
 </script>
 
-<ol
-  class="flex-table tree-table-new hierarchy-tree-table statement-tree-table font-mono text-sm text-foreground"
-  class:wider={$operatingCurrency.length > 1}
-  data-statement-tree-table
->
-  <li class="head">
-    <p>
-      <AccountCellHeader />
-      {#each $operatingCurrency as currency}
-        <span class="num" title={$currencyName(currency)}>{currency}</span>
-      {/each}
-      <span class="num other">{"Other"}</span>
-    </p>
-  </li>
-  {#each tree.account === "" ? tree.children : [tree] as n}
-    <TreeTableNode node={n} invert={$invertAccount(n.account) ? -1 : 1} />
-  {/each}
-</ol>
-<div class="p-2"></div>
-
-<style>
-  .wider {
-    font-size: 0.9em;
-  }
-</style>
+<TreeTable
+  {nodes}
+  operatingCurrency={$operatingCurrency}
+  currencyName={$currencyName}
+  formatBalance={formatBalance}
+  formatAmount={formatAmount}
+  formatDiff={formatDiff}
+  toAccountLabel={leaf}
+  toAccountHref={urlForAccount}
+  {hiddenAccounts}
+  {initialCollapsedIds}
+/>

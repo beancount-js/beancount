@@ -1,19 +1,17 @@
 <script lang="ts">
   import { accountOpenClose } from "@beancount-js/beancount";
   import { onDestroy } from "svelte";
-  import {
-    AccountAvatar,
-    FilterCommandPicker,
-    SearchFilterBar,
-    accountAvatarInitial,
-    type FilterCommandOption,
-  } from "@beancount-js/forms";
+  import type { FilterCommandOption } from "@beancount-js/ui/forms";
+  import SharedIngestionReconciliationPanel, {
+    type ReconciliationPanelItem,
+    type ReconciliationPanelMember,
+    type ReconciliationReviewFacetOptions,
+    type ReconciliationReviewSearchValues,
+  } from "@beancount-js/ui/pages/IngestionReconciliationPanel.svelte";
   import type {
     ReconciliationReviewDisplayItem,
     ReconciliationReviewResponse,
   } from "../lib/reconciliation-review-response";
-  import Check from "lucide-svelte/icons/check";
-  import X from "lucide-svelte/icons/x";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
   import type { IngestionSource } from "../ingestion/types";
   import { useContext } from "../context";
@@ -39,10 +37,7 @@
     updateReviewSelection,
   } from "../lib/review-selection";
   import { useNavigation } from "../router/router";
-  import { Badge, type BadgeVariant } from "$lib/components/ui/badge";
-  import { Button } from "$lib/components/ui/button";
-  import PagePagination from "./PagePagination.svelte";
-  import ReconciliationReviewSkeleton from "./skeletons/ReconciliationReviewSkeleton.svelte";
+  import type { BadgeVariant } from "$lib/components/ui/badge";
 
   type Review = ReconciliationReviewResponse;
   type ConnectionMerchant = {
@@ -60,7 +55,6 @@
   }: {
     projectId?: string;
     sources?: readonly IngestionSource[];
-    /** Changes after sync, edits, and ordinary acceptance to reload candidates. */
     refreshKey?: string;
     onApplied?: () => void;
     onReconciliationChanged?: () => void;
@@ -79,10 +73,8 @@
   let rechecking = $state(false);
   let selectedCandidateIds = $state(new Set<string>());
   let merchantsById = $state<Record<string, ConnectionMerchant>>({});
-  let failedMerchantLogoIds = $state(new Set<string>());
   let loadedMerchantsProjectId = $state("");
   let loadedKey = $state("");
-  let filtersExpanded = $state(false);
   let searchState = $state<ReconciliationReviewSearchState>(
     cloneReconciliationReviewSearchState(),
   );
@@ -197,15 +189,26 @@
       ],
     };
   });
-
-  function setIndeterminate(node: HTMLInputElement, value: boolean) {
-    node.indeterminate = value;
-    return {
-      update(next: boolean) {
-        node.indeterminate = next;
-      },
-    };
-  }
+  const searchValues = $derived<ReconciliationReviewSearchValues>({
+    query: searchState.query,
+    accounts: searchState.accounts,
+    sources: searchState.sources,
+    years: searchState.years,
+    currencies: searchState.currencies,
+    kinds: searchState.kinds,
+    confidence: searchState.confidence,
+  });
+  const reviewFacetOptions = $derived<ReconciliationReviewFacetOptions>({
+    accounts: accountOptions,
+    sources: sourceOptions,
+    years: yearOptions,
+    currencies: currencyOptions,
+    kinds: kindOptions,
+    confidence: confidenceOptions,
+  });
+  const visiblePanelItems = $derived(
+    visibleCandidates.map((item) => reconciliationPanelItem(item)),
+  );
 
   function canBulkConfirm(item: ReconciliationReviewDisplayItem) {
     return (
@@ -291,10 +294,6 @@
     return merchantFor(connectionForMember(member)?.merchantId);
   }
 
-  function markMerchantLogoFailed(merchantId: string) {
-    failedMerchantLogoIds = new Set([...failedMerchantLogoIds, merchantId]);
-  }
-
   function memberSourceLabel(
     member: ReconciliationReviewDisplayItem["members"][number],
   ) {
@@ -311,6 +310,60 @@
     if (confidence === "high") return "success";
     if (confidence === "possible") return "warning";
     return "secondary";
+  }
+
+  function panelMember(
+    member: ReconciliationReviewDisplayItem["members"][number],
+  ): ReconciliationPanelMember {
+    const appearance = accountAppearanceFor(member);
+    const accountMerchant = merchantFor(appearance.merchantId);
+    const sourceMerchant = sourceMerchantFor(member);
+    return {
+      observationId: member.observation.id,
+      label: memberLabel(member),
+      detail: memberDetail(member),
+      account: member.observation.sourceAccount,
+      color: appearance.color,
+      icon: appearance.icon,
+      accountMerchantLogoUrl: accountMerchant?.logoUrl,
+      sourceLabel: memberSourceLabel(member),
+      sourceMerchantId: sourceMerchant?.merchantId,
+      sourceMerchantLogoUrl: sourceMerchant?.logoUrl,
+      amount: member.observation.amount,
+      currency: member.observation.currency,
+    };
+  }
+
+  function reconciliationPanelItem(
+    item: ReconciliationReviewDisplayItem,
+  ): ReconciliationPanelItem {
+    const chosenObservationId =
+      item.decision?.canonicalObservationId ??
+      item.candidate.recommendedCanonicalId;
+    return {
+      id: item.candidate.id,
+      kind: item.candidate.kind,
+      kindLabel: reconciliationKindLabel(item.candidate.kind),
+      confidence: item.candidate.confidence,
+      confidenceLabel: normaliseReconciliationLabel(item.candidate.confidence),
+      confidenceVariant: confidenceBadgeVariant(item.candidate.confidence),
+      evidenceSummary: item.candidate.evidence
+        .map((evidence) => evidence.summary)
+        .join(" · "),
+      decisionState: item.decision?.state,
+      chosenObservationId,
+      selectable: canBulkConfirm(item),
+      selectableTitle: canBulkConfirm(item)
+        ? undefined
+        : item.decision?.state === "confirmed"
+          ? "This match is already confirmed"
+          : "Choose a canonical record before confirming this match",
+      members: item.members.map(panelMember),
+    };
+  }
+
+  function itemFor(candidateId: string) {
+    return candidates.find((item) => item.candidate.id === candidateId);
   }
 
   function updateRoute(values: Record<string, string | undefined>) {
@@ -572,6 +625,21 @@
     }
   }
 
+  function applyById(candidateId: string) {
+    const item = itemFor(candidateId);
+    if (item) void apply(item);
+  }
+
+  function dismissById(candidateId: string) {
+    const item = itemFor(candidateId);
+    if (item) void decide(item, "dismissed");
+  }
+
+  function confirmById(candidateId: string, canonicalObservationId: string) {
+    const item = itemFor(candidateId);
+    if (item) void decide(item, "confirmed", canonicalObservationId);
+  }
+
   $effect(() => {
     const key = `${projectId ?? ""}\0${refreshKey}`;
     if (key === loadedKey) return;
@@ -622,504 +690,43 @@
   });
 </script>
 
-{#if loading && !reviewLoaded}
-  <ReconciliationReviewSkeleton />
-{:else if candidates.length}
-  <div
-    class="ingestion-page-search"
-    style="--cv-search-filter-justify: stretch; --cv-search-filter-content-justify: stretch; --cv-search-filter-max-width: 100%;"
-  >
-    <SearchFilterBar
-      inputMode="plain"
-      value={searchState.query}
-      placeholder="Search reconciliation matches…"
-      ariaLabel="Search reconciliation matches"
-      clearSearchLabel="Clear search"
-      clearAllLabel="Clear all filters"
-      expandFiltersLabel="Expand filter options"
-      collapseFiltersLabel="Collapse filter options"
-      showActiveQueryChip={true}
-      showFilterToggle={true}
-      showClearAll={activeSearch}
-      clearAllDisabled={!activeSearch}
-      bind:filtersExpanded
-      onValueChange={onSearchQueryInput}
-      onClearSearch={clearSearchQuery}
-      onClearAll={clearAllSearch}
-    >
-      {#snippet filters()}
-        <div class="ingestion-page-search__facet-row">
-          <FilterCommandPicker
-            multiple
-            label="Account"
-            values={searchState.accounts}
-            options={accountOptions}
-            placeholder="Filter by account…"
-            onValuesChange={(accounts) => setSearchFacet("accounts", accounts)}
-          />
-          <FilterCommandPicker
-            multiple
-            label="Source"
-            values={searchState.sources}
-            options={sourceOptions}
-            placeholder="Filter by source…"
-            onValuesChange={(sources) => setSearchFacet("sources", sources)}
-          />
-          <FilterCommandPicker
-            multiple
-            label="Reason"
-            values={searchState.kinds}
-            options={kindOptions}
-            placeholder="Filter by reason…"
-            onValuesChange={(kinds) => setSearchFacet("kinds", kinds)}
-          />
-          <FilterCommandPicker
-            multiple
-            label="Confidence"
-            values={searchState.confidence}
-            options={confidenceOptions}
-            placeholder="Filter by confidence…"
-            onValuesChange={(confidence) =>
-              setSearchFacet("confidence", confidence)}
-          />
-          <FilterCommandPicker
-            multiple
-            label="Year"
-            values={searchState.years}
-            options={yearOptions}
-            placeholder="Filter by year…"
-            onValuesChange={(years) => setSearchFacet("years", years)}
-          />
-          <FilterCommandPicker
-            multiple
-            label="Currency"
-            values={searchState.currencies}
-            options={currencyOptions}
-            placeholder="Filter by currency…"
-            onValuesChange={(currencies) =>
-              setSearchFacet("currencies", currencies)}
-          />
-        </div>
-      {/snippet}
-      {#snippet collapsedFilters()}
-        <div class="ingestion-page-search__facet-row">
-          {#if searchState.accounts.length}
-            <FilterCommandPicker
-              multiple
-              label="Account"
-              values={searchState.accounts}
-              options={accountOptions}
-              onValuesChange={(accounts) =>
-                setSearchFacet("accounts", accounts)}
-            />
-          {/if}
-          {#if searchState.sources.length}
-            <FilterCommandPicker
-              multiple
-              label="Source"
-              values={searchState.sources}
-              options={sourceOptions}
-              onValuesChange={(sources) => setSearchFacet("sources", sources)}
-            />
-          {/if}
-          {#if searchState.kinds.length}
-            <FilterCommandPicker
-              multiple
-              label="Reason"
-              values={searchState.kinds}
-              options={kindOptions}
-              onValuesChange={(kinds) => setSearchFacet("kinds", kinds)}
-            />
-          {/if}
-          {#if searchState.confidence.length}
-            <FilterCommandPicker
-              multiple
-              label="Confidence"
-              values={searchState.confidence}
-              options={confidenceOptions}
-              onValuesChange={(confidence) =>
-                setSearchFacet("confidence", confidence)}
-            />
-          {/if}
-          {#if searchState.years.length}
-            <FilterCommandPicker
-              multiple
-              label="Year"
-              values={searchState.years}
-              options={yearOptions}
-              onValuesChange={(years) => setSearchFacet("years", years)}
-            />
-          {/if}
-          {#if searchState.currencies.length}
-            <FilterCommandPicker
-              multiple
-              label="Currency"
-              values={searchState.currencies}
-              options={currencyOptions}
-              onValuesChange={(currencies) =>
-                setSearchFacet("currencies", currencies)}
-            />
-          {/if}
-        </div>
-      {/snippet}
-    </SearchFilterBar>
-  </div>
-
-  {#if activeSearch && !matchedCandidates.length}
-    <div
-      class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-    >
-      No reconciliation matches this search.
-    </div>
-  {:else if matchedCandidates.length}
-    <div class="flex justify-end">
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        data-reconciliation-auto-confirm
-        disabled={loading ||
-          autoConfirming ||
-          bulkConfirming ||
-          rechecking ||
-          Boolean(busyCandidateId)}
-        onclick={() => void autoConfirmExactMappedMatches()}
-      >
-        <Check data-icon="inline-start" />
-        {autoConfirming
-          ? "Auto-confirming exact matches…"
-          : "Auto-confirm exact mapped matches"}
-      </Button>
-    </div>
-
-    <div
-      class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-    >
-      <input
-        use:setIndeterminate={masterSelection.indeterminate}
-        type="checkbox"
-        class="size-4 rounded border-input text-primary focus:ring-ring"
-        aria-label="Select visible reconciliation matches"
-        checked={masterSelection.checked}
-        disabled={!visibleActionableCandidateIds.length ||
-          bulkConfirming ||
-          autoConfirming ||
-          rechecking}
-        onchange={(event) =>
-          setSelectedCandidates(
-            visibleActionableCandidateIds,
-            (event.currentTarget as HTMLInputElement).checked,
-          )}
-      />
-      <span>Match</span>
-      <span class="text-right">Actions</span>
-    </div>
-
-    {#if showSelectionBanner}
-      <div
-        data-reconciliation-selection-banner
-        role="status"
-        class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
-      >
-        {#if allMatchingSelected}
-          All {actionableCandidates.length} matching reconciliation items selected.
-          <button
-            type="button"
-            class="font-medium text-primary underline-offset-2 hover:underline"
-            onclick={clearSelectedCandidates}
-          >
-            Clear selection
-          </button>
-        {:else}
-          All {visibleActionableCandidateIds.length} actionable matches on this page
-          are selected.
-          <button
-            type="button"
-            class="font-medium text-primary underline-offset-2 hover:underline"
-            onclick={selectAllMatchingCandidates}
-          >
-            Select all {actionableCandidates.length} matching items
-          </button>
-        {/if}
-      </div>
-    {/if}
-
-    <div class="flex flex-col gap-3" data-ingestion-reconciliation>
-      {#each visibleCandidates as item (item.candidate.id)}
-        {@const busy = busyCandidateId === item.candidate.id}
-        {@const selectable = actionableCandidateIds.has(item.candidate.id)}
-        {@const chosen =
-          item.decision?.canonicalObservationId ??
-          item.candidate.recommendedCanonicalId}
-        <section class="overflow-hidden rounded-2xl bg-muted/80">
-          <div
-            class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 px-4 py-4 sm:px-5"
-          >
-            <input
-              type="checkbox"
-              class="mt-0.5 size-4 rounded border-input text-primary focus:ring-ring"
-              aria-label={`Select ${reconciliationKindLabel(item.candidate.kind)}`}
-              title={selectable
-                ? undefined
-                : item.decision?.state === "confirmed"
-                  ? "This match is already confirmed"
-                  : "Choose a canonical record before confirming this match"}
-              checked={selectedCandidateIds.has(item.candidate.id)}
-              disabled={!selectable ||
-                bulkConfirming ||
-                autoConfirming ||
-                rechecking}
-              onchange={(event) =>
-                setSelectedCandidates(
-                  [item.candidate.id],
-                  (event.currentTarget as HTMLInputElement).checked,
-                )}
-            />
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <h2
-                  class="text-sm font-semibold tracking-[0.08em] text-muted-foreground [font-variant:all-small-caps]"
-                  data-reconciliation-kind
-                >
-                  {reconciliationKindLabel(item.candidate.kind)}
-                </h2>
-                <Badge
-                  variant={confidenceBadgeVariant(item.candidate.confidence)}
-                  class="rounded-full"
-                  data-reconciliation-confidence={item.candidate.confidence}
-                  >{normaliseReconciliationLabel(
-                    item.candidate.confidence,
-                  )}</Badge
-                >
-              </div>
-            </div>
-            <div
-              class="flex shrink-0 flex-wrap items-center justify-end gap-1"
-              data-reconciliation-actions
-            >
-              {#if item.decision?.state === "confirmed"}
-                <Button
-                  size="icon-sm"
-                  variant="ghost-raised"
-                  aria-label="Apply confirmed match"
-                  title="Apply confirmed match"
-                  data-reconciliation-action="apply"
-                  disabled={busy ||
-                    bulkConfirming ||
-                    autoConfirming ||
-                    rechecking}
-                  onclick={() => void apply(item)}
-                >
-                  <Check data-icon />
-                </Button>
-              {:else}
-                <Button
-                  size="icon-sm"
-                  variant="ghost-raised"
-                  aria-label="Not a match"
-                  title="Not a match"
-                  data-reconciliation-action="dismiss"
-                  disabled={busy ||
-                    bulkConfirming ||
-                    autoConfirming ||
-                    rechecking}
-                  onclick={() => void decide(item, "dismissed")}
-                >
-                  <X data-icon />
-                </Button>
-                {#if chosen}
-                  <Button
-                    size="icon-sm"
-                    variant="ghost-raised"
-                    aria-label="Confirm match"
-                    title="Confirm match"
-                    data-reconciliation-action="confirm"
-                    disabled={busy ||
-                      bulkConfirming ||
-                      autoConfirming ||
-                      rechecking}
-                    onclick={() => void decide(item, "confirmed", chosen)}
-                  >
-                    <Check data-icon />
-                  </Button>
-                {:else}
-                  {#each item.members as member (member.observation.id)}
-                    <Button
-                      size="icon-sm"
-                      variant="ghost-raised"
-                      aria-label={`Use ${memberLabel(member)} as the canonical record`}
-                      title={`Use ${memberLabel(member)} as the canonical record`}
-                      data-reconciliation-action="confirm"
-                      disabled={busy ||
-                        bulkConfirming ||
-                        autoConfirming ||
-                        rechecking}
-                      onclick={() =>
-                        void decide(item, "confirmed", member.observation.id)}
-                    >
-                      <Check data-icon />
-                    </Button>
-                  {/each}
-                {/if}
-              {/if}
-            </div>
-            <p
-              class="col-span-full text-xs leading-relaxed text-muted-foreground"
-            >
-              {item.candidate.evidence
-                .map((evidence) => evidence.summary)
-                .join(" · ")}
-            </p>
-          </div>
-
-          <div
-            class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
-          >
-            {#each item.members as member, memberIndex (member.observation.id)}
-              {@const appearance = accountAppearanceFor(member)}
-              {@const accountMerchant = merchantFor(appearance.merchantId)}
-              {@const sourceMerchant = sourceMerchantFor(member)}
-              <div
-                class:rounded-b-xl={memberIndex === item.members.length - 1}
-                class="grid grid-cols-[2.5rem_minmax(0,1fr)_7rem] items-center gap-x-3 gap-y-1 border-b px-[15px] py-4 transition-colors last:border-b-0 hover:bg-accent/60 sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem_7rem]"
-                data-reconciliation-member-row
-              >
-                <div
-                  class="col-start-1 row-span-2 row-start-1 sm:row-span-1"
-                  aria-hidden="true"
-                  data-reconciliation-member-avatar
-                >
-                  <AccountAvatar
-                    account={member.observation.sourceAccount ??
-                      memberLabel(member)}
-                    color={appearance.color}
-                    icon={appearance.icon}
-                    merchantLogoUrl={accountMerchant?.logoUrl}
-                  />
-                </div>
-                <div
-                  class="col-start-2 row-span-2 row-start-1 min-w-0 self-center sm:row-span-1"
-                  data-reconciliation-member-details
-                >
-                  <div class="break-words text-sm font-semibold sm:truncate">
-                    {memberLabel(member)}
-                  </div>
-                  <div
-                    class="mt-1 break-words text-xs text-muted-foreground sm:truncate"
-                  >
-                    {memberDetail(member)}
-                  </div>
-                </div>
-                <Badge
-                  variant="outline"
-                  class="pointer-events-none col-start-3 row-start-1 max-w-full gap-1 justify-self-center truncate rounded-full bg-card text-[10px] uppercase tracking-wide text-muted-foreground"
-                  aria-label={`Source ${memberSourceLabel(member)}`}
-                  data-reconciliation-member-source
-                >
-                  {#if sourceMerchant?.logoUrl && !failedMerchantLogoIds.has(sourceMerchant.merchantId)}
-                    <img
-                      class="size-3.5 rounded-full object-cover"
-                      src={sourceMerchant.logoUrl}
-                      alt=""
-                      onerror={() =>
-                        markMerchantLogoFailed(sourceMerchant.merchantId)}
-                    />
-                  {:else}
-                    <span
-                      class="grid size-3.5 shrink-0 place-items-center rounded-full bg-rose-200 text-[0.5rem] font-semibold text-rose-800"
-                      aria-hidden="true"
-                    >
-                      {accountAvatarInitial(memberSourceLabel(member))}
-                    </span>
-                  {/if}
-                  {memberSourceLabel(member)}
-                </Badge>
-                <span
-                  class="col-start-3 row-start-2 justify-self-end text-sm font-semibold tabular-nums sm:col-start-4 sm:row-start-1"
-                  data-reconciliation-member-amount
-                >
-                  {member.observation.amount}&nbsp;{member.observation.currency}
-                </span>
-              </div>
-            {/each}
-          </div>
-        </section>
-      {/each}
-    </div>
-
-    {#if pages.length > 1}
-      <div
-        class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-        data-reconciliation-pagination
-      >
-        <span class="text-sm text-muted-foreground"
-          >Page {page} of {pages.length}</span
-        >
-        <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-          <div class="hidden items-center gap-2 sm:flex">
-            <label
-              class="text-sm text-muted-foreground"
-              for="reconciliation-review-page-size">Matches per page</label
-            >
-            <select
-              id="reconciliation-review-page-size"
-              class="h-8 rounded-md border bg-background px-2 text-sm"
-              value={pageSize}
-              onchange={(event) =>
-                updateRoute({
-                  reconcilePageSize: (event.currentTarget as HTMLSelectElement)
-                    .value,
-                  reconcilePage: "1",
-                })}
-            >
-              {#each RECONCILIATION_REVIEW_PAGE_SIZES as size (size)}
-                <option value={size}>{size}</option>
-              {/each}
-            </select>
-          </div>
-          <PagePagination
-            {page}
-            pageCount={pages.length}
-            ariaLabel="Reconciliation match pages"
-            disabled={loading ||
-              bulkConfirming ||
-              autoConfirming ||
-              rechecking ||
-              Boolean(busyCandidateId)}
-            onPageChange={(nextPage) =>
-              updateRoute({ reconcilePage: String(nextPage) })}
-          />
-        </div>
-      </div>
-    {/if}
-  {/if}
-{:else if reviewLoaded && !error}
-  <div
-    class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
-  >
-    No reconciliation matches are available.
-  </div>
-{:else if error}
-  <p class="text-sm text-destructive" role="status">{error}</p>
-{/if}
-
-<style>
-  .ingestion-page-search :global(.cv-search-filter-bar) {
-    padding: 0;
-  }
-
-  .ingestion-page-search :global(.cv-search-filter-bar__search-pill) {
-    flex: 1 1 100%;
-    width: 100%;
-    max-width: none;
-  }
-
-  .ingestion-page-search__facet-row {
-    display: flex;
-    width: 100%;
-    min-width: 0;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem;
-  }
-</style>
+<SharedIngestionReconciliationPanel
+  loadingInitial={loading && !reviewLoaded}
+  {reviewLoaded}
+  {error}
+  hasCandidates={candidates.length > 0}
+  {activeSearch}
+  matchedItemCount={matchedCandidates.length}
+  visibleItems={visiblePanelItems}
+  actionableItemCount={actionableCandidates.length}
+  visibleActionableIds={visibleActionableCandidateIds}
+  {selectedCandidateIds}
+  {masterSelection}
+  {allMatchingSelected}
+  {showSelectionBanner}
+  {loading}
+  {busyCandidateId}
+  {bulkConfirming}
+  {autoConfirming}
+  {rechecking}
+  {searchValues}
+  facetOptions={reviewFacetOptions}
+  {page}
+  pageCount={pages.length}
+  {pageSize}
+  pageSizeOptions={RECONCILIATION_REVIEW_PAGE_SIZES}
+  onSearchQueryInput={onSearchQueryInput}
+  onClearSearch={clearSearchQuery}
+  onClearAllSearch={clearAllSearch}
+  onFacetChange={(key, value) => setSearchFacet(key, value)}
+  onAutoConfirm={() => void autoConfirmExactMappedMatches()}
+  onSetSelectedCandidates={setSelectedCandidates}
+  onSelectAllMatching={selectAllMatchingCandidates}
+  onClearSelected={clearSelectedCandidates}
+  onApply={applyById}
+  onDismiss={dismissById}
+  onConfirm={confirmById}
+  onPageChange={(nextPage) => updateRoute({ reconcilePage: String(nextPage) })}
+  onPageSizeChange={(nextSize) =>
+    updateRoute({ reconcilePageSize: String(nextSize), reconcilePage: "1" })}
+/>

@@ -1,16 +1,12 @@
 <svelte:options runes={false} />
 
 <script lang="ts">
-  import { EditorView, keymap } from "@codemirror/view";
-  import { Compartment, EditorState, Prec } from "@codemirror/state";
+  import { EditorView } from "@codemirror/view";
   import { unfoldAll } from "@codemirror/language";
-  import { openSearchPanel } from "@codemirror/search";
   import { onDestroy, onMount } from "svelte";
-  import { toggleComment } from "@codemirror/commands";
-  import { findNext, findPrevious } from "@codemirror/search";
-  import { basicSetup, ledgerSetup } from "../codemirror/beancount/setup";
-  import { replaceContents } from "../codemirror/extensions/transactions";
   import { formatLedger } from "../codemirror/beancount/format";
+  import { basicSetup, ledgerSetup } from "../codemirror/beancount/setup";
+  import { toggleComment } from "@codemirror/commands";
   import {
     areAllHeadersCollapsed,
     collapseHeaders,
@@ -19,11 +15,13 @@
   } from "../codemirror/beancount/foldHeaders";
   import { foldMetadata } from "../codemirror/beancount/foldMetadata";
   import { foldAll } from "../codemirror/extensions/foldAll";
-  import { goToLine, showGotoLine } from "../codemirror/extensions/gotoline";
+  import { showGotoLine } from "../codemirror/extensions/gotoline";
+  import Editor from "@beancount-js/ui/pages/Editor.svelte";
   import { useContext } from "../context";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
+  import type { IngestionReviewLedgerSnapshot } from "../ingestion/types";
 
   const {
     router: { activeRoute },
@@ -37,269 +35,211 @@
     requestInlineAi,
   } = useStudioWorkspace();
 
-  let formatOnSave = true;
-  let editor: EditorView | undefined;
-  let line = "";
-  let dirty = false;
-  let replacingContents = false;
-  let loadedPath = "";
-  let reviewHeadersCollapsedAll = false;
-  let ledgerHeadersCollapsedAll = false;
-
-  function editorMode(readOnly: boolean) {
-    return readOnly
-      ? [
-          EditorState.readOnly.of(true),
-          Prec.highest(EditorView.editable.of(false)),
-        ]
-      : [
-          EditorState.readOnly.of(false),
-          Prec.highest(EditorView.editable.of(true)),
-        ];
-  }
-
-  function formatReviewContents(view: EditorView, readOnly: boolean) {
-    if (!readOnly) return;
-    replacingContents = true;
-    formatLedger(view);
-    replacingContents = false;
-  }
-
-  const codeMirror = (
-    node: HTMLDivElement,
-    source: { path: string; contents: string; readOnly: boolean },
-  ) => {
-    const mode = new Compartment();
-    const view = new EditorView({
-      state: EditorState.create({
-        doc: source.contents,
-        extensions: [
-          basicSetup,
-          ledgerSetup(() => $ledgerSource),
-          mode.of(editorMode(source.readOnly)),
-          EditorView.updateListener.of((update) => {
-            if (update.docChanged && !replacingContents) dirty = true;
-          }),
-          keymap.of([
-            {
-              key: "Ctrl-s",
-              mac: "Mod-s",
-              run: () => {
-                handleSave();
-                return true;
-              },
-            },
-          ]),
-        ],
-      }),
-      parent: node,
-    });
-    editor = view;
-    loadedPath = source.path;
-    dirty = false;
-    formatReviewContents(view, source.readOnly);
-    foldMetadata(view);
-    if (source.readOnly) collapseHeadersExceptLast(view);
-
-    if (line) {
-      goToLine(editor, line);
-    }
-    return {
-      update(next: { path: string; contents: string; readOnly: boolean }) {
-        const nextPath = next.path;
-        // Do not let the filesystem polling loop overwrite an unsaved edit.
-        // A deliberate source-file switch always loads that source instead.
-        const contentsChanged =
-          loadedPath !== nextPath ||
-          (!dirty && view.state.doc.toString() !== next.contents);
-        if (contentsChanged) {
-          replacingContents = true;
-          view.dispatch({
-            ...replaceContents(view.state, next.contents),
-          });
-          replacingContents = false;
-          loadedPath = nextPath;
-          dirty = false;
-        }
-        const readOnlyChanged = source.readOnly !== next.readOnly;
-        if (readOnlyChanged) {
-          view.dispatch({
-            effects: mode.reconfigure(editorMode(next.readOnly)),
-          });
-        }
-        if (next.readOnly && (contentsChanged || readOnlyChanged)) {
-          formatReviewContents(view, next.readOnly);
-        }
-        if (contentsChanged) {
-          foldMetadata(view);
-          ledgerHeadersCollapsedAll = false;
-          if (next.readOnly) {
-            collapseHeadersExceptLast(view);
-            reviewHeadersCollapsedAll = false;
-          }
-        }
-        source = next;
-      },
-      destroy() {},
-    };
+  type EditorHandle = {
+    areAllHeadersCollapsed: () => boolean;
+    collapseHeaders: () => void;
+    expandHeaders: () => void;
+    foldAll: () => void;
+    format: () => void;
+    openGotoLine: () => void;
+    askAi: () => void;
+    save: () => Promise<void> | void;
+    showSearchPanel: () => void;
+    toggleComment: () => void;
+    unfoldAll: () => void;
+    findNextMatch: () => void;
+    findPreviousMatch: () => void;
   };
 
-  function showSearch() {
-    if (!editor) return;
-    openSearchPanel(editor);
-    const el = document.querySelector<HTMLInputElement>(
-      "input.document-search-input",
-    );
-    if (el) {
-      const text = editor.state.sliceDoc(
-        editor.state.selection.main.from,
-        editor.state.selection.main.to,
-      );
-      if (text) {
-        el.value = text;
-        el.select();
-      }
-      el.blur();
-      el.focus();
-    }
-  }
-
-  $: if (
-    editor &&
-    $activeRoute.query["line"] &&
-    line !== $activeRoute.query["line"]
-  ) {
-    line = $activeRoute.query["line"];
-    goToLine(editor, line);
-  }
-
-  async function handleSave() {
-    if (!editor || readOnly) return;
-    if (formatOnSave) {
-      formatLedger(editor);
-    }
-    if (!$snapshot || !$workspaceActiveFile) return;
-    await saveFile($workspaceActiveFile, editor.state.doc.toString());
-    dirty = false;
-  }
-
-  function askAiAboutSelection() {
-    if (!editor || !$workspaceActiveFile) return;
-    const selection = editor.state.selection.main;
-    const text = editor.state.sliceDoc(selection.from, selection.to).trim();
-    const fromLine = editor.state.doc.lineAt(selection.from).number;
-    const toLine = editor.state.doc.lineAt(selection.to).number;
-    requestInlineAi({
-      path: $workspaceActiveFile,
-      text: text.slice(0, 4_000),
-      fromLine,
-      toLine,
-    });
-  }
+  let formatOnSave = true;
+  let editor: EditorHandle | undefined;
+  let reviewHeadersCollapsedAll = false;
+  let ledgerHeadersCollapsedAll = false;
+  let dirty = false;
+  let editorExtensions = [basicSetup, ledgerSetup(() => $ledgerSource)];
+  let source = {
+    path: "",
+    contents: "",
+    readOnly: false,
+  };
+  let reviewFile: IngestionReviewLedgerSnapshot | null = null;
+  let activeFile: { path: string; contents: string } | undefined;
+  let readOnly = false;
 
   // The virtual review file arrives alongside route state during a hard reload.
   // Its path is the authoritative identity here; waiting for the separately
   // derived ledger kind can briefly replace the editor document with nothing.
   $: reviewFile =
-    $reviewLedger?.path === $workspaceActiveFile ? $reviewLedger : undefined;
+    $reviewLedger?.path === $workspaceActiveFile ? $reviewLedger : null;
   $: activeFile =
     reviewFile ??
     $snapshot?.ledgerFiles.find((file) => file.path === $workspaceActiveFile);
   $: readOnly = Boolean(reviewFile);
 
-  $: {
+  $: source = {
+    path: activeFile?.path ?? "",
+    contents: activeFile?.contents ?? "",
+    readOnly,
+  };
+
+  function handleFoldMetadata(view: EditorView) {
+    if (readOnly) {
+      foldMetadata(view);
+      reviewHeadersCollapsedAll = false;
+      return;
+    }
+    ledgerHeadersCollapsedAll = false;
+  }
+
+  function handleCollapseHeadersExceptLast(view: EditorView) {
+    if (readOnly) {
+      collapseHeadersExceptLast(view);
+      reviewHeadersCollapsedAll = false;
+    }
+  }
+
+  function handleShowSearch() {
+    editor?.showSearchPanel();
+  }
+
+  function handleSaveLedger() {
+    void editor?.save();
+  }
+
+  function handleSave(contents: string) {
+    if (readOnly || !$snapshot || !$workspaceActiveFile) return;
+    return saveFile($workspaceActiveFile, contents);
+  }
+
+  function handleAskAi(payload: {
+    path: string;
+    text: string;
+    fromLine: number;
+    toLine: number;
+  }) {
+    requestInlineAi(payload);
+  }
+
+  function refreshHeaderActions() {
     if (readOnly) {
       ingestionHeaderActions.set({
         kind: "review-ledger",
         headersCollapsedAll: reviewHeadersCollapsedAll,
         onToggleHeaders: () => {
           if (!editor) return;
-          if (areAllHeadersCollapsed(editor.state)) {
-            expandHeaders(editor);
+          if (editor.areAllHeadersCollapsed()) {
+            editor.expandHeaders();
             reviewHeadersCollapsedAll = false;
           } else {
-            collapseHeaders(editor);
+            editor.collapseHeaders();
             reviewHeadersCollapsedAll = true;
           }
         },
       });
-    } else {
-      ingestionHeaderActions.set({
-        kind: "ledger",
-        formatOnSave,
-        headersCollapsedAll: ledgerHeadersCollapsedAll,
-        sources: ($snapshot?.ledgerFiles ?? []).map((file) => ({
-          path: file.path,
-        })),
-        activePath: $workspaceActiveFile ?? "",
-        dirty,
-        onOpenSource: (path) => workspaceActiveFile.set(path),
-        onToggleFormatOnSave: () => {
-          formatOnSave = !formatOnSave;
-        },
-        onToggleHeaders: () => {
-          if (!editor) return;
-          if (areAllHeadersCollapsed(editor.state)) {
-            expandHeaders(editor);
-            ledgerHeadersCollapsedAll = false;
-          } else {
-            collapseHeaders(editor);
-            ledgerHeadersCollapsedAll = true;
-          }
-        },
-        onGotoLine: () => {
-          if (editor) showGotoLine(editor);
-        },
-        onFormat: () => {
-          if (editor) formatLedger(editor);
-        },
-        onToggleComment: () => {
-          if (editor) toggleComment(editor);
-        },
-        onUnfoldAll: () => {
-          if (editor) unfoldAll(editor);
-        },
-        onFoldAll: () => {
-          if (editor) foldAll(editor);
-        },
-        onFind: () => showSearch(),
-        onFindNext: () => {
-          if (editor) findNext(editor);
-        },
-        onFindPrevious: () => {
-          if (editor) findPrevious(editor);
-        },
-        onAskAi: () => askAiAboutSelection(),
-        onSave: () => {
-          void handleSave();
-        },
-      });
+      return;
     }
+
+    ingestionHeaderActions.set({
+      kind: "ledger",
+      formatOnSave,
+      headersCollapsedAll: ledgerHeadersCollapsedAll,
+      sources: ($snapshot?.ledgerFiles ?? []).map((file) => ({
+        path: file.path,
+      })),
+      activePath: $workspaceActiveFile ?? "",
+      dirty,
+      onOpenSource: (path) => workspaceActiveFile.set(path),
+      onToggleFormatOnSave: () => {
+        formatOnSave = !formatOnSave;
+      },
+      onToggleHeaders: () => {
+        if (!editor) return;
+        if (editor.areAllHeadersCollapsed()) {
+          editor.expandHeaders();
+          ledgerHeadersCollapsedAll = false;
+        } else {
+          editor.collapseHeaders();
+          ledgerHeadersCollapsedAll = true;
+        }
+      },
+      onGotoLine: () => {
+        editor?.openGotoLine();
+      },
+      onFormat: () => {
+        editor?.format();
+      },
+      onToggleComment: () => {
+        editor?.toggleComment();
+      },
+      onUnfoldAll: () => {
+        editor?.unfoldAll();
+      },
+      onFoldAll: () => {
+        editor?.foldAll();
+      },
+      onFind: () => {
+        editor?.showSearchPanel();
+      },
+      onFindNext: () => {
+        editor?.findNextMatch();
+      },
+      onFindPrevious: () => {
+        editor?.findPreviousMatch();
+      },
+      onAskAi: () => {
+        editor?.askAi();
+      },
+      onSave: () => {
+        void editor?.save();
+      },
+    });
   }
 
-  onDestroy(() => ingestionHeaderActions.set(null));
+  $: {
+    refreshHeaderActions();
+  }
+
+  $: editorExtensions = [basicSetup, ledgerSetup(() => $ledgerSource)];
 
   onMount(function () {
-    document.addEventListener("showSearch", showSearch);
-    document.addEventListener("saveLedger", handleSave);
+    document.addEventListener("showSearch", handleShowSearch);
+    document.addEventListener("saveLedger", handleSaveLedger);
     return () => {
-      document.removeEventListener("showSearch", showSearch);
-      document.removeEventListener("saveLedger", handleSave);
+      document.removeEventListener("showSearch", handleShowSearch);
+      document.removeEventListener("saveLedger", handleSaveLedger);
     };
+  });
+
+  onDestroy(() => {
+    ingestionHeaderActions.set(null);
   });
 </script>
 
 <div class="flex h-full min-h-0 flex-col">
   <div class="editor-scroll-host min-h-0 flex-1 overflow-hidden">
     <div class="beancount-editor relative">
-      <div
-        class="h-full"
-        use:codeMirror={{
-          path: activeFile?.path ?? "",
-          contents: activeFile?.contents ?? "",
-          readOnly,
+      <Editor
+        bind:this={editor}
+        {source}
+        line={$activeRoute.query["line"] ?? ""}
+        {formatOnSave}
+        {editorExtensions}
+        onSave={handleSave}
+        onDirtyChange={(nextDirty) => {
+          dirty = nextDirty;
         }}
-      ></div>
+        onAskAi={handleAskAi}
+        onFormat={formatLedger}
+        onFoldMetadata={handleFoldMetadata}
+        onCollapseHeaders={collapseHeaders}
+        onExpandHeaders={expandHeaders}
+        onAreAllHeadersCollapsed={areAllHeadersCollapsed}
+        onCollapseHeadersExceptLast={handleCollapseHeadersExceptLast}
+        onUnfoldAll={unfoldAll}
+        onFoldAll={foldAll}
+        onShowGotoLine={(view) => showGotoLine(view)}
+        onToggleComment={toggleComment}
+      />
     </div>
   </div>
 </div>

@@ -19,7 +19,10 @@
     label: string;
     values: Readonly<Record<string, string | undefined>>;
     weight?: string;
+    collapsedValues?: Readonly<Record<string, string | undefined>>;
+    collapsedWeight?: string;
     otherValues?: readonly StatementSummaryOtherValue[];
+    collapsedOtherValues?: readonly StatementSummaryOtherValue[];
     href?: string;
     color?: string;
     children?: readonly StatementSummaryTreeNode[];
@@ -42,6 +45,7 @@
     contributions = [],
     ariaLabel = `${title} account summary`,
     onNavigate,
+    initialCollapsedIds = new Set<string>(),
   }: {
     title: string;
     total?: string;
@@ -51,9 +55,17 @@
     contributions?: readonly StatementSummaryContribution[];
     ariaLabel?: string;
     onNavigate?: (node: StatementSummaryTreeNode) => void;
+    initialCollapsedIds?: ReadonlySet<string>;
   } = $props();
 
   let collapsedIds = $state<Set<string>>(new Set());
+  let hasAppliedInitialCollapsedIds = false;
+
+  $effect.pre(() => {
+    if (hasAppliedInitialCollapsedIds) return;
+    collapsedIds = new Set(initialCollapsedIds);
+    hasAppliedInitialCollapsedIds = true;
+  });
 
   const collapsibleIds = $derived(collectCollapsibleIds(nodes));
   const allCollapsed = $derived(
@@ -82,6 +94,11 @@
   function toggleAll() {
     collapsedIds = allCollapsed ? new Set() : new Set(collapsibleIds);
   }
+
+  function navigate(node: StatementSummaryTreeNode, event: MouseEvent) {
+    if (onNavigate) event.preventDefault();
+    onNavigate?.(node);
+  }
 </script>
 
 <section class="bj-statement-summary" aria-label={ariaLabel}>
@@ -98,11 +115,7 @@
   </div>
 
   {#if contributions.length}
-    <div
-      class="bj-statement-summary-contribution-bar"
-      role="img"
-      aria-label={`${title} category contributions`}
-    >
+    <div class="bj-statement-summary-contribution-bar" role="img" aria-label={`${title} category contributions`}>
       {#each contributions as contribution (contribution.id)}
         <span
           style={`width: ${contribution.percentage}%; background: ${contribution.color}`}
@@ -136,6 +149,7 @@
           {#if collapsibleIds.length}
             <button
               type="button"
+              class="view-icon"
               aria-label={allCollapsed
                 ? "Expand all accounts"
                 : "Collapse all accounts"}
@@ -259,7 +273,6 @@
     color: var(--foreground);
     font-family: var(--font-mono, ui-monospace, monospace);
     font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
@@ -313,23 +326,44 @@
     text-align: left;
   }
 
-  .bj-statement-summary-header button {
+  .view-icon {
     display: grid;
     width: 1rem;
     height: 1rem;
-    flex: 0 0 auto;
-    place-items: center;
     border: 0;
-    border-radius: 0.125rem;
     background: transparent;
     color: var(--muted-foreground);
     cursor: pointer;
   }
 
-  .bj-statement-summary-header button:hover,
-  .bj-statement-summary-header button:focus-visible {
+  .view-icon:hover,
+  .view-icon:focus-visible {
     background: var(--background);
     color: var(--foreground);
     outline: none;
+  }
+
+  .bj-statement-summary-muted {
+    color: var(--muted-foreground);
+  }
+
+  .bj-statement-summary-table > li > div {
+    display: grid;
+    grid-template-columns:
+      minmax(16rem, 2fr) 4.5rem 5.5rem repeat(
+        var(--statement-column-count),
+        minmax(8rem, 1fr)
+      )
+      minmax(11rem, 1fr);
+    border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  }
+
+  .bj-statement-summary-table > li > div > span,
+  .bj-statement-summary-table > li > div > div {
+    padding: 0.5rem 1rem;
+    text-align: right;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
   }
 </style>

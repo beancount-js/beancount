@@ -220,7 +220,12 @@
   }
 </script>
 
-<section class="flex min-h-0 flex-1 flex-col gap-3" aria-label={ariaLabel}>
+<section
+  class="flex min-h-0 flex-1 flex-col gap-3"
+  aria-label={ariaLabel}
+  data-ledger-workspace-navigation
+  data-ledger-workspace-sidebar
+>
   <div class="flex items-center justify-between gap-2 px-2">
     <p class="text-xs font-medium uppercase text-muted-foreground">{title}</p>
     <span

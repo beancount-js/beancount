@@ -9,7 +9,7 @@
     type EditableMerchantProfile,
     type MerchantProfileResponse,
   } from "../ingestion/merchant-form-config";
-  import type { FormConfig } from "@beancount-js/forms";
+  import type { FormConfig } from "@beancount-js/ui/forms";
   import type { MerchantEditProfile } from "@beancount-js/ui/forms";
 
   type Props = {

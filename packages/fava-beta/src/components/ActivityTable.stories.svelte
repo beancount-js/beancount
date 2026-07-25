@@ -80,7 +80,7 @@
     );
 
     await userEvent.click(
-      canvas.getByRole("button", { name: "Open Groceries" }),
+      canvas.getByRole("button", { name: "Edit Groceries" }),
     );
     await expect(canvas.getByRole("status")).toHaveTextContent("record opened");
   }}

@@ -1,11 +1,10 @@
 <script lang="ts">
-  import PresetQueryView from "./PresetQueryView.svelte";
+  import { type PresetQuery } from "@beancount-js/ui/pages/PresetQueryView.svelte";
+  import Statistics from "@beancount-js/ui/pages/Statistics.svelte";
+  import { urlFor } from "../helpers";
+  import QueryTable from "./QueryTable.svelte";
 
-  const queries: Array<{
-    id: string;
-    name: string;
-    query: string;
-  }> = [
+  const queries: readonly PresetQuery[] = [
     {
       id: "postings-per-account",
       name: "Postings per Account",
@@ -40,4 +39,12 @@
   ];
 </script>
 
-<PresetQueryView {queries} alignQueryActionEnd />
+<Statistics
+  {queries}
+  alignQueryActionEnd
+  queryHref={(query) => urlFor("/query", { qs: query.query.trim() })}
+>
+  {#snippet children(query)}
+    <QueryTable query={query.query} />
+  {/snippet}
+</Statistics>

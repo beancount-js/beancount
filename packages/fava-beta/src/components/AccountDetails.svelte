@@ -1,24 +1,27 @@
 <script lang="ts">
-  import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js";
-  import ChartSwitcher from "../charts/ChartSwitcher.svelte";
-  import { balances } from "../charts/line";
-  import { useContext } from "../context";
-  import { urlForAccount } from "../helpers";
   import AccountActivityTable from "./AccountActivityTable.svelte";
-  import * as Tabs from "$lib/components/ui/tabs";
-  import type { AccountTreeNode } from "../lib/models";
-  import { useLedger } from "./helpers";
+  import AccountDetails, {
+    type AccountDetailsBreadcrumb,
+    type AccountDetailsChart,
+    type AccountDetailsTab,
+  } from "@beancount-js/ui/pages/AccountDetails.svelte";
+  import { balances } from "../charts/line";
+  import { useChartContext } from "../charts/context";
+  import { bar } from "../charts/bar";
+  import Chart from "../charts/Chart.svelte";
+  import { hierarchyFromParsedData } from "../charts/hierarchy";
   import { stratify } from "../lib/tree";
   import type { Tree } from "../core/tree";
+  import type { FavaChart } from "../charts";
+  import type { AccountTreeNode } from "../lib/models";
   import { intervalLabel } from "../lib/interval";
+  import { useContext } from "../context";
   import IntervalTreeTable from "./tree-table/IntervalTreeTable.svelte";
-  import { bar } from "../charts/bar";
-  import { useChartContext } from "../charts/context";
-  import { hierarchyFromParsedData } from "../charts/hierarchy";
-  import moment from "moment";
-  import { formatDate } from "@beancount-js/parser";
-  import ContentScrollArea from "@beancount-js/ui/layout/ContentScrollArea.svelte";
+  import { useLedger } from "./helpers";
+  import { urlForAccount } from "../helpers";
   import { useNavigation } from "../router/router";
+  import { formatDate } from "@beancount-js/parser";
+
   const { conversion, interval } = useContext();
   const chartContext = useChartContext();
   const { activeRoute, router } = useNavigation();
@@ -35,39 +38,35 @@
   $: balanceTrees = $ledgerData.balanceTrees($interval);
   $: changeTrees = $ledgerData.changeTrees($interval);
   $: budgets = $ledgerData.intervalBudgets(account, $interval);
-  $: charts = () => {
-    const charts = [
-      balances(
-        `Account Balance`,
-        $ledgerData.accountBalance(account, $conversion),
-      ),
-      bar(
-        `Changes`,
-        $ledgerData.intervalTotals([account], $conversion, $interval),
-        $chartContext,
-      ),
-      hierarchyFromParsedData(
-        account,
-        $ledgerData.tree
-          .get(account)
-          .toRecord($conversion, conversionContext()),
-      ),
-      ...changeTrees
-        .slice(-3)
-        .reverse()
-        .map((it) =>
-          hierarchyFromParsedData(
-            `${formatDate(it.range.from, "MMM yyyy")}`,
-            it.tree
-              .get(account)
-              .toRecord($conversion, conversionContext(it.range.endInclusive)),
-          ),
+  $: chartEntries = [
+    balances(
+      `Account Balance`,
+      $ledgerData.accountBalance(account, $conversion),
+    ),
+    bar(
+      `Changes`,
+      $ledgerData.intervalTotals([account], $conversion, $interval),
+      $chartContext,
+    ),
+    hierarchyFromParsedData(
+      account,
+      $ledgerData.tree.get(account).toRecord($conversion, conversionContext()),
+    ),
+    ...changeTrees
+      .slice(-3)
+      .reverse()
+      .map((it) =>
+        hierarchyFromParsedData(
+          `${formatDate(it.range.from, "MMM yyyy")}`,
+          it.tree.get(account).toRecord($conversion, conversionContext(it.range.endInclusive)),
         ),
-    ];
+      ),
+  ];
+  $: chartById = new Map(
+    chartEntries.map((chart) => [getChartId(chart.name), chart] as const),
+  ) as ReadonlyMap<string, FavaChart>;
 
-    return charts;
-  };
-  $: createNode = (tree: Tree, asOf = $ledgerData.dateLast) => {
+  $: createNodeFromTree = (tree: Tree, asOf = $ledgerData.dateLast) => {
     const context = conversionContext(asOf);
     return stratify(
       tree.get(account).accounts,
@@ -89,10 +88,10 @@
   };
 
   $: balanceTreeNodes = balanceTrees
-    .map((it) => createNode(it.tree, it.range.endInclusive))
+    .map((it) => createNodeFromTree(it.tree, it.range.endInclusive))
     .reverse();
   $: changeTreeNodes = changeTrees
-    .map((it) => createNode(it.tree, it.range.endInclusive))
+    .map((it) => createNodeFromTree(it.tree, it.range.endInclusive))
     .reverse();
 
   $: balanceDates = balanceTrees.map((it) => it.range).reverse();
@@ -101,94 +100,99 @@
     .map((it) => it.account)
     .filter((it) => it)
     .reverse();
-  $: availableTabs = [
-    DEFAULT_TAB,
-    ...(changeTreeNodes.length > 0 ? ["changes"] : []),
-    ...(balanceTreeNodes.length > 0 ? ["balances"] : []),
+
+  const getChartId = (name: string | undefined) => name || "All";
+  let activeChartId = "";
+
+  let chartOptions: readonly AccountDetailsChart[] = [];
+  $: chartOptions = chartEntries.map((chart) => ({
+    id: getChartId(chart.name),
+    label: chart.name || "All",
+  }));
+
+  $: selectedChartId =
+    chartOptions.some((chart) => chart.id === activeChartId) && activeChartId
+      ? activeChartId
+      : chartOptions[0]?.id ?? "";
+
+  let tabs: readonly AccountDetailsTab[] = [];
+  $: tabs = [
+    { id: DEFAULT_TAB, label: "Account Table" },
+    ...(changeTreeNodes.length > 0
+      ? [{ id: "changes", label: `Changes (${intervalLabel($interval)})` }]
+      : []),
+    ...(balanceTreeNodes.length > 0
+      ? [{ id: "balances", label: `Balances (${intervalLabel($interval)})` }]
+      : []),
   ];
-  $: selectedTab = availableTabs.includes($activeRoute.query.tab)
+  $: selectedTab = tabs.some((tab) => tab.id === $activeRoute.query.tab)
     ? $activeRoute.query.tab
     : DEFAULT_TAB;
+  let breadcrumbs: readonly AccountDetailsBreadcrumb[] = [];
+  $: breadcrumbs = [
+    { label: "Journal", href: "/journal" },
+    ...ancestors.map((ancestor) => ({
+      label: ancestor,
+      href: urlForAccount(ancestor),
+    })),
+    { label: account, isPage: true },
+  ];
+
+  function handleChartChange(chartId: string) {
+    activeChartId = chartId;
+  }
 
   function handleTabChange(value: string | undefined) {
-    if (!value || !availableTabs.includes(value)) return;
+    if (!value || !tabs.some((tab) => tab.id === value)) return;
     const query = new URLSearchParams($activeRoute.query);
     if (value === DEFAULT_TAB) query.delete("tab");
     else query.set("tab", value);
     const next = query.toString();
     void router.updateState(next ? `?${next}` : "?");
   }
+
+  const mapForChart = (chartId: string) => chartById.get(chartId);
 </script>
 
-<div class="flex h-full min-h-0 flex-col">
-  <Breadcrumb.Root class="w-full shrink-0 p-3">
-    <Breadcrumb.List>
-      <Breadcrumb.Item>
-        <Breadcrumb.Link href="/journal">Journal</Breadcrumb.Link>
-      </Breadcrumb.Item>
-      {#each ancestors as account}
-        <Breadcrumb.Separator />
-        <Breadcrumb.Link href={urlForAccount(account)}
-          >{account}</Breadcrumb.Link
-        >
-      {/each}
-      <Breadcrumb.Separator />
-      <Breadcrumb.Item>
-        <Breadcrumb.Page>{account}</Breadcrumb.Page>
-      </Breadcrumb.Item>
-    </Breadcrumb.List>
-  </Breadcrumb.Root>
-  <ContentScrollArea class="min-h-0 flex-1" contentClass="scroll-container">
-    <div class="p-2">
-      <ChartSwitcher charts={charts()} />
-    </div>
-    <div class="min-w-0 max-w-full p-2">
-      <div class="flex min-w-0 max-w-full">
-        <div class="w-full min-w-0 max-w-full">
-          <Tabs.Root
-            value={selectedTab}
-            onValueChange={handleTabChange}
-            class="min-w-0 max-w-full pt-2"
-          >
-            <Tabs.List>
-              <Tabs.Trigger value="account-table">Account Table</Tabs.Trigger>
-              {#if changeTreeNodes.length > 0}
-                <Tabs.Trigger value="changes"
-                  >Changes ({intervalLabel($interval)})</Tabs.Trigger
-                >
-              {/if}
-              {#if balanceTreeNodes.length > 0}
-                <Tabs.Trigger value="balances"
-                  >Balances ({intervalLabel($interval)})</Tabs.Trigger
-                >
-              {/if}
-            </Tabs.List>
-            <Tabs.Content value="account-table">
-              <AccountActivityTable {account} />
-            </Tabs.Content>
-            {#if changeTreeNodes.length > 0}
-              <Tabs.Content value="changes">
-                <IntervalTreeTable
-                  trees={changeTreeNodes}
-                  dates={changeDates}
-                  {budgets}
-                  accumulate={true}
-                />
-              </Tabs.Content>
-            {/if}
-            {#if balanceTreeNodes.length > 0}
-              <Tabs.Content value="balances">
-                <IntervalTreeTable
-                  trees={balanceTreeNodes}
-                  dates={balanceDates}
-                  {budgets}
-                  accumulate={true}
-                />
-              </Tabs.Content>
-            {/if}
-          </Tabs.Root>
-        </div>
-      </div>
-    </div>
-  </ContentScrollArea>
-</div>
+<AccountDetails
+  {account}
+  {breadcrumbs}
+  charts={chartOptions}
+  activeChartId={selectedChartId}
+  {tabs}
+  activeTab={selectedTab}
+  onActiveChartChange={handleChartChange}
+  onActiveTabChange={handleTabChange}
+  chartSwitcherAriaLabel="Account chart"
+>
+  {#snippet chartChildren(chartId)}
+    {#if chartId}
+      {@const chart = mapForChart(chartId)}
+      {#if chart}
+        <Chart {chart} />
+      {/if}
+    {/if}
+  {/snippet}
+
+  {#snippet accountChildren()}
+    <AccountActivityTable {account} />
+  {/snippet}
+
+  {#snippet changesChildren()}
+    <IntervalTreeTable
+      trees={changeTreeNodes}
+      dates={changeDates}
+      {budgets}
+      accumulate={true}
+    />
+  {/snippet}
+
+  {#snippet balancesChildren()}
+    <IntervalTreeTable
+      trees={balanceTreeNodes}
+      dates={balanceDates}
+      {budgets}
+      accumulate={true}
+    />
+  {/snippet}
+</AccountDetails>

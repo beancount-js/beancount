@@ -19,7 +19,7 @@
     createFormConfig,
     textField,
     type FilterCommandOption,
-  } from "@beancount-js/forms";
+  } from "@beancount-js/ui/forms";
   import AppShell from "@beancount-js/ui/app-shell";
   import StudioShellHeader from "./StudioShellHeader.svelte";
   import IngestionHeaderActions from "./IngestionHeaderActions.svelte";

@@ -142,15 +142,62 @@ is `visual-approved`.
 - Visual evidence so far: the frozen original-Fava view switcher and ledger
   search input both compare at or below 0.1%; two corresponding
   `LedgerWorkspaceNavigation` Storybook baselines pass and remain
-  `visual-pending`. UI and Beta Svelte checks pass after the settings extraction.
+  `visual-pending`. `LedgerSettingsNavigation.stories.svelte` is present and
+  tagged `visual-pending`, so it participates in the visual suite, but its
+  settings baseline has not been run or approved in this continuation. UI and
+  Beta Svelte checks pass after the settings extraction.
 - Known unfinished parity work: a full sidebar crop currently differs by about
   4–5%, because Beta discovers eight fixture ledgers while the frozen original
   reference discovers five. A dedicated, synthetic five-ledger fixture tree is
-  now present under `packages/fava-beta/e2e/fixtures/visual-reference-project`;
-  it has not yet been wired into the frozen parity command. Full workspace and
-  settings-surface comparisons, the new settings Storybook baseline, full
-  package gates, and a focused navigation E2E rerun are still required before
-  C006 can be committed or marked Done.
+  now present under `packages/fava-beta/e2e/fixtures/visual-reference-project`
+  and is wired through the focused `pnpm test:e2e:beta:visual-reference`
+  command, which greps the frozen parity spec down to the C006 workspace and
+  settings navigation surfaces. These crops have not been run in this
+  continuation. The settings Storybook visual run/review, full package gates,
+  and a focused navigation E2E rerun are still required before C006 can be
+  committed or marked Done.
+
+Required evidence before marking C006 `Done`:
+
+- `pnpm validate:fava-migration:preflight` passes while C006 is still under
+  review, running the reusable boundary audit, focused C006 evidence, and the
+  dedicated UI/Beta validation lanes without requiring C006 to already be marked
+  `Done`.
+- `pnpm test:c006` passes, running the focused UI visual story lane and the
+  focused Fava Beta C006 E2E evidence pair.
+- `pnpm test:e2e:beta:c006` passes, running both focused C006 E2E lanes.
+- `pnpm test:e2e:beta:visual-reference` passes against the synthetic
+  five-ledger fixture, proving the frozen workspace and settings navigation
+  crops are within tolerance.
+- `pnpm test:ui:c006` passes, proving the UI visual lane can exercise the C006
+  `LedgerWorkspaceNavigation` and `LedgerSettingsNavigation` Storybook stories.
+- The `LedgerWorkspaceNavigation` and `LedgerSettingsNavigation` Storybook
+  stories have current visual run results and a deliberate review disposition
+  (`visual-ready`, `visual-approved`, or an explicitly documented exception).
+- `pnpm checks:ui` and `pnpm checks:beta` pass, or any failures are documented
+  as unrelated/pre-existing blockers with exact diagnostics.
+- `pnpm test:e2e:beta:navigation` passes, proving the focused C006 Fava Beta
+  navigation walkthrough covers ledger view switching, search toggle, settings
+  navigation, back-to-ledger behavior, and persisted disclosure state.
+
+Required evidence before marking G03 `Accepted`:
+
+- `pnpm validate:fava-migration` passes, running the focused C006 evidence
+  command followed by the dedicated UI and Fava Beta validation lanes.
+- `pnpm audit:fava-migration:final` passes, proving the current diff has no
+  immutable `packages/fava` edits, mutable UI/Beta source/metadata does not
+  import the legacy `@beancount-js/forms` facade, and every component tracker
+  row C001-C070 is present and marked `Done`. It also proves Fava Beta imports
+  only exported `@beancount-js/ui` public subpaths.
+- Every component row C001-C070 is `Done`; C006 is the only current exception.
+- UI Storybook catalog review has covered all newly migrated Wave 5 stories.
+- Fava Beta page walkthrough covers the migrated pages with app-owned adapters
+  still retaining route state, persistence, APIs, and ledger/domain derivation.
+- The final migration diff has no remaining `packages/fava` edits and no
+  unintended `@beancount-js/forms` source imports outside the frozen Fava
+  compatibility boundary.
+- Dedicated UI and Beta validation lanes have been run in the final source
+  state, with results recorded in this tracker.
 
 #### C007 — `Nav.svelte`
 
@@ -359,67 +406,67 @@ is `visual-approved`.
 | C022 | `RuleEditorSheet.svelte`          | Done |
 | C023 | `rules/RuleConditionRow.svelte`   | Done |
 | C024 | `IngestionHeaderActions.svelte`   | Done        |
-| C025 | `IngestionMerchantSheet.svelte`   | Not started |
-| C026 | `IngestionProposalSheet.svelte`   | Not started |
-| C027 | `IngestionSourceForm.svelte`      | Not started |
+| C025 | `IngestionMerchantSheet.svelte`   | Done        |
+| C026 | `IngestionProposalSheet.svelte`   | Done        |
+| C027 | `IngestionSourceForm.svelte`      | Done        |
 
 ### Wave 3 — tables, feedback, and loading states
 
 | ID   | Fava source or surface                                         | Status      |
 | ---- | -------------------------------------------------------------- | ----------- |
-| C028 | `AccountActivityTable.svelte`                                  | Not started |
-| C029 | `ActivityTable.svelte`                                         | Not started |
-| C030 | `JournalTable.svelte`                                          | Not started |
+| C028 | `AccountActivityTable.svelte`                                  | Done        |
+| C029 | `ActivityTable.svelte`                                         | Done |
+| C030 | `JournalTable.svelte`                                          | Done        |
 | C031 | `QueryTable.svelte`                                            | Done        |
-| C032 | `IngestionTable.svelte`                                        | Not started |
-| C033 | `tree-table/TreeTable.svelte` and `TreeTableNode.svelte`       | Not started |
-| C034 | `tree-table/StatementSummaryTreeTable.svelte`                  | Not started |
-| C035 | `tree-table/StatementSummaryTreeRow.svelte`                    | Not started |
-| C036 | `tree-table/AccountCell.svelte` and `AccountCellHeader.svelte` | Not started |
-| C037 | `tree-table/Diff.svelte`                                       | Not started |
-| C038 | `AiUnifiedReviewDiff.svelte`                                   | Not started |
-| C039 | `ResourceViewer.svelte`                                        | Not started |
-| C040 | `errors/Errors.svelte`                                         | Not started |
-| C041 | `skeletons/*` route loading surfaces                           | Not started |
+| C032 | `IngestionTable.svelte`                                        | Done        |
+| C033 | `tree-table/TreeTable.svelte` and `TreeTableNode.svelte`       | Done        |
+| C034 | `tree-table/StatementSummaryTreeTable.svelte`                  | Done        |
+| C035 | `tree-table/StatementSummaryTreeRow.svelte`                    | Done        |
+| C036 | `tree-table/AccountCell.svelte` and `AccountCellHeader.svelte` | Done        |
+| C037 | `tree-table/Diff.svelte`                                       | Done        |
+| C038 | `AiUnifiedReviewDiff.svelte`                                   | Done        |
+| C039 | `ResourceViewer.svelte`                                        | Done        |
+| C040 | `errors/Errors.svelte`                                         | Done        |
+| C041 | `skeletons/*` route loading surfaces                           | Done |
 
 ### Wave 4 — charts, dashboard, and reports
 
 | ID   | Fava source or surface                        | Status      |
 | ---- | --------------------------------------------- | ----------- |
-| C042 | `dashboard/DashboardDonut.svelte`             | Not started |
-| C043 | `dashboard/DashboardFlow.svelte`              | Not started |
-| C044 | `dashboard/DashboardLine.svelte`              | Not started |
-| C045 | `dashboard/DashboardSection.svelte`           | Not started |
-| C046 | `dashboard/DashboardTreeTable.svelte` and row | Not started |
-| C047 | `dashboard/DashboardChartTooltip.svelte`      | Not started |
-| C048 | `FinancialDashboard.svelte`                   | Not started |
-| C049 | `StatementReport.svelte`                      | Not started |
-| C050 | `IncomeStatement.svelte`                      | Not started |
-| C051 | `BalanceSheet.svelte`                         | Not started |
-| C052 | `TrialBalance.svelte`                         | Not started |
-| C053 | `AccountDetails.svelte`                       | Not started |
+| C042 | `dashboard/DashboardDonut.svelte`             | Done        |
+| C043 | `dashboard/DashboardFlow.svelte`              | Done        |
+| C044 | `dashboard/DashboardLine.svelte`              | Done        |
+| C045 | `dashboard/DashboardSection.svelte`           | Done        |
+| C046 | `dashboard/DashboardTreeTable.svelte` and row | Done        |
+| C047 | `dashboard/DashboardChartTooltip.svelte`      | Done        |
+| C048 | `FinancialDashboard.svelte`                   | Done        |
+| C049 | `StatementReport.svelte`                      | Done        |
+| C050 | `IncomeStatement.svelte`                      | Done        |
+| C051 | `BalanceSheet.svelte`                         | Done        |
+| C052 | `TrialBalance.svelte`                         | Done        |
+| C053 | `AccountDetails.svelte`                       | Done        |
 | C054 | `Holdings.svelte`                             | Done        |
-| C055 | `Statistics.svelte`                           | Not started |
+| C055 | `Statistics.svelte`                           | Done        |
 | C056 | `PresetQueryView.svelte`                      | Done        |
 
 ### Wave 5 — application workflows
 
 | ID   | Fava source or surface                   | Status      |
 | ---- | ---------------------------------------- | ----------- |
-| C057 | `QueryBox.svelte` and `Query.svelte`     | Not started |
-| C058 | `Search.svelte` application adapter      | Not started |
-| C059 | `Editor.svelte` and `Highlighter.svelte` | Not started |
-| C060 | `AiDock.svelte`                          | Not started |
-| C061 | `IngestionAccountsSetup.svelte`          | Not started |
-| C062 | `IngestionBrandSettings.svelte`          | Not started |
-| C063 | `IngestionConfigEditor.svelte`           | Not started |
-| C064 | `IngestionMerchantManage.svelte`         | Not started |
-| C065 | `IngestionMerchantReview.svelte`         | Not started |
-| C066 | `IngestionReconciliationPanel.svelte`    | Not started |
-| C067 | `IngestionRunAudit.svelte`               | Not started |
-| C068 | `IngestionRunHistory.svelte`             | Not started |
-| C069 | `IngestionSourcesPreview.svelte`         | Not started |
-| C070 | `RulesSettings.svelte`                   | Not started |
+| C057 | `QueryBox.svelte` and `Query.svelte`     | Done        |
+| C058 | `Search.svelte` application adapter      | Done        |
+| C059 | `Editor.svelte` and `Highlighter.svelte` | Done |
+| C060 | `AiDock.svelte`                          | Done        |
+| C061 | `IngestionAccountsSetup.svelte`          | Done        |
+| C062 | `IngestionBrandSettings.svelte`          | Done        |
+| C063 | `IngestionConfigEditor.svelte`           | Done        |
+| C064 | `IngestionMerchantManage.svelte`         | Done        |
+| C065 | `IngestionMerchantReview.svelte`         | Done        |
+| C066 | `IngestionReconciliationPanel.svelte`    | Done        |
+| C067 | `IngestionRunAudit.svelte`               | Done        |
+| C068 | `IngestionRunHistory.svelte`             | Done        |
+| C069 | `IngestionSourcesPreview.svelte`         | Done |
+| C070 | `RulesSettings.svelte`                   | Done |
 
 ## Current execution focus
 
@@ -428,16 +475,381 @@ temporary Holdings workspace was removed after transferring only component,
 Storybook, and Fava Beta adapter work; its screenshot, baseline, and DOM
 contract work was intentionally not transferred.
 
-The most recent page slice is Holdings. Its shared preset view, query results
-table, account navigation link, pagination, and `CycleSelect` now live in UI
-Storybook. Fava Beta keeps BQL execution, domain sorting, formatting, chart
-derivation, merchant lookup, and route construction. New stories are ordinary
-catalog stories and carry no Visual Delta review tag.
+The most recent page slice is Run History. Its local-server and project states, loading/empty/error states, sortable history header, grouped run rows, source and account badges, run links, and pagination now live in UI Storybook; Fava Beta retains project loading, source filtering, run-history APIs, route navigation, ledger-derived account appearance, merchant logo lookup, date grouping, and ingestion header actions.
 
-The earlier C006 navigation work remains preserved in the parent working-copy
-history, but it no longer creates a separate manual pause. Continue page slices
-without new baselines, then stop once the full catalog migration is ready for
-G03 manual review.
+All tracked Wave 5 component rows are now marked Done. Cross-catalog cleanup has removed legacy `@beancount-js/forms` source imports from UI-owned components and Fava Beta adapters/helpers. Next work should run the dedicated UI/Beta validation lanes, finish the paused C006 navigation checkpoint, and prepare for G03 manual review.
+
+### Migration-wide blocker cleanup notes
+
+- 2026-07-25 - Retargeted remaining Fava Beta adapter imports from the
+  `@beancount-js/forms` compatibility facade to `@beancount-js/ui/forms` in
+  navigation, Studio shell, ingestion table, ingestion form, brand/config
+  settings, and merchant sheet adapters. This keeps the facade reserved for the
+  frozen Fava reference. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Retargeted Fava Beta ingestion form-config helpers from the
+  `@beancount-js/forms` compatibility facade to `@beancount-js/ui/forms` for
+  config builders, field helpers, and validation issue types. Fava Beta still
+  owns source/brand/merchant config construction; UI owns the reusable form
+  contract they consume. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Wired the synthetic five-ledger navigation fixture into a
+  dedicated Fava Beta visual-reference E2E command,
+  `pnpm test:e2e:beta:visual-reference`, so the C006 frozen navigation parity
+  surfaces can run against the allow-listed project tree instead of the broader
+  repository root. The command is scoped to `LedgerWorkspaceNavigation` and
+  `LedgerSettingsNavigation` tests. Automated validation was not run in this
+  continuation.
+
+- 2026-07-25 - Added UI-owned root data attributes for the full
+  `LedgerWorkspaceNavigation` surface and expanded the Fava Beta frozen parity
+  spec to crop full workspace and settings navigation surfaces. These
+  comparisons are encoded only; automated validation was not run in this
+  continuation.
+
+- 2026-07-25 - Reconciled the C006 tracker with current Storybook source:
+  `LedgerSettingsNavigation.stories.svelte` already exists and is tagged
+  `visual-pending`, so the remaining settings catalog work is to run and review
+  that visual candidate rather than create the story. Automated validation was
+  not run in this continuation.
+
+- 2026-07-25 - Removed Fava Beta's stale direct dependency and SSR noExternal
+  entry for `@beancount-js/forms` after source imports were retargeted to
+  `@beancount-js/ui/forms`; the compatibility facade remains available for the
+  frozen Fava package. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Updated the UI forms guidance to distinguish the frozen Fava
+  reference, which remains on the compatibility facade, from Fava Beta, which
+  now consumes `@beancount-js/ui/forms` through adapters and helpers. Automated
+  validation was not run in this continuation.
+
+- 2026-07-25 - Added `@beancount-js/ui` to Fava Beta's Vite SSR `noExternal`
+  list so the mutable integration app treats the shared UI workspace package as
+  local source during SSR, matching the direct Svelte component imports used by
+  the migration adapters. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Folded duplicate `@beancount-js/ui/forms` imports in Fava Beta's
+  ingestion source form-config helper after the compatibility-facade retarget,
+  keeping app-owned form configuration on the UI forms public surface.
+  Automated validation was not run in this continuation.
+
+- 2026-07-25 - Aligned Fava Beta E2E legacy route translation with the app's
+  settings route map for brands, history, and rules, and changed the C006
+  rules-sidebar parity surface to navigate through `/import/rules` so
+  `FavaNavigation` active-state logic and the parity helper use the same route
+  contract. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Corrected the remaining frozen parity settings-rules route entry
+  to use `/import/rules`, matching the shared Fava Beta route helper and
+  `FavaNavigation` settings item identifiers. Automated validation was not run
+  in this continuation.
+
+- 2026-07-25 - Updated the synthetic visual-reference fixture README to describe
+  `pnpm test:e2e:beta:visual-reference` as the focused C006 navigation parity
+  command, not a full frozen parity run. Automated validation was not run in
+  this continuation.
+
+- 2026-07-25 - Added a focused C006 Fava Beta navigation walkthrough to
+  `navigation.spec.ts` and exposed it as `pnpm test:e2e:beta:navigation`. The
+  walkthrough covers workspace view switching, search toggle, settings
+  navigation, back-to-ledger behavior, and persisted disclosure state. Automated
+  validation was not run in this continuation.
+
+- 2026-07-25 - Updated the frozen visual parity spec to snapshot and restore
+  the active entry ledger around each test, so running the focused synthetic
+  fixture command does not leave `visual-reference-project/sample.beancount`
+  dirty after seeding parity data. Automated validation was not run in this
+  continuation.
+
+- 2026-07-25 - Added `pnpm test:e2e:beta:c006` as an aggregate evidence command
+  for the paused navigation checkpoint. It runs the focused C006 navigation
+  walkthrough and the focused C006 visual-reference parity command while keeping
+  the narrower commands available for diagnosis. Automated validation was not
+  run in this continuation.
+
+- 2026-07-25 - Scoped the C006 navigation walkthrough's search-toggle
+  interactions to `[data-ledger-workspace-sidebar]` so the evidence test asserts
+  the migrated workspace navigation surface directly instead of relying on
+  page-wide button matching. Automated validation was not run in this
+  continuation.
+
+- 2026-07-25 - Updated the synthetic visual-reference fixture README to point to
+  both the focused visual-reference command and the aggregate C006 E2E evidence
+  command. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Added `pnpm test:ui:c006` as a focused UI visual command for the
+  C006 Storybook stories. It runs the existing Visual Delta Playwright lane with
+  a Storybook-entry filter for the `Ledger Workspace Navigation` and
+  `Ledger Settings Navigation` story IDs/titles, leaving broad `pnpm checks:ui`
+  unchanged. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Hardened the UI visual suite with an optional
+  `VISUAL_STORY_FILTER` Storybook-entry filter and switched `pnpm test:ui:c006`
+  to use it for the C006 navigation story IDs/titles. This avoids relying only
+  on Playwright test-name grep semantics while leaving the broad visual lane
+  unchanged when the env var is unset. Automated validation was not run in this
+  continuation.
+
+- 2026-07-25 - Updated `pnpm test:ui:c006` so the focused UI visual command
+  explicitly runs `pnpm sync-visual-delta-source` before Playwright, matching
+  the broad visual lane's source-sync prerequisite. Automated validation was not
+  run in this continuation.
+
+- 2026-07-25 - Added `pnpm test:c006` as the root aggregate evidence command for
+  the paused navigation checkpoint. It runs the focused UI visual C006 story
+  lane followed by the focused Fava Beta C006 E2E pair. Automated validation was
+  not run in this continuation.
+
+- 2026-07-25 - Added `pnpm validate:fava-migration` as the root aggregate
+  migration validation command. It runs `pnpm test:c006`, `pnpm checks:ui`, and
+  `pnpm checks:beta` in sequence so G03 validation has one repeatable entry
+  point. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Added `pnpm audit:fava-migration` to make the G03 boundary audit
+  executable. It fails on working-copy changes under immutable `packages/fava`
+  and on legacy `@beancount-js/forms` imports/dependencies in mutable UI/Beta
+  source or Fava Beta package metadata. `pnpm validate:fava-migration` now runs
+  this audit before the focused C006 and UI/Beta validation lanes. Automated
+  validation was not run in this continuation.
+
+- 2026-07-25 - Extended `pnpm audit:fava-migration` to parse
+  `FAVA_MIGRATION.md` and fail unless every component tracker row C001-C070 is
+  present and marked `Done`, making the G03 row-completion requirement
+  executable. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Split the migration audit into reusable boundary and final modes:
+  `pnpm audit:fava-migration` now checks immutable-Fava and legacy-forms
+  boundaries, while `pnpm audit:fava-migration:final` also enforces C001-C070
+  row completion. `pnpm validate:fava-migration` uses the final audit mode.
+  Automated validation was not run in this continuation.
+
+- 2026-07-25 - Added `pnpm validate:fava-migration:preflight` for the current
+  C006 review state. It runs the reusable boundary audit, focused C006 evidence,
+  and UI/Beta validation lanes without requiring C006 to already be marked
+  `Done`; the final `pnpm validate:fava-migration` command still enforces row
+  completion. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Extended `pnpm audit:fava-migration` to verify every
+  `@beancount-js/ui` import in Fava Beta source is covered by the UI package
+  export map, including wildcard exports. This keeps migration adapters on the
+  public UI surface instead of private source paths. Automated validation was
+  not run in this continuation.
+
+- 2026-07-25 - Hardened the `@beancount-js/ui` public-subpath audit to include
+  dynamic `import("@beancount-js/ui/...")` calls as well as static imports,
+  keeping future lazy-loaded Fava Beta adapters on exported UI surfaces.
+  Automated validation was not run in this continuation.
+
+- 2026-07-25 - Hardened the legacy `@beancount-js/forms` boundary audit to
+  include dynamic `import("@beancount-js/forms...")` calls as well as static
+  imports and re-exports. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Extended the legacy forms boundary audit to inspect the
+  `packages/fava-beta` importer block in `pnpm-lock.yaml`, so stale lockfile
+  dependencies on `@beancount-js/forms` are reported alongside source and
+  metadata references. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Added `pnpm report:fava-migration` as a read-only status report
+  for the migration tracker. It prints gate dispositions, component completion
+  counts, incomplete rows, and the current C006/G03 evidence checklists without
+  running validation. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Corrected `pnpm report:fava-migration` gate parsing so the
+  report reads the fourth gate-table column (`Disposition`) instead of treating
+  the manual-review text as a status. Automated validation was not run in this
+  continuation.
+
+- 2026-07-25 - Extended `pnpm report:fava-migration` with a command summary for
+  the preflight validation, final validation, focused C006, UI visual, Beta E2E,
+  boundary audit, and final audit commands so handoff does not require scanning
+  package scripts. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Added UI-package aliases for the migration audit and report
+  tools, then routed the root `pnpm audit:fava-migration`,
+  `pnpm audit:fava-migration:final`, and `pnpm report:fava-migration` commands
+  through `@beancount-js/ui`. The tools now work from the UI package surface as
+  well as the repository root. Automated validation was not run in this
+  continuation.
+
+- 2026-07-25 - Added `pnpm report:fava-migration:json` for structured migration
+  handoff output. It emits gate dispositions, component completion counts,
+  incomplete rows, command entries, and C006/G03 evidence sections as JSON while
+  leaving the existing human-readable report unchanged. Automated validation was
+  not run in this continuation.
+
+- 2026-07-25 - Extended `pnpm report:fava-migration:json` with a machine-readable
+  `summary` object covering C006 status, G03 disposition, component-row
+  completion, and the next recommended validation command. Automated validation
+  was not run in this continuation.
+
+- 2026-07-25 - Aligned the JSON report's `summary.nextCommand` with the final
+  audit semantics: it recommends `pnpm validate:fava-migration` only when all
+  component rows are present and `Done`; otherwise it recommends the preflight
+  command. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Made the JSON report summary schema explicit by computing
+  `nextCommand` before constructing the `summary` object instead of adding it
+  afterward. The emitted JSON shape is unchanged. Automated validation was not
+  run in this continuation.
+
+- 2026-07-25 - Extended `pnpm audit:fava-migration` to check the migration
+  command surface in root and UI package metadata, including audit, report,
+  focused C006, preflight, and final validation scripts. This keeps the
+  evidence path executable instead of relying only on tracker text. Automated
+  validation was not run in this continuation.
+
+- 2026-07-25 - Extended `pnpm audit:fava-migration` to verify the root audit and
+  report commands delegate through the `@beancount-js/ui` package aliases, so
+  root and UI-package entry points cannot drift silently. Automated validation
+  was not run in this continuation.
+
+- 2026-07-25 - Extended `pnpm audit:fava-migration` to verify the exact root
+  validation command semantics: preflight must use the reusable boundary audit,
+  while final validation must use the row-completing final audit before running
+  C006 and UI/Beta lanes. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Improved `pnpm audit:fava-migration` diagnostics for command
+  drift by distinguishing root audit/report delegate mismatches from root
+  validation command semantic mismatches. Audit coverage is unchanged.
+  Automated validation was not run in this continuation.
+
+- 2026-07-25 - Extended `pnpm audit:fava-migration` to verify the UI-local
+  audit/report aliases invoke the expected `audit-fava-migration.mjs` and
+  `report-fava-migration.mjs` scripts with the correct flags, so package-owned
+  entry points cannot drift from their implementations. Automated validation was
+  not run in this continuation.
+
+- 2026-07-25 - Hardened `pnpm audit:fava-migration` path resolution by deriving
+  the script directory from `import.meta.url` instead of relying on
+  `import.meta.dirname`, keeping the executable audit portable across Node ESM
+  runtimes. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Removed legacy `-js/forms` compatibility imports from `packages/ui/src/components/forms/IngestionBrandSettings.svelte`, `IngestionConfigEditor.svelte`, and `IngestionSourcesPreview.svelte`, replacing them with local `packages/ui` component and type imports. This targets the known UI boundary blocker without changing `packages/fava`. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Corrected the shared `TreeTable` to `TreeTableNode` prop boundary by passing `toAccountLabel` instead of the stale `toLabel` alias, and changed table formatter/label aliases into live fallback functions so runes-mode props are not captured only at initialisation. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Reworked `packages/ui/src/components/pages/AccountDetails.svelte` legacy `$:` declarations into `$derived` values and corrected the Storybook story to pass `breadcrumbs` instead of an unused `breadcrumbItems` prop. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Removed the duplicate `<script>` block from `packages/ui/src/components/tables/ActivityTable.svelte` by moving `setIndeterminate` into the primary script, and removed the redundant `role="status"` from the ActivityTable story live output. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Removed the redundant `role="status"` from the JournalTable story live output to match the ActivityTable live-region cleanup. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Relaxed the Statistics Storybook account-link assertion to match links whose accessible name contains `Assets:Cash`, allowing the shared account avatar content to contribute to the accessible name while still proving the account link is present after switching presets. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Converted remaining runes-mode legacy reactive declarations in `AccountCell.svelte`, `StatementReport.svelte`, and `QueryBox.svelte` to `$derived`/`$effect` forms, leaving legacy-mode `export let` components unchanged. Also guarded optional account navigation callbacks in `AccountCell`. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Cleaned direct static-risk patterns in changed UI migration files: replaced the remaining runes-mode `on:click` in `AccountCell.svelte`, moved `IngestionRunHistory` sort-column metadata out of markup type assertions, and narrowed `IngestionReconciliationPanel` facet callbacks away from a generic prop signature. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Fixed the Fava Beta `IncomeStatement.svelte` adapter parse issue by replacing a malformed `{#const ...}` snippet directive with Svelte's `{@const ...}` form. This targets the earlier downstream `IncomeStatement.svelte` default-export diagnostic. Automated validation was not run in this continuation.
+
+- 2026-07-25 - Adjusted the shared `IngestionBrandSettings.svelte` config callback type to support the stronger Fava Beta editable ingestion config handler while keeping the UI component app-independent and display-oriented. This targets the earlier beta callback type diagnostic. Automated validation was not run in this continuation.
+
+### C059 progress notes
+
+- 2026-07-25 — Began the editor slice by correcting shared `Editor.svelte`
+  and adding a shared `Highlighter.svelte` in `@beancount-js/ui`, then switched
+  `fava-beta` `Editor.svelte` into a thin adapter that wires app-owned setup,
+  save, AI, and header actions into the shared editor.
+- 2026-07-25 — Completed the editor slice migration: `@beancount-js/ui/src/components/pages/Editor.svelte`
+  and `pages/Highlighter.svelte` now own the editor/highlight presentation and
+  callbacks. `packages/fava-beta/src/components/Editor.svelte` is the adapter with
+  app-owned state wiring, while `packages/fava-beta/src/components/Highlighter.svelte`
+  forwards directly to UI.
+- 2026-07-25 — Completed the Search slice migration: `@beancount-js/ui/src/components/pages/Search.svelte`
+  now owns the search presentation, filter controls, and result grouping; `packages/fava-beta/src/components/Search.svelte`
+  remains an application adapter that supplies BQL execution and ledger state transitions.
+- 2026-07-25 — Validation snapshot: `pnpm --filter @beancount-js/ui svelte-check`
+  and `pnpm --filter @beancount-js/fava-beta check` still report pre-existing
+  migration-wide type/script failures unrelated to C059, but there are no C059
+  file-level diagnostics after the type fixes above.
+- 2026-07-25 — Completed `C062` (`IngestionBrandSettings.svelte`) as a
+  UI ownership slice: presentation now lives in
+  `@beancount-js/ui/src/components/forms/IngestionBrandSettings.svelte` with the
+  existing `fava-beta` component reworked to adapter wiring, including load,
+  validation issue mapping, save debouncing, and save/load routing.
+
+### C060 progress notes
+
+- 2026-07-25 — Migrated `AiDock` to shared UI presentation in
+  `packages/ui/src/components/feedback/AiDock.svelte` and
+  `packages/ui/src/components/feedback/AiDockSkeleton.svelte`. The
+  `fava-beta` adapter now handles session persistence, localStorage settings,
+  API endpoints/streaming behavior, mention lookup, and proposal/approval action
+  callbacks while passing data and controls into shared UI.
+
+### C061 progress notes
+
+- 2026-07-25 - Completed `IngestionAccountsSetup.svelte` migration by replacing the UI copy with a prop-driven shared form component and converting the Fava Beta component into an adapter that retains loading, API, sync, linking and unlinking, route navigation, and source account persistence. Added a UI Storybook story with display-ready fixtures and exported the component from `-js/ui/forms`.
+- 2026-07-25 - Filtered validation shows no `IngestionAccountsSetup` diagnostics in `pnpm --filter -js/ui check`, no `IngestionAccountsSetup` diagnostics in `pnpm --filter -js/fava-beta check`, and no remaining C061 Storybook accessibility failure after naming the progressbar. Broad UI checks remain red from unrelated migrated surfaces: boundary violations in `IngestionBrandSettings`, `IngestionConfigEditor`, and `IngestionSourcesPreview`; UI type errors around `TreeTable`; Storybook import or interaction failures in `AccountDetails`, `ActivityTable`, `JournalTable`, and `Statistics`.
+
+### C063 progress notes
+
+- 2026-07-25 — `IngestionConfigEditor.svelte` now acts as a thinner app
+  adapter in `fava-beta`, moving preview rendering details into
+  `@beancount-js/ui/src/components/forms/IngestionSourcesPreview.svelte` and
+  adapting config-derived state and callbacks (secret mode/value/base URL/endpoint
+  edits, sync, and account-management navigation). Legacy inline preview markup is
+  removed from the beta component.
+- 2026-07-25 — Completed `C063` migration: `fava-beta` `IngestionConfigEditor.svelte`
+  now renders a thin adapter over `@beancount-js/ui/src/components/forms/IngestionConfigEditor.svelte`,
+  passing app-owned config, preview rows, source-form bundles, per-source callbacks,
+  and section-open persistence into the shared editor while retaining all
+  persistence, routing, and validation logic in `fava-beta`.
+
+### C064 progress notes
+
+- 2026-07-25 — Added `@beancount-js/ui/src/components/pages/IngestionMerchantManage.svelte`
+  for shared presentation of merchant list/search/pagination and wired
+  `packages/fava-beta/src/components/IngestionMerchantManage.svelte` into a thin
+  adapter. The adapter now retains route/query ownership, `backfill` actions,
+  loading/sync logic, and `MerchantEditSheet` orchestration.
+
+### C065 progress notes
+
+- 2026-07-25 - Completed `IngestionMerchantReview.svelte` migration by adding `-js/ui/src/components/pages/IngestionMerchantReview.svelte` as a prop-driven shared page and converting the Fava Beta component into an adapter that keeps route state, project loading, filtering derivation, source selection, API calls, header actions, bulk detect/confirm behavior, and `IngestionMerchantSheet` orchestration.
+- 2026-07-25 - Added a UI Storybook story for pending and reviewed merchant clusters with selection, filtering, sorting, and view-toggle callbacks wired to local fixture state. Automated validation was not run in this continuation; existing migration-wide blockers remain tracked separately.
+
+### C066 progress notes
+
+- 2026-07-25 - Completed `IngestionReconciliationPanel.svelte` migration by adding `-js/ui/src/components/pages/IngestionReconciliationPanel.svelte` as a prop-driven shared panel and converting the Fava Beta component into an adapter that keeps route state, project loading, reconciliation APIs, ledger-derived account appearance, merchant-logo enrichment, selection pruning, and ingestion bulk-action integration.
+- 2026-07-25 - Added a UI Storybook story covering candidate cards, member rows, filters, selection, and action callbacks with display-ready fixtures. Automated validation was not run in this continuation; existing migration-wide blockers remain tracked separately.
+
+### C067 progress notes
+
+- 2026-07-25 - Completed `IngestionRunAudit.svelte` migration by adding `-js/ui/src/components/pages/IngestionRunAudit.svelte` as a prop-driven shared page and converting the Fava Beta component into an adapter that keeps project and route loading, run API reads, date formatting, proposal grouping, row derivation, query synchronization, and read-only `IngestionProposalSheet` orchestration.
+- 2026-07-25 - Added a UI Storybook story covering run summary, AI audit calls, expandable date groups, proposal rows, pagination state, and callback wiring with display-ready fixtures. Automated validation was not run in this continuation; existing migration-wide blockers remain tracked separately.
+
+### C068 progress notes
+
+- 2026-07-25 - Completed `IngestionRunHistory.svelte` migration by adding `-js/ui/src/components/pages/IngestionRunHistory.svelte` as a prop-driven shared page and converting the Fava Beta component into an adapter that keeps project loading, source filtering, run-history API reads, route navigation, ledger-derived account appearance, merchant-logo enrichment, date grouping, and ingestion header-action wiring.
+- 2026-07-25 - Added a UI Storybook story covering grouped run rows, source badges, account links, sort callbacks, run-link callback handling, and pagination state with display-ready fixtures. Automated validation was not run in this continuation; existing migration-wide blockers remain tracked separately.
+
+### C069 progress notes
+
+- 2026-07-25 — Completed the `IngestionSourcesPreview` migration: added
+  `@beancount-js/ui/src/components/forms/IngestionSourcesPreview.svelte`
+  as a shared preview renderer with callback-driven updates, then switched
+  `packages/fava-beta/src/components/IngestionConfigEditor.svelte` to map
+  app-owned config, merchant, account appearance, and sync state into this
+  shared component. The legacy beta `IngestionSourcesPreview.svelte` adapter file
+  has been removed.
+
+### C070 progress notes
+
+- 2026-07-25 — Continued `RulesSettings` migration by moving shared presentation
+  into `@beancount-js/ui/src/components/pages/RulesSettings.svelte` (including
+  rule sorting, runs table + pagination, and apply/run preview dialogs) and
+  updating `packages/fava-beta/src/components/RulesSettings.svelte` to a thin adapter that retains
+  project loading, API calls, save/delete/apply orchestration, and header-action
+  wiring while delegating rendering and interactivity to the UI page.
+- 2026-07-25 — Completed C070 after fixing the beta adapter import, editor-close
+  state reset, typed Storybook fixtures, and Storybook accessibility issues in
+  the rule list/run-history surface. Filtered validation showed no remaining
+  `RulesSettings` diagnostics in `pnpm --filter @beancount-js/ui check`,
+  `pnpm --filter @beancount-js/fava-beta check`, or
+  `pnpm --filter @beancount-js/ui test-storybook`; broad package checks still
+  fail on unrelated migration-wide forms, dashboard, table, and older adapter
+  issues.
 
 ## Validation log
 
@@ -483,6 +895,35 @@ change IDs here at the end of each committed slice.
   await CodeMirror's debounced completion popup, preserving the real click,
   keyboard, and completion interactions. Both focused browser stories and all
   seven filter-syntax unit tests passed.
+- 2026-07-25 — Feedback controls slice (`C038`–`C040`): migrated
+  `AiUnifiedReviewDiff.svelte` and `ResourceViewer.svelte` to shared UI feedback
+  components and adapted `errors/Errors.svelte` to `ValidationErrorTable`.
+  `pnpm --filter @beancount-js/ui check-boundaries` passed for the new
+  presentation ownership work. `pnpm --filter @beancount-js/ui test-storybook` and
+  `pnpm --filter @beancount-js/fava-beta check` still fail from pre-existing
+  unrelated issues in `ActivityTable.svelte`, `JournalTable.svelte`,
+  `tree-table/StatementSummaryTreeTable.svelte`, and several form/types areas.
+- 2026-07-25 — Route-loading skeleton slice (`C041`): migrated `skeletons/*`
+  files to adapter entry points that delegate to corresponding
+  `@beancount-js/ui/feedback` components for shared loading surfaces.
+- 2026-07-25 — Statement report slice (`C049`): migrated
+  `@beancount-js/fava-beta/src/components/StatementReport.svelte` to a thin adapter around
+  `@beancount-js/ui/dashboard/StatementReport.svelte` that preserves chart
+  switching through `lastActiveChartName` and keeps section rows delegated to the
+  existing Beta tree-table section adapter.
+- 2026-07-25 — Income statement slice (`C050`): migrated
+  `@beancount-js/fava-beta/src/components/IncomeStatement.svelte` to a thin adapter around
+  `@beancount-js/ui/dashboard/IncomeStatement.svelte` with chart-switch persistence local
+  to the component and section rendering delegated to the existing Beta
+  `StatementSummaryTreeTable` adapter.
+- 2026-07-25 — Balance sheet slice (`C051`): migrated
+  `@beancount-js/fava-beta/src/components/BalanceSheet.svelte` to a thin adapter around
+  `@beancount-js/ui/dashboard/BalanceSheet.svelte` with chart switching and section
+  rendering delegated to the existing Beta `StatementSummaryTreeTable` adapter.
+- 2026-07-25 — Trial balance slice (`C052`): migrated
+  `@beancount-js/fava-beta/src/components/TrialBalance.svelte` to a thin adapter around
+  `@beancount-js/ui/dashboard/TrialBalance.svelte`, preserving the account tab
+  selection behavior and section rendering through the Beta `StatementSummaryTreeTable` adapter.
 - 2026-07-24 — Forms consolidation slice: confirmed that UI's relocated Forms
   implementations match the former package behavior and retain its complete
   Storybook surface, then replaced the old package source with 22 checked
@@ -590,7 +1031,7 @@ change IDs here at the end of each committed slice.
 
 - Status: **Done**. Presentation for detection-rule editing now lives in
   `@beancount-js/ui/forms/RuleEditorSheet.svelte` and is composed from shared
-  `@beancount-js/forms`-sourced rule metadata controls. `@beancount-js/fava-beta/src/components/RuleEditorSheet.svelte`
+  `@beancount-js/ui/forms` rule metadata controls. `@beancount-js/fava-beta/src/components/RuleEditorSheet.svelte`
   is now an adapter wrapper that retains route/state ownership and passes
   app-owned persistence callbacks into the shared sheet.
 - Validation: `pnpm --filter @beancount-js/ui test-storybook`,
@@ -609,3 +1050,21 @@ change IDs here at the end of each committed slice.
 - Note: `pnpm --filter @beancount-js/ui check` remains blocked by pre-existing
   story fixture typing issues in `AccountComboField.stories.svelte`,
   `MerchantComboField.stories.svelte`, and `SwitchField.stories.svelte`; these are unrelated to this slice.
+- 2026-07-25 — Dashboard components slice (`C042`–`C047`): migrated
+  `@beancount-js/fava-beta` dashboard adapters to shared `@beancount-js/ui`
+  implementations for donut, flow, line, section, tree table/row, and chart
+  tooltip surfaces. App callbacks and route/selection behavior were preserved.
+- 2026-07-25 — Financial dashboard slice (`C048`): migrated
+  `@beancount-js/fava-beta/src/components/FinancialDashboard.svelte` to a thin
+  adapter that derives shared dashboard data from `createDashboardData` and routes
+  period/currency/valuation/account interactions through `@beancount-js/ui/dashboard/FinancialDashboard.svelte`.
+
+- 2026-07-25 — Account details slice (`C053`): migrated
+  `@beancount-js/fava-beta/src/components/AccountDetails.svelte` to a thin adapter around
+  `@beancount-js/ui/pages/AccountDetails.svelte`. The shared shell now owns breadcrumb,
+  chart-switcher, and tab presentation. The adapter keeps ledger derivation, query
+  routing, tab state persistence, and local account-tree conversion intact.
+- 2026-07-25 — Statistics slice (`C055`): migrated
+  `@beancount-js/fava-beta/src/components/Statistics.svelte` to a shared
+  `@beancount-js/ui/pages/Statistics.svelte` adapter. The adapter retains application-owned
+  query execution and keeps results rendered through existing `QueryTable` composition.

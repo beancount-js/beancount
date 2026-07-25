@@ -58,4 +58,4 @@ Every reusable control needs meaningful interactive stories. Verify visible stat
 
 ## Migration boundary
 
-This catalog owns the complete forms contract at `@beancount-js/ui/forms`. Fava remains on `@beancount-js/forms` until its explicit migration stage; do not modify Fava imports or remove the original package in this slice.
+This catalog owns the complete forms contract at `@beancount-js/ui/forms`. The frozen Fava reference remains on `@beancount-js/forms`; Fava Beta consumes `@beancount-js/ui/forms` through app-owned adapters and helpers. Do not modify frozen Fava imports or remove the compatibility facade in this slice.

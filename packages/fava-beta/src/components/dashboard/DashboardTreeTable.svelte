@@ -1,186 +1,120 @@
 <script lang="ts">
-  import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
-  import type { AccountTreeNode } from "../../lib/models";
-  import { getAllNodes } from "../tree-table/helpers";
-  import DashboardTreeRow from "./DashboardTreeRow.svelte";
+  import { urlForAccount } from "../../helpers";
+  import DashboardTreeTable from "@beancount-js/ui/dashboard/DashboardTreeTable.svelte";
   import { dashboardCategoryColor } from "./model";
-  import * as ScrollArea from "$lib/components/ui/scroll-area";
+  import type { AccountTreeNode } from "../../lib/models";
 
-  export let tree: AccountTreeNode;
-  export let title: string;
-  export let href: string;
-  export let currency: string;
-  export let formatter: (value: number, currency: string) => string;
-  export let multiplier = 1;
-
-  const accountColumn = "16rem";
-  const weightMeterColumn = "4.5rem";
-  const weightColumn = "5.5rem";
-  let collapsed = new Set<string>();
-  let roots: AccountTreeNode[] = [];
-  let collapsibleAccounts = new Set<string>();
-  let total = 0;
-  let contributionNodes: AccountTreeNode[] = [];
-  let contributionTotal = 0;
-  let contributions: Array<{
-    account: string;
-    amount: number;
-    color: string;
-    percentage: number;
-  }> = [];
-
-  $: roots = tree.account === "" ? tree.children : [tree];
-  $: collapsibleAccounts = roots.reduce((accounts, root) => {
-    getAllNodes(root).forEach((account) => accounts.add(account));
-    return accounts;
-  }, new Set<string>());
-  $: allCollapsed =
-    collapsibleAccounts.size > 0 &&
-    [...collapsibleAccounts].every((account) => collapsed.has(account));
-  $: total = roots.reduce(
-    (sum, root) => sum + (root.balanceChildren[currency] ?? 0) * multiplier,
-    0,
-  );
-  $: contributionNodes = roots.flatMap((root) =>
-    root.children.length ? root.children : [root],
-  );
-  $: contributionTotal = contributionNodes.reduce(
-    (sum, node) =>
-      sum + Math.abs((node.balanceChildren[currency] ?? 0) * multiplier),
-    0,
-  );
-  $: contributions = contributionNodes
-    .map((node) => {
-      const amount = (node.balanceChildren[currency] ?? 0) * multiplier;
-      return {
-        account: node.account,
-        amount,
-        color: dashboardCategoryColor(node.account),
-        percentage: contributionTotal
-          ? (Math.abs(amount) / contributionTotal) * 100
-          : 0,
-      };
-    })
-    .filter((contribution) => contribution.amount);
-  $: gridTemplate = `${accountColumn} ${weightMeterColumn} ${weightColumn} minmax(10rem, 1fr)`;
-
-  function toggle(account: string) {
-    const next = new Set(collapsed);
-    if (next.has(account)) next.delete(account);
-    else next.add(account);
-    collapsed = next;
+  interface SharedTreeNode {
+    id: string;
+    label: string;
+    value: number;
+    color?: string;
+    children?: readonly SharedTreeNode[];
   }
 
-  function toggleAll() {
-    collapsed = allCollapsed ? new Set() : new Set(collapsibleAccounts);
+  let {
+    tree,
+    title,
+    href,
+    currency,
+    multiplier = 1,
+    formatter = (value) => String(value),
+    onNodeSelect = () => {},
+  }: {
+    tree: AccountTreeNode;
+    title: string;
+    href: string;
+    currency: string;
+    multiplier?: number;
+    formatter?: (value: number, currency: string) => string;
+    onNodeSelect?: (node: AccountTreeNode) => void;
+  } = $props();
+
+  const roots = $derived(
+    tree.account === "" ? tree.children : [tree],
+  );
+
+  function nodeLabel(account: string) {
+    return account.split(":").at(-1) ?? account;
+  }
+
+  function branchColorForChild(
+    child: AccountTreeNode,
+    depthLevel: number,
+    inheritedColor: string,
+  ) {
+    if (depthLevel === 0) return dashboardCategoryColor(child.account);
+    return inheritedColor;
+  }
+
+  function toSharedNode(
+    source: AccountTreeNode,
+    currencyCode: string,
+    scale: number,
+    depthLevel: number,
+    inheritedColor = "var(--primary)",
+  ): SharedTreeNode {
+    const value =
+      (Number.isFinite(source.balanceChildren[currencyCode] ?? NaN)
+        ? source.balanceChildren[currencyCode] ?? 0
+        : 0) * scale;
+
+    const children = source.children.map((child) =>
+      toSharedNode(
+        child,
+        currencyCode,
+        scale,
+        depthLevel + 1,
+        branchColorForChild(child, depthLevel, inheritedColor),
+      ),
+    );
+
+    return {
+      id: source.account,
+      label: nodeLabel(source.account),
+      value,
+      color: depthLevel === 0 ? undefined : inheritedColor,
+      children: children.length ? children : undefined,
+    };
+  }
+
+  const nodes = $derived(
+    roots.map((root) => toSharedNode(root, currency, multiplier, 0)),
+  );
+
+  function findNode(root: AccountTreeNode, account: string): AccountTreeNode | undefined {
+    if (root.account === account) return root;
+
+    for (const child of root.children) {
+      const match = findNode(child, account);
+      if (match) return match;
+    }
+
+    return undefined;
+  }
+
+  function handleNodeSelect(node: SharedTreeNode) {
+    const selected = findNode(tree, node.id);
+    if (!selected) return;
+
+    onNodeSelect(selected);
+    if (selected.account) {
+      window.location.href = urlForAccount(selected.account);
+    }
+  }
+
+  function handleViewAll() {
+    window.location.href = href;
   }
 </script>
 
-<section class="w-full min-w-0" data-dashboard-tree-table>
-  <div class="flex items-baseline justify-between gap-4">
-    <h2 class="text-lg font-semibold tracking-tight text-foreground">
-      {title}
-      <span class="font-mono text-base font-medium text-muted-foreground"
-        >· {total ? formatter(total, currency) : "—"}</span
-      >
-    </h2>
-    <a class="text-xs font-medium text-primary hover:underline" {href}
-      >View account</a
-    >
-  </div>
-  <div
-    class="mt-3 flex h-1.5 w-full overflow-hidden rounded-full bg-muted"
-    role="img"
-    aria-label={`${title} category contributions`}
-    data-dashboard-contribution-bar
-  >
-    {#each contributions as contribution (contribution.account)}
-      <span
-        class="h-full first:rounded-l-full last:rounded-r-full"
-        style={`width: ${contribution.percentage}%; background: ${contribution.color}`}
-        title={`${contribution.account}: ${formatter(contribution.amount, currency)}`}
-      ></span>
-    {/each}
-  </div>
-  <div
-    class="contribution-legend mt-4 gap-x-6 gap-y-2 text-sm text-muted-foreground"
-    data-dashboard-contribution-legend
-  >
-    {#each contributions as contribution (contribution.account)}
-      <span
-        class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_max-content_max-content] items-baseline gap-x-2"
-      >
-        <span
-          class="mt-1 size-2.5 shrink-0 self-start rounded-full"
-          style={`background: ${contribution.color}`}
-          aria-hidden="true"
-        ></span>
-        <span class="min-w-0 break-words leading-5">{contribution.account}</span
-        >
-        <span
-          class="whitespace-nowrap font-mono text-xs tabular-nums text-foreground"
-          >{contribution.percentage.toFixed(1)}%</span
-        >
-        <span
-          class="whitespace-nowrap font-mono text-xs tabular-nums text-foreground"
-          >{formatter(contribution.amount, currency)}</span
-        >
-      </span>
-    {/each}
-  </div>
-  <ScrollArea.Root
-    orientation="horizontal"
-    class="mt-4 w-full min-w-0 max-w-full rounded-xl"
-  >
-    <ol
-      class="min-w-[45rem] overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
-      data-dashboard-tree-rows
-    >
-      <li
-        class="grid min-h-10 items-center bg-muted/65 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
-        style={`grid-template-columns: ${gridTemplate}`}
-      >
-        <span class="flex items-center gap-2 px-4 py-2">
-          <button
-            type="button"
-            class="grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-background hover:text-foreground"
-            aria-label={allCollapsed
-              ? "Expand all accounts"
-              : "Collapse all accounts"}
-            aria-pressed={allCollapsed}
-            title={allCollapsed
-              ? "Expand all accounts"
-              : "Collapse all accounts"}
-            on:click={toggleAll}
-          >
-            <ChevronsUpDown class="size-3" />
-          </button>
-          Account
-        </span>
-        <span aria-hidden="true"></span>
-        <span class="px-4 py-2 text-right">Weight</span>
-        <span class="px-4 py-2 text-right">Value</span>
-      </li>
-      {#each roots as root (root.account)}
-        <DashboardTreeRow
-          node={root}
-          {currency}
-          {formatter}
-          {multiplier}
-          {total}
-          {gridTemplate}
-          {collapsed}
-          {toggle}
-          branchColor="var(--primary)"
-        />
-      {/each}
-    </ol>
-  </ScrollArea.Root>
-</section>
-
-<style>
-  .contribution-legend {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-  }
-</style>
+<DashboardTreeTable
+  {nodes}
+  {title}
+  ariaLabel={`${title} account hierarchy`}
+  emptyLabel="No accounts match this period."
+  viewAllLabel="View account"
+  valueFormatter={(value) => formatter(value, currency)}
+  onNodeSelect={handleNodeSelect}
+  onViewAll={handleViewAll}
+/>

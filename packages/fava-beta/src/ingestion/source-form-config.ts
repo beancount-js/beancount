@@ -4,16 +4,14 @@ import {
   segmentedField,
   textField,
   textareaField,
-  type FormCustomRenderer,
-} from "@beancount-js/forms";
-import { type MerchantPickerMerchant } from "@beancount-js/ui/forms";
-import type { EditableIngestionSource } from "./source-form";
-import {
   AccountComboField,
   MerchantComboField,
   SecretField,
   SwitchField,
+  type FormCustomRenderer,
+  type MerchantPickerMerchant,
 } from "@beancount-js/ui/forms";
+import type { EditableIngestionSource } from "./source-form";
 
 export type SourceFormContext = {
   accounts: string[];

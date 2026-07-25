@@ -19,6 +19,14 @@ export default defineConfig({
   // with Vite 6. Keep the cast local until the upstream type range catches up.
   plugins: [lezer() as any, sveltekit()],
   resolve: {
+    dedupe: [
+      "@codemirror/autocomplete",
+      "@codemirror/commands",
+      "@codemirror/language",
+      "@codemirror/search",
+      "@codemirror/state",
+      "@codemirror/view",
+    ],
     alias: [
       {
         find: "$lib",
@@ -68,7 +76,6 @@ export default defineConfig({
   ssr: {
     noExternal: [
       "@beancount-js/beancount",
-      "@beancount-js/forms",
       "@beancount-js/beangulp",
       "@beancount-js/connector-lunchflow",
       "@beancount-js/connector-monzo",
@@ -76,6 +83,7 @@ export default defineConfig({
       "@beancount-js/filters",
       "@beancount-js/parser",
       "@beancount-js/server",
+      "@beancount-js/ui",
       "@beancount-js/web",
       "@beancount-js/workspace",
       "rrule",

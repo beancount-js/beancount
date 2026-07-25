@@ -1,24 +1,37 @@
 <script lang="ts">
-  import {
-    FormAddButton,
-    FormField,
-    FormSectionHeader,
-    YamlBackedForm,
-    type FormValidationIssue,
-  } from "@beancount-js/forms";
-  import FileCode2 from "lucide-svelte/icons/file-code-2";
-  import Plus from "lucide-svelte/icons/plus";
+  import { type FormValidationIssue } from "@beancount-js/ui/forms";
+  import type { JsonApiLinkedAccount } from "@beancount-js/beangulp";
   import { onDestroy } from "svelte";
-  import * as Alert from "$lib/components/ui/alert";
-  import * as Empty from "$lib/components/ui/empty";
-  import { Input } from "$lib/components/ui/input";
+  import { useContext } from "../context";
   import { useNavigation } from "../router/router";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { ingestionJson, ingestionPath } from "../ingestion/api";
-  import { ingestionSamples, type IngestionSample } from "../ingestion/samples";
-  import { isGroupedSource, sourceSecretRef } from "../ingestion/connectors";
-  import { isSecretConfigured } from "../ingestion/secret-ref";
+  import {
+    availableIngestionSamples,
+    ingestionSamples,
+    type IngestionSample,
+  } from "../ingestion/samples";
+  import {
+    isConnectorSource,
+    isGroupedSource,
+    sourceBaseUrl,
+    sourceSecretRef,
+  } from "../ingestion/connectors";
+  import { clientConnector } from "../ingestion/connectors";
+  import { connectorFieldsForm } from "../ingestion/connector-fields";
+  import {
+    renderSetupMarkdown,
+    setupHost,
+    setupHref,
+  } from "../ingestion/setup-markdown";
+  import {
+    isSecretConfigured,
+    secretDisplayValue,
+    secretMode,
+    secretStoredValue,
+    type SecretMode,
+  } from "../ingestion/secret-ref";
   import {
     duplicateIngestionSource,
     editableIngestionConfig,
@@ -34,14 +47,26 @@
   import { latestIngestionSyncJob } from "../ingestion/sync";
   import { beginIngestionSync } from "../studio/sync-status";
   import type { IngestionConfigResponse } from "../ingestion/types";
-  import SourcesPageSkeleton from "./skeletons/SourcesPageSkeleton.svelte";
-  import IngestionSourceForm, {
+  import { accountAppearanceStore } from "../lib/account-appearance";
+  import { urlForAccount } from "../helpers";
+  import {
+    IngestionConfigEditor,
     sourceFormSectionIds,
-  } from "./IngestionSourceForm.svelte";
-  import IngestionSourcesPreview from "./IngestionSourcesPreview.svelte";
+  } from "@beancount-js/ui/forms";
+  import {
+    sourceApiForm,
+    sourceApiGroupedForm,
+    sourceDetailsForm,
+    sourceDetailsGroupedForm,
+    sourceEnrichmentDetailsForm,
+    sourceEnrichmentForm,
+    sourceMappingForm,
+    sourcePaginationForm,
+  } from "../ingestion/source-form-config";
 
   const { snapshot, activeFile } = useStudioWorkspace();
   const { router } = useNavigation();
+  const { ledgerData } = useContext();
   const isWeb = import.meta.env.VITE_BEANCOUNT_STUDIO_RUNTIME === "web";
 
   type EditorMode = "form" | "yaml";
@@ -50,6 +75,39 @@
     merchantId: string;
     canonicalName: string;
     logoUrl?: string;
+  };
+  type IngestionSourcePreviewAccount = {
+    id: string;
+    name: string;
+    sourceAccount: string;
+    defaultCurrency?: string;
+    color?: string;
+    icon?: string;
+    merchantLogoUrl?: string;
+    href: string;
+  };
+
+  type IngestionSourcePreview = {
+    key: string;
+    name: string;
+    accountCount: number;
+    grouped: boolean;
+    accounts: readonly IngestionSourcePreviewAccount[];
+    status: {
+      connected: boolean;
+      lastSyncedAt?: string;
+      syncing?: boolean;
+      failed?: boolean;
+    };
+    secretMode: SecretMode;
+    secretDisplayValue: string;
+    setupHost: string;
+    setupHref?: string;
+    setupHtml?: string;
+    baseUrl?: string;
+    endpoint?: string;
+    merchantLogoUrl?: string;
+    merchantId?: string;
   };
 
   let config = $state<EditableIngestionConfig | undefined>(undefined);
@@ -68,8 +126,13 @@
     Record<string, Awaited<ReturnType<typeof latestIngestionSyncJob>>>
   >({});
   let merchantsById = $state<Record<string, ConnectionMerchant>>({});
+  const accountAppearances = accountAppearanceStore(ledgerData);
   /** Open section ids keyed by source index. Missing key = fully expanded. */
   let openBySourceIndex = $state<Record<number, string[]>>({});
+
+  const availableIngestionSources = $derived.by(() =>
+    availableIngestionSamples(config?.sources ?? [], ingestionSamples),
+  );
 
   const validationIssues = $derived(
     config ? validateEditableIngestionConfig(config) : [],
@@ -125,6 +188,159 @@
       (source) => connectionStatuses[source.id]?.connected,
     ),
   );
+
+  function sourceDefaultCurrency(source: EditableIngestionSource) {
+    return (source as { defaultCurrency?: string }).defaultCurrency;
+  }
+
+  function sourceMerchantById(source: EditableIngestionSource) {
+    return source.merchantId
+      ? merchantsById[source.merchantId]
+      : undefined;
+  }
+
+  function accountMerchantFor(sourceAccount: string) {
+    const appearance = $accountAppearances.get(sourceAccount);
+    const merchantId = appearance?.merchantId;
+    return merchantId ? merchantsById[merchantId] : undefined;
+  }
+
+  const sourceMerchants = $derived.by(() =>
+    Object.values(merchantsById).sort((left, right) =>
+      left.canonicalName.localeCompare(right.canonicalName),
+    ),
+  );
+
+  function sourceFormConfig(source: EditableIngestionSource) {
+    const connector = isConnectorSource(source) ? clientConnector(source.kind) : undefined;
+    const isGrouped = isGroupedSource(source);
+    const sourceSections =
+      connector?.connectionFields?.length
+        ? connectorFieldsForm(
+            connector.connectionFields,
+            `${connector.kind}-connection`,
+          )
+        : undefined;
+    const advancedSections =
+      connector?.advancedFields?.length
+        ? connectorFieldsForm(
+            connector.advancedFields,
+            `${connector.kind}-advanced`,
+          )
+        : undefined;
+
+    return {
+      detailsForm: isGrouped ? sourceDetailsGroupedForm : sourceDetailsForm,
+      apiForm: isGrouped ? sourceApiGroupedForm : sourceApiForm,
+      sourcePaginationForm,
+      sourceMappingForm,
+      sourceEnrichmentForm,
+      sourceEnrichmentDetailsForm,
+      connectionFieldsForm: sourceSections,
+      advancedFieldsForm: advancedSections,
+      providerCategories: connector?.providerCategories,
+      isConnector: Boolean(connector),
+      isGrouped,
+    };
+  }
+
+  const sourceRows = $derived.by(() => {
+    return (config?.sources ?? []).map((source, index) => {
+      const serverSource = serverSourceFor(source);
+      return {
+        source,
+        issues: issuesForSource(index),
+        accounts: loadedConfig?.accounts ?? [],
+        categoryAccounts:
+          serverSource?.allowedAccounts ?? loadedConfig?.accounts ?? [],
+        credentialAvailable: serverSource?.credentialAvailable,
+        merchantCredentialAvailable: serverSource?.merchantCredentialAvailable,
+        openSections: openSectionsFor(index, isGroupedSource(source)),
+        sourceFormConfig: sourceFormConfig(source),
+      };
+    });
+  });
+
+  function withConfig(
+    source: EditableIngestionSource,
+    patch: Record<string, unknown>,
+  ): EditableIngestionSource {
+    return {
+      ...source,
+      config: {
+        ...((source.config as Record<string, unknown> | undefined) ?? {}),
+        ...patch,
+      },
+    };
+  }
+
+  function withApi(
+    source: EditableIngestionSource,
+    patch: Partial<{ endpoint: string; baseUrl: string; secretRef: string }>,
+  ): EditableIngestionSource {
+    return {
+      ...source,
+      api: { ...(source.api ?? { secretRef: "" }), ...patch },
+    };
+  }
+
+  function sourceStatus(source: EditableIngestionSource) {
+    return (
+      connectionStatuses[source.id] ?? {
+        connected: false,
+      }
+    );
+  }
+
+  const previewSources = $derived.by(() => {
+    return (config?.sources ?? []).map((source, index): IngestionSourcePreview => {
+      const merchant = sourceMerchantById(source);
+      const grouped = isGroupedSource(source);
+      const secretRef = sourceSecretRef(source);
+      const previewUrl = sourceBaseUrl(source) || source.api?.endpoint || "";
+      const sourceDefaultCurrencyValue = sourceDefaultCurrency(source);
+      const accounts = (source.accounts ?? []).map(
+        (account: JsonApiLinkedAccount) => {
+          const accountMerchant = accountMerchantFor(account.sourceAccount);
+          return {
+            id: account.id,
+            name: account.name,
+            sourceAccount: account.sourceAccount,
+            defaultCurrency:
+              account.defaultCurrency ?? sourceDefaultCurrencyValue,
+            color: $accountAppearances.get(account.sourceAccount)?.color,
+            icon: $accountAppearances.get(account.sourceAccount)?.icon,
+            merchantLogoUrl: accountMerchant?.logoUrl,
+            href: urlForAccount(
+              account.sourceAccount,
+              undefined,
+              $activeFile,
+            ),
+          } satisfies IngestionSourcePreviewAccount;
+        },
+      );
+
+      return {
+        key: source.id || `source-${index}`,
+        name: source.name || "Untitled source",
+        accountCount: accounts.length,
+        grouped,
+        accounts,
+        status: sourceStatus(source),
+        secretMode: secretMode(secretRef),
+        secretDisplayValue: secretDisplayValue(secretRef),
+        setupHost: setupHost(previewUrl),
+        setupHref: setupHref(previewUrl),
+        setupHtml: source.setup?.trim()
+          ? renderSetupMarkdown(source.setup)
+          : undefined,
+        baseUrl: sourceBaseUrl(source),
+        endpoint: source.api?.endpoint,
+        merchantLogoUrl: merchant?.logoUrl,
+        merchantId: merchant?.merchantId,
+      } satisfies IngestionSourcePreview;
+    });
+  });
 
   async function load() {
     if (!$snapshot || isWeb) return;
@@ -208,6 +424,54 @@
       ),
     };
     scheduleSave();
+  }
+
+  function updatePreviewSecretMode(index: number, nextMode: SecretMode) {
+    const source = config?.sources[index];
+    if (!source) return;
+    if (secretMode(sourceSecretRef(source)) === nextMode) return;
+    updateSource(
+      index,
+      isConnectorSource(source)
+        ? withConfig(source, { secretRef: secretStoredValue(nextMode, "") })
+        : withApi(source, { secretRef: secretStoredValue(nextMode, "") }),
+    );
+  }
+
+  function updatePreviewSecretValue(
+    index: number,
+    value: string,
+    nextMode: SecretMode,
+  ) {
+    const source = config?.sources[index];
+    if (!source) return;
+    const nextSecretRef = secretStoredValue(
+      nextMode,
+      value,
+    );
+    updateSource(
+      index,
+      isConnectorSource(source)
+        ? withConfig(source, { secretRef: nextSecretRef })
+        : withApi(source, { secretRef: nextSecretRef }),
+    );
+  }
+
+  function updatePreviewBaseUrl(index: number, nextBaseUrl: string) {
+    const source = config?.sources[index];
+    if (!source) return;
+    updateSource(
+      index,
+      isConnectorSource(source)
+        ? withConfig(source, { baseUrl: nextBaseUrl })
+        : withApi(source, { baseUrl: nextBaseUrl }),
+    );
+  }
+
+  function updatePreviewEndpoint(index: number, nextEndpoint: string) {
+    const source = config?.sources[index];
+    if (!source) return;
+    updateSource(index, withApi(source, { endpoint: nextEndpoint }));
   }
 
   function updateReconciliation(
@@ -507,195 +771,47 @@
   });
 </script>
 
-<section
-  class={previewMode
-    ? "h-full overflow-y-auto p-4 sm:p-6"
-    : "h-full overflow-y-auto p-6 sm:p-8 lg:p-10"}
-  data-ingestion-sources-editor
->
-  <div class="mx-auto flex w-full max-w-3xl flex-col gap-5">
-    {#if isWeb}
-      <Alert.Root>
-        <FileCode2 />
-        <Alert.Title>Local server required</Alert.Title>
-        <Alert.Description
-          >Remote ingestion settings are available only through the local
-          server.</Alert.Description
-        >
-      </Alert.Root>
-    {:else if !config}
-      <SourcesPageSkeleton />
-    {:else}
-      <div class="flex min-w-0 flex-col gap-6">
-        <YamlBackedForm
-          yamlMode={mode === "yaml"}
-          {yamlText}
-          {yamlError}
-          yamlLabel="Ingestion sources YAML editor"
-          yamlApplyLabel="Apply YAML"
-          onYamlChange={(value) => {
-            yamlText = value;
-          }}
-          onYamlApply={() => {
-            void applyYaml();
-          }}
-          onYamlReset={resetYaml}
-        >
-          <div class="flex min-w-0 flex-col gap-8">
-            {#if previewMode}
-              <IngestionSourcesPreview
-                sources={config.sources}
-                {merchantsById}
-                samples={ingestionSamples}
-                envKeys={$snapshot?.envKeys ?? []}
-                {connectionStatuses}
-                {saving}
-                activeLedgerPath={$activeFile}
-                onChange={(index, next) => updateSource(index, next)}
-                onConnectSample={connectSampleDirect}
-                onManageAccounts={openManageAccounts}
-                onSync={syncSingle}
-                onSave={() => void saveNow()}
-              />
-            {:else}
-              <section>
-                <FormSectionHeader
-                  title="Reconciliation"
-                  editable={false}
-                  movable={false}
-                  removable={false}
-                />
-                <div class="mt-3 grid gap-3 pl-6">
-                  <div class="beancount-structured-form">
-                    <FormField
-                      label="Duplicate window (days)"
-                      controlId="reconciliation-duplicate-window"
-                      as="div"
-                      align="center"
-                    >
-                      <Input
-                        id="reconciliation-duplicate-window"
-                        type="number"
-                        min="0"
-                        max="31"
-                        step="1"
-                        value={config.reconciliation?.duplicateWindowDays ===
-                        undefined
-                          ? ""
-                          : String(config.reconciliation.duplicateWindowDays)}
-                        placeholder="5"
-                        oninput={(event) =>
-                          updateReconciliation(
-                            "duplicateWindowDays",
-                            event.currentTarget.value,
-                          )}
-                      />
-                    </FormField>
-                    <FormField
-                      label="Transfer window (days)"
-                      controlId="reconciliation-transfer-window"
-                      as="div"
-                      align="center"
-                    >
-                      <Input
-                        id="reconciliation-transfer-window"
-                        type="number"
-                        min="0"
-                        max="31"
-                        step="1"
-                        value={config.reconciliation?.transferWindowDays ===
-                        undefined
-                          ? ""
-                          : String(config.reconciliation.transferWindowDays)}
-                        placeholder="4"
-                        oninput={(event) =>
-                          updateReconciliation(
-                            "transferWindowDays",
-                            event.currentTarget.value,
-                          )}
-                      />
-                    </FormField>
-                    <FormField
-                      label="FX rate tolerance"
-                      controlId="reconciliation-fx-rate-tolerance"
-                      as="div"
-                      align="center"
-                    >
-                      <Input
-                        id="reconciliation-fx-rate-tolerance"
-                        type="number"
-                        min="0"
-                        max="1"
-                        step="0.001"
-                        value={config.reconciliation?.fxRateTolerance ===
-                        undefined
-                          ? ""
-                          : String(config.reconciliation.fxRateTolerance)}
-                        placeholder="0.02"
-                        oninput={(event) =>
-                          updateReconciliation(
-                            "fxRateTolerance",
-                            event.currentTarget.value,
-                          )}
-                      />
-                    </FormField>
-                  </div>
-                </div>
-              </section>
-              {#each config.sources as source, index (source.id || index)}
-                {@const serverSource = serverSourceFor(source)}
-                <IngestionSourceForm
-                  {source}
-                  accounts={loadedConfig?.accounts ?? []}
-                  categoryAccounts={serverSource?.allowedAccounts ??
-                    loadedConfig?.accounts ??
-                    []}
-                  issues={issuesForSource(index)}
-                  credentialAvailable={serverSource?.credentialAvailable}
-                  merchantCredentialAvailable={serverSource?.merchantCredentialAvailable}
-                  envKeys={$snapshot?.envKeys ?? []}
-                  projectId={$snapshot?.project.id}
-                  openSections={openSectionsFor(index, isGroupedSource(source))}
-                  onOpenSectionsChange={(sections) =>
-                    setOpenSectionsFor(index, sections)}
-                  onChange={(next) => updateSource(index, next)}
-                  onDuplicate={() => duplicateSource(index)}
-                  onRemove={() => removeSource(index)}
-                />
-              {:else}
-                <Empty.Root class="min-h-48 border">
-                  <Empty.Header>
-                    <Empty.Media variant="icon">
-                      <button
-                        type="button"
-                        class="inline-flex size-full items-center justify-center"
-                        aria-label="Add source"
-                        onclick={addSource}
-                      >
-                        <Plus />
-                      </button>
-                    </Empty.Media>
-                    <Empty.Title>No sources yet</Empty.Title>
-                    <Empty.Description
-                      >Add a source to get started.</Empty.Description
-                    >
-                  </Empty.Header>
-                </Empty.Root>
-              {/each}
-
-              {#if config.sources.length}
-                <div class="flex justify-end">
-                  <FormAddButton label="Add source" onclick={addSource} />
-                </div>
-              {/if}
-            {/if}
-          </div>
-        </YamlBackedForm>
-      </div>
-    {/if}
-
-    {#if status}
-      <p class="text-sm text-muted-foreground" role="status">{status}</p>
-    {/if}
-  </div>
-</section>
+<IngestionConfigEditor
+  {isWeb}
+  {config}
+  {status}
+  {yamlText}
+  {yamlError}
+  {previewMode}
+  {saving}
+  availableSamples={availableIngestionSources}
+  {previewSources}
+  envKeys={$snapshot?.envKeys ?? []}
+  {sourceRows}
+  snapshotProjectId={$snapshot?.project.id ?? ""}
+  merchants={sourceMerchants}
+  onYamlChange={(value) => {
+    yamlText = value;
+  }}
+  onYamlApply={() => {
+    void applyYaml();
+  }}
+  onYamlReset={resetYaml}
+  onConnectSample={connectSampleDirect}
+  onManageAccounts={openManageAccounts}
+  onSync={(index) => {
+    const source = config?.sources[index];
+    if (source) syncSingle(source);
+  }}
+  onSecretModeChange={updatePreviewSecretMode}
+  onSecretValueChange={updatePreviewSecretValue}
+  onBaseUrlChange={updatePreviewBaseUrl}
+  onEndpointChange={updatePreviewEndpoint}
+  onSave={() => {
+    void saveNow();
+  }}
+  onReconciliationChange={updateReconciliation}
+  onSourceChange={updateSource}
+  onSourceOpenSectionsChange={setOpenSectionsFor}
+  onSourceDuplicate={duplicateSource}
+  onSourceRemove={removeSource}
+  onAddSource={addSource}
+  onOpenBrandSettings={() => {
+    router.push("/import/brands");
+  }}
+/>

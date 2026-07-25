@@ -1,122 +1,110 @@
 <script lang="ts">
-  import { ChevronDown } from "lucide-svelte";
-  import type { AccountTreeNode } from "../../lib/models";
-  import AccountLink from "../AccountLink.svelte";
-  import Self from "./DashboardTreeRow.svelte";
+  import DashboardTreeRow from "@beancount-js/ui/dashboard/DashboardTreeRow.svelte";
   import { dashboardCategoryColor } from "./model";
+  import type { AccountTreeNode } from "../../lib/models";
 
-  export let node: AccountTreeNode;
-  export let currency: string;
-  export let formatter: (value: number, currency: string) => string;
-  export let multiplier = 1;
-  export let total = 0;
-  export let gridTemplate: string;
-  export let depth = 0;
-  export let collapsed: Set<string>;
-  export let toggle: (account: string) => void;
-  export let branchColor = "var(--primary)";
+  interface SharedTreeNode {
+    id: string;
+    label: string;
+    value: number;
+    color?: string;
+    children?: readonly SharedTreeNode[];
+  }
 
-  const weightBars = [0, 1, 2, 3, 4];
+  let {
+    node,
+    currency,
+    multiplier = 1,
+    total,
+    gridTemplate,
+    depth = 0,
+    collapsed,
+    onNodeSelect = () => {},
+    onToggle = () => {},
+    valueFormatter = (value) => String(value),
+  }: {
+    node: AccountTreeNode;
+    currency: string;
+    multiplier?: number;
+    total: number;
+    gridTemplate: string;
+    depth?: number;
+    collapsed: ReadonlySet<string>;
+    onNodeSelect?: (node: AccountTreeNode) => void;
+    onToggle?: (id: string) => void;
+    valueFormatter?: (value: number) => string;
+  } = $props();
 
-  $: hasChildren = node.children.length > 0;
-  $: isCollapsed = collapsed.has(node.account);
-  $: amount = (node.balanceChildren[currency] ?? 0) * multiplier;
-  $: name = node.account.split(":").at(-1) ?? node.account;
-  $: weight = total ? (Math.abs(amount) / Math.abs(total)) * 100 : 0;
+  const sharedNode = $derived.by(() =>
+    toSharedNode(node, currency, multiplier, depth),
+  );
+
+  function nodeLabel(account: string) {
+    return account.split(":").at(-1) ?? account;
+  }
+
+  function branchColorForChild(
+    child: AccountTreeNode,
+    depthLevel: number,
+    inheritedColor: string,
+  ) {
+    if (depthLevel === 0) return dashboardCategoryColor(child.account);
+    return inheritedColor;
+  }
+
+  function toSharedNode(
+    source: AccountTreeNode,
+    currencyCode: string,
+    scale: number,
+    depthLevel: number,
+    inheritedColor = "var(--primary)",
+  ): SharedTreeNode {
+    const value =
+      (Number.isFinite(source.balanceChildren[currencyCode] ?? NaN)
+        ? source.balanceChildren[currencyCode] ?? 0
+        : 0) * scale;
+
+    const children = source.children.map((child) =>
+      toSharedNode(
+        child,
+        currencyCode,
+        scale,
+        depthLevel + 1,
+        branchColorForChild(child, depthLevel, inheritedColor),
+      ),
+    );
+
+    return {
+      id: source.account,
+      label: nodeLabel(source.account),
+      value,
+      color: depthLevel === 0 ? undefined : inheritedColor,
+      children: children.length ? children : undefined,
+    };
+  }
+
+  function findNode(root: AccountTreeNode, account: string): AccountTreeNode | undefined {
+    if (root.account === account) return root;
+    for (const child of root.children) {
+      const found = findNode(child, account);
+      if (found) return found;
+    }
+    return undefined;
+  }
+
+  function handleNodeSelect(rowNode: SharedTreeNode) {
+    const selected = findNode(node, rowNode.id);
+    if (selected) onNodeSelect(selected);
+  }
 </script>
 
-<li>
-  <div
-    class="grid min-h-12 items-center border-t border-border/70 text-sm transition-colors hover:bg-muted/65"
-    style={`grid-template-columns: ${gridTemplate}`}
-    data-dashboard-tree-row
-  >
-    <div
-      class="flex min-w-0 items-center gap-1 py-2 pr-4"
-      style={`padding-left: ${0.9 + depth * 1.2}rem`}
-    >
-      {#if hasChildren}
-        <button
-          class="grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-          aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${node.account}`}
-          aria-expanded={!isCollapsed}
-          on:click={() => toggle(node.account)}
-        >
-          <ChevronDown
-            class={`size-3 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
-          />
-        </button>
-      {:else}
-        <span class="size-4 shrink-0" aria-hidden="true"></span>
-      {/if}
-      <AccountLink account={node.account} label={name} avatarSize="sm" />
-    </div>
-    <span
-      class="grid place-items-center py-2 pl-4 pr-2"
-      data-dashboard-weight-meter-column
-    >
-      <span
-        class:invisible={!amount}
-        class="weight-meter"
-        style={`--meter-color: ${branchColor}`}
-        data-dashboard-weight-meter
-        aria-hidden="true"
-      >
-        {#each weightBars as bar}
-          <span style={`opacity: ${0.48 + bar * 0.11}`}></span>
-        {/each}
-      </span>
-    </span>
-    <span
-      class:dimmed={!amount}
-      class="px-4 text-right font-mono text-[13px] tabular-nums"
-      data-dashboard-weight>{amount ? `${weight.toFixed(1)}%` : "—"}</span
-    >
-    <span
-      class:dimmed={!amount}
-      class="px-4 text-right font-mono text-[13px] tabular-nums"
-    >
-      {amount ? formatter(amount, currency) : "—"}
-    </span>
-  </div>
-  {#if hasChildren && !isCollapsed}
-    <ol>
-      {#each node.children as child (child.account)}
-        <Self
-          node={child}
-          {currency}
-          {formatter}
-          {multiplier}
-          {total}
-          {gridTemplate}
-          depth={depth + 1}
-          branchColor={depth === 0
-            ? dashboardCategoryColor(child.account)
-            : branchColor}
-          {collapsed}
-          {toggle}
-        />
-      {/each}
-    </ol>
-  {/if}
-</li>
-
-<style>
-  .dimmed {
-    color: var(--muted-foreground);
-  }
-
-  .weight-meter {
-    display: grid;
-    grid-template-columns: repeat(5, 0.22rem);
-    gap: 0.14rem;
-    height: 0.85rem;
-    align-items: stretch;
-    color: var(--meter-color);
-  }
-
-  .weight-meter > span {
-    border-radius: 999px;
-    background: currentColor;
-  }
-</style>
+<DashboardTreeRow
+  node={sharedNode}
+  {total}
+  {gridTemplate}
+  {collapsed}
+  {depth}
+  {valueFormatter}
+  onNodeSelect={handleNodeSelect}
+  onToggle={onToggle}
+/>

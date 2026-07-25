@@ -714,9 +714,6 @@ importers:
       '@beancount-js/filters':
         specifier: workspace:*
         version: link:../filters
-      '@beancount-js/forms':
-        specifier: workspace:*
-        version: link:../forms
       '@beancount-js/parser':
         specifier: workspace:*
         version: link:../parser
