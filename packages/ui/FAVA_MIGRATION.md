@@ -107,7 +107,7 @@ obsolete rendering architecture.
 | ID  | Task                                                                  | Status      |
 | --- | --------------------------------------------------------------------- | ----------- |
 | N01 | Define native component ownership and add the Tailwind ratchet        | Done        |
-| N02 | Add framework-independent foundation and component tokens             | Not started |
+| N02 | Add framework-independent foundation and component tokens             | Done        |
 | N03 | Normalize UI primitive families to native CSS                         | Not started |
 | N04 | Convert shared UI compositions to native CSS                          | Not started |
 | N05 | Move Fava Beta consumers to public UI primitives                      | Not started |
@@ -116,6 +116,9 @@ obsolete rendering architecture.
 
 N01 evidence: repository-owned scanner and unit tests, package ratchet commands,
 and `packages/ui/NATIVE_COMPONENTS.md`.
+
+N02 evidence: `src/foundation.tokens.css`, the typed `./tokens` export, and the
+focused foundation token contract test.
 
 ## Component migration order
 

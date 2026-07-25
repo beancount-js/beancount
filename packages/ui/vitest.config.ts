@@ -18,6 +18,7 @@ export default mergeConfig(
             name: "unit",
             environment: "node",
             include: [
+              "src/foundation.tokens.spec.ts",
               "src/components/forms/**/*.spec.ts",
               "src/components/dashboard/**/*.spec.ts",
             ],

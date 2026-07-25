@@ -1,0 +1,87 @@
+const token = (name: string) => `var(--ui-${name})`;
+
+export const foundationTokens = {
+  color: {
+    background: token("color-background"),
+    foreground: token("color-foreground"),
+    surface: token("color-surface"),
+    surfaceForeground: token("color-surface-foreground"),
+    muted: token("color-muted"),
+    mutedForeground: token("color-muted-foreground"),
+    primary: token("color-primary"),
+    primaryForeground: token("color-primary-foreground"),
+    secondary: token("color-secondary"),
+    secondaryForeground: token("color-secondary-foreground"),
+    accent: token("color-accent"),
+    accentForeground: token("color-accent-foreground"),
+    destructive: token("color-destructive"),
+    destructiveForeground: token("color-destructive-foreground"),
+    border: token("color-border"),
+    input: token("color-input"),
+    ring: token("color-ring"),
+  },
+  controlHeight: {
+    xs: token("control-height-xs"),
+    sm: token("control-height-sm"),
+    md: token("control-height-md"),
+    lg: token("control-height-lg"),
+  },
+  duration: {
+    fast: token("duration-fast"),
+    normal: token("duration-normal"),
+    slow: token("duration-slow"),
+  },
+  font: {
+    sans: token("font-sans"),
+    mono: token("font-mono"),
+  },
+  fontSize: {
+    xs: token("font-size-xs"),
+    sm: token("font-size-sm"),
+    md: token("font-size-md"),
+    lg: token("font-size-lg"),
+    xl: token("font-size-xl"),
+  },
+  iconSize: {
+    sm: token("icon-size-sm"),
+    md: token("icon-size-md"),
+    lg: token("icon-size-lg"),
+  },
+  layer: {
+    dropdown: token("layer-dropdown"),
+    sticky: token("layer-sticky"),
+    dialog: token("layer-dialog"),
+    toast: token("layer-toast"),
+  },
+  radius: {
+    sm: token("radius-sm"),
+    md: token("radius-md"),
+    lg: token("radius-lg"),
+    xl: token("radius-xl"),
+    round: token("radius-round"),
+  },
+  shadow: {
+    xs: token("shadow-xs"),
+    sm: token("shadow-sm"),
+    md: token("shadow-md"),
+    lg: token("shadow-lg"),
+  },
+  space: {
+    0: token("space-0"),
+    0.5: token("space-0-5"),
+    1: token("space-1"),
+    1.5: token("space-1-5"),
+    2: token("space-2"),
+    2.5: token("space-2-5"),
+    3: token("space-3"),
+    4: token("space-4"),
+    5: token("space-5"),
+    6: token("space-6"),
+    8: token("space-8"),
+    10: token("space-10"),
+    12: token("space-12"),
+    16: token("space-16"),
+  },
+} as const;
+
+export type FoundationTokens = typeof foundationTokens;

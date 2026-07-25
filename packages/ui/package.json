@@ -10,6 +10,7 @@
     "prebuild-storybook": "pnpm sync-visual-delta-source",
     "build-storybook": "storybook build",
     "test-unit": "vitest run --project unit",
+    "test:foundation-tokens": "vitest run --project unit src/foundation.tokens.spec.ts",
     "test-storybook": "vitest run --project storybook",
     "pretest-visual": "pnpm sync-visual-delta-source",
     "test-visual": "playwright test",
@@ -117,6 +118,7 @@
     "./forms/helpers/appearance-color": "./src/components/forms/appearance-color.ts",
     "./forms/components/*.svelte": "./src/components/forms/*.svelte",
     "./forms/*.svelte": "./src/components/forms/*.svelte",
+    "./tokens": "./src/foundation.tokens.ts",
     "./styles.css": "./src/styles.css",
     "./tailwind": "./src/tailwind-preset.ts"
   }
