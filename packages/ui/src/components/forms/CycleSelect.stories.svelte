@@ -30,7 +30,9 @@
 <Story
   name="Cycles reporting periods"
   play={async ({ canvas, canvasElement }) => {
-    await userEvent.click(canvas.getByRole("button", { name: "Period" }));
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Select period" }),
+    );
     const page = within(canvasElement.ownerDocument.body);
     const options = page.getAllByRole("option");
     const rowGap =
