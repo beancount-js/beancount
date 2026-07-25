@@ -3,57 +3,54 @@
 </script>
 
 <div
-  class="flex h-full min-w-0 flex-col p-4"
+  class="cn-feedback-querypageskeleton-6-1"
   data-route-loading-skeleton
   data-query-page-skeleton
   role="status"
   aria-busy="true"
   aria-label="Loading query page"
 >
-  <div
-    class="flex h-10 w-full items-center rounded-md border bg-muted/35 shadow-sm"
-  >
-    <Skeleton class="ml-3 size-4 shrink-0 rounded-full" />
-    <Skeleton class="mx-3 h-3.5 min-w-0 flex-1" />
-    <Skeleton class="mr-1 h-7 w-20 shrink-0 rounded-sm" />
+  <div class="cn-feedback-querypageskeleton-14-1">
+    <Skeleton class="cn-feedback-querypageskeleton-16-1" />
+    <Skeleton class="cn-feedback-querypageskeleton-17-1" />
+    <Skeleton class="cn-feedback-querypageskeleton-18-1" />
   </div>
 
-  <div class="flex flex-col gap-3 pt-3">
+  <div class="cn-feedback-querypageskeleton-21-1">
     {#each Array.from({ length: 2 }, (_, index) => index) as query (query)}
-      <article
-        class="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm"
-      >
-        <div class="flex min-h-14 items-stretch gap-3">
-          <div class="flex min-w-0 flex-1">
-            <div class="flex h-full w-full items-center gap-3 pl-4">
-              <Skeleton class="size-3 shrink-0 rounded-sm" />
-              <Skeleton class="h-3.5 w-80 max-w-[55%]" />
+      <article class="cn-feedback-querypageskeleton-24-1">
+        <div class="cn-feedback-querypageskeleton-26-1">
+          <div class="cn-feedback-querypageskeleton-27-1">
+            <div class="cn-feedback-querypageskeleton-28-1">
+              <Skeleton class="cn-feedback-querypageskeleton-29-1" />
+              <Skeleton class="cn-feedback-querypageskeleton-30-1" />
             </div>
           </div>
-          <div class="flex shrink-0 items-center gap-1 pr-4">
-            <Skeleton class="size-8 rounded-md" />
-            <Skeleton class="size-8 rounded-md" />
+          <div class="cn-feedback-querypageskeleton-33-1">
+            <Skeleton class="cn-feedback-querypageskeleton-34-1" />
+            <Skeleton class="cn-feedback-querypageskeleton-35-1" />
           </div>
         </div>
 
         {#if query === 0}
-          <div class="border-t bg-muted/20 p-4" data-query-skeleton-result>
-            <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
-              <div
-                class="grid grid-cols-[minmax(0,1fr)_5rem_4rem] gap-3 border-b bg-muted px-4 py-3"
-              >
-                <Skeleton class="h-3 w-24" />
-                <Skeleton class="h-3 w-full" />
-                <Skeleton class="h-3 w-full" />
+          <div
+            class="cn-feedback-querypageskeleton-40-1"
+            data-query-skeleton-result
+          >
+            <div class="cn-feedback-querypageskeleton-41-1">
+              <div class="cn-feedback-querypageskeleton-43-1">
+                <Skeleton class="cn-feedback-querypageskeleton-45-1" />
+                <Skeleton class="cn-feedback-querypageskeleton-46-1" />
+                <Skeleton class="cn-feedback-querypageskeleton-47-1" />
               </div>
               {#each Array.from({ length: 3 }, (_, index) => index) as row (row)}
                 <div
-                  class="grid grid-cols-[minmax(0,1fr)_5rem_4rem] gap-3 border-b px-4 py-3 last:border-b-0"
+                  class="cn-feedback-querypageskeleton-51-1"
                   data-query-skeleton-row
                 >
-                  <Skeleton class="h-3.5 w-3/4" />
-                  <Skeleton class="h-3.5 w-full" />
-                  <Skeleton class="h-3.5 w-full" />
+                  <Skeleton class="cn-feedback-querypageskeleton-54-1" />
+                  <Skeleton class="cn-feedback-querypageskeleton-55-1" />
+                  <Skeleton class="cn-feedback-querypageskeleton-56-1" />
                 </div>
               {/each}
             </div>

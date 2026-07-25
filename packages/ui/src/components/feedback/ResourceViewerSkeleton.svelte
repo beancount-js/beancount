@@ -3,9 +3,9 @@
 </script>
 
 <div
-  class="flex min-h-0 flex-1 flex-col gap-3"
+  class="cn-feedback-resourceviewerskeleton-6-1"
   data-resource-viewer-skeleton
   aria-busy="true"
 >
-  <Skeleton class="min-h-48 w-full flex-1 rounded-md" />
+  <Skeleton class="cn-feedback-resourceviewerskeleton-10-1" />
 </div>

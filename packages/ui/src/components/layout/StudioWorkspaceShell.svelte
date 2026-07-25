@@ -85,16 +85,14 @@
 </script>
 
 <Sidebar.Provider
-  class={`${height === "viewport" ? "h-screen" : "h-full"} overflow-hidden`}
+  class={`${height === "viewport" ? "cn-layout-studioworkspaceshell-88-2" : "cn-layout-studioworkspaceshell-88-1"} overflow-hidden`}
 >
   <AppShell {pageTitle} {height} hasSidebar>
     <svelte:fragment slot="sidebar">
       <Sidebar.Root collapsible="icon" showBorder={false}>
-        <div class="relative flex h-full min-h-0 flex-col">
-          <div
-            class="flex min-h-0 flex-1 flex-col group-data-[collapsible=icon]:hidden"
-          >
-            <Sidebar.Header class="gap-3">
+        <div class="cn-layout-studioworkspaceshell-93-1">
+          <div class="cn-layout-studioworkspaceshell-95-1">
+            <Sidebar.Header class="cn-layout-studioworkspaceshell-97-1">
               <StudioShellHeader
                 {projectName}
                 {settingsOpen}
@@ -116,8 +114,8 @@
                       variant="ghost"
                       size="icon"
                       class={activeSidebarTab === tab.id
-                        ? "h-8 w-full border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-                        : "h-8 w-full border border-transparent text-muted-foreground hover:text-sidebar-foreground"}
+                        ? "cn-layout-studioworkspaceshell-119-1"
+                        : "cn-layout-studioworkspaceshell-120-1"}
                       aria-label={tab.label}
                       aria-pressed={activeSidebarTab === tab.id}
                       title={tab.label}
@@ -131,7 +129,10 @@
               {/if}
             </Sidebar.Header>
 
-            <Sidebar.Content class="px-2 pb-3" aria-label={ariaLabel}>
+            <Sidebar.Content
+              class="cn-layout-studioworkspaceshell-134-1"
+              aria-label={ariaLabel}
+            >
               {#if activeSidebarTab === projectTabId}
                 <ProjectSwitcher
                   {projects}
@@ -143,22 +144,20 @@
                   onAdd={onAddProject}
                 />
               {:else if sidebarTabContent}
-                <div class="flex min-h-0 flex-1 flex-col">
+                <div class="cn-layout-studioworkspaceshell-146-1">
                   {@render sidebarTabContent(activeSidebarTab)}
                 </div>
               {:else}
-                <p class="px-2 text-sm text-muted-foreground">
+                <p class="cn-layout-studioworkspaceshell-150-1">
                   Select a workspace section.
                 </p>
               {/if}
             </Sidebar.Content>
           </div>
 
-          <div
-            class="hidden h-full min-h-0 flex-col items-center gap-2 px-1.5 py-2 group-data-[collapsible=icon]:flex"
-          >
+          <div class="cn-layout-studioworkspaceshell-158-1">
             <Sidebar.Trigger
-              class="size-8"
+              class="cn-layout-studioworkspaceshell-161-1"
               aria-label="Expand sidebar"
               title="Expand sidebar"
             >
@@ -166,13 +165,11 @@
               <span class="sr-only">Expand sidebar</span>
             </Sidebar.Trigger>
             <Sidebar.Trigger
-              class="flex min-h-0 flex-1 items-center justify-center rounded-md border border-transparent px-1 py-2 text-sidebar-foreground hover:border-sidebar-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              class="cn-layout-studioworkspaceshell-169-1"
               aria-label="Expand project rail"
               title={projectName}
             >
-              <span
-                class="max-h-full truncate text-[12px] font-semibold [writing-mode:vertical-rl]"
-              >
+              <span class="cn-layout-studioworkspaceshell-174-1">
                 {projectName}
               </span>
             </Sidebar.Trigger>
@@ -183,7 +180,7 @@
 
     <svelte:fragment slot="mobile-navigation-trigger">
       <Sidebar.Trigger
-        class="md:hidden"
+        class="cn-layout-studioworkspaceshell-186-1"
         aria-label="Show navigation"
         title="Show navigation"
       />
@@ -191,7 +188,7 @@
 
     <svelte:fragment slot="desktop-sidebar-trigger">
       <Sidebar.Trigger
-        class="hidden size-8 md:inline-flex"
+        class="cn-layout-studioworkspaceshell-194-1"
         aria-label="Collapse sidebar to project rail"
         title="Collapse sidebar"
       />

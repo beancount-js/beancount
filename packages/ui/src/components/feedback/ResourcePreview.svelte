@@ -54,14 +54,16 @@
 </script>
 
 <section
-  class="flex h-full min-h-0 flex-col gap-3 p-4"
+  class="cn-feedback-resourcepreview-57-1"
   aria-label={accessibleLabel}
   aria-busy={loading}
 >
-  <div class="flex items-center justify-between gap-3">
-    <div class="min-w-0">
-      <p class="truncate text-sm font-medium">{resource?.path ?? "Resource"}</p>
-      <p class="text-xs text-muted-foreground">
+  <div class="cn-feedback-resourcepreview-61-1">
+    <div class="cn-feedback-resourcepreview-62-1">
+      <p class="cn-feedback-resourcepreview-63-1">
+        {resource?.path ?? "Resource"}
+      </p>
+      <p class="cn-feedback-resourcepreview-64-1">
         {resource?.mimeType ?? "Unavailable"}
       </p>
     </div>
@@ -72,29 +74,32 @@
         size="sm"
         onclick={() => onOpen(resource!)}
       >
-        <ExternalLink class="size-4" aria-hidden="true" />
+        <ExternalLink
+          class="cn-feedback-resourcepreview-75-1"
+          aria-hidden="true"
+        />
         Open
       </Button>
     {/if}
   </div>
 
   {#if message}
-    <div
-      class="flex items-center gap-2 rounded-md border border-destructive/30 p-3 text-sm text-destructive"
-      role="alert"
-    >
-      <FileWarning class="size-4 shrink-0" aria-hidden="true" />
+    <div class="cn-feedback-resourcepreview-83-1" role="alert">
+      <FileWarning
+        class="cn-feedback-resourcepreview-86-1"
+        aria-hidden="true"
+      />
       <span>{message}</span>
     </div>
   {:else if loading || !resource || !resource.url}
     <ResourceViewerSkeleton />
   {:else if isImage}
-    <ScrollArea.Root class="min-h-0 flex-1 rounded-md border bg-muted">
-      <div class="p-3">
+    <ScrollArea.Root class="cn-feedback-resourcepreview-92-1">
+      <div class="cn-feedback-resourcepreview-93-1">
         <img
           src={resource.url}
           alt={resource.path}
-          class="mx-auto max-w-full"
+          class="cn-feedback-resourcepreview-97-1"
         />
       </div>
     </ScrollArea.Root>
@@ -102,12 +107,11 @@
     <iframe
       title={resource.path}
       src={resource.url}
-      class="min-h-0 flex-1 rounded-md border bg-muted"
+      class="cn-feedback-resourcepreview-105-1"
     ></iframe>
   {:else if isText && resource.text !== undefined}
-    <ScrollArea.Root class="min-h-0 flex-1 rounded-md border bg-muted">
-      <pre
-        class="whitespace-pre-wrap break-words p-3 font-mono text-sm">{resource.text}</pre>
+    <ScrollArea.Root class="cn-feedback-resourcepreview-108-1">
+      <pre class="cn-feedback-resourcepreview-110-1">{resource.text}</pre>
     </ScrollArea.Root>
   {:else}
     <ResourceViewerSkeleton />

@@ -64,7 +64,7 @@
 
 {#if queries.length}
   <Accordion.Root
-    class="flex w-full flex-col gap-3 pt-3"
+    class="cn-navigation-savedqueryhistory-67-1"
     type="multiple"
     value={[...expandedIds]}
     onValueChange={updateExpansion}
@@ -74,27 +74,23 @@
       <Accordion.Item
         value={query.id}
         class={cn(
-          "overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm data-[state=open]:bg-muted/50",
-          selectedId === query.id && "ring-1 ring-primary/30",
+          "cn-navigation-savedqueryhistory-77-1",
+          selectedId === query.id && "cn-navigation-savedqueryhistory-78-1",
         )}
       >
-        <div
-          class="group flex min-h-14 items-stretch gap-3 transition-colors hover:bg-muted/50"
-        >
-          <div class="flex min-w-0 flex-1">
+        <div class="cn-navigation-savedqueryhistory-82-1 cn-group">
+          <div class="cn-navigation-savedqueryhistory-84-1">
             <Accordion.Trigger
               indicatorPosition="start"
-              class="h-full w-full min-w-0 gap-3 py-0 pl-4 text-left text-xs hover:no-underline"
+              class="cn-navigation-savedqueryhistory-87-1"
               onclick={() => onSelect?.(query)}
             >
-              <code
-                class="min-w-0 flex-1 break-words font-mono text-xs leading-relaxed"
-              >
+              <code class="cn-navigation-savedqueryhistory-91-1">
                 {query.label ?? query.query}
               </code>
             </Accordion.Trigger>
           </div>
-          <div class="flex shrink-0 items-center gap-1 pr-4">
+          <div class="cn-navigation-savedqueryhistory-97-1">
             <Button
               type="button"
               variant="ghost"
@@ -119,8 +115,8 @@
             </Button>
           </div>
         </div>
-        <Accordion.Content class="border-t bg-muted/20 [&>div]:p-0">
-          <div class="px-4 pb-4">
+        <Accordion.Content class="cn-navigation-savedqueryhistory-122-1">
+          <div class="cn-navigation-savedqueryhistory-123-1">
             {@render details?.(query)}
           </div>
         </Accordion.Content>
@@ -128,5 +124,5 @@
     {/each}
   </Accordion.Root>
 {:else}
-  <p class="px-2 py-3 text-sm text-muted-foreground">{emptyLabel}</p>
+  <p class="cn-navigation-savedqueryhistory-131-1">{emptyLabel}</p>
 {/if}

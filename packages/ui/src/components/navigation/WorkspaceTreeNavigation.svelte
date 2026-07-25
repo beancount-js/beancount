@@ -102,8 +102,8 @@
 
 <nav
   class={variant === "ledger"
-    ? "flex min-w-0 flex-col gap-1 overflow-x-hidden pr-4"
-    : "grid gap-1 px-2"}
+    ? "cn-navigation-workspacetreenavigation-105-1"
+    : "cn-navigation-workspacetreenavigation-106-1"}
   aria-label={ariaLabel}
 >
   {#if showExpandAll && expandableItemIds(items).length}
@@ -111,12 +111,12 @@
     {@const hasCollapsedItem = expandable.some(
       (id) => !expandedIds.includes(id),
     )}
-    <div class="flex justify-end">
+    <div class="cn-navigation-workspacetreenavigation-114-1">
       <Button
         type="button"
         variant="ghost"
         size="icon-sm"
-        class="size-7 text-muted-foreground"
+        class="cn-navigation-workspacetreenavigation-119-1"
         aria-label={hasCollapsedItem
           ? "Expand all navigation items"
           : "Collapse all navigation items"}
@@ -142,7 +142,7 @@
       {@render TreeItem({ item, depth: 0 })}
     {/if}
   {:else}
-    <p class="px-2 py-1 text-xs text-muted-foreground">{emptyLabel}</p>
+    <p class="cn-navigation-workspacetreenavigation-145-1">{emptyLabel}</p>
   {/each}
 </nav>
 
@@ -157,20 +157,23 @@
   {@const hasChildren = Boolean(item.children?.length)}
   {@const selected = isActive(item)}
   {@const Icon = item.icon ?? FileText}
-  <div class="min-w-0" data-workspace-tree-item={item.id}>
+  <div
+    class="cn-navigation-workspacetreenavigation-160-1"
+    data-workspace-tree-item={item.id}
+  >
     <div
       class={cn(
-        "relative flex h-8 min-w-0 items-center gap-1 rounded-md text-xs transition-colors",
+        "cn-navigation-workspacetreenavigation-163-1",
         selected
-          ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm"
-          : "border border-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          ? "cn-navigation-workspacetreenavigation-165-1"
+          : "cn-navigation-workspacetreenavigation-166-1",
       )}
       style={itemIndentStyle(depth)}
     >
       {#each Array(depth) as _, guideDepth (guideDepth)}
         <span
           aria-hidden="true"
-          class="pointer-events-none absolute bottom-0 top-0 w-px bg-sidebar-border/70"
+          class="cn-navigation-workspacetreenavigation-173-1"
           style={`left: calc(0.75rem + ${guideDepth * 1.25}rem);`}
         ></span>
       {/each}
@@ -180,7 +183,7 @@
           type="button"
           variant="ghost"
           size="icon-sm"
-          class="relative z-10 size-7 shrink-0 rounded-sm p-0 hover:bg-background/70"
+          class="cn-navigation-workspacetreenavigation-183-1"
           aria-label={expanded
             ? `Collapse ${item.label}`
             : `Expand ${item.label}`}
@@ -191,27 +194,38 @@
         >
           <ChevronRight
             aria-hidden="true"
-            class={cn("transition-transform", expanded && "rotate-90")}
+            class={cn(
+              "cn-navigation-workspacetreenavigation-194-1",
+              expanded && "cn-navigation-workspacetreenavigation-194-2",
+            )}
           />
         </Button>
       {:else}
-        <span class="size-7 shrink-0" aria-hidden="true"></span>
+        <span
+          class="cn-navigation-workspacetreenavigation-198-1"
+          aria-hidden="true"
+        ></span>
       {/if}
 
       <Button
         type="button"
         variant="ghost"
         size="sm"
-        class="relative z-10 h-7 min-w-0 flex-1 justify-start gap-1.5 rounded-sm px-1 text-xs font-medium hover:bg-background/70"
+        class="cn-navigation-workspacetreenavigation-205-1"
         aria-current={selected ? "page" : undefined}
         disabled={item.disabled || !onSelect}
         title={item.label}
         onclick={() => onSelect?.(item.id)}
       >
-        <Icon class="size-3.5 shrink-0" aria-hidden="true" />
-        <span class="min-w-0 flex-1 truncate text-left">{item.label}</span>
+        <Icon
+          class="cn-navigation-workspacetreenavigation-211-1"
+          aria-hidden="true"
+        />
+        <span class="cn-navigation-workspacetreenavigation-212-1"
+          >{item.label}</span
+        >
         {#if item.badge}
-          <span class="text-[10px] tabular-nums text-muted-foreground">
+          <span class="cn-navigation-workspacetreenavigation-214-1">
             {item.badge}
           </span>
         {/if}
@@ -219,7 +233,10 @@
     </div>
 
     {#if hasChildren && expanded}
-      <div id={childRegionId(item.id)} class="min-w-0">
+      <div
+        id={childRegionId(item.id)}
+        class="cn-navigation-workspacetreenavigation-222-1"
+      >
         {#each item.children ?? [] as child (child.id)}
           {@render TreeItem({ item: child, depth: depth + 1 })}
         {/each}
@@ -245,10 +262,10 @@
       variant="ghost"
       size="sm"
       class={cn(
-        "relative h-8 w-full justify-start rounded-md pr-2 text-xs",
+        "cn-navigation-workspacetreenavigation-248-1",
         active
-          ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-          : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+          ? "cn-navigation-workspacetreenavigation-250-1"
+          : "cn-navigation-workspacetreenavigation-251-1",
       )}
       style={ledgerPanelStyle(depth - 1)}
       aria-current={active ? "page" : undefined}
@@ -258,23 +275,31 @@
       {#each Array(Math.max(depth, 0)) as _, guideDepth (guideDepth)}
         <span
           aria-hidden="true"
-          class="pointer-events-none absolute bottom-0 top-0 w-px bg-sidebar-border/70"
+          class="cn-navigation-workspacetreenavigation-261-1"
           style={ledgerGuideStyle(guideDepth)}
         ></span>
       {/each}
-      <Icon class="mr-2 size-4" aria-hidden="true" />
-      <span class="truncate">{item.label}</span>
+      <Icon
+        class="cn-navigation-workspacetreenavigation-265-1"
+        aria-hidden="true"
+      />
+      <span class="cn-navigation-workspacetreenavigation-266-1"
+        >{item.label}</span
+      >
     </Button>
   {:else if item.kind === "ledger-folder"}
-    <div class="min-w-0" data-workspace-tree-item={item.id}>
+    <div
+      class="cn-navigation-workspacetreenavigation-269-1"
+      data-workspace-tree-item={item.id}
+    >
       <div
-        class="relative flex h-8 min-w-0 items-center rounded-md text-xs text-sidebar-foreground hover:bg-background hover:text-sidebar-accent-foreground"
+        class="cn-navigation-workspacetreenavigation-271-1"
         style={ledgerFileRowStyle(depth)}
       >
         {#each Array(Math.max(depth, 0)) as _, guideDepth (guideDepth)}
           <span
             aria-hidden="true"
-            class="pointer-events-none absolute bottom-0 top-0 w-px bg-sidebar-border/70"
+            class="cn-navigation-workspacetreenavigation-277-1"
             style={ledgerGuideStyle(guideDepth)}
           ></span>
         {/each}
@@ -284,7 +309,7 @@
             type="button"
             variant="ghost"
             size="icon"
-            class="relative z-10 size-7 shrink-0 rounded-sm p-0 hover:bg-background/70"
+            class="cn-navigation-workspacetreenavigation-287-1"
             aria-label={expanded
               ? `Collapse ${item.label}`
               : `Expand ${item.label}`}
@@ -294,34 +319,48 @@
             onclick={() => updateExpansion(item.id)}
           >
             <ChevronRight
-              class={cn("transition-transform", expanded && "rotate-90")}
+              class={cn(
+                "cn-navigation-workspacetreenavigation-297-1",
+                expanded && "cn-navigation-workspacetreenavigation-297-2",
+              )}
               aria-hidden="true"
             />
           </Button>
         {:else}
-          <span class="size-7 shrink-0" aria-hidden="true"></span>
+          <span
+            class="cn-navigation-workspacetreenavigation-302-1"
+            aria-hidden="true"
+          ></span>
         {/if}
 
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs hover:bg-background/70"
+          class="cn-navigation-workspacetreenavigation-309-1"
           title={item.label}
           disabled={item.disabled || !onSelect}
           onclick={() => onSelect?.(item.id)}
         >
-          <Icon class="mr-2 size-4" aria-hidden="true" />
-          <span class="min-w-0 flex-1 truncate text-left">{item.label}</span>
+          <Icon
+            class="cn-navigation-workspacetreenavigation-314-1"
+            aria-hidden="true"
+          />
+          <span class="cn-navigation-workspacetreenavigation-315-1"
+            >{item.label}</span
+          >
           {#if item.badge}
-            <span class="text-[10px] tabular-nums text-muted-foreground"
+            <span class="cn-navigation-workspacetreenavigation-317-1"
               >{item.badge}</span
             >
           {/if}
         </Button>
       </div>
       {#if hasChildren && expanded}
-        <div id={childRegionId(item.id)} class="min-w-0">
+        <div
+          id={childRegionId(item.id)}
+          class="cn-navigation-workspacetreenavigation-324-1"
+        >
           {#each item.children ?? [] as child (child.id)}
             {@render LedgerTreeItem({ item: child, depth: depth + 1 })}
           {/each}
@@ -329,15 +368,18 @@
       {/if}
     </div>
   {:else if item.kind === "ledger-tag"}
-    <div class="min-w-0" data-workspace-tree-item={item.id}>
+    <div
+      class="cn-navigation-workspacetreenavigation-332-1"
+      data-workspace-tree-item={item.id}
+    >
       <div
-        class="relative flex min-w-0 items-center gap-1"
+        class="cn-navigation-workspacetreenavigation-334-1"
         style={ledgerFileRowStyle(depth)}
       >
         {#each Array(Math.max(depth, 0)) as _, guideDepth (guideDepth)}
           <span
             aria-hidden="true"
-            class="pointer-events-none absolute bottom-0 top-0 w-px bg-sidebar-border/70"
+            class="cn-navigation-workspacetreenavigation-340-1"
             style={ledgerGuideStyle(guideDepth)}
           ></span>
         {/each}
@@ -346,7 +388,7 @@
             type="button"
             variant="ghost"
             size="icon"
-            class="shrink-0 text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
+            class="cn-navigation-workspacetreenavigation-349-1"
             aria-label={expanded
               ? `Collapse ${item.label}`
               : `Expand ${item.label}`}
@@ -355,7 +397,10 @@
             onclick={() => updateExpansion(item.id)}
           >
             <ChevronRight
-              class={cn("transition-transform", expanded && "rotate-90")}
+              class={cn(
+                "cn-navigation-workspacetreenavigation-358-1",
+                expanded && "cn-navigation-workspacetreenavigation-358-2",
+              )}
               aria-hidden="true"
             />
           </Button>
@@ -364,21 +409,28 @@
           type="button"
           variant="ghost"
           size="sm"
-          class="h-8 min-w-0 flex-1 justify-start gap-2 pr-1 text-xs text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
+          class="cn-navigation-workspacetreenavigation-367-1"
           title={item.label}
           aria-pressed={active}
           disabled={item.disabled || !onSelect}
           onclick={() => onSelect?.(item.id)}
         >
-          <Icon class="mr-2 size-4" aria-hidden="true" />
-          <span class="min-w-0 flex-1 truncate text-left">{item.label}</span>
+          <Icon
+            class="cn-navigation-workspacetreenavigation-373-1"
+            aria-hidden="true"
+          />
+          <span class="cn-navigation-workspacetreenavigation-374-1"
+            >{item.label}</span
+          >
           {#if item.badge}
-            <span class="text-[10px] tabular-nums">{item.badge}</span>
+            <span class="cn-navigation-workspacetreenavigation-376-1"
+              >{item.badge}</span
+            >
           {/if}
         </Button>
       </div>
       {#if hasChildren && expanded}
-        <div class="min-w-0">
+        <div class="cn-navigation-workspacetreenavigation-381-1">
           {#each item.children ?? [] as child (child.id)}
             {@render LedgerTreeItem({ item: child, depth: depth + 1 })}
           {/each}
@@ -386,20 +438,23 @@
       {/if}
     </div>
   {:else}
-    <div class="min-w-0" data-workspace-tree-item={item.id}>
+    <div
+      class="cn-navigation-workspacetreenavigation-389-1"
+      data-workspace-tree-item={item.id}
+    >
       <div
         class={cn(
-          "relative flex h-8 min-w-0 items-center rounded-md text-xs font-semibold transition-colors",
+          "cn-navigation-workspacetreenavigation-392-1",
           active
-            ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-            : "border border-transparent text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+            ? "cn-navigation-workspacetreenavigation-394-1"
+            : "cn-navigation-workspacetreenavigation-395-1",
         )}
         style={ledgerFileRowStyle(depth)}
       >
         {#each Array(Math.max(depth, 0)) as _, guideDepth (guideDepth)}
           <span
             aria-hidden="true"
-            class="pointer-events-none absolute bottom-0 top-0 w-px bg-sidebar-border/70"
+            class="cn-navigation-workspacetreenavigation-402-1"
             style={ledgerGuideStyle(guideDepth)}
           ></span>
         {/each}
@@ -407,7 +462,7 @@
           type="button"
           variant="ghost"
           size="icon"
-          class="relative z-10 size-7 shrink-0 rounded-sm p-0 hover:bg-background/70"
+          class="cn-navigation-workspacetreenavigation-410-1"
           aria-label={expanded
             ? `Collapse ${item.label}`
             : `Expand ${item.label}`}
@@ -416,7 +471,10 @@
           onclick={() => updateExpansion(item.id)}
         >
           <ChevronRight
-            class={cn("transition-transform", expanded && "rotate-90")}
+            class={cn(
+              "cn-navigation-workspacetreenavigation-419-1",
+              expanded && "cn-navigation-workspacetreenavigation-419-2",
+            )}
             aria-hidden="true"
           />
         </Button>
@@ -424,22 +482,27 @@
           type="button"
           variant="ghost"
           size="sm"
-          class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs font-semibold hover:bg-background/70"
+          class="cn-navigation-workspacetreenavigation-427-1"
           title={item.label}
           disabled={item.disabled || !onSelect}
           onclick={() => onSelect?.(item.id)}
         >
-          <Icon class="mr-2 size-4" aria-hidden="true" />
-          <span class="min-w-0 flex-1 truncate text-left">{item.label}</span>
+          <Icon
+            class="cn-navigation-workspacetreenavigation-432-1"
+            aria-hidden="true"
+          />
+          <span class="cn-navigation-workspacetreenavigation-433-1"
+            >{item.label}</span
+          >
           {#if item.badge}
-            <span class="text-[10px] tabular-nums text-muted-foreground"
+            <span class="cn-navigation-workspacetreenavigation-435-1"
               >{item.badge}</span
             >
           {/if}
         </Button>
       </div>
       {#if hasChildren && expanded}
-        <div class="min-w-0">
+        <div class="cn-navigation-workspacetreenavigation-442-1">
           {#each item.children ?? [] as child (child.id)}
             {@render LedgerTreeItem({ item: child, depth: depth + 1 })}
           {/each}

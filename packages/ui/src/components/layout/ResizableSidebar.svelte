@@ -79,7 +79,7 @@
 </script>
 
 <aside
-  class="relative flex h-full min-h-0 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
+  class="cn-layout-resizablesidebar-82-1"
   style={`width: ${width}px`}
   data-resizable-sidebar
 >
@@ -87,7 +87,7 @@
   <div
     role="slider"
     tabindex="0"
-    class="absolute -right-1.5 bottom-4 top-4 z-20 hidden w-3 cursor-col-resize items-stretch justify-center rounded-full bg-transparent outline-none md:flex"
+    class="cn-layout-resizablesidebar-90-1"
     aria-label={ariaLabel}
     aria-orientation="horizontal"
     aria-valuemin={minWidth}
@@ -101,9 +101,9 @@
     onblur={() => (hovering = false)}
   >
     <span
-      class:bg-primary={resizing || hovering}
-      class:opacity-60={resizing || hovering}
-      class="my-2.5 w-px bg-transparent transition-colors"
+      class:cn-layout-resizablesidebar-104-1={resizing || hovering}
+      class:cn-layout-resizablesidebar-105-1={resizing || hovering}
+      class="cn-layout-resizablesidebar-106-1"
       aria-hidden="true"
     ></span>
   </div>

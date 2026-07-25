@@ -47,9 +47,9 @@
 
 <a
   href={href ?? "#"}
-  class="inline-flex shrink-0 items-center gap-2 text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-  class:pointer-events-none={disabled}
-  class:opacity-50={disabled}
+  class="cn-navigation-accountnavigationlink-50-1"
+  class:cn-navigation-accountnavigationlink-51-1={disabled}
+  class:cn-navigation-accountnavigationlink-52-1={disabled}
   aria-disabled={disabled || undefined}
   tabindex={disabled ? -1 : undefined}
   data-account-link
@@ -67,5 +67,5 @@
       size={avatarSize}
     />
   {/if}
-  <span class="whitespace-nowrap">{label}</span>
+  <span class="cn-navigation-accountnavigationlink-70-1">{label}</span>
 </a>

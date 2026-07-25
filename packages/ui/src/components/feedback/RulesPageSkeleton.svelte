@@ -2,45 +2,45 @@
   import { Skeleton } from "../shadcn/skeleton";
 </script>
 
-<div class="flex flex-col gap-6" data-rules-page-skeleton aria-busy="true">
-  <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+<div
+  class="cn-feedback-rulespageskeleton-5-1"
+  data-rules-page-skeleton
+  aria-busy="true"
+>
+  <div class="cn-feedback-rulespageskeleton-6-1">
     {#each Array.from({ length: 4 }, (_, index) => index) as row (row)}
-      <div
-        class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b px-4 py-3 last:border-b-0"
-      >
-        <div class="flex min-w-0 flex-col gap-2">
-          <Skeleton class="h-4 w-36" />
-          <div class="flex flex-wrap gap-1.5">
-            <Skeleton class="h-5 w-40 rounded-full" />
-            <Skeleton class="h-5 w-48 rounded-full" />
-            <Skeleton class="h-5 w-44 rounded-full" />
+      <div class="cn-feedback-rulespageskeleton-9-1">
+        <div class="cn-feedback-rulespageskeleton-11-1">
+          <Skeleton class="cn-feedback-rulespageskeleton-12-1" />
+          <div class="cn-feedback-rulespageskeleton-13-1">
+            <Skeleton class="cn-feedback-rulespageskeleton-14-1" />
+            <Skeleton class="cn-feedback-rulespageskeleton-15-1" />
+            <Skeleton class="cn-feedback-rulespageskeleton-16-1" />
           </div>
         </div>
-        <Skeleton class="h-5 w-9 rounded-full" />
-        <Skeleton class="size-8 rounded-md" />
+        <Skeleton class="cn-feedback-rulespageskeleton-19-1" />
+        <Skeleton class="cn-feedback-rulespageskeleton-20-1" />
       </div>
     {/each}
   </div>
 
-  <div class="flex flex-col gap-3">
-    <div class="flex flex-col gap-1">
-      <Skeleton class="h-4 w-28" />
-      <Skeleton class="h-3 w-64" />
+  <div class="cn-feedback-rulespageskeleton-25-1">
+    <div class="cn-feedback-rulespageskeleton-26-1">
+      <Skeleton class="cn-feedback-rulespageskeleton-27-1" />
+      <Skeleton class="cn-feedback-rulespageskeleton-28-1" />
     </div>
-    <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
-      <div class="border-b bg-muted/40 px-4 py-2.5">
-        <div class="grid grid-cols-8 gap-3">
+    <div class="cn-feedback-rulespageskeleton-30-1">
+      <div class="cn-feedback-rulespageskeleton-31-1">
+        <div class="cn-feedback-rulespageskeleton-32-1">
           {#each Array.from({ length: 8 }, (_, index) => index) as col (col)}
-            <Skeleton class="h-3 w-full" />
+            <Skeleton class="cn-feedback-rulespageskeleton-34-1" />
           {/each}
         </div>
       </div>
       {#each Array.from({ length: 5 }, (_, index) => index) as row (row)}
-        <div
-          class="grid grid-cols-8 gap-3 border-b px-4 py-2.5 last:border-b-0"
-        >
+        <div class="cn-feedback-rulespageskeleton-40-1">
           {#each Array.from({ length: 8 }, (_, index) => index) as col (col)}
-            <Skeleton class="h-3.5 w-full" />
+            <Skeleton class="cn-feedback-rulespageskeleton-43-1" />
           {/each}
         </div>
       {/each}

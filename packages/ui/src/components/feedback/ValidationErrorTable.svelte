@@ -30,25 +30,20 @@
 </script>
 
 {#if errors.length}
-  <div
-    class="overflow-x-auto rounded-xl border border-border/80 bg-card shadow-sm"
-  >
-    <Table.Root aria-label={ariaLabel} class="min-w-[42rem]">
+  <div class="cn-feedback-validationerrortable-34-1">
+    <Table.Root
+      aria-label={ariaLabel}
+      class="cn-feedback-validationerrortable-36-1"
+    >
       <Table.Header>
-        <Table.Row class="bg-muted/65 hover:bg-muted/65">
-          <Table.Head
-            class="w-20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em]"
-          >
+        <Table.Row class="cn-feedback-validationerrortable-38-1">
+          <Table.Head class="cn-feedback-validationerrortable-40-1">
             Line
           </Table.Head>
-          <Table.Head
-            class="min-w-72 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em]"
-          >
+          <Table.Head class="cn-feedback-validationerrortable-45-1">
             Message
           </Table.Head>
-          <Table.Head
-            class="min-w-80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em]"
-          >
+          <Table.Head class="cn-feedback-validationerrortable-50-1">
             Source context
           </Table.Head>
         </Table.Row>
@@ -56,11 +51,11 @@
       <Table.Body>
         {#each errors as error (error.id)}
           <Table.Row>
-            <Table.Cell class="px-4 py-3 font-mono text-xs tabular-nums">
+            <Table.Cell class="cn-feedback-validationerrortable-59-1">
               {#if error.href}
                 <a
                   href={error.href}
-                  class="font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  class="cn-feedback-validationerrortable-63-1"
                   onclick={(event) => navigate(error, event)}
                   >{error.line ?? "—"}</a
                 >
@@ -68,17 +63,16 @@
                 {error.line ?? "—"}
               {/if}
             </Table.Cell>
-            <Table.Cell class="px-4 py-3 align-top text-sm text-destructive">
+            <Table.Cell class="cn-feedback-validationerrortable-71-1">
               {error.message}
             </Table.Cell>
-            <Table.Cell class="px-4 py-3 align-top">
+            <Table.Cell class="cn-feedback-validationerrortable-74-1">
               {#if error.entity}
-                <code
-                  class="block whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-muted-foreground"
+                <code class="cn-feedback-validationerrortable-77-1"
                   >{error.entity}</code
                 >
               {:else}
-                <span class="text-sm text-muted-foreground">—</span>
+                <span class="cn-feedback-validationerrortable-81-1">—</span>
               {/if}
             </Table.Cell>
           </Table.Row>
@@ -87,11 +81,8 @@
     </Table.Root>
   </div>
 {:else}
-  <section
-    class="rounded-xl border border-dashed border-border/80 bg-card px-5 py-8 text-center shadow-sm"
-    aria-label={ariaLabel}
-  >
-    <h3 class="text-sm font-semibold">{emptyTitle}</h3>
-    <p class="mt-1 text-sm text-muted-foreground">{emptyDescription}</p>
+  <section class="cn-feedback-validationerrortable-91-1" aria-label={ariaLabel}>
+    <h3 class="cn-feedback-validationerrortable-94-1">{emptyTitle}</h3>
+    <p class="cn-feedback-validationerrortable-95-1">{emptyDescription}</p>
   </section>
 {/if}

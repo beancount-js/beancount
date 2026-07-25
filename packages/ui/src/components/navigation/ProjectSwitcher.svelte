@@ -46,11 +46,9 @@
   );
 </script>
 
-<nav class="grid gap-3" aria-label={ariaLabel}>
-  <section class="grid gap-1.5">
-    <p class="px-2 text-xs font-medium uppercase text-muted-foreground">
-      Current project
-    </p>
+<nav class="cn-navigation-projectswitcher-49-1" aria-label={ariaLabel}>
+  <section class="cn-navigation-projectswitcher-50-1">
+    <p class="cn-navigation-projectswitcher-51-1">Current project</p>
     {#if currentProject}
       {@render ProjectButton({
         project: currentProject,
@@ -58,12 +56,15 @@
         onSelect,
       })}
     {:else}
-      <p class="px-2 text-sm text-muted-foreground">{emptyLabel}</p>
+      <p class="cn-navigation-projectswitcher-61-1">{emptyLabel}</p>
     {/if}
   </section>
 
   {#if otherProjects.length}
-    <section class="grid gap-1" aria-label="Other projects">
+    <section
+      class="cn-navigation-projectswitcher-66-1"
+      aria-label="Other projects"
+    >
       {#each otherProjects as project (project.id)}
         {@render ProjectButton({ project, onSelect })}
       {/each}
@@ -75,7 +76,7 @@
     type="button"
     variant="outline"
     size="sm"
-    class="w-full justify-start"
+    class="cn-navigation-projectswitcher-78-1"
     disabled={addPending || !onAdd}
     onclick={() => onAdd?.()}
   >
@@ -98,18 +99,18 @@
     variant="ghost"
     size="sm"
     class={current
-      ? "h-auto w-full justify-start border border-sidebar-border bg-background py-2 text-sidebar-accent-foreground shadow-sm hover:bg-background hover:text-sidebar-accent-foreground"
-      : "h-auto w-full justify-start py-2"}
+      ? "cn-navigation-projectswitcher-101-1"
+      : "cn-navigation-projectswitcher-102-1"}
     title={project.name}
     aria-current={current ? "page" : undefined}
     disabled={project.disabled || !onSelect}
     onclick={() => onSelect?.(project)}
   >
     <FolderOpen data-icon="inline-start" />
-    <span class="min-w-0 text-left">
-      <span class="block truncate">{project.name}</span>
+    <span class="cn-navigation-projectswitcher-109-1">
+      <span class="cn-navigation-projectswitcher-110-1">{project.name}</span>
       {#if project.detail}
-        <span class="block truncate text-xs text-muted-foreground">
+        <span class="cn-navigation-projectswitcher-112-1">
           {project.detail}
         </span>
       {/if}

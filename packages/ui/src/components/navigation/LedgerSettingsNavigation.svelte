@@ -61,7 +61,7 @@
 </script>
 
 <nav
-  class="flex min-h-0 flex-1 flex-col gap-3"
+  class="cn-navigation-ledgersettingsnavigation-64-1"
   aria-label={ariaLabel}
   data-ledger-settings-navigation
   data-ledger-settings-sidebar
@@ -70,16 +70,16 @@
     type="button"
     variant="ghost"
     size="sm"
-    class="h-8 w-full justify-start gap-2 px-2 text-left text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
+    class="cn-navigation-ledgersettingsnavigation-73-1"
     aria-label="Back to ledger navigation"
     disabled={!onBack}
     onclick={() => onBack?.()}
   >
     <ArrowLeft data-icon="inline-start" />
-    <span class="text-xs font-medium">{backLabel}</span>
+    <span class="cn-navigation-ledgersettingsnavigation-79-1">{backLabel}</span>
   </Button>
 
-  <div class="flex min-h-0 flex-1 flex-col gap-1">
+  <div class="cn-navigation-ledgersettingsnavigation-82-1">
     {#each items as item (item.id)}
       {@render SettingsItem({ item })}
     {/each}
@@ -90,20 +90,20 @@
   {@const Icon = item.icon}
   {@const expanded = isExpanded(item)}
   {#if isGroup(item)}
-    <div class="flex flex-col gap-1">
+    <div class="cn-navigation-ledgersettingsnavigation-93-1">
       <div
         class={cn(
-          "flex items-center rounded-md",
+          "cn-navigation-ledgersettingsnavigation-96-1",
           groupIsActive(item)
-            ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm"
-            : "text-muted-foreground",
+            ? "cn-navigation-ledgersettingsnavigation-98-1"
+            : "cn-navigation-ledgersettingsnavigation-99-1",
         )}
       >
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          class="ml-1 size-6 shrink-0"
+          class="cn-navigation-ledgersettingsnavigation-106-1"
           aria-label={expanded
             ? `Collapse ${disclosureLabel(item)} navigation`
             : `Expand ${disclosureLabel(item)} navigation`}
@@ -112,34 +112,36 @@
           onclick={() => onExpandedChange?.(item.id, !expanded)}
         >
           <ChevronDown
-            class={cn("transition-transform", expanded ? "" : "-rotate-90")}
+            class={cn(
+              "cn-navigation-ledgersettingsnavigation-115-1",
+              expanded ? "" : "cn-navigation-ledgersettingsnavigation-115-2",
+            )}
           />
         </Button>
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          class="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent"
+          class="cn-navigation-ledgersettingsnavigation-122-1"
           aria-current={item.active ? "page" : undefined}
           disabled={item.disabled || !onSelect}
           onclick={() => onSelect?.(item.id)}
         >
           <Icon data-icon="inline-start" />
-          <span class="min-w-0 flex-1 truncate text-xs font-medium"
+          <span class="cn-navigation-ledgersettingsnavigation-128-1"
             >{item.label}</span
           >
           {#if item.badge}
             <span
-              class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-accent px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-              title={item.badgeTitle}
-              >{item.badge}</span
+              class="cn-navigation-ledgersettingsnavigation-133-1"
+              title={item.badgeTitle}>{item.badge}</span
             >
           {/if}
         </Button>
       </div>
 
       {#if expanded}
-        <div class="ml-4 flex flex-col gap-1 border-l border-sidebar-border pl-2">
+        <div class="cn-navigation-ledgersettingsnavigation-142-1">
           {#each item.children ?? [] as child (child.id)}
             {@render SettingsItem({ item: child })}
           {/each}
@@ -152,22 +154,23 @@
       variant="ghost"
       size="sm"
       class={cn(
-        "h-auto w-full justify-start gap-2 px-2 py-2 text-left",
+        "cn-navigation-ledgersettingsnavigation-155-1",
         item.active
-          ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
-          : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
+          ? "cn-navigation-ledgersettingsnavigation-157-1"
+          : "cn-navigation-ledgersettingsnavigation-158-1",
       )}
       aria-current={item.active ? "page" : undefined}
       disabled={item.disabled || !onSelect}
       onclick={() => onSelect?.(item.id)}
     >
       <Icon data-icon="inline-start" />
-      <span class="min-w-0 flex-1 truncate text-xs font-medium">{item.label}</span>
+      <span class="cn-navigation-ledgersettingsnavigation-165-1"
+        >{item.label}</span
+      >
       {#if item.badge}
         <span
-          class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-accent px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-          title={item.badgeTitle}
-          >{item.badge}</span
+          class="cn-navigation-ledgersettingsnavigation-168-1"
+          title={item.badgeTitle}>{item.badge}</span
         >
       {/if}
     </Button>

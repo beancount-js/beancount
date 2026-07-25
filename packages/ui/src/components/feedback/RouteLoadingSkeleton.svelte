@@ -11,26 +11,26 @@
   <QueryPageSkeleton />
 {:else}
   <div
-    class="flex h-full flex-col gap-4 p-4 sm:p-6"
+    class="cn-feedback-routeloadingskeleton-14-1"
     data-route-loading-skeleton
     role="status"
     aria-busy="true"
     aria-label="Loading ledger page"
   >
-    <div class="flex items-center justify-between gap-3">
-      <Skeleton class="h-5 w-36" />
-      <div class="flex gap-2">
-        <Skeleton class="size-8 rounded-md" />
-        <Skeleton class="size-8 rounded-md" />
+    <div class="cn-feedback-routeloadingskeleton-20-1">
+      <Skeleton class="cn-feedback-routeloadingskeleton-21-1" />
+      <div class="cn-feedback-routeloadingskeleton-22-1">
+        <Skeleton class="cn-feedback-routeloadingskeleton-23-1" />
+        <Skeleton class="cn-feedback-routeloadingskeleton-24-1" />
       </div>
     </div>
-    <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+    <div class="cn-feedback-routeloadingskeleton-27-1">
       {#each Array.from({ length: 8 }, (_, index) => index) as row (row)}
-        <div class="flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
-          <Skeleton class="h-3.5 w-20" />
-          <Skeleton class="h-3.5 min-w-0 flex-1" />
-          <Skeleton class="h-3.5 w-24" />
-          <Skeleton class="h-3.5 w-16" />
+        <div class="cn-feedback-routeloadingskeleton-29-1">
+          <Skeleton class="cn-feedback-routeloadingskeleton-30-1" />
+          <Skeleton class="cn-feedback-routeloadingskeleton-31-1" />
+          <Skeleton class="cn-feedback-routeloadingskeleton-32-1" />
+          <Skeleton class="cn-feedback-routeloadingskeleton-33-1" />
         </div>
       {/each}
     </div>

@@ -43,5 +43,42 @@ test("replaces Tailwind variant recipes with the semantic helper", () => {
   });
 
   assert.match(transformed.source, /createVariants/);
+  assert.match(
+    transformed.source,
+    /from "\.\.\/\.\.\/\.\.\/lib\/semantic-variants\.js"/,
+  );
   assert.doesNotMatch(transformed.source, /tailwind-variants|\btv\(/);
+});
+
+test("resolves the semantic variant helper from shared components", () => {
+  const source = `<script module lang="ts">
+  import { tv } from "tailwind-variants";
+  export const variants = tv({ base: "flex gap-2" });
+</script>`;
+
+  const transformed = transformClassContexts({
+    source,
+    file: "src/components/navigation/nav-variants.ts",
+    family: "navigation",
+  });
+
+  assert.match(
+    transformed.source,
+    /from "\.\.\/\.\.\/lib\/semantic-variants\.js"/,
+  );
+  assert.doesNotMatch(transformed.source, /tailwind-variants|\btv\(/);
+});
+
+test("replaces utilities in dynamic class expression branches", () => {
+  const source = `<section class={\`${'${fullHeight ? "h-screen" : "h-full"}'} overflow-hidden\`}></section>`;
+
+  const transformed = transformClassContexts({
+    source,
+    file: "src/components/layout/workspace-shell.svelte",
+    family: "layout",
+  });
+
+  assert.doesNotMatch(transformed.source, /h-screen|h-full|overflow-hidden/);
+  assert.match(transformed.source, /fullHeight \?/);
+  assert.equal(transformed.mappings.length, 3);
 });

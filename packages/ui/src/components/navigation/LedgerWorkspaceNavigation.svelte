@@ -221,15 +221,15 @@
 </script>
 
 <section
-  class="flex min-h-0 flex-1 flex-col gap-3"
+  class="cn-navigation-ledgerworkspacenavigation-224-1"
   aria-label={ariaLabel}
   data-ledger-workspace-navigation
   data-ledger-workspace-sidebar
 >
-  <div class="flex items-center justify-between gap-2 px-2">
-    <p class="text-xs font-medium uppercase text-muted-foreground">{title}</p>
+  <div class="cn-navigation-ledgerworkspacenavigation-229-1">
+    <p class="cn-navigation-ledgerworkspacenavigation-230-1">{title}</p>
     <span
-      class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-accent px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+      class="cn-navigation-ledgerworkspacenavigation-232-1"
       aria-label={`${ledgerCount} ${title.toLocaleLowerCase()}`}
       >{ledgerCount}</span
     >
@@ -237,8 +237,8 @@
 
   <div
     class={searchContent
-      ? "grid grid-cols-[repeat(3,minmax(0,1fr))_1.75rem] gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-1"
-      : "grid grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-1"}
+      ? "cn-navigation-ledgerworkspacenavigation-240-1"
+      : "cn-navigation-ledgerworkspacenavigation-241-1"}
     aria-label="Ledger navigation views"
   >
     {#each [{ id: "ledgers", label: "Ledgers" }, { id: "folders", label: "Folders" }, { id: "tags", label: "Tags" }] as workspaceView (workspaceView.id)}
@@ -246,10 +246,10 @@
         type="button"
         variant="ghost"
         size="sm"
-        class={"h-7 text-xs " +
+        class={"cn-navigation-ledgerworkspacenavigation-249-1" +
           (view === workspaceView.id && !searchOpen
-            ? "border border-sidebar-border bg-background shadow-sm hover:bg-background"
-            : "hover:bg-background")}
+            ? "cn-navigation-ledgerworkspacenavigation-251-1"
+            : "cn-navigation-ledgerworkspacenavigation-252-1")}
         aria-pressed={view === workspaceView.id && !searchOpen}
         onclick={() => {
           onViewChange?.(workspaceView.id as LedgerWorkspaceView);
@@ -264,10 +264,10 @@
         type="button"
         variant="ghost"
         size="icon"
-        class={"size-7 " +
+        class={"cn-navigation-ledgerworkspacenavigation-267-1" +
           (searchOpen
-            ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
-            : "hover:bg-background")}
+            ? "cn-navigation-ledgerworkspacenavigation-269-1"
+            : "cn-navigation-ledgerworkspacenavigation-270-1")}
         aria-label={searchOpen ? "Show ledger sidebar" : "Show search sidebar"}
         aria-pressed={searchOpen}
         title={searchOpen ? "Show ledgers" : "Search ledgers"}
@@ -283,25 +283,30 @@
   {:else}
     {#if selectedTags.length}
       <div
-        class="relative flex flex-wrap items-center gap-1.5 rounded-md border border-sidebar-border bg-background/55 py-1.5 pl-2 pr-9 text-xs text-muted-foreground"
+        class="cn-navigation-ledgerworkspacenavigation-286-1"
         aria-label="Selected tag filters"
       >
         {#each selectedTags as tag (tag.id)}
           <button
             type="button"
-            class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[11px] font-semibold leading-none text-primary hover:bg-primary/15"
+            class="cn-navigation-ledgerworkspacenavigation-292-1"
             aria-label={`Remove ${tag.label} filter`}
             onclick={() => toggleTag(tag.id)}
           >
-            <Hash class="h-3 w-3 shrink-0" aria-hidden="true" />
-            <span class="min-w-0 truncate">{tag.label}</span>
+            <Hash
+              class="cn-navigation-ledgerworkspacenavigation-296-1"
+              aria-hidden="true"
+            />
+            <span class="cn-navigation-ledgerworkspacenavigation-297-1"
+              >{tag.label}</span
+            >
           </button>
         {/each}
         <Button
           type="button"
           variant="ghost"
           size={treeVariant === "ledger" ? "icon" : "icon-sm"}
-          class="absolute right-1.5 top-1/2 size-6 -translate-y-1/2 rounded-full text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
+          class="cn-navigation-ledgerworkspacenavigation-304-1"
           aria-label="Clear tag filters"
           title="Clear tag filters"
           disabled={!onSelectedTagIdsChange}
@@ -313,24 +318,24 @@
     {/if}
 
     {#if view === "ledgers"}
-      <div class="flex items-center gap-1">
-        <label class="relative min-w-0 flex-1">
+      <div class="cn-navigation-ledgerworkspacenavigation-316-1">
+        <label class="cn-navigation-ledgerworkspacenavigation-317-1">
           <span class="sr-only">Search ledgers</span>
           <ListFilter
-            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+            class="cn-navigation-ledgerworkspacenavigation-320-1"
             aria-hidden="true"
           />
           <Input
             bind:value={ledgerSearch}
             placeholder="Search ledgers"
-            class="h-8 bg-sidebar pl-8 text-xs"
+            class="cn-navigation-ledgerworkspacenavigation-326-1"
           />
         </label>
         <Button
           type="button"
           variant="ghost"
           size={treeVariant === "ledger" ? "icon" : "icon-sm"}
-          class="size-7"
+          class="cn-navigation-ledgerworkspacenavigation-333-1"
           aria-label={visibleLedgerExpandableIds.some(
             (id) => !ledgerExpandedIds.includes(id),
           )
@@ -360,8 +365,8 @@
 
       <div
         class={treeVariant === "ledger"
-          ? "-mr-2 min-h-0 min-w-0 flex-1"
-          : "min-h-0 flex-1 overflow-auto pr-1"}
+          ? "cn-navigation-ledgerworkspacenavigation-363-1"
+          : "cn-navigation-ledgerworkspacenavigation-364-1"}
         data-ledger-scroll-area={treeVariant === "ledger" || undefined}
       >
         <WorkspaceTreeNavigation
@@ -381,20 +386,20 @@
         {#if queryPicker || accountPicker || resources.length}
           <div
             class={treeVariant === "ledger"
-              ? "mt-2 flex flex-col gap-2 border-t border-sidebar-border pt-3"
-              : "mt-2 flex flex-col gap-2 border-t border-sidebar-border px-2 pt-3"}
+              ? "cn-navigation-ledgerworkspacenavigation-384-1"
+              : "cn-navigation-ledgerworkspacenavigation-385-1"}
           >
             <p
               class={treeVariant === "ledger"
-                ? "px-2 text-xs font-medium uppercase text-muted-foreground"
-                : "text-xs font-medium uppercase text-muted-foreground"}
+                ? "cn-navigation-ledgerworkspacenavigation-389-1"
+                : "cn-navigation-ledgerworkspacenavigation-390-1"}
             >
               Ledger tools
             </p>
             {#if queryPicker || accountPicker}
-              <div class="flex flex-wrap gap-2">
+              <div class="cn-navigation-ledgerworkspacenavigation-395-1">
                 {#if queryPicker}
-                  <div class="min-w-0 flex-[1_1_8rem]">
+                  <div class="cn-navigation-ledgerworkspacenavigation-397-1">
                     <FilterCommandPicker
                       fullWidth
                       label={queryPicker.label}
@@ -407,7 +412,7 @@
                   </div>
                 {/if}
                 {#if accountPicker}
-                  <div class="min-w-0 flex-[1_1_8rem]">
+                  <div class="cn-navigation-ledgerworkspacenavigation-410-1">
                     <FilterCommandPicker
                       fullWidth
                       label={accountPicker.label}
@@ -427,36 +432,41 @@
                 type="button"
                 variant="ghost"
                 size="sm"
-                class="w-full justify-start"
+                class="cn-navigation-ledgerworkspacenavigation-430-1"
                 disabled={resource.disabled || !onResourceSelect}
                 onclick={() => onResourceSelect?.(resource.id)}
               >
-                <Icon class="size-4 shrink-0" aria-hidden="true" />
-                <span class="truncate">{resource.label}</span>
+                <Icon
+                  class="cn-navigation-ledgerworkspacenavigation-434-1"
+                  aria-hidden="true"
+                />
+                <span class="cn-navigation-ledgerworkspacenavigation-435-1"
+                  >{resource.label}</span
+                >
               </Button>
             {/each}
           </div>
         {/if}
       </div>
     {:else if view === "folders"}
-      <div class="flex items-center gap-1">
-        <label class="relative min-w-0 flex-1">
+      <div class="cn-navigation-ledgerworkspacenavigation-442-1">
+        <label class="cn-navigation-ledgerworkspacenavigation-443-1">
           <span class="sr-only">Search folders</span>
           <ListFilter
-            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+            class="cn-navigation-ledgerworkspacenavigation-446-1"
             aria-hidden="true"
           />
           <Input
             bind:value={folderSearch}
             placeholder="Search folders"
-            class="h-8 bg-sidebar pl-8 text-xs"
+            class="cn-navigation-ledgerworkspacenavigation-452-1"
           />
         </label>
         <Button
           type="button"
           variant="ghost"
           size={treeVariant === "ledger" ? "icon" : "icon-sm"}
-          class="size-7"
+          class="cn-navigation-ledgerworkspacenavigation-459-1"
           aria-label={visibleFolderExpandableIds.some(
             (id) => !folderExpandedIds.includes(id),
           )
@@ -486,8 +496,8 @@
 
       <div
         class={treeVariant === "ledger"
-          ? "-mr-2 min-h-0 min-w-0 flex-1"
-          : "min-h-0 flex-1 overflow-auto pr-1"}
+          ? "cn-navigation-ledgerworkspacenavigation-489-1"
+          : "cn-navigation-ledgerworkspacenavigation-490-1"}
         data-folder-scroll-area={treeVariant === "ledger" || undefined}
       >
         <WorkspaceTreeNavigation
@@ -502,24 +512,24 @@
         />
       </div>
     {:else}
-      <div class="flex items-center gap-1">
-        <label class="relative min-w-0 flex-1">
+      <div class="cn-navigation-ledgerworkspacenavigation-505-1">
+        <label class="cn-navigation-ledgerworkspacenavigation-506-1">
           <span class="sr-only">Search tags</span>
           <ListFilter
-            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+            class="cn-navigation-ledgerworkspacenavigation-509-1"
             aria-hidden="true"
           />
           <Input
             bind:value={tagSearch}
             placeholder="Search tags"
-            class="h-8 bg-sidebar pl-8 text-xs"
+            class="cn-navigation-ledgerworkspacenavigation-515-1"
           />
         </label>
         <Button
           type="button"
           variant="ghost"
           size="icon-sm"
-          class="size-7 shrink-0 border border-sidebar-border bg-background shadow-sm hover:bg-background"
+          class="cn-navigation-ledgerworkspacenavigation-522-1"
           aria-label={tagsPresentation === "tree"
             ? "Showing tag hierarchy. Switch to flat tags."
             : "Showing flat tags. Switch to tag hierarchy."}
@@ -543,8 +553,8 @@
 
       <div
         class={treeVariant === "ledger"
-          ? "-mr-2 min-h-0 min-w-0 flex-1"
-          : "min-h-0 flex-1 overflow-auto pr-1"}
+          ? "cn-navigation-ledgerworkspacenavigation-546-1"
+          : "cn-navigation-ledgerworkspacenavigation-547-1"}
         data-tags-scroll-area={treeVariant === "ledger" || undefined}
       >
         {#if tagsPresentation === "tree"}
@@ -559,30 +569,38 @@
             onExpandedIdsChange={onTagExpandedIdsChange}
           />
         {:else if flatTagItems.length}
-          <div class="grid gap-1 px-2" aria-label="Flat ledger tags">
+          <div
+            class="cn-navigation-ledgerworkspacenavigation-562-1"
+            aria-label="Flat ledger tags"
+          >
             {#each flatTagItems as tag (tag.id)}
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                class="h-8 w-full min-w-0 justify-start gap-2 px-2 text-xs text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
+                class="cn-navigation-ledgerworkspacenavigation-568-1"
                 aria-pressed={selectedTagIds.includes(tag.id)}
                 title={tag.label}
                 disabled={tag.disabled || !onSelectedTagIdsChange}
                 onclick={() => toggleTag(tag.id)}
               >
-                <Hash class="size-3.5 shrink-0" aria-hidden="true" />
-                <span class="min-w-0 flex-1 truncate text-left"
+                <Hash
+                  class="cn-navigation-ledgerworkspacenavigation-574-1"
+                  aria-hidden="true"
+                />
+                <span class="cn-navigation-ledgerworkspacenavigation-575-1"
                   >{tag.label}</span
                 >
                 {#if tag.badge}
-                  <span class="text-[10px] tabular-nums">{tag.badge}</span>
+                  <span class="cn-navigation-ledgerworkspacenavigation-579-1"
+                    >{tag.badge}</span
+                  >
                 {/if}
               </Button>
             {/each}
           </div>
         {:else}
-          <p class="px-2 py-1 text-xs text-muted-foreground">
+          <p class="cn-navigation-ledgerworkspacenavigation-585-1">
             No tags match the current filter.
           </p>
         {/if}

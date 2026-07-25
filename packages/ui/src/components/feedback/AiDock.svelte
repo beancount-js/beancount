@@ -150,10 +150,11 @@
     onRequestMentions?: (query: string) => Promise<Mention[]> | Mention[];
   } = $props();
 
-  const selectedModel = $derived.by(() =>
-    modelOptions.find((option) => option.value === model) ??
-    modelOptions[0] ??
-    DEFAULT_MODEL_OPTIONS[0],
+  const selectedModel = $derived.by(
+    () =>
+      modelOptions.find((option) => option.value === model) ??
+      modelOptions[0] ??
+      DEFAULT_MODEL_OPTIONS[0],
   );
 
   let clearChatConfirmOpen = $state(false);
@@ -242,11 +243,11 @@
 </script>
 
 {#if visibility !== "expanded"}
-  <div class="fixed bottom-4 right-4 z-30">
+  <div class="cn-feedback-aidock-245-1">
     <Button
       variant="outline"
       size="icon"
-      class="rounded-full bg-background shadow-lg"
+      class="cn-feedback-aidock-249-1"
       aria-label="Open ledger AI"
       title="Ask about this ledger"
       onclick={() => onVisibilityChange("expanded")}
@@ -255,11 +256,8 @@
     </Button>
   </div>
 {:else}
-  <section
-    class="fixed bottom-4 left-4 right-4 z-30 mx-auto flex h-[min(72vh,620px)] max-w-3xl flex-col overflow-hidden rounded-xl border bg-background shadow-2xl lg:static lg:z-auto lg:h-full lg:w-[26rem] lg:max-w-none lg:shrink-0"
-    aria-label="Ledger AI"
-  >
-    <div class="flex h-11 shrink-0 items-center gap-2 border-b px-2">
+  <section class="cn-feedback-aidock-259-1" aria-label="Ledger AI">
+    <div class="cn-feedback-aidock-262-1">
       <Button
         variant="ghost"
         size="icon"
@@ -268,16 +266,16 @@
       >
         <ChevronDown />
       </Button>
-      <div class="flex min-w-0 flex-1 items-center gap-2">
-        <Sparkles class="shrink-0" />
-        <p class="min-w-0 truncate text-sm font-medium">AI · {projectName}</p>
+      <div class="cn-feedback-aidock-271-1">
+        <Sparkles class="cn-feedback-aidock-272-1" />
+        <p class="cn-feedback-aidock-273-1">AI · {projectName}</p>
         <Select.Root
           type="single"
           value={model}
           onValueChange={(next: string) => setModel(next)}
         >
           <Select.Trigger
-            class="h-7 min-w-0 max-w-36 border-0 bg-secondary px-2 text-xs shadow-none"
+            class="cn-feedback-aidock-280-1"
             aria-label="Select Codex model"
           >
             {selectedModel.label}
@@ -289,18 +287,16 @@
           </Select.Content>
         </Select.Root>
       </div>
-      <details class="relative">
+      <details class="cn-feedback-aidock-292-1">
         <summary
-          class="flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground [&::-webkit-details-marker]:hidden"
+          class="cn-feedback-aidock-294-1"
           aria-label="AI settings"
           title="AI settings"
         >
           <SlidersHorizontal />
         </summary>
-        <div
-          class="absolute right-0 top-10 z-40 flex w-60 flex-col gap-2 rounded-md border bg-popover p-3 text-sm text-popover-foreground shadow-md"
-        >
-          <label class="flex cursor-pointer items-start gap-2">
+        <div class="cn-feedback-aidock-301-1">
+          <label class="cn-feedback-aidock-303-1">
             <input
               type="checkbox"
               checked={includeSelection}
@@ -311,7 +307,7 @@
           <Button
             variant="ghost"
             size="sm"
-            class="w-full justify-start"
+            class="cn-feedback-aidock-314-1"
             onclick={() => (clearChatConfirmOpen = true)}
           >
             <X data-icon="inline-start" />
@@ -320,7 +316,7 @@
           <Button
             variant="ghost"
             size="sm"
-            class="w-full justify-start"
+            class="cn-feedback-aidock-323-1"
             onclick={() => onVisibilityChange("hidden")}
           >
             <EyeOff data-icon="inline-start" />
@@ -330,24 +326,20 @@
       </details>
     </div>
 
-    <ScrollArea.Root class="min-h-0 flex-1">
-      <div class="flex min-h-full flex-col gap-3 p-3">
+    <ScrollArea.Root class="cn-feedback-aidock-333-1">
+      <div class="cn-feedback-aidock-334-1">
         {#if loadingSession}
           <AiDockSkeleton />
         {:else if !hasProject}
-          <div
-            class="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground"
-          >
+          <div class="cn-feedback-aidock-339-1">
             Open a ledger project to ask about its accounts.
           </div>
         {:else if session.items.length === 0}
-          <div
-            class="flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground"
-          >
+          <div class="cn-feedback-aidock-345-1">
             <Sparkles />
             <p>
-              Ask about the ledger, or ask for a proposed change. Sources are read
-              through safe Beancount tools; changes require review.
+              Ask about the ledger, or ask for a proposed change. Sources are
+              read through safe Beancount tools; changes require review.
             </p>
           </div>
         {/if}
@@ -356,42 +348,37 @@
           {#if item.type === "message"}
             <article
               class={item.role === "user"
-                ? "ml-auto max-w-[88%] rounded-lg bg-primary px-3 py-2 text-primary-foreground"
-                : "mr-auto max-w-[88%] rounded-lg bg-muted px-3 py-2 text-foreground"}
+                ? "cn-feedback-aidock-359-1"
+                : "cn-feedback-aidock-360-1"}
             >
-              <pre
-                class="whitespace-pre-wrap font-sans text-sm leading-5">{item.text}</pre>
+              <pre class="cn-feedback-aidock-363-1">{item.text}</pre>
             </article>
           {:else if item.type === "trace"}
             <Collapsible.Root
               open={item.state === "streaming"}
-              class="mx-auto w-full max-w-[94%] rounded-lg border bg-muted/35 px-3 py-2"
+              class="cn-feedback-aidock-368-1"
             >
-              <Collapsible.Trigger
-                class="flex w-full items-center gap-2 text-left text-sm font-medium text-muted-foreground hover:text-foreground"
-              >
+              <Collapsible.Trigger class="cn-feedback-aidock-371-1">
                 <Brain />
-                <span class="flex-1">{item.title}</span>
+                <span class="cn-feedback-aidock-374-1">{item.title}</span>
                 {#if item.state === "streaming"}<LoaderCircle
-                    class="animate-spin"
+                    class="cn-feedback-aidock-376-1"
                   />{/if}
               </Collapsible.Trigger>
-              <Collapsible.Content class="mt-3 flex flex-col gap-3">
+              <Collapsible.Content class="cn-feedback-aidock-379-1">
                 {#each item.steps as step (step.id)}
                   <div
-                    class="border-l pl-3 text-sm"
-                    class:border-destructive={step.state === "error"}
+                    class="cn-feedback-aidock-382-1"
+                    class:cn-feedback-aidock-383-1={step.state === "error"}
                   >
-                    <p class="font-medium">{step.title}</p>
+                    <p class="cn-feedback-aidock-385-1">{step.title}</p>
                     {#if step.text}<pre
-                        class="mt-1 whitespace-pre-wrap font-sans text-xs leading-5 text-muted-foreground">{step.text}</pre>{/if}
+                        class="cn-feedback-aidock-387-1">{step.text}</pre>{/if}
                     {#each step.tools ?? [] as tool (tool.id)}
-                      <details
-                        class="mt-2 rounded-md border bg-background/80 p-2"
-                      >
-                        <summary
-                          class="flex cursor-pointer items-center gap-2 text-xs font-medium"
-                          ><Wrench /><span class="flex-1">{tool.name}</span
+                      <details class="cn-feedback-aidock-390-1">
+                        <summary class="cn-feedback-aidock-393-1"
+                          ><Wrench /><span class="cn-feedback-aidock-394-1"
+                            >{tool.name}</span
                           ><Badge
                             variant={tool.state === "error"
                               ? "destructive"
@@ -399,9 +386,9 @@
                           ></summary
                         >
                         {#if tool.input}<pre
-                            class="mt-2 max-h-36 overflow-auto whitespace-pre-wrap border-t pt-2 text-xs">{tool.input}</pre>{/if}
+                            class="cn-feedback-aidock-402-1">{tool.input}</pre>{/if}
                         {#if tool.output}<pre
-                            class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap border-t pt-2 text-xs">{tool.output}</pre>{/if}
+                            class="cn-feedback-aidock-404-1">{tool.output}</pre>{/if}
                       </details>
                     {/each}
                   </div>
@@ -410,12 +397,10 @@
             </Collapsible.Root>
           {:else if item.type === "proposal"}
             {@const status = proposalStatus(item.proposal)}
-            <article
-              class="mx-auto w-full max-w-[94%] rounded-lg border bg-card p-3"
-            >
-              <div class="flex flex-wrap items-center gap-2">
+            <article class="cn-feedback-aidock-414-1">
+              <div class="cn-feedback-aidock-416-1">
                 <FilePenLine />
-                <h3 class="min-w-0 flex-1 text-sm font-semibold">
+                <h3 class="cn-feedback-aidock-418-1">
                   {item.proposal.title}
                 </h3>
                 <Badge
@@ -428,18 +413,18 @@
                         : "destructive"}>{status}</Badge
                 >
               </div>
-              <p class="mt-2 text-xs text-muted-foreground">
+              <p class="cn-feedback-aidock-431-1">
                 {item.proposal.file.path} · review {item.proposal.replacements
                   .length} replacement{item.proposal.replacements.length === 1
                   ? ""
                   : "s"} before saving.
               </p>
               {#if item.proposal.errors?.length}
-                <p class="mt-2 text-xs text-destructive">
+                <p class="cn-feedback-aidock-438-1">
                   {item.proposal.errors.join("; ")}
                 </p>
               {/if}
-              <div class="mt-3 flex flex-col gap-2">
+              <div class="cn-feedback-aidock-442-1">
                 {#each item.proposal.replacements as replacement, index (`${item.proposal.id}-${index}`)}
                   <AiUnifiedReviewDiff
                     before={replacement.oldText}
@@ -448,82 +433,72 @@
                 {/each}
               </div>
               {#if status === "pending"}
-                <div class="mt-3 flex justify-end gap-2">
+                <div class="cn-feedback-aidock-451-1">
                   <Button
                     variant="outline"
                     size="sm"
-                    onclick={() => void onResolveProposal(item.proposal, "undo")}
+                    onclick={() =>
+                      void onResolveProposal(item.proposal, "undo")}
                     >Undo proposal</Button
                   >
                   <Button
                     size="sm"
-                    onclick={() => void onResolveProposal(item.proposal, "keep")}
+                    onclick={() =>
+                      void onResolveProposal(item.proposal, "keep")}
                     ><Check data-icon="inline-start" /> Keep change</Button
                   >
                 </div>
               {/if}
             </article>
           {:else if item.type === "approval"}
-            <article
-              class="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm"
-            >
-              <p class="font-medium">
+            <article class="cn-feedback-aidock-468-1">
+              <p class="cn-feedback-aidock-470-1">
                 AI needs approval for {item.request.kind}
               </p>
-              {#if item.request.reason}<p class="mt-1 text-muted-foreground">
+              {#if item.request.reason}<p class="cn-feedback-aidock-473-1">
                   {item.request.reason}
                 </p>{/if}
-              <div class="mt-3 flex justify-end gap-2">
+              <div class="cn-feedback-aidock-476-1">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onclick={() =>
-                    void onRespondToApproval(item, "reject")}
+                  onclick={() => void onRespondToApproval(item, "reject")}
                   >Reject</Button
                 ><Button
                   size="sm"
-                  onclick={() =>
-                    void onRespondToApproval(item, "approve")}
+                  onclick={() => void onRespondToApproval(item, "approve")}
                   >Approve</Button
                 >
               </div>
             </article>
           {:else if item.type === "error"}
-            <div
-              class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
+            <div class="cn-feedback-aidock-493-1">
               {item.text}
             </div>
           {/if}
         {/each}
-        {#if sessionError}<div
-            class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          >
+        {#if sessionError}<div class="cn-feedback-aidock-500-1">
             {sessionError}
           </div>{/if}
-        {#if streaming}<div
-            class="flex items-center gap-2 px-2 text-xs text-muted-foreground"
-          >
-            <LoaderCircle class="animate-spin" /> Thinking
+        {#if streaming}<div class="cn-feedback-aidock-505-1">
+            <LoaderCircle class="cn-feedback-aidock-507-1" /> Thinking
           </div>{/if}
       </div>
     </ScrollArea.Root>
 
     <form
-      class="relative shrink-0 border-t p-3"
+      class="cn-feedback-aidock-513-1"
       onsubmit={(event) => {
         event.preventDefault();
         void send();
       }}
     >
       {#if mentionOptions.length}
-        <div
-          class="absolute bottom-[calc(100%+0.25rem)] left-3 right-3 z-40 max-h-44 overflow-auto rounded-md border bg-popover p-1 shadow-lg"
-        >
+        <div class="cn-feedback-aidock-521-1">
           {#each mentionOptions as option (option.path)}
             <button
               type="button"
-              class="flex w-full rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+              class="cn-feedback-aidock-526-1"
               onclick={() => insertMention(option.path)}>@{option.path}</button
             >
           {/each}
@@ -531,7 +506,7 @@
       {/if}
       <Textarea
         bind:value={input}
-        class="min-h-20 resize-y"
+        class="cn-feedback-aidock-534-1"
         placeholder="Ask about balances, entries, or request a proposed ledger change. Type @ to mention a source."
         disabled={!hasProject || streaming}
         onkeydown={(event) => {
@@ -541,9 +516,8 @@
           }
         }}
       />
-      <div class="mt-2 flex items-center justify-between gap-2">
-        <span class="text-xs text-muted-foreground">⌘/Ctrl + Enter to send</span
-        >
+      <div class="cn-feedback-aidock-544-1">
+        <span class="cn-feedback-aidock-545-1">⌘/Ctrl + Enter to send</span>
         {#if streaming}
           <Button
             type="button"

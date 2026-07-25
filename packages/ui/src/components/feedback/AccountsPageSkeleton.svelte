@@ -2,30 +2,32 @@
   import { Skeleton } from "../shadcn/skeleton";
 </script>
 
-<div class="flex flex-col gap-6" data-accounts-page-skeleton aria-busy="true">
-  <div class="flex flex-wrap gap-2">
-    <Skeleton class="h-8 w-28 rounded-md" />
-    <Skeleton class="h-8 w-32 rounded-md" />
+<div
+  class="cn-feedback-accountspageskeleton-5-1"
+  data-accounts-page-skeleton
+  aria-busy="true"
+>
+  <div class="cn-feedback-accountspageskeleton-6-1">
+    <Skeleton class="cn-feedback-accountspageskeleton-7-1" />
+    <Skeleton class="cn-feedback-accountspageskeleton-8-1" />
   </div>
-  <article
-    class="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
-  >
-    <div class="flex items-center gap-3 border-b px-4 py-3">
-      <Skeleton class="size-8 rounded-md" />
-      <div class="flex min-w-0 flex-1 flex-col gap-2">
-        <Skeleton class="h-4 w-40" />
-        <Skeleton class="h-3 w-56" />
+  <article class="cn-feedback-accountspageskeleton-11-1">
+    <div class="cn-feedback-accountspageskeleton-13-1">
+      <Skeleton class="cn-feedback-accountspageskeleton-14-1" />
+      <div class="cn-feedback-accountspageskeleton-15-1">
+        <Skeleton class="cn-feedback-accountspageskeleton-16-1" />
+        <Skeleton class="cn-feedback-accountspageskeleton-17-1" />
       </div>
     </div>
-    <div class="flex flex-col gap-0 p-2">
+    <div class="cn-feedback-accountspageskeleton-20-1">
       {#each Array.from({ length: 5 }, (_, index) => index) as row (row)}
-        <div class="flex items-center gap-3 rounded-lg px-3 py-2.5">
-          <Skeleton class="size-4 rounded-sm" />
-          <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-            <Skeleton class="h-3.5 w-48" />
-            <Skeleton class="h-3 w-32" />
+        <div class="cn-feedback-accountspageskeleton-22-1">
+          <Skeleton class="cn-feedback-accountspageskeleton-23-1" />
+          <div class="cn-feedback-accountspageskeleton-24-1">
+            <Skeleton class="cn-feedback-accountspageskeleton-25-1" />
+            <Skeleton class="cn-feedback-accountspageskeleton-26-1" />
           </div>
-          <Skeleton class="h-8 w-40" />
+          <Skeleton class="cn-feedback-accountspageskeleton-28-1" />
         </div>
       {/each}
     </div>

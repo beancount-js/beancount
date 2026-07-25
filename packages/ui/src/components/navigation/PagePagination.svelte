@@ -28,13 +28,16 @@
     if (!disabled && nextPage !== page) onPageChange(nextPage);
   }}
   aria-label={ariaLabel}
-  class="mx-0 w-full justify-center sm:w-auto"
+  class="cn-navigation-pagepagination-31-1"
   data-page-pagination
 >
   {#snippet children({ pages, currentPage })}
-    <Pagination.Content class="gap-0.5">
+    <Pagination.Content class="cn-navigation-pagepagination-35-1">
       <Pagination.Item>
-        <Pagination.Previous {disabled} class="size-8 px-0" />
+        <Pagination.Previous
+          {disabled}
+          class="cn-navigation-pagepagination-37-1"
+        />
       </Pagination.Item>
       {#each pages as pageItem (pageItem.key)}
         {#if pageItem.type === "ellipsis"}
@@ -55,7 +58,7 @@
         {/if}
       {/each}
       <Pagination.Item>
-        <Pagination.Next {disabled} class="size-8 px-0" />
+        <Pagination.Next {disabled} class="cn-navigation-pagepagination-58-1" />
       </Pagination.Item>
     </Pagination.Content>
   {/snippet}

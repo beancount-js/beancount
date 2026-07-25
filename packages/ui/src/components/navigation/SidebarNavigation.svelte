@@ -35,7 +35,7 @@
 </script>
 
 <Tooltip.Provider>
-  <nav class="grid gap-1 px-2" aria-label={ariaLabel}>
+  <nav class="cn-navigation-sidebarnavigation-38-1" aria-label={ariaLabel}>
     {#each items as item (item.href)}
       {@const active = item.href === activeHref}
       {@const Icon = item.icon}
@@ -61,26 +61,29 @@
               onclick={(event) => navigate(item, event)}
             >
               <Icon
-                class="mr-2 size-4 group-data-[collapsible=icon]:mr-0"
+                class="cn-navigation-sidebarnavigation-64-1"
                 aria-hidden="true"
               />
-              <span class="group-data-[collapsible=icon]:hidden"
+              <span class="cn-navigation-sidebarnavigation-67-1"
                 >{item.label}</span
               >
               {#if item.badge}
-                <span
-                  class="ml-auto text-muted-foreground group-data-[collapsible=icon]:hidden"
-                >
+                <span class="cn-navigation-sidebarnavigation-72-1">
                   {item.badge}
                 </span>
               {/if}
             </a>
           {/snippet}
         </Tooltip.Trigger>
-        <Tooltip.Content side="right" class="flex items-center gap-4">
+        <Tooltip.Content
+          side="right"
+          class="cn-navigation-sidebarnavigation-80-1"
+        >
           {item.label}
           {#if item.badge}
-            <span class="ml-auto text-muted-foreground">{item.badge}</span>
+            <span class="cn-navigation-sidebarnavigation-83-1"
+              >{item.badge}</span
+            >
           {/if}
         </Tooltip.Content>
       </Tooltip.Root>

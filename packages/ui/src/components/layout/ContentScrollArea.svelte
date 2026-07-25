@@ -17,9 +17,9 @@
 
 <ScrollArea.Root
   data-content-scroll-area
-  class={cn("h-full min-h-0 min-w-0", className)}
+  class={cn("cn-layout-contentscrollarea-20-1", className)}
 >
-  <div class={cn("min-w-0", contentClass)}>
+  <div class={cn("cn-layout-contentscrollarea-22-1", contentClass)}>
     {@render children?.()}
   </div>
 </ScrollArea.Root>

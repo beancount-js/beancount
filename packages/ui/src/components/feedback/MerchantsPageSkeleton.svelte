@@ -2,17 +2,21 @@
   import { Skeleton } from "../shadcn/skeleton";
 </script>
 
-<div class="flex flex-col gap-5" data-merchants-page-skeleton aria-busy="true">
-  <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+<div
+  class="cn-feedback-merchantspageskeleton-5-1"
+  data-merchants-page-skeleton
+  aria-busy="true"
+>
+  <div class="cn-feedback-merchantspageskeleton-6-1">
     {#each Array.from({ length: 6 }, (_, index) => index) as row (row)}
-      <div class="flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
-        <Skeleton class="size-9 shrink-0 rounded-full" />
-        <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-          <Skeleton class="h-4 w-44" />
-          <Skeleton class="h-3 w-28" />
+      <div class="cn-feedback-merchantspageskeleton-8-1">
+        <Skeleton class="cn-feedback-merchantspageskeleton-9-1" />
+        <div class="cn-feedback-merchantspageskeleton-10-1">
+          <Skeleton class="cn-feedback-merchantspageskeleton-11-1" />
+          <Skeleton class="cn-feedback-merchantspageskeleton-12-1" />
         </div>
-        <Skeleton class="h-5 w-16 rounded-full" />
-        <Skeleton class="size-8 rounded-md" />
+        <Skeleton class="cn-feedback-merchantspageskeleton-14-1" />
+        <Skeleton class="cn-feedback-merchantspageskeleton-15-1" />
       </div>
     {/each}
   </div>

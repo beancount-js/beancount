@@ -19,25 +19,17 @@
   } = $props();
 </script>
 
-<div
-  class="flex items-center gap-2 group-data-[collapsible=icon]:hidden"
-  data-studio-shell-header
->
-  <div
-    class="grid size-8 place-items-center rounded-md bg-primary font-semibold text-primary-foreground"
-    aria-hidden="true"
-  >
-    B
-  </div>
-  <div class="min-w-0 flex-1">
-    <p class="truncate text-sm font-semibold leading-tight">Beancount Studio</p>
-    <p class="truncate text-xs text-muted-foreground">{projectName}</p>
+<div class="cn-layout-studioshellheader-23-1" data-studio-shell-header>
+  <div class="cn-layout-studioshellheader-27-1" aria-hidden="true">B</div>
+  <div class="cn-layout-studioshellheader-32-1">
+    <p class="cn-layout-studioshellheader-33-1">Beancount Studio</p>
+    <p class="cn-layout-studioshellheader-34-1">{projectName}</p>
   </div>
   <Button
     type="button"
     variant="ghost"
     size="icon"
-    class="size-8 shrink-0"
+    class="cn-layout-studioshellheader-40-1"
     aria-label="Ledger settings"
     title="Ledger settings"
     aria-pressed={settingsOpen}
@@ -50,7 +42,7 @@
       type="button"
       variant="ghost"
       size="icon"
-      class="size-8 md:hidden"
+      class="cn-layout-studioshellheader-53-1"
       aria-label="Close sidebar"
       title="Close sidebar"
       onclick={onCloseSidebar}

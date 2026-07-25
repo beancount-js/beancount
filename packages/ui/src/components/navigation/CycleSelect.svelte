@@ -39,11 +39,11 @@
   }
 </script>
 
-<div data-slot="cycle-select" class="flex min-w-0 shrink items-center gap-1">
+<div data-slot="cycle-select" class="cn-navigation-cycleselect-42-1">
   <Button
     variant="ghost"
     size="icon"
-    class="size-8 overflow-hidden rounded-md"
+    class="cn-navigation-cycleselect-46-1"
     aria-label="Previous {label.toLowerCase()}"
     disabled={shiftDisabled}
     onclick={() => shift(-1)}
@@ -64,7 +64,7 @@
   <Button
     variant="ghost"
     size="icon"
-    class="size-8 overflow-hidden rounded-md"
+    class="cn-navigation-cycleselect-67-1"
     aria-label="Next {label.toLowerCase()}"
     disabled={shiftDisabled}
     onclick={() => shift(1)}

@@ -8,7 +8,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { basename, dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { findTailwindUtilitiesInSource } from "./no-tailwind-utilities.mjs";
@@ -25,7 +25,7 @@ const escapeClassName = escapeClassNameModule.default ?? escapeClassNameModule;
 
 const quotePattern = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g;
 const classDirectivePattern = (token) =>
-  new RegExp(`class:${escapeRegExp(token)}(?=\\\\s*=)`, "g");
+  new RegExp(`class:${escapeRegExp(token)}(?=\\s*=)`, "g");
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -51,6 +51,50 @@ function semanticGroupClass(token) {
   return null;
 }
 
+function semanticVariantsImport(file) {
+  let importPath = relative(
+    dirname(file),
+    "src/lib/semantic-variants.js",
+  ).replaceAll("\\\\", "/");
+  if (!importPath.startsWith(".")) importPath = `./${importPath}`;
+  return importPath;
+}
+
+function sourceMarkerStem(file, family) {
+  let source = file.replace(/^src\/components\//, "").replace(/\.[^.]+$/, "");
+  if (source.startsWith(`${family}/`)) {
+    source = source.slice(family.length + 1);
+  }
+  return slug(source);
+}
+
+function embeddedUtilityPattern(token) {
+  return new RegExp(
+    `(^|[\\s\"'\\\`{(:,])${escapeRegExp(token)}(?=$|[\\s\"'\\\`},)])`,
+  );
+}
+
+function classLiteralCandidates(content) {
+  return content
+    .split(/\s+/)
+    .map((word) =>
+      word.replace(/^[${}\"'`(),?]+/, "").replace(/[{}\"'`(),?]+$/, ""),
+    )
+    .filter(Boolean);
+}
+
+function classifyClassLiteral(content, file) {
+  const candidates = classLiteralCandidates(content);
+  if (candidates.length === 0) return new Set();
+
+  return new Set(
+    findTailwindUtilitiesInSource(
+      `<div class="${candidates.join(" ")}"></div>`,
+      file,
+    ).map((finding) => finding.token),
+  );
+}
+
 export function transformClassContexts({ source, file, family }) {
   const findings = findTailwindUtilitiesInSource(source, file);
   const tokensByLine = new Map();
@@ -66,6 +110,7 @@ export function transformClassContexts({ source, file, family }) {
   const groupClasses = new Map();
   const lines = source.split("\n");
   const familyMarkerPrefix = `cn-${slug(family)}-`;
+  const markerStem = sourceMarkerStem(file, family);
 
   lines.forEach((line, index) => {
     if (line.includes(familyMarkerPrefix) && !tokensByLine.has(index + 1)) {
@@ -82,14 +127,20 @@ export function transformClassContexts({ source, file, family }) {
       const quote = literal[0];
       const content = literal.slice(1, -1);
       const words = content.split(/\s+/).filter(Boolean);
+      const candidates = classLiteralCandidates(content);
       const existingMarker = words.find((word) =>
         word.startsWith(familyMarkerPrefix),
       );
-      const confirmedUtilities = words.filter(
+      const confirmedUtilities = candidates.filter(
         (word) => tokens.has(word) || semanticGroupClass(word),
       );
 
       if (confirmedUtilities.length === 0 && !existingMarker) return literal;
+
+      const classifiedUtilities = classifyClassLiteral(content, file);
+      for (const utility of classifiedUtilities) tokens.add(utility);
+
+      if (quote === "`" && content.includes("${")) return literal;
 
       const utilities = words.filter(
         (word) =>
@@ -102,7 +153,7 @@ export function transformClassContexts({ source, file, family }) {
       occurrence += 1;
       const marker =
         existingMarker ??
-        `cn-${slug(family)}-${slug(basename(file))}-${lineNumber}-${occurrence}`;
+        `cn-${slug(family)}-${markerStem}-${lineNumber}-${occurrence}`;
       const semanticGroups = [];
 
       for (const utility of utilities) {
@@ -124,29 +175,40 @@ export function transformClassContexts({ source, file, family }) {
     for (const token of tokens) {
       if (consumed.has(token)) continue;
       const directive = classDirectivePattern(token);
-      if (!directive.test(lines[index])) continue;
+      if (directive.test(lines[index])) {
+        occurrence += 1;
+        const marker = `cn-${slug(family)}-${markerStem}-${lineNumber}-${occurrence}`;
+        lines[index] = lines[index].replace(directive, `class:${marker}`);
+        mappings.push({ marker, utilities: [token] });
+        consumed.add(token);
+        continue;
+      }
+
+      const embedded = embeddedUtilityPattern(token);
+      if (!embedded.test(lines[index])) continue;
 
       occurrence += 1;
-      const marker = `cn-${slug(family)}-${slug(basename(file))}-${lineNumber}-${occurrence}`;
-      lines[index] = lines[index].replace(directive, `class:${marker}`);
+      const marker = `cn-${slug(family)}-${markerStem}-${lineNumber}-${occurrence}`;
+      lines[index] = lines[index].replace(embedded, `$1${marker}`);
       mappings.push({ marker, utilities: [token] });
       consumed.add(token);
     }
   }
 
+  const variantsImport = semanticVariantsImport(file);
   let transformed = lines.join("\n");
   transformed = transformed
     .replace(
       /import\s*\{\s*type VariantProps,\s*tv\s*\}\s*from\s*"tailwind-variants";/g,
-      'import { createVariants, type VariantProps } from "../../../lib/semantic-variants.js";',
+      `import { createVariants, type VariantProps } from "${variantsImport}";`,
     )
     .replace(
       /import\s*\{\s*tv,\s*type VariantProps\s*\}\s*from\s*"tailwind-variants";/g,
-      'import { createVariants, type VariantProps } from "../../../lib/semantic-variants.js";',
+      `import { createVariants, type VariantProps } from "${variantsImport}";`,
     )
     .replace(
       /import\s*\{\s*tv\s*,?\s*\}\s*from\s*"tailwind-variants";/g,
-      'import { createVariants } from "../../../lib/semantic-variants.js";',
+      `import { createVariants } from "${variantsImport}";`,
     );
 
   if (!transformed.includes('"tailwind-variants"')) {
@@ -535,6 +597,98 @@ export function migrateFamilies({ families }) {
   }
 }
 
+function collectProductionSources(directory) {
+  const sources = [];
+
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      sources.push(...collectProductionSources(path));
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    if (!entry.name.endsWith(".svelte") && !entry.name.endsWith(".ts"))
+      continue;
+    if (
+      entry.name.includes(".stories.") ||
+      entry.name.includes(".spec.") ||
+      entry.name.includes(".test.") ||
+      entry.name.endsWith(".tokens.ts") ||
+      entry.name === "index.ts"
+    ) {
+      continue;
+    }
+    sources.push(path);
+  }
+
+  return sources.sort();
+}
+
+export function migrateSharedComponents({ categories }) {
+  const temporaryDirectory = mkdtempSync(
+    join(tmpdir(), "beancount-native-compositions-"),
+  );
+  const stylesPath = join(uiRoot, "src/styles.css");
+  let styles = readFileSync(stylesPath, "utf8");
+
+  try {
+    for (const category of categories) {
+      const categoryDirectory = join(uiRoot, "src/components", category);
+      if (!existsSync(categoryDirectory)) {
+        throw new Error(`Unknown shared component category: ${category}`);
+      }
+
+      const mappings = [];
+      const groupClasses = new Map();
+      const pendingWrites = new Map();
+      const cssPath = join(categoryDirectory, `${category}.native.css`);
+      const existingCss = existsSync(cssPath)
+        ? readFileSync(cssPath, "utf8")
+        : "";
+
+      for (const path of collectProductionSources(categoryDirectory)) {
+        const file = relative(uiRoot, path);
+        const transformed = transformClassContexts({
+          source: readFileSync(path, "utf8"),
+          file,
+          family: category,
+        });
+        pendingWrites.set(path, transformed.source);
+        mappings.push(...transformed.mappings);
+        for (const entry of transformed.groupClasses) {
+          groupClasses.set(...entry);
+        }
+      }
+
+      const css = compileFamilyCss({
+        family: `shared-${category}`,
+        mappings,
+        groupClasses,
+        temporaryDirectory,
+      });
+
+      for (const [path, source] of pendingWrites) writeFileSync(path, source);
+      writeFileSync(
+        cssPath,
+        existingCss && mappings.length === 0
+          ? existingCss
+          : existingCss
+            ? `${existingCss.trimEnd()}\n\n${css}`
+            : css,
+      );
+
+      const statement = `@import "./components/${category}/${category}.native.css";`;
+      if (!styles.includes(statement)) {
+        styles = `${styles.trimEnd()}\n${statement}\n`;
+      }
+    }
+
+    writeFileSync(stylesPath, styles);
+  } finally {
+    rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
+}
+
 function parseFamilies(argv) {
   const familyArgument = argv.find((argument) =>
     argument.startsWith("--families="),
@@ -547,10 +701,27 @@ function parseFamilies(argv) {
     .filter(Boolean);
 }
 
+function parseSharedCategories(argv) {
+  const categoryArgument = argv.find((argument) =>
+    argument.startsWith("--shared="),
+  );
+  if (!categoryArgument) return [];
+  return categoryArgument
+    .slice("--shared=".length)
+    .split(",")
+    .map((category) => category.trim())
+    .filter(Boolean);
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const families = parseFamilies(process.argv.slice(2));
-  if (families.length === 0) {
-    throw new Error("Pass --families=accordion,alert,...");
+  const argv = process.argv.slice(2);
+  const families = parseFamilies(argv);
+  const categories = parseSharedCategories(argv);
+  if (families.length === 0 && categories.length === 0) {
+    throw new Error(
+      "Pass --families=accordion,alert,... or --shared=layout,navigation,...",
+    );
   }
-  migrateFamilies({ families });
+  if (families.length > 0) migrateFamilies({ families });
+  if (categories.length > 0) migrateSharedComponents({ categories });
 }
