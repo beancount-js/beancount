@@ -3,13 +3,11 @@
   import ArrowDownToLine from "lucide-svelte/icons/arrow-down-to-line";
   import X from "lucide-svelte/icons/x";
   import { closeGotoLine, dialogEffect, goToLine } from "../gotoline";
-  import Input from "$lib/components/ui/input/input.svelte";
-  import Button, {
-    buttonVariants,
-  } from "$lib/components/ui/button/button.svelte";
+  import { Input } from "@beancount-js/ui/shadcn/input";
+  import { Button, buttonVariants } from "@beancount-js/ui/shadcn/button";
   import { onMount } from "svelte";
   import type { WithElementRef } from "bits-ui";
-  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
+  import * as Tooltip from "@beancount-js/ui/shadcn/tooltip";
 
   let { ref = $bindable(null), view }: WithElementRef<{ view: EditorView }> =
     $props();

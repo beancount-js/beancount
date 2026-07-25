@@ -1,6 +1,6 @@
 <script lang="ts">
   import { writable } from "svelte/store";
-  import * as Select from "$lib/components/ui/select";
+  import * as Select from "@beancount-js/ui/shadcn/select";
 
   import {
     barChartMode,

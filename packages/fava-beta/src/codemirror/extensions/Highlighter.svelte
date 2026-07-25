@@ -2,7 +2,7 @@
   import { highlightCode } from "@lezer/highlight";
   import { Parser } from "@lezer/common";
   import { classHighlighter } from "./classHighlighter";
-  import * as ScrollArea from "$lib/components/ui/scroll-area";
+  import * as ScrollArea from "@beancount-js/ui/shadcn/scroll-area";
   export let code: string;
   export let parser: Parser;
   let contentEl: HTMLPreElement;

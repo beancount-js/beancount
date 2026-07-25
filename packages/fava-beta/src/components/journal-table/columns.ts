@@ -1,4 +1,7 @@
-import { renderComponent, renderSnippet } from "$lib/components/ui/data-table";
+import {
+  renderComponent,
+  renderSnippet,
+} from "@beancount-js/ui/shadcn/data-table";
 import {
   Balance,
   Close,

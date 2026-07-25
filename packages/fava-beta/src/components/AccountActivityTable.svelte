@@ -15,8 +15,8 @@
   import { useCtx } from "../stores/format";
   import { urlForAccount } from "../helpers";
   import { useNavigation } from "../router/router";
-  import * as Select from "$lib/components/ui/select";
-  import * as ToggleGroup from "$lib/components/ui/toggle-group";
+  import * as Select from "@beancount-js/ui/shadcn/select";
+  import * as ToggleGroup from "@beancount-js/ui/shadcn/toggle-group";
   import { ingestionHeaderActions } from "../studio/ingestion-header-actions";
   import { useStudioWorkspace } from "../studio/workspace";
   import { useLedger } from "./helpers";
@@ -102,8 +102,11 @@
   $: visibleGroups = pages[page - 1] ?? [];
   $: visibleRecords = visibleGroups.flatMap((group) => group.records);
   $: visibleKeys = visibleRecords.map((record) => record.key);
-  $: selectedVisibleCount = visibleKeys.filter((key) => selectedKeys.has(key)).length;
-  $: masterChecked = Boolean(visibleKeys.length) && selectedVisibleCount === visibleKeys.length;
+  $: selectedVisibleCount = visibleKeys.filter((key) =>
+    selectedKeys.has(key),
+  ).length;
+  $: masterChecked =
+    Boolean(visibleKeys.length) && selectedVisibleCount === visibleKeys.length;
   $: hasOffPageRecords = allRecords.length > visibleKeys.length;
   $: allMatchingSelected =
     allRecords.length > 0 && selectedKeys.size === allRecords.length;
@@ -119,7 +122,9 @@
   $: groupsForTable = visibleGroups.map(toUiGroup);
 
   $: if ([...selectedKeys].some((key) => !recordMap.has(key))) {
-    commitSelection(new Set([...selectedKeys].filter((key) => recordMap.has(key))));
+    commitSelection(
+      new Set([...selectedKeys].filter((key) => recordMap.has(key))),
+    );
   }
 
   $: readOnly = $activeLedgerKind === "ingestion-review";
@@ -136,7 +141,6 @@
       });
     }
   }
-
 
   onDestroy(() => ingestionHeaderActions.set(null));
 
@@ -166,7 +170,9 @@
   function balanceText(balance: Record<string, number>) {
     const entries = orderedBalanceEntries(balance, $operatingCurrency);
     return entries.length
-      ? entries.map(([currency, value]) => $ctx.money(value, currency)).join(" · ")
+      ? entries
+          .map(([currency, value]) => $ctx.money(value, currency))
+          .join(" · ")
       : "—";
   }
 
@@ -296,7 +302,9 @@
     {/if}
 
     {#if !visibleRecords.length}
-      <div class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground">
+      <div
+        class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+      >
         {emptyMessage}
       </div>
     {:else}
@@ -316,13 +324,14 @@
       <div
         class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
       >
-        <span class="text-sm text-muted-foreground">{page} of {pages.length}</span>
+        <span class="text-sm text-muted-foreground"
+          >{page} of {pages.length}</span
+        >
         <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
           <div class="hidden items-center gap-2 sm:flex">
             <span
               class="text-sm text-muted-foreground"
-              id={`account-activity-table-page-size-label`}
-              >Page size</span
+              id={`account-activity-table-page-size-label`}>Page size</span
             >
             <Select.Root
               type="single"
@@ -352,11 +361,10 @@
             </Select.Root>
           </div>
           <PagePagination
-            page={page}
+            {page}
             pageCount={pages.length}
             ariaLabel="Account activity pages"
-            onPageChange={(nextPage) =>
-              updateRoute({ page: String(nextPage) })}
+            onPageChange={(nextPage) => updateRoute({ page: String(nextPage) })}
           />
         </div>
       </div>

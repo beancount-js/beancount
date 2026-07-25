@@ -37,7 +37,7 @@
     updateReviewSelection,
   } from "../lib/review-selection";
   import { useNavigation } from "../router/router";
-  import type { BadgeVariant } from "$lib/components/ui/badge";
+  import type { BadgeVariant } from "@beancount-js/ui/shadcn/badge";
 
   type Review = ReconciliationReviewResponse;
   type ConnectionMerchant = {
@@ -715,7 +715,7 @@
   pageCount={pages.length}
   {pageSize}
   pageSizeOptions={RECONCILIATION_REVIEW_PAGE_SIZES}
-  onSearchQueryInput={onSearchQueryInput}
+  {onSearchQueryInput}
   onClearSearch={clearSearchQuery}
   onClearAllSearch={clearAllSearch}
   onFacetChange={(key, value) => setSearchFacet(key, value)}

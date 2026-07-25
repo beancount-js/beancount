@@ -2,11 +2,11 @@
   import Check from "lucide-svelte/icons/check";
   import Edit from "lucide-svelte/icons/edit";
   import { tick } from "svelte";
-  import * as Command from "$lib/components/ui/command/index.js";
-  import * as Popover from "$lib/components/ui/popover/index.js";
-  import { Button } from "$lib/components/ui/button";
+  import * as Command from "@beancount-js/ui/shadcn/command";
+  import * as Popover from "@beancount-js/ui/shadcn/popover";
+  import { Button } from "@beancount-js/ui/shadcn/button";
   import { cn } from "$lib/utils.js";
-  import ScrollArea from "$lib/components/ui/scroll-area/scroll-area.svelte";
+  import { ScrollArea } from "@beancount-js/ui/shadcn/scroll-area";
 
   let {
     class: klass,

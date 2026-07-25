@@ -9,9 +9,9 @@
     ProjectSnapshot,
     ProjectSummary,
   } from "@beancount-js/workspace";
-  import * as Sidebar from "$lib/components/ui/sidebar";
-  import { Button } from "$lib/components/ui/button";
-  import * as Empty from "$lib/components/ui/empty";
+  import * as Sidebar from "@beancount-js/ui/shadcn/sidebar";
+  import { Button } from "@beancount-js/ui/shadcn/button";
+  import * as Empty from "@beancount-js/ui/shadcn/empty";
   import { cn } from "$lib/utils";
   import {
     FilterCommandPicker,

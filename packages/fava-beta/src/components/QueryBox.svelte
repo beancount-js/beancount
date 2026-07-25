@@ -1,11 +1,11 @@
 <script lang="ts">
-  import * as Accordion from "$lib/components/ui/accordion/index.js";
+  import * as Accordion from "@beancount-js/ui/shadcn/accordion";
   import Highlighter from "./Highlighter.svelte";
   import { bqlLanguage } from "../bql/bql";
   import QueryTable from "./QueryTable.svelte";
   import { type QueryHistory } from "../stores/query";
   import { cn } from "$lib/utils";
-  import { Button } from "$lib/components/ui/button";
+  import { Button } from "@beancount-js/ui/shadcn/button";
   import Copy from "lucide-svelte/icons/copy";
   import Trash from "lucide-svelte/icons/trash";
   import { useContext } from "../context";

@@ -1,6 +1,6 @@
 <script lang="ts">
   import StudioShellHeader from "@beancount-js/ui/layout/StudioShellHeader.svelte";
-  import { useSidebar } from "$lib/components/ui/sidebar";
+  import { useSidebar } from "@beancount-js/ui/shadcn/sidebar";
   import { useStudioWorkspace } from "../studio/workspace";
 
   export let projectName = "No project";

@@ -64,11 +64,11 @@
     ReconciliationProposalReconciliationsResponse,
   } from "../lib/reconciliation-review-response";
   import type { SortOrder } from "../grid/sort";
-  import * as Alert from "$lib/components/ui/alert";
-  import { Button } from "$lib/components/ui/button";
-  import * as Empty from "$lib/components/ui/empty";
-  import { Progress } from "$lib/components/ui/progress";
-  import * as ToggleGroup from "$lib/components/ui/toggle-group";
+  import * as Alert from "@beancount-js/ui/shadcn/alert";
+  import { Button } from "@beancount-js/ui/shadcn/button";
+  import * as Empty from "@beancount-js/ui/shadcn/empty";
+  import { Progress } from "@beancount-js/ui/shadcn/progress";
+  import * as ToggleGroup from "@beancount-js/ui/shadcn/toggle-group";
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
   import IngestionReconciliationPanel from "./IngestionReconciliationPanel.svelte";
   import ReviewImportsSkeleton from "./skeletons/ReviewImportsSkeleton.svelte";

@@ -4,8 +4,8 @@
   import { derived, writable, type Readable } from "svelte/store";
   import { sortDataset, useSortableTable, type SortType } from "./sort";
   import Cell from "./Cell.svelte";
-  import * as Alert from "$lib/components/ui/alert";
-  import * as ScrollArea from "$lib/components/ui/scroll-area";
+  import * as Alert from "@beancount-js/ui/shadcn/alert";
+  import * as ScrollArea from "@beancount-js/ui/shadcn/scroll-area";
   export let data: Readable<Array<any>>;
   export let height: number = 500;
   export let rowHeight: number = 20;

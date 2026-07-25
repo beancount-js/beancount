@@ -1,6 +1,6 @@
 <script lang="ts" generics="T extends string">
   import type { LocalStoreSyncedStore } from "../lib/store";
-  import * as Tabs from "$lib/components/ui/tabs";
+  import * as Tabs from "@beancount-js/ui/shadcn/tabs";
 
   /** The store to show a switch for. */
   export let store: LocalStoreSyncedStore<string>;
