@@ -48,3 +48,14 @@ describe("Beancount controller", () => {
     await expect(c.initialize()).rejects.toThrow("disposed");
   });
 });
+
+it("isolates chart preferences across controllers", () => {
+  const first = createBeancountController({ source: createInMemorySource() });
+  const second = createBeancountController({ source: createInMemorySource() });
+  first.presentation.chart.lineChartMode.set("area");
+  first.presentation.chart.chartToggledCurrencies.set(["GBP"]);
+  expect(get(second.presentation.chart.lineChartMode)).toBe("line");
+  expect(get(second.presentation.chart.chartToggledCurrencies)).toEqual([]);
+  first.dispose();
+  second.dispose();
+});

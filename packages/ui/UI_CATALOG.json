@@ -53,9 +53,9 @@
     {
       "source": "packages/fava/src/components/BalanceSheet.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/BalanceSheet.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/ComboBox.svelte",
@@ -69,7 +69,7 @@
       "kind": "domain",
       "target": "src/domain/components/ContentScrollArea.svelte",
       "status": "copied",
-      "stories": []
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/CycleSelect.svelte",
@@ -118,7 +118,7 @@
       "kind": "domain",
       "target": "src/domain/components/FinancialDashboard.svelte",
       "status": "copied",
-      "stories": []
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/Highlighter.svelte",
@@ -130,9 +130,9 @@
     {
       "source": "packages/fava/src/components/Holdings.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/Holdings.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/ImportEditor.svelte",
@@ -151,9 +151,9 @@
     {
       "source": "packages/fava/src/components/IncomeStatement.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/IncomeStatement.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/IngestionAccountsSetup.svelte",
@@ -319,9 +319,9 @@
     {
       "source": "packages/fava/src/components/QueryTable.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/QueryTable.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/ResourceViewer.svelte",
@@ -354,9 +354,9 @@
     {
       "source": "packages/fava/src/components/Statistics.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/Statistics.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/StudioShell.svelte",
@@ -375,72 +375,72 @@
     {
       "source": "packages/fava/src/components/TrialBalance.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/TrialBalance.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/dashboard/DashboardChartTooltip.svelte",
       "kind": "domain",
       "target": "src/domain/components/dashboard/DashboardChartTooltip.svelte",
       "status": "copied",
-      "stories": []
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/dashboard/DashboardDonut.svelte",
       "kind": "domain",
       "target": "src/domain/components/dashboard/DashboardDonut.svelte",
       "status": "copied",
-      "stories": []
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/dashboard/DashboardFlow.svelte",
       "kind": "domain",
       "target": "src/domain/components/dashboard/DashboardFlow.svelte",
       "status": "copied",
-      "stories": []
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/dashboard/DashboardLine.svelte",
       "kind": "domain",
       "target": "src/domain/components/dashboard/DashboardLine.svelte",
       "status": "copied",
-      "stories": []
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/dashboard/DashboardSection.svelte",
       "kind": "domain",
       "target": "src/domain/components/dashboard/DashboardSection.svelte",
       "status": "copied",
-      "stories": []
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/dashboard/DashboardTreeRow.svelte",
       "kind": "domain",
       "target": "src/domain/components/dashboard/DashboardTreeRow.svelte",
       "status": "copied",
-      "stories": []
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/dashboard/DashboardTreeTable.svelte",
       "kind": "domain",
       "target": "src/domain/components/dashboard/DashboardTreeTable.svelte",
       "status": "copied",
-      "stories": []
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/errors/Errors.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/errors/Errors.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/form/AccountComboField.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/form/AccountComboField.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/form/MerchantComboField.svelte",
@@ -452,16 +452,16 @@
     {
       "source": "packages/fava/src/components/form/SecretField.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/form/SecretField.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/form/SwitchField.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/form/SwitchField.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/rules/RuleConditionRow.svelte",
@@ -578,16 +578,16 @@
     {
       "source": "packages/fava/src/components/tree-table/StatementSummaryTreeRow.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/tree-table/StatementSummaryTreeRow.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/tree-table/StatementSummaryTreeTable.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/tree-table/StatementSummaryTreeTable.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Reports"]
     },
     {
       "source": "packages/fava/src/components/tree-table/TreeTable.svelte",

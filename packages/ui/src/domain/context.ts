@@ -28,7 +28,9 @@ export type Options = Record<string, unknown> & {
   ledger: LedgerOptions;
 };
 
+import { createChartStores } from "./stores/chart";
 export interface ComponentContext {
+  chart: ReturnType<typeof createChartStores>;
   importConfig: Writable<ImportConfig>;
   importFile: Writable<ImportFile | null>;
   conversion: Writable<Conversion>;
@@ -175,6 +177,7 @@ export function createContext(): ComponentContext {
   );
 
   return {
+    chart: createChartStores(),
     importConfig,
     importFile,
     ledgerOptions,

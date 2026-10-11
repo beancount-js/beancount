@@ -10,6 +10,12 @@
   import { FilterCommandPicker } from "@lapismd/design-core/forms";
   import { ContextKey } from "../../domain/context";
   import { ClockKey } from "../../domain/components/dashboard/clock";
+  import IncomeStatement from "../../domain/components/IncomeStatement.svelte";
+  import BalanceSheet from "../../domain/components/BalanceSheet.svelte";
+  import TrialBalance from "../../domain/components/TrialBalance.svelte";
+  import Holdings from "../../domain/components/Holdings.svelte";
+  import Statistics from "../../domain/components/Statistics.svelte";
+  import Errors from "../../domain/components/errors/Errors.svelte";
   import FinancialDashboard from "../../domain/components/FinancialDashboard.svelte";
   import BeancountAppShell from "../app-shell/BeancountAppShell.svelte";
   import type { BeancountController } from "../../controller";
@@ -76,7 +82,7 @@
 </script>
 
 <div
-  class="beancount-application"
+  class="beancount-application beancount"
   data-testid="beancount-application"
   data-status={controller.state.status}
 >
@@ -114,7 +120,7 @@
             onChange={controller.actions.selectFile}
           />
           <nav aria-label="Ledger reports">
-            {#each ledgerDestinations.filter(([path]) => path === "/dashboard") as [path, label]}<Button
+            {#each ledgerDestinations.filter( ([path]) => ["/dashboard", "/income_statement", "/balance_sheet", "/trial_balance", "/holdings", "/statistics", "/errors"].includes(path), ) as [path, label]}<Button
                 variant={controller.state.route.path === path
                   ? "secondary"
                   : "ghost"}
@@ -148,7 +154,21 @@
             aria-label={routeTitle(controller.state.route)}
             use:routerLinks
           >
-            <FinancialDashboard />
+            {#key controller.state.route.path}
+              {#if controller.state.route.path === "/dashboard"}<FinancialDashboard
+                />
+              {:else if controller.state.route.path === "/income_statement"}<IncomeStatement
+                />
+              {:else if controller.state.route.path === "/balance_sheet"}<BalanceSheet
+                />
+              {:else if controller.state.route.path === "/trial_balance"}<TrialBalance
+                />
+              {:else if controller.state.route.path === "/holdings"}<Holdings />
+              {:else if controller.state.route.path === "/statistics"}<Statistics
+                />
+              {:else if controller.state.route.path === "/errors"}<Errors />
+              {:else}<p class="p-4">Page not found</p>{/if}
+            {/key}
           </div>{/if}
       {/snippet}
     </BeancountAppShell>

@@ -157,6 +157,142 @@
     {
       "source": "packages/fava/src/yaml/lint.ts",
       "target": "src/domain/yaml/lint.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IncomeStatement.svelte",
+      "target": "src/domain/components/IncomeStatement.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/StatementSummaryTreeTable.svelte",
+      "target": "src/domain/components/tree-table/StatementSummaryTreeTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/stores/account.ts",
+      "target": "src/domain/stores/account.ts"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/StatementSummaryTreeRow.svelte",
+      "target": "src/domain/components/tree-table/StatementSummaryTreeRow.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/ChartSwitcher.svelte",
+      "target": "src/domain/charts/ChartSwitcher.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/Chart.svelte",
+      "target": "src/domain/charts/Chart.svelte"
+    },
+    {
+      "source": "packages/fava/src/stores/chart.ts",
+      "target": "src/domain/stores/chart.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/ChartLegend.svelte",
+      "target": "src/domain/charts/ChartLegend.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/BarChart.svelte",
+      "target": "src/domain/charts/BarChart.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/Axis.svelte",
+      "target": "src/domain/charts/Axis.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/helpers.ts",
+      "target": "src/domain/charts/helpers.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/LineChart.svelte",
+      "target": "src/domain/charts/LineChart.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/line.ts",
+      "target": "src/domain/charts/line.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/HierarchyContainer.svelte",
+      "target": "src/domain/charts/HierarchyContainer.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/hierarchy.ts",
+      "target": "src/domain/charts/hierarchy.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/Sunburst.svelte",
+      "target": "src/domain/charts/Sunburst.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/Treemap.svelte",
+      "target": "src/domain/charts/Treemap.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/ModeSwitch.svelte",
+      "target": "src/domain/charts/ModeSwitch.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/index.ts",
+      "target": "src/domain/charts/index.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/scatterplot.ts",
+      "target": "src/domain/charts/scatterplot.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/ScatterPlot.svelte",
+      "target": "src/domain/charts/ScatterPlot.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/BalanceSheet.svelte",
+      "target": "src/domain/components/BalanceSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/TrialBalance.svelte",
+      "target": "src/domain/components/TrialBalance.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/ledger-data.ts",
+      "target": "src/domain/lib/ledger-data.ts"
+    },
+    {
+      "source": "packages/fava/src/components/Holdings.svelte",
+      "target": "src/domain/components/Holdings.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/QueryTable.svelte",
+      "target": "src/domain/components/QueryTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/helpers.ts",
+      "target": "src/domain/components/helpers.ts"
+    },
+    {
+      "source": "packages/fava/src/grid/sort.ts",
+      "target": "src/domain/grid/sort.ts"
+    },
+    {
+      "source": "packages/fava/src/components/Statistics.svelte",
+      "target": "src/domain/components/Statistics.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/errors/Errors.svelte",
+      "target": "src/domain/components/errors/Errors.svelte"
+    },
+    {
+      "source": "packages/fava/src/grid/index.ts",
+      "target": "src/domain/grid/index.ts"
+    },
+    {
+      "source": "packages/fava/src/grid/Root.svelte",
+      "target": "src/domain/grid/Root.svelte"
+    },
+    {
+      "source": "packages/fava/src/grid/grid.ts",
+      "target": "src/domain/grid/grid.ts"
+    },
+    {
+      "source": "packages/fava/src/grid/Cell.svelte",
+      "target": "src/domain/grid/Cell.svelte"
     }
   ],
   "formAdapters": {
