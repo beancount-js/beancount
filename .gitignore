@@ -25,3 +25,5 @@ packages/fava-beta/test-results/
 packages/ui/storybook-static/
 packages/ui/playwright-report/
 packages/ui/test-results/
+packages/ui/.visual-delta/artifacts/
+packages/ui/.visual-delta/cache/

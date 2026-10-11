@@ -28,23 +28,22 @@ This file is the source of truth for moving reusable Fava presentation into
 
 ### Current Visual Delta contract
 
-The harness refresh re-read the canonical addon documentation and exported
-contracts before changing host configuration. The source package is
-`/Users/stevejuma/ui/packages/storybook-addon-visual-delta`; the host consumes
-that directory directly through a `link:` dependency instead of maintaining a
-mirrored workspace copy. The source package must keep its built `dist` exports
-current for Node and Playwright entry points, while Storybook still loads the
-manager and preview source exports from the linked package.
+The catalog consumes the published
+`@lapismd/storybook-addon-visual-delta@0.0.7` package from
+[lapismd/storybook-addon-visual-delta](https://github.com/lapismd/storybook-addon-visual-delta).
+Storybook registers the package directly; its shipped preset, manager, preview,
+and compiled CLI replace the removed local source alias and preset bridge.
+The lifecycle script watches only this catalog's local Storybook manager files.
 
-| Previous host responsibility                 | Current contract                                                                                                                        |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Local preset bridge and Vite source alias    | Bare `storybook-addon-visual-delta` registration; Storybook 10 loads package manager/preview exports and the preset supplies host hooks |
-| Host `/visual-baselines` static mapping      | Preset `staticDirs` owns the committed snapshot mount                                                                                   |
-| Host middleware/update argv                  | Preset middleware and packaged `visual-delta` CLI                                                                                       |
-| Handwritten Playwright config                | `defineVisualPlaywrightConfig()` plus `.visual-delta/playwright.json`; the package resolves the visual server from the Storybook port   |
-| Existing-baseline custom suite               | `defineVisualSuite({ includeStory })`, restricted to review-tagged stories outside approved update runs                                 |
-| Pending/approved-only status badges          | Mutually exclusive pending, ready, approved, and failed badges; automated pass becomes ready and human acceptance becomes approved      |
-| Reference gallery self-comparison parameters | Reference stories render the immutable originals only and remain `skip-visual`                                                          |
+| Previous host responsibility                 | Current contract                                                                                                                                 |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Local preset bridge and Vite source alias    | Bare `@lapismd/storybook-addon-visual-delta` registration; Storybook 10 loads package manager/preview exports and the preset supplies host hooks |
+| Host `/visual-baselines` static mapping      | Preset `staticDirs` owns the committed snapshot mount                                                                                            |
+| Host middleware/update argv                  | Preset middleware and packaged `visual-delta` CLI                                                                                                |
+| Handwritten Playwright config                | `defineVisualPlaywrightConfig()` plus `.visual-delta/config.json`; the package resolves the visual server from the Storybook port                |
+| Existing-baseline custom suite               | `defineVisualSuite({ includeStory })`, restricted to review-tagged stories outside approved update runs                                          |
+| Pending/approved-only status badges          | Mutually exclusive pending, ready, approved, and failed badges; automated pass becomes ready and human acceptance becomes approved               |
+| Reference gallery self-comparison parameters | Reference stories render the immutable originals only and remain `skip-visual`                                                                   |
 
 ## Status and validation rules
 

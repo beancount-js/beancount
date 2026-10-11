@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * Start Storybook and restart it when Visual Delta manager/panel source
- * or local Storybook manager files change.
+ * Start Storybook and restart it when local Storybook manager files change.
  */
 import { spawn, execSync } from "node:child_process";
 import { watch, readFileSync, existsSync, statSync } from "node:fs";
@@ -10,9 +9,6 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const visualDeltaRoot =
-  process.env.VISUAL_DELTA_SOURCE_DIR ??
-  "/Users/stevejuma/ui/packages/storybook-addon-visual-delta";
 const port = process.env.STORYBOOK_PORT ?? "5005";
 const storybookPortNum = Number(port);
 const visualPort =
@@ -28,16 +24,6 @@ const RESTART_DEBOUNCE_MS = 500;
 const STARTUP_GRACE_MS = 10000;
 
 const restartWatchPaths = [
-  path.join(visualDeltaRoot, "src/manager.tsx"),
-  path.join(visualDeltaRoot, "src/manager"),
-  path.join(visualDeltaRoot, "src/panel"),
-  path.join(visualDeltaRoot, "src/constants.ts"),
-  path.join(visualDeltaRoot, "src/types.ts"),
-  path.join(visualDeltaRoot, "src/visual-diff-sidecar.ts"),
-  path.join(visualDeltaRoot, "src/shared"),
-  path.join(visualDeltaRoot, "src/preset.ts"),
-  path.join(visualDeltaRoot, "src/node"),
-  path.join(root, ".storybook/visual-delta-preset.ts"),
   path.join(root, ".storybook/manager.ts"),
   path.join(root, ".storybook/manager-stacked-badges.ts"),
 ];
@@ -242,6 +228,6 @@ for (const sig of ["SIGINT", "SIGTERM"]) {
 }
 
 console.log(
-  `[storybook-run] watching Visual Delta manager/panel + local Storybook files; UI at http://localhost:${port}; visual static :${visualPort}`,
+  `[storybook-run] watching local Storybook files; UI at http://localhost:${port}; visual static :${visualPort}`,
 );
 void startStorybook();
