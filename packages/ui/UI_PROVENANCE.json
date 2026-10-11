@@ -158,5 +158,15 @@
       "source": "packages/fava/src/yaml/lint.ts",
       "target": "src/domain/yaml/lint.ts"
     }
-  ]
+  ],
+  "formAdapters": {
+    "source": "packages/forms/src",
+    "targets": [
+      "src/components/forms/AccountAvatar.svelte",
+      "src/components/forms/TagEditor.svelte",
+      "src/components/forms/IconColorPicker.svelte"
+    ],
+    "sharedControls": "@lapismd/design-core/forms",
+    "notes": "Preserve Beancount account appearance calculations; compose public Design Core controls."
+  }
 }
