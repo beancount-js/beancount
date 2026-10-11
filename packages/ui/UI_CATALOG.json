@@ -4,37 +4,37 @@
     {
       "source": "packages/fava/src/components/AccountActivityTable.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/AccountActivityTable.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/AccountBulkActionSheet.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/AccountBulkActionSheet.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/AccountDetails.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/AccountDetails.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/AccountTable.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/AccountTable.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/ActivityTable.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/ActivityTable.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/AiDock.svelte",
@@ -74,9 +74,9 @@
     {
       "source": "packages/fava/src/components/CycleSelect.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/CycleSelect.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/Dashboard.svelte",
@@ -95,16 +95,16 @@
     {
       "source": "packages/fava/src/components/Editor.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/Editor.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/EditorDialog.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/EditorDialog.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/FavaNavigation.svelte",
@@ -123,9 +123,9 @@
     {
       "source": "packages/fava/src/components/Highlighter.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/Highlighter.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/Holdings.svelte",
@@ -179,9 +179,9 @@
     {
       "source": "packages/fava/src/components/IngestionHeaderActions.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/IngestionHeaderActions.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/IngestionMerchantManage.svelte",
@@ -256,23 +256,23 @@
     {
       "source": "packages/fava/src/components/JournalEditorSheet.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/JournalEditorSheet.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/JournalRecordRouteSheet.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/JournalRecordRouteSheet.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/JournalTable.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/JournalTable.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/LocalMerchantMatchPicker.svelte",
@@ -298,23 +298,23 @@
     {
       "source": "packages/fava/src/components/PagePagination.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/PagePagination.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/Query.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/Query.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/QueryBox.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/QueryBox.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/QueryTable.svelte",
@@ -326,9 +326,9 @@
     {
       "source": "packages/fava/src/components/ResourceViewer.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/ResourceViewer.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/RuleEditorSheet.svelte",
@@ -347,9 +347,9 @@
     {
       "source": "packages/fava/src/components/Search.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/Search.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/Statistics.svelte",
@@ -508,9 +508,9 @@
     {
       "source": "packages/fava/src/components/skeletons/ResourceViewerSkeleton.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/skeletons/ResourceViewerSkeleton.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/skeletons/ReviewImportsSkeleton.svelte",
@@ -543,37 +543,37 @@
     {
       "source": "packages/fava/src/components/tree-table/AccountCell.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/tree-table/AccountCell.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/tree-table/AccountCellHeader.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/tree-table/AccountCellHeader.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/tree-table/Diff.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/tree-table/Diff.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/tree-table/IntervalTreeTable.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/tree-table/IntervalTreeTable.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/tree-table/IntervalTreeTableNode.svelte",
       "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
+      "target": "src/domain/components/tree-table/IntervalTreeTableNode.svelte",
+      "status": "copied",
+      "stories": ["Beancount/Editing and discovery"]
     },
     {
       "source": "packages/fava/src/components/tree-table/StatementSummaryTreeRow.svelte",

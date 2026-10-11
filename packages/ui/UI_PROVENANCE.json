@@ -293,6 +293,266 @@
     {
       "source": "packages/fava/src/grid/Cell.svelte",
       "target": "src/domain/grid/Cell.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/JournalTable.svelte",
+      "target": "src/domain/components/JournalTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/studio/ingestion-header-actions.ts",
+      "target": "src/domain/studio/ingestion-header-actions.ts"
+    },
+    {
+      "source": "packages/fava/src/studio/workspace.ts",
+      "target": "src/domain/studio/workspace.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/types.ts",
+      "target": "src/domain/ingestion/types.ts"
+    },
+    {
+      "source": "packages/fava/src/components/ActivityTable.svelte",
+      "target": "src/domain/components/ActivityTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/router/router.ts",
+      "target": "src/domain/router/router.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/api.ts",
+      "target": "src/domain/ingestion/api.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/journal-merchant-logos.ts",
+      "target": "src/domain/lib/journal-merchant-logos.ts"
+    },
+    {
+      "source": "packages/fava/src/components/journal-table/model.ts",
+      "target": "src/domain/components/journal-table/model.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/review-ledger.ts",
+      "target": "src/domain/ingestion/review-ledger.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/journal-record-key.ts",
+      "target": "src/domain/lib/journal-record-key.ts"
+    },
+    {
+      "source": "packages/fava/src/components/PagePagination.svelte",
+      "target": "src/domain/components/PagePagination.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/AccountBulkActionSheet.svelte",
+      "target": "src/domain/components/AccountBulkActionSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/account-bulk-replace.ts",
+      "target": "src/domain/lib/account-bulk-replace.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/journal-duplicates.ts",
+      "target": "src/domain/lib/journal-duplicates.ts"
+    },
+    {
+      "source": "packages/fava/src/components/AccountDetails.svelte",
+      "target": "src/domain/components/AccountDetails.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/AccountActivityTable.svelte",
+      "target": "src/domain/components/AccountActivityTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/AccountTable.svelte",
+      "target": "src/domain/components/AccountTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/EditorDialog.svelte",
+      "target": "src/domain/components/EditorDialog.svelte"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/transactions.ts",
+      "target": "src/domain/codemirror/extensions/transactions.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/setup.ts",
+      "target": "src/domain/codemirror/beancount/setup.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/foldGutter.ts",
+      "target": "src/domain/codemirror/extensions/foldGutter.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/classHighlighter.ts",
+      "target": "src/domain/codemirror/extensions/classHighlighter.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/urls.ts",
+      "target": "src/domain/codemirror/extensions/urls.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/foldHeaders.ts",
+      "target": "src/domain/codemirror/beancount/foldHeaders.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/ruler.ts",
+      "target": "src/domain/codemirror/beancount/ruler.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/headers.ts",
+      "target": "src/domain/codemirror/beancount/headers.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/math.ts",
+      "target": "src/domain/codemirror/beancount/math.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/format.ts",
+      "target": "src/domain/codemirror/beancount/format.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/foldComments.ts",
+      "target": "src/domain/codemirror/beancount/foldComments.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/hashTags.ts",
+      "target": "src/domain/codemirror/extensions/hashTags.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/languages.ts",
+      "target": "src/domain/codemirror/extensions/languages.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/linter.ts",
+      "target": "src/domain/codemirror/beancount/linter.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/autocomplete.ts",
+      "target": "src/domain/codemirror/beancount/autocomplete.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/combobox/combo.ts",
+      "target": "src/domain/codemirror/extensions/combobox/combo.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/combobox/comboWidget.svelte",
+      "target": "src/domain/codemirror/extensions/combobox/comboWidget.svelte"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/search/search.ts",
+      "target": "src/domain/codemirror/extensions/search/search.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/search/FindReplace.svelte",
+      "target": "src/domain/codemirror/extensions/search/FindReplace.svelte"
+    },
+    {
+      "source": "packages/fava/src/hooks/debounce.ts",
+      "target": "src/domain/hooks/debounce.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/datepicker/datepicker.ts",
+      "target": "src/domain/codemirror/extensions/datepicker/datepicker.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/datepicker/datePickerWidget.svelte",
+      "target": "src/domain/codemirror/extensions/datepicker/datePickerWidget.svelte"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/gotoline.ts",
+      "target": "src/domain/codemirror/extensions/gotoline.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/search/GoToLine.svelte",
+      "target": "src/domain/codemirror/extensions/search/GoToLine.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/IntervalTreeTable.svelte",
+      "target": "src/domain/components/tree-table/IntervalTreeTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/AccountCellHeader.svelte",
+      "target": "src/domain/components/tree-table/AccountCellHeader.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/IntervalTreeTableNode.svelte",
+      "target": "src/domain/components/tree-table/IntervalTreeTableNode.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/AccountCell.svelte",
+      "target": "src/domain/components/tree-table/AccountCell.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/Diff.svelte",
+      "target": "src/domain/components/tree-table/Diff.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/Editor.svelte",
+      "target": "src/domain/components/Editor.svelte"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/foldAll.ts",
+      "target": "src/domain/codemirror/extensions/foldAll.ts"
+    },
+    {
+      "source": "packages/fava/src/components/Query.svelte",
+      "target": "src/domain/components/Query.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/QueryBox.svelte",
+      "target": "src/domain/components/QueryBox.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/Highlighter.svelte",
+      "target": "src/domain/components/Highlighter.svelte"
+    },
+    {
+      "source": "packages/fava/src/stores/query.ts",
+      "target": "src/domain/stores/query.ts"
+    },
+    {
+      "source": "packages/fava/src/components/query-box.ts",
+      "target": "src/domain/components/query-box.ts"
+    },
+    {
+      "source": "packages/fava/src/components/Search.svelte",
+      "target": "src/domain/components/Search.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/ledger-search-state.ts",
+      "target": "src/domain/lib/ledger-search-state.ts"
+    },
+    {
+      "source": "packages/fava/src/components/JournalRecordRouteSheet.svelte",
+      "target": "src/domain/components/JournalRecordRouteSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/JournalEditorSheet.svelte",
+      "target": "src/domain/components/JournalEditorSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/journal-editor/directive-draft.ts",
+      "target": "src/domain/components/journal-editor/directive-draft.ts"
+    },
+    {
+      "source": "packages/fava/src/components/ResourceViewer.svelte",
+      "target": "src/domain/components/ResourceViewer.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/ResourceViewerSkeleton.svelte",
+      "target": "src/domain/components/skeletons/ResourceViewerSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionHeaderActions.svelte",
+      "target": "src/domain/components/IngestionHeaderActions.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/CycleSelect.svelte",
+      "target": "src/domain/components/CycleSelect.svelte"
+    },
+    {
+      "source": "packages/fava/src/codemirror/themes/base.scss",
+      "target": "src/domain/codemirror/themes/base.scss"
     }
   ],
   "formAdapters": {

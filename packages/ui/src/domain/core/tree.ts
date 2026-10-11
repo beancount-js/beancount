@@ -1,5 +1,5 @@
-import { parent } from "$lib/accounts";
-import { stratify } from "$lib/tree";
+import { parent } from "../lib/accounts";
+import { stratify } from "../lib/tree";
 import {
   Amount,
   Conversion,

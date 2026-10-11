@@ -18,6 +18,16 @@ export interface BeancountRoute {
 export interface BeancountDataSource {
   listProjects(signal?: AbortSignal): Promise<ProjectSummary[]>;
   loadProject(id: string, signal?: AbortSignal): Promise<ProjectSnapshot>;
+  request?(url: string, init?: RequestInit): Promise<Response>;
+  resourceUrl?(
+    projectId: string,
+    path: string,
+  ): Promise<{
+    url: string;
+    mimeType: string;
+    text?: string;
+    revoke?: () => void;
+  }>;
   saveFile(
     projectId: string,
     path: string,
@@ -34,10 +44,23 @@ export interface BeancountControllerState {
   readonly ledger: LedgerData;
   readonly status: BeancountStatus;
   readonly error: string;
+  readonly inlineAiRequest:
+    | import("../domain/studio/workspace").InlineAiRequest
+    | undefined;
   readonly canNavigateBack: boolean;
   readonly canNavigateForward: boolean;
 }
 export interface BeancountControllerActions {
+  request(url: string, init?: RequestInit): Promise<Response>;
+  resourceUrl(path: string): Promise<{
+    url: string;
+    mimeType: string;
+    text?: string;
+    revoke?: () => void;
+  }>;
+  requestInlineAi(
+    request: import("../domain/studio/workspace").InlineAiRequest,
+  ): void;
   navigate(path: string): void;
   back(): void;
   forward(): void;
@@ -57,6 +80,10 @@ export interface BeancountController {
   readonly state: BeancountControllerState;
   readonly actions: BeancountControllerActions;
   readonly presentation: ComponentContext;
+  readonly workspace: import("../domain/studio/workspace").StudioWorkspaceContext;
+  readonly navigation: ReturnType<
+    typeof import("../domain/router/router").createControllerNavigation
+  >;
   readonly clock: () => DateTime;
   initialize(): Promise<void>;
   dispose(): void;

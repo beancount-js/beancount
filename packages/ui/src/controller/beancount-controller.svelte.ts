@@ -1,4 +1,6 @@
-import { get } from "svelte/store";
+import { createStudioWorkspace } from "../domain/studio/workspace";
+import { createControllerNavigation } from "../domain/router/router";
+import { get, writable } from "svelte/store";
 import { DateTime } from "luxon";
 import { createContext } from "../domain/context";
 import { LedgerSource } from "../domain/core/ledger";
@@ -21,8 +23,16 @@ export function createBeancountController(
   let status = $state<BeancountStatus>("idle");
   let error = $state("");
   let ledger = $state.raw(get(presentation.ledgerData));
-  let history = $state.raw([parseRoute(options.initialRoute ?? "/dashboard")]);
+  const initialRoute = parseRoute(options.initialRoute ?? "/dashboard");
+  let history = $state.raw([initialRoute]);
   let index = $state(0);
+  const routeStore = writable(initialRoute);
+  let inlineAiRequest =
+    $state.raw<import("../domain/studio/workspace").InlineAiRequest>();
+  function syncRoute() {
+    routeStore.set(history[index]!);
+    presentation.query.set(history[index]!.query.query ?? "");
+  }
   let disposed = false;
   let initialized: Promise<void> | undefined;
   let generation = 0;
@@ -37,6 +47,8 @@ export function createBeancountController(
     presentation.ledgerSource.set(
       LedgerSource.fromProject(activeFile, next.ledgerFiles),
     );
+    workspace.snapshot.set(next);
+    workspace.activeFile.set(activeFile);
     status = next.ledgerFiles.length ? "ready" : "empty";
   }
   async function operate<T>(
@@ -74,18 +86,54 @@ export function createBeancountController(
     );
   }
   const actions: BeancountController["actions"] = {
+    async request(url, init = {}) {
+      if (disposed) throw new Error("Controller has been disposed.");
+      if (!options.source.request)
+        throw new Error(
+          "This data source does not support application services.",
+        );
+      const request = new AbortController();
+      pending.add(request);
+      try {
+        return await options.source.request(url, {
+          ...init,
+          signal: init.signal
+            ? AbortSignal.any([init.signal, request.signal])
+            : request.signal,
+        });
+      } finally {
+        pending.delete(request);
+      }
+    },
+    async resourceUrl(path) {
+      if (!snapshot || !options.source.resourceUrl)
+        throw new Error("This data source does not provide resources.");
+      return options.source.resourceUrl(snapshot.project.id, path);
+    },
+    requestInlineAi(request) {
+      inlineAiRequest = request;
+    },
     navigate(path) {
       if (disposed) return;
-      const next = parseRoute(path);
+      const next = parseRoute(
+        path.startsWith("?") ? history[index]!.path + path : path,
+      );
       if (JSON.stringify(next) === JSON.stringify(history[index])) return;
       history = [...history.slice(0, index + 1), next];
       index++;
+      syncRoute();
     },
     back() {
-      if (!disposed) index = Math.max(0, index - 1);
+      if (!disposed) {
+        index = Math.max(0, index - 1);
+        syncRoute();
+      }
     },
     forward() {
-      if (!disposed) index = Math.min(history.length - 1, index + 1);
+      if (!disposed) {
+        index = Math.min(history.length - 1, index + 1);
+        syncRoute();
+      }
     },
     selectProject,
     selectFile(path) {
@@ -142,8 +190,29 @@ export function createBeancountController(
       else status = "empty";
     }));
   }
+  const workspace = createStudioWorkspace(
+    actions.saveFile,
+    async () => {
+      await actions.refresh();
+      if (!snapshot) throw new Error("No project selected.");
+      return snapshot;
+    },
+    async () => null,
+    actions.resourceUrl,
+    actions.requestInlineAi,
+  );
+  const navigation = createControllerNavigation(routeStore, actions);
+  const unsubscribeFile = workspace.activeFile.subscribe((path) => {
+    if (path && path !== activeFile) actions.selectFile(path);
+  });
+  syncRoute();
   return {
+    workspace,
+    navigation,
     state: {
+      get inlineAiRequest() {
+        return inlineAiRequest;
+      },
       get route() {
         return history[index]!;
       },
@@ -183,6 +252,7 @@ export function createBeancountController(
       for (const request of pending) request.abort();
       pending.clear();
       unsubscribe();
+      unsubscribeFile();
     },
   };
 }

@@ -13,6 +13,31 @@ export function createInMemorySource(
     return project;
   }
   return {
+    async request(url, init) {
+      if (init?.signal?.aborted) throw init.signal.reason;
+      const path = new URL(url, "http://fixture.invalid").pathname;
+      if (path.endsWith("/merchants")) return Response.json([]);
+      if (path.endsWith("/merchant-review"))
+        return Response.json({ clusters: [] });
+      if (path.endsWith("/ingestion"))
+        return Response.json({
+          version: 3,
+          sources: [],
+          accounts: ["Assets:Checking", "Expenses:Food"],
+        });
+      throw new Error(`Unsupported fixture service: ${path}`);
+    },
+    async resourceUrl(id, path) {
+      read(id);
+      if (path !== "receipts/example.txt")
+        throw new Error("Resource not found.");
+      const text = "Example receipt\nGroceries: 120.00 GBP";
+      return {
+        url: "data:text/plain," + encodeURIComponent(text),
+        mimeType: "text/plain",
+        text,
+      };
+    },
     async listProjects() {
       return [...projects.values()].map(({ project }) =>
         structuredClone(project),

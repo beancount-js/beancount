@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./controller": "./src/controller/index.ts",
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./src/styles.css",
+    "./forms": "./src/components/forms/index.ts"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
@@ -44,6 +45,7 @@
     "@codemirror/search": "^6.5.11",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.8",
+    "@internationalized/date": "^3.12.2",
     "@lapismd/design-core": "0.3.1",
     "@lezer/common": "^1.2.3",
     "@lezer/highlight": "^1.2.1",

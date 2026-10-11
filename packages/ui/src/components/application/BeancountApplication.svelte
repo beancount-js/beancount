@@ -1,4 +1,13 @@
 <script lang="ts">
+  import { BeancountControllerKey } from "../../controller/context";
+  import JournalTable from "../../domain/components/JournalTable.svelte";
+  import AccountDetails from "../../domain/components/AccountDetails.svelte";
+  import Editor from "../../domain/components/Editor.svelte";
+  import Query from "../../domain/components/Query.svelte";
+  import Search from "../../domain/components/Search.svelte";
+  import ResourceViewer from "../../domain/components/ResourceViewer.svelte";
+  import JournalRecordRouteSheet from "../../domain/components/JournalRecordRouteSheet.svelte";
+  import IngestionHeaderActions from "../../domain/components/IngestionHeaderActions.svelte";
   import { setContext, onMount, onDestroy, untrack } from "svelte";
   import {
     AppShellController,
@@ -29,6 +38,10 @@
     displayMode?: AppShellDisplayMode;
     layoutStorage?: Storage;
   } = $props();
+  setContext(
+    BeancountControllerKey,
+    untrack(() => controller),
+  );
   setContext(
     ContextKey,
     untrack(() => controller.presentation),
@@ -119,8 +132,9 @@
             )}
             onChange={controller.actions.selectFile}
           />
+          <Search />
           <nav aria-label="Ledger reports">
-            {#each ledgerDestinations.filter( ([path]) => ["/dashboard", "/income_statement", "/balance_sheet", "/trial_balance", "/holdings", "/statistics", "/errors"].includes(path), ) as [path, label]}<Button
+            {#each ledgerDestinations as [path, label]}<Button
                 variant={controller.state.route.path === path
                   ? "secondary"
                   : "ghost"}
@@ -133,6 +147,9 @@
           </nav>
         </div>
       {/snippet}
+      {#snippet toolbar()}<IngestionHeaderActions
+          region="leading"
+        /><IngestionHeaderActions />{/snippet}
       {#snippet content()}
         {#if controller.state.error}<div role="alert" class="p-4">
             {controller.state.error}<Button
@@ -167,9 +184,20 @@
               {:else if controller.state.route.path === "/statistics"}<Statistics
                 />
               {:else if controller.state.route.path === "/errors"}<Errors />
+              {:else if controller.state.route.path === "/journal"}<JournalTable
+                />
+              {:else if controller.state.route.path === "/accounts" || controller.state.route.params.account}<AccountDetails
+                  account={controller.state.route.params.account ?? ""}
+                />
+              {:else if controller.state.route.path === "/editor" || controller.state.route.path === "/directives"}<Editor
+                />
+              {:else if controller.state.route.path === "/query"}<Query />
+              {:else if controller.state.route.path === "/resource"}<ResourceViewer
+                />
               {:else}<p class="p-4">Page not found</p>{/if}
             {/key}
-          </div>{/if}
+          </div>
+          <JournalRecordRouteSheet />{/if}
       {/snippet}
     </BeancountAppShell>
   </Tooltip.Provider>

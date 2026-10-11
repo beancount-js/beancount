@@ -12,3 +12,9 @@ export { default as BalanceSheet } from "./domain/components/BalanceSheet.svelte
 export { default as TrialBalance } from "./domain/components/TrialBalance.svelte";
 export { default as Holdings } from "./domain/components/Holdings.svelte";
 export { default as Statistics } from "./domain/components/Statistics.svelte";
+export { default as Editor } from "./domain/components/Editor.svelte";
+export { default as JournalTable } from "./domain/components/JournalTable.svelte";
+export { default as AccountDetails } from "./domain/components/AccountDetails.svelte";
+export { default as Query } from "./domain/components/Query.svelte";
+export { default as Search } from "./domain/components/Search.svelte";
+export { default as ResourceViewer } from "./domain/components/ResourceViewer.svelte";

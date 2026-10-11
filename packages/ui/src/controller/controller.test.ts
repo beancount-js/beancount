@@ -59,3 +59,27 @@ it("isolates chart preferences across controllers", () => {
   first.dispose();
   second.dispose();
 });
+
+it("keeps workspace selection and query history bound to one controller", async () => {
+  const first = createBeancountController({ source: createInMemorySource() });
+  const second = createBeancountController({ source: createInMemorySource() });
+  await Promise.all([first.initialize(), second.initialize()]);
+  first.workspace.activeFile.set("empty.beancount");
+  expect(first.state.activeFile).toBe("empty.beancount");
+  expect(second.state.activeFile).toBe("main.beancount");
+  first.actions.navigate("/journal");
+  first.navigation.router.updateState("?view=upcoming");
+  expect(first.state.route.path).toBe("/journal");
+  expect(first.state.route.query.view).toBe("upcoming");
+  const resource = await first.actions.resourceUrl("receipts/example.txt");
+  expect(resource.text).toContain("Groceries");
+  const response = await first.actions.request(
+    "/api/projects/example/ingestion/merchants",
+  );
+  expect(await response.json()).toEqual([]);
+  first.dispose();
+  second.dispose();
+  await expect(
+    first.actions.request("/api/projects/example/ingestion"),
+  ).rejects.toThrow("disposed");
+});

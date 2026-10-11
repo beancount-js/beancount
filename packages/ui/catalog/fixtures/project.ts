@@ -48,7 +48,9 @@ export function demoProject(
           'option "title" "Empty Ledger"\noption "operating_currency" "GBP"\n',
       },
     ],
-    resources: [],
+    resources: [
+      { path: "receipts/example.txt", mimeType: "text/plain", size: 36 },
+    ],
     revisions: [
       { path: "main.beancount", revision: "1", updatedAt: NOW },
       { path: "empty.beancount", revision: "1", updatedAt: NOW },
