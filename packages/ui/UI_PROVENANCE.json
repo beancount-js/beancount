@@ -1,0 +1,162 @@
+{
+  "sourceCommit": "215bb59f31d4658410c2fd2b0122022a56dff5aa",
+  "sourceLicense": "MIT",
+  "references": {
+    "community": "lapismd/lapis-community",
+    "jjStore": "lapismd/jj-store"
+  },
+  "copied": [
+    {
+      "source": "packages/fava/src/charts/bar.ts",
+      "target": "src/domain/charts/bar.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/context.ts",
+      "target": "src/domain/charts/context.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/tooltip.ts",
+      "target": "src/domain/charts/tooltip.ts"
+    },
+    {
+      "source": "packages/fava/src/components/ContentScrollArea.svelte",
+      "target": "src/domain/components/ContentScrollArea.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/FinancialDashboard.svelte",
+      "target": "src/domain/components/FinancialDashboard.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardChartTooltip.svelte",
+      "target": "src/domain/components/dashboard/DashboardChartTooltip.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardDonut.svelte",
+      "target": "src/domain/components/dashboard/DashboardDonut.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardFlow.svelte",
+      "target": "src/domain/components/dashboard/DashboardFlow.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardLine.svelte",
+      "target": "src/domain/components/dashboard/DashboardLine.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardSection.svelte",
+      "target": "src/domain/components/dashboard/DashboardSection.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardTreeRow.svelte",
+      "target": "src/domain/components/dashboard/DashboardTreeRow.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardTreeTable.svelte",
+      "target": "src/domain/components/dashboard/DashboardTreeTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/geometry.ts",
+      "target": "src/domain/components/dashboard/geometry.ts"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/model.ts",
+      "target": "src/domain/components/dashboard/model.ts"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/helpers.ts",
+      "target": "src/domain/components/tree-table/helpers.ts"
+    },
+    {
+      "source": "packages/fava/src/context.ts",
+      "target": "src/domain/context.ts"
+    },
+    {
+      "source": "packages/fava/src/core/account.ts",
+      "target": "src/domain/core/account.ts"
+    },
+    {
+      "source": "packages/fava/src/core/ledger-data-class.ts",
+      "target": "src/domain/core/ledger-data-class.ts"
+    },
+    {
+      "source": "packages/fava/src/core/ledger.ts",
+      "target": "src/domain/core/ledger.ts"
+    },
+    {
+      "source": "packages/fava/src/core/tree.ts",
+      "target": "src/domain/core/tree.ts"
+    },
+    {
+      "source": "packages/fava/src/format/index.ts",
+      "target": "src/domain/format/index.ts"
+    },
+    {
+      "source": "packages/fava/src/helpers.ts",
+      "target": "src/domain/helpers.ts"
+    },
+    {
+      "source": "packages/fava/src/import/models.ts",
+      "target": "src/domain/import/models.ts"
+    },
+    {
+      "source": "packages/fava/src/import/schema.json",
+      "target": "src/domain/import/schema.json"
+    },
+    {
+      "source": "packages/fava/src/import/schema.ts",
+      "target": "src/domain/import/schema.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/accounts.ts",
+      "target": "src/domain/lib/accounts.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/format.ts",
+      "target": "src/domain/lib/format.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/interval.ts",
+      "target": "src/domain/lib/interval.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/ledger-route.ts",
+      "target": "src/domain/lib/ledger-route.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/models.ts",
+      "target": "src/domain/lib/models.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/studio-route-env.ts",
+      "target": "src/domain/lib/studio-route-env.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/tree.ts",
+      "target": "src/domain/lib/tree.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/utils.ts",
+      "target": "src/domain/lib/utils.ts"
+    },
+    {
+      "source": "packages/fava/src/menu.ts",
+      "target": "src/domain/menu.ts"
+    },
+    {
+      "source": "packages/fava/src/options.ts",
+      "target": "src/domain/options.ts"
+    },
+    {
+      "source": "packages/fava/src/stores/format.ts",
+      "target": "src/domain/stores/format.ts"
+    },
+    {
+      "source": "packages/fava/src/stores/index.ts",
+      "target": "src/domain/stores/index.ts"
+    },
+    {
+      "source": "packages/fava/src/yaml/lint.ts",
+      "target": "src/domain/yaml/lint.ts"
+    }
+  ]
+}

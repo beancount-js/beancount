@@ -14,3 +14,8 @@ coverage
 packages/fava/.svelte-kit/
 packages/fava/build-server/
 packages/fava/build-web/
+
+# UI catalog build artifacts
+packages/ui/storybook-static/
+packages/ui/.cache/
+packages/ui/test-results/

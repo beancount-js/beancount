@@ -1,0 +1,9 @@
+# Beancount UI catalog
+
+Reusable Beancount application components backed by published Design Core 0.3.1. The original Fava application remains the comparison application.
+
+Run `pnpm storybook` from the repository root. The catalog binds to `127.0.0.1:6006`; Fava runs independently on 5173. Stories own deterministic, disposable controller instances and do not access a server or browser storage.
+
+Consumers import `BeancountApplication` from `@beancount-js/ui`, controllers from `@beancount-js/ui/controller`, and `@beancount-js/ui/styles.css` once. Hosts supply a `BeancountController`, initialize it and dispose it when their application is destroyed. The application owns its Design Core shell controller.
+
+Run `pnpm --filter @beancount-js/ui checks` for dependency boundaries, types, unit tests, Storybook interactions/accessibility and the static build. Source provenance is recorded in `UI_PROVENANCE.json`.

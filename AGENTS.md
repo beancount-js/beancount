@@ -37,3 +37,7 @@
 - In forms, wrap every `FilterCommandPicker` with `FormField as="div" align="center"` (see Shared forms). Never nest the picker in a label-only `FormField`.
 - For values the user may type that are not in the option list (e.g. Environment credential names from project `.env`), set `allowCustom={true}` on `FilterCommandPicker`. Do not use `SearchableChoicePicker` for new work — it is the legacy picker.
 - Multi-select: `multiple` + `values` + `onValuesChange`. Single-select: `value` + `onChange`.
+
+## Design Core catalog
+
+The new `packages/ui` package owns reusable application presentation and controller contracts. Consume published `@lapismd/design-core` forms and primitives through public exports; do not extend the historical forms package for catalog work. The existing form behavior contract still applies. Keep `packages/fava` unchanged as the pre-migration reference. Run `pnpm --filter @beancount-js/ui checks` for every UI slice and commit each verified slice with Jujutsu.
