@@ -749,6 +749,22 @@
     {
       "source": "packages/fava/src/components/skeletons/RulesPageSkeleton.svelte",
       "target": "src/domain/components/skeletons/RulesPageSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/AiUnifiedReviewDiff.svelte",
+      "target": "src/domain/components/AiUnifiedReviewDiff.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/AiDockSkeleton.svelte",
+      "target": "src/domain/components/skeletons/AiDockSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/ai/chat.ts",
+      "target": "src/domain/lib/ai/chat.ts"
+    },
+    {
+      "source": "packages/fava/src/components/AiDock.svelte",
+      "target": "src/domain/components/AiDock.svelte"
     }
   ],
   "formAdapters": {

@@ -40,6 +40,7 @@ export function createBeancountController(
   let initialized: Promise<void> | undefined;
   let generation = 0;
   const pending = new Set<AbortController>();
+  const lifetime = new AbortController();
   const unsubscribe = presentation.ledgerData.subscribe((value) => {
     ledger = value;
   });
@@ -113,9 +114,11 @@ export function createBeancountController(
       try {
         return await options.source.request(url, {
           ...init,
-          signal: init.signal
-            ? AbortSignal.any([init.signal, request.signal])
-            : request.signal,
+          signal: AbortSignal.any([
+            lifetime.signal,
+            request.signal,
+            ...(init.signal ? [init.signal] : []),
+          ]),
         });
       } finally {
         pending.delete(request);
@@ -288,6 +291,7 @@ export function createBeancountController(
     dispose() {
       if (disposed) return;
       disposed = true;
+      lifetime.abort();
       generation++;
       for (const request of pending) request.abort();
       pending.clear();

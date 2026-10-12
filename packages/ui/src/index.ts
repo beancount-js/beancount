@@ -27,3 +27,6 @@ export { default as IngestionBrandSettings } from "./domain/components/Ingestion
 export { default as IngestionRunHistory } from "./domain/components/IngestionRunHistory.svelte";
 export { default as IngestionRunAudit } from "./domain/components/IngestionRunAudit.svelte";
 export { default as RulesSettings } from "./domain/components/RulesSettings.svelte";
+
+export { default as AiDock } from "./domain/components/AiDock.svelte";
+export { default as AiUnifiedReviewDiff } from "./domain/components/AiUnifiedReviewDiff.svelte";

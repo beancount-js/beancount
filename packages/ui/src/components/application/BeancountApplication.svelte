@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AiDock from "../../domain/components/AiDock.svelte";
   import IngestionTable from "../../domain/components/IngestionTable.svelte";
   import IngestionConfigEditor from "../../domain/components/IngestionConfigEditor.svelte";
   import IngestionAccountsSetup from "../../domain/components/IngestionAccountsSetup.svelte";
@@ -85,6 +86,14 @@
   onDestroy(() => {
     void shell.dispose();
   });
+  $effect(() => {
+    if (controller.state.inlineAiRequest) {
+      untrack(() => {
+        shell.right.open();
+        if (shell.mobile.resolvedMode === "mobile") shell.mobile.show("right");
+      });
+    }
+  });
   function navigate(path: string) {
     controller.actions.navigate(path);
     shell.mobile.showMain();
@@ -160,6 +169,17 @@
           </nav>
         </div>
       {/snippet}
+      {#snippet details()}<AiDock
+          projectId={controller.state.snapshot?.project.id}
+          projectName={controller.state.snapshot?.project.name ?? "Ledger"}
+          hasProject={Boolean(controller.state.snapshot)}
+          inlineRequest={controller.state.inlineAiRequest}
+          onProjectChanged={controller.actions.refresh}
+          onClose={() => {
+            shell.right.close();
+            shell.mobile.showMain();
+          }}
+        />{/snippet}
       {#snippet toolbar()}<IngestionHeaderActions
           region="leading"
         /><IngestionHeaderActions />{/snippet}

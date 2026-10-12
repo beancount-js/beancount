@@ -26,6 +26,7 @@ export default defineConfig({
       "@lapismd/design-core/filter",
       "@lapismd/design-core/shadcn/accordion",
       "@lapismd/design-core/shadcn/alert",
+      "@lapismd/design-core/shadcn/alert-dialog",
       "@lapismd/design-core/shadcn/badge",
       "@lapismd/design-core/shadcn/breadcrumb",
       "@lapismd/design-core/shadcn/button",

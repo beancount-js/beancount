@@ -9,3 +9,5 @@ Consumers import `BeancountApplication` from `@beancount-js/ui`, controllers fro
 Run `pnpm --filter @beancount-js/ui checks` for dependency boundaries, types, unit tests, Storybook interactions/accessibility and the static build. Source provenance is recorded in `UI_PROVENANCE.json`.
 
 Ingestion stories use an isolated service adapter for source configuration, merchant profiles, rule previews/application, sync events and import acceptance. Accepting a fixture import writes balanced postings to the in-memory ledger with file revision protection; it never contacts a bank. API-backed presentation uses the host controller's request adapter. Import and settings state belongs to each controller instance.
+
+The assistant is composed in the Design Core right sidebar. Desktop and mobile controls use the shell controller, and editor selections open that panel. The catalog streams a deterministic title proposal through the same event parser used by production; keep performs a revision-aware file save, undo leaves the file unchanged, and clear resets the project chat. Hosts supply their own AI endpoint through `BeancountDataSource.request`.

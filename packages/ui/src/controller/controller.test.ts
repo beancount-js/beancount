@@ -85,3 +85,20 @@ it("keeps workspace selection and query history bound to one controller", async 
     first.actions.request("/api/projects/example/ingestion"),
   ).rejects.toThrow("disposed");
 });
+
+it("aborts streamed services when disposed even after response headers arrive", async () => {
+  const captured: { signal?: AbortSignal | null } = {};
+  const controller = createBeancountController({
+    source: {
+      ...createInMemorySource(),
+      async request(_url, init) {
+        captured.signal = init?.signal;
+        return new Response("stream");
+      },
+    },
+  });
+  await controller.actions.request("/api/projects/example/ai");
+  expect(captured.signal?.aborted).toBe(false);
+  controller.dispose();
+  expect(captured.signal?.aborted).toBe(true);
+});

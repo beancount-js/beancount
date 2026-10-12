@@ -9,7 +9,7 @@
   import ChevronRight from "@lucide/svelte/icons/chevron-right";
   import PanelLeft from "@lucide/svelte/icons/panel-left";
   import PanelRight from "@lucide/svelte/icons/panel-right";
-  import type { Snippet } from "svelte";
+  import { tick, type Snippet } from "svelte";
   let {
     controller,
     displayMode = "auto",
@@ -35,6 +35,34 @@
     title?: string;
     toolbar?: Snippet;
   } = $props();
+  const navigationOpen = $derived(
+    controller.mobile.resolvedMode === "mobile"
+      ? controller.mobile.stage === "left"
+      : !controller.left.collapsed,
+  );
+  const assistantOpen = $derived(
+    controller.mobile.resolvedMode === "mobile"
+      ? controller.mobile.stage === "right"
+      : !controller.right.closed,
+  );
+  function toggleNavigation() {
+    if (controller.mobile.resolvedMode === "mobile") {
+      if (controller.mobile.stage === "left") controller.mobile.showMain();
+      else controller.mobile.show("left");
+    } else controller.left.toggle();
+  }
+  async function toggleAssistant() {
+    if (controller.mobile.resolvedMode === "mobile") {
+      if (controller.mobile.stage === "right") controller.mobile.showMain();
+      else controller.mobile.show("right");
+    } else if (!controller.right.closed) controller.right.close();
+    else {
+      controller.right.open();
+      await tick();
+      if (controller.isPanelConstrained("right"))
+        controller.setPanelDesktopPreviewed("right", true);
+    }
+  }
 </script>
 
 <div
@@ -45,12 +73,11 @@
     <Button
       variant="ghost"
       size="icon-sm"
-      aria-label={controller.left.collapsed
-        ? "Expand left sidebar"
-        : "Collapse left sidebar"}
-      aria-expanded={!controller.left.collapsed}
-      onclick={() => controller.left.toggle()}
-      ><PanelLeft aria-hidden="true" /></Button
+      aria-label={navigationOpen
+        ? "Collapse left sidebar"
+        : "Expand left sidebar"}
+      aria-expanded={navigationOpen}
+      onclick={toggleNavigation}><PanelLeft aria-hidden="true" /></Button
     >
     <Button
       variant="ghost"
@@ -71,15 +98,16 @@
         variant="ghost"
         size="icon-sm"
         aria-label="Toggle AI panel"
-        aria-expanded={!controller.right.closed}
-        onclick={() =>
-          controller.right.closed
-            ? controller.right.open()
-            : controller.right.close()}
-        ><PanelRight aria-hidden="true" /></Button
+        aria-expanded={assistantOpen}
+        onclick={toggleAssistant}><PanelRight aria-hidden="true" /></Button
       >{/if}
   </nav>
-  <AppShell.Root {controller} {displayMode} mobileBreakpoint={1024}>
+  <AppShell.Root
+    {controller}
+    {displayMode}
+    mobileBreakpoint={1024}
+    desktopMinMainWidth={360}
+  >
     <AppShell.Sidebar
       side="left"
       label="Ledger navigation"
@@ -132,11 +160,5 @@
     flex: 1;
     font-size: 0.875rem;
     padding-inline: 0.5rem;
-  }
-  .beancount-shell[data-mobile="true"] {
-    grid-template-rows: minmax(0, 1fr);
-  }
-  .beancount-shell[data-mobile="true"] .beancount-shell__header {
-    display: none;
   }
 </style>
