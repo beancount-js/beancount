@@ -80,6 +80,14 @@ export interface BeancountController {
   readonly state: BeancountControllerState;
   readonly actions: BeancountControllerActions;
   readonly presentation: ComponentContext;
+  readonly services: {
+    sync: ReturnType<
+      typeof import("../domain/ingestion/sync").createIngestionSync
+    >;
+    syncStatus: ReturnType<
+      typeof import("../domain/studio/sync-status").createSyncStatus
+    >;
+  };
   readonly workspace: import("../domain/studio/workspace").StudioWorkspaceContext;
   readonly navigation: ReturnType<
     typeof import("../domain/router/router").createControllerNavigation

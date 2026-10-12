@@ -76,7 +76,9 @@ it("keeps workspace selection and query history bound to one controller", async 
   const response = await first.actions.request(
     "/api/projects/example/ingestion/merchants",
   );
-  expect(await response.json()).toEqual([]);
+  expect(await response.json()).toEqual([
+    expect.objectContaining({ canonicalName: "Example cafe" }),
+  ]);
   first.dispose();
   second.dispose();
   await expect(

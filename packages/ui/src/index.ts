@@ -18,3 +18,12 @@ export { default as AccountDetails } from "./domain/components/AccountDetails.sv
 export { default as Query } from "./domain/components/Query.svelte";
 export { default as Search } from "./domain/components/Search.svelte";
 export { default as ResourceViewer } from "./domain/components/ResourceViewer.svelte";
+export { default as IngestionTable } from "./domain/components/IngestionTable.svelte";
+export { default as IngestionConfigEditor } from "./domain/components/IngestionConfigEditor.svelte";
+export { default as IngestionAccountsSetup } from "./domain/components/IngestionAccountsSetup.svelte";
+export { default as IngestionMerchantReview } from "./domain/components/IngestionMerchantReview.svelte";
+export { default as IngestionMerchantManage } from "./domain/components/IngestionMerchantManage.svelte";
+export { default as IngestionBrandSettings } from "./domain/components/IngestionBrandSettings.svelte";
+export { default as IngestionRunHistory } from "./domain/components/IngestionRunHistory.svelte";
+export { default as IngestionRunAudit } from "./domain/components/IngestionRunAudit.svelte";
+export { default as RulesSettings } from "./domain/components/RulesSettings.svelte";

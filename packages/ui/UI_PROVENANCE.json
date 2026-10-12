@@ -553,6 +553,202 @@
     {
       "source": "packages/fava/src/codemirror/themes/base.scss",
       "target": "src/domain/codemirror/themes/base.scss"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionTable.svelte",
+      "target": "src/domain/components/IngestionTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/sync.ts",
+      "target": "src/domain/ingestion/sync.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/review-classification.ts",
+      "target": "src/domain/ingestion/review-classification.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/ingestion-review-search-state.ts",
+      "target": "src/domain/lib/ingestion-review-search-state.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/review-selection.ts",
+      "target": "src/domain/lib/review-selection.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionProposalSheet.svelte",
+      "target": "src/domain/components/IngestionProposalSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/LocalMerchantMatchPicker.svelte",
+      "target": "src/domain/components/LocalMerchantMatchPicker.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/fuzzy-search.ts",
+      "target": "src/domain/lib/fuzzy-search.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionReconciliationPanel.svelte",
+      "target": "src/domain/components/IngestionReconciliationPanel.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/reconciliation-review-response.ts",
+      "target": "src/domain/lib/reconciliation-review-response.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/reconciliation-review-search-state.ts",
+      "target": "src/domain/lib/reconciliation-review-search-state.ts"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/ReconciliationReviewSkeleton.svelte",
+      "target": "src/domain/components/skeletons/ReconciliationReviewSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/ReviewImportsSkeleton.svelte",
+      "target": "src/domain/components/skeletons/ReviewImportsSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionConfigEditor.svelte",
+      "target": "src/domain/components/IngestionConfigEditor.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/samples.ts",
+      "target": "src/domain/ingestion/samples.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/source-form.ts",
+      "target": "src/domain/ingestion/source-form.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/secret-ref.ts",
+      "target": "src/domain/ingestion/secret-ref.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/connectors.ts",
+      "target": "src/domain/ingestion/connectors.ts"
+    },
+    {
+      "source": "packages/fava/src/studio/sync-status.ts",
+      "target": "src/domain/studio/sync-status.ts"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/SourcesPageSkeleton.svelte",
+      "target": "src/domain/components/skeletons/SourcesPageSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionSourceForm.svelte",
+      "target": "src/domain/components/IngestionSourceForm.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/connector-fields.ts",
+      "target": "src/domain/ingestion/connector-fields.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/source-form-config.ts",
+      "target": "src/domain/ingestion/source-form-config.ts"
+    },
+    {
+      "source": "packages/fava/src/components/form/MerchantComboField.svelte",
+      "target": "src/domain/components/form/MerchantComboField.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionSourcesPreview.svelte",
+      "target": "src/domain/components/IngestionSourcesPreview.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/setup-markdown.ts",
+      "target": "src/domain/ingestion/setup-markdown.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionAccountsSetup.svelte",
+      "target": "src/domain/components/IngestionAccountsSetup.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/other-accounts.ts",
+      "target": "src/domain/ingestion/other-accounts.ts"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/AccountsPageSkeleton.svelte",
+      "target": "src/domain/components/skeletons/AccountsPageSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/ComboBox.svelte",
+      "target": "src/domain/components/ComboBox.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionMerchantReview.svelte",
+      "target": "src/domain/components/IngestionMerchantReview.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/ingestion-merchant-search-state.ts",
+      "target": "src/domain/lib/ingestion-merchant-search-state.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionMerchantSheet.svelte",
+      "target": "src/domain/components/IngestionMerchantSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/MerchantsPageSkeleton.svelte",
+      "target": "src/domain/components/skeletons/MerchantsPageSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionMerchantManage.svelte",
+      "target": "src/domain/components/IngestionMerchantManage.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/MerchantEditSheet.svelte",
+      "target": "src/domain/components/MerchantEditSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/merchant-form-config.ts",
+      "target": "src/domain/ingestion/merchant-form-config.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionBrandSettings.svelte",
+      "target": "src/domain/components/IngestionBrandSettings.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/brand-form-config.ts",
+      "target": "src/domain/ingestion/brand-form-config.ts"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/BrandSettingsSkeleton.svelte",
+      "target": "src/domain/components/skeletons/BrandSettingsSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionRunHistory.svelte",
+      "target": "src/domain/components/IngestionRunHistory.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/history.ts",
+      "target": "src/domain/ingestion/history.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionRunAudit.svelte",
+      "target": "src/domain/components/IngestionRunAudit.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/RulesSettings.svelte",
+      "target": "src/domain/components/RulesSettings.svelte"
+    },
+    {
+      "source": "packages/fava/src/rules/api.ts",
+      "target": "src/domain/rules/api.ts"
+    },
+    {
+      "source": "packages/fava/src/rules/types.ts",
+      "target": "src/domain/rules/types.ts"
+    },
+    {
+      "source": "packages/fava/src/components/RuleEditorSheet.svelte",
+      "target": "src/domain/components/RuleEditorSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/rules/RuleConditionRow.svelte",
+      "target": "src/domain/components/rules/RuleConditionRow.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/RulesPageSkeleton.svelte",
+      "target": "src/domain/components/skeletons/RulesPageSkeleton.svelte"
     }
   ],
   "formAdapters": {

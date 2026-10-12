@@ -52,3 +52,12 @@ html.dark {
   grid-template-columns: max-content minmax(0, 1fr);
   min-width: 0;
 }
+.beancount-structured-form > * {
+  grid-column: 1 / -1;
+}
+@supports (grid-template-columns: subgrid) {
+  .beancount-structured-form > .cv-structured-form,
+  .beancount-structured-form > .cv-form-field {
+    grid-template-columns: subgrid;
+  }
+}

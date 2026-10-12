@@ -1,3 +1,6 @@
+import { createIngestionSync } from "../domain/ingestion/sync";
+import { createSyncStatus } from "../domain/studio/sync-status";
+import { ingestionPath } from "../domain/ingestion/api";
 import { createStudioWorkspace } from "../domain/studio/workspace";
 import { createControllerNavigation } from "../domain/router/router";
 import { get, writable } from "svelte/store";
@@ -42,13 +45,25 @@ export function createBeancountController(
   });
   function apply(next: ProjectSnapshot) {
     snapshot = next;
-    if (!next.ledgerFiles.some((file) => file.path === activeFile))
+    const review = get(workspace.reviewLedger);
+    if (
+      !next.ledgerFiles.some((file) => file.path === activeFile) &&
+      review?.path !== activeFile
+    )
       activeFile = next.project.entryFile;
     presentation.ledgerSource.set(
-      LedgerSource.fromProject(activeFile, next.ledgerFiles),
+      LedgerSource.fromProject(
+        activeFile,
+        review?.path === activeFile
+          ? [{ path: review.path, contents: review.contents }]
+          : next.ledgerFiles,
+      ),
     );
     workspace.snapshot.set(next);
     workspace.activeFile.set(activeFile);
+    workspace.activeLedgerKind.set(
+      review?.path === activeFile ? "ingestion-review" : "file",
+    );
     status = next.ledgerFiles.length ? "ready" : "empty";
   }
   async function operate<T>(
@@ -79,6 +94,7 @@ export function createBeancountController(
       (signal) => options.source.loadProject(id, signal),
       (next) => {
         if (version === generation) {
+          workspace.reviewLedger.set(null);
           activeFile = next.project.entryFile;
           apply(next);
         }
@@ -106,6 +122,7 @@ export function createBeancountController(
       }
     },
     async resourceUrl(path) {
+      if (disposed) throw new Error("Controller has been disposed.");
       if (!snapshot || !options.source.resourceUrl)
         throw new Error("This data source does not provide resources.");
       return options.source.resourceUrl(snapshot.project.id, path);
@@ -137,7 +154,12 @@ export function createBeancountController(
     },
     selectProject,
     selectFile(path) {
-      if (disposed || !snapshot?.ledgerFiles.some((file) => file.path === path))
+      if (
+        disposed ||
+        !snapshot ||
+        (!snapshot.ledgerFiles.some((file) => file.path === path) &&
+          get(workspace.reviewLedger)?.path !== path)
+      )
         return;
       activeFile = path;
       apply(snapshot);
@@ -190,6 +212,11 @@ export function createBeancountController(
       else status = "empty";
     }));
   }
+  const services = {
+    sync: createIngestionSync(actions.request),
+    syncStatus: undefined as unknown as ReturnType<typeof createSyncStatus>,
+  };
+  services.syncStatus = createSyncStatus(services.sync);
   const workspace = createStudioWorkspace(
     actions.saveFile,
     async () => {
@@ -197,7 +224,16 @@ export function createBeancountController(
       if (!snapshot) throw new Error("No project selected.");
       return snapshot;
     },
-    async () => null,
+    async () => {
+      if (!snapshot || !options.source.request) return null;
+      const response = await actions.request(
+        ingestionPath(snapshot.project.id, "/review-ledger"),
+      );
+      if (!response.ok) throw new Error("Review ledger is unavailable.");
+      const next = await response.json();
+      workspace.reviewLedger.set(next);
+      return next;
+    },
     actions.resourceUrl,
     actions.requestInlineAi,
   );
@@ -205,8 +241,12 @@ export function createBeancountController(
   const unsubscribeFile = workspace.activeFile.subscribe((path) => {
     if (path && path !== activeFile) actions.selectFile(path);
   });
+  const unsubscribeSnapshot = workspace.snapshot.subscribe((next) => {
+    if (next && next !== snapshot) apply(next);
+  });
   syncRoute();
   return {
+    services,
     workspace,
     navigation,
     state: {
@@ -253,6 +293,8 @@ export function createBeancountController(
       pending.clear();
       unsubscribe();
       unsubscribeFile();
+      unsubscribeSnapshot();
+      services.syncStatus.dispose();
     },
   };
 }

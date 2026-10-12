@@ -7,3 +7,5 @@ Run `pnpm storybook` from the repository root. The catalog binds to `127.0.0.1:6
 Consumers import `BeancountApplication` from `@beancount-js/ui`, controllers from `@beancount-js/ui/controller`, and `@beancount-js/ui/styles.css` once. Hosts supply a `BeancountController`, initialize it and dispose it when their application is destroyed. The application owns its Design Core shell controller.
 
 Run `pnpm --filter @beancount-js/ui checks` for dependency boundaries, types, unit tests, Storybook interactions/accessibility and the static build. Source provenance is recorded in `UI_PROVENANCE.json`.
+
+Ingestion stories use an isolated service adapter for source configuration, merchant profiles, rule previews/application, sync events and import acceptance. Accepting a fixture import writes balanced postings to the in-memory ledger with file revision protection; it never contacts a bank. API-backed presentation uses the host controller's request adapter. Import and settings state belongs to each controller instance.

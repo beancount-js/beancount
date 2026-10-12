@@ -1,4 +1,13 @@
 <script lang="ts">
+  import IngestionTable from "../../domain/components/IngestionTable.svelte";
+  import IngestionConfigEditor from "../../domain/components/IngestionConfigEditor.svelte";
+  import IngestionAccountsSetup from "../../domain/components/IngestionAccountsSetup.svelte";
+  import IngestionMerchantReview from "../../domain/components/IngestionMerchantReview.svelte";
+  import IngestionMerchantManage from "../../domain/components/IngestionMerchantManage.svelte";
+  import IngestionBrandSettings from "../../domain/components/IngestionBrandSettings.svelte";
+  import IngestionRunHistory from "../../domain/components/IngestionRunHistory.svelte";
+  import RulesSettings from "../../domain/components/RulesSettings.svelte";
+  import IngestionRunAudit from "../../domain/components/IngestionRunAudit.svelte";
   import { BeancountControllerKey } from "../../controller/context";
   import JournalTable from "../../domain/components/JournalTable.svelte";
   import AccountDetails from "../../domain/components/AccountDetails.svelte";
@@ -28,7 +37,11 @@
   import FinancialDashboard from "../../domain/components/FinancialDashboard.svelte";
   import BeancountAppShell from "../app-shell/BeancountAppShell.svelte";
   import type { BeancountController } from "../../controller";
-  import { ledgerDestinations, routeTitle } from "../../controller";
+  import {
+    ledgerDestinations,
+    settingsDestinations,
+    routeTitle,
+  } from "../../controller";
   let {
     controller,
     displayMode = "auto",
@@ -134,7 +147,7 @@
           />
           <Search />
           <nav aria-label="Ledger reports">
-            {#each ledgerDestinations as [path, label]}<Button
+            {#each [...ledgerDestinations, ...settingsDestinations] as [path, label]}<Button
                 variant={controller.state.route.path === path
                   ? "secondary"
                   : "ghost"}
@@ -194,7 +207,16 @@
               {:else if controller.state.route.path === "/query"}<Query />
               {:else if controller.state.route.path === "/resource"}<ResourceViewer
                 />
-              {:else}<p class="p-4">Page not found</p>{/if}
+              {:else if controller.state.route.path === "/records"}<IngestionTable
+                />{:else if controller.state.route.path === "/import/editor"}<IngestionConfigEditor
+                />{:else if controller.state.route.path === "/import/accounts"}<IngestionAccountsSetup
+                />{:else if controller.state.route.path === "/import/merchants"}<IngestionMerchantReview
+                />{:else if controller.state.route.path === "/import/manage-merchants"}<IngestionMerchantManage
+                />{:else if controller.state.route.path === "/import/brands"}<IngestionBrandSettings
+                />{:else if controller.state.route.path === "/import/history"}<IngestionRunHistory
+                />{:else if controller.state.route.path === "/import/rules"}<RulesSettings
+                />{:else if controller.state.route.params.runId}<IngestionRunAudit
+                />{:else}<p class="p-4">Page not found</p>{/if}
             {/key}
           </div>
           <JournalRecordRouteSheet />{/if}

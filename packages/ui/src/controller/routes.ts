@@ -12,6 +12,16 @@ export const ledgerDestinations = [
   ["/accounts", "Accounts"],
   ["/errors", "Errors"],
 ] as const;
+export const settingsDestinations = [
+  ["/records", "Records"],
+  ["/import/editor", "Sources"],
+  ["/import/accounts", "Linked Accounts"],
+  ["/import/merchants", "Review Merchants"],
+  ["/import/manage-merchants", "Manage Merchants"],
+  ["/import/brands", "Brand Match"],
+  ["/import/history", "Import History"],
+  ["/import/rules", "Rules"],
+] as const;
 export function parseRoute(input: string): BeancountRoute {
   const url = new URL(
     input.replace(/^#/, "") || "/dashboard",
@@ -27,7 +37,9 @@ export function parseRoute(input: string): BeancountRoute {
 }
 export function routeTitle(route: BeancountRoute) {
   return (
-    ledgerDestinations.find(([path]) => path === route.path)?.[1] ??
+    [...ledgerDestinations, ...settingsDestinations].find(
+      ([path]) => path === route.path,
+    )?.[1] ??
     (route.params.account
       ? `Account: ${route.params.account}`
       : "Beancount Studio")
