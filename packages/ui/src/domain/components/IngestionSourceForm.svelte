@@ -24,12 +24,13 @@
 </script>
 
 <script lang="ts">
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
   import { ArrowRight } from "@lucide/svelte";
   import { Copy } from "@lucide/svelte";
   import {
     CollapsibleItemList,
     EntryActions,
-    FilterCommandPicker,
     FormField,
     FormSectionHeader,
     StructuredForm,

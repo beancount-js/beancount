@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { ColorPicker, FilterCommandPicker } from "@lapismd/design-core/forms";
+  import FilterCommandPicker from "./FilterCommandPicker.svelte";
+
+  import { ColorPicker } from "@lapismd/design-core/forms";
   import { Button } from "@lapismd/design-core/shadcn/button";
   import * as Popover from "@lapismd/design-core/shadcn/popover";
   import AccountAvatar from "./AccountAvatar.svelte";

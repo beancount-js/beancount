@@ -84,7 +84,7 @@
         <Select.Root type="single" value={period} onValueChange={updatePeriod}>
           <Select.Trigger
             class="h-8 w-36 text-xs font-medium"
-            aria-label="Dashboard period"
+            aria-label={`Dashboard period: ${dashboardPeriodLabels[period]}`}
           >
             {dashboardPeriodLabels[period]}
           </Select.Trigger>
@@ -383,7 +383,7 @@
 
 <style>
   .positive {
-    color: var(--chart-2);
+    color: color-mix(in srgb, var(--chart-2) 70%, var(--foreground));
   }
 
   .negative {

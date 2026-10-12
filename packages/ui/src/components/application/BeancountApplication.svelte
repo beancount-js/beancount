@@ -1,4 +1,6 @@
 <script lang="ts">
+  import FilterCommandPicker from "../forms/FilterCommandPicker.svelte";
+
   import AiDock from "../../domain/components/AiDock.svelte";
   import IngestionTable from "../../domain/components/IngestionTable.svelte";
   import IngestionConfigEditor from "../../domain/components/IngestionConfigEditor.svelte";
@@ -26,7 +28,7 @@
   } from "@lapismd/design-core/shell";
   import { Button } from "@lapismd/design-core/shadcn/button";
   import * as Tooltip from "@lapismd/design-core/shadcn/tooltip";
-  import { FilterCommandPicker } from "@lapismd/design-core/forms";
+
   import { ContextKey } from "../../domain/context";
   import { ClockKey } from "../../domain/components/dashboard/clock";
   import IncomeStatement from "../../domain/components/IncomeStatement.svelte";

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { rowOpen } from "../lib/row-open";
   import { ArrowDownWideNarrow } from "@lucide/svelte";
   import { ArrowUpDown } from "@lucide/svelte";
   import { ArrowUpNarrowWide } from "@lucide/svelte";
@@ -392,18 +393,18 @@
         </Empty.Root>
       {:else}
         <div
-          role="row"
+          role="group"
           class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 rounded-2xl bg-muted px-4 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
           <div
-            role="columnheader"
-            aria-sort={ariaSortFor("name")}
+            role="group"
+            data-sort-direction={ariaSortFor("name")}
             class="justify-self-start"
           >
             <button
               type="button"
               class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by rule name"
+              aria-label={`Sort by rule name; sort direction: ${ariaSortFor("name")}`}
               onclick={() => cycleSort("name")}
             >
               Rule
@@ -417,14 +418,14 @@
             </button>
           </div>
           <div
-            role="columnheader"
-            aria-sort={ariaSortFor("active")}
+            role="group"
+            data-sort-direction={ariaSortFor("active")}
             class="justify-self-end"
           >
             <button
               type="button"
               class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by active status"
+              aria-label={`Sort by active status; sort direction: ${ariaSortFor("active")}`}
               onclick={() => cycleSort("active")}
             >
               Active
@@ -437,27 +438,25 @@
               {/if}
             </button>
           </div>
-          <div role="columnheader" aria-hidden="true"></div>
+          <div role="group" aria-hidden="true"></div>
         </div>
         <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
           {#each sortedRules as rule, index (rule.id)}
             {@const summary = summarizeRule(rule)}
             <div
-              role="button"
-              tabindex="0"
+              role="group"
               class:rounded-b-xl={index === sortedRules.length - 1}
               class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b px-4 py-3 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
               aria-label={`Edit rule ${ruleName(rule)}`}
-              onclick={() => openEdit(rule)}
-              onkeydown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  openEdit(rule);
-                }
-              }}
+              use:rowOpen={() => openEdit(rule)}
             >
               <div class="min-w-0">
-                <p class="truncate text-sm font-semibold">{ruleName(rule)}</p>
+                <button
+                  type="button"
+                  class="text-left text-sm font-semibold hover:underline focus-visible:outline focus-visible:outline-ring"
+                  aria-label={`Edit rule ${ruleName(rule)}`}
+                  onclick={() => openEdit(rule)}>{ruleName(rule)}</button
+                >
                 <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                   <span
                     class="max-w-full truncate rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"

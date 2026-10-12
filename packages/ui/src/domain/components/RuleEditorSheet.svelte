@@ -1,4 +1,6 @@
 <script lang="ts">
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
   import { Plus } from "@lucide/svelte";
   import { Trash2 } from "@lucide/svelte";
   import { X } from "@lucide/svelte";
@@ -13,7 +15,6 @@
     type RuleRegistryMeta,
   } from "@beancount-js/beangulp";
   import {
-    FilterCommandPicker,
     FormAddButton,
     FormSectionHeader,
     type FilterCommandOption,

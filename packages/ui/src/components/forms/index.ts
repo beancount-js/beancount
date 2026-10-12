@@ -7,3 +7,5 @@ export {
   accountAvatarInitial,
   accountAvatarFallbackColor,
 } from "./account-avatar";
+
+export { default as FilterCommandPicker } from "./FilterCommandPicker.svelte";

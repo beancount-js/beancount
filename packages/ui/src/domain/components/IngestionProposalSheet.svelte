@@ -1,11 +1,12 @@
 <script lang="ts">
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
   import type { ImportProposal, IngestionRun } from "../ingestion/types";
   import { useIngestionApi, ingestionPath } from "../ingestion/api";
   const { ingestionJson } = useIngestionApi();
   import {
     CollapsibleItemList,
     EntryActions,
-    FilterCommandPicker,
     FormField,
     FormSectionHeader,
   } from "@lapismd/design-core/forms";

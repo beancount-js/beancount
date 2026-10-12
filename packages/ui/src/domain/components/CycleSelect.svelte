@@ -1,7 +1,9 @@
 <script lang="ts">
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
   import { ChevronLeft } from "@lucide/svelte";
   import { ChevronRight } from "@lucide/svelte";
-  import { FilterCommandPicker } from "@lapismd/design-core/forms";
+
   import { Button } from "@lapismd/design-core/shadcn/button";
 
   type Option = {

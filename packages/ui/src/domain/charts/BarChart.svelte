@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useClock } from "../components/dashboard/clock";
   import { extent } from "d3-array";
   import { axisBottom, axisLeft } from "d3-axis";
   import { scaleBand, scaleLinear, scaleOrdinal } from "d3-scale";
@@ -29,7 +30,7 @@
   export let width: number;
   export let legend: Writable<[string, string | null][]>;
 
-  const today = new Date();
+  const today = useClock()().toJSDate();
   const maxColumnWidth = 100;
   const margin = { top: 10, right: 10, bottom: 30, left: 40 };
   const height = 250;
@@ -133,7 +134,7 @@
       {#each stacks as [currency, account_stacks]}
         {#each account_stacks as stack}
           {@const account = stack.key}
-          <a href={urlForAccount(account)}>
+          <a href={urlForAccount(account)} aria-label={`View ${account}`}>
             <g
               class="category"
               class:faded={highlighted != null && account !== highlighted}
@@ -149,7 +150,8 @@
               on:blur={() => {
                 highlighted = null;
               }}
-              role="img"
+              role="group"
+              aria-label={account}
             >
               {#each stack as bar}
                 <rect

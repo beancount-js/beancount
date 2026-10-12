@@ -88,10 +88,20 @@
   name="Linked Accounts"
   play={async ({ canvasElement }) => {
     await ready(canvasElement, "Linked Accounts");
+    const canvas = within(canvasElement);
     await expect(
       await within(canvasElement).findByText("Fixture provider", {
         exact: true,
       }),
+    ).toBeVisible();
+    await userEvent.click(
+      await canvas.findByRole("button", {
+        name: /Fixture provider 1 institution/,
+      }),
+    );
+    await expect(await canvas.findByText(/Current account/)).toBeVisible();
+    await expect(
+      canvas.getByRole("link", { name: "Open Assets:Checking" }),
     ).toBeVisible();
   }}
   >{#snippet template()}<ApplicationHarness

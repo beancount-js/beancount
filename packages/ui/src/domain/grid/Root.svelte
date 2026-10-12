@@ -49,14 +49,15 @@
   </Alert.Root>
 {:else}
   <ScrollArea.Root orientation="horizontal" class="w-full max-w-full">
-    <ol class="bean-table flex-table text-xs">
+    <div data-grid-list class="bean-table flex-table text-xs">
       <VirtualList
         height={Math.min(height, maxHeight)}
         width="max-content"
         itemCount={$sortedData.length}
         itemSize={getSize}
       >
-        <li
+        <div
+          data-grid-row
           class="head sticky top-0 z-10 border-b border-l border-t border-solid"
           slot="header"
         >
@@ -81,7 +82,7 @@
               {/if}
             {/each}
           </p>
-        </li>
+        </div>
         <div slot="item" let:index let:style class="align-middle" {style}>
           <slot
             name="row"
@@ -93,7 +94,8 @@
             {columns}
           >
             <div style={`line-height: ${rowHeight - 4}px`}>
-              <li
+              <div
+                data-grid-row
                 class="border-b border-l"
                 style={`height: ${getSize(index, false)}px`}
               >
@@ -117,11 +119,11 @@
                     </slot>
                   {/each}
                 </p>
-              </li>
+              </div>
             </div>
           </slot>
         </div>
       </VirtualList>
-    </ol>
+    </div>
   </ScrollArea.Root>
 {/if}

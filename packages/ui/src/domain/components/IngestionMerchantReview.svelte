@@ -1,9 +1,9 @@
 <script lang="ts">
+  import { rowOpen } from "../lib/row-open";
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
   import { onDestroy } from "svelte";
-  import {
-    FilterCommandPicker,
-    type FilterCommandOption,
-  } from "@lapismd/design-core/forms";
+  import { type FilterCommandOption } from "@lapismd/design-core/forms";
   import { SearchFilterBar } from "@lapismd/design-core/filter";
   import { ArrowDownWideNarrow } from "@lucide/svelte";
   import { ArrowUpDown } from "@lucide/svelte";
@@ -607,7 +607,7 @@
           </div>
         {:else if matchedClusters.length}
           <div
-            role="row"
+            role="group"
             class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
             <input
@@ -624,14 +624,14 @@
                 )}
             />
             <div
-              role="columnheader"
-              aria-sort={ariaSortFor("merchant")}
+              role="group"
+              data-sort-direction={ariaSortFor("merchant")}
               class="justify-self-start"
             >
               <button
                 type="button"
                 class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="Sort by merchant"
+                aria-label={`Sort by merchant; sort direction: ${ariaSortFor("merchant")}`}
                 onclick={() => cycleSort("merchant")}
               >
                 Merchant
@@ -645,14 +645,14 @@
               </button>
             </div>
             <div
-              role="columnheader"
-              aria-sort={ariaSortFor("pending")}
+              role="group"
+              data-sort-direction={ariaSortFor("pending")}
               class="justify-self-end"
             >
               <button
                 type="button"
                 class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="Sort by pending count"
+                aria-label={`Sort by pending count; sort direction: ${ariaSortFor("pending")}`}
                 onclick={() => cycleSort("pending")}
               >
                 Pending
@@ -699,13 +699,11 @@
           <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
             {#each visibleClusters as cluster, index (cluster.id)}
               <div
-                role="button"
-                tabindex="0"
+                role="group"
                 class:rounded-b-xl={index === visibleClusters.length - 1}
                 class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={`Review merchant ${cluster.displayName}`}
-                onclick={() => openCluster(cluster)}
-                onkeydown={(event) => handleRowKeydown(event, cluster)}
+                use:rowOpen={() => openCluster(cluster)}
               >
                 <input
                   type="checkbox"
@@ -736,9 +734,13 @@
                   </div>
                 {/if}
                 <div class="min-w-0">
-                  <div class="truncate text-sm font-semibold">
-                    {cluster.displayName}
-                  </div>
+                  <button
+                    type="button"
+                    class="text-left text-sm font-semibold hover:underline focus-visible:outline focus-visible:outline-ring"
+                    aria-label={`Review merchant ${cluster.displayName}`}
+                    onclick={() => openCluster(cluster)}
+                    >{cluster.displayName}</button
+                  >
                   <div class="mt-1 truncate text-xs text-muted-foreground">
                     <span class="capitalize"
                       >{cluster.statuses[0] ?? "unresolved"}</span

@@ -47,6 +47,15 @@ html.dark {
   min-height: 0;
   overflow: hidden;
 }
+/* Form accents are text on a tinted surface; primary remains the filled-action token. */
+.dark .beancount-application,
+.dark .beancount-application :is(.cv-structured-form, .ui-structured-form) {
+  --ui-form-accent: color-mix(
+    in srgb,
+    var(--lapis-accent, var(--foreground)) 70%,
+    var(--foreground)
+  );
+}
 .beancount-structured-form {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);

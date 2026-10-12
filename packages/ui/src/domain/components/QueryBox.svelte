@@ -54,19 +54,24 @@
       value={query.hash}
       class={cn({ "opacity-45": isOpen[query.hash] == undefined })}
     >
-      <Accordion.Trigger class="px-2 text-xs hover:no-underline ">
-        <div class="flex w-full flex-1 items-center justify-between">
+      <div class="flex items-center">
+        <Accordion.Trigger
+          class="min-w-0 flex-1 px-2 text-xs hover:no-underline"
+          aria-label={`Query: ${query.query}`}
+        >
           <Highlighter code={query.query} parser={bqlParser} />
-          <div>
-            <Button variant="ghost" onclick={(evt) => handleCopy(evt, query)}>
-              <Copy class="size-4" />
-            </Button>
-            <Button variant="ghost" onclick={(evt) => handleDelete(evt, query)}>
-              <Trash class="size-4" />
-            </Button>
-          </div>
-        </div>
-      </Accordion.Trigger>
+        </Accordion.Trigger>
+        <Button
+          variant="ghost"
+          aria-label="Reuse query"
+          onclick={(evt) => handleCopy(evt, query)}><Copy /></Button
+        >
+        <Button
+          variant="ghost"
+          aria-label="Delete query"
+          onclick={(evt) => handleDelete(evt, query)}><Trash /></Button
+        >
+      </div>
       <Accordion.Content class="border-t">
         {#if isOpen[query.hash]}
           <QueryTable query={query.query} {height} />

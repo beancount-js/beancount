@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { rowOpen } from "../lib/row-open";
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
   import { ArrowLeft } from "@lucide/svelte";
@@ -462,7 +463,7 @@
                 class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
                 aria-expanded={expanded}
                 aria-controls={summaryId}
-                aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
+                aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label} · ${group.rows.length}`}
                 onclick={() => toggleSummary(group.key)}
               >
                 <span
@@ -482,7 +483,7 @@
                 class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 aria-expanded={expanded}
                 aria-controls={summaryId}
-                aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
+                aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label} · ${group.rows.length}`}
                 onclick={() => toggleSummary(group.key)}
               >
                 {#if expanded}
@@ -501,13 +502,11 @@
                 {#each group.rows as row, index (row.key)}
                   {@const logo = merchantLogo(row.proposal)}
                   <div
-                    role="button"
-                    tabindex="0"
+                    role="group"
                     class:rounded-b-xl={index === group.rows.length - 1}
                     class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={`Inspect ${rowTitle(row.proposal)}`}
-                    onclick={() => openRow(row)}
-                    onkeydown={(event) => handleRowKeydown(event, row)}
+                    use:rowOpen={() => openRow(row)}
                   >
                     {#if logo && !failedLogoIds.has(row.proposal.id)}
                       <img
@@ -525,9 +524,13 @@
                       </div>
                     {/if}
                     <div class="min-w-0">
-                      <div class="truncate text-sm font-semibold">
-                        {rowTitle(row.proposal)}
-                      </div>
+                      <button
+                        type="button"
+                        class="text-left text-sm font-semibold hover:underline focus-visible:outline focus-visible:outline-ring"
+                        aria-label={`Inspect ${rowTitle(row.proposal)}`}
+                        onclick={() => openRow(row)}
+                        >{rowTitle(row.proposal)}</button
+                      >
                       <div class="mt-1 truncate text-xs text-muted-foreground">
                         {rowDetail(row.proposal)}
                       </div>

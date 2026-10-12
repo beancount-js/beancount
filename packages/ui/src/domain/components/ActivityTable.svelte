@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { rowOpen } from "../lib/row-open";
   import { useClock } from "./dashboard/clock";
   const clock = useClock();
   import type { Amount, DirectiveBase } from "@beancount-js/beancount";
@@ -454,7 +455,7 @@
               : undefined}
             aria-expanded={expanded}
             aria-controls={summaryId}
-            aria-label={`${expanded ? "Collapse" : "Expand"} ${groupDate(group)}`}
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${groupDate(group)} · ${group.records.length} ${balanceText(group.balance.final)}`}
             onclick={() => toggleSummary(group.key)}
           >
             <span
@@ -528,15 +529,13 @@
           {#each group.records as record, index}
             {@const logo = recordLogo(record)}
             <div
-              role="button"
-              tabindex="0"
+              role="group"
               class:rounded-b-xl={index === group.records.length - 1}
               class={selectable
                 ? "grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                 : "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"}
               aria-label={`Open ${record.title}`}
-              onclick={() => openRecord(record)}
-              onkeydown={(event) => handleRecordKeydown(event, record)}
+              use:rowOpen={() => openRecord(record)}
             >
               {#if selectable}
                 <input
@@ -572,7 +571,12 @@
                 </div>
               {/if}
               <div class="min-w-0">
-                <div class="truncate text-sm font-semibold">{record.title}</div>
+                <button
+                  type="button"
+                  class="text-left text-sm font-semibold hover:underline focus-visible:outline focus-visible:outline-ring"
+                  aria-label={`Open ${record.title}`}
+                  onclick={() => openRecord(record)}>{record.title}</button
+                >
                 <div class="mt-1 truncate text-xs text-muted-foreground">
                   {record.detail}
                 </div>

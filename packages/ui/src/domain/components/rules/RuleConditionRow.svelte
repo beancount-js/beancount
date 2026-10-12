@@ -1,4 +1,6 @@
 <script lang="ts">
+  import FilterCommandPicker from "../../../components/forms/FilterCommandPicker.svelte";
+
   import { Trash2 } from "@lucide/svelte";
   import {
     newRuleId,
@@ -7,7 +9,6 @@
     type RuleRegistryMeta,
   } from "@beancount-js/beangulp";
   import {
-    FilterCommandPicker,
     FormAddButton,
     type FilterCommandOption,
   } from "@lapismd/design-core/forms";

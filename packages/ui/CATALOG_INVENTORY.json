@@ -1,0 +1,166 @@
+{
+  "referenceCommit": "215bb59f31d4658410c2fd2b0122022a56dff5aa",
+  "routes": [
+    {
+      "route": "/",
+      "component": "BalanceSheet",
+      "storyId": "beancount-application-states--ledger-root-alias"
+    },
+    {
+      "route": "/dashboard",
+      "component": "FinancialDashboard",
+      "storyId": "beancount-application--dashboard"
+    },
+    {
+      "route": "/income_statement",
+      "component": "IncomeStatement",
+      "storyId": "beancount-reports--income-statement"
+    },
+    {
+      "route": "/balance_sheet",
+      "component": "BalanceSheet",
+      "storyId": "beancount-reports--balance-sheet"
+    },
+    {
+      "route": "/trial_balance",
+      "component": "TrialBalance",
+      "storyId": "beancount-reports--trial-balance"
+    },
+    {
+      "route": "/journal",
+      "component": "JournalTable",
+      "storyId": "beancount-editing-and-discovery--journal"
+    },
+    {
+      "route": "/errors",
+      "component": "Errors",
+      "storyId": "beancount-reports--errors"
+    },
+    {
+      "route": "/accounts",
+      "component": "AccountDetails",
+      "storyId": "beancount-editing-and-discovery--account"
+    },
+    {
+      "route": "/account/:account",
+      "component": "AccountDetails",
+      "storyId": "beancount-editing-and-discovery--account"
+    },
+    {
+      "route": "/holdings",
+      "component": "Holdings",
+      "storyId": "beancount-reports--holdings"
+    },
+    {
+      "route": "/query",
+      "component": "Query",
+      "storyId": "beancount-editing-and-discovery--query"
+    },
+    {
+      "route": "/editor",
+      "component": "Editor",
+      "storyId": "beancount-editing-and-discovery--editor"
+    },
+    {
+      "route": "/statistics",
+      "component": "Statistics",
+      "storyId": "beancount-reports--statistics"
+    },
+    {
+      "route": "/records",
+      "component": "IngestionTable",
+      "storyId": "beancount-ingestion-and-settings--records"
+    },
+    {
+      "route": "/import/editor",
+      "component": "IngestionConfigEditor",
+      "storyId": "beancount-ingestion-and-settings--sources"
+    },
+    {
+      "route": "/import/accounts",
+      "component": "IngestionAccountsSetup",
+      "storyId": "beancount-ingestion-and-settings--linked-accounts"
+    },
+    {
+      "route": "/import/merchants",
+      "component": "IngestionMerchantReview",
+      "storyId": "beancount-ingestion-and-settings--review-merchants"
+    },
+    {
+      "route": "/import/manage-merchants",
+      "component": "IngestionMerchantManage",
+      "storyId": "beancount-ingestion-and-settings--manage-merchants"
+    },
+    {
+      "route": "/import/brands",
+      "component": "IngestionBrandSettings",
+      "storyId": "beancount-ingestion-and-settings--brand-match"
+    },
+    {
+      "route": "/import/history/:runId",
+      "component": "IngestionRunAudit",
+      "storyId": "beancount-ingestion-and-settings--run-audit"
+    },
+    {
+      "route": "/import/history",
+      "component": "IngestionRunHistory",
+      "storyId": "beancount-ingestion-and-settings--import-history"
+    },
+    {
+      "route": "/import/rules",
+      "component": "RulesSettings",
+      "storyId": "beancount-ingestion-and-settings--rules"
+    },
+    {
+      "route": "/directives",
+      "component": "Editor",
+      "storyId": "beancount-application-states--directives-alias"
+    },
+    {
+      "route": "/resource",
+      "component": "ResourceViewer",
+      "storyId": "beancount-editing-and-discovery--resource"
+    }
+  ],
+  "sharedShell": "@lapismd/design-core/shell",
+  "sharedImports": [
+    "@lapismd/design-core/filter",
+    "@lapismd/design-core/forms",
+    "@lapismd/design-core/shadcn/accordion",
+    "@lapismd/design-core/shadcn/alert",
+    "@lapismd/design-core/shadcn/alert-dialog",
+    "@lapismd/design-core/shadcn/badge",
+    "@lapismd/design-core/shadcn/breadcrumb",
+    "@lapismd/design-core/shadcn/button",
+    "@lapismd/design-core/shadcn/collapsible",
+    "@lapismd/design-core/shadcn/dialog",
+    "@lapismd/design-core/shadcn/dropdown-menu",
+    "@lapismd/design-core/shadcn/empty",
+    "@lapismd/design-core/shadcn/input",
+    "@lapismd/design-core/shadcn/pagination",
+    "@lapismd/design-core/shadcn/popover",
+    "@lapismd/design-core/shadcn/progress",
+    "@lapismd/design-core/shadcn/scroll-area",
+    "@lapismd/design-core/shadcn/select",
+    "@lapismd/design-core/shadcn/separator",
+    "@lapismd/design-core/shadcn/sheet",
+    "@lapismd/design-core/shadcn/skeleton",
+    "@lapismd/design-core/shadcn/switch",
+    "@lapismd/design-core/shadcn/tabs",
+    "@lapismd/design-core/shadcn/textarea",
+    "@lapismd/design-core/shadcn/toggle-group",
+    "@lapismd/design-core/shadcn/tooltip",
+    "@lapismd/design-core/shell",
+    "@lapismd/design-core/styles.css",
+    "@lapismd/design-core/themes/lapis.css"
+  ],
+  "replacedReferenceChrome": [
+    "src/Main.svelte",
+    "src/components/StudioShell.svelte",
+    "src/components/StudioShellHeader.svelte",
+    "src/components/FavaNavigation.svelte",
+    "src/components/Nav.svelte",
+    "src/lib/components/ui"
+  ],
+  "assistant": "beancount-assistant--keep-proposed-change"
+}

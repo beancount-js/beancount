@@ -102,3 +102,14 @@ it("aborts streamed services when disposed even after response headers arrive", 
   controller.dispose();
   expect(captured.signal?.aborted).toBe(true);
 });
+
+it("preserves the reference root and run audit route semantics", async () => {
+  const controller = createBeancountController({
+    source: createInMemorySource(),
+    initialRoute: "/",
+  });
+  expect(controller.state.route.path).toBe("/balance_sheet");
+  controller.actions.navigate("/import/history/import-2024");
+  expect(controller.state.route.params.runId).toBe("import-2024");
+  controller.dispose();
+});

@@ -532,7 +532,7 @@ export function createApplicationServices(
         }
         return Response.json(job);
       }
-      if (path[0] === "discover-accounts")
+      if (path[0] === "discover-accounts" || path[0] === "discover")
         return Response.json({
           accounts: [
             {

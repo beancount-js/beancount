@@ -240,7 +240,8 @@
       >
         {@const directive = value}
         {#if directive instanceof Transaction}
-          <li
+          <div
+            data-grid-row
             class="transaction cleared border-b border-l border-solid"
             style={`height: ${size}px`}
           >
@@ -316,9 +317,9 @@
               </span>
             </div>
             {#if !$toggled.has(directive.id)}
-              <ul class="postings h-full border-t">
+              <div data-grid-list class="postings h-full border-t">
                 {#each directive.postings as posting}
-                  <li>
+                  <div data-grid-row>
                     <p>
                       <span class="datecell" style={styles.date}></span>
                       <span class="flag" style={styles.flag}
@@ -338,13 +339,17 @@
                       ></span>
                       <span class="num border-r" style={styles.price}></span>
                     </p>
-                  </li>
+                  </div>
                 {/each}
-              </ul>
+              </div>
             {/if}
-          </li>
+          </div>
         {:else if directive instanceof Open}
-          <li class="border-b border-l" style={`height: ${size}px`}>
+          <div
+            data-grid-row
+            class="border-b border-l"
+            style={`height: ${size}px`}
+          >
             <p class="h-full">
               <span class="datecell" style={styles.date}>
                 <a href={urlForDate(directive.date)}
@@ -364,9 +369,13 @@
                 >
               </span>
             </p>
-          </li>
+          </div>
         {:else if directive instanceof Pad}
-          <li class="border-b border-l" style={`height: ${size}px`}>
+          <div
+            data-grid-row
+            class="border-b border-l"
+            style={`height: ${size}px`}
+          >
             <p class="h-full">
               <span class="datecell" style={styles.date}>
                 <a href={urlForDate(directive.date)}
@@ -390,9 +399,13 @@
                 >
               </span>
             </p>
-          </li>
+          </div>
         {:else if directive instanceof Balance}
-          <li class="border-b border-l" style={`height: ${size}px`}>
+          <div
+            data-grid-row
+            class="border-b border-l"
+            style={`height: ${size}px`}
+          >
             <p class="h-full">
               <span class="datecell" style={styles.date}>
                 <a href={urlForDate(directive.date)}
@@ -416,7 +429,7 @@
                 style={`width: ${widths.cost + widths.price}px`}
               ></span>
             </p>
-          </li>
+          </div>
         {/if}
       </div>
     </Grid>

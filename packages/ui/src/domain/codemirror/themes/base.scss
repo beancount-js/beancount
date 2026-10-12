@@ -1,21 +1,21 @@
 .beancount-editor {
   --color-red-rgb: 233, 49, 71;
-  --color-red: #e93147;
+  --color-red: #b42338;
   --color-orange-rgb: 236, 117, 0;
-  --color-orange: #ec7500;
+  --color-orange: #9b4a00;
   --color-yellow-rgb: 224, 172, 0;
-  --color-yellow: #e0ac00;
+  --color-yellow: #786000;
   --color-green-rgb: 8, 185, 78;
-  --color-green: #08b94e;
+  --color-green: #16733a;
   --color-cyan-rgb: 0, 191, 188;
-  --color-cyan: #00bfbc;
+  --color-cyan: #006f70;
   --color-blue-rgb: 8, 109, 221;
-  --color-blue: #086ddd;
+  --color-blue: #0862bc;
   --color-purple-rgb: 120, 82, 238;
-  --color-purple: #7852ee;
+  --color-purple: #6940c1;
   --color-pink-rgb: 213, 57, 132;
-  --color-pink: #d53984;
-  --color-grey: #ababab;
+  --color-pink: #a72b67;
+  --color-grey: #616161;
 
   /* Headers */
   --h1-color: inherit;
@@ -64,15 +64,15 @@
   --code-white-space: pre-wrap;
   --code-radius: var(--radius-s);
   --code-size: var(--font-smaller);
-  --code-background: var(--background-primary-alt);
-  --code-normal: var(--text-muted);
+  --code-background: var(--muted);
+  --code-normal: var(--muted-foreground);
   --code-comment: var(--color-grey);
   --code-function: var(--color-yellow);
   --code-important: var(--color-orange);
   --code-keyword: var(--color-pink);
   --code-operator: var(--color-red);
   --code-property: var(--color-cyan);
-  --code-punctuation: var(--text-muted);
+  --code-punctuation: var(--muted-foreground);
   --code-string: var(--color-green);
   --code-tag: var(--color-red);
   --code-value: var(--color-purple);
@@ -81,27 +81,28 @@
 .light,
 .theme-light {
   --code-caret: #000000;
-  --color-red: #e93147;
-  --color-orange: #ec7500;
-  --color-yellow: #e0ac00;
-  --color-green: #08b94e;
-  --color-cyan: #00bfbc;
-  --color-blue: #086ddd;
-  --color-purple: #7852ee;
-  --color-pink: #d53984;
+  --color-red: #b42338;
+  --color-orange: #9b4a00;
+  --color-yellow: #786000;
+  --color-green: #16733a;
+  --color-cyan: #006f70;
+  --color-blue: #0862bc;
+  --color-purple: #6940c1;
+  --color-pink: #a72b67;
 }
 
-.dark,
-.theme-dark {
+.dark .beancount-editor,
+.theme-dark .beancount-editor {
   --code-caret: #ffffff;
   --color-red: #fb464c;
   --color-orange: #e9973f;
   --color-yellow: #e0de71;
   --color-green: #44cf6e;
   --color-cyan: #53dfdd;
-  --color-blue: #027aff;
+  --color-blue: #75aaff;
   --color-purple: #a882ff;
   --color-pink: #fa99cd;
+  --color-grey: var(--muted-foreground);
 }
 
 .cm-editor {
@@ -230,8 +231,13 @@
 
 .cm-editor .cm-gutters {
   background: var(--background);
+  color: var(--muted-foreground);
   border: none;
   font-size: 12px;
+}
+
+.beancount-editor.cm-editor .cm-activeLine {
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
 }
 
 .cm-editor .cm-gutter .cm-gutterElement.cm-activeLineGutter {

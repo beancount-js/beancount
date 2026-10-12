@@ -1,9 +1,7 @@
 <script lang="ts">
-  import {
-    FilterCommandPicker,
-    FormField,
-    FormSectionHeader,
-  } from "@lapismd/design-core/forms";
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
+  import { FormField, FormSectionHeader } from "@lapismd/design-core/forms";
   import { ChevronsDownUp } from "@lucide/svelte";
   import { ChevronsUpDown } from "@lucide/svelte";
   import { CircleAlert } from "@lucide/svelte";

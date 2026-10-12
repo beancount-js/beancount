@@ -27,7 +27,7 @@ export function parseRoute(input: string): BeancountRoute {
     input.replace(/^#/, "") || "/dashboard",
     "http://beancount.invalid",
   );
-  const path = url.pathname.replace(/\/$/, "") || "/dashboard";
+  const path = url.pathname.replace(/\/$/, "") || "/balance_sheet";
   const params: Record<string, string> = {};
   if (path.startsWith("/account/"))
     params.account = decodeURIComponent(path.slice(9));
@@ -42,6 +42,12 @@ export function routeTitle(route: BeancountRoute) {
     )?.[1] ??
     (route.params.account
       ? `Account: ${route.params.account}`
-      : "Beancount Studio")
+      : route.params.runId
+        ? "Import Audit"
+        : route.path === "/directives"
+          ? "Editor"
+          : route.path === "/resource"
+            ? "Resource"
+            : "Beancount Studio")
   );
 }

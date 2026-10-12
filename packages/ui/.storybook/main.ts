@@ -1,6 +1,6 @@
 import type { StorybookConfig } from "@storybook/svelte-vite";
 export default {
-  stories: ["../src/**/*.stories.svelte", "../catalog/**/*.stories.svelte"],
+  stories: ["../catalog/**/*.stories.svelte"],
   addons: [
     "@storybook/addon-docs",
     "@storybook/addon-a11y",

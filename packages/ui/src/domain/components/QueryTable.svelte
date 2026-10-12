@@ -153,14 +153,15 @@
           <Chart {chart} hideButtons />
         </div>
       {/if}
-      <ol class="bean-table flex-table font-mono text-xs">
+      <div data-grid-list class="bean-table flex-table font-mono text-xs">
         <VirtualList
           height={viewportHeight}
           width="max-content"
           itemCount={$data.length}
           itemSize={getSize}
         >
-          <li
+          <div
+            data-grid-row
             class="head sticky top-0 z-10 border-b border-l border-t border-solid bg-muted tracking-wide [font-variant-caps:all-small-caps]"
             slot="header"
           >
@@ -175,7 +176,7 @@
                 >
               {/each}
             </p>
-          </li>
+          </div>
           <div
             slot="item"
             let:index
@@ -185,7 +186,7 @@
           >
             {@const row = $data[index]}
             {@const cellHeight = `height: ${rowHeight - 1}px; line-height: ${rowHeight - 1}px; `}
-            <li class="border-b border-l border-solid">
+            <div data-grid-row class="border-b border-l border-solid">
               <div>
                 {#each columns.values as col}
                   {@const value = row[col.id]}
@@ -255,10 +256,10 @@
                   </span>
                 {/each}
               </div>
-            </li>
+            </div>
           </div>
         </VirtualList>
-      </ol>
+      </div>
     </div>
   </ScrollArea.Root>
 </div>

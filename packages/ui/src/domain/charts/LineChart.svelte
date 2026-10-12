@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useClock } from "../components/dashboard/clock";
   import { extent, max, min } from "d3-array";
   import { axisBottom, axisLeft } from "d3-axis";
   import { quadtree } from "d3-quadtree";
@@ -29,7 +30,7 @@
   export let width: number;
   export let legend: Writable<[string, string | null][]>;
 
-  const today = new Date();
+  const today = useClock()().toJSDate();
   const margin = { top: 10, right: 10, bottom: 30, left: 40 };
   const height = 250;
   $: innerWidth = width - margin.left - margin.right;

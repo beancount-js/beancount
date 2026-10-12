@@ -369,18 +369,18 @@
         </Empty.Root>
       {:else}
         <div
-          role="row"
+          role="group"
           class="hidden grid-cols-[minmax(0,1fr)_repeat(4,5rem)] items-center gap-x-6 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid"
         >
           <div
-            role="columnheader"
-            aria-sort={ariaSortFor("date")}
+            role="group"
+            data-sort-direction={ariaSortFor("date")}
             class="justify-self-start"
           >
             <button
               type="button"
               class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by date"
+              aria-label={`Sort by date; sort direction: ${ariaSortFor("date")}`}
               onclick={() => cycleSort("date")}
             >
               Date
@@ -394,14 +394,14 @@
             </button>
           </div>
           <div
-            role="columnheader"
-            aria-sort={ariaSortFor("proposals")}
+            role="group"
+            data-sort-direction={ariaSortFor("proposals")}
             class="justify-self-center"
           >
             <button
               type="button"
               class="inline-flex items-center justify-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by proposal count"
+              aria-label={`Sort by proposals count; sort direction: ${ariaSortFor("proposals")}`}
               onclick={() => cycleSort("proposals")}
             >
               Proposals
@@ -415,14 +415,14 @@
             </button>
           </div>
           <div
-            role="columnheader"
-            aria-sort={ariaSortFor("accepted")}
+            role="group"
+            data-sort-direction={ariaSortFor("accepted")}
             class="justify-self-center"
           >
             <button
               type="button"
               class="inline-flex items-center justify-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by accepted count"
+              aria-label={`Sort by accepted count; sort direction: ${ariaSortFor("accepted")}`}
               onclick={() => cycleSort("accepted")}
             >
               Accepted
@@ -436,14 +436,14 @@
             </button>
           </div>
           <div
-            role="columnheader"
-            aria-sort={ariaSortFor("review")}
+            role="group"
+            data-sort-direction={ariaSortFor("review")}
             class="justify-self-center"
           >
             <button
               type="button"
               class="inline-flex items-center justify-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by review count"
+              aria-label={`Sort by review count; sort direction: ${ariaSortFor("review")}`}
               onclick={() => cycleSort("review")}
             >
               Review
@@ -457,14 +457,14 @@
             </button>
           </div>
           <div
-            role="columnheader"
-            aria-sort={ariaSortFor("duplicates")}
+            role="group"
+            data-sort-direction={ariaSortFor("duplicates")}
             class="justify-self-center"
           >
             <button
               type="button"
               class="inline-flex items-center justify-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by duplicate count"
+              aria-label={`Sort by duplicates count; sort direction: ${ariaSortFor("duplicates")}`}
               onclick={() => cycleSort("duplicates")}
             >
               Duplicates
@@ -552,7 +552,7 @@
                     <span
                       class={`justify-self-start rounded-full px-2 py-0.5 text-xs font-medium ${
                         run.reviewState === "pending"
-                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                          ? "bg-amber-500/15 text-amber-800 dark:text-amber-300"
                           : "bg-muted text-muted-foreground"
                       }`}
                     >

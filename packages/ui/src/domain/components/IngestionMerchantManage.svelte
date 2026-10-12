@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { rowOpen } from "../lib/row-open";
   import { onDestroy } from "svelte";
   import { SearchFilterBar } from "@lapismd/design-core/filter";
   import { FileCode2 } from "@lucide/svelte";
@@ -277,12 +278,10 @@
           <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
             {#each visibleMerchants as merchant (merchant.merchantId)}
               <div
-                role="button"
-                tabindex="0"
+                role="group"
                 class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={`Edit merchant ${merchant.canonicalName}`}
-                onclick={() => openMerchant(merchant)}
-                onkeydown={(event) => handleRowKeydown(event, merchant)}
+                use:rowOpen={() => openMerchant(merchant)}
               >
                 {#if merchant.logoUrl && !failedLogoIds.has(merchant.merchantId)}
                   <img
@@ -300,9 +299,13 @@
                   </div>
                 {/if}
                 <div class="min-w-0">
-                  <div class="truncate text-sm font-semibold">
-                    {merchant.canonicalName}
-                  </div>
+                  <button
+                    type="button"
+                    class="text-left text-sm font-semibold hover:underline focus-visible:outline focus-visible:outline-ring"
+                    aria-label={`Edit merchant ${merchant.canonicalName}`}
+                    onclick={() => openMerchant(merchant)}
+                    >{merchant.canonicalName}</button
+                  >
                   <div class="mt-1 truncate text-xs text-muted-foreground">
                     {merchantDetail(merchant)}
                   </div>

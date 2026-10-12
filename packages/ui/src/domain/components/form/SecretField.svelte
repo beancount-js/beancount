@@ -18,7 +18,7 @@
 <SecretField
   {value}
   label={field.label}
-  ariaLabel={field.ariaLabel ?? field.label}
+  ariaLabel={`${field.ariaLabel ?? field.label}: ${value.startsWith("env:") ? value.slice(4) || envPlaceholder || field.label : field.label}`}
   environmentKeys={context?.envKeys}
   environmentPlaceholder={envPlaceholder}
   readOnly={readonly}

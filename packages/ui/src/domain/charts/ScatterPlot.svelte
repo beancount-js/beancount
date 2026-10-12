@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useClock } from "../components/dashboard/clock";
   import { extent } from "d3-array";
   import { axisBottom, axisLeft } from "d3-axis";
   import { quadtree } from "d3-quadtree";
@@ -14,7 +15,7 @@
   export let chart: ScatterPlot;
   export let width: number;
 
-  const today = new Date();
+  const today = useClock()().toJSDate();
   const margin = { top: 10, right: 10, bottom: 30, left: 70 };
   const height = 250;
   $: innerWidth = width - margin.left - margin.right;

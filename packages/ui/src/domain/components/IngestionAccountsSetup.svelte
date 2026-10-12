@@ -957,9 +957,6 @@
                 type="button"
                 class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left"
                 aria-expanded={isSelected && connectionExpanded}
-                aria-label={isSelected && connectionExpanded
-                  ? "Collapse connection"
-                  : "Expand connection"}
                 onclick={() => toggleConnection(connection)}
               >
                 <ChevronDown

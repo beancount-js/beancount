@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { FilterCommandPicker } from "@lapismd/design-core/forms";
+  import FilterCommandPicker from "../../../../components/forms/FilterCommandPicker.svelte";
+
   let {
     class: klass,
     items,

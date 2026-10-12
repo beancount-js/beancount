@@ -1,9 +1,8 @@
 /* stylelint-disable no-descending-specificity */
 
 .flex-table p,
-.flex-table li,
-.flex-table ul,
-.flex-table ol {
+.flex-table [data-grid-row],
+.flex-table [data-grid-list] {
   padding: 0;
   margin: 0;
 }
@@ -56,7 +55,7 @@
   line-height: 16px;
 }
 
-.journal > li,
+.journal > [data-grid-row],
 .journal.show-custom .custom.budget,
 .journal.show-document .document.discovered,
 .journal.show-document .document.linked,

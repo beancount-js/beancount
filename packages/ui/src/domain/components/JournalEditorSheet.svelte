@@ -1,4 +1,6 @@
 <script lang="ts">
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
   import "../codemirror/themes/base.scss";
   import type { DirectiveBase } from "@beancount-js/beancount";
   import type { ProjectSnapshot } from "@beancount-js/workspace";
@@ -7,7 +9,6 @@
     ChipAutocomplete,
     CollapsibleItemList,
     EntryActions,
-    FilterCommandPicker,
     FormField,
     FormSectionHeader,
     type FilterCommandOption,

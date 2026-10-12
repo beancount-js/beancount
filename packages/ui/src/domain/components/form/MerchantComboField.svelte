@@ -1,6 +1,7 @@
 <script lang="ts">
+  import FilterCommandPicker from "../../../components/forms/FilterCommandPicker.svelte";
+
   import {
-    FilterCommandPicker,
     type FilterCommandOption,
     type FilterCommandSearchAction,
     type FormFieldRenderArgs,

@@ -1,11 +1,10 @@
 <script lang="ts">
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
   import { ArrowRight } from "@lucide/svelte";
   import { ChevronDown } from "@lucide/svelte";
   import { RefreshCw } from "@lucide/svelte";
-  import {
-    FilterCommandPicker,
-    SegmentedControl,
-  } from "@lapismd/design-core/forms";
+  import { SegmentedControl } from "@lapismd/design-core/forms";
   import { accountAvatarInitial } from "../../components/forms/account-avatar";
   import { Badge } from "@lapismd/design-core/shadcn/badge";
   import { Button } from "@lapismd/design-core/shadcn/button";

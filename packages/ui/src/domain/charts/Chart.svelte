@@ -61,30 +61,40 @@
           value={$conversion}
           onValueChange={updateConversion}
         >
-          <Select.Trigger aria-label="Report valuation" class="mr-1 w-[150px]">
+          <Select.Trigger
+            aria-label={`Report valuation: ${conversionLabel($conversion) || "At Cost"}`}
+            class="mr-1 w-[150px]"
+          >
             {conversionLabel($conversion) || "At Cost"}
           </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="AT_COST">At Cost</Select.Item>
-            <Select.Item value="AT_VALUE">At Market Value</Select.Item>
-            <Select.Item value="UNITS">Units</Select.Item>
-          </Select.Content>
+          <Select.Content
+            ><Select.Group>
+              <Select.Item value="AT_COST">At Cost</Select.Item>
+              <Select.Item value="AT_VALUE">At Market Value</Select.Item>
+              <Select.Item value="UNITS">Units</Select.Item>
+            </Select.Group></Select.Content
+          >
         </Select.Root>
         <Select.Root
           type="single"
           value={$interval}
           onValueChange={updateInterval}
         >
-          <Select.Trigger aria-label="Report interval" class="mr-1 w-auto">
+          <Select.Trigger
+            aria-label={`Report interval: ${intervalLabel($interval) || "Monthly"}`}
+            class="mr-1 w-auto"
+          >
             {intervalLabel($interval) || "Monthly"}
           </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="year">Yearly</Select.Item>
-            <Select.Item value="quarter">Quarterly</Select.Item>
-            <Select.Item value="month">Monthly</Select.Item>
-            <Select.Item value="week">Weekly</Select.Item>
-            <Select.Item value="day">Daily</Select.Item>
-          </Select.Content>
+          <Select.Content
+            ><Select.Group>
+              <Select.Item value="year">Yearly</Select.Item>
+              <Select.Item value="quarter">Quarterly</Select.Item>
+              <Select.Item value="month">Monthly</Select.Item>
+              <Select.Item value="week">Weekly</Select.Item>
+              <Select.Item value="day">Daily</Select.Item>
+            </Select.Group></Select.Content
+          >
         </Select.Root>
       {/if}
       {#if chart.type === "hierarchy"}

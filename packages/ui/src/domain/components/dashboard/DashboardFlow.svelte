@@ -116,7 +116,7 @@
       <svg
         class="w-full text-foreground"
         viewBox={`0 0 ${width} ${chartHeight}`}
-        role="img"
+        role="group"
         aria-label="Cash flow from income and refunds to outflows"
         data-dashboard-flow
         on:pointerleave={clearActive}

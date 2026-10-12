@@ -1,10 +1,9 @@
 <script lang="ts">
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
   import { accountOpenClose } from "@beancount-js/beancount";
   import { onDestroy } from "svelte";
-  import {
-    FilterCommandPicker,
-    type FilterCommandOption,
-  } from "@lapismd/design-core/forms";
+  import { type FilterCommandOption } from "@lapismd/design-core/forms";
   import AccountAvatar from "../../components/forms/AccountAvatar.svelte";
   import { accountAvatarInitial } from "../../components/forms/account-avatar";
   import { SearchFilterBar } from "@lapismd/design-core/filter";

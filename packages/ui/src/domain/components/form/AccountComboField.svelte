@@ -1,8 +1,7 @@
 <script lang="ts">
-  import {
-    FilterCommandPicker,
-    type FormFieldRenderArgs,
-  } from "@lapismd/design-core/forms";
+  import FilterCommandPicker from "../../../components/forms/FilterCommandPicker.svelte";
+
+  import { type FormFieldRenderArgs } from "@lapismd/design-core/forms";
 
   type AccountContext = {
     accounts?: string[];

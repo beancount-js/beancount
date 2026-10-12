@@ -1,9 +1,8 @@
 <script lang="ts">
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
   import { SearchFilterBar } from "@lapismd/design-core/filter";
-  import {
-    FilterCommandPicker,
-    type FilterCommandOption,
-  } from "@lapismd/design-core/forms";
+  import { type FilterCommandOption } from "@lapismd/design-core/forms";
   import { syntaxHighlighting } from "@codemirror/language";
   import { ChevronRightIcon } from "@lucide/svelte";
   import { ChevronsDownUpIcon } from "@lucide/svelte";

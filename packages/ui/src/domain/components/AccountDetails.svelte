@@ -106,8 +106,10 @@
       </Breadcrumb.Item>
       {#each ancestors as account}
         <Breadcrumb.Separator />
-        <Breadcrumb.Link href={urlForAccount(account)}
-          >{account}</Breadcrumb.Link
+        <Breadcrumb.Item
+          ><Breadcrumb.Link href={urlForAccount(account)}
+            >{account}</Breadcrumb.Link
+          ></Breadcrumb.Item
         >
       {/each}
       <Breadcrumb.Separator />

@@ -1,12 +1,12 @@
 <script lang="ts">
+  import { rowOpen } from "../lib/row-open";
+  import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import type { ProjectSnapshot } from "@beancount-js/workspace";
-  import {
-    FilterCommandPicker,
-    type FilterCommandOption,
-  } from "@lapismd/design-core/forms";
+  import { type FilterCommandOption } from "@lapismd/design-core/forms";
   import { SearchFilterBar } from "@lapismd/design-core/filter";
   import { Decimal } from "@beancount-js/parser";
   import { ArrowDownWideNarrow } from "@lucide/svelte";
@@ -1544,11 +1544,11 @@
                 (event.currentTarget as HTMLInputElement).checked,
               )}
           />
-          <div role="columnheader" aria-sort={ariaSortFor("date")}>
+          <div role="group" data-sort-direction={ariaSortFor("date")}>
             <button
               type="button"
               class="inline-flex items-center gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by date"
+              aria-label={`Sort by date; sort direction: ${ariaSortFor("date")}`}
               onclick={() => cycleSort("date")}
             >
               Date
@@ -1562,14 +1562,14 @@
             </button>
           </div>
           <div
-            role="columnheader"
-            aria-sort={ariaSortFor("amount")}
+            role="group"
+            data-sort-direction={ariaSortFor("amount")}
             class="justify-self-end"
           >
             <button
               type="button"
               class="inline-flex items-center justify-end gap-1.5 rounded-md outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Sort by amount"
+              aria-label={`Sort by amount; sort direction: ${ariaSortFor("amount")}`}
               onclick={() => cycleSort("amount")}
             >
               Amount
@@ -1664,7 +1664,7 @@
                   class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
                   aria-expanded={expanded}
                   aria-controls={summaryId}
-                  aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
+                  aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label} · ${group.rows.length}`}
                   onclick={() => toggleSummary(group.key)}
                 >
                   <span
@@ -1684,7 +1684,7 @@
                   class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   aria-expanded={expanded}
                   aria-controls={summaryId}
-                  aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`}
+                  aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label} · ${group.rows.length}`}
                   onclick={() => toggleSummary(group.key)}
                 >
                   {#if expanded}
@@ -1703,13 +1703,11 @@
                   {#each group.rows as row, index (row.key)}
                     {@const logo = merchantLogo(row.proposal)}
                     <div
-                      role="button"
-                      tabindex="0"
+                      role="group"
                       class:rounded-b-xl={index === group.rows.length - 1}
                       class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_auto_minmax(0,1fr)_7.5rem]"
                       aria-label={`Review ${rowTitle(row.proposal)}`}
-                      onclick={() => openRow(row)}
-                      onkeydown={(event) => handleRowKeydown(event, row)}
+                      use:rowOpen={() => openRow(row)}
                     >
                       <input
                         type="checkbox"
@@ -1743,11 +1741,13 @@
                         </div>
                       {/if}
                       <div class="min-w-0">
-                        <div
-                          class="break-words text-sm font-semibold sm:truncate"
+                        <button
+                          type="button"
+                          class="text-left text-sm font-semibold hover:underline focus-visible:outline focus-visible:outline-ring"
+                          aria-label={`Review ${rowTitle(row.proposal)}`}
+                          onclick={() => openRow(row)}
+                          >{rowTitle(row.proposal)}</button
                         >
-                          {rowTitle(row.proposal)}
-                        </div>
                         <div class="mt-1 text-xs text-muted-foreground">
                           {rowDetail(row.proposal)}
                         </div>
