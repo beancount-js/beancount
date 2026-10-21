@@ -115,7 +115,7 @@
 .cm-editor,
 .cm-editor .cm-scroller,
 .cm-editor .cm-line {
-  @apply font-mono;
+  font-family: var(--studio-font-mono, var(--font-mono, monospace));
   font-size: 0.85rem;
 }
 
@@ -190,7 +190,7 @@
 .HyperMD-header .cm-header-5,
 .HyperMD-header .cm-header-6 {
   // font-size: inherit !important;
-  @apply font-sans;
+  font-family: var(--font-sans, sans-serif);
 }
 
 @for $i from 1 through 6 {
@@ -211,7 +211,7 @@
 }
 
 .cm-editor .cm-panels {
-  @apply bg-background;
+  background: var(--background);
   border: none;
 }
 

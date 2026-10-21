@@ -4,6 +4,7 @@
   import BeancountApplication from "../src/components/application/BeancountApplication.svelte";
   import ApplicationHarness from "./ApplicationHarness.svelte";
   import { expectContainedShell } from "./layout-assertions";
+  import { expectEditorTypography } from "./editor-assertions";
   const { Story } = defineMeta({
     title: "Beancount/Query",
     component: BeancountApplication,
@@ -38,6 +39,7 @@
   }) {
     const canvas = within(canvasElement);
     const editor = await canvas.findByRole("textbox", { name: "BQL query" });
+    await expectEditorTypography(editor);
     await canvas.findByRole("button", { name: /^Copy query:/ });
     expectQueryGeometry(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "Clear query" }));
@@ -119,6 +121,14 @@
     const trigger = saved.querySelector<HTMLElement>(
       "[data-query-history-trigger]",
     )!;
+    if (import.meta.env.MODE === "test") {
+      const { page } = await import("vitest/browser");
+      await page.elementLocator(trigger).hover();
+      await waitFor(() =>
+        expect(getComputedStyle(trigger).textDecorationLine).toBe("none"),
+      );
+      await page.elementLocator(trigger).unhover();
+    }
     const indicator = [
       ...trigger.querySelectorAll('[data-slot="accordion-trigger-icon"]'),
     ].find((icon) => icon.getBoundingClientRect().width > 0)!;
@@ -170,7 +180,9 @@
     await userEvent.click(canvas.getByRole("button", { name: "Dashboard" }));
     await canvas.findByRole("heading", { name: "Financial dashboard" });
     await userEvent.click(canvas.getByRole("button", { name: "Back" }));
-    await canvas.findByRole("textbox", { name: "BQL query" });
+    await expectEditorTypography(
+      await canvas.findByRole("textbox", { name: "BQL query" }),
+    );
     await waitFor(() =>
       expect(
         canvasElement.querySelectorAll("[data-query-history-item]"),
@@ -200,7 +212,9 @@
   name="Mobile editor"
   play={async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole("textbox", { name: "BQL query" });
+    await expectEditorTypography(
+      await canvas.findByRole("textbox", { name: "BQL query" }),
+    );
     expectQueryGeometry(canvasElement);
     await expectContainedShell(canvasElement);
   }}

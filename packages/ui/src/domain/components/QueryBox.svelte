@@ -113,3 +113,12 @@
     </Accordion.Item>
   {/each}
 </Accordion.Root>
+
+<style>
+  :global(
+      .beancount-editor
+        [data-query-history-trigger][data-ui-part="accordion-trigger"]:hover
+    ) {
+    text-decoration-line: none;
+  }
+</style>

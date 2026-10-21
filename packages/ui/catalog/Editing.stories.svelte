@@ -4,6 +4,7 @@
   import BeancountApplication from "../src/components/application/BeancountApplication.svelte";
   import ApplicationHarness from "./ApplicationHarness.svelte";
   import { expectHeaderActionsRight } from "./header-assertions";
+  import { expectEditorTypography } from "./editor-assertions";
   const { Story } = defineMeta({
     title: "Beancount/Editing and discovery",
     component: BeancountApplication,
@@ -35,6 +36,7 @@
     const editor = await canvas.findByRole("textbox", {
       name: "Ledger source",
     });
+    await expectEditorTypography(editor);
     await expectHeaderActionsRight(canvasElement);
     expect(
       canvas
