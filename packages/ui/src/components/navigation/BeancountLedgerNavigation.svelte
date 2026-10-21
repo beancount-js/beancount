@@ -218,7 +218,8 @@
     return `padding-left: ${0.25 + Math.max(depth, 0) * 0.875}rem`;
   }
   function filePanelStyle(depth: number) {
-    return `padding-left: ${2 + Math.max(depth, 0) * 0.875}rem`;
+    // Row border + leading inset + one disclosure gutter.
+    return `padding-left: ${1.1875 + Math.max(depth, 0) * 0.875}rem`;
   }
   const folderRowStyle = fileRowStyle;
   const tagRowStyle = fileRowStyle;
@@ -845,6 +846,8 @@
           : "border border-transparent text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
       )}
       style={fileRowStyle(depth)}
+      data-ledger-tree-row
+      data-active={active}
     >
       {@render IndentGuides({ depth })}
       <Button
@@ -889,6 +892,7 @@
                 : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
             )}
             style={filePanelStyle(depth)}
+            data-ledger-report-row
             aria-current={active && isPanelActive(panel, activeRoute.path)
               ? "page"
               : undefined}
@@ -920,6 +924,8 @@
           : "border border-transparent text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
       )}
       style={fileRowStyle(0)}
+      data-ledger-tree-row
+      data-active={active}
     >
       <Button
         type="button"
@@ -930,6 +936,7 @@
           ? "Collapse review transactions"
           : "Expand review transactions"}
         aria-expanded={expanded}
+        data-ledger-file-toggle={review.path}
         onclick={() => toggleLedgerFile(review.path)}
       >
         <ChevronRight
@@ -943,6 +950,7 @@
         size="sm"
         class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs font-semibold hover:bg-transparent"
         title="Active review transactions"
+        data-ledger-file-row={review.path}
         onclick={() => {
           controller.actions.selectFile(review.path, "/journal");
           onNavigate();
@@ -971,6 +979,7 @@
                 : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
             )}
             style={filePanelStyle(0)}
+            data-ledger-report-row
             aria-current={active && isPanelActive(panel, activeRoute.path)
               ? "page"
               : undefined}
@@ -1003,15 +1012,19 @@
       aria-expanded={expanded}
       title={node.path || "Ledgers"}
       data-ledger-folder-row={node.path || "ledgers"}
+      data-ledger-tree-row
       onclick={() => toggleFolder(node.id)}
     >
       {@render IndentGuides({ depth })}
       <ChevronRight
+        data-folder-disclosure
         data-icon="inline-start"
         class={cn("transition-transform", expanded && "rotate-90")}
       />
       <Folder data-icon="inline-start" />
-      <span class="min-w-0 flex-1 truncate text-left">{node.label}</span>
+      <span class="min-w-0 flex-1 truncate text-left" data-folder-label
+        >{node.label}</span
+      >
       <span class="text-[10px] tabular-nums text-muted-foreground"
         >{node.count}</span
       >
@@ -1019,7 +1032,7 @@
     {#if expanded}
       <div class="min-w-0" data-ledger-folder-children={node.id}>
         {#each node.files as file (file.path)}
-          {@render LedgerFileRow({ file, depth: depth + 1 })}
+          {@render LedgerFileRow({ file, depth })}
         {/each}
         {#each node.children as child (child.id)}
           {@render FolderNode({ node: child, depth: depth + 1 })}
@@ -1111,7 +1124,7 @@
       transparent
     );
   }
-  :global(.beancount-workspace-views [data-workspace-view]) {
+  :global(.beancount-workspace-views [data-workspace-view][data-ui-part]) {
     height: 1.75rem;
     width: 100%;
     min-width: 0;
@@ -1122,7 +1135,10 @@
     background: transparent;
     color: var(--muted-foreground);
   }
-  :global(.beancount-workspace-views [data-state="on"]) {
+  :global(
+      .beancount-workspace-views
+        [data-ui-part][data-workspace-view][data-state="on"]
+    ) {
     border-color: var(--sidebar-border, var(--border));
     background: var(--background);
     color: var(--sidebar-accent-foreground, var(--foreground));

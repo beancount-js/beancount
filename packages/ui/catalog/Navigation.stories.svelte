@@ -24,7 +24,48 @@
       }
       expect(getComputedStyle(selected).borderTopStyle).toBe("solid");
       expect(getComputedStyle(selected).boxShadow).not.toBe("none");
+      expect(getComputedStyle(selected).backgroundColor).toBe(
+        getComputedStyle(document.body).backgroundColor,
+      );
     });
+  }
+  async function expectTreePresentation(canvas: HTMLElement) {
+    await expectSelectedChoice(canvas, "[data-workspace-view]", "ledgers");
+    const parent = canvas.querySelector<HTMLElement>(
+      "[data-ledger-file-node]:has([data-ledger-file-panels])",
+    )!;
+    const icon = parent.querySelector("[data-ledger-file-row] svg")!;
+    for (const report of parent.querySelectorAll(
+      "[data-ledger-report-row] svg",
+    )) {
+      expect(
+        Math.abs(
+          icon.getBoundingClientRect().left -
+            report.getBoundingClientRect().left,
+        ),
+      ).toBeLessThanOrEqual(1);
+    }
+    const row = canvas.querySelector<HTMLElement>(
+      '[data-ledger-tree-row][data-active="false"]',
+    )!;
+    const background = getComputedStyle(row).backgroundColor;
+    if (import.meta.env.MODE !== "test") return;
+    const { page } = await import("vitest/browser");
+    for (const button of row.querySelectorAll("button")) {
+      await page.elementLocator(button).hover();
+      await waitFor(() =>
+        expect(getComputedStyle(row).backgroundColor).not.toBe(background),
+      );
+      for (const control of row.querySelectorAll("button")) {
+        expect(getComputedStyle(control).backgroundColor).toBe(
+          "rgba(0, 0, 0, 0)",
+        );
+      }
+      await page.elementLocator(button).unhover();
+      await waitFor(() =>
+        expect(getComputedStyle(row).backgroundColor).toBe(background),
+      );
+    }
   }
   const { Story } = defineMeta({
     title: "Beancount/Navigation",
@@ -51,8 +92,9 @@
     const fileRow = canvasElement.querySelector<HTMLElement>(
       "[data-ledger-file-row]",
     )!;
-    expect(getComputedStyle(fileRow).paddingLeft).toBe("4px");
+    expect(getComputedStyle(fileRow).paddingLeft).toBe("0px");
     expect(fileRow.getBoundingClientRect().height).toBe(32);
+    await expectTreePresentation(canvasElement);
     await userEvent.type(
       canvas.getByRole("textbox", { name: "Search ledgers" }),
       "nonexistent",
@@ -77,6 +119,16 @@
       '[data-ledger-folder-row="archive"]',
     )!;
     await userEvent.click(folder);
+    const folderIcon = folder.querySelectorAll("svg")[1];
+    const fileIcon = folder.parentElement!.querySelector(
+      "[data-ledger-file-row] svg",
+    )!;
+    expect(
+      Math.abs(
+        folderIcon.getBoundingClientRect().left -
+          fileIcon.getBoundingClientRect().left,
+      ),
+    ).toBeLessThanOrEqual(1);
     await userEvent.click(
       canvas.getByRole("button", { name: "Archive Ledger" }),
     );
@@ -259,6 +311,9 @@
     )!;
     expect(getComputedStyle(projectRow).paddingLeft).toBe("8px");
     expect(getComputedStyle(projectRow).justifyContent).toBe("flex-start");
+    expect(getComputedStyle(projectRow).fontSize).toBe("12px");
+    expect(getComputedStyle(projectRow).lineHeight).toBe("16px");
+    expect(getComputedStyle(projectRow.parentElement!).rowGap).toBe("4px");
     await userEvent.click(
       canvas.getByRole("button", { name: "Open another project" }),
     );
@@ -309,6 +364,22 @@
       }),
     ).toBeVisible();
     await expectContainedShell(canvasElement);
+  }}
+>
+  {#snippet template()}<ApplicationHarness
+      scenario="review"
+      displayMode="desktop"
+    />{/snippet}
+</Story>
+
+<Story
+  name="Dark tree styling"
+  globals={{ theme: "default", colorMode: "dark" }}
+  play={async ({ canvasElement }) => {
+    await within(canvasElement).findByRole("heading", {
+      name: "Financial dashboard",
+    });
+    await expectTreePresentation(canvasElement);
   }}
 >
   {#snippet template()}<ApplicationHarness

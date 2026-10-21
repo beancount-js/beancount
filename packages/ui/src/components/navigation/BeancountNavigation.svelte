@@ -54,7 +54,7 @@
     <Search />
   {:else}
     <section
-      class="flex min-h-0 flex-col gap-2 overflow-y-auto"
+      class="flex min-h-0 flex-col gap-1 overflow-y-auto"
       aria-label="Projects"
     >
       <h2 class="text-xs font-medium text-muted-foreground">Current project</h2>
@@ -172,6 +172,8 @@
     justify-content: flex-start;
     gap: 0.5rem;
     padding: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
   }
   .beancount-navigation :global([data-sidebar-project] > span) {
     overflow: hidden;
@@ -179,7 +181,7 @@
   .beancount-navigation :global([data-ledger-file-row]) {
     height: 2rem;
     min-height: 0;
-    padding-inline: 0.25rem;
+    padding-inline: 0;
     gap: 0.25rem;
     font-size: 0.75rem;
   }
@@ -197,8 +199,8 @@
   }
 
   .beancount-navigation :global([data-ledger-file-toggle]) {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 0.875rem;
+    height: 2rem;
     min-height: 0;
     padding: 0;
     border-radius: 0.125rem;
@@ -210,7 +212,6 @@
     box-shadow: none;
     border: 0;
   }
-  .beancount-navigation :global([data-ledger-file-toggle]:hover),
   .beancount-navigation
     :global([data-ledger-tag-node] > div > button[aria-expanded]:hover) {
     background: var(--accent);
@@ -235,5 +236,39 @@
     width: 1rem;
     height: 1rem;
     stroke-width: 2;
+  }
+  .beancount-navigation :global([data-ledger-tree-row]) {
+    gap: 0;
+    border: 1px solid transparent;
+    background: transparent;
+  }
+  .beancount-navigation :global([data-ledger-tree-row][data-active="true"]) {
+    border-color: var(--sidebar-border, var(--border));
+    background: var(--background);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  }
+  .beancount-navigation :global([data-ledger-tree-row]:hover) {
+    background: var(--sidebar-accent, var(--accent));
+    color: var(--sidebar-accent-foreground, var(--foreground));
+  }
+  .beancount-navigation :global([data-ledger-tree-row] > button) {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+  }
+  .beancount-navigation :global([data-ledger-folder-row]) {
+    gap: 0;
+    padding-block: 0;
+  }
+  .beancount-navigation :global([data-folder-disclosure]) {
+    width: 0.875rem;
+    flex: none;
+  }
+  .beancount-navigation :global([data-folder-label]) {
+    margin-inline-start: 0.25rem;
+  }
+  .beancount-navigation :global([data-ledger-report-row]) {
+    border: 0;
   }
 </style>
