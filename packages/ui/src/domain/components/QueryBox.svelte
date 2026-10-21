@@ -102,9 +102,9 @@
       <Accordion.Content
         forceMount
         hidden={!isOpen[query.hash]}
-        class="border-t bg-muted/20 [&>div]:p-0"
+        class="border-t bg-muted/20 p-0"
       >
-        <div class="px-4 pb-4">
+        <div class="px-4 pb-4" data-query-history-results>
           {#if isOpen[query.hash]}
             <QueryTable query={query.query} {height} />
           {/if}

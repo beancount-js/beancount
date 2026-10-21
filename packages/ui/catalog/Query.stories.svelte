@@ -110,6 +110,12 @@
     expect(saved.querySelector("[data-query-history-label]")).toHaveTextContent(
       "number",
     );
+    const resultBody = saved.querySelector<HTMLElement>(
+      "[data-query-history-results]",
+    )!;
+    expect(getComputedStyle(resultBody).paddingLeft).toBe("16px");
+    expect(getComputedStyle(resultBody).paddingRight).toBe("16px");
+    expect(getComputedStyle(resultBody).paddingBottom).toBe("16px");
     const trigger = saved.querySelector<HTMLElement>(
       "[data-query-history-trigger]",
     )!;
