@@ -291,6 +291,8 @@
                 <button
                   type="button"
                   class="block h-auto w-full"
+                  aria-label={`Toggle postings for ${formatDate(directive.date)}`}
+                  aria-expanded={!$toggled.has(directive.id)}
                   on:click={(evt) => handleToggle(evt, directive)}
                 >
                   {#each chunk([...directive.postings], 10) as batch}

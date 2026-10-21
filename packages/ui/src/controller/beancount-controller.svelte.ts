@@ -8,7 +8,14 @@ import { DateTime } from "luxon";
 import { createContext } from "../domain/context";
 import { LedgerSource } from "../domain/core/ledger";
 import { MainNav } from "../domain/menu";
-import { parseRoute } from "./routes";
+import { parseRoute, isSettingsRoute } from "./routes";
+import { createSidebar } from "./sidebar.svelte";
+import {
+  appendLedgerSearchParams,
+  facetsToFilterQuery,
+  parseLedgerSearchState,
+} from "../domain/lib/ledger-search-state";
+import { normalizeLedgerTag } from "../components/navigation/ledger-sidebar";
 import type {
   BeancountController,
   BeancountControllerOptions,
@@ -27,14 +34,37 @@ export function createBeancountController(
   let error = $state("");
   let ledger = $state.raw(get(presentation.ledgerData));
   const initialRoute = parseRoute(options.initialRoute ?? "/dashboard");
-  let history = $state.raw([initialRoute]);
+  type HistoryEntry = {
+    route: typeof initialRoute;
+    projectId?: string;
+    file: string;
+  };
+  const sidebar = createSidebar();
+  const projectCache = new Map<string, ProjectSnapshot>();
+  const reviewCache = new Map<
+    string,
+    import("../domain/ingestion/types").IngestionReviewLedgerSnapshot | null
+  >();
+  let history = $state.raw<HistoryEntry[]>([{ route: initialRoute, file: "" }]);
+  let settingsReturn: HistoryEntry | undefined;
   let index = $state(0);
   const routeStore = writable(initialRoute);
   let inlineAiRequest =
     $state.raw<import("../domain/studio/workspace").InlineAiRequest>();
   function syncRoute() {
-    routeStore.set(history[index]!);
-    presentation.query.set(history[index]!.query.query ?? "");
+    const route = history[index]!.route;
+    routeStore.set(route);
+    presentation.query.set(
+      facetsToFilterQuery(parseLedgerSearchState(route.query)),
+    );
+    presentation.bqlQuery.set(route.query.qs ?? "");
+    sidebar.update({
+      settings: isSettingsRoute(route.path),
+      selectedTags: parseLedgerSearchState(route.query).tags,
+    });
+    workspace.ledgerSidebarMode.set(
+      isSettingsRoute(route.path) ? "settings" : "workspace",
+    );
   }
   let disposed = false;
   let initialized: Promise<void> | undefined;
@@ -46,6 +76,7 @@ export function createBeancountController(
   });
   function apply(next: ProjectSnapshot) {
     snapshot = next;
+    projectCache.set(next.project.id, next);
     const review = get(workspace.reviewLedger);
     if (
       !next.ledgerFiles.some((file) => file.path === activeFile) &&
@@ -89,18 +120,60 @@ export function createBeancountController(
       pending.delete(request);
     }
   }
-  async function selectProject(id: string) {
+  function currentEntry(route = history[index]!.route): HistoryEntry {
+    return { route, projectId: snapshot?.project.id, file: activeFile };
+  }
+  function remember(entry: HistoryEntry) {
+    if (JSON.stringify(entry) === JSON.stringify(history[index])) return;
+    if (
+      !isSettingsRoute(history[index]!.route.path) &&
+      isSettingsRoute(entry.route.path)
+    )
+      settingsReturn = history[index];
+    history = [...history.slice(0, index + 1), entry];
+    index++;
+    syncRoute();
+  }
+  function restore(target: number) {
+    if (disposed || target < 0 || target >= history.length) return;
+    const entry = history[target]!;
+    if (snapshot)
+      reviewCache.set(snapshot.project.id, get(workspace.reviewLedger));
+    const next = entry.projectId
+      ? projectCache.get(entry.projectId)
+      : undefined;
+    if (next) {
+      workspace.reviewLedger.set(reviewCache.get(next.project.id) ?? null);
+      activeFile = entry.file;
+      apply(next);
+    }
+    index = target;
+    syncRoute();
+  }
+  async function loadProject(id: string, record: boolean, resetFile = true) {
     const version = ++generation;
     await operate(
       (signal) => options.source.loadProject(id, signal),
       (next) => {
         if (version === generation) {
-          workspace.reviewLedger.set(null);
-          activeFile = next.project.entryFile;
+          if (snapshot)
+            reviewCache.set(snapshot.project.id, get(workspace.reviewLedger));
+          workspace.reviewLedger.set(reviewCache.get(id) ?? null);
+          if (resetFile) activeFile = next.project.entryFile;
           apply(next);
+          if (record) remember(currentEntry());
+          else {
+            history = history.map((entry, i) =>
+              i === index ? currentEntry() : entry,
+            );
+            syncRoute();
+          }
         }
       },
     );
+  }
+  async function selectProject(id: string) {
+    await loadProject(id, true);
   }
   const actions: BeancountController["actions"] = {
     async request(url, init = {}) {
@@ -133,30 +206,99 @@ export function createBeancountController(
     requestInlineAi(request) {
       inlineAiRequest = request;
     },
+    sidebar: sidebar.actions,
+    async addProject(path) {
+      if (
+        disposed ||
+        !options.source.addProject ||
+        sidebar.state.projectOpening
+      )
+        return;
+      const request = new AbortController();
+      pending.add(request);
+      sidebar.update({ projectOpening: true, projectError: "" });
+      const version = ++generation;
+      try {
+        const next = await options.source.addProject(path, request.signal);
+        if (
+          disposed ||
+          request.signal.aborted ||
+          version !== generation ||
+          !next
+        )
+          return;
+        projects = [
+          ...projects.filter((p) => p.id !== next.project.id),
+          next.project,
+        ];
+        if (snapshot)
+          reviewCache.set(snapshot.project.id, get(workspace.reviewLedger));
+        workspace.reviewLedger.set(null);
+        activeFile = next.project.entryFile;
+        apply(next);
+        remember(currentEntry(parseRoute("/dashboard")));
+        sidebar.update({
+          mode: "workspace",
+          projectFormOpen: false,
+          projectPath: "",
+        });
+      } catch (cause) {
+        if (!disposed && !request.signal.aborted)
+          sidebar.update({
+            projectError:
+              cause instanceof Error ? cause.message : String(cause),
+          });
+      } finally {
+        pending.delete(request);
+        if (!disposed) sidebar.update({ projectOpening: false });
+      }
+    },
+    openSettings(path = "/import/accounts") {
+      sidebar.actions.setMode("workspace");
+      actions.navigate(path);
+    },
+    returnFromSettings() {
+      const target = settingsReturn;
+      settingsReturn = undefined;
+      if (target?.projectId) {
+        const next = projectCache.get(target.projectId);
+        if (next) {
+          workspace.reviewLedger.set(
+            reviewCache.get(target.projectId) ?? get(workspace.reviewLedger),
+          );
+          activeFile = target.file;
+          apply(next);
+        }
+      }
+      remember(target ?? currentEntry(parseRoute("/dashboard")));
+    },
+    selectTags(tags) {
+      const params = new URLSearchParams(history[index]!.route.query);
+      const search = parseLedgerSearchState(params);
+      search.tags = tags.map(normalizeLedgerTag).filter(Boolean);
+      appendLedgerSearchParams(params, search);
+      actions.navigate(`?${params}`);
+    },
     navigate(path) {
       if (disposed) return;
       const next = parseRoute(
-        path.startsWith("?") ? history[index]!.path + path : path,
+        path.startsWith("?") ? history[index]!.route.path + path : path,
       );
-      if (JSON.stringify(next) === JSON.stringify(history[index])) return;
-      history = [...history.slice(0, index + 1), next];
-      index++;
-      syncRoute();
+      const file = next.query.ledger;
+      if (file && snapshot?.ledgerFiles.some((item) => item.path === file)) {
+        activeFile = file;
+        apply(snapshot);
+      }
+      remember(currentEntry(next));
     },
     back() {
-      if (!disposed) {
-        index = Math.max(0, index - 1);
-        syncRoute();
-      }
+      restore(index - 1);
     },
     forward() {
-      if (!disposed) {
-        index = Math.min(history.length - 1, index + 1);
-        syncRoute();
-      }
+      restore(index + 1);
     },
     selectProject,
-    selectFile(path) {
+    selectFile(path, route) {
       if (
         disposed ||
         !snapshot ||
@@ -166,9 +308,13 @@ export function createBeancountController(
         return;
       activeFile = path;
       apply(snapshot);
+      sidebar.actions.setExpanded("files", path, true);
+      remember(currentEntry(route ? parseRoute(route) : undefined));
     },
     setQuery(query) {
-      presentation.query.set(query);
+      actions.navigate(
+        `?${new URLSearchParams({ ...history[index]!.route.query, query })}`,
+      );
     },
     setConversion(value) {
       presentation.conversion.set(value);
@@ -191,7 +337,7 @@ export function createBeancountController(
       );
     },
     async refresh() {
-      if (snapshot) await selectProject(snapshot.project.id);
+      if (snapshot) await loadProject(snapshot.project.id, false, false);
     },
     async retry() {
       if (snapshot) await actions.refresh();
@@ -211,7 +357,7 @@ export function createBeancountController(
       },
     ).then(async () => {
       if (disposed) return;
-      if (projects[0]) await selectProject(projects[0].id);
+      if (projects[0]) await loadProject(projects[0].id, false);
       else status = "empty";
     }));
   }
@@ -248,6 +394,17 @@ export function createBeancountController(
     if (next && next !== snapshot) apply(next);
   });
   syncRoute();
+  const unsubscribeSidebarMode = workspace.ledgerSidebarMode.subscribe(
+    (mode) => {
+      if (mode === "settings" && !isSettingsRoute(history[index]!.route.path))
+        actions.openSettings();
+      else if (
+        mode === "workspace" &&
+        isSettingsRoute(history[index]!.route.path)
+      )
+        actions.returnFromSettings();
+    },
+  );
   return {
     services,
     workspace,
@@ -256,8 +413,14 @@ export function createBeancountController(
       get inlineAiRequest() {
         return inlineAiRequest;
       },
+      get sidebar() {
+        return sidebar.state;
+      },
+      get canAddProject() {
+        return Boolean(options.source.addProject);
+      },
       get route() {
-        return history[index]!;
+        return history[index]!.route;
       },
       get projects() {
         return projects;
@@ -298,6 +461,7 @@ export function createBeancountController(
       unsubscribe();
       unsubscribeFile();
       unsubscribeSnapshot();
+      unsubscribeSidebarMode();
       services.syncStatus.dispose();
     },
   };

@@ -36,7 +36,16 @@ export function createInMemorySource(
   }
   const services = createApplicationServices(read, saveFile);
   const ai = createAiServices(read, saveFile);
+  let opened = 0;
   return {
+    async addProject(path) {
+      if (path === "cancel") return null;
+      if (path === "error") throw new Error("The project could not be opened.");
+      const project = demoProject(`opened-${++opened}`);
+      project.project.name = path || "Opened Project";
+      projects.set(project.project.id, project);
+      return structuredClone(project);
+    },
     request: (url, init) =>
       new URL(url, "http://fixture.invalid").pathname.split("/")[4] === "ai"
         ? ai.request(url, init)

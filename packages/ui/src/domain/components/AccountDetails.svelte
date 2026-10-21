@@ -114,7 +114,7 @@
       {/each}
       <Breadcrumb.Separator />
       <Breadcrumb.Item>
-        <Breadcrumb.Page>{account}</Breadcrumb.Page>
+        <Breadcrumb.Page>{account || "All accounts"}</Breadcrumb.Page>
       </Breadcrumb.Item>
     </Breadcrumb.List>
   </Breadcrumb.Root>

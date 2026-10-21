@@ -109,7 +109,7 @@
           >
             <Select.Trigger
               class="h-8 w-24 text-xs font-medium"
-              aria-label="Display currency"
+              aria-label={`Display currency: ${dashboard.currency}`}
             >
               {dashboard.currency}
             </Select.Trigger>

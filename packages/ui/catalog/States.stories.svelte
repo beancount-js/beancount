@@ -109,13 +109,9 @@
     const save = canvas.getByRole("button", { name: "Save ledger" });
     await userEvent.click(save);
     await waitFor(() => expect(save).toBeDisabled());
+    await userEvent.click(canvas.getByRole("button", { name: "Projects" }));
     await userEvent.click(
-      canvas.getByRole("button", { name: "Project: Example Ledger" }),
-    );
-    await userEvent.click(
-      await within(document.body).findByRole("option", {
-        name: "Second Project",
-      }),
+      canvas.getByRole("button", { name: /^Second Project/ }),
     );
     await waitFor(() =>
       expect(
@@ -125,13 +121,9 @@
     await expect(
       canvas.getByRole("textbox", { name: "Ledger source" }),
     ).not.toHaveTextContent("Isolated edit");
+
     await userEvent.click(
-      canvas.getByRole("button", { name: "Project: Second Project" }),
-    );
-    await userEvent.click(
-      await within(document.body).findByRole("option", {
-        name: "Example Ledger",
-      }),
+      canvas.getByRole("button", { name: /^Example Ledger/ }),
     );
     await waitFor(() =>
       expect(

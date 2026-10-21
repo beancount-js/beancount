@@ -1,4 +1,3 @@
-import type { Icon } from "@lucide/svelte";
 import {
   Wallet,
   Scale,
@@ -22,7 +21,7 @@ export interface MenuItem {
   name: string;
   path: string;
   badge?: string;
-  icon: typeof Icon;
+  icon: typeof Wallet;
 }
 
 export const MainNav: Array<MenuItem> = [
@@ -69,7 +68,7 @@ export const MainNav: Array<MenuItem> = [
   },
 ];
 
-const icons: Record<string, typeof Icon> = {
+const icons: Record<string, typeof Wallet> = {
   "": ListTree,
   Assets: BadgePercent,
   Equity: BadgeDollarSign,

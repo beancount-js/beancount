@@ -51,3 +51,7 @@ export function routeTitle(route: BeancountRoute) {
             : "Beancount Studio")
   );
 }
+
+export function isSettingsRoute(path: string) {
+  return path === "/records" || path.startsWith("/import/");
+}

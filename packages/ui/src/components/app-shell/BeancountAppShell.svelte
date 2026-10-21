@@ -1,14 +1,17 @@
 <script lang="ts">
   import {
+    ChevronLeft,
+    ChevronRight,
+    Settings,
+    PanelLeft,
+    PanelRight,
+  } from "@lucide/svelte";
+  import {
     AppShell,
     type AppShellController,
     type AppShellDisplayMode,
   } from "@lapismd/design-core/shell";
   import { Button } from "@lapismd/design-core/shadcn/button";
-  import ChevronLeft from "@lucide/svelte/icons/chevron-left";
-  import ChevronRight from "@lucide/svelte/icons/chevron-right";
-  import PanelLeft from "@lucide/svelte/icons/panel-left";
-  import PanelRight from "@lucide/svelte/icons/panel-right";
   import { tick, type Snippet } from "svelte";
   let {
     controller,
@@ -21,6 +24,8 @@
     content,
     details,
     title = "Beancount Studio",
+    projectName = "Beancount Studio",
+    onOpenSettings,
     toolbar,
   }: {
     controller: AppShellController;
@@ -33,6 +38,8 @@
     content?: Snippet;
     details?: Snippet;
     title?: string;
+    projectName?: string;
+    onOpenSettings?: () => void;
     toolbar?: Snippet;
   } = $props();
   const navigationOpen = $derived(
@@ -115,16 +122,45 @@
         label="Ledger navigation"
         resizable
         mobileLabel="Navigation"
-        ><AppShell.Sidebar.Header
-          ><strong>Beancount Studio</strong></AppShell.Sidebar.Header
-        ><AppShell.Sidebar.Body>{@render navigation?.()}</AppShell.Sidebar.Body
-        ></AppShell.Sidebar
-      >
+        >{#if controller.mobile.resolvedMode !== "mobile" && controller.left.collapsed && !controller.left.previewed}
+          <Button
+            variant="ghost"
+            class="beancount-shell__project-rail"
+            aria-label={`Expand project rail: ${projectName}`}
+            title={projectName}
+            onclick={() => controller.left.expand()}
+            ><span>{projectName}</span></Button
+          >
+        {:else}
+          <AppShell.Sidebar.Header
+            ><div class="beancount-project-banner" data-project-banner>
+              <div class="beancount-project-banner__mark" aria-hidden="true">
+                B
+              </div>
+              <div class="beancount-project-banner__identity">
+                <p>Beancount Studio</p>
+                <span data-project-name>{projectName}</span>
+              </div>
+              {#if onOpenSettings}<Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Project settings"
+                  title="Ledger settings"
+                  onclick={onOpenSettings}><Settings /></Button
+                >{/if}
+            </div></AppShell.Sidebar.Header
+          >
+          <AppShell.Sidebar.Body scrollable={false}
+            >{@render navigation?.()}</AppShell.Sidebar.Body
+          >
+        {/if}
+      </AppShell.Sidebar>
       <AppShell.Main
         ><AppShell.Toolbar label="Page toolbar"
           ><strong>{title}</strong>{@render toolbar?.()}</AppShell.Toolbar
         ><AppShell.Body layout="regions"
-          ><AppShell.Body.Content>{@render content?.()}</AppShell.Body.Content
+          ><AppShell.Body.Content class="beancount-shell__content"
+            >{@render content?.()}</AppShell.Body.Content
           ></AppShell.Body
         ></AppShell.Main
       >
@@ -159,6 +195,48 @@
     padding: 0.25rem 0.5rem;
     background: var(--muted);
   }
+  .beancount-project-banner {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+  .beancount-project-banner__mark {
+    display: grid;
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    border-radius: 0.375rem;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 600;
+  }
+  .beancount-project-banner__identity {
+    flex: 1;
+    min-width: 0;
+  }
+  .beancount-project-banner__identity p {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+  .beancount-project-banner__identity span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  :global(.beancount-shell__surface [data-ui-part="toolbar"]) {
+    padding-inline: 1rem;
+  }
+  :global(.beancount-shell__content) {
+    padding: 0.5rem;
+  }
   .beancount-shell__stage {
     display: flex;
     min-width: 0;
@@ -169,6 +247,17 @@
     --ui-shell-height: 100%;
     flex: 1;
     min-height: 0;
+  }
+  :global(.beancount-shell__project-rail) {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+    padding-block: 1rem;
+  }
+  :global(.beancount-shell__project-rail span) {
+    writing-mode: vertical-rl;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .beancount-shell__name {
     flex: 1;

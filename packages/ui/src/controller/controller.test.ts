@@ -113,3 +113,140 @@ it("preserves the reference root and run audit route semantics", async () => {
   expect(controller.state.route.params.runId).toBe("import-2024");
   controller.dispose();
 });
+
+it("restores project, ledger, route and query as one history selection", async () => {
+  const c = createBeancountController({ source: createInMemorySource() });
+  await c.initialize();
+  c.actions.navigate("/journal?query=account%3AExpenses%3AFood");
+  c.actions.selectFile("empty.beancount");
+  await c.actions.selectProject("second");
+  c.actions.navigate("/query?qs=SELECT%20account");
+  c.actions.back();
+  c.actions.back();
+  expect(c.state.snapshot?.project.id).toBe("example");
+  expect(c.state.activeFile).toBe("empty.beancount");
+  expect(c.state.route.path).toBe("/journal");
+  expect(get(c.presentation.query)).toBe("account:Expenses:Food");
+  c.actions.back();
+  expect(c.state.activeFile).toBe("main.beancount");
+  c.actions.forward();
+  c.actions.forward();
+  c.actions.forward();
+  expect(c.state.snapshot?.project.id).toBe("second");
+  expect(get(c.presentation.bqlQuery)).toBe("SELECT account");
+  c.dispose();
+});
+
+it("keeps refresh on the selected ledger without adding history", async () => {
+  const c = createBeancountController({ source: createInMemorySource() });
+  await c.initialize();
+  c.actions.selectFile("empty.beancount");
+  await c.actions.refresh();
+  expect(c.state.activeFile).toBe("empty.beancount");
+  c.actions.back();
+  expect(c.state.activeFile).toBe("main.beancount");
+  expect(c.state.canNavigateBack).toBe(false);
+  c.dispose();
+});
+
+it("restores the full selection after settings and bridges legacy settings actions", async () => {
+  const c = createBeancountController({ source: createInMemorySource() });
+  await c.initialize();
+  c.actions.selectFile("empty.beancount", "/journal?query=2024");
+  c.workspace.ledgerSidebarMode.set("settings");
+  expect(c.state.route.path).toBe("/import/accounts");
+  expect(c.state.sidebar.settings).toBe(true);
+  c.actions.navigate("/import/history");
+  c.actions.returnFromSettings();
+  expect(c.state.route.path).toBe("/journal");
+  expect(c.state.route.query.query).toBe("2024");
+  expect(c.state.activeFile).toBe("empty.beancount");
+  expect(c.state.sidebar.settings).toBe(false);
+  c.dispose();
+});
+
+it("initializes direct settings routes without redirecting away", async () => {
+  const c = createBeancountController({
+    source: createInMemorySource(),
+    initialRoute: "/import/rules",
+  });
+  await c.initialize();
+  expect(c.state.route.path).toBe("/import/rules");
+  expect(c.state.sidebar.settings).toBe(true);
+  c.actions.returnFromSettings();
+  expect(c.state.route.path).toBe("/dashboard");
+  c.dispose();
+});
+
+it("isolates sidebar modes, searches, expansion and tag history", async () => {
+  const first = createBeancountController({ source: createInMemorySource() });
+  const second = createBeancountController({ source: createInMemorySource() });
+  await Promise.all([first.initialize(), second.initialize()]);
+  first.actions.sidebar.setMode("search");
+  first.actions.sidebar.setView("tags");
+  first.actions.sidebar.setSearch("folders", "archive");
+  first.actions.sidebar.setExpanded("folders", "archive", true);
+  first.actions.selectTags(["#food"]);
+  expect(get(first.presentation.query)).toContain("#food");
+  expect(second.state.sidebar.mode).toBe("workspace");
+  expect(second.state.sidebar.view).toBe("ledgers");
+  expect(second.state.sidebar.searches.folders).toBe("");
+  expect(second.state.sidebar.expanded.folders).toEqual({});
+  expect(second.state.sidebar.selectedTags).toEqual([]);
+  first.actions.back();
+  expect(first.state.sidebar.selectedTags).toEqual([]);
+  first.actions.forward();
+  expect(first.state.sidebar.selectedTags).toEqual(["food"]);
+  first.dispose();
+  second.dispose();
+});
+
+it("opens projects in memory and keeps cancellation and errors local to the form", async () => {
+  const c = createBeancountController({ source: createInMemorySource() });
+  await c.initialize();
+  expect(c.state.canAddProject).toBe(true);
+  c.actions.sidebar.beginProjectOpen();
+  await c.actions.addProject("cancel");
+  expect(c.state.snapshot?.project.id).toBe("example");
+  await c.actions.addProject("error");
+  expect(c.state.snapshot?.project.id).toBe("example");
+  expect(c.state.status).toBe("ready");
+  expect(c.state.error).toBe("");
+  expect(c.state.sidebar.projectError).toContain("could not be opened");
+  await c.actions.addProject("Books");
+  expect(c.state.snapshot?.project.name).toBe("Books");
+  expect(c.state.sidebar.projectError).toBe("");
+  expect(c.state.sidebar.projectFormOpen).toBe(false);
+  c.actions.back();
+  expect(c.state.snapshot?.project.id).toBe("example");
+  c.dispose();
+});
+
+it("advertises unsupported project opening and aborts opening on disposal", async () => {
+  const source = createInMemorySource();
+  const unsupported = createBeancountController({
+    source: { ...source, addProject: undefined },
+  });
+  expect(unsupported.state.canAddProject).toBe(false);
+  unsupported.dispose();
+  let signal: AbortSignal | undefined;
+  const c = createBeancountController({
+    source: {
+      ...source,
+      addProject(_path, nextSignal) {
+        signal = nextSignal;
+        return new Promise((_, reject) =>
+          nextSignal?.addEventListener(
+            "abort",
+            () => reject(nextSignal.reason),
+            { once: true },
+          ),
+        );
+      },
+    },
+  });
+  const pending = c.actions.addProject();
+  c.dispose();
+  await pending;
+  expect(signal?.aborted).toBe(true);
+});

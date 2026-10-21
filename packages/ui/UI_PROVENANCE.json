@@ -765,6 +765,18 @@
     {
       "source": "packages/fava/src/components/AiDock.svelte",
       "target": "src/domain/components/AiDock.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/FavaNavigation.svelte",
+      "target": "src/components/navigation/BeancountLedgerNavigation.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/ledger-sidebar.ts",
+      "target": "src/components/navigation/ledger-sidebar.ts"
+    },
+    {
+      "source": "packages/fava/src/components/ledger-sidebar.spec.ts",
+      "target": "src/components/navigation/ledger-sidebar.test.ts"
     }
   ],
   "formAdapters": {

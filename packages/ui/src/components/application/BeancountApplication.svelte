@@ -16,7 +16,7 @@
   import AccountDetails from "../../domain/components/AccountDetails.svelte";
   import Editor from "../../domain/components/Editor.svelte";
   import Query from "../../domain/components/Query.svelte";
-  import Search from "../../domain/components/Search.svelte";
+  import BeancountNavigation from "../navigation/BeancountNavigation.svelte";
   import ResourceViewer from "../../domain/components/ResourceViewer.svelte";
   import JournalRecordRouteSheet from "../../domain/components/JournalRecordRouteSheet.svelte";
   import IngestionHeaderActions from "../../domain/components/IngestionHeaderActions.svelte";
@@ -128,48 +128,19 @@
       controller={shell}
       {displayMode}
       title={routeTitle(controller.state.route)}
+      projectName={controller.state.snapshot?.project.name ??
+        "Beancount Studio"}
+      onOpenSettings={() => controller.actions.openSettings()}
       canNavigateBack={controller.state.canNavigateBack}
       canNavigateForward={controller.state.canNavigateForward}
       onBack={controller.actions.back}
       onForward={controller.actions.forward}
     >
       {#snippet navigation()}
-        <div class="beancount-navigation">
-          <FilterCommandPicker
-            label="Project"
-            ariaLabel="Project"
-            fullWidth
-            value={controller.state.snapshot?.project.id}
-            options={controller.state.projects.map((project) => ({
-              value: project.id,
-              label: project.name,
-            }))}
-            onChange={controller.actions.selectProject}
-          />
-          <FilterCommandPicker
-            label="Ledger"
-            ariaLabel="Ledger"
-            fullWidth
-            value={controller.state.activeFile}
-            options={(controller.state.snapshot?.ledgerFiles ?? []).map(
-              (file) => ({ value: file.path, label: file.path }),
-            )}
-            onChange={controller.actions.selectFile}
-          />
-          <Search />
-          <nav aria-label="Ledger reports">
-            {#each [...ledgerDestinations, ...settingsDestinations] as [path, label]}<Button
-                variant={controller.state.route.path === path
-                  ? "secondary"
-                  : "ghost"}
-                class="beancount-navigation__item"
-                aria-current={controller.state.route.path === path
-                  ? "page"
-                  : undefined}
-                onclick={() => navigate(path)}>{label}</Button
-              >{/each}
-          </nav>
-        </div>
+        <BeancountNavigation
+          {controller}
+          onNavigate={() => shell.mobile.showMain()}
+        />
       {/snippet}
       {#snippet details()}<AiDock
           projectId={controller.state.snapshot?.project.id}
@@ -207,7 +178,7 @@
             aria-label={routeTitle(controller.state.route)}
             use:routerLinks
           >
-            {#key `${controller.state.route.path}:${controller.state.activeFile}`}
+            {#key `${controller.state.snapshot?.project.id}:${controller.state.route.path}:${controller.state.activeFile}`}
               {#if controller.state.route.path === "/dashboard"}<FinancialDashboard
                 />
               {:else if controller.state.route.path === "/income_statement"}<IncomeStatement
@@ -258,18 +229,5 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-  }
-  .beancount-navigation {
-    display: grid;
-    gap: 0.75rem;
-    padding: 0.5rem;
-  }
-  .beancount-navigation nav {
-    display: grid;
-    gap: 0.125rem;
-  }
-  :global(.beancount-navigation__item) {
-    width: 100%;
-    justify-content: flex-start;
   }
 </style>
