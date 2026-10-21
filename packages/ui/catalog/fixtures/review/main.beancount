@@ -17,226 +17,226 @@ option "operating_currency" "USD"
   Assets:Foreign:Travel 1500 USD
   Equity:Opening -12500 GBP
   Equity:Opening -1500 USD
-2024-01-02 * "Example employer" "Salary" #household/income
+2024-01-02 * "Example employer" "Salary" #household ; #household/income
   Assets:Checking 3000 GBP
   Income:Salary -3000 GBP
-2024-01-03 * "Example hotel" "A deliberately long narration for a multi-currency travel expense" #travel/2024
+2024-01-03 * "Example hotel" "A deliberately long narration for a multi-currency travel expense" #travel ; #travel/2024
   Expenses:Travel:Accommodation 125 USD
   Assets:Foreign:Travel -125 USD
-2024-01-04 * "Example supplier 01" "Review transaction with a long descriptive label 01" #household/food
+2024-01-04 * "Example supplier 01" "Review transaction with a long descriptive label 01" #household ; #household/food
   note: "First line\nSecond line for multi-line query results"
   Expenses:Home:Office:EquipmentAndSupplies 10 GBP
   Assets:Checking -10 GBP
-2024-01-05 * "Example supplier 02" "Review transaction with a long descriptive label 02" #household/food
+2024-01-05 * "Example supplier 02" "Review transaction with a long descriptive label 02" #household ; #household/food
   Expenses:Food:Groceries 11 GBP
   Assets:Checking -11 GBP
-2024-01-06 * "Example supplier 03" "Review transaction with a long descriptive label 03" #household/food
+2024-01-06 * "Example supplier 03" "Review transaction with a long descriptive label 03" #household ; #household/food
   Expenses:Food:Groceries 12 GBP
   Assets:Checking -12 GBP
-2024-01-07 * "Example supplier 04" "Review transaction with a long descriptive label 04" #household/food
+2024-01-07 * "Example supplier 04" "Review transaction with a long descriptive label 04" #household ; #household/food
   Expenses:Food:Groceries 13 GBP
   Assets:Checking -13 GBP
-2024-01-08 * "Example supplier 05" "Review transaction with a long descriptive label 05" #household/food
+2024-01-08 * "Example supplier 05" "Review transaction with a long descriptive label 05" #household ; #household/food
   Expenses:Food:Groceries 14 GBP
   Assets:Checking -14 GBP
-2024-01-09 * "Example supplier 06" "Review transaction with a long descriptive label 06" #household/food
+2024-01-09 * "Example supplier 06" "Review transaction with a long descriptive label 06" #household ; #household/food
   Expenses:Food:Groceries 15 GBP
   Assets:Checking -15 GBP
-2024-01-10 * "Example supplier 07" "Review transaction with a long descriptive label 07" #household/food
+2024-01-10 * "Example supplier 07" "Review transaction with a long descriptive label 07" #household ; #household/food
   Expenses:Food:Groceries 16 GBP
   Assets:Checking -16 GBP
-2024-01-11 * "Example supplier 08" "Review transaction with a long descriptive label 08" #household/food
+2024-01-11 * "Example supplier 08" "Review transaction with a long descriptive label 08" #household ; #household/food
   Expenses:Home:Office:EquipmentAndSupplies 17 GBP
   Assets:Checking -17 GBP
-2024-01-12 * "Example supplier 09" "Review transaction with a long descriptive label 09" #household/food
+2024-01-12 * "Example supplier 09" "Review transaction with a long descriptive label 09" #household ; #household/food
   Expenses:Food:Groceries 18 GBP
   Assets:Checking -18 GBP
-2024-01-13 * "Example supplier 10" "Review transaction with a long descriptive label 10" #household/food
+2024-01-13 * "Example supplier 10" "Review transaction with a long descriptive label 10" #household ; #household/food
   Expenses:Food:Groceries 19 GBP
   Assets:Checking -19 GBP
-2024-01-14 * "Example supplier 11" "Review transaction with a long descriptive label 11" #household/food
+2024-01-14 * "Example supplier 11" "Review transaction with a long descriptive label 11" #household ; #household/food
   note: "First line\nSecond line for multi-line query results"
   Expenses:Food:Groceries 20 GBP
   Assets:Checking -20 GBP
-2024-01-15 * "Example supplier 12" "Review transaction with a long descriptive label 12" #household/food
+2024-01-15 * "Example supplier 12" "Review transaction with a long descriptive label 12" #household ; #household/food
   Expenses:Food:Groceries 21 GBP
   Assets:Checking -21 GBP
-2024-01-16 * "Example supplier 13" "Review transaction with a long descriptive label 13" #household/food
+2024-01-16 * "Example supplier 13" "Review transaction with a long descriptive label 13" #household ; #household/food
   Expenses:Food:Groceries 22 GBP
   Assets:Checking -22 GBP
-2024-01-17 * "Example supplier 14" "Review transaction with a long descriptive label 14" #household/food
+2024-01-17 * "Example supplier 14" "Review transaction with a long descriptive label 14" #household ; #household/food
   Expenses:Food:Groceries 23 GBP
   Assets:Checking -23 GBP
-2024-01-18 * "Example supplier 15" "Review transaction with a long descriptive label 15" #household/food
+2024-01-18 * "Example supplier 15" "Review transaction with a long descriptive label 15" #household ; #household/food
   Expenses:Home:Office:EquipmentAndSupplies 24 GBP
   Assets:Checking -24 GBP
-2024-01-19 * "Example supplier 16" "Review transaction with a long descriptive label 16" #household/food
+2024-01-19 * "Example supplier 16" "Review transaction with a long descriptive label 16" #household ; #household/food
   Expenses:Food:Groceries 25 GBP
   Assets:Checking -25 GBP
-2024-01-20 * "Example supplier 17" "Review transaction with a long descriptive label 17" #household/food
+2024-01-20 * "Example supplier 17" "Review transaction with a long descriptive label 17" #household ; #household/food
   Expenses:Food:Groceries 26 GBP
   Assets:Checking -26 GBP
-2024-01-21 * "Example supplier 18" "Review transaction with a long descriptive label 18" #household/food
+2024-01-21 * "Example supplier 18" "Review transaction with a long descriptive label 18" #household ; #household/food
   Expenses:Food:Groceries 27 GBP
   Assets:Checking -27 GBP
-2024-01-22 * "Example supplier 19" "Review transaction with a long descriptive label 19" #household/food
+2024-01-22 * "Example supplier 19" "Review transaction with a long descriptive label 19" #household ; #household/food
   Expenses:Food:Groceries 28 GBP
   Assets:Checking -28 GBP
-2024-01-23 * "Example supplier 20" "Review transaction with a long descriptive label 20" #household/food
+2024-01-23 * "Example supplier 20" "Review transaction with a long descriptive label 20" #household ; #household/food
   Expenses:Food:Groceries 29 GBP
   Assets:Checking -29 GBP
-2024-01-24 * "Example supplier 21" "Review transaction with a long descriptive label 21" #household/food
+2024-01-24 * "Example supplier 21" "Review transaction with a long descriptive label 21" #household ; #household/food
   note: "First line\nSecond line for multi-line query results"
   Expenses:Food:Groceries 30 GBP
   Assets:Checking -30 GBP
-2024-01-25 * "Example supplier 22" "Review transaction with a long descriptive label 22" #household/food
+2024-01-25 * "Example supplier 22" "Review transaction with a long descriptive label 22" #household ; #household/food
   Expenses:Home:Office:EquipmentAndSupplies 31 GBP
   Assets:Checking -31 GBP
-2024-01-26 * "Example supplier 23" "Review transaction with a long descriptive label 23" #household/food
+2024-01-26 * "Example supplier 23" "Review transaction with a long descriptive label 23" #household ; #household/food
   Expenses:Food:Groceries 32 GBP
   Assets:Checking -32 GBP
-2024-01-27 * "Example supplier 24" "Review transaction with a long descriptive label 24" #household/food
+2024-01-27 * "Example supplier 24" "Review transaction with a long descriptive label 24" #household ; #household/food
   Expenses:Food:Groceries 33 GBP
   Assets:Checking -33 GBP
-2024-01-28 * "Example supplier 25" "Review transaction with a long descriptive label 25" #household/food
+2024-01-28 * "Example supplier 25" "Review transaction with a long descriptive label 25" #household ; #household/food
   Expenses:Food:Groceries 34 GBP
   Assets:Checking -34 GBP
-2024-01-29 * "Example supplier 26" "Review transaction with a long descriptive label 26" #household/food
+2024-01-29 * "Example supplier 26" "Review transaction with a long descriptive label 26" #household ; #household/food
   Expenses:Food:Groceries 35 GBP
   Assets:Checking -35 GBP
-2024-01-30 * "Example supplier 27" "Review transaction with a long descriptive label 27" #household/food
+2024-01-30 * "Example supplier 27" "Review transaction with a long descriptive label 27" #household ; #household/food
   Expenses:Food:Groceries 36 GBP
   Assets:Checking -36 GBP
-2024-01-31 * "Example supplier 28" "Review transaction with a long descriptive label 28" #household/food
+2024-01-31 * "Example supplier 28" "Review transaction with a long descriptive label 28" #household ; #household/food
   Expenses:Food:Groceries 37 GBP
   Assets:Checking -37 GBP
-2024-02-01 * "Example supplier 29" "Review transaction with a long descriptive label 29" #household/food
+2024-02-01 * "Example supplier 29" "Review transaction with a long descriptive label 29" #household ; #household/food
   Expenses:Home:Office:EquipmentAndSupplies 38 GBP
   Assets:Checking -38 GBP
-2024-02-02 * "Example supplier 30" "Review transaction with a long descriptive label 30" #household/food
+2024-02-02 * "Example supplier 30" "Review transaction with a long descriptive label 30" #household ; #household/food
   Expenses:Food:Groceries 39 GBP
   Assets:Checking -39 GBP
-2024-02-03 * "Example supplier 31" "Review transaction with a long descriptive label 31" #household/food
+2024-02-03 * "Example supplier 31" "Review transaction with a long descriptive label 31" #household ; #household/food
   note: "First line\nSecond line for multi-line query results"
   Expenses:Food:Groceries 40 GBP
   Assets:Checking -40 GBP
-2024-02-04 * "Example supplier 32" "Review transaction with a long descriptive label 32" #household/food
+2024-02-04 * "Example supplier 32" "Review transaction with a long descriptive label 32" #household ; #household/food
   Expenses:Food:Groceries 41 GBP
   Assets:Checking -41 GBP
-2024-02-05 * "Example supplier 33" "Review transaction with a long descriptive label 33" #household/food
+2024-02-05 * "Example supplier 33" "Review transaction with a long descriptive label 33" #household ; #household/food
   Expenses:Food:Groceries 42 GBP
   Assets:Checking -42 GBP
-2024-02-06 * "Example supplier 34" "Review transaction with a long descriptive label 34" #household/food
+2024-02-06 * "Example supplier 34" "Review transaction with a long descriptive label 34" #household ; #household/food
   Expenses:Food:Groceries 43 GBP
   Assets:Checking -43 GBP
-2024-02-07 * "Example supplier 35" "Review transaction with a long descriptive label 35" #household/food
+2024-02-07 * "Example supplier 35" "Review transaction with a long descriptive label 35" #household ; #household/food
   Expenses:Food:Groceries 44 GBP
   Assets:Checking -44 GBP
-2024-02-08 * "Example supplier 36" "Review transaction with a long descriptive label 36" #household/food
+2024-02-08 * "Example supplier 36" "Review transaction with a long descriptive label 36" #household ; #household/food
   Expenses:Home:Office:EquipmentAndSupplies 45 GBP
   Assets:Checking -45 GBP
-2024-02-09 * "Example supplier 37" "Review transaction with a long descriptive label 37" #household/food
+2024-02-09 * "Example supplier 37" "Review transaction with a long descriptive label 37" #household ; #household/food
   Expenses:Food:Groceries 46 GBP
   Assets:Checking -46 GBP
-2024-02-10 * "Example supplier 38" "Review transaction with a long descriptive label 38" #household/food
+2024-02-10 * "Example supplier 38" "Review transaction with a long descriptive label 38" #household ; #household/food
   Expenses:Food:Groceries 47 GBP
   Assets:Checking -47 GBP
-2024-02-11 * "Example supplier 39" "Review transaction with a long descriptive label 39" #household/food
+2024-02-11 * "Example supplier 39" "Review transaction with a long descriptive label 39" #household ; #household/food
   Expenses:Food:Groceries 48 GBP
   Assets:Checking -48 GBP
-2024-02-12 * "Example supplier 40" "Review transaction with a long descriptive label 40" #household/food
+2024-02-12 * "Example supplier 40" "Review transaction with a long descriptive label 40" #household ; #household/food
   Expenses:Food:Groceries 49 GBP
   Assets:Checking -49 GBP
-2024-02-13 * "Example supplier 41" "Review transaction with a long descriptive label 41" #household/food
+2024-02-13 * "Example supplier 41" "Review transaction with a long descriptive label 41" #household ; #household/food
   note: "First line\nSecond line for multi-line query results"
   Expenses:Food:Groceries 50 GBP
   Assets:Checking -50 GBP
-2024-02-14 * "Example supplier 42" "Review transaction with a long descriptive label 42" #household/food
+2024-02-14 * "Example supplier 42" "Review transaction with a long descriptive label 42" #household ; #household/food
   Expenses:Food:Groceries 51 GBP
   Assets:Checking -51 GBP
-2024-02-15 * "Example supplier 43" "Review transaction with a long descriptive label 43" #household/food
+2024-02-15 * "Example supplier 43" "Review transaction with a long descriptive label 43" #household ; #household/food
   Expenses:Home:Office:EquipmentAndSupplies 52 GBP
   Assets:Checking -52 GBP
-2024-02-16 * "Example supplier 44" "Review transaction with a long descriptive label 44" #household/food
+2024-02-16 * "Example supplier 44" "Review transaction with a long descriptive label 44" #household ; #household/food
   Expenses:Food:Groceries 53 GBP
   Assets:Checking -53 GBP
-2024-02-17 * "Example supplier 45" "Review transaction with a long descriptive label 45" #household/food
+2024-02-17 * "Example supplier 45" "Review transaction with a long descriptive label 45" #household ; #household/food
   Expenses:Food:Groceries 54 GBP
   Assets:Checking -54 GBP
-2024-02-18 * "Example supplier 46" "Review transaction with a long descriptive label 46" #household/food
+2024-02-18 * "Example supplier 46" "Review transaction with a long descriptive label 46" #household ; #household/food
   Expenses:Food:Groceries 55 GBP
   Assets:Checking -55 GBP
-2024-02-19 * "Example supplier 47" "Review transaction with a long descriptive label 47" #household/food
+2024-02-19 * "Example supplier 47" "Review transaction with a long descriptive label 47" #household ; #household/food
   Expenses:Food:Groceries 56 GBP
   Assets:Checking -56 GBP
-2024-02-20 * "Example supplier 48" "Review transaction with a long descriptive label 48" #household/food
+2024-02-20 * "Example supplier 48" "Review transaction with a long descriptive label 48" #household ; #household/food
   Expenses:Food:Groceries 57 GBP
   Assets:Checking -57 GBP
-2024-02-21 * "Example supplier 49" "Review transaction with a long descriptive label 49" #household/food
+2024-02-21 * "Example supplier 49" "Review transaction with a long descriptive label 49" #household ; #household/food
   Expenses:Food:Groceries 58 GBP
   Assets:Checking -58 GBP
-2024-02-22 * "Example supplier 50" "Review transaction with a long descriptive label 50" #household/food
+2024-02-22 * "Example supplier 50" "Review transaction with a long descriptive label 50" #household ; #household/food
   Expenses:Home:Office:EquipmentAndSupplies 59 GBP
   Assets:Checking -59 GBP
-2024-02-23 * "Example supplier 51" "Review transaction with a long descriptive label 51" #household/food
+2024-02-23 * "Example supplier 51" "Review transaction with a long descriptive label 51" #household ; #household/food
   note: "First line\nSecond line for multi-line query results"
   Expenses:Food:Groceries 60 GBP
   Assets:Checking -60 GBP
-2024-02-24 * "Example supplier 52" "Review transaction with a long descriptive label 52" #household/food
+2024-02-24 * "Example supplier 52" "Review transaction with a long descriptive label 52" #household ; #household/food
   Expenses:Food:Groceries 61 GBP
   Assets:Checking -61 GBP
-2024-02-25 * "Example supplier 53" "Review transaction with a long descriptive label 53" #household/food
+2024-02-25 * "Example supplier 53" "Review transaction with a long descriptive label 53" #household ; #household/food
   Expenses:Food:Groceries 62 GBP
   Assets:Checking -62 GBP
-2024-02-26 * "Example supplier 54" "Review transaction with a long descriptive label 54" #household/food
+2024-02-26 * "Example supplier 54" "Review transaction with a long descriptive label 54" #household ; #household/food
   Expenses:Food:Groceries 63 GBP
   Assets:Checking -63 GBP
-2024-02-27 * "Example supplier 55" "Review transaction with a long descriptive label 55" #household/food
+2024-02-27 * "Example supplier 55" "Review transaction with a long descriptive label 55" #household ; #household/food
   Expenses:Food:Groceries 64 GBP
   Assets:Checking -64 GBP
-2024-02-28 * "Example supplier 56" "Review transaction with a long descriptive label 56" #household/food
+2024-02-28 * "Example supplier 56" "Review transaction with a long descriptive label 56" #household ; #household/food
   Expenses:Food:Groceries 65 GBP
   Assets:Checking -65 GBP
-2024-02-29 * "Example supplier 57" "Review transaction with a long descriptive label 57" #household/food
+2024-02-29 * "Example supplier 57" "Review transaction with a long descriptive label 57" #household ; #household/food
   Expenses:Home:Office:EquipmentAndSupplies 66 GBP
   Assets:Checking -66 GBP
-2024-03-01 * "Example supplier 58" "Review transaction with a long descriptive label 58" #household/food
+2024-03-01 * "Example supplier 58" "Review transaction with a long descriptive label 58" #household ; #household/food
   Expenses:Food:Groceries 67 GBP
   Assets:Checking -67 GBP
-2024-03-02 * "Example supplier 59" "Review transaction with a long descriptive label 59" #household/food
+2024-03-02 * "Example supplier 59" "Review transaction with a long descriptive label 59" #household ; #household/food
   Expenses:Food:Groceries 68 GBP
   Assets:Checking -68 GBP
-2024-03-03 * "Example supplier 60" "Review transaction with a long descriptive label 60" #household/food
+2024-03-03 * "Example supplier 60" "Review transaction with a long descriptive label 60" #household ; #household/food
   Expenses:Food:Groceries 69 GBP
   Assets:Checking -69 GBP
-2024-03-04 * "Example supplier 61" "Review transaction with a long descriptive label 61" #household/food
+2024-03-04 * "Example supplier 61" "Review transaction with a long descriptive label 61" #household ; #household/food
   note: "First line\nSecond line for multi-line query results"
   Expenses:Food:Groceries 70 GBP
   Assets:Checking -70 GBP
-2024-03-05 * "Example supplier 62" "Review transaction with a long descriptive label 62" #household/food
+2024-03-05 * "Example supplier 62" "Review transaction with a long descriptive label 62" #household ; #household/food
   Expenses:Food:Groceries 71 GBP
   Assets:Checking -71 GBP
-2024-03-06 * "Example supplier 63" "Review transaction with a long descriptive label 63" #household/food
+2024-03-06 * "Example supplier 63" "Review transaction with a long descriptive label 63" #household ; #household/food
   Expenses:Food:Groceries 72 GBP
   Assets:Checking -72 GBP
-2024-03-07 * "Example supplier 64" "Review transaction with a long descriptive label 64" #household/food
+2024-03-07 * "Example supplier 64" "Review transaction with a long descriptive label 64" #household ; #household/food
   Expenses:Home:Office:EquipmentAndSupplies 73 GBP
   Assets:Checking -73 GBP
-2024-03-08 * "Example supplier 65" "Review transaction with a long descriptive label 65" #household/food
+2024-03-08 * "Example supplier 65" "Review transaction with a long descriptive label 65" #household ; #household/food
   Expenses:Food:Groceries 74 GBP
   Assets:Checking -74 GBP
-2024-03-09 * "Example supplier 66" "Review transaction with a long descriptive label 66" #household/food
+2024-03-09 * "Example supplier 66" "Review transaction with a long descriptive label 66" #household ; #household/food
   Expenses:Food:Groceries 75 GBP
   Assets:Checking -75 GBP
-2024-03-10 * "Example supplier 67" "Review transaction with a long descriptive label 67" #household/food
+2024-03-10 * "Example supplier 67" "Review transaction with a long descriptive label 67" #household ; #household/food
   Expenses:Food:Groceries 76 GBP
   Assets:Checking -76 GBP
-2024-03-11 * "Example supplier 68" "Review transaction with a long descriptive label 68" #household/food
+2024-03-11 * "Example supplier 68" "Review transaction with a long descriptive label 68" #household ; #household/food
   Expenses:Food:Groceries 77 GBP
   Assets:Checking -77 GBP
-2024-03-12 * "Example supplier 69" "Review transaction with a long descriptive label 69" #household/food
+2024-03-12 * "Example supplier 69" "Review transaction with a long descriptive label 69" #household ; #household/food
   Expenses:Food:Groceries 78 GBP
   Assets:Checking -78 GBP
-2024-03-13 * "Example supplier 70" "Review transaction with a long descriptive label 70" #household/food
+2024-03-13 * "Example supplier 70" "Review transaction with a long descriptive label 70" #household ; #household/food
   Expenses:Food:Groceries 79 GBP
   Assets:Checking -79 GBP

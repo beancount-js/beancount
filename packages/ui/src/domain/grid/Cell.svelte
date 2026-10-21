@@ -24,6 +24,7 @@
 </script>
 
 <div
+  data-grid-cell={depth === 0 ? "" : undefined}
   {style}
   class={(className || "") +
     (depth > 0 ? "" : " border-r border-solid pl-1 pr-1")}

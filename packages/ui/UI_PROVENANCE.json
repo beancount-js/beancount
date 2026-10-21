@@ -788,5 +788,17 @@
     ],
     "sharedControls": "@lapismd/design-core/forms",
     "notes": "Preserve Beancount account appearance calculations; compose public Design Core controls."
-  }
+  },
+  "recovered": [
+    {
+      "commit": "66e56a4bf39f^",
+      "source": "packages/ui/src/components/tables/QueryResultsTable.svelte",
+      "target": "src/components/tables/QueryResultsTable.svelte"
+    },
+    {
+      "commit": "4c5afac5e00e",
+      "source": "packages/fava-beta/src/components/QueryTable.svelte",
+      "target": "src/domain/components/QueryTable.svelte"
+    }
+  ]
 }

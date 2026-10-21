@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { createTableTypography } from "./typography";
   import VirtualList from "svelte-tiny-virtual-list";
   import { useDataset, type Column } from "./grid";
   import { derived, writable, type Readable } from "svelte/store";
@@ -13,6 +14,7 @@
   export let heightDiff: number = 0;
   export let model: Array<Column<any>> = [];
 
+  const typography = createTableTypography();
   const sortOrder = writable<SortType>({});
   $: sortedData = derived([data, sortOrder], ([$data, $sortOrder]) => {
     const map: Record<string, Column<any>> = model.reduce(
@@ -35,6 +37,7 @@
   });
   $: table = useDataset(sortedData, {
     height: rowHeight,
+    typography: typography.style,
     padding,
     columns: model,
     heightDiff,
@@ -49,9 +52,13 @@
   </Alert.Root>
 {:else}
   <ScrollArea.Root orientation="horizontal" class="w-full max-w-full">
-    <div data-grid-list class="bean-table flex-table text-xs">
+    <div
+      data-grid-list
+      class="bean-table flex-table text-xs"
+      use:typography.measure
+    >
       <VirtualList
-        height={Math.min(height, maxHeight)}
+        height={Math.min(height, maxHeight + 32)}
         width="max-content"
         itemCount={$sortedData.length}
         itemSize={getSize}
@@ -68,14 +75,18 @@
                   data-sort={col.type}
                   data-sort-name={col.id}
                   style={styles[col.id]}
-                  class={"border-r " + col.class || ""}
+                  class={"border-r " + (col.class ?? "")}
                 >
-                  <slot name="header" column={col}>{col.name}</slot>
+                  <slot name="header-actions" column={col} /><button
+                    type="button"
+                    data-sort-control
+                    ><slot name="header" column={col}>{col.name}</slot></button
+                  >
                 </span>
               {:else}
                 <span
                   style={styles[col.id]}
-                  class={"border-r " + col.class || ""}
+                  class={"border-r " + (col.class ?? "")}
                 >
                   <slot name="header" column={col}>{col.name}</slot>
                 </span>

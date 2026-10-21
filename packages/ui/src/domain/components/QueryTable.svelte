@@ -1,16 +1,10 @@
 <script lang="ts">
-  import * as Alert from "@lapismd/design-core/shadcn/alert";
-  import VirtualList from "svelte-tiny-virtual-list";
-
-  import { TriangleAlert } from "@lucide/svelte";
   import { derived, writable } from "svelte/store";
   import { stringify, useDataset, useLedger, type Columns } from "./helpers";
   import { Inventory } from "@beancount-js/beancount";
   import { useCtx } from "../stores/format";
   import { Decimal, formatDate } from "@beancount-js/parser";
   import { DateTime } from "luxon";
-  import { urlForAccount } from "../helpers";
-  import { matchesAccount } from "@beancount-js/beancount";
   import { Tree } from "../core/tree";
   import {
     CounterInventory,
@@ -22,15 +16,26 @@
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import Chart from "../charts/Chart.svelte";
   import { balances } from "../charts/line";
-  import { useSortableTable, type SortType, sortDataset } from "../grid/sort";
+  import { type SortOrder, type SortType, sortDataset } from "../grid/sort";
   import { Position } from "@beancount-js/beancount";
   import { runBql } from "@beancount-js/beanquery";
-  import * as ScrollArea from "@lapismd/design-core/shadcn/scroll-area";
+  import QueryResultsTable, {
+    type QueryResultCell,
+    type QueryResultColumn,
+    type QueryResultRow,
+    type QueryResultsSortDirection,
+  } from "../../components/tables/QueryResultsTable.svelte";
+  import { urlForAccount } from "../helpers";
+  import { createTableTypography } from "../grid/typography";
 
-  export let height: number = 500;
-  export let rowHeight: number = 20;
+  // Compatibility with existing report compositions; the recovered paged
+  // renderer owns its rows and keeps the page as the vertical scroll lane.
+  export let height = 500;
+  export let rowHeight = 20;
+  export let padding = 0;
   export let query: string = "";
-  export let padding: number = 0;
+
+  const PAGE_SIZES = [10, 25, 50, 100];
 
   const ctx = useCtx();
   const ledgerData = useLedger();
@@ -105,7 +110,10 @@
     return null;
   }
 
+  const typography = createTableTypography();
   const sortOrder = writable<SortType>({});
+  let page = 1;
+  let pageSize = PAGE_SIZES[0];
 
   $: queryResult = derived([ledgerData], ([$ledgerData]) => {
     if (!query) {
@@ -124,148 +132,151 @@
     return $queryResult.data;
   });
 
-  $: table = useDataset(data, { height: rowHeight, padding });
-  $: ({ getSize, columns, maxHeight } = $table);
-
-  // Query tables use their page scroll area as the vertical scroller. The
-  // virtual-list package renders its header outside the measured item area,
-  // so account for the 35px table heading when the rows fill the viewport.
-  const headerHeight = 35;
-  $: viewportHeight = Math.max(height, maxHeight + headerHeight);
+  $: table = useDataset(data, { typography: typography.style });
+  $: ({ columns } = $table);
 
   $: chart = chartData($data, columns);
+  $: pageCount = Math.max(1, Math.ceil($data.length / pageSize));
+  $: if (page > pageCount) page = pageCount;
+  $: pageStart = (page - 1) * pageSize;
+  $: pageEnd = Math.min(pageStart + pageSize, $data.length);
+  $: visibleRows = $data.slice(pageStart, pageEnd);
+  $: queryColumns = columns.values.map(
+    (column): QueryResultColumn => ({
+      id: column.id,
+      label: column.name,
+      sortable: true,
+      align: column.class.includes("text-right") ? "right" : "left",
+      class: column.class.join(" "),
+      style: column.style,
+    }),
+  );
+  $: columnTypes = Object.fromEntries(
+    columns.values.map((column) => [column.id, column.type]),
+  );
+  $: queryRows = visibleRows.map(
+    (row, index): QueryResultRow => ({
+      id: String(pageStart + index),
+      values: Object.fromEntries(
+        columns.values.map((column) => [column.id, formatCell(row[column.id])]),
+      ),
+    }),
+  );
+  $: activeSort = Object.entries($sortOrder)[0];
+  $: sortColumnId = activeSort?.[0];
+  $: sortDirection = sortDirectionFor(activeSort?.[1]?.order);
+
+  function sortDirectionFor(
+    order: SortOrder | undefined,
+  ): QueryResultsSortDirection {
+    if (order === "asc") return "ascending";
+    if (order === "desc") return "descending";
+    return "none";
+  }
+
+  function setSort(columnId: string, direction: QueryResultsSortDirection) {
+    page = 1;
+    sortOrder.set(
+      direction === "none"
+        ? {}
+        : {
+            [columnId]: {
+              type: columns.definition[columnId]?.type ?? "string",
+              order: direction === "ascending" ? "asc" : "desc",
+            },
+          },
+    );
+  }
+
+  function setPageSize(next: number) {
+    if (!PAGE_SIZES.includes(next)) return;
+    pageSize = next;
+    page = 1;
+  }
+
+  function formatCell(value: unknown): QueryResultCell {
+    if (value instanceof Inventory) {
+      return [...value.values()].map((position) => $ctx.money(position.units));
+    }
+    if (Array.isArray(value)) {
+      return value.map((item) => {
+        if (item instanceof Amount || item instanceof Decimal) {
+          return $ctx.money(item);
+        }
+        if (item instanceof Date || item instanceof DateTime) {
+          return formatDate(item instanceof DateTime ? item.toJSDate() : item);
+        }
+        return stringify(item);
+      });
+    }
+    if (value instanceof Date || value instanceof DateTime) {
+      return formatDate(value instanceof DateTime ? value.toJSDate() : value);
+    }
+    if (value instanceof Amount || value instanceof Decimal) {
+      return value instanceof Decimal && value.eq(0) ? "" : $ctx.money(value);
+    }
+    return stringify(value);
+  }
+
+  function displayValues(value: QueryResultCell): string[] {
+    if (Array.isArray(value)) return value.map(String);
+    return value == null ? ["—"] : [String(value)];
+  }
 </script>
 
-<div class="query-table" data-query-table>
-  {#if $queryResult.error}
-    <Alert.Root variant="destructive" class="mt-4 font-mono text-xs">
-      <TriangleAlert class="h-4 w-4" />
-      <Alert.Title>Error</Alert.Title>
-      <Alert.Description class="whitespace-pre-wrap"
-        >{$queryResult.error}</Alert.Description
-      >
-    </Alert.Root>
-  {/if}
-  <ScrollArea.Root orientation="horizontal" class="w-full">
-    <div class="w-full pr-3 pt-4">
-      {#if chart}
-        <div class="pb-2 text-xs">
-          <Chart {chart} hideButtons />
-        </div>
-      {/if}
-      <div data-grid-list class="bean-table flex-table font-mono text-xs">
-        <VirtualList
-          height={viewportHeight}
-          width="max-content"
-          itemCount={$data.length}
-          itemSize={getSize}
-        >
-          <div
-            data-grid-row
-            class="head sticky top-0 z-10 border-b border-l border-t border-solid bg-muted tracking-wide [font-variant-caps:all-small-caps]"
-            slot="header"
-          >
-            <p use:useSortableTable={sortOrder}>
-              {#each columns.values as col}
-                <span
-                  data-sort={col.type}
-                  data-sort-name={col.id}
-                  style={col.style}
-                  class={"border-r border-solid " + col.class.join(" ")}
-                  >{col.name}</span
-                >
-              {/each}
-            </p>
-          </div>
-          <div
-            slot="item"
-            let:index
-            let:style
-            class="align-middle"
-            style={`` + style}
-          >
-            {@const row = $data[index]}
-            {@const cellHeight = `height: ${rowHeight - 1}px; line-height: ${rowHeight - 1}px; `}
-            <div data-grid-row class="border-b border-l border-solid">
-              <div>
-                {#each columns.values as col}
-                  {@const value = row[col.id]}
-                  <span
-                    style={col.style}
-                    class={"border-r border-solid " + col.class.join(" ")}
-                  >
-                    {#if col.id === "account" || matchesAccount(value)}
-                      <span class="block" style={cellHeight}
-                        ><a href={urlForAccount(String(value ?? ""))}>{value}</a
-                        ></span
-                      >
-                    {:else if value instanceof Inventory}
-                      {#each [...value.values()] as position}
-                        <span class="block text-right" style={cellHeight}
-                          >{$ctx.money(position.units)}</span
-                        >
-                      {/each}
-                    {:else if Array.isArray(value)}
-                      {#each value as item, i}
-                        {@const rowval = stringify(item)}
-                        {@const lines = countLines(rowval)}
-                        {@const cellHeight = `height: ${rowHeight * lines - 1}px; line-height: ${rowHeight - 1}px; `}
-                        <div class:border-t={i > 0}>
-                          {#if col.type === "account"}
-                            <span class="block" style={cellHeight}
-                              ><a href={urlForAccount(rowval)}>{rowval}</a
-                              ></span
-                            >
-                          {:else if item instanceof Amount || item instanceof Decimal}
-                            {$ctx.money(item)}
-                          {:else if item instanceof Date || item instanceof DateTime}
-                            {formatDate(
-                              item instanceof DateTime ? item.toJSDate() : item,
-                            )}
-                          {:else}
-                            <span
-                              class:whitespace-pre={lines > 1}
-                              class="block"
-                              style={cellHeight}>{rowval}</span
-                            >
-                          {/if}
-                        </div>
-                      {/each}
-                    {:else if value instanceof Date || value instanceof DateTime}
-                      <span class="block" style={cellHeight}
-                        >{formatDate(
-                          value instanceof DateTime ? value.toJSDate() : value,
-                        )}</span
-                      >
-                    {:else if value instanceof Amount || value instanceof Decimal}
-                      <span class="block" style={cellHeight}
-                        >{value instanceof Decimal && value.eq(0)
-                          ? ""
-                          : $ctx.money(value)}</span
-                      >
-                    {:else}
-                      {@const rowval = stringify(value)}
-                      {@const lines = countLines(rowval)}
-                      {@const cellHeight = `height: ${rowHeight * lines - 1}px; line-height: ${rowHeight - 1}px; `}
-                      <span
-                        class:whitespace-pre={countLines(rowval) > 1}
-                        class="block"
-                        style={cellHeight}>{rowval}</span
-                      >
-                    {/if}
-                  </span>
-                {/each}
-              </div>
-            </div>
-          </div>
-        </VirtualList>
-      </div>
+{#snippet queryChart()}
+  {#if chart}
+    <div class="mt-4 rounded-xl border bg-card p-3 text-xs shadow-sm">
+      <Chart {chart} hideButtons />
     </div>
-  </ScrollArea.Root>
-</div>
+  {/if}
+{/snippet}
 
-<style>
-  .query-table :global(.virtual-list-wrapper) {
-    overflow: visible;
-  }
-</style>
+{#snippet queryCell(
+  _row: QueryResultRow,
+  column: QueryResultColumn,
+  value: QueryResultCell,
+)}
+  {#each displayValues(value) as displayValue, index}
+    <div class:border-t={Array.isArray(value) && index > 0}>
+      {#if columnTypes[column.id] === "account" && displayValue}
+        <a
+          href={urlForAccount(displayValue)}
+          class="hover:text-primary hover:underline">{displayValue}</a
+        >
+      {:else}
+        <span class:whitespace-pre={countLines(displayValue) > 1}>
+          {displayValue}
+        </span>
+      {/if}
+    </div>
+  {/each}
+{/snippet}
+
+<div
+  class="font-mono text-xs"
+  use:typography.measure
+  style={`min-height: ${height}px; padding-bottom: ${padding}px; --query-line-height: ${rowHeight}px`}
+>
+  <QueryResultsTable
+    columns={queryColumns}
+    rows={queryRows}
+    error={$queryResult.error}
+    {sortColumnId}
+    {sortDirection}
+    onSortChange={setSort}
+    pagination={$data.length > PAGE_SIZES[0]
+      ? {
+          page,
+          pageCount,
+          resultLabel: `Showing ${pageStart + 1}–${pageEnd} of ${$data.length}`,
+          pageSize,
+          pageSizes: PAGE_SIZES,
+        }
+      : undefined}
+    onPageChange={(nextPage) => (page = nextPage)}
+    onPageSizeChange={setPageSize}
+    beforeTable={queryChart}
+    cell={queryCell}
+  />
+</div>

@@ -1,4 +1,9 @@
-import { derived, type Readable } from "svelte/store";
+import {
+  defaultTableTypography,
+  textWidth,
+  type TableTypography,
+} from "./typography";
+import { derived, readable, type Readable } from "svelte/store";
 import { useCtx } from "../stores/format";
 import { formatDate } from "@beancount-js/parser";
 import { DateTime } from "luxon";
@@ -77,6 +82,7 @@ export function useDataset<T>(
     columns: Column<T>[];
     height: number;
     font: string;
+    typography: Readable<TableTypography>;
     padding: number;
     width: number;
     heightDiff: number;
@@ -84,18 +90,21 @@ export function useDataset<T>(
 ) {
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
-  if (context) {
-    context.font = props.font ?? "0.8rem monospace";
-  }
+  const typography =
+    props.typography ??
+    readable({
+      ...defaultTableTypography,
+      ...(props.font ? { font: props.font } : {}),
+    });
   const ctx = useCtx();
-  return derived([data, ctx], ([$data, $ctx]) => {
+  return derived([data, ctx, typography], ([$data, $ctx, $typography]) => {
     const columnDefs = props.columns ?? [];
     const height = props.height ?? 22;
     const padding = props.padding ?? 0;
     const width = props.width ?? 18;
     const heightDiff = props.heightDiff ?? 0;
     const columns: Column<T>[] = props.columns ?? [];
-    let maxHeight = height * 2;
+    let maxHeight = 0;
 
     const getSize = (index: number, includePadding: boolean = true) => {
       if (!$data.length) {
@@ -123,9 +132,13 @@ export function useDataset<T>(
       return size + heightDiff;
     };
 
-    const columnSize: Record<string, string> = {};
+    const columnSize: Record<string, number> = {};
     columnDefs.forEach((column) => {
-      columnSize[column.id] = column.name;
+      columnSize[column.id] = textWidth(
+        context,
+        column.name.toUpperCase(),
+        $typography,
+      );
     });
 
     $data.forEach((row, i) => {
@@ -140,21 +153,18 @@ export function useDataset<T>(
         if (rowvalue instanceof Inventory) {
           for (const position of rowvalue.values()) {
             const value = $ctx.money(position.units);
-            if (value.length > columnSize[key].length) {
-              columnSize[key] = value;
-            }
+            columnSize[key] = Math.max(
+              columnSize[key],
+              textWidth(context, value, $typography),
+            );
           }
         } else {
           let value = stringify(rowvalue);
-          if (value.includes("\n")) {
-            value = value
-              .split("\n")
-              .sort((a: string, b: string) => b.length - a.length)[0];
-          }
 
-          if (value.length > columnSize[key].length) {
-            columnSize[key] = value;
-          }
+          columnSize[key] = Math.max(
+            columnSize[key],
+            textWidth(context, value, $typography),
+          );
         }
       });
     });
@@ -163,14 +173,14 @@ export function useDataset<T>(
     const widths: Record<string, number> = {};
 
     Object.keys(columnSize).forEach((k) => {
-      if (context) {
-        const metrics = context.measureText("XX" + columnSize[k] + "XX");
-        styles[k] = `width: ${Math.min(metrics.width + width, 1000)}px; `;
-        widths[k] = Math.min(metrics.width + width, 1000);
-        return;
-      }
-      const size = parseInt((columnSize[k].length * 0.6).toFixed(2));
-      styles[k] = size > 0 ? `width: ${size}rem; ` : "width: auto; ";
+      const size = Math.ceil(
+        Math.min(
+          columnSize[k] + textWidth(context, "XXXX", $typography) + width,
+          1000,
+        ),
+      );
+      styles[k] = `width: ${size}px; `;
+      widths[k] = size;
     });
 
     return {

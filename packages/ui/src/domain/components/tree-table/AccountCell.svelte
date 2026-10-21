@@ -54,7 +54,13 @@
   style={`--account-indent: ${depth}em;`}
 >
   {#if children.length > 0}
-    <button type="button" class="clickable-icon" on:click={handleClick}>
+    <button
+      type="button"
+      class="clickable-icon"
+      aria-label={`${$toggled.has(account) ? "Expand" : "Collapse"} ${account}`}
+      aria-expanded={!$toggled.has(account)}
+      on:click={handleClick}
+    >
       {#if $toggled.has(account)}
         <svg
           xmlns="http://www.w3.org/2000/svg"

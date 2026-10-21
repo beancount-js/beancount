@@ -1,4 +1,15 @@
-import { derived, writable, type Readable, type Writable } from "svelte/store";
+import {
+  defaultTableTypography,
+  textWidth,
+  type TableTypography,
+} from "../grid/typography";
+import {
+  readable,
+  derived,
+  writable,
+  type Readable,
+  type Writable,
+} from "svelte/store";
 import { useContext } from "../context";
 import type { Filter } from "@beancount-js/filters";
 import type { LedgerData } from "../core/ledger";
@@ -384,24 +395,28 @@ export function useDataset(
     inventoryClass: string;
     height: number;
     font: string;
+    typography: Readable<TableTypography>;
     padding: number;
     width: number;
   }> = {},
 ) {
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
-  if (context) {
-    context.font = props.font ?? "0.8rem monospace";
-  }
+  const typography =
+    props.typography ??
+    readable({
+      ...defaultTableTypography,
+      ...(props.font ? { font: props.font } : {}),
+    });
   const ctx = useCtx();
-  return derived([data, ctx], ([$data, $ctx]) => {
+  return derived([data, ctx, typography], ([$data, $ctx, $typography]) => {
     const inventoryClass = props.inventoryClass ?? "text-right";
     const columnDefs = props.columns ?? [];
     const height = props.height ?? 22;
     const padding = props.padding ?? 0;
     const width = props.width ?? 18;
     const columns: Columns = { ids: [], definition: {}, values: [] };
-    let maxHeight = height * 2;
+    let maxHeight = 0;
 
     if (!columnDefs.length && $data.length && $data[0]) {
       columnDefs.push(
@@ -432,11 +447,15 @@ export function useDataset(
       return size;
     };
 
-    const columnSize: Record<string, string> = {};
+    const columnSize: Record<string, number> = {};
     columnDefs.forEach((column) => {
       columns.ids.push(column.id);
       columns.definition[column.id] = column;
-      columnSize[column.id] = column.name;
+      columnSize[column.id] = textWidth(
+        context,
+        column.name.toUpperCase(),
+        $typography,
+      );
     });
     columns.values.push(...columnDefs);
 
@@ -463,30 +482,25 @@ export function useDataset(
         if (rowvalue instanceof Inventory) {
           for (const position of rowvalue.values()) {
             const value = $ctx.money(position.units);
-            if (value.length > columnSize[key].length) {
-              columnSize[key] = value;
-            }
+            columnSize[key] = Math.max(
+              columnSize[key],
+              textWidth(context, value, $typography),
+            );
           }
         } else {
           let value = stringify(rowvalue);
-          if (value.includes("\n")) {
-            value = value
-              .split("\n")
-              .sort((a: string, b: string) => b.length - a.length)[0];
-          }
           if (isValidNumber(value)) {
             numeric[key] ||= 0;
             numeric[key] += 1;
           }
 
-          if (value.length > columnSize[key].length) {
-            columnSize[key] = value;
-          }
+          columnSize[key] = Math.max(
+            columnSize[key],
+            textWidth(context, value, $typography),
+          );
         }
       });
     });
-
-    maxHeight -= padding;
 
     Object.keys(numeric).forEach((k) => {
       if (numeric[k] / $data.length > 0.5) {
@@ -500,15 +514,13 @@ export function useDataset(
     });
 
     Object.keys(columnSize).forEach((k) => {
-      if (context) {
-        const metrics = context.measureText("XX" + columnSize[k] + "XX");
-        columns.definition[k].style =
-          `width: ${Math.min(metrics.width + width, 1000)}px`;
-        return;
-      }
-      const size = parseInt((columnSize[k].length * 0.6).toFixed(2));
-      columns.definition[k].style =
-        size > 0 ? `width: ${size}rem` : "width: auto";
+      const size = Math.ceil(
+        Math.min(
+          columnSize[k] + textWidth(context, "XXXX", $typography) + width,
+          1000,
+        ),
+      );
+      columns.definition[k].style = `width: ${size}px`;
     });
 
     return {

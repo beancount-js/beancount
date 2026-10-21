@@ -72,7 +72,11 @@
           onclick={(evt) => handleDelete(evt, query)}><Trash /></Button
         >
       </div>
-      <Accordion.Content class="border-t">
+      <Accordion.Content
+        forceMount
+        hidden={!isOpen[query.hash]}
+        class="border-t"
+      >
         {#if isOpen[query.hash]}
           <QueryTable query={query.query} {height} />
         {/if}

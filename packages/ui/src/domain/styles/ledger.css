@@ -67,3 +67,71 @@
   padding-top: 0.5em;
   padding-right: 1em;
 }
+
+/* Preserve the historical flex geometry after the accessible markup adaptation. */
+.beancount .bean-table.flex-table [data-grid-row] > div {
+  display: flex;
+}
+.beancount .bean-table.flex-table [data-grid-row] > div > span,
+.beancount .bean-table.flex-table [data-grid-cell] {
+  box-sizing: border-box;
+  display: block;
+  flex: 0 0 auto;
+  padding-inline: 4px;
+}
+.beancount .bean-table.flex-table [data-grid-row] > :is(p, div) > :last-child {
+  padding-right: 15px;
+}
+.beancount .flex-table .head p > span[data-sort] {
+  position: relative;
+  cursor: pointer;
+  padding-right: 18px;
+  user-select: none;
+}
+.beancount .flex-table .head p > span[data-sort]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.beancount .flex-table [data-sort][data-order]::before,
+.beancount .flex-table [data-sort][data-order]::after {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: block;
+  width: 0;
+  height: 0;
+  content: "";
+  border: 4px solid transparent;
+}
+.beancount .flex-table [data-sort][data-order="none"]::before {
+  margin-top: -9px;
+  border-bottom-color: var(--primary);
+}
+.beancount .flex-table [data-sort][data-order="none"]::after {
+  margin-top: 1px;
+  border-top-color: var(--primary);
+}
+.beancount .flex-table [data-sort][data-order="asc"]::after {
+  margin-top: -5px;
+  border-bottom-color: var(--primary);
+}
+.beancount .flex-table [data-sort][data-order="desc"]::after {
+  margin-top: -1px;
+  border-top-color: var(--primary);
+}
+.beancount .flex-table .head [data-sort-control] {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.beancount .flex-table .head [data-sort-control]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

@@ -13,7 +13,7 @@
 
 import { permute } from "d3-array";
 import { DateTime } from "luxon";
-import { type Writable } from "svelte/store";
+import { get, type Writable } from "svelte/store";
 import { Amount } from "@beancount-js/beancount";
 import { Decimal } from "@beancount-js/parser";
 
@@ -183,53 +183,97 @@ export function sortDataset<T>(
   );
 }
 
+/** Svelte action: keyboard parity, reactive sort state, late columns and cleanup. */
 export function useSortableTable(
   head: HTMLElement,
   sortOrder: Writable<SortType>,
 ) {
-  const headers = head.querySelectorAll("span[data-sort]");
-  const orders: Record<string, SortOrder> = {
+  const bindings = new Map<HTMLElement, () => void>();
+  const orders: Record<SortOrder, SortOrder> = {
+    none: "asc",
     asc: "desc",
     desc: "none",
-    none: "asc",
   };
-  const elements: Record<string, Element> = {};
-
-  headers.forEach((header) => {
-    const type = header.getAttribute("data-sort") || "text";
-    const name = header.getAttribute("data-sort-name");
-    const order = header.getAttribute("data-order");
-    if (!name) {
-      throw new Error(`Table has invalid header: ${head.innerHTML}.`);
+  function synchronize() {
+    const state = get(sortOrder);
+    for (const header of bindings.keys()) {
+      const order = state[header.dataset.sortName!]?.order ?? "none";
+      header.dataset.order = order;
+      const control =
+        header.querySelector<HTMLElement>("[data-sort-control]") ?? header;
+      control.dataset.order = order;
+      control.setAttribute("aria-pressed", String(order !== "none"));
+      const description = {
+        none: "unsorted",
+        asc: "ascending",
+        desc: "descending",
+      }[order];
+      control.setAttribute(
+        "aria-label",
+        `${header.textContent?.trim() || header.dataset.sortName}: sort ${description}`,
+      );
     }
-    elements[name] = header;
-
-    if (!order) {
-      header.setAttribute("data-order", "none");
+  }
+  function scan() {
+    for (const [header, cleanup] of bindings) {
+      if (!head.contains(header)) {
+        cleanup();
+        bindings.delete(header);
+      }
     }
-
-    const sort = (order: SortOrder) => {
-      header.setAttribute("data-order", order);
-      sortOrder.update((prev) => {
-        const sorted = { ...prev };
-        sorted[name] = { type, order };
-        for (const [key, value] of Object.entries(sorted)) {
-          const el = elements[key];
-          if (el) {
-            el.setAttribute("data-order", value.order);
-          }
-          if (value.order === "none") {
-            delete sorted[key];
-          }
+    for (const header of head.querySelectorAll<HTMLElement>(
+      "span[data-sort]",
+    )) {
+      if (bindings.has(header)) continue;
+      if (!header.dataset.sortName)
+        throw new Error("Table header has no sort name.");
+      const control =
+        header.querySelector<HTMLElement>("[data-sort-control]") ?? header;
+      control.setAttribute("role", "button");
+      control.tabIndex = 0;
+      const activate = () => {
+        const name = header.dataset.sortName!;
+        sortOrder.update((previous) => {
+          const order = orders[previous[name]?.order ?? "none"];
+          const next = {
+            ...previous,
+            [name]: { type: header.dataset.sort || "text", order },
+          };
+          if (order === "none") delete next[name];
+          return next;
+        });
+      };
+      const keyboard = (event: KeyboardEvent) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          activate();
         }
-        return sorted;
+      };
+      control.addEventListener("click", activate);
+      control.addEventListener("keydown", keyboard);
+      bindings.set(header, () => {
+        control.removeEventListener("click", activate);
+        control.removeEventListener("keydown", keyboard);
       });
-    };
-
-    header.addEventListener("click", () => {
-      const order =
-        orders[header.getAttribute("data-order") ?? "none"] ?? "none";
-      sort(order);
-    });
-  });
+    }
+    synchronize();
+  }
+  let unsubscribe = sortOrder.subscribe(synchronize);
+  scan();
+  const observer = new MutationObserver(scan);
+  observer.observe(head, { childList: true, subtree: true });
+  return {
+    update(next: Writable<SortType>) {
+      unsubscribe();
+      sortOrder = next;
+      unsubscribe = sortOrder.subscribe(synchronize);
+      scan();
+    },
+    destroy() {
+      unsubscribe();
+      observer.disconnect();
+      for (const cleanup of bindings.values()) cleanup();
+      bindings.clear();
+    },
+  };
 }

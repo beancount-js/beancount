@@ -193,7 +193,7 @@
       {data}
       {model}
     >
-      <svelte:fragment slot="header" let:column>
+      <svelte:fragment slot="header-actions" let:column>
         {#if column.id == "date" && $data.length}
           {#if !$toggled.size}
             <button
@@ -222,9 +222,6 @@
               <FoldVertical />
             </button>
           {/if}
-          {column.name}
-        {:else}
-          {column.name}
         {/if}
       </svelte:fragment>
       <div

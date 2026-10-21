@@ -30,3 +30,11 @@ export { default as RulesSettings } from "./domain/components/RulesSettings.svel
 
 export { default as AiDock } from "./domain/components/AiDock.svelte";
 export { default as AiUnifiedReviewDiff } from "./domain/components/AiUnifiedReviewDiff.svelte";
+export { default as QueryResultsTable } from "./components/tables/QueryResultsTable.svelte";
+export type {
+  QueryResultCell,
+  QueryResultColumn,
+  QueryResultRow,
+  QueryResultsPagination,
+  QueryResultsSortDirection,
+} from "./components/tables/QueryResultsTable.svelte";

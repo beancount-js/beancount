@@ -45,6 +45,7 @@ export default defineConfig({
       "@lapismd/design-core/shadcn/skeleton",
       "@lapismd/design-core/shadcn/switch",
       "@lapismd/design-core/shadcn/tabs",
+      "@lapismd/design-core/shadcn/table",
       "@lapismd/design-core/shadcn/textarea",
       "@lapismd/design-core/shadcn/toggle-group",
       "@lapismd/design-core/shadcn/tooltip",
