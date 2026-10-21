@@ -38,6 +38,28 @@ body,
 #storybook-root {
   min-width: 0;
 }
+/* Copied utility state classes cannot override Design Core's semantic item
+   rules. Keep application selection treatments explicit, including portals. */
+[data-beancount-toggle]
+  [data-ui-component="toggle-group"][data-ui-part="toggle-group-item"][data-state="on"] {
+  background-color: color-mix(in srgb, var(--primary) 16%, var(--background));
+  color: var(--foreground);
+}
+[data-beancount-toggle="segmented"]
+  [data-ui-component="toggle-group"][data-ui-part="toggle-group-item"][data-state="on"] {
+  background-color: var(--background);
+}
+[data-beancount-toggle="segmented"]
+  [data-ui-component="toggle-group"][data-ui-part="toggle-group-item"][data-state="on"]:not(
+    :focus-visible
+  ) {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+[data-beancount-toggle]
+  [data-ui-component="toggle-group"][data-ui-part="toggle-group-item"]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
 html.dark {
   color-scheme: dark;
 }

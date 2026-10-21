@@ -336,20 +336,22 @@
   <div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
     <ToggleGroup.Root
       type="single"
+      spacing={1}
       bind:value={toggleValue}
       aria-label="Activity timeframe"
+      data-beancount-toggle="segmented"
       class="!gap-0 self-start rounded-lg bg-muted p-1"
       data-activity-timeframe-toggle
       onValueChange={setTimeframe}
     >
       <ToggleGroup.Item
         value="transactions"
-        class="!h-7 !min-w-0 !px-6 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+        class="!h-7 !min-w-0 !px-6 text-muted-foreground hover:bg-accent"
         >Transactions</ToggleGroup.Item
       >
       <ToggleGroup.Item
         value="upcoming"
-        class="!h-7 !min-w-0 !px-6 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+        class="!h-7 !min-w-0 !px-6 text-muted-foreground hover:bg-accent"
         >Upcoming</ToggleGroup.Item
       >
     </ToggleGroup.Root>

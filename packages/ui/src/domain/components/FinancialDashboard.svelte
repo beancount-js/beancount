@@ -132,24 +132,26 @@
         {/if}
         <ToggleGroup.Root
           type="single"
+          spacing={1}
           aria-label="Valuation method"
+          data-beancount-toggle="segmented"
           value={$conversion}
           onValueChange={updateConversion}
           class="!gap-0 rounded-lg border border-border bg-muted/65 p-1"
         >
           <ToggleGroup.Item
             value="AT_COST"
-            class="!h-6 !min-w-0 !px-2.5 text-xs text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            class="!h-6 !min-w-0 !px-2.5 text-xs text-muted-foreground hover:bg-accent"
             >At Cost</ToggleGroup.Item
           >
           <ToggleGroup.Item
             value="AT_VALUE"
-            class="!h-6 !min-w-0 !px-2.5 text-xs text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            class="!h-6 !min-w-0 !px-2.5 text-xs text-muted-foreground hover:bg-accent"
             >At Market Value</ToggleGroup.Item
           >
           <ToggleGroup.Item
             value="UNITS"
-            class="!h-6 !min-w-0 !px-2.5 text-xs text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            class="!h-6 !min-w-0 !px-2.5 text-xs text-muted-foreground hover:bg-accent"
             >Units</ToggleGroup.Item
           >
         </ToggleGroup.Root>

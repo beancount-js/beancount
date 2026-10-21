@@ -639,6 +639,8 @@
           <ToggleGroup.Root
             type="single"
             variant="outline"
+            aria-label="Rule application target"
+            data-beancount-toggle="tinted"
             class="grid w-full grid-cols-3"
             bind:value={applyTarget}
             disabled={applyBusy}

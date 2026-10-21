@@ -132,6 +132,7 @@
 <div class="mx-4 flex flex-col py-2">
   <ToggleGroup.Root
     type="multiple"
+    data-beancount-toggle="tinted"
     value={values()}
     size="sm"
     onValueChange={handlePropChange}

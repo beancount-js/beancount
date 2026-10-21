@@ -1365,15 +1365,17 @@
         </div>
         <ToggleGroup.Root
           type="single"
+          spacing={1}
           value={reviewFilter}
           aria-label="Review content filter"
+          data-beancount-toggle="segmented"
           class="grid w-full grid-cols-3 !gap-0 rounded-lg bg-muted p-1 sm:flex sm:w-auto sm:self-start"
           data-ingestion-review-filter
           onValueChange={setReviewFilter}
         >
           <ToggleGroup.Item
             value="pending"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:!px-3"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent sm:!px-3"
           >
             Review
             <span
@@ -1384,7 +1386,7 @@
           </ToggleGroup.Item>
           <ToggleGroup.Item
             value="accepted"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:!px-3"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent sm:!px-3"
           >
             Ready
             <span
@@ -1395,7 +1397,7 @@
           </ToggleGroup.Item>
           <ToggleGroup.Item
             value="reconciliation"
-            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:!px-3"
+            class="!inline-flex !h-7 !min-w-0 items-center gap-1.5 !px-2 text-muted-foreground hover:bg-accent sm:!px-3"
           >
             Reconcile
             <span

@@ -31,6 +31,7 @@
 {#if active}
   <ToggleGroup.Root
     variant="outline"
+    data-beancount-toggle="tinted"
     value={$active || ""}
     type="single"
     onValueChange={handleChange}
@@ -50,6 +51,7 @@
 {:else if toggled}
   <ToggleGroup.Root
     variant="outline"
+    data-beancount-toggle="tinted"
     value={selected}
     type="multiple"
     onValueChange={handleChange}
