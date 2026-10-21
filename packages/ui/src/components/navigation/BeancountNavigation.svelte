@@ -222,10 +222,11 @@
     gap: 0.5rem;
     font-size: 0.75rem;
   }
-  .beancount-navigation
-    :global([data-ledger-tag-node] > div > button[aria-expanded]) {
-    width: 2.25rem;
-    height: 2.25rem;
+  /* Match one tree step so parent hashes align with their child leaves. */
+  .beancount-navigation :global([data-tag-disclosure]) {
+    width: 0.875rem;
+    min-width: 0;
+    height: 2rem;
     padding: 0;
     flex: none;
   }

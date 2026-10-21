@@ -1039,16 +1039,14 @@
   {@const expanded =
     node.children.length > 0 && isTagOpen(node.tag, tagOpenNodes)}
   <div class="min-w-0" data-ledger-tag-node={node.tag}>
-    <div
-      class="relative flex min-w-0 items-center gap-1"
-      style={tagRowStyle(depth)}
-    >
+    <div class="relative flex min-w-0 items-center" style={tagRowStyle(depth)}>
       {@render IndentGuides({ depth })}
       {#if node.children.length > 0}
         <Button
           type="button"
           variant="ghost"
           size="icon"
+          data-tag-disclosure
           class="shrink-0 text-muted-foreground hover:bg-background hover:text-sidebar-foreground"
           aria-label={expanded
             ? `Collapse ${node.name}`

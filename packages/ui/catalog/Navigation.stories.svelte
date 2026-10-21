@@ -88,8 +88,8 @@
       canvas.getByRole("textbox", { name: "Search tags" }),
       "household",
     );
-    // Adapted from the historical tree: a 14px depth step, a 36px
-    // parent disclosure and 4px gap. Leaf labels keep their original offset.
+    // The disclosure occupies one 14px tree step. Compare rendered hashes,
+    // rather than preserving the reference's oversized parent control.
     const tagRoot = canvasElement.querySelector<HTMLElement>(
       '[data-ledger-tag-node="household"]',
     )!;
@@ -101,7 +101,7 @@
       Math.abs(
         tagRow.getBoundingClientRect().left -
           tagRoot.getBoundingClientRect().left -
-          44,
+          18,
       ),
     ).toBeLessThanOrEqual(1);
     expect(
@@ -112,6 +112,26 @@
       ),
     ).toBeLessThanOrEqual(1);
     expect(tagRow.querySelector("svg")!.getBoundingClientRect().width).toBe(16);
+    for (const child of tagRoot.querySelectorAll<HTMLElement>(
+      "[data-ledger-tag-children] [data-ledger-tag-row]",
+    )) {
+      expect(
+        Math.abs(
+          tagRow.querySelector("svg")!.getBoundingClientRect().left -
+            child.querySelector("svg")!.getBoundingClientRect().left,
+        ),
+      ).toBeLessThanOrEqual(1);
+    }
+    const disclosure = canvas.getByRole("button", {
+      name: "Collapse household",
+    });
+    disclosure.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(childRow).not.toBeInTheDocument();
+    await userEvent.keyboard("{Enter}");
+    await expect(
+      canvasElement.querySelector('[data-ledger-tag-row="household/food"]'),
+    ).toBeVisible();
     const banner = canvasElement.querySelector<HTMLElement>(
       "[data-project-banner]",
     )!;
