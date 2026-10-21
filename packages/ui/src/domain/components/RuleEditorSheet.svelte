@@ -226,7 +226,8 @@
 <Sheet.Root bind:open>
   <Sheet.Content
     side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
+    showCloseButton={false}
+    data-beancount-form-sheet
     data-rule-editor-sheet
     onOpenAutoFocus={(event) => {
       event.preventDefault();

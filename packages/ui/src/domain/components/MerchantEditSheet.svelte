@@ -292,7 +292,8 @@
 <Sheet.Root {open} onOpenChange={handleOpenChange}>
   <Sheet.Content
     side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
+    showCloseButton={false}
+    data-beancount-form-sheet
     data-merchant-edit-sheet
     onOpenAutoFocus={(event) => {
       event.preventDefault();

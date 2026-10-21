@@ -230,7 +230,8 @@
 <Sheet.Root {open} onOpenChange={handleOpenChange}>
   <Sheet.Content
     side="right"
-    class="flex w-full flex-col gap-0 p-0 sm:max-w-2xl [&>button.absolute]:hidden"
+    showCloseButton={false}
+    data-beancount-form-sheet
     data-account-bulk-action-sheet
     onOpenAutoFocus={(event) => {
       event.preventDefault();
@@ -439,8 +440,8 @@
   }
 
   :global(.account-bulk-sheet-title),
-  .account-bulk-form :global(.beancount-form-section-title-toggle),
-  .account-bulk-form :global(.beancount-form-section-title-row h3) {
+  .account-bulk-form :global(.cv-form-section-title-toggle),
+  .account-bulk-form :global(.cv-form-section-title-row h3) {
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.05em;
