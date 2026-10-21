@@ -3,6 +3,7 @@
   import { expect, within, userEvent, waitFor } from "storybook/test";
   import BeancountApplication from "../src/components/application/BeancountApplication.svelte";
   import ApplicationHarness from "./ApplicationHarness.svelte";
+  import { expectHeaderActionsRight } from "./header-assertions";
   const { Story } = defineMeta({
     title: "Beancount/Editing and discovery",
     component: BeancountApplication,
@@ -34,6 +35,12 @@
     const editor = await canvas.findByRole("textbox", {
       name: "Ledger source",
     });
+    await expectHeaderActionsRight(canvasElement);
+    expect(
+      canvas
+        .getByRole("toolbar", { name: "Editor commands" })
+        .closest("[data-page-toolbar-leading]"),
+    ).not.toBeNull();
     await userEvent.click(editor);
     const modifier = /Mac/.test(navigator.platform) ? "Meta" : "Control";
     await userEvent.keyboard(`{${modifier}>}a{/${modifier}}`);

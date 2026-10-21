@@ -3,6 +3,7 @@
   import { expect, within, userEvent, waitFor } from "storybook/test";
   import BeancountApplication from "../src/components/application/BeancountApplication.svelte";
   import ApplicationHarness from "./ApplicationHarness.svelte";
+  import { expectHeaderActionsRight } from "./header-assertions";
   const { Story } = defineMeta({
     title: "Beancount/Ingestion and settings",
     component: BeancountApplication,
@@ -11,6 +12,7 @@
   async function ready(canvasElement: HTMLElement, name: string) {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("region", { name })).toBeVisible();
+    await expectHeaderActionsRight(canvasElement);
   }
 </script>
 

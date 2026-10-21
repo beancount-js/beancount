@@ -27,6 +27,7 @@
     projectName = "Beancount Studio",
     onOpenSettings,
     toolbar,
+    toolbarLeading,
   }: {
     controller: AppShellController;
     displayMode?: AppShellDisplayMode;
@@ -41,6 +42,7 @@
     projectName?: string;
     onOpenSettings?: () => void;
     toolbar?: Snippet;
+    toolbarLeading?: Snippet;
   } = $props();
   const navigationOpen = $derived(
     controller.mobile.resolvedMode === "mobile"
@@ -157,7 +159,19 @@
       </AppShell.Sidebar>
       <AppShell.Main
         ><AppShell.Toolbar label="Page toolbar"
-          ><strong>{title}</strong>{@render toolbar?.()}</AppShell.Toolbar
+          ><div
+            class="beancount-shell__toolbar-leading"
+            data-page-toolbar-leading
+          >
+            <strong class="beancount-shell__page-title">{title}</strong>
+            {@render toolbarLeading?.()}
+          </div>
+          <div
+            class="beancount-shell__toolbar-actions"
+            data-page-toolbar-actions
+          >
+            {@render toolbar?.()}
+          </div></AppShell.Toolbar
         ><AppShell.Body layout="regions"
           ><AppShell.Body.Content class="beancount-shell__content"
             >{@render content?.()}</AppShell.Body.Content
@@ -233,6 +247,28 @@
   }
   :global(.beancount-shell__surface [data-ui-part="toolbar"]) {
     padding-inline: 1rem;
+    gap: 0.5rem;
+  }
+  .beancount-shell__toolbar-leading {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .beancount-shell__page-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .beancount-shell__toolbar-actions {
+    display: flex;
+    flex: none;
+    min-width: 0;
+    align-items: center;
+    gap: 0.5rem;
+    margin-inline-start: auto;
   }
   :global(
       .beancount-shell__surface

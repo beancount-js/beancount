@@ -153,9 +153,10 @@
             shell.mobile.showMain();
           }}
         />{/snippet}
-      {#snippet toolbar()}<IngestionHeaderActions
+      {#snippet toolbarLeading()}<IngestionHeaderActions
           region="leading"
-        /><IngestionHeaderActions />{/snippet}
+        />{/snippet}
+      {#snippet toolbar()}<IngestionHeaderActions />{/snippet}
       {#snippet content()}
         {#if controller.state.error}<div role="alert" class="p-4">
             {controller.state.error}<Button
