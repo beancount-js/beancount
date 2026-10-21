@@ -799,6 +799,12 @@
       "commit": "4c5afac5e00e",
       "source": "packages/fava-beta/src/components/QueryTable.svelte",
       "target": "src/domain/components/QueryTable.svelte"
+    },
+    {
+      "sourceCommit": "bbaff0cb13bb",
+      "source": "packages/ui/src/components/navigation/AccountNavigationLink.svelte",
+      "target": "src/components/navigation/AccountNavigationLink.svelte",
+      "notes": "Reuses the existing UI forms AccountAvatar. Adds controller-local metadata adapters from Fava at 498bd075; pinned Design Core 0.3.1 has no avatar export."
     }
   ]
 }

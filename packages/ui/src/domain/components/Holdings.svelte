@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { buttonVariants } from "@lapismd/design-core/shadcn/button";
   import * as Tabs from "@lapismd/design-core/shadcn/tabs";
   import * as ScrollArea from "@lapismd/design-core/shadcn/scroll-area";
   import { urlFor } from "../helpers";
@@ -92,7 +91,9 @@
     {#each queries as query}
       <Tabs.Content value={query.id}>
         <a
-          class={buttonVariants({ variant: "outline", size: "sm" })}
+          data-ui-component="button"
+          data-variant="outline"
+          data-size="sm"
           href={urlFor("/query", { qs: query.query.trim() })}>Query</a
         >
         {#if value === query.id}

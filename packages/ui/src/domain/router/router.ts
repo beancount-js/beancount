@@ -11,7 +11,7 @@ export function createControllerNavigation(
   const router = {
     activeRoute,
     push: actions.navigate,
-    updateState: actions.navigate,
+    updateState: (path: string) => actions.navigate(path, { replace: true }),
     set: actions.navigate,
   };
   return {
@@ -34,7 +34,9 @@ export function createControllerNavigation(
           if (value) qs.set(key, value);
           else qs.delete(key);
         }
-        actions.navigate(current.path + (qs.size ? "?" + qs : ""));
+        actions.navigate(current.path + (qs.size ? "?" + qs : ""), {
+          replace: true,
+        });
       },
     },
   };

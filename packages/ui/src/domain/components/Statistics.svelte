@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { buttonVariants } from "@lapismd/design-core/shadcn/button";
   import * as Tabs from "@lapismd/design-core/shadcn/tabs";
   import { urlFor } from "../helpers";
   import QueryTable from "./QueryTable.svelte";
@@ -62,7 +61,9 @@
       <Tabs.Content value={query.id}>
         <div class="flex justify-end">
           <a
-            class={buttonVariants({ variant: "outline", size: "sm" })}
+            data-ui-component="button"
+            data-variant="outline"
+            data-size="sm"
             href={urlFor("/query", { qs: query.query.trim() })}>Query</a
           >
         </div>

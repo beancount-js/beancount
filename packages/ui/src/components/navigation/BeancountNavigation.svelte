@@ -7,6 +7,7 @@
   } from "@lucide/svelte";
   import type { BeancountController, SidebarMode } from "../../controller";
   import { Button } from "@lapismd/design-core/shadcn/button";
+  import * as ToggleGroup from "@lapismd/design-core/shadcn/toggle-group";
   import { Input } from "@lapismd/design-core/shadcn/input";
   import { FormField } from "../forms";
   import BeancountLedgerNavigation from "./BeancountLedgerNavigation.svelte";
@@ -26,24 +27,26 @@
 
 <div class="beancount-navigation flex h-full min-h-0 flex-1 flex-col gap-3 p-2">
   {#if !sidebar.settings}
-    <div
-      class="grid grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/50 p-1"
-      role="group"
+    <ToggleGroup.Root
+      type="single"
+      value={sidebar.mode}
+      onValueChange={(value) => {
+        if (value) actions.setMode(value as SidebarMode);
+      }}
+      spacing={1}
+      size="sm"
+      class="beancount-sidebar-modes"
       aria-label="Sidebar modes"
     >
       {#each modes as mode}
-        <Button
-          variant={sidebar.mode === mode.id ? "secondary" : "ghost"}
-          size="icon-sm"
-          class="w-full"
+        <ToggleGroup.Item
+          value={mode.id}
+          data-sidebar-mode={mode.id}
           aria-label={mode.label}
-          title={mode.label}
-          aria-pressed={sidebar.mode === mode.id}
-          onclick={() => actions.setMode(mode.id as SidebarMode)}
-          ><mode.icon /></Button
+          title={mode.label}><mode.icon /></ToggleGroup.Item
         >
       {/each}
-    </div>
+    </ToggleGroup.Root>
   {/if}
   {#if sidebar.settings || sidebar.mode === "workspace"}
     <BeancountLedgerNavigation {controller} {onNavigate} />
@@ -61,6 +64,7 @@
             ? "secondary"
             : "ghost"}
           class="h-auto w-full justify-start py-2"
+          data-sidebar-project={project.id}
           aria-current={project.id === controller.state.snapshot?.project.id
             ? "page"
             : undefined}
@@ -131,6 +135,55 @@
 </div>
 
 <style>
+  .beancount-navigation :global(.beancount-sidebar-modes) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid var(--sidebar-border, var(--border));
+    border-radius: 0.375rem;
+    background: color-mix(
+      in srgb,
+      var(--sidebar-accent, var(--accent)) 50%,
+      transparent
+    );
+  }
+  .beancount-navigation :global([data-sidebar-mode]) {
+    width: 100%;
+    min-width: 0;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    color: var(--muted-foreground);
+    background: transparent;
+  }
+  .beancount-navigation :global([data-sidebar-mode][data-state="on"]) {
+    border-color: var(--sidebar-border, var(--border));
+    background: var(--background);
+    color: var(--sidebar-accent-foreground, var(--foreground));
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  }
+  .beancount-navigation :global([data-sidebar-project]) {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+  .beancount-navigation :global([data-sidebar-project] > span) {
+    overflow: hidden;
+  }
+  .beancount-navigation :global([data-ledger-file-row]) {
+    height: 2rem;
+    min-height: 0;
+    padding-inline: 0.25rem;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+  }
+
   .beancount-navigation :global([data-ledger-file-panels] button),
   .beancount-navigation :global([data-review-ledger-panels] button),
   .beancount-navigation :global([data-ledger-file-row]),

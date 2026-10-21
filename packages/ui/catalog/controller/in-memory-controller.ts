@@ -3,12 +3,14 @@ import { createBeancountController } from "@beancount-js/ui/controller";
 import { createInMemorySource } from "./in-memory-source";
 import { NOW } from "../fixtures/project";
 import { reviewProject } from "../fixtures/review-project";
+import { previewProject } from "../fixtures/preview-project";
 export type CatalogScenario =
   | "ready"
   | "loading"
   | "empty"
   | "error"
-  | "review";
+  | "review"
+  | "preview";
 export function createInMemoryBeancountController(
   initialRoute = "/dashboard",
   scenario: CatalogScenario = "ready",
@@ -18,7 +20,9 @@ export function createInMemoryBeancountController(
       ? []
       : scenario === "review"
         ? [reviewProject()]
-        : undefined,
+        : scenario === "preview"
+          ? [previewProject()]
+          : undefined,
   );
   let failed = false;
   return createBeancountController({
@@ -43,6 +47,7 @@ export function createInMemoryBeancountController(
       },
     },
     initialRoute,
-    clock: () => DateTime.fromISO(NOW),
+    clock: () =>
+      scenario === "preview" ? DateTime.now() : DateTime.fromISO(NOW),
   });
 }

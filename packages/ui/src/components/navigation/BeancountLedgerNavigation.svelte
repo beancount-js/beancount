@@ -29,6 +29,7 @@
   import type { BeancountController, WorkspaceView } from "../../controller";
   import type { ProjectFile } from "@beancount-js/workspace";
   import { Button } from "@lapismd/design-core/shadcn/button";
+  import * as ToggleGroup from "@lapismd/design-core/shadcn/toggle-group";
   import { Input } from "@lapismd/design-core/shadcn/input";
   import * as ScrollArea from "@lapismd/design-core/shadcn/scroll-area";
   import { cn } from "../../domain/lib/utils";
@@ -291,6 +292,7 @@
               variant="ghost"
               size="icon"
               class="ml-1 size-6 shrink-0"
+              data-settings-disclosure
               aria-label={importSettingsOpen
                 ? "Collapse import navigation"
                 : "Expand import navigation"}
@@ -309,6 +311,7 @@
               variant="ghost"
               size="sm"
               class="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent"
+              data-settings-group-label
               aria-current={isLedgerSettingActive(
                 "/import/editor",
                 activeViewPath,
@@ -372,6 +375,7 @@
                       variant="ghost"
                       size="icon"
                       class="ml-1 size-6 shrink-0"
+                      data-settings-disclosure
                       aria-label={reviewSettingsOpen
                         ? "Collapse review navigation"
                         : "Expand review navigation"}
@@ -390,6 +394,7 @@
                       variant="ghost"
                       size="sm"
                       class="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent"
+                      data-settings-group-label
                       aria-current={isLedgerSettingActive(
                         "/records",
                         activeViewPath,
@@ -526,28 +531,23 @@
       >
     </div>
 
-    <div
-      class="grid grid-cols-3 gap-1 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-1"
+    <ToggleGroup.Root
+      type="single"
+      value={workspaceView}
+      onValueChange={(value) => {
+        if (value) actions.setView(value as WorkspaceView);
+      }}
+      spacing={1}
+      size="sm"
+      class="beancount-workspace-views"
       aria-label="Ledger navigation views"
     >
       {#each [{ id: "ledgers", label: "Ledgers" }, { id: "folders", label: "Folders" }, { id: "tags", label: "Tags" }] as view (view.id)}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          class={cn(
-            "h-7 text-xs",
-            workspaceView === view.id
-              ? "border border-sidebar-border bg-background shadow-sm hover:bg-background"
-              : "hover:bg-background",
-          )}
-          aria-pressed={workspaceView === view.id}
-          onclick={() => actions.setView(view.id as WorkspaceView)}
-        >
+        <ToggleGroup.Item value={view.id} data-workspace-view={view.id}>
           {view.label}
-        </Button>
+        </ToggleGroup.Item>
       {/each}
-    </div>
+    </ToggleGroup.Root>
 
     {#if selectedTags.length}
       <div
@@ -1097,3 +1097,56 @@
     ></span>
   {/each}
 {/snippet}
+
+<style>
+  :global(.beancount-workspace-views) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid var(--sidebar-border, var(--border));
+    border-radius: 0.375rem;
+    background: color-mix(
+      in srgb,
+      var(--sidebar-accent, var(--accent)) 40%,
+      transparent
+    );
+  }
+  :global(.beancount-workspace-views [data-workspace-view]) {
+    height: 1.75rem;
+    width: 100%;
+    min-width: 0;
+    padding: 0 0.25rem;
+    font-size: 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--muted-foreground);
+  }
+  :global(.beancount-workspace-views [data-state="on"]) {
+    border-color: var(--sidebar-border, var(--border));
+    background: var(--background);
+    color: var(--sidebar-accent-foreground, var(--foreground));
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  }
+  :global([data-ledger-settings-sidebar] [data-settings-disclosure]) {
+    width: 1.5rem;
+    height: 1.5rem;
+    min-height: 0;
+    margin-left: 0.25rem;
+    padding: 0;
+    flex: none;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  :global([data-ledger-settings-sidebar] [data-settings-group-label]) {
+    height: 2rem;
+    min-height: 0;
+    padding: 0 0.25rem;
+    gap: 0.5rem;
+    justify-content: flex-start;
+    font-size: 0.75rem;
+  }
+</style>

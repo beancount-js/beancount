@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 const inventory = JSON.parse(readFileSync("CATALOG_INVENTORY.json", "utf8"));
@@ -23,10 +24,37 @@ if (
   throw new Error(
     "Catalog Design Core import inventory no longer matches production source.",
   );
+function referenceFile(path) {
+  return execFileSync(
+    "jj",
+    ["file", "show", "-r", inventory.referenceCommit, path],
+    {
+      cwd: resolve("../.."),
+      encoding: "utf8",
+    },
+  );
+}
+const referencePaths = execFileSync(
+  "jj",
+  ["file", "list", "-r", inventory.referenceCommit],
+  {
+    cwd: resolve("../.."),
+    encoding: "utf8",
+  },
+).split("\n");
 for (const path of inventory.replacedReferenceChrome)
-  if (!existsSync(resolve("../fava", path)))
+  if (
+    !referencePaths.some(
+      (name) =>
+        name === `packages/fava/${path}` ||
+        name.startsWith(`packages/fava/${path}/`),
+    )
+  )
     throw new Error(`Unknown reference chrome: ${path}`);
-const reference = readFileSync("../fava/src/Main.svelte", "utf8");
+for (const { source, target } of inventory.referenceFixtures)
+  if (referenceFile(source) !== readFileSync(target, "utf8"))
+    throw new Error(`Fixture differs from pinned Fava reference: ${target}`);
+const reference = referenceFile("packages/fava/src/Main.svelte");
 const routes = [
   ...reference.matchAll(/\{ path: "([^"]+)", element: (\w+) \}/g),
 ].map((match) => ({ route: match[1], component: match[2] }));
@@ -64,6 +92,12 @@ for (const name of readdirSync("catalog").filter((name) =>
 }
 for (const { storyId } of inventory.routes)
   if (!stories.has(storyId)) throw new Error(`Missing route story: ${storyId}`);
+for (const group of ["navigationStates", "tableFamilies"]) {
+  if (!inventory[group]?.length) throw new Error(`Missing ${group} inventory.`);
+  for (const { storyId } of inventory[group])
+    if (!stories.has(storyId))
+      throw new Error(`Missing ${group} story: ${storyId}`);
+}
 if (!stories.has(inventory.assistant))
   throw new Error("Missing assistant story.");
 if (process.argv.includes("--built")) {
@@ -72,5 +106,5 @@ if (process.argv.includes("--built")) {
     if (!index.entries[id]) throw new Error(`Missing built story: ${id}`);
 }
 console.log(
-  `Catalog coverage passed: ${routes.length} reference routes and ${inventory.sharedImports.length} public Design Core imports.`,
+  `Catalog coverage passed: ${routes.length} reference routes and ${inventory.navigationStates.length} navigation states, ${inventory.tableFamilies.length} table families and ${inventory.sharedImports.length} public Design Core imports.`,
 );

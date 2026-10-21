@@ -175,6 +175,7 @@
         {:else}<div
             role="region"
             class="beancount-route-content"
+            data-settings={controller.state.sidebar.settings}
             aria-label={routeTitle(controller.state.route)}
             use:routerLinks
           >
@@ -229,5 +230,22 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
+  }
+  .beancount-route-content[data-settings="true"] {
+    --cv-search-filter-max-width: 100%;
+  }
+  .beancount-route-content[data-settings="true"]
+    :global(.cv-search-filter-bar__content),
+  .beancount-route-content[data-settings="true"]
+    :global(.cv-search-filter-input),
+  .beancount-route-content[data-settings="true"]
+    :global(.cv-search-filter-bar__search-pill) {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+  .beancount-route-content[data-settings="true"]
+    :global(.cv-search-filter-input) {
+    flex: 1;
   }
 </style>

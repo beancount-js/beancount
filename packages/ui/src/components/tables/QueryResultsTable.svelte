@@ -173,7 +173,7 @@
                 <button
                   type="button"
                   class={cn(
-                    "inline-flex h-10 w-full items-center gap-1.5 px-4 font-sans text-xs font-semibold uppercase tracking-wide outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+                    "inline-flex h-10 w-full items-center gap-1.5 px-4 font-sans text-xs font-semibold tracking-wide outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
                     column.align === "right" && "justify-end",
                   )}
                   data-query-sort={column.id}
@@ -194,7 +194,7 @@
                 </button>
               {:else}
                 <span
-                  class="inline-flex h-10 items-center px-4 font-sans text-xs font-semibold uppercase tracking-wide"
+                  class="inline-flex h-10 items-center px-4 font-sans text-xs font-semibold tracking-wide"
                   >{column.label}</span
                 >
               {/if}
@@ -276,7 +276,9 @@
     >
       <span class="text-sm text-muted-foreground">{pagination.resultLabel}</span
       >
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div
+        class="beancount-query-table__pagination-controls flex flex-col gap-3 sm:flex-row sm:items-center"
+      >
         {#if pagination.pageSize && pagination.pageSizes?.length}
           <div class="flex items-center gap-2">
             <span class="text-sm text-muted-foreground" id={pageSizeLabel}
@@ -323,6 +325,42 @@
 </div>
 
 <style>
+  .beancount-query-table__pagination-controls {
+    flex: none;
+  }
+  .beancount-query-table :global([data-query-pagination]) {
+    font-family: var(--font-sans, sans-serif);
+  }
+  .beancount-query-table :global([data-query-pagination] span) {
+    white-space: nowrap;
+  }
+  .beancount-query-table :global([data-query-page-size]) {
+    flex: none;
+  }
+  .beancount-query-table {
+    container-type: inline-size;
+  }
+  @container (max-width: 40rem) {
+    .beancount-query-table :global([data-query-pagination]),
+    .beancount-query-table__pagination-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .beancount-query-table :global([data-page-pagination]) {
+      width: 100%;
+      justify-content: center;
+    }
+    .beancount-query-table :global([data-page-pagination] button) {
+      width: 2rem;
+      height: 2rem;
+      min-width: 0;
+      padding: 0;
+    }
+    .beancount-query-table
+      :global([data-page-pagination] button > span:not(.sr-only)) {
+      display: none;
+    }
+  }
   .beancount-query-table__frame {
     min-width: 0;
     overflow: hidden;
@@ -340,13 +378,21 @@
     color: var(--muted-foreground);
   }
   .beancount-query-table :global(td) {
-    padding: 0.75rem 1rem;
+    padding: 0.5rem;
     line-height: var(--query-line-height, 20px);
     font-family: var(--font-family-monospaced);
   }
   .beancount-query-table :global(td.text-right),
   .beancount-query-table :global(th.text-right) {
     text-align: right;
+    padding-right: 2rem;
+  }
+  .beancount-query-table :global(th.text-right) {
+    padding: 0;
+  }
+  .beancount-query-table :global([data-query-page-size]) {
+    width: 5rem;
+    height: 2rem;
   }
   .beancount-query-table :global(th.text-right [data-query-sort]) {
     justify-content: flex-end;
@@ -358,7 +404,7 @@
     align-items: center;
     gap: 0.375rem;
     padding-inline: 1rem;
-    text-transform: uppercase;
+    text-transform: none;
     font-size: 0.75rem;
     font-family: var(--font-sans, sans-serif);
     font-weight: 600;

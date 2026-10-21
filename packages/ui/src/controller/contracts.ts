@@ -106,7 +106,7 @@ export interface BeancountControllerActions {
   requestInlineAi(
     request: import("../domain/studio/workspace").InlineAiRequest,
   ): void;
-  navigate(path: string): void;
+  navigate(path: string, options?: { replace?: boolean }): void;
   back(): void;
   forward(): void;
   selectProject(id: string): Promise<void>;

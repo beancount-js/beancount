@@ -3,6 +3,8 @@ import { createInMemorySource } from "../controller/in-memory-source";
 import { runBql } from "@beancount-js/beanquery";
 import { expect, it } from "vitest";
 import { LedgerSource } from "../../src/domain/core/ledger";
+import { previewProject } from "./preview-project";
+import sample from "./reference/fava-sample.beancount?raw";
 import { reviewProject } from "./review-project";
 
 it("loads each shared review ledger without errors and retains pagination data", () => {
@@ -33,5 +35,29 @@ it("keeps the complete review ledger available to reports and query pagination",
   );
   expect(result.error).toBeUndefined();
   expect(result.data.length).toBeGreaterThan(100);
+  controller.dispose();
+});
+
+it("matches the preview workspace paths and loads the selected sample ledger", async () => {
+  const project = previewProject();
+  expect(project.ledgerFiles).toHaveLength(5);
+  expect(project.project.entryFile).toBe(
+    "packages/fava/public/sample.beancount",
+  );
+  expect(
+    project.ledgerFiles.find((file) => file.path === project.project.entryFile)
+      ?.contents,
+  ).toBe(sample);
+  const controller = createBeancountController({
+    source: createInMemorySource([project]),
+  });
+  await controller.initialize();
+  expect(controller.state.activeFile).toBe(project.project.entryFile);
+  expect(controller.state.ledger.transactions.length).toBeGreaterThan(0);
+  // The selected reference sample has these existing validation diagnostics.
+  expect(controller.state.ledger.errors).toHaveLength(30);
+  expect(
+    controller.state.ledger.errors.map((error) => error.message),
+  ).toContain("Duplicate open directive for Assets:Checking:Starling");
   controller.dispose();
 });

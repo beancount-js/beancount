@@ -25,7 +25,7 @@
     type QueryResultRow,
     type QueryResultsSortDirection,
   } from "../../components/tables/QueryResultsTable.svelte";
-  import { urlForAccount } from "../helpers";
+  import AccountLink from "./AccountLink.svelte";
   import { createTableTypography } from "../grid/typography";
 
   // Compatibility with existing report compositions; the recovered paged
@@ -240,10 +240,7 @@
   {#each displayValues(value) as displayValue, index}
     <div class:border-t={Array.isArray(value) && index > 0}>
       {#if columnTypes[column.id] === "account" && displayValue}
-        <a
-          href={urlForAccount(displayValue)}
-          class="hover:text-primary hover:underline">{displayValue}</a
-        >
+        <AccountLink account={displayValue} avatarSize="sm" />
       {:else}
         <span class:whitespace-pre={countLines(displayValue) > 1}>
           {displayValue}
@@ -254,7 +251,7 @@
 {/snippet}
 
 <div
-  class="font-mono text-xs"
+  class="mt-4 font-mono text-xs"
   use:typography.measure
   style={`min-height: ${height}px; padding-bottom: ${padding}px; --query-line-height: ${rowHeight}px`}
 >

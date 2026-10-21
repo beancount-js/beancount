@@ -38,3 +38,5 @@ export type {
   QueryResultsPagination,
   QueryResultsSortDirection,
 } from "./components/tables/QueryResultsTable.svelte";
+
+export { default as AccountNavigationLink } from "./components/navigation/AccountNavigationLink.svelte";

@@ -234,8 +234,26 @@
   :global(.beancount-shell__surface [data-ui-part="toolbar"]) {
     padding-inline: 1rem;
   }
+  :global(
+      .beancount-shell__surface
+        [data-ui-part="toolbar"]
+        [data-ui-component="button"]
+    ) {
+    height: 2rem;
+    min-height: 0;
+    padding-block: 0;
+    padding-inline: 0.625rem;
+  }
+  :global(
+      .beancount-shell__surface
+        [data-ui-part="toolbar"]
+        [data-ui-component="button"][data-size^="icon"]
+    ) {
+    width: 2rem;
+    padding: 0;
+  }
   :global(.beancount-shell__content) {
-    padding: 0.5rem;
+    padding: 0;
   }
   .beancount-shell__stage {
     display: flex;

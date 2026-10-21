@@ -4,6 +4,28 @@
   import BeancountApplication from "../src/components/application/BeancountApplication.svelte";
   import ApplicationHarness from "./ApplicationHarness.svelte";
   import { expectContainedShell } from "./layout-assertions";
+  async function expectSelectedChoice(
+    canvas: HTMLElement,
+    selector: string,
+    value: string,
+  ) {
+    await waitFor(() => {
+      const choices = [...canvas.querySelectorAll<HTMLElement>(selector)];
+      const selected = choices.find(
+        (choice) => choice.getAttribute("data-state") === "on",
+      )!;
+      expect(selected).toHaveAttribute("data-value", value);
+      expect(selected).toHaveAttribute("aria-checked", "true");
+      for (const other of choices.filter((choice) => choice !== selected)) {
+        expect(other).toHaveAttribute("aria-checked", "false");
+        expect(getComputedStyle(selected).backgroundColor).not.toBe(
+          getComputedStyle(other).backgroundColor,
+        );
+      }
+      expect(getComputedStyle(selected).borderTopStyle).toBe("solid");
+      expect(getComputedStyle(selected).boxShadow).not.toBe("none");
+    });
+  }
   const { Story } = defineMeta({
     title: "Beancount/Navigation",
     component: BeancountApplication,
@@ -16,6 +38,21 @@
   play={async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole("heading", { name: "Financial dashboard" });
+    await expectSelectedChoice(
+      canvasElement,
+      "[data-sidebar-mode]",
+      "workspace",
+    );
+    await expectSelectedChoice(
+      canvasElement,
+      "[data-workspace-view]",
+      "ledgers",
+    );
+    const fileRow = canvasElement.querySelector<HTMLElement>(
+      "[data-ledger-file-row]",
+    )!;
+    expect(getComputedStyle(fileRow).paddingLeft).toBe("4px");
+    expect(fileRow.getBoundingClientRect().height).toBe(32);
     await userEvent.type(
       canvas.getByRole("textbox", { name: "Search ledgers" }),
       "nonexistent",
@@ -26,7 +63,12 @@
     await userEvent.clear(
       canvas.getByRole("textbox", { name: "Search ledgers" }),
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Folders" }));
+    await userEvent.click(canvas.getByRole("radio", { name: "Folders" }));
+    await expectSelectedChoice(
+      canvasElement,
+      "[data-workspace-view]",
+      "folders",
+    );
     await userEvent.type(
       canvas.getByRole("textbox", { name: "Search folders" }),
       "archive",
@@ -41,7 +83,7 @@
     await expect(
       canvas.getByRole("button", { name: "Collapse Archive Ledger" }),
     ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Tags" }));
+    await userEvent.click(canvas.getByRole("radio", { name: "Tags" }));
     await userEvent.type(
       canvas.getByRole("textbox", { name: "Search tags" }),
       "household",
@@ -90,11 +132,14 @@
     await userEvent.click(
       canvas.getByRole("button", { name: "Clear tag filters" }),
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Search" }));
+    const searchMode = canvas.getByRole("radio", { name: "Search" });
+    searchMode.focus();
+    await userEvent.keyboard("{Enter}");
+    await expectSelectedChoice(canvasElement, "[data-sidebar-mode]", "search");
     await expect(
       canvas.getByRole("searchbox", { name: "Search ledger" }),
     ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Workspace" }));
+    await userEvent.click(canvas.getByRole("radio", { name: "Workspace" }));
     await expect(
       canvas.getByRole("textbox", { name: "Search tags" }),
     ).toHaveValue("household");
@@ -123,6 +168,27 @@
     await expect(
       settings.getByRole("button", { name: "Accounts" }),
     ).toHaveAttribute("aria-current", "page");
+    const disclosure = settings.getByRole("button", {
+      name: "Collapse import navigation",
+    });
+    const groupLabel = settings.getByRole("button", { name: "Bank Sync" });
+    const d = disclosure.getBoundingClientRect();
+    const g = groupLabel.getBoundingClientRect();
+    expect(d.width).toBe(24);
+    expect(d.height).toBe(24);
+    expect(
+      Math.abs(d.top + d.height / 2 - g.top - g.height / 2),
+    ).toBeLessThanOrEqual(1);
+    await userEvent.click(disclosure);
+    await expect(
+      settings.queryByRole("button", { name: "History" }),
+    ).not.toBeInTheDocument();
+    await expect(
+      settings.getByRole("button", { name: "Accounts" }),
+    ).toHaveAttribute("aria-current", "page");
+    await userEvent.click(
+      settings.getByRole("button", { name: "Expand import navigation" }),
+    );
     await userEvent.click(settings.getByRole("button", { name: "History" }));
     await canvas.findByRole("region", { name: "Import History" });
     await userEvent.click(
@@ -162,7 +228,17 @@
   play={async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole("heading", { name: "Financial dashboard" });
-    await userEvent.click(canvas.getByRole("button", { name: "Projects" }));
+    await userEvent.click(canvas.getByRole("radio", { name: "Projects" }));
+    await expectSelectedChoice(
+      canvasElement,
+      "[data-sidebar-mode]",
+      "projects",
+    );
+    const projectRow = canvasElement.querySelector<HTMLElement>(
+      "[data-sidebar-project]",
+    )!;
+    expect(getComputedStyle(projectRow).paddingLeft).toBe("8px");
+    expect(getComputedStyle(projectRow).justifyContent).toBe("flex-start");
     await userEvent.click(
       canvas.getByRole("button", { name: "Open another project" }),
     );
@@ -218,5 +294,43 @@
   {#snippet template()}<ApplicationHarness
       scenario="review"
       displayMode="desktop"
+    />{/snippet}
+</Story>
+
+<Story
+  name="Settings search and toolbar"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = await canvas.findByRole("searchbox", {
+      name: "Search merchants",
+    });
+    await waitFor(() => {
+      const wrapper = input.closest<HTMLElement>(".cv-search-filter-input")!;
+      const content = wrapper.closest<HTMLElement>(
+        ".cv-search-filter-bar__content",
+      )!;
+      expect(
+        Math.abs(
+          wrapper.getBoundingClientRect().width -
+            content.getBoundingClientRect().width,
+        ),
+      ).toBeLessThanOrEqual(1);
+      expect(wrapper.getBoundingClientRect().width).toBeGreaterThan(300);
+    });
+    const toolbar = canvasElement.querySelector<HTMLElement>(
+      '[data-ui-part="toolbar"]',
+    )!;
+    for (const button of toolbar.querySelectorAll<HTMLElement>(
+      '[data-ui-component="button"]',
+    )) {
+      expect(button.getBoundingClientRect().height).toBe(32);
+    }
+    await expectContainedShell(canvasElement);
+  }}
+>
+  {#snippet template()}<ApplicationHarness
+      scenario="review"
+      displayMode="desktop"
+      initialRoute="/import/manage-merchants"
     />{/snippet}
 </Story>

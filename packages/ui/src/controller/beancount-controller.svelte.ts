@@ -279,7 +279,7 @@ export function createBeancountController(
       appendLedgerSearchParams(params, search);
       actions.navigate(`?${params}`);
     },
-    navigate(path) {
+    navigate(path, options) {
       if (disposed) return;
       const next = parseRoute(
         path.startsWith("?") ? history[index]!.route.path + path : path,
@@ -289,7 +289,14 @@ export function createBeancountController(
         activeFile = file;
         apply(snapshot);
       }
-      remember(currentEntry(next));
+      const entry = currentEntry(next);
+      if (options?.replace) {
+        if (JSON.stringify(entry) === JSON.stringify(history[index])) return;
+        history = history.map((previous, i) =>
+          i === index ? entry : previous,
+        );
+        syncRoute();
+      } else remember(entry);
     },
     back() {
       restore(index - 1);

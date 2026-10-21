@@ -6,7 +6,7 @@
   import { DateTime } from "luxon";
   import { useContext } from "../context";
   import { useCtx } from "../stores/format";
-  import { urlForAccount } from "../helpers";
+  import AccountLink from "./AccountLink.svelte";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
   import type { MerchantReviewCluster } from "@beancount-js/server";
@@ -595,13 +595,12 @@
                         : undefined}
                     >
                       {#if linkAccounts}
-                        <a
-                          class="truncate text-left text-xs text-muted-foreground hover:text-primary hover:underline"
-                          href={urlForAccount(posting.account)}
+                        <AccountLink
+                          account={posting.account}
+                          avatarSize="sm"
                           onclick={stopRowClick}
                           onkeydown={stopRowKeydown}
-                          title={posting.account}>{posting.account}</a
-                        >
+                        />
                       {:else}
                         <span
                           class="truncate text-left text-xs text-muted-foreground"

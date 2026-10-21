@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { urlForAccount } from "../../helpers";
+  import AccountLink from "../AccountLink.svelte";
   import { leaf } from "../../lib/accounts";
   import type { AccountTreeNode } from "../../lib/models";
   import { getTreeTableContext } from "./helpers";
@@ -90,9 +90,7 @@
       {/if}
     </button>
   {/if}
-  <a href={urlForAccount(account)} class="account">
-    {leaf(account)}
-  </a>
+  <span class="account"><AccountLink {account} label={leaf(account)} /></span>
 </span>
 
 <style>
@@ -102,7 +100,7 @@
     color: var(--treetable-expander);
   }
 
-  a {
+  .account {
     margin-left: 1.7em;
   }
 

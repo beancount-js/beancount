@@ -1,5 +1,5 @@
 {
-  "referenceCommit": "215bb59f31d4658410c2fd2b0122022a56dff5aa",
+  "referenceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
   "routes": [
     {
       "route": "/",
@@ -163,5 +163,96 @@
     "src/components/Nav.svelte",
     "src/lib/components/ui"
   ],
-  "assistant": "beancount-assistant--keep-proposed-change"
+  "assistant": "beancount-assistant--keep-proposed-change",
+  "navigationStates": [
+    {
+      "state": "Modes, selected tabs, folders, tags and ledger expansion",
+      "storyId": "beancount-navigation--modes-and-trees"
+    },
+    {
+      "state": "Settings entry, disclosure, return and account picker",
+      "storyId": "beancount-navigation--settings-return-and-account-picker"
+    },
+    {
+      "state": "Project opening, cancellation, failure and history",
+      "storyId": "beancount-navigation--project-opening"
+    },
+    {
+      "state": "Settings search width and toolbar geometry",
+      "storyId": "beancount-navigation--settings-search-and-toolbar"
+    },
+    {
+      "state": "Independent controller state",
+      "storyId": "beancount-application-states--project-isolation"
+    },
+    {
+      "state": "Matching preview workspace and sample selection",
+      "storyId": "beancount-review--matching-preview"
+    },
+    {
+      "state": "Account avatars, custom appearance and merchant logo fallback",
+      "storyId": "beancount-accounts--account-avatars"
+    }
+  ],
+  "tableFamilies": [
+    {
+      "family": "Statements and dashboard trees",
+      "storyId": "beancount-tables--statement-trees"
+    },
+    {
+      "family": "Interval tables and sticky columns",
+      "storyId": "beancount-tables--interval-trees"
+    },
+    {
+      "family": "Query sorting and pagination",
+      "storyId": "beancount-tables--query-results"
+    },
+    {
+      "family": "Legacy virtualized account grid",
+      "storyId": "beancount-tables--legacy-all-accounts"
+    },
+    {
+      "family": "Dark mobile query and assistant containment",
+      "storyId": "beancount-tables--mobile-query-results"
+    },
+    {
+      "family": "Multiline cells and page-size selection",
+      "storyId": "beancount-tables--multiline-query-cells"
+    },
+    {
+      "family": "Empty and error result states",
+      "storyId": "beancount-tables--empty-query-and-error"
+    },
+    {
+      "family": "Journal and account activity paging",
+      "storyId": "beancount-tables--journal-and-account-activity"
+    },
+    {
+      "family": "Holdings and Statistics shared renderer",
+      "storyId": "beancount-tables--holdings-and-statistics"
+    }
+  ],
+  "adaptedSourceCommit": "215bb59f31d4658410c2fd2b0122022a56dff5aa",
+  "referenceFixtures": [
+    {
+      "source": "packages/fava/e2e/fixtures/minimal.beancount",
+      "target": "catalog/fixtures/reference/minimal.beancount"
+    },
+    {
+      "source": "packages/fava/public/sample.beancount",
+      "target": "catalog/fixtures/reference/fava-sample.beancount"
+    },
+    {
+      "source": "packages/fava/src/parity/fixtures/off-by-one.beancount",
+      "target": "catalog/fixtures/reference/off-by-one.beancount"
+    },
+    {
+      "source": "sample-budgets.beancount",
+      "target": "catalog/fixtures/reference/sample-budgets.beancount"
+    },
+    {
+      "source": "sample.beancount",
+      "target": "catalog/fixtures/reference/sample.beancount"
+    }
+  ]
 }

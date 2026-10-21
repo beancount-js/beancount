@@ -48,3 +48,31 @@
       displayMode="desktop"
     />{/snippet}
 </Story>
+
+<Story
+  name="Matching preview"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("heading", { name: "Financial dashboard" });
+    await expect(
+      canvas.getByText("beancount-js-studio-query-table-498bd075", {
+        selector: "[data-project-name]",
+      }),
+    ).toBeVisible();
+    expect(
+      canvasElement.querySelectorAll("[data-ledger-file-row]"),
+    ).toHaveLength(5);
+    await userEvent.click(
+      canvas.getByRole("button", { name: /^Dashboard period:/ }),
+    );
+    await userEvent.click(
+      await within(document.body).findByRole("option", { name: "All time" }),
+    );
+    await expectContainedShell(canvasElement);
+  }}
+>
+  {#snippet template()}<ApplicationHarness
+      scenario="preview"
+      displayMode="desktop"
+    />{/snippet}
+</Story>

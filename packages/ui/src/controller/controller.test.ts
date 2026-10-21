@@ -250,3 +250,38 @@ it("advertises unsupported project opening and aborts opening on disposal", asyn
   await pending;
   expect(signal?.aborted).toBe(true);
 });
+
+it("replaces query initialization state without trapping Back on the query route", async () => {
+  const c = createBeancountController({ source: createInMemorySource() });
+  await c.initialize();
+  c.actions.navigate("/statistics");
+  c.actions.navigate("/query?qs=SELECT%20account");
+  c.navigation.history.updateState({
+    params: { qs: "SELECT account", selected: "query-hash" },
+  });
+  c.actions.back();
+  expect(c.state.route.path).toBe("/statistics");
+  c.actions.forward();
+  expect(c.state.route.path).toBe("/query");
+  expect(c.state.route.query).toMatchObject({
+    qs: "SELECT account",
+    selected: "query-hash",
+  });
+  expect(c.state.activeFile).toBe("main.beancount");
+  expect(c.state.snapshot?.project.id).toBe("example");
+  c.dispose();
+});
+
+it("does not notify routes again when replacement state is unchanged", async () => {
+  const c = createBeancountController({ source: createInMemorySource() });
+  await c.initialize();
+  c.actions.navigate("/import/manage-merchants");
+  let notifications = 0;
+  const unsubscribe = c.navigation.activeRoute.subscribe(() => notifications++);
+  c.navigation.router.updateState("?merchantId=cafe");
+  const updated = notifications;
+  c.navigation.router.updateState("?merchantId=cafe");
+  expect(notifications).toBe(updated);
+  unsubscribe();
+  c.dispose();
+});
