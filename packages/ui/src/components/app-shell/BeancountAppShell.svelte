@@ -1,11 +1,5 @@
 <script lang="ts">
-  import {
-    ChevronLeft,
-    ChevronRight,
-    Settings,
-    PanelLeft,
-    PanelRight,
-  } from "@lucide/svelte";
+  import { ChevronLeft, ChevronRight, Settings } from "@lucide/svelte";
   import {
     AppShell,
     type AppShellController,
@@ -44,34 +38,6 @@
     toolbar?: Snippet;
     toolbarLeading?: Snippet;
   } = $props();
-  const navigationOpen = $derived(
-    controller.mobile.resolvedMode === "mobile"
-      ? controller.mobile.stage === "left"
-      : !controller.left.collapsed,
-  );
-  const assistantOpen = $derived(
-    controller.mobile.resolvedMode === "mobile"
-      ? controller.mobile.stage === "right"
-      : !controller.right.closed,
-  );
-  function toggleNavigation() {
-    if (controller.mobile.resolvedMode === "mobile") {
-      if (controller.mobile.stage === "left") controller.mobile.showMain();
-      else controller.mobile.show("left");
-    } else controller.left.toggle();
-  }
-  async function toggleAssistant() {
-    if (controller.mobile.resolvedMode === "mobile") {
-      if (controller.mobile.stage === "right") controller.mobile.showMain();
-      else controller.mobile.show("right");
-    } else if (!controller.right.closed) controller.right.close();
-    else {
-      controller.right.open();
-      await tick();
-      if (controller.isPanelConstrained("right"))
-        controller.setPanelDesktopPreviewed("right", true);
-    }
-  }
 </script>
 
 <div
@@ -79,15 +45,7 @@
   data-mobile={controller.mobile.resolvedMode === "mobile"}
 >
   <nav aria-label="Application navigation" class="beancount-shell__header">
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      aria-label={navigationOpen
-        ? "Collapse left sidebar"
-        : "Expand left sidebar"}
-      aria-expanded={navigationOpen}
-      onclick={toggleNavigation}><PanelLeft aria-hidden="true" /></Button
-    >
+    <AppShell.Sidebar.Toggle shellController={controller} side="left" />
     <Button
       variant="ghost"
       size="icon-sm"
@@ -102,14 +60,24 @@
       disabled={!canNavigateForward}
       onclick={onForward}><ChevronRight aria-hidden="true" /></Button
     >
-    <span class="beancount-shell__name">Beancount Studio</span>
-    {#if details}<Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Toggle AI panel"
-        aria-expanded={assistantOpen}
-        onclick={toggleAssistant}><PanelRight aria-hidden="true" /></Button
-      >{/if}
+    {#if details}<AppShell.Sidebar.Toggle
+        shellController={controller}
+        side="right"
+        label="Toggle AI panel"
+        class="beancount-shell__assistant-toggle"
+        onclick={async (event) => {
+          const opening =
+            event.currentTarget.getAttribute("aria-expanded") !== "true";
+          // A closed panel's constraints resolve after the shared toggle opens it.
+          await tick();
+          if (
+            opening &&
+            controller.mobile.resolvedMode !== "mobile" &&
+            controller.isPanelConstrained("right")
+          )
+            controller.setPanelDesktopPreviewed("right", true);
+        }}
+      />{/if}
   </nav>
   <div class="beancount-shell__stage">
     <AppShell.Root
@@ -207,7 +175,7 @@
     gap: 0.125rem;
     align-items: center;
     padding: 0.25rem 0.5rem;
-    background: var(--muted);
+    background: var(--sidebar, var(--muted));
   }
   .beancount-project-banner {
     display: flex;
@@ -313,9 +281,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .beancount-shell__name {
-    flex: 1;
-    font-size: 0.875rem;
-    padding-inline: 0.5rem;
+  :global(.beancount-shell__assistant-toggle) {
+    margin-inline-start: auto;
   }
 </style>
