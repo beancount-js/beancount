@@ -805,6 +805,42 @@
       "source": "packages/ui/src/components/navigation/AccountNavigationLink.svelte",
       "target": "src/components/navigation/AccountNavigationLink.svelte",
       "notes": "Reuses the existing UI forms AccountAvatar. Adds controller-local metadata adapters from Fava at 498bd075; pinned Design Core 0.3.1 has no avatar export."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/components/Query.svelte",
+      "target": "src/domain/components/Query.svelte",
+      "notes": "Adapt compact editor actions and saved-query cards. Retain controller-owned history, accessible editor labels and public Design Core primitives."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/components/QueryBox.svelte",
+      "target": "src/domain/components/QueryBox.svelte",
+      "notes": "Adapt compact editor actions and saved-query cards. Retain controller-owned history, accessible editor labels and public Design Core primitives."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/bql/bql.ts",
+      "target": "src/domain/bql/bql.ts",
+      "notes": "Presentation-only syntax highlighting and editor completions; runtime BQL execution stays in @beancount-js/beanquery."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/bql/autocomplete.ts",
+      "target": "src/domain/bql/autocomplete.ts",
+      "notes": "Presentation-only syntax highlighting and editor completions; runtime BQL execution stays in @beancount-js/beanquery."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/bql/parser.ts",
+      "target": "src/domain/bql/parser.ts",
+      "notes": "Presentation-only syntax highlighting and editor completions; runtime BQL execution stays in @beancount-js/beanquery."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/bql/grammar.ts",
+      "target": "src/domain/bql/grammar.ts",
+      "notes": "Presentation-only syntax highlighting and editor completions; runtime BQL execution stays in @beancount-js/beanquery."
     }
   ]
 }

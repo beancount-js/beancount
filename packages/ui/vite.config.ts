@@ -30,6 +30,7 @@ export default defineConfig({
       "@lapismd/design-core/shadcn/badge",
       "@lapismd/design-core/shadcn/breadcrumb",
       "@lapismd/design-core/shadcn/button",
+      "@lapismd/design-core/shadcn/button-group",
       "@lapismd/design-core/shadcn/collapsible",
       "@lapismd/design-core/shadcn/dialog",
       "@lapismd/design-core/shadcn/dropdown-menu",

@@ -42,14 +42,15 @@ match the running reference.
 
 Related changes reviewed:
 
-| Change                         | Behavior                                                              | Current disposition                                                                                              |
-| ------------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `8da834629543`, `4219725f3888` | Query paging, page size and Holdings catalog surfaces                 | Recovered and covered by browser stories                                                                         |
-| `db2a05912f94`                 | Controlled SavedQueryHistory with reuse, delete and expansion         | Adapted QueryBox retains these core actions; extracting a separate reusable history component remains optional   |
-| `bbaff0cb13bb`, `5da6729c7280` | AccountNavigationLink and interval account appearance                 | Recovered for consistent account avatars/appearance in query, statement, dashboard, interval and activity tables |
-| `ca97b2b00736`                 | Separate folder disclosure from selection and explicit file expansion | File disclosure is already independent and controller-owned; folder rows retain historical expansion semantics   |
-| `ae05fa5ed25d`                 | Reusable PresetQueryView for Holdings and Statistics                  | Potential deduplication; both current routes already use the recovered shared query renderer                     |
-| `eded26e88466`                 | Shared interval account table                                         | Existing interval adaptation is covered for alignment, sticky columns and borders                                |
+| Change                         | Behavior                                                              | Current disposition                                                                                                                                           |
+| ------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `8da834629543`, `4219725f3888` | Query paging, page size and Holdings catalog surfaces                 | Recovered and covered by browser stories                                                                                                                      |
+| `db2a05912f94`                 | Controlled SavedQueryHistory with reuse, delete and expansion         | Adapted QueryBox retains these core actions; extracting a separate reusable history component remains optional                                                |
+| `73237ab3090e`, `d389c9ab660b` | Compact query editor, grouped actions and saved-query cards           | Recovered from the selected reference with syntax highlighting/completions and its formatter version; retains controller-owned history and keyboard execution |
+| `bbaff0cb13bb`, `5da6729c7280` | AccountNavigationLink and interval account appearance                 | Recovered for consistent account avatars/appearance in query, statement, dashboard, interval and activity tables                                              |
+| `ca97b2b00736`                 | Separate folder disclosure from selection and explicit file expansion | File disclosure is already independent and controller-owned; folder rows retain historical expansion semantics                                                |
+| `ae05fa5ed25d`                 | Reusable PresetQueryView for Holdings and Statistics                  | Potential deduplication; both current routes already use the recovered shared query renderer                                                                  |
+| `eded26e88466`                 | Shared interval account table                                         | Existing interval adaptation is covered for alignment, sticky columns and borders                                                                             |
 
 ## Qualification
 
