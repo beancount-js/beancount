@@ -102,43 +102,46 @@
         onclick={toggleAssistant}><PanelRight aria-hidden="true" /></Button
       >{/if}
   </nav>
-  <AppShell.Root
-    {controller}
-    {displayMode}
-    mobileBreakpoint={1024}
-    desktopMinMainWidth={360}
-  >
-    <AppShell.Sidebar
-      side="left"
-      label="Ledger navigation"
-      resizable
-      mobileLabel="Navigation"
-      ><AppShell.Sidebar.Header
-        ><strong>Beancount Studio</strong></AppShell.Sidebar.Header
-      ><AppShell.Sidebar.Body>{@render navigation?.()}</AppShell.Sidebar.Body
-      ></AppShell.Sidebar
+  <div class="beancount-shell__stage">
+    <AppShell.Root
+      class="beancount-shell__surface"
+      {controller}
+      {displayMode}
+      mobileBreakpoint={1024}
+      desktopMinMainWidth={360}
     >
-    <AppShell.Main
-      ><AppShell.Toolbar label="Page toolbar"
-        ><strong>{title}</strong>{@render toolbar?.()}</AppShell.Toolbar
-      ><AppShell.Body layout="regions"
-        ><AppShell.Body.Content>{@render content?.()}</AppShell.Body.Content
-        ></AppShell.Body
-      ></AppShell.Main
-    >
-    {#if details}<AppShell.Sidebar
-        side="right"
-        label="AI assistant"
-        closeable
+      <AppShell.Sidebar
+        side="left"
+        label="Ledger navigation"
         resizable
-        mobileLabel="Assistant"
+        mobileLabel="Navigation"
         ><AppShell.Sidebar.Header
-          ><strong>Assistant</strong><AppShell.Sidebar.Close
-          /></AppShell.Sidebar.Header
-        ><AppShell.Sidebar.Body>{@render details()}</AppShell.Sidebar.Body
+          ><strong>Beancount Studio</strong></AppShell.Sidebar.Header
+        ><AppShell.Sidebar.Body>{@render navigation?.()}</AppShell.Sidebar.Body
         ></AppShell.Sidebar
-      >{/if}
-  </AppShell.Root>
+      >
+      <AppShell.Main
+        ><AppShell.Toolbar label="Page toolbar"
+          ><strong>{title}</strong>{@render toolbar?.()}</AppShell.Toolbar
+        ><AppShell.Body layout="regions"
+          ><AppShell.Body.Content>{@render content?.()}</AppShell.Body.Content
+          ></AppShell.Body
+        ></AppShell.Main
+      >
+      {#if details}<AppShell.Sidebar
+          side="right"
+          label="AI assistant"
+          closeable
+          resizable
+          mobileLabel="Assistant"
+          ><AppShell.Sidebar.Header
+            ><strong>Assistant</strong><AppShell.Sidebar.Close
+            /></AppShell.Sidebar.Header
+          ><AppShell.Sidebar.Body>{@render details()}</AppShell.Sidebar.Body
+          ></AppShell.Sidebar
+        >{/if}
+    </AppShell.Root>
+  </div>
 </div>
 
 <style>
@@ -155,6 +158,17 @@
     align-items: center;
     padding: 0.25rem 0.5rem;
     background: var(--muted);
+  }
+  .beancount-shell__stage {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  :global(.beancount-shell__surface) {
+    --ui-shell-height: 100%;
+    flex: 1;
+    min-height: 0;
   }
   .beancount-shell__name {
     flex: 1;

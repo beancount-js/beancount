@@ -2,12 +2,24 @@ import { DateTime } from "luxon";
 import { createBeancountController } from "@beancount-js/ui/controller";
 import { createInMemorySource } from "./in-memory-source";
 import { NOW } from "../fixtures/project";
-export type CatalogScenario = "ready" | "loading" | "empty" | "error";
+import { reviewProject } from "../fixtures/review-project";
+export type CatalogScenario =
+  | "ready"
+  | "loading"
+  | "empty"
+  | "error"
+  | "review";
 export function createInMemoryBeancountController(
   initialRoute = "/dashboard",
   scenario: CatalogScenario = "ready",
 ) {
-  const source = createInMemorySource(scenario === "empty" ? [] : undefined);
+  const source = createInMemorySource(
+    scenario === "empty"
+      ? []
+      : scenario === "review"
+        ? [reviewProject()]
+        : undefined,
+  );
   let failed = false;
   return createBeancountController({
     source: {

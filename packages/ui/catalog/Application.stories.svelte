@@ -7,6 +7,7 @@
     title: "Beancount/Application",
     component: BeancountApplication,
     parameters: {
+      beancountApplication: true,
       layout: "fullscreen",
       docs: {
         source: {

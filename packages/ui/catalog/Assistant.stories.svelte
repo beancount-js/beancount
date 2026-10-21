@@ -6,6 +6,7 @@
   const { Story } = defineMeta({
     title: "Beancount/Assistant",
     component: BeancountApplication,
+    parameters: { beancountApplication: true },
   });
   async function propose(canvasElement: HTMLElement) {
     const canvas = within(canvasElement);

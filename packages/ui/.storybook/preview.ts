@@ -25,6 +25,12 @@ export default {
     (story, context) => {
       syncCatalogStoryLayout(document, context);
       if (
+        context.parameters.beancountApplication &&
+        context.viewMode === "story"
+      ) {
+        document.body.setAttribute("data-ui-catalog-full-viewport", "");
+      }
+      if (
         context.canvasElement?.parentElement === document.body &&
         !document.getElementById("storybook-root")
       ) {

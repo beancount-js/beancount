@@ -6,6 +6,7 @@
   const { Story } = defineMeta({
     title: "Beancount/Reports",
     component: BeancountApplication,
+    parameters: { beancountApplication: true },
   });
   async function ready(canvasElement: HTMLElement, name: string) {
     const canvas = within(canvasElement);

@@ -6,6 +6,7 @@
   const { Story } = defineMeta({
     title: "Beancount/Editing and discovery",
     component: BeancountApplication,
+    parameters: { beancountApplication: true },
   });
 </script>
 

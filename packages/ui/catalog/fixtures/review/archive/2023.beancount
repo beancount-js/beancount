@@ -1,0 +1,7 @@
+option "title" "Archive Ledger"
+option "operating_currency" "GBP"
+2023-01-01 open Assets:Checking GBP
+2023-01-01 open Equity:Opening GBP
+2023-01-02 * "Archived opening" #archive/2023
+  Assets:Checking 75 GBP
+  Equity:Opening -75 GBP

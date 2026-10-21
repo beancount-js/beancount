@@ -203,10 +203,11 @@
           </div>
         {:else}<div
             role="region"
+            class="beancount-route-content"
             aria-label={routeTitle(controller.state.route)}
             use:routerLinks
           >
-            {#key controller.state.route.path}
+            {#key `${controller.state.route.path}:${controller.state.activeFile}`}
               {#if controller.state.route.path === "/dashboard"}<FinancialDashboard
                 />
               {:else if controller.state.route.path === "/income_statement"}<IncomeStatement
@@ -248,6 +249,16 @@
 </div>
 
 <style>
+  .beancount-route-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
   .beancount-navigation {
     display: grid;
     gap: 0.75rem;
