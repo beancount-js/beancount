@@ -1,5 +1,6 @@
 <script lang="ts">
   import "../codemirror/themes/base.scss";
+  import { getAllContexts } from "svelte";
   import * as Dialog from "@lapismd/design-core/shadcn/dialog";
   import { EditorState } from "@codemirror/state";
   import { Edit, PencilOff } from "@lucide/svelte";
@@ -22,6 +23,7 @@
   import { Text as ParserText } from "@beancount-js/parser";
   import * as ScrollArea from "@lapismd/design-core/shadcn/scroll-area";
   const { ledgerSource } = useContext();
+  const editorContext = getAllContexts();
   import { useStudioWorkspace } from "../studio/workspace";
   import { journalRecordAnchor } from "../lib/journal-record-key";
   const { snapshot, saveFile } = useStudioWorkspace();
@@ -109,7 +111,10 @@
     editor = new EditorView({
       state: EditorState.create({
         doc: directive?.toString() ?? "",
-        extensions: [basicSetup, ledgerSetup(() => $ledgerSource)],
+        extensions: [
+          basicSetup,
+          ledgerSetup(() => $ledgerSource, editorContext),
+        ],
       }),
       parent: contentContainer,
     });

@@ -16,7 +16,7 @@
   } from "@lapismd/design-core/forms";
   import IconColorPicker from "../../components/forms/IconColorPicker.svelte";
   import TagEditor from "../../components/forms/TagEditor.svelte";
-  import { onDestroy } from "svelte";
+  import { getAllContexts, onDestroy } from "svelte";
   import * as Alert from "@lapismd/design-core/shadcn/alert";
   import { Button } from "@lapismd/design-core/shadcn/button";
   import { Input } from "@lapismd/design-core/shadcn/input";
@@ -81,6 +81,7 @@
   }: Props = $props();
 
   const { accounts, currencies, ledgerSource, tags: ledgerTags } = useContext();
+  const editorContext = getAllContexts();
   const { snapshot, saveFile, refreshSnapshot } = useStudioWorkspace();
 
   const sectionTitleClass = "text-xs font-semibold uppercase tracking-wide";
@@ -273,7 +274,7 @@
         doc: source,
         extensions: [
           basicSetup,
-          ledgerSetup(() => $ledgerSource),
+          ledgerSetup(() => $ledgerSource, editorContext),
           EditorView.updateListener.of((update) => {
             if (update.docChanged && !replacing) {
               rawSource = update.state.doc.toString();

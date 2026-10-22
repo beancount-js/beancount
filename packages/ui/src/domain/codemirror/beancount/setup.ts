@@ -72,12 +72,16 @@ export const ledgerFacet: Facet<
   Required<Ledgerconfig>
 > = Facet.define();
 
-export const ledgerSetup = (source: () => LedgerSource): Extension => {
+export const ledgerSetup = (
+  source: () => LedgerSource,
+  context?: Map<unknown, unknown>,
+): Extension => {
   return [
     autocompletion({
       override: [beancountCompletion(source)],
     }),
     comboWidget({
+      context,
       match: (node) => {
         return ["AccountName", "Currency", "Tag", "Link"].includes(node.name);
       },
@@ -107,6 +111,7 @@ export const ledgerSetup = (source: () => LedgerSource): Extension => {
       },
     }),
     comboWidget({
+      context,
       match: (node) =>
         node.name === "String" &&
         node.node.parent?.name === "Transaction" &&

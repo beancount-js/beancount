@@ -30,7 +30,9 @@ class ComboWidget extends WidgetType {
     return (
       other instanceof ComboWidget &&
       this.state.nodeName === other.state.nodeName &&
-      this.state.from === other.state.from
+      this.state.from === other.state.from &&
+      this.state.to === other.state.to &&
+      this.state.account === other.state.account
     );
   }
 
@@ -44,10 +46,13 @@ class ComboWidget extends WidgetType {
     // Zero-width host so the icon does not contribute to CodeMirror line wrapping.
     const span = document.createElement("span");
     span.className = "cm-account-combo-host";
+    span.dataset.nodeName = this.state.nodeName;
     const component = mount(ComboWidgetComponent, {
       target: span,
+      context: this.state.props.context,
       props: {
         value: this.state.account,
+        nodeName: this.state.nodeName,
         items: () => this.state.props.data(this.state),
         onValueChange: (value: string) => {
           if (!value) {
@@ -139,6 +144,8 @@ const pluginSpec: PluginSpec<ComboWidgetView> = {
 };
 
 export interface ComboWidgetProps {
+  /** Preserve the owning editor's ledger and project authority in mounted widgets. */
+  context?: Map<unknown, unknown>;
   match: (node: SyntaxNodeRef, update: ViewUpdate) => boolean;
   data: (props: ComboProps) => Array<{ label: string; value: string }>;
   read?: (data: string) => string;

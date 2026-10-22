@@ -6,7 +6,7 @@
   import { Compartment, EditorState, Prec } from "@codemirror/state";
   import { unfoldAll } from "@codemirror/language";
   import { openSearchPanel } from "@codemirror/search";
-  import { onDestroy, onMount } from "svelte";
+  import { getAllContexts, onDestroy, onMount } from "svelte";
   import { toggleComment } from "@codemirror/commands";
   import { findNext, findPrevious } from "@codemirror/search";
   import { basicSetup, ledgerSetup } from "../codemirror/beancount/setup";
@@ -25,6 +25,7 @@
     router: { activeRoute },
   } = useNavigation();
   const { ledgerSource } = useContext();
+  const editorContext = getAllContexts();
   const {
     snapshot,
     activeFile: workspaceActiveFile,
@@ -68,7 +69,7 @@
             "aria-multiline": "true",
           }),
           basicSetup,
-          ledgerSetup(() => $ledgerSource),
+          ledgerSetup(() => $ledgerSource, editorContext),
           mode.of(editorMode(source.readOnly)),
           EditorView.updateListener.of((update) => {
             if (update.docChanged && !replacingContents) dirty = true;
