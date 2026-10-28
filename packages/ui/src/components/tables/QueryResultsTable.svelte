@@ -1,13 +1,15 @@
 <script lang="ts">
+  import {
+    ArrowDownWideNarrow,
+    ArrowUpDown,
+    ArrowUpNarrowWide,
+    TriangleAlert,
+  } from "@lucide/svelte";
   import type { Snippet } from "svelte";
-  import ArrowDownWideNarrow from "lucide-svelte/icons/arrow-down-wide-narrow";
-  import ArrowUpDown from "lucide-svelte/icons/arrow-up-down";
-  import ArrowUpNarrowWide from "lucide-svelte/icons/arrow-up-narrow-wide";
-  import TriangleAlert from "lucide-svelte/icons/triangle-alert";
-  import { cn } from "../../lib/utils";
-  import PagePagination from "../navigation/PagePagination.svelte";
-  import * as Select from "../shadcn/select";
-  import * as Table from "../shadcn/table";
+  import { cn } from "../../domain/lib/utils";
+  import PagePagination from "../../domain/components/PagePagination.svelte";
+  import * as Select from "@lapismd/design-core/shadcn/select";
+  import * as Table from "@lapismd/design-core/shadcn/table";
 
   export type QueryResultCell =
     | string
@@ -85,6 +87,7 @@
     cell?: Snippet<[QueryResultRow, QueryResultColumn, QueryResultCell]>;
   } = $props();
 
+  const pageSizeLabel = $props.id();
   let sortedColumnId = $state<string>();
   let localSortDirection = $state<QueryResultsSortDirection>("none");
 
@@ -149,23 +152,20 @@
   }
 </script>
 
-<div class="cn-tables-queryresultstable-152-1" data-query-table>
+<div class="beancount-query-table flex min-w-0 flex-col gap-3" data-query-table>
   {@render beforeTable?.()}
-  <div class="cn-tables-queryresultstable-155-1">
-    <Table.Root
-      aria-label={ariaLabel}
-      class="cn-tables-queryresultstable-157-1"
-    >
-      <Table.Header class="cn-tables-queryresultstable-158-1">
-        <Table.Row class="cn-tables-queryresultstable-159-1">
+  <div class="beancount-query-table__frame">
+    <Table.Root aria-label={ariaLabel} class="min-w-max font-mono text-xs">
+      <Table.Header class="bg-muted/65 text-muted-foreground">
+        <Table.Row class="hover:bg-muted/65">
           {#each columns as column (column.id)}
             {@const order = orderFor(column)}
             <Table.Head
               aria-sort={column.sortable ? order : undefined}
               style={column.style}
               class={cn(
-                "cn-tables-queryresultstable-166-1",
-                column.align === "right" && "cn-tables-queryresultstable-167-1",
+                "p-0",
+                column.align === "right" && "text-right",
                 column.class,
               )}
             >
@@ -173,33 +173,28 @@
                 <button
                   type="button"
                   class={cn(
-                    "cn-tables-queryresultstable-175-1",
-                    column.align === "right" &&
-                      "cn-tables-queryresultstable-176-1",
+                    "inline-flex h-10 w-full items-center gap-1.5 px-4 font-sans text-xs font-semibold tracking-wide outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+                    column.align === "right" && "justify-end",
                   )}
+                  data-query-sort={column.id}
                   aria-label={`Sort by ${column.label}`}
                   onclick={() => toggleSort(column)}
                 >
                   <span>{column.label}</span>
                   {#if order === "ascending"}
-                    <ArrowUpNarrowWide
-                      class="cn-tables-queryresultstable-183-1"
-                      aria-hidden="true"
-                    />
+                    <ArrowUpNarrowWide class="size-3.5" aria-hidden="true" />
                   {:else if order === "descending"}
-                    <ArrowDownWideNarrow
-                      class="cn-tables-queryresultstable-185-1"
-                      aria-hidden="true"
-                    />
+                    <ArrowDownWideNarrow class="size-3.5" aria-hidden="true" />
                   {:else}
                     <ArrowUpDown
-                      class="cn-tables-queryresultstable-188-1"
+                      class="size-3.5 opacity-50"
                       aria-hidden="true"
                     />
                   {/if}
                 </button>
               {:else}
-                <span class="cn-tables-queryresultstable-195-1"
+                <span
+                  class="inline-flex h-10 items-center px-4 font-sans text-xs font-semibold tracking-wide"
                   >{column.label}</span
                 >
               {/if}
@@ -214,9 +209,8 @@
               <Table.Cell
                 style={column.style}
                 class={cn(
-                  "cn-tables-queryresultstable-210-1",
-                  column.align === "right" &&
-                    "cn-tables-queryresultstable-211-1",
+                  "px-4 py-3 font-mono",
+                  column.align === "right" && "text-right tabular-nums",
                   column.class,
                 )}
               >
@@ -225,8 +219,8 @@
                 {:else}
                   {#each displayCell(row.values[column.id]) as value, index}
                     <span
-                      class:cn-tables-queryresultstable-220-1={index > 0}
-                      class="cn-tables-queryresultstable-221-1"
+                      class:mt-1={index > 0}
+                      class="block whitespace-pre-wrap"
                     >
                       {value}
                     </span>
@@ -239,7 +233,7 @@
           <Table.Row>
             <Table.Cell
               colspan={Math.max(columns.length, 1)}
-              class="cn-tables-queryresultstable-234-1"
+              class="h-24 text-center font-sans text-sm text-muted-foreground"
             >
               {emptyLabel}
             </Table.Cell>
@@ -248,24 +242,23 @@
       </Table.Body>
       {#if error}
         <Table.Footer
-          class="cn-tables-queryresultstable-243-1"
+          class="border-t border-destructive/45 bg-destructive/10 text-foreground"
           data-query-error-footer
         >
-          <Table.Row class="cn-tables-queryresultstable-246-1">
-            <Table.Cell
-              colspan={Math.max(columns.length, 1)}
-              class="cn-tables-queryresultstable-247-1"
-            >
-              <div class="cn-tables-queryresultstable-248-1" role="alert">
+          <Table.Row class="hover:bg-transparent">
+            <Table.Cell colspan={Math.max(columns.length, 1)} class="px-4 py-3">
+              <div class="flex items-start gap-2" role="alert">
                 <TriangleAlert
-                  class="cn-tables-queryresultstable-250-1"
+                  class="mt-0.5 size-4 shrink-0"
                   aria-hidden="true"
                 />
                 <div>
-                  <p class="cn-tables-queryresultstable-254-1">
+                  <p class="font-sans text-xs font-semibold">
                     Could not run query
                   </p>
-                  <p class="cn-tables-queryresultstable-258-1">
+                  <p
+                    class="mt-1 break-words font-mono text-[11px] leading-snug"
+                  >
                     {error}
                   </p>
                 </div>
@@ -277,16 +270,19 @@
     </Table.Root>
   </div>
   {#if pagination}
-    <div class="cn-tables-queryresultstable-272-1" data-query-pagination>
-      <span class="cn-tables-queryresultstable-275-1"
-        >{pagination.resultLabel}</span
+    <div
+      class="flex flex-col gap-3 rounded-xl border border-border/80 bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      data-query-pagination
+    >
+      <span class="text-sm text-muted-foreground">{pagination.resultLabel}</span
       >
-      <div class="cn-tables-queryresultstable-277-1">
+      <div
+        class="beancount-query-table__pagination-controls flex flex-col gap-3 sm:flex-row sm:items-center"
+      >
         {#if pagination.pageSize && pagination.pageSizes?.length}
-          <div class="cn-tables-queryresultstable-279-1">
-            <span
-              class="cn-tables-queryresultstable-281-1"
-              id="query-results-page-size-label">Rows per page</span
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-muted-foreground" id={pageSizeLabel}
+              >Rows per page</span
             >
             <Select.Root
               type="single"
@@ -294,8 +290,8 @@
               onValueChange={setPageSize}
             >
               <Select.Trigger
-                aria-labelledby="query-results-page-size-label"
-                class="cn-tables-queryresultstable-291-1"
+                aria-label={`Rows per page: ${pagination.pageSize}`}
+                class="h-8 w-20 font-mono text-sm tabular-nums"
                 data-query-page-size
               >
                 {pagination.pageSize}
@@ -327,3 +323,95 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .beancount-query-table__pagination-controls {
+    flex: none;
+  }
+  .beancount-query-table :global([data-query-pagination]) {
+    font-family: var(--font-sans, sans-serif);
+  }
+  .beancount-query-table :global([data-query-pagination] span) {
+    white-space: nowrap;
+  }
+  .beancount-query-table :global([data-query-page-size]) {
+    flex: none;
+  }
+  .beancount-query-table {
+    container-type: inline-size;
+  }
+  @container (max-width: 40rem) {
+    .beancount-query-table :global([data-query-pagination]),
+    .beancount-query-table__pagination-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .beancount-query-table :global([data-page-pagination]) {
+      width: 100%;
+      justify-content: center;
+    }
+    .beancount-query-table :global([data-page-pagination] button) {
+      width: 2rem;
+      height: 2rem;
+      min-width: 0;
+      padding: 0;
+    }
+    .beancount-query-table
+      :global([data-page-pagination] button > span:not(.sr-only)) {
+      display: none;
+    }
+  }
+  .beancount-query-table__frame {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--card);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  }
+  .beancount-query-table :global(table) {
+    font-size: 0.75rem;
+  }
+  .beancount-query-table :global(th) {
+    padding: 0;
+    background: var(--muted);
+    color: var(--muted-foreground);
+  }
+  .beancount-query-table :global(td) {
+    padding: 0.5rem;
+    line-height: var(--query-line-height, 20px);
+    font-family: var(--font-family-monospaced);
+  }
+  .beancount-query-table :global(td.text-right),
+  .beancount-query-table :global(th.text-right) {
+    text-align: right;
+    padding-right: 2rem;
+  }
+  .beancount-query-table :global(th.text-right) {
+    padding: 0;
+  }
+  .beancount-query-table :global([data-query-page-size]) {
+    width: 5rem;
+    height: 2rem;
+  }
+  .beancount-query-table :global(th.text-right [data-query-sort]) {
+    justify-content: flex-end;
+  }
+  .beancount-query-table :global([data-query-sort]) {
+    display: inline-flex;
+    width: 100%;
+    height: 2.5rem;
+    align-items: center;
+    gap: 0.375rem;
+    padding-inline: 1rem;
+    text-transform: none;
+    font-size: 0.75rem;
+    font-family: var(--font-sans, sans-serif);
+    font-weight: 600;
+  }
+  .beancount-query-table :global([data-query-sort] svg) {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex: none;
+  }
+</style>

@@ -1,48 +1,47 @@
 import type { Preview } from "@storybook/svelte-vite";
-import "../src/storybook.css";
-
-const preview: Preview = {
+import { withThemeByDataAttribute } from "@storybook/addon-themes";
+import { syncCatalogStoryLayout } from "@lapismd/design-core/storybook/catalog-layout";
+import "@lapismd/design-core/storybook.css";
+import "@lapismd/design-core/themes/lapis.css";
+import "../src/styles.css";
+export default {
   tags: ["autodocs", "test"],
   globalTypes: {
-    theme: {
-      description: "Color theme",
-      toolbar: {
-        icon: "paintbrush",
-        items: ["light", "dark"],
-      },
-    },
+    theme: { toolbar: { icon: "paintbrush", items: ["default", "lapis"] } },
+    colorMode: { toolbar: { icon: "circlehollow", items: ["light", "dark"] } },
   },
-  initialGlobals: {
-    theme: "light",
+  initialGlobals: { theme: "lapis", colorMode: "light" },
+  parameters: {
+    layout: "fullscreen",
+    a11y: { test: "error" },
+    backgrounds: { disable: true },
   },
   decorators: [
+    withThemeByDataAttribute({
+      themes: { default: "default", lapis: "lapis" },
+      defaultTheme: "lapis",
+      attributeName: "data-ui-theme",
+    }),
     (story, context) => {
-      if (typeof document !== "undefined") {
-        document.documentElement.classList.toggle(
-          "dark",
-          context.globals.theme === "dark",
-        );
+      syncCatalogStoryLayout(document, context);
+      if (
+        context.parameters.beancountApplication &&
+        context.viewMode === "story"
+      ) {
+        document.body.setAttribute("data-ui-catalog-full-viewport", "");
       }
+      if (
+        context.canvasElement?.parentElement === document.body &&
+        !document.getElementById("storybook-root")
+      ) {
+        context.canvasElement.id = "storybook-root";
+        document.body.classList.add("sb-main-fullscreen");
+      }
+      document.documentElement.classList.toggle(
+        "dark",
+        context.globals.colorMode === "dark",
+      );
       return story();
     },
   ],
-  parameters: {
-    a11y: {
-      test: "error",
-      // CodeMirror gutters are visual annotations. The shared editor marks
-      // them aria-hidden, but axe still reports one-character line numbers
-      // and fold glyphs as contrast-inconclusive.
-      context: {
-        exclude: [".cm-gutters"],
-      },
-    },
-    // The background addon owns a second, independent canvas colour. Keeping it
-    // enabled lets a stale `backgrounds` global override the app theme.
-    backgrounds: {
-      disable: true,
-    },
-    layout: "fullscreen",
-  },
-};
-
-export default preview;
+} satisfies Preview;

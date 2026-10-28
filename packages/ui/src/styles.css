@@ -1,81 +1,129 @@
-@import "@fontsource-variable/dm-sans";
-@import "@fontsource/source-code-pro/400.css";
-@import "@fontsource/source-code-pro/600.css";
-@import "./theme.css";
-@import "./foundation.tokens.css";
-@import "./components/shadcn/native-runtime.css";
-@import "./components/shadcn/button/button.tokens.css";
-@import "./components/shadcn/button/button.css";
-@import "./components/shadcn/badge/badge.tokens.css";
-@import "./components/shadcn/badge/badge.css";
-@import "./components/shadcn/input/input.tokens.css";
-@import "./components/shadcn/input/input.css";
-@import "./components/shadcn/separator/separator.tokens.css";
-@import "./components/shadcn/separator/separator.css";
-@import "./components/shadcn/skeleton/skeleton.tokens.css";
-@import "./components/shadcn/skeleton/skeleton.css";
-@import "./components/shadcn/textarea/textarea.tokens.css";
-@import "./components/shadcn/textarea/textarea.css";
-@import "./components/shadcn/accordion/accordion.tokens.css";
-@import "./components/shadcn/accordion/accordion.css";
-@import "./components/shadcn/alert/alert.tokens.css";
-@import "./components/shadcn/alert/alert.css";
-@import "./components/shadcn/breadcrumb/breadcrumb.tokens.css";
-@import "./components/shadcn/breadcrumb/breadcrumb.css";
-@import "./components/shadcn/collapsible/collapsible.tokens.css";
-@import "./components/shadcn/collapsible/collapsible.css";
-@import "./components/shadcn/empty/empty.tokens.css";
-@import "./components/shadcn/empty/empty.css";
-@import "./components/shadcn/table/table.tokens.css";
-@import "./components/shadcn/table/table.css";
-@import "./components/shadcn/alert-dialog/alert-dialog.tokens.css";
-@import "./components/shadcn/alert-dialog/alert-dialog.css";
-@import "./components/shadcn/dialog/dialog.tokens.css";
-@import "./components/shadcn/dialog/dialog.css";
-@import "./components/shadcn/popover/popover.tokens.css";
-@import "./components/shadcn/popover/popover.css";
-@import "./components/shadcn/sheet/sheet.tokens.css";
-@import "./components/shadcn/sheet/sheet.css";
-@import "./components/shadcn/tooltip/tooltip.tokens.css";
-@import "./components/shadcn/tooltip/tooltip.css";
-@import "./components/shadcn/command/command.tokens.css";
-@import "./components/shadcn/command/command.css";
-@import "./components/shadcn/dropdown-menu/dropdown-menu.tokens.css";
-@import "./components/shadcn/dropdown-menu/dropdown-menu.css";
-@import "./components/shadcn/select/select.tokens.css";
-@import "./components/shadcn/select/select.css";
-@import "./components/shadcn/tabs/tabs.tokens.css";
-@import "./components/shadcn/tabs/tabs.css";
-@import "./components/shadcn/pagination/pagination.tokens.css";
-@import "./components/shadcn/pagination/pagination.css";
-@import "./components/shadcn/button-group/button-group.tokens.css";
-@import "./components/shadcn/button-group/button-group.css";
-@import "./components/shadcn/resizable/resizable.tokens.css";
-@import "./components/shadcn/resizable/resizable.css";
-@import "./components/shadcn/scroll-area/scroll-area.tokens.css";
-@import "./components/shadcn/scroll-area/scroll-area.css";
-@import "./components/shadcn/switch/switch.tokens.css";
-@import "./components/shadcn/switch/switch.css";
-@import "./components/shadcn/toggle/toggle.tokens.css";
-@import "./components/shadcn/toggle/toggle.css";
-@import "./components/shadcn/toggle-group/toggle-group.tokens.css";
-@import "./components/shadcn/toggle-group/toggle-group.css";
-@import "./components/shadcn/sidebar/sidebar.tokens.css";
-@import "./components/shadcn/sidebar/sidebar.css";
-@import "./components/shadcn/calendar/calendar.tokens.css";
-@import "./components/shadcn/calendar/calendar.css";
-@import "./components/shadcn/data-table/data-table.tokens.css";
-@import "./components/shadcn/data-table/data-table.css";
-@import "./components/shadcn/menubar/menubar.tokens.css";
-@import "./components/shadcn/menubar/menubar.css";
-@import "./components/shadcn/progress/progress.tokens.css";
-@import "./components/shadcn/progress/progress.css";
-@import "./components/layout/layout.native.css";
-@import "./components/navigation/navigation.native.css";
-@import "./components/feedback/feedback.native.css";
-@import "./components/forms/forms.native.css";
-@import "./components/root.native.css";
-@import "./components/charts/charts.native.css";
-@import "./components/dashboard/dashboard.native.css";
-@import "./components/pages/pages.native.css";
-@import "./components/tables/tables.native.css";
+@import "./domain/styles/ledger.css";
+@import "./domain/styles/journal-table.css";
+@import "./domain/components/tree-table/tree-table.css";
+@import "tailwindcss";
+@import "@lapismd/design-core/styles.css";
+@import "@lapismd/design-core/themes/lapis.css";
+@source "./**/*.svelte";
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+}
+html,
+body,
+#storybook-root {
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans, sans-serif);
+}
+#storybook-root {
+  min-width: 0;
+}
+/* Copied utility state classes cannot override Design Core's semantic item
+   rules. Keep application selection treatments explicit, including portals. */
+[data-beancount-toggle]
+  [data-ui-component="toggle-group"][data-ui-part="toggle-group-item"][data-state="on"] {
+  background-color: color-mix(in srgb, var(--primary) 16%, var(--background));
+  color: var(--foreground);
+}
+[data-beancount-toggle="segmented"]
+  [data-ui-component="toggle-group"][data-ui-part="toggle-group-item"][data-state="on"] {
+  background-color: var(--background);
+}
+[data-beancount-toggle="segmented"]
+  [data-ui-component="toggle-group"][data-ui-part="toggle-group-item"][data-state="on"]:not(
+    :focus-visible
+  ) {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+[data-beancount-toggle]
+  [data-ui-component="toggle-group"][data-ui-part="toggle-group-item"]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+html.dark {
+  color-scheme: dark;
+}
+.beancount-application {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+/* Copied workflow sheets own a compact header and its close control. */
+[data-beancount-form-sheet][data-ui-part="sheet-content"] {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 42rem);
+  max-width: 42rem;
+  height: 100dvh;
+  max-height: 100dvh;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+[data-beancount-form-sheet] > [data-ui-part="sheet-header"] {
+  display: flex;
+  flex: none;
+  flex-direction: row;
+  align-items: center;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+[data-beancount-form-sheet]
+  > [data-ui-part="sheet-header"]
+  :is([data-ui-component="button"], [data-slot="sheet-close"]) {
+  height: 2rem;
+  width: 2rem;
+  padding: 0;
+}
+/* Form accents are text on a tinted surface; primary remains the filled-action token. */
+.dark .beancount-application,
+.dark .beancount-application :is(.cv-structured-form, .ui-structured-form),
+.dark [data-beancount-form-sheet],
+.dark
+  [data-beancount-form-sheet]
+  :is(.cv-structured-form, .ui-structured-form) {
+  --ui-form-accent: color-mix(
+    in srgb,
+    var(--lapis-accent, var(--foreground)) 70%,
+    var(--foreground)
+  );
+}
+.beancount-structured-form {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  min-width: 0;
+}
+.beancount-structured-form > * {
+  grid-column: 1 / -1;
+}
+@supports (grid-template-columns: subgrid) {
+  .beancount-structured-form > .cv-structured-form,
+  .beancount-structured-form > .cv-form-field {
+    grid-template-columns: subgrid;
+  }
+}

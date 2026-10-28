@@ -1,13 +1,12 @@
 <script lang="ts">
-  import ChipAutocomplete from "./ChipAutocomplete.svelte";
-
+  import { ChipAutocomplete } from "@lapismd/design-core/forms";
   let {
     value = [],
-    suggestions = [] as readonly string[],
+    suggestions = [],
     label = "Tags",
     showLabel = true,
     placeholder = "Add tag...",
-    id = undefined,
+    id,
     embedded = false,
     uppercase = true,
     onChange = () => {},
@@ -24,29 +23,14 @@
   } = $props();
 </script>
 
-<div class="tag-editor">
-  <ChipAutocomplete
-    {value}
-    {suggestions}
-    {label}
-    {showLabel}
-    {placeholder}
-    {id}
-    {embedded}
-    {uppercase}
-    {onChange}
-  />
-</div>
-
-<style>
-  .tag-editor :global(.chip) {
-    border: 1px solid color-mix(in srgb, var(--primary) 72%, transparent);
-    background: var(--primary);
-    color: var(--primary-foreground);
-  }
-
-  .tag-editor :global(.chip button) {
-    background: color-mix(in srgb, var(--primary-foreground) 18%, transparent);
-    color: inherit;
-  }
-</style>
+<ChipAutocomplete
+  value={[...value]}
+  suggestions={[...suggestions]}
+  {label}
+  {showLabel}
+  {placeholder}
+  {id}
+  {embedded}
+  {uppercase}
+  {onChange}
+/>

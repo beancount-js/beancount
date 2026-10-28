@@ -1,8 +1,0 @@
-{
-  "browsers": ["chromium"],
-  "deviceScaleFactor": 3,
-  "passThresholdPercent": 0.1,
-  "workflow": {
-    "visualTestFailureMode": "strict"
-  }
-}

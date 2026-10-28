@@ -1,23 +1,27 @@
-# Storybook catalog and Fava migration
+# Active Design Core application UI
 
-The UI migration is active. `packages/ui/FAVA_MIGRATION.md` is the source of
-truth for phase status, component order, evidence, and the model handoff.
+This package is the active application and Storybook baseline. Follow
+[`spec/src/app-baseline.md`](../../spec/src/app-baseline.md) and keep
+[`docs/APP_STATUS.md`](../../docs/APP_STATUS.md) accurate for meaningful changes.
 
-- Keep reusable components prop-driven and application-independent. Fava
-  routing, stores, APIs, persistence, ledger derivation, and CodeMirror document
-  integration stay in the application adapter.
-- Every migrated component needs a deliberate public export, colocated
-  Storybook documentation/stories, interaction and accessibility assertions,
-  and a protected original-Fava visual reference where it is visually
-  comparable.
-- Protected Fava images come only from the clean pinned `fava-reference`
-  Jujutsu workspace. Ordinary visual-update commands must never overwrite them.
-- Automated parity at or below 0.1% advances component work without a
-  per-component manual pause. Mark a passing component `visual-ready`; reserve
-  `visual-approved` for explicit human acceptance. The only manual validation
-  gates are after the Storybook/reference harness, the Forms merge, and the
-  final parity audit; their evidence packet and acceptance status belong in
-  `FAVA_MIGRATION.md`.
-- Update the migration ledger and commit every verified component slice before
-  starting another.
-- Run `pnpm checks` from this package after each UI-scope change.
+- Consume published Design Core shell, forms and primitives through public
+  exports. Keep application actions/controller ownership and injected host
+  capabilities explicit. `src/domain` contains the adapted application bridges;
+  do not restart the superseded component-extraction/native-CSS campaign.
+- `catalog/` and `.storybook/` are the sole active Storybook. Fixtures are
+  disposable and controller-scoped. Preserve existing story IDs and public
+  component/controller contracts unless the requested work requires a change.
+- Do not import `@lapis/ui`, `@beancount-js/forms`, Fava source, SvelteKit aliases
+  or private Design Core paths. Legacy compatibility lives outside this package.
+- Keep mounted CodeMirror widgets on the owning editor's context. Reuse shared
+  account appearance/avatar behavior and preserve replacement/undo semantics.
+- Keep application stories bounded to the viewport and standalone stories in
+  catalog layout. Test table geometry and internal scrolling, pointer/keyboard
+  use, mobile, themes, controller isolation and accessibility when affected.
+- Validate copied-source provenance at `UI_PROVENANCE.json.sourceCommit` and
+  reference fixtures at `CATALOG_INVENTORY.json.referenceCommit`. Do not mutate
+  a live reference ledger or recapture/replace frozen evidence casually.
+- Run this package's complete `pnpm checks` for every UI slice and verify
+  `pnpm exec node scripts/check-catalog.mjs --built`. Commit each verified slice
+  with Jujutsu. Record failures and manual-review limits honestly; passing
+  browser geometry checks is not screenshot approval.

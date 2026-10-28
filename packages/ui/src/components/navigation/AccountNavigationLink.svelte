@@ -5,7 +5,6 @@
   export type AccountNavigationAppearance = {
     color?: string;
     icon?: string;
-    merchantId?: string;
     merchantLogoUrl?: string;
   };
 
@@ -23,8 +22,9 @@
     avatarSize = "sm",
     disabled = false,
     onSelect,
-    onclick,
+    onclick: onClick,
     onkeydown,
+    class: className = "",
   }: {
     account: string;
     label?: string;
@@ -35,28 +35,34 @@
     onSelect?: (account: string) => void;
     onclick?: (event: MouseEvent) => void;
     onkeydown?: (event: KeyboardEvent) => void;
+    class?: string;
   } = $props();
 
   function select(event: MouseEvent): void {
-    onclick?.(event);
-    if (event.defaultPrevented) return;
     if (disabled || !href || onSelect) event.preventDefault();
-    if (!disabled) onSelect?.(account);
+    if (!disabled) {
+      onClick?.(event);
+      onSelect?.(account);
+    }
   }
 </script>
 
 <a
   href={href ?? "#"}
-  class="cn-navigation-accountnavigationlink-50-1"
-  class:cn-navigation-accountnavigationlink-51-1={disabled}
-  class:cn-navigation-accountnavigationlink-52-1={disabled}
+  class={[
+    "beancount-account-link inline-flex shrink-0 items-center gap-2 text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ")}
+  class:pointer-events-none={disabled}
+  class:opacity-50={disabled}
   aria-disabled={disabled || undefined}
   tabindex={disabled ? -1 : undefined}
-  data-account-link
   data-account-navigation-link={account}
-  data-merchant-id={appearance?.merchantId}
-  onclick={select}
+  title={account}
   {onkeydown}
+  onclick={select}
 >
   {#if appearance}
     <AccountAvatar
@@ -67,5 +73,14 @@
       size={avatarSize}
     />
   {/if}
-  <span class="cn-navigation-accountnavigationlink-70-1">{label}</span>
+  <span class="whitespace-nowrap">{label}</span>
 </a>
+
+<style>
+  .beancount-account-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+</style>

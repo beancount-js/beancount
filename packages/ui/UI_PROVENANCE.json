@@ -1,0 +1,846 @@
+{
+  "sourceCommit": "215bb59f31d4658410c2fd2b0122022a56dff5aa",
+  "sourceLicense": "MIT",
+  "references": {
+    "community": "lapismd/lapis-community",
+    "jjStore": "lapismd/jj-store"
+  },
+  "copied": [
+    {
+      "source": "packages/fava/src/charts/bar.ts",
+      "target": "src/domain/charts/bar.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/context.ts",
+      "target": "src/domain/charts/context.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/tooltip.ts",
+      "target": "src/domain/charts/tooltip.ts"
+    },
+    {
+      "source": "packages/fava/src/components/ContentScrollArea.svelte",
+      "target": "src/domain/components/ContentScrollArea.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/FinancialDashboard.svelte",
+      "target": "src/domain/components/FinancialDashboard.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardChartTooltip.svelte",
+      "target": "src/domain/components/dashboard/DashboardChartTooltip.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardDonut.svelte",
+      "target": "src/domain/components/dashboard/DashboardDonut.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardFlow.svelte",
+      "target": "src/domain/components/dashboard/DashboardFlow.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardLine.svelte",
+      "target": "src/domain/components/dashboard/DashboardLine.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardSection.svelte",
+      "target": "src/domain/components/dashboard/DashboardSection.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardTreeRow.svelte",
+      "target": "src/domain/components/dashboard/DashboardTreeRow.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/DashboardTreeTable.svelte",
+      "target": "src/domain/components/dashboard/DashboardTreeTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/geometry.ts",
+      "target": "src/domain/components/dashboard/geometry.ts"
+    },
+    {
+      "source": "packages/fava/src/components/dashboard/model.ts",
+      "target": "src/domain/components/dashboard/model.ts"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/helpers.ts",
+      "target": "src/domain/components/tree-table/helpers.ts"
+    },
+    {
+      "source": "packages/fava/src/context.ts",
+      "target": "src/domain/context.ts"
+    },
+    {
+      "source": "packages/fava/src/core/account.ts",
+      "target": "src/domain/core/account.ts"
+    },
+    {
+      "source": "packages/fava/src/core/ledger-data-class.ts",
+      "target": "src/domain/core/ledger-data-class.ts"
+    },
+    {
+      "source": "packages/fava/src/core/ledger.ts",
+      "target": "src/domain/core/ledger.ts"
+    },
+    {
+      "source": "packages/fava/src/core/tree.ts",
+      "target": "src/domain/core/tree.ts"
+    },
+    {
+      "source": "packages/fava/src/format/index.ts",
+      "target": "src/domain/format/index.ts"
+    },
+    {
+      "source": "packages/fava/src/helpers.ts",
+      "target": "src/domain/helpers.ts"
+    },
+    {
+      "source": "packages/fava/src/import/models.ts",
+      "target": "src/domain/import/models.ts"
+    },
+    {
+      "source": "packages/fava/src/import/schema.json",
+      "target": "src/domain/import/schema.json"
+    },
+    {
+      "source": "packages/fava/src/import/schema.ts",
+      "target": "src/domain/import/schema.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/accounts.ts",
+      "target": "src/domain/lib/accounts.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/format.ts",
+      "target": "src/domain/lib/format.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/interval.ts",
+      "target": "src/domain/lib/interval.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/ledger-route.ts",
+      "target": "src/domain/lib/ledger-route.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/models.ts",
+      "target": "src/domain/lib/models.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/studio-route-env.ts",
+      "target": "src/domain/lib/studio-route-env.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/tree.ts",
+      "target": "src/domain/lib/tree.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/utils.ts",
+      "target": "src/domain/lib/utils.ts"
+    },
+    {
+      "source": "packages/fava/src/menu.ts",
+      "target": "src/domain/menu.ts"
+    },
+    {
+      "source": "packages/fava/src/options.ts",
+      "target": "src/domain/options.ts"
+    },
+    {
+      "source": "packages/fava/src/stores/format.ts",
+      "target": "src/domain/stores/format.ts"
+    },
+    {
+      "source": "packages/fava/src/stores/index.ts",
+      "target": "src/domain/stores/index.ts"
+    },
+    {
+      "source": "packages/fava/src/yaml/lint.ts",
+      "target": "src/domain/yaml/lint.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IncomeStatement.svelte",
+      "target": "src/domain/components/IncomeStatement.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/StatementSummaryTreeTable.svelte",
+      "target": "src/domain/components/tree-table/StatementSummaryTreeTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/stores/account.ts",
+      "target": "src/domain/stores/account.ts"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/StatementSummaryTreeRow.svelte",
+      "target": "src/domain/components/tree-table/StatementSummaryTreeRow.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/ChartSwitcher.svelte",
+      "target": "src/domain/charts/ChartSwitcher.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/Chart.svelte",
+      "target": "src/domain/charts/Chart.svelte"
+    },
+    {
+      "source": "packages/fava/src/stores/chart.ts",
+      "target": "src/domain/stores/chart.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/ChartLegend.svelte",
+      "target": "src/domain/charts/ChartLegend.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/BarChart.svelte",
+      "target": "src/domain/charts/BarChart.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/Axis.svelte",
+      "target": "src/domain/charts/Axis.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/helpers.ts",
+      "target": "src/domain/charts/helpers.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/LineChart.svelte",
+      "target": "src/domain/charts/LineChart.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/line.ts",
+      "target": "src/domain/charts/line.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/HierarchyContainer.svelte",
+      "target": "src/domain/charts/HierarchyContainer.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/hierarchy.ts",
+      "target": "src/domain/charts/hierarchy.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/Sunburst.svelte",
+      "target": "src/domain/charts/Sunburst.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/Treemap.svelte",
+      "target": "src/domain/charts/Treemap.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/ModeSwitch.svelte",
+      "target": "src/domain/charts/ModeSwitch.svelte"
+    },
+    {
+      "source": "packages/fava/src/charts/index.ts",
+      "target": "src/domain/charts/index.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/scatterplot.ts",
+      "target": "src/domain/charts/scatterplot.ts"
+    },
+    {
+      "source": "packages/fava/src/charts/ScatterPlot.svelte",
+      "target": "src/domain/charts/ScatterPlot.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/BalanceSheet.svelte",
+      "target": "src/domain/components/BalanceSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/TrialBalance.svelte",
+      "target": "src/domain/components/TrialBalance.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/ledger-data.ts",
+      "target": "src/domain/lib/ledger-data.ts"
+    },
+    {
+      "source": "packages/fava/src/components/Holdings.svelte",
+      "target": "src/domain/components/Holdings.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/QueryTable.svelte",
+      "target": "src/domain/components/QueryTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/helpers.ts",
+      "target": "src/domain/components/helpers.ts"
+    },
+    {
+      "source": "packages/fava/src/grid/sort.ts",
+      "target": "src/domain/grid/sort.ts"
+    },
+    {
+      "source": "packages/fava/src/components/Statistics.svelte",
+      "target": "src/domain/components/Statistics.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/errors/Errors.svelte",
+      "target": "src/domain/components/errors/Errors.svelte"
+    },
+    {
+      "source": "packages/fava/src/grid/index.ts",
+      "target": "src/domain/grid/index.ts"
+    },
+    {
+      "source": "packages/fava/src/grid/Root.svelte",
+      "target": "src/domain/grid/Root.svelte"
+    },
+    {
+      "source": "packages/fava/src/grid/grid.ts",
+      "target": "src/domain/grid/grid.ts"
+    },
+    {
+      "source": "packages/fava/src/grid/Cell.svelte",
+      "target": "src/domain/grid/Cell.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/JournalTable.svelte",
+      "target": "src/domain/components/JournalTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/studio/ingestion-header-actions.ts",
+      "target": "src/domain/studio/ingestion-header-actions.ts"
+    },
+    {
+      "source": "packages/fava/src/studio/workspace.ts",
+      "target": "src/domain/studio/workspace.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/types.ts",
+      "target": "src/domain/ingestion/types.ts"
+    },
+    {
+      "source": "packages/fava/src/components/ActivityTable.svelte",
+      "target": "src/domain/components/ActivityTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/router/router.ts",
+      "target": "src/domain/router/router.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/api.ts",
+      "target": "src/domain/ingestion/api.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/journal-merchant-logos.ts",
+      "target": "src/domain/lib/journal-merchant-logos.ts"
+    },
+    {
+      "source": "packages/fava/src/components/journal-table/model.ts",
+      "target": "src/domain/components/journal-table/model.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/review-ledger.ts",
+      "target": "src/domain/ingestion/review-ledger.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/journal-record-key.ts",
+      "target": "src/domain/lib/journal-record-key.ts"
+    },
+    {
+      "source": "packages/fava/src/components/PagePagination.svelte",
+      "target": "src/domain/components/PagePagination.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/AccountBulkActionSheet.svelte",
+      "target": "src/domain/components/AccountBulkActionSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/account-bulk-replace.ts",
+      "target": "src/domain/lib/account-bulk-replace.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/journal-duplicates.ts",
+      "target": "src/domain/lib/journal-duplicates.ts"
+    },
+    {
+      "source": "packages/fava/src/components/AccountDetails.svelte",
+      "target": "src/domain/components/AccountDetails.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/AccountActivityTable.svelte",
+      "target": "src/domain/components/AccountActivityTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/AccountTable.svelte",
+      "target": "src/domain/components/AccountTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/EditorDialog.svelte",
+      "target": "src/domain/components/EditorDialog.svelte"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/transactions.ts",
+      "target": "src/domain/codemirror/extensions/transactions.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/setup.ts",
+      "target": "src/domain/codemirror/beancount/setup.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/foldGutter.ts",
+      "target": "src/domain/codemirror/extensions/foldGutter.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/classHighlighter.ts",
+      "target": "src/domain/codemirror/extensions/classHighlighter.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/urls.ts",
+      "target": "src/domain/codemirror/extensions/urls.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/foldHeaders.ts",
+      "target": "src/domain/codemirror/beancount/foldHeaders.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/ruler.ts",
+      "target": "src/domain/codemirror/beancount/ruler.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/headers.ts",
+      "target": "src/domain/codemirror/beancount/headers.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/math.ts",
+      "target": "src/domain/codemirror/beancount/math.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/format.ts",
+      "target": "src/domain/codemirror/beancount/format.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/foldComments.ts",
+      "target": "src/domain/codemirror/beancount/foldComments.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/hashTags.ts",
+      "target": "src/domain/codemirror/extensions/hashTags.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/languages.ts",
+      "target": "src/domain/codemirror/extensions/languages.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/linter.ts",
+      "target": "src/domain/codemirror/beancount/linter.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/beancount/autocomplete.ts",
+      "target": "src/domain/codemirror/beancount/autocomplete.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/combobox/combo.ts",
+      "target": "src/domain/codemirror/extensions/combobox/combo.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/combobox/comboWidget.svelte",
+      "target": "src/domain/codemirror/extensions/combobox/comboWidget.svelte"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/search/search.ts",
+      "target": "src/domain/codemirror/extensions/search/search.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/search/FindReplace.svelte",
+      "target": "src/domain/codemirror/extensions/search/FindReplace.svelte"
+    },
+    {
+      "source": "packages/fava/src/hooks/debounce.ts",
+      "target": "src/domain/hooks/debounce.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/datepicker/datepicker.ts",
+      "target": "src/domain/codemirror/extensions/datepicker/datepicker.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/datepicker/datePickerWidget.svelte",
+      "target": "src/domain/codemirror/extensions/datepicker/datePickerWidget.svelte"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/gotoline.ts",
+      "target": "src/domain/codemirror/extensions/gotoline.ts"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/search/GoToLine.svelte",
+      "target": "src/domain/codemirror/extensions/search/GoToLine.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/IntervalTreeTable.svelte",
+      "target": "src/domain/components/tree-table/IntervalTreeTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/AccountCellHeader.svelte",
+      "target": "src/domain/components/tree-table/AccountCellHeader.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/IntervalTreeTableNode.svelte",
+      "target": "src/domain/components/tree-table/IntervalTreeTableNode.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/AccountCell.svelte",
+      "target": "src/domain/components/tree-table/AccountCell.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/tree-table/Diff.svelte",
+      "target": "src/domain/components/tree-table/Diff.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/Editor.svelte",
+      "target": "src/domain/components/Editor.svelte"
+    },
+    {
+      "source": "packages/fava/src/codemirror/extensions/foldAll.ts",
+      "target": "src/domain/codemirror/extensions/foldAll.ts"
+    },
+    {
+      "source": "packages/fava/src/components/Query.svelte",
+      "target": "src/domain/components/Query.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/QueryBox.svelte",
+      "target": "src/domain/components/QueryBox.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/Highlighter.svelte",
+      "target": "src/domain/components/Highlighter.svelte"
+    },
+    {
+      "source": "packages/fava/src/stores/query.ts",
+      "target": "src/domain/stores/query.ts"
+    },
+    {
+      "source": "packages/fava/src/components/query-box.ts",
+      "target": "src/domain/components/query-box.ts"
+    },
+    {
+      "source": "packages/fava/src/components/Search.svelte",
+      "target": "src/domain/components/Search.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/ledger-search-state.ts",
+      "target": "src/domain/lib/ledger-search-state.ts"
+    },
+    {
+      "source": "packages/fava/src/components/JournalRecordRouteSheet.svelte",
+      "target": "src/domain/components/JournalRecordRouteSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/JournalEditorSheet.svelte",
+      "target": "src/domain/components/JournalEditorSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/journal-editor/directive-draft.ts",
+      "target": "src/domain/components/journal-editor/directive-draft.ts"
+    },
+    {
+      "source": "packages/fava/src/components/ResourceViewer.svelte",
+      "target": "src/domain/components/ResourceViewer.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/ResourceViewerSkeleton.svelte",
+      "target": "src/domain/components/skeletons/ResourceViewerSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionHeaderActions.svelte",
+      "target": "src/domain/components/IngestionHeaderActions.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/CycleSelect.svelte",
+      "target": "src/domain/components/CycleSelect.svelte"
+    },
+    {
+      "source": "packages/fava/src/codemirror/themes/base.scss",
+      "target": "src/domain/codemirror/themes/base.scss"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionTable.svelte",
+      "target": "src/domain/components/IngestionTable.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/sync.ts",
+      "target": "src/domain/ingestion/sync.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/review-classification.ts",
+      "target": "src/domain/ingestion/review-classification.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/ingestion-review-search-state.ts",
+      "target": "src/domain/lib/ingestion-review-search-state.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/review-selection.ts",
+      "target": "src/domain/lib/review-selection.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionProposalSheet.svelte",
+      "target": "src/domain/components/IngestionProposalSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/LocalMerchantMatchPicker.svelte",
+      "target": "src/domain/components/LocalMerchantMatchPicker.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/fuzzy-search.ts",
+      "target": "src/domain/lib/fuzzy-search.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionReconciliationPanel.svelte",
+      "target": "src/domain/components/IngestionReconciliationPanel.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/reconciliation-review-response.ts",
+      "target": "src/domain/lib/reconciliation-review-response.ts"
+    },
+    {
+      "source": "packages/fava/src/lib/reconciliation-review-search-state.ts",
+      "target": "src/domain/lib/reconciliation-review-search-state.ts"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/ReconciliationReviewSkeleton.svelte",
+      "target": "src/domain/components/skeletons/ReconciliationReviewSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/ReviewImportsSkeleton.svelte",
+      "target": "src/domain/components/skeletons/ReviewImportsSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionConfigEditor.svelte",
+      "target": "src/domain/components/IngestionConfigEditor.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/samples.ts",
+      "target": "src/domain/ingestion/samples.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/source-form.ts",
+      "target": "src/domain/ingestion/source-form.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/secret-ref.ts",
+      "target": "src/domain/ingestion/secret-ref.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/connectors.ts",
+      "target": "src/domain/ingestion/connectors.ts"
+    },
+    {
+      "source": "packages/fava/src/studio/sync-status.ts",
+      "target": "src/domain/studio/sync-status.ts"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/SourcesPageSkeleton.svelte",
+      "target": "src/domain/components/skeletons/SourcesPageSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionSourceForm.svelte",
+      "target": "src/domain/components/IngestionSourceForm.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/connector-fields.ts",
+      "target": "src/domain/ingestion/connector-fields.ts"
+    },
+    {
+      "source": "packages/fava/src/ingestion/source-form-config.ts",
+      "target": "src/domain/ingestion/source-form-config.ts"
+    },
+    {
+      "source": "packages/fava/src/components/form/MerchantComboField.svelte",
+      "target": "src/domain/components/form/MerchantComboField.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionSourcesPreview.svelte",
+      "target": "src/domain/components/IngestionSourcesPreview.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/setup-markdown.ts",
+      "target": "src/domain/ingestion/setup-markdown.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionAccountsSetup.svelte",
+      "target": "src/domain/components/IngestionAccountsSetup.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/other-accounts.ts",
+      "target": "src/domain/ingestion/other-accounts.ts"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/AccountsPageSkeleton.svelte",
+      "target": "src/domain/components/skeletons/AccountsPageSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/ComboBox.svelte",
+      "target": "src/domain/components/ComboBox.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionMerchantReview.svelte",
+      "target": "src/domain/components/IngestionMerchantReview.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/ingestion-merchant-search-state.ts",
+      "target": "src/domain/lib/ingestion-merchant-search-state.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionMerchantSheet.svelte",
+      "target": "src/domain/components/IngestionMerchantSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/MerchantsPageSkeleton.svelte",
+      "target": "src/domain/components/skeletons/MerchantsPageSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionMerchantManage.svelte",
+      "target": "src/domain/components/IngestionMerchantManage.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/MerchantEditSheet.svelte",
+      "target": "src/domain/components/MerchantEditSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/merchant-form-config.ts",
+      "target": "src/domain/ingestion/merchant-form-config.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionBrandSettings.svelte",
+      "target": "src/domain/components/IngestionBrandSettings.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/brand-form-config.ts",
+      "target": "src/domain/ingestion/brand-form-config.ts"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/BrandSettingsSkeleton.svelte",
+      "target": "src/domain/components/skeletons/BrandSettingsSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionRunHistory.svelte",
+      "target": "src/domain/components/IngestionRunHistory.svelte"
+    },
+    {
+      "source": "packages/fava/src/ingestion/history.ts",
+      "target": "src/domain/ingestion/history.ts"
+    },
+    {
+      "source": "packages/fava/src/components/IngestionRunAudit.svelte",
+      "target": "src/domain/components/IngestionRunAudit.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/RulesSettings.svelte",
+      "target": "src/domain/components/RulesSettings.svelte"
+    },
+    {
+      "source": "packages/fava/src/rules/api.ts",
+      "target": "src/domain/rules/api.ts"
+    },
+    {
+      "source": "packages/fava/src/rules/types.ts",
+      "target": "src/domain/rules/types.ts"
+    },
+    {
+      "source": "packages/fava/src/components/RuleEditorSheet.svelte",
+      "target": "src/domain/components/RuleEditorSheet.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/rules/RuleConditionRow.svelte",
+      "target": "src/domain/components/rules/RuleConditionRow.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/RulesPageSkeleton.svelte",
+      "target": "src/domain/components/skeletons/RulesPageSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/AiUnifiedReviewDiff.svelte",
+      "target": "src/domain/components/AiUnifiedReviewDiff.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/skeletons/AiDockSkeleton.svelte",
+      "target": "src/domain/components/skeletons/AiDockSkeleton.svelte"
+    },
+    {
+      "source": "packages/fava/src/lib/ai/chat.ts",
+      "target": "src/domain/lib/ai/chat.ts"
+    },
+    {
+      "source": "packages/fava/src/components/AiDock.svelte",
+      "target": "src/domain/components/AiDock.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/FavaNavigation.svelte",
+      "target": "src/components/navigation/BeancountLedgerNavigation.svelte"
+    },
+    {
+      "source": "packages/fava/src/components/ledger-sidebar.ts",
+      "target": "src/components/navigation/ledger-sidebar.ts"
+    },
+    {
+      "source": "packages/fava/src/components/ledger-sidebar.spec.ts",
+      "target": "src/components/navigation/ledger-sidebar.test.ts"
+    }
+  ],
+  "formAdapters": {
+    "source": "packages/forms/src",
+    "targets": [
+      "src/components/forms/AccountAvatar.svelte",
+      "src/components/forms/TagEditor.svelte",
+      "src/components/forms/IconColorPicker.svelte"
+    ],
+    "sharedControls": "@lapismd/design-core/forms",
+    "notes": "Preserve Beancount account appearance calculations; compose public Design Core controls."
+  },
+  "recovered": [
+    {
+      "commit": "66e56a4bf39f^",
+      "source": "packages/ui/src/components/tables/QueryResultsTable.svelte",
+      "target": "src/components/tables/QueryResultsTable.svelte"
+    },
+    {
+      "commit": "4c5afac5e00e",
+      "source": "packages/fava-beta/src/components/QueryTable.svelte",
+      "target": "src/domain/components/QueryTable.svelte"
+    },
+    {
+      "sourceCommit": "bbaff0cb13bb",
+      "source": "packages/ui/src/components/navigation/AccountNavigationLink.svelte",
+      "target": "src/components/navigation/AccountNavigationLink.svelte",
+      "notes": "Reuses the existing UI forms AccountAvatar. Adds controller-local metadata adapters from Fava at 498bd075; pinned Design Core 0.3.1 has no avatar export."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/components/Query.svelte",
+      "target": "src/domain/components/Query.svelte",
+      "notes": "Adapt compact editor actions and saved-query cards. Retain controller-owned history, accessible editor labels and public Design Core primitives."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/components/QueryBox.svelte",
+      "target": "src/domain/components/QueryBox.svelte",
+      "notes": "Adapt compact editor actions and saved-query cards. Retain controller-owned history, accessible editor labels and public Design Core primitives."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/bql/bql.ts",
+      "target": "src/domain/bql/bql.ts",
+      "notes": "Presentation-only syntax highlighting and editor completions; runtime BQL execution stays in @beancount-js/beanquery."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/bql/autocomplete.ts",
+      "target": "src/domain/bql/autocomplete.ts",
+      "notes": "Presentation-only syntax highlighting and editor completions; runtime BQL execution stays in @beancount-js/beanquery."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/bql/parser.ts",
+      "target": "src/domain/bql/parser.ts",
+      "notes": "Presentation-only syntax highlighting and editor completions; runtime BQL execution stays in @beancount-js/beanquery."
+    },
+    {
+      "sourceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+      "source": "packages/fava/src/bql/grammar.ts",
+      "target": "src/domain/bql/grammar.ts",
+      "notes": "Presentation-only syntax highlighting and editor completions; runtime BQL execution stays in @beancount-js/beanquery."
+    }
+  ]
+}

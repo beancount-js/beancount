@@ -20,43 +20,59 @@
 - Documentation-only or configuration-only changes that cannot exercise runtime behavior still require a relevant validation, such as formatting, parsing, schema validation, or another focused consistency check. Record the command run for handoff.
 - At handoff, report the validations run and their outcomes, along with the committed `jj` change or changes.
 
-## Shared forms
+## Application baseline and direction
 
-- UI-package work has resumed. `packages/ui` / `@beancount-js/ui` is the
-  canonical implementation and public surface for reusable presentation and
-  form components.
-- `packages/forms/FORMS.md` remains the active form behavior contract. Implement
-  that contract in `@beancount-js/ui/forms`.
-- `@beancount-js/forms` is a temporary implementation-free compatibility
-  facade for the frozen Fava reference. Do not add source behavior, stories, or
-  dependencies there.
-- Keep one `max-content minmax(0, 1fr)` label/value grid per form scope, visible single separators, title-only collapsible headers, and left-rail disclosure.
-- Use `FormField as="div" align="center"` for pill/button controls, date pickers, and searchable pickers in row layouts.
-- Use centered alignment for text rows when they are mixed with pills.
-- Do not add explanatory text to section headers. Use existing boolean controls in this repository for booleans.
-- A form toolbar owns collapse/expand-all; keep nested collapse state and horizontal overflow checks in scope.
+- The active application/UI baseline is `packages/ui` / `@beancount-js/ui`,
+  integrated from the Design Core historical workspace. Continue new work in
+  this main checkout on the `beancount-studio` development line.
+- Read `spec/src/app-baseline.md` for package/host ownership and
+  `docs/APP_STATUS.md` for qualification and remaining work. Keep README files,
+  these specifications and agent guidance aligned when direction changes.
+- The old extraction/native-CSS/Visual Delta campaign is superseded. Its
+  previous state, including pending work, is preserved at
+  `archive/pre-design-core-baseline-2026-10-28`. Do not restart its component
+  queue or treat historical certification statuses as current approval.
+- `pnpm dev` / `pnpm storybook` start the sole active catalog. Application
+  stories use disposable in-memory data sources; production host integration
+  through `BeancountDataSource` remains a separate qualification milestone.
+- Use published `@lapismd/design-core` shell, forms and primitives. Keep
+  controller state/actions, history, cancellation, service/cache lifetimes and
+  host capability boundaries explicit and isolated per instance/project.
+- Run `pnpm check:baseline` for ownership/configuration checks and
+  `pnpm checks:ui` for every active UI slice. Root `pnpm checks` includes the
+  active UI and compatibility lanes. Report pre-existing aggregate failures
+  separately and never disable checks to promote a baseline.
 
-## Searchable pickers
+## Shared forms and searchable pickers
 
-- Use `FilterCommandPicker` from `@beancount-js/ui/forms` for searchable select controls.
-- Wrap each picker in `FormField as="div" align="center"`, and use `fullWidth` in forms and sidebars.
-- For user-entered values not present in options, use `allowCustom={true}`.
-- Use `multiple` + `values` + `onValuesChange` for multi-select; use `value` + `onChange` for single-select.
-- Do not use `SearchableChoicePicker` for new work.
+- `packages/forms/FORMS.md` remains the form behavior contract. Implement it
+  with public Design Core forms and application controls in
+  `@beancount-js/ui/forms`.
+- Keep one `max-content minmax(0, 1fr)` label/value grid per form scope, visible
+  single separators, title-only collapsible headers and left-rail disclosure.
+- Use `FormField as="div" align="center"` for pill/button controls, date pickers
+  and searchable pickers in row layouts. Use centered alignment for text rows
+  mixed with pills. Do not add explanatory section-header text.
+- Use `FilterCommandPicker` from `@beancount-js/ui/forms`; use `fullWidth` in
+  forms/sidebars, `allowCustom` for typed values, and the existing single- or
+  multi-select action contracts. Do not add new `SearchableChoicePicker` uses.
+- Form toolbars own collapse/expand-all. Check nested collapse and horizontal
+  overflow. Inline editor widgets remain compact document affordances rather
+  than structured form rows.
 
-## UI catalog and Storybook
+## Retained compatibility and frozen references
 
-- The resumed migration is tracked in `packages/ui/FAVA_MIGRATION.md`.
-- `packages/fava` is the immutable comparison application. Migration commits
-  must not edit it; protected captures run from the pinned `fava-reference`
-  Jujutsu workspace.
-- `packages/fava-beta` is the integration target once the harness and Forms
-  foundation are complete. It may keep application adapters, routes, stores,
-  ledger derivation, persistence, APIs, and CodeMirror integration; reusable
-  presentation belongs in `packages/ui`.
-- Run `pnpm --filter @beancount-js/ui checks` for every UI slice. UI and
-  Fava Beta are intentionally excluded from the ordinary root `pnpm checks`
-  aggregate while migration is in progress.
-- Manual validation pauses occur only after the visual-reference harness, after
-  the Forms consolidation, and after the final parity audit. Component slices
-  use automated gates and do not wait for per-component approval.
+- `packages/fava` is an unchanged reference. `packages/fava-beta` retains the
+  old integration host/services. Neither is the destination for new UI work.
+- `packages/ui-legacy` provides the `@lapis/ui` runtime imports still needed by
+  those hosts. `@beancount-js/forms` is their implementation-free forwarding
+  facade. Do not add behavior, stories or new dependencies to the forms facade.
+- The compatibility package has no Storybook or visual runners. Keep changes
+  limited to necessary compatibility fixes; remove runtime code only after its
+  remaining consumers have migrated or been explicitly retired.
+- Consume no legacy/reference source in the active UI. Validate historical
+  provenance against recorded commits, not the current Fava file layout. Keep
+  live reference ledgers out of seed/write helpers.
+- Shell/table/editor qualification uses browser geometry and accessibility
+  checks. Human visual approval and production backend readiness must be
+  reported separately; do not claim either from passing catalog tests.

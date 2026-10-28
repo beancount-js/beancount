@@ -1,29 +1,70 @@
-# beancount-js
+# Beancount JS Studio
 
-A standalone Beancount ledger UI migrated from [obsidian-ledger](https://github.com/stevejuma/obsidian-ledger). The monorepo contains the core accounting engine, parser, filters, CodeMirror language support, and the Fava-style web UI.
+A Beancount accounting monorepo with a controller-backed application UI built
+on published [Design Core](https://github.com/lapismd/design-core).
+The Design Core application catalog in `packages/ui` is the active development
+baseline as of 28 October 2026.
+
+Read [app status](docs/APP_STATUS.md), the
+[baseline specification](spec/src/app-baseline.md), and the
+[UI package guide](packages/ui/README.md) for ownership, validation and limits.
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| `@beancount-js/beancount` | Core ledger logic, BQL query engine, ingest helpers |
-| `@beancount-js/parser` | Beancount syntax parser and document model |
-| `@beancount-js/filters` | Filter query language for reports |
-| `@beancount-js/codemirror-lang-beancount` | CodeMirror 6 Beancount grammar |
-| `@beancount-js/fava` | Svelte UI (editor, reports, import workflow) |
+| Package | Role |
+| --- | --- |
+| `@beancount-js/ui` | Active application composition, controllers, adapted presentation and sole Storybook catalog |
+| `@lapismd/design-core` | Published shell, forms and UI primitives consumed by the application |
+| `@beancount-js/beancount`, `parser`, `filters`, `beanquery` | Repository-owned accounting, parsing and query logic |
+| `@beancount-js/server`, `workspace`, connectors | Host services and integration boundaries |
+| `@beancount-js/fava` | Retained frozen comparison application |
+| `@beancount-js/fava-beta` | Retained legacy integration host/services |
+| `@lapis/ui` (`packages/ui-legacy`), `@beancount-js/forms` | Compatibility imports for retained hosts; no active catalog |
 
 ## Development
 
-Requires [pnpm](https://pnpm.io/) 10.x and Node.js 20+.
+Use Node.js 22.12+ (Node 24 is used locally), pnpm 10 and Jujutsu. Catalog
+checks need the pinned source/reference commit objects available in this repo.
 
-```bash
+```sh
 pnpm install
-pnpm build
-pnpm test
 pnpm dev
 ```
 
-`pnpm dev` starts the Fava UI dev server. The ledger contents persist in `localStorage` under the key `ledger`.
+`pnpm dev` starts Storybook at `http://127.0.0.1:6006`. The application stories
+use disposable in-memory projects and fixture services. They do not read/write
+real ledger files or contact banks. A production filesystem/API host through
+`BeancountDataSource` remains follow-up work.
+
+```sh
+pnpm check:baseline
+pnpm checks:ui
+pnpm checks:compat
+pnpm test:storybook
+pnpm build-storybook
+pnpm test
+```
+
+`pnpm checks` runs the core, active UI and compatibility checks. The
+[status page](docs/APP_STATUS.md) records observed results and outstanding
+aggregate failures. A passing catalog is not production integration or visual
+signoff. Root build/test commands may also exercise retained legacy hosts.
+
+## Preserved previous state
+
+`archive/pre-design-core-baseline-2026-10-28` preserves the previous checkout
+at `96936679`, including the pending Visual Delta/macOS changes. The
+`beancount-studio` bookmark names the promoted application development baseline.
+The repository's separate `main` bookmark is not repurposed by this transition.
+
+```sh
+jj --no-pager show archive/pre-design-core-baseline-2026-10-28
+```
+
+Both histories are retained by the baseline merge. The selected visual
+reference remains Fava at `498bd075`; provenance and comparison details are in
+[PARITY_REVIEW.md](packages/ui/PARITY_REVIEW.md). The former extraction ledger,
+old catalog and visual tooling remain recoverable through the archive bookmark.
 
 ## Plugin configuration
 
@@ -48,29 +89,8 @@ plugin "beancount.plugins.forecast"
 
 Inline configuration wins over the global default. The built-in forecast plugin accepts `now` and `end`; the credit-card plugin accepts `{ tag: ... }` as YAML and continues to support its legacy plain tag string. The auto-account, pad, and balance plugins do not accept configuration.
 
-### Useful filters
-
-```bash
-pnpm --filter @beancount-js/fava check
-pnpm --filter @beancount-js/fava dev
-pnpm --filter @beancount-js/beancount test
-```
-
-## Routes
-
-| Path | View |
-|------|------|
-| `/editor` | Beancount source editor |
-| `/journal` | Transaction journal grid |
-| `/errors` | Parse and validation errors |
-| `/income_statement`, `/balance_sheet`, `/trial_balance` | Financial reports with charts |
-| `/holdings`, `/statistics` | Query-based reports |
-| `/query` | BQL query runner |
-| `/accounts`, `/account/:name` | Account detail |
-| `/records` | CSV import and categorization |
-| `/import/editor` | Import YAML config editor |
-| `/directives` | Generated beancount preview |
-
 ## Version control
 
-This repository uses [Jujutsu](https://jj-vcs.github.io/jj/latest/) (`jj`) colocated with Git. Use `jj commit -m "..."` after validated slices.
+Use [Jujutsu](https://jj-vcs.github.io/jj/latest/) for local repository work.
+Commit small verified slices with `jj commit -m "..."`; preserve unrelated work.
+Bookmarks are local unless explicitly published.

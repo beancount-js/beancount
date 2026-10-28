@@ -5,11 +5,14 @@
 > Canonical implementation surface in this repo: `@lapis/ui/forms`
 > (`packages/ui/src/components/forms`).
 >
-> `@beancount-js/forms` is a temporary implementation-free compatibility facade
+> `@beancount-js/ui/forms` is a temporary implementation-free compatibility facade
 > for the frozen Fava reference. Where the origin text refers to `@cvstudio/ui`
 > or `@cvstudio/forms`, use `@lapis/ui/forms` in new code.
 
 The shared form and UI contract keeps Studio, applications, docs, and task editors visually and behaviorally consistent.
+
+`@beancount-js/forms` itself is now an implementation-free legacy forwarding facade.
+Do not extend it or its frozen `@lapis/ui` provider for new application work.
 
 ## Shared form pattern
 

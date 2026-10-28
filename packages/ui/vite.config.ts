@@ -1,27 +1,56 @@
-import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vite";
-import { fileURLToPath, URL } from "node:url";
-
-const storybookTest = fileURLToPath(
-  new URL("./node_modules/storybook/dist/test/index.js", import.meta.url),
-);
-
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { lezer } from "@lezer/generator/rollup";
+import tailwindcss from "@tailwindcss/vite";
+import { fileURLToPath } from "node:url";
 export default defineConfig({
-  plugins: [svelte()],
-  optimizeDeps: {
-    // The forms icon registry is only reached by a subset of stories. Pin its
-    // late-discovered entry so Vitest does not invalidate the browser runner
-    // while the complete Storybook suite is already executing.
-    include: ["lucide-svelte/icons/luggage"],
-  },
+  plugins: [lezer(), tailwindcss(), svelte()],
   resolve: {
+    dedupe: ["svelte", "bits-ui", "@codemirror/state", "@codemirror/view"],
     alias: {
-      "@beancount-js/beancount": fileURLToPath(
-        new URL("../beancount/src/index.ts", import.meta.url),
+      ...Object.fromEntries(
+        ["beancount", "parser", "filters", "beanquery", "beangulp"].map(
+          (name) => [
+            `@beancount-js/${name}`,
+            fileURLToPath(new URL(`../${name}/src/index.ts`, import.meta.url)),
+          ],
+        ),
       ),
-      // UI-owned colocated stories resolve test helpers from the catalog
-      // package, which owns the Storybook runtime.
-      "storybook/test": storybookTest,
+      $lib: fileURLToPath(new URL("./src/domain/lib", import.meta.url)),
     },
+  },
+  optimizeDeps: {
+    include: [
+      "@lapismd/design-core/shell",
+      "@lapismd/design-core/forms",
+      "@lapismd/design-core/filter",
+      "@lapismd/design-core/shadcn/accordion",
+      "@lapismd/design-core/shadcn/alert",
+      "@lapismd/design-core/shadcn/alert-dialog",
+      "@lapismd/design-core/shadcn/badge",
+      "@lapismd/design-core/shadcn/breadcrumb",
+      "@lapismd/design-core/shadcn/button",
+      "@lapismd/design-core/shadcn/button-group",
+      "@lapismd/design-core/shadcn/collapsible",
+      "@lapismd/design-core/shadcn/dialog",
+      "@lapismd/design-core/shadcn/dropdown-menu",
+      "@lapismd/design-core/shadcn/empty",
+      "@lapismd/design-core/shadcn/input",
+      "@lapismd/design-core/shadcn/pagination",
+      "@lapismd/design-core/shadcn/popover",
+      "@lapismd/design-core/shadcn/progress",
+      "@lapismd/design-core/shadcn/scroll-area",
+      "@lapismd/design-core/shadcn/select",
+      "@lapismd/design-core/shadcn/separator",
+      "@lapismd/design-core/shadcn/sheet",
+      "@lapismd/design-core/shadcn/skeleton",
+      "@lapismd/design-core/shadcn/switch",
+      "@lapismd/design-core/shadcn/tabs",
+      "@lapismd/design-core/shadcn/table",
+      "@lapismd/design-core/shadcn/textarea",
+      "@lapismd/design-core/shadcn/toggle-group",
+      "@lapismd/design-core/shadcn/tooltip",
+      "bits-ui",
+    ],
   },
 });

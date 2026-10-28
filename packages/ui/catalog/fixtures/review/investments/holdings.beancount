@@ -1,0 +1,13 @@
+option "title" "Investment Ledger"
+option "operating_currency" "GBP"
+2024-01-01 commodity ACME
+2024-01-01 open Assets:Brokerage:Shares ACME
+2024-01-01 open Assets:Checking GBP
+2024-01-01 open Equity:Opening GBP
+2024-01-02 * "Fund brokerage" #investments
+  Assets:Checking 5000 GBP
+  Equity:Opening -5000 GBP
+2024-02-01 * "Buy example shares" #investments ; #investments/shares
+  Assets:Brokerage:Shares 10 ACME {20 GBP}
+  Assets:Checking -200 GBP
+2024-03-01 price ACME 25 GBP

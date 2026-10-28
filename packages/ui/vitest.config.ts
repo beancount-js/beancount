@@ -1,14 +1,10 @@
 import { defineConfig, mergeConfig } from "vitest/config";
-import { playwright } from "@vitest/browser-playwright";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-import path from "node:path";
+import { playwright } from "@vitest/browser-playwright";
 import { fileURLToPath } from "node:url";
-import viteConfig from "./vite.config";
-
-const dirname = path.dirname(fileURLToPath(import.meta.url));
-
+import vite from "./vite.config";
 export default mergeConfig(
-  viteConfig,
+  vite,
   defineConfig({
     test: {
       projects: [
@@ -16,12 +12,10 @@ export default mergeConfig(
           extends: true,
           test: {
             name: "unit",
-            environment: "node",
             include: [
-              "src/foundation.tokens.spec.ts",
-              "src/components/shadcn/native-primitives.spec.ts",
-              "src/components/forms/**/*.spec.ts",
-              "src/components/dashboard/**/*.spec.ts",
+              "src/**/*.test.ts",
+              "src/**/*.spec.ts",
+              "catalog/**/*.test.ts",
             ],
           },
         },
@@ -29,18 +23,25 @@ export default mergeConfig(
           extends: true,
           plugins: [
             storybookTest({
-              configDir: path.join(dirname, ".storybook"),
+              configDir: fileURLToPath(
+                new URL("./.storybook", import.meta.url),
+              ),
             }),
           ],
           test: {
             name: "storybook",
+            testTimeout: 60000,
             browser: {
               enabled: true,
-              provider: playwright({}),
               headless: true,
-              instances: [{ browser: "chromium" }],
+              fileParallelism: false,
+              provider: playwright({
+                contextOptions: { viewport: { width: 1440, height: 1200 } },
+              }),
+              instances: [
+                { browser: "chromium", viewport: { width: 1280, height: 800 } },
+              ],
             },
-            setupFiles: ["./.storybook/vitest.setup.ts"],
           },
         },
       ],

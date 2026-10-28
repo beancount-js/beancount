@@ -1,29 +1,28 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "baseUrl": ".",
-    "checkJs": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "sourceMap": true,
     "strict": true,
-    "target": "ES2022",
-    "types": ["vite/client"],
-    "useDefineForClassFields": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
+    "types": ["vite/client", "node"],
     "paths": {
-      "storybook/test": ["./node_modules/storybook/dist/test/index.d.ts"]
-    }
+      "$lib/*": ["./src/domain/lib/*"]
+    },
+    "noEmit": true
   },
   "include": [
-    ".storybook/**/*.ts",
     "src/**/*.ts",
     "src/**/*.svelte",
-    "vite.config.ts",
-    "vitest.config.ts"
+    "catalog/**/*.ts",
+    "catalog/**/*.svelte",
+    ".storybook/**/*.ts",
+    "*.ts"
   ]
 }

@@ -1,0 +1,161 @@
+import { describe, expect, it } from "vitest";
+import {
+  buildLedgerHref,
+  hashUrlToLedgerHref,
+  ledgerStemForPath,
+  parseLedgerAndView,
+  resolveLedgerPath,
+  viewPathToSegments,
+} from "./ledger-route";
+
+const available = [
+  "sample.beancount",
+  "a/b/sample.beancount",
+  "tax/2026/main.bean",
+  "dup.bean",
+  "dup.beancount",
+];
+
+describe("ledger-route", () => {
+  it("parses view and ledger stem from catch-all segments", () => {
+    expect(parseLedgerAndView(["sample", "journal"])).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/journal",
+      viewSegment: "journal",
+      params: {},
+    });
+    expect(parseLedgerAndView(["a", "b", "sample", "trial-balance"])).toEqual({
+      ledgerStem: "a/b/sample",
+      viewPath: "/trial_balance",
+      viewSegment: "trial-balance",
+      params: {},
+    });
+    expect(
+      parseLedgerAndView(["a", "b", "sample", "account", "Assets:Checking"]),
+    ).toMatchObject({
+      ledgerStem: "a/b/sample",
+      viewPath: "/account/Assets:Checking",
+      params: { account: "Assets:Checking" },
+    });
+    expect(parseLedgerAndView(["sample", "settings", "accounts"])).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/accounts",
+      viewSegment: "settings/accounts",
+      params: {},
+    });
+    expect(parseLedgerAndView(["sample", "settings", "merchants"])).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/merchants",
+      viewSegment: "settings/merchants",
+      params: {},
+    });
+    expect(
+      parseLedgerAndView(["sample", "settings", "manage-merchants"]),
+    ).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/manage-merchants",
+      viewSegment: "settings/manage-merchants",
+      params: {},
+    });
+    expect(parseLedgerAndView(["sample", "settings", "brands"])).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/brands",
+      viewSegment: "settings/brands",
+      params: {},
+    });
+    expect(parseLedgerAndView(["sample", "settings", "history"])).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/history",
+      viewSegment: "settings/history",
+      params: {},
+    });
+    expect(
+      parseLedgerAndView(["sample", "settings", "history", "run:2026-07-17"]),
+    ).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/history/run:2026-07-17",
+      viewSegment: "settings/history/run:2026-07-17",
+      params: { runId: "run:2026-07-17" },
+    });
+    expect(parseLedgerAndView(["sample", "settings", "rules"])).toEqual({
+      ledgerStem: "sample",
+      viewPath: "/import/rules",
+      viewSegment: "settings/rules",
+      params: {},
+    });
+  });
+
+  it("defaults to dashboard when view is omitted", () => {
+    expect(parseLedgerAndView(["sample"])).toMatchObject({
+      ledgerStem: "sample",
+      viewPath: "/dashboard",
+      viewSegment: "dashboard",
+    });
+  });
+
+  it("resolves extensionless stems and keeps ambiguous ones extensionful", () => {
+    expect(resolveLedgerPath("sample", available)).toBe("sample.beancount");
+    expect(resolveLedgerPath("a/b/sample", available)).toBe(
+      "a/b/sample.beancount",
+    );
+    expect(resolveLedgerPath("dup", available)).toBeNull();
+    expect(resolveLedgerPath("dup.bean", available)).toBe("dup.bean");
+    expect(ledgerStemForPath("sample.beancount", available)).toBe("sample");
+    expect(ledgerStemForPath("dup.bean", available)).toBe("dup.bean");
+  });
+
+  it("builds ledger pathnames with kebab view segments", () => {
+    expect(viewPathToSegments("/income_statement")).toEqual([
+      "income-statement",
+    ]);
+    expect(viewPathToSegments("/import/brands")).toEqual([
+      "settings",
+      "brands",
+    ]);
+    expect(viewPathToSegments("/import/history")).toEqual([
+      "settings",
+      "history",
+    ]);
+    expect(viewPathToSegments("/import/history/run:2026-07-17")).toEqual([
+      "settings",
+      "history",
+      "run:2026-07-17",
+    ]);
+    expect(viewPathToSegments("/import/rules")).toEqual(["settings", "rules"]);
+    expect(buildLedgerHref("bean-budget", "a/b/sample", "/dashboard")).toBe(
+      "/bean-budget/ledger/a/b/sample/dashboard/",
+    );
+    expect(buildLedgerHref("bean-budget", "sample", "/import/brands")).toBe(
+      "/bean-budget/ledger/sample/settings/brands/",
+    );
+    expect(buildLedgerHref("bean-budget", "sample", "/import/history")).toBe(
+      "/bean-budget/ledger/sample/settings/history/",
+    );
+    expect(
+      buildLedgerHref(
+        "bean-budget",
+        "sample",
+        "/import/history/run:2026-07-17",
+      ),
+    ).toBe("/bean-budget/ledger/sample/settings/history/run%3A2026-07-17/");
+    expect(buildLedgerHref("bean-budget", "sample", "/import/rules")).toBe(
+      "/bean-budget/ledger/sample/settings/rules/",
+    );
+    expect(
+      buildLedgerHref("bean-budget", "sample", "/account/Assets:Checking", {
+        page: "2",
+      }),
+    ).toBe("/bean-budget/ledger/sample/account/Assets%3AChecking/?page=2");
+  });
+
+  it("maps legacy hash URLs to path hrefs", () => {
+    expect(
+      hashUrlToLedgerHref(
+        "bean-budget",
+        "#/journal?ledger=a/b/sample.beancount",
+        available,
+        "sample.beancount",
+      ),
+    ).toBe("/bean-budget/ledger/a/b/sample/journal/");
+  });
+});
