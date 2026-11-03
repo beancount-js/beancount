@@ -263,6 +263,26 @@
         journal.querySelectorAll("[data-journal-group-toggle]").length,
       ).toBeGreaterThan(0),
     );
+    await waitFor(() => {
+      const postings = journal.querySelectorAll<HTMLElement>(
+        "[data-journal-posting]",
+      );
+      expect(postings.length).toBeGreaterThan(0);
+      for (const posting of postings) {
+        const account = posting.firstElementChild!;
+        const amount = posting.lastElementChild!;
+        const accountLink = account.querySelector<HTMLElement>(
+          "[data-account-navigation-link]",
+        );
+        expect(account.getBoundingClientRect().right).toBeLessThanOrEqual(
+          amount.getBoundingClientRect().left + 1,
+        );
+        if (accountLink)
+          expect(accountLink.getBoundingClientRect().right).toBeLessThanOrEqual(
+            account.getBoundingClientRect().right + 1,
+          );
+      }
+    });
     const toggle = journal.querySelector<HTMLElement>(
       "[data-journal-group-toggle]",
     )!;

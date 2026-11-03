@@ -21,6 +21,7 @@
     appearance,
     avatarSize = "sm",
     disabled = false,
+    truncate = false,
     onSelect,
     onclick: onClick,
     onkeydown,
@@ -32,6 +33,8 @@
     appearance?: AccountNavigationAppearance;
     avatarSize?: "sm" | "md" | "lg";
     disabled?: boolean;
+    /** Constrain the label to the available cell width and show an ellipsis. */
+    truncate?: boolean;
     onSelect?: (account: string) => void;
     onclick?: (event: MouseEvent) => void;
     onkeydown?: (event: KeyboardEvent) => void;
@@ -50,7 +53,8 @@
 <a
   href={href ?? "#"}
   class={[
-    "beancount-account-link inline-flex shrink-0 items-center gap-2 text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+    "beancount-account-link inline-flex items-center gap-2 text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+    truncate ? "max-w-full" : "shrink-0",
     className,
   ]
     .filter(Boolean)
@@ -73,7 +77,7 @@
       size={avatarSize}
     />
   {/if}
-  <span class="whitespace-nowrap">{label}</span>
+  <span class:truncate class="min-w-0 whitespace-nowrap">{label}</span>
 </a>
 
 <style>

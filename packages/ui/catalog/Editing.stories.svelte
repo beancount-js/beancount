@@ -43,7 +43,32 @@
         .getByRole("toolbar", { name: "Editor commands" })
         .closest("[data-page-toolbar-leading]"),
     ).not.toBeNull();
-    await userEvent.click(editor);
+    const editorCommands = within(
+      canvas.getByRole("toolbar", { name: "Editor commands" }),
+    );
+    await userEvent.click(editorCommands.getByRole("button", { name: "File" }));
+    const fileMenu = await within(document.body).findByRole("menu");
+    expect(getComputedStyle(fileMenu).whiteSpace).toBe("nowrap");
+    expect(fileMenu.scrollWidth).toBeLessThanOrEqual(fileMenu.clientWidth);
+    expect(
+      getComputedStyle(
+        within(fileMenu).getByRole("menuitem", { name: "Go To Line" }),
+      ).textAlign,
+    ).toBe("left");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(within(document.body).queryByRole("menu")).not.toBeInTheDocument(),
+    );
+    editorCommands.getByRole("button", { name: "Edit" }).focus();
+    await userEvent.keyboard("{Enter}");
+    const editMenu = await within(document.body).findByRole("menu");
+    expect(getComputedStyle(editMenu).whiteSpace).toBe("nowrap");
+    expect(editMenu.scrollWidth).toBeLessThanOrEqual(editMenu.clientWidth);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(within(document.body).queryByRole("menu")).not.toBeInTheDocument(),
+    );
+    editor.focus();
     const modifier = /Mac/.test(navigator.platform) ? "Meta" : "Control";
     await userEvent.keyboard(`{${modifier}>}a{/${modifier}}`);
     await userEvent.type(

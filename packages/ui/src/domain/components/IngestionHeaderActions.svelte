@@ -49,12 +49,14 @@
             class="h-8 cursor-pointer px-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
             >File</DropdownMenu.Trigger
           >
-          <DropdownMenu.Content>
+          <DropdownMenu.Content class="!w-max min-w-44 whitespace-nowrap">
             <DropdownMenu.Sub>
               <DropdownMenu.SubTrigger class="pl-8"
                 >Open source</DropdownMenu.SubTrigger
               >
-              <DropdownMenu.SubContent>
+              <DropdownMenu.SubContent
+                class="!w-max min-w-44 whitespace-nowrap"
+              >
                 {#each header.sources as file (file.path)}
                   <DropdownMenu.CheckboxItem
                     checked={file.path === header.activePath}
@@ -70,8 +72,10 @@
             >
               Format on Save
             </DropdownMenu.CheckboxItem>
-            <DropdownMenu.Item inset onclick={() => header.onGotoLine()}
-              >Go To Line</DropdownMenu.Item
+            <DropdownMenu.Item
+              inset
+              class="justify-start whitespace-nowrap text-left"
+              onclick={() => header.onGotoLine()}>Go To Line</DropdownMenu.Item
             >
           </DropdownMenu.Content>
         </DropdownMenu.Root>
@@ -80,21 +84,35 @@
             class="h-8 cursor-pointer px-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
             >Edit</DropdownMenu.Trigger
           >
-          <DropdownMenu.Content>
-            <DropdownMenu.Item inset onclick={() => header.onFormat()}>
+          <DropdownMenu.Content class="!w-max min-w-48 whitespace-nowrap">
+            <DropdownMenu.Item
+              inset
+              class="whitespace-nowrap"
+              onclick={() => header.onFormat()}
+            >
               Format <DropdownMenu.Shortcut class="pl-2"
                 >⌘ + D</DropdownMenu.Shortcut
               >
             </DropdownMenu.Item>
-            <DropdownMenu.Item inset onclick={() => header.onToggleComment()}>
+            <DropdownMenu.Item
+              inset
+              class="whitespace-nowrap"
+              onclick={() => header.onToggleComment()}
+            >
               Toggle Comment <DropdownMenu.Shortcut class="pl-2"
                 >⌘ + /</DropdownMenu.Shortcut
               >
             </DropdownMenu.Item>
-            <DropdownMenu.Item onclick={() => header.onUnfoldAll()}>
+            <DropdownMenu.Item
+              class="whitespace-nowrap"
+              onclick={() => header.onUnfoldAll()}
+            >
               <UnfoldVertical class="mr-2 size-4" /> Open all folds
             </DropdownMenu.Item>
-            <DropdownMenu.Item onclick={() => header.onFoldAll()}>
+            <DropdownMenu.Item
+              class="whitespace-nowrap"
+              onclick={() => header.onFoldAll()}
+            >
               <FoldVertical class="mr-2 size-4" /> Close all folds
             </DropdownMenu.Item>
             <DropdownMenu.Separator />
@@ -102,7 +120,9 @@
               <DropdownMenu.SubTrigger class="pl-8"
                 >Find</DropdownMenu.SubTrigger
               >
-              <DropdownMenu.SubContent>
+              <DropdownMenu.SubContent
+                class="!w-max min-w-36 whitespace-nowrap"
+              >
                 <DropdownMenu.Item onclick={() => header.onFind()}
                   >Find...</DropdownMenu.Item
                 >
@@ -115,7 +135,10 @@
               </DropdownMenu.SubContent>
             </DropdownMenu.Sub>
             <DropdownMenu.Separator />
-            <DropdownMenu.Item onclick={() => header.onAskAi()}>
+            <DropdownMenu.Item
+              class="whitespace-nowrap"
+              onclick={() => header.onAskAi()}
+            >
               <Sparkles class="mr-2 size-4" /> Ask AI about selection
             </DropdownMenu.Item>
           </DropdownMenu.Content>

@@ -34,6 +34,11 @@
     const parent = canvas.querySelector<HTMLElement>(
       "[data-ledger-file-node]:has([data-ledger-file-panels])",
     )!;
+    expect(
+      getComputedStyle(
+        parent.querySelector<HTMLElement>("[data-ledger-file-panels]")!,
+      ).rowGap,
+    ).toBe("4px");
     const icon = parent.querySelector("[data-ledger-file-row] svg")!;
     for (const report of parent.querySelectorAll(
       "[data-ledger-report-row] svg",
@@ -95,6 +100,12 @@
     expect(getComputedStyle(fileRow).paddingLeft).toBe("0px");
     expect(fileRow.getBoundingClientRect().height).toBe(32);
     await expectTreePresentation(canvasElement);
+    expect(
+      canvas
+        .getByRole("textbox", { name: "Search ledgers" })
+        .parentElement!.querySelector("svg")!
+        .getBoundingClientRect().width,
+    ).toBe(14);
     await userEvent.type(
       canvas.getByRole("textbox", { name: "Search ledgers" }),
       "nonexistent",
@@ -115,10 +126,31 @@
       canvas.getByRole("textbox", { name: "Search folders" }),
       "archive",
     );
+    const folderDisclosure = canvas.getByRole("button", {
+      name: /all filesystem folders/,
+    });
+    if (import.meta.env.MODE === "test") {
+      const { page } = await import("vitest/browser");
+      const background = getComputedStyle(folderDisclosure).backgroundColor;
+      await page.elementLocator(folderDisclosure).hover();
+      await waitFor(() =>
+        expect(getComputedStyle(folderDisclosure).backgroundColor).not.toBe(
+          background,
+        ),
+      );
+      await page.elementLocator(folderDisclosure).unhover();
+    }
     const folder = canvasElement.querySelector<HTMLElement>(
       '[data-ledger-folder-row="archive"]',
     )!;
     await userEvent.click(folder);
+    expect(
+      getComputedStyle(
+        folder.parentElement!.querySelector<HTMLElement>(
+          "[data-ledger-folder-children]",
+        )!,
+      ).rowGap,
+    ).toBe("4px");
     const folderIcon = folder.querySelectorAll("svg")[1];
     const fileIcon = folder.parentElement!.querySelector(
       "[data-ledger-file-row] svg",
@@ -278,6 +310,12 @@
     await userEvent.click(
       nav.getByRole("button", { name: /^Select account:/ }),
     );
+    const accountOption = await within(document.body).findByRole("option", {
+      name: "Assets:Checking",
+    });
+    const accountAvatar = accountOption.querySelector("img")!;
+    await expect(accountAvatar).toBeVisible();
+    expect(accountAvatar.getAttribute("src")).toContain("data:image/svg+xml,");
     await userEvent.click(
       await within(document.body).findByRole("option", {
         name: "All accounts",

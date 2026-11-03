@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   accountAvatarFallbackColor,
+  accountAvatarImageDataUrl,
   accountAvatarInitial,
 } from "./account-avatar";
 
@@ -17,5 +18,16 @@ describe("account avatar fallback appearance", () => {
     expect(accountAvatarFallbackColor("Assets:Cash")).not.toBe(
       accountAvatarFallbackColor("Assets:Holiday"),
     );
+  });
+
+  it("provides the same fallback identity to image-based pickers", () => {
+    const image = decodeURIComponent(
+      accountAvatarImageDataUrl("Assets:Checking").replace(
+        "data:image/svg+xml,",
+        "",
+      ),
+    );
+    expect(image).toContain(">C</text>");
+    expect(image).toContain(accountAvatarFallbackColor("Assets:Checking"));
   });
 });

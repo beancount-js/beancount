@@ -32,8 +32,29 @@ export async function expectStatementGeometry(canvas: HTMLElement) {
         expectColumnsAligned([...header.children], [...row.children]);
         expect(row.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);
         expect(getComputedStyle(row).borderTopWidth).toBe("1px");
+        if (table.matches("[data-statement-summary-tree-table]")) {
+          const accountCell = row.firstElementChild!;
+          const accountLink = accountCell.querySelector<HTMLElement>(
+            "[data-account-navigation-link]",
+          );
+          if (accountLink)
+            expect(
+              accountLink.getBoundingClientRect().right,
+            ).toBeLessThanOrEqual(
+              accountCell.getBoundingClientRect().right + 1,
+            );
+        }
       });
     });
+    for (const item of canvas.querySelectorAll<HTMLElement>(
+      "[data-statement-contribution-legend] > span",
+    )) {
+      const label = item.children[1]!;
+      const percentage = item.children[2]!;
+      expect(label.getBoundingClientRect().right).toBeLessThanOrEqual(
+        percentage.getBoundingClientRect().left + 1,
+      );
+    }
   });
 }
 

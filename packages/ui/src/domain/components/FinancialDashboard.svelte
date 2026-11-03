@@ -258,15 +258,15 @@
             class="w-full min-w-0 max-w-full"
           >
             <div
-              class="min-w-[32rem] p-4 sm:min-w-0 sm:p-5"
+              class="p-4 sm:p-5 lg:min-w-[32rem]"
               data-dashboard-outflow-table
             >
               <div
-                class="mb-2 grid grid-cols-[minmax(0,1fr)_5.5rem_9rem] gap-4 border-b border-border/80 px-2 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                class="mb-2 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b border-border/80 px-2 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:grid-cols-[minmax(0,1fr)_5.5rem_9rem] lg:gap-4"
               >
-                <span>Category</span><span class="text-right">Share</span><span
-                  class="text-right">Value</span
-                >
+                <span>Category</span>
+                <span class="hidden text-right lg:block">Share</span>
+                <span class="text-right">Value</span>
               </div>
               {#if dashboard.expenseCategories.length}
                 {#each dashboard.expenseCategories as category (category.account)}
@@ -274,21 +274,25 @@
                     href={category.account === "Other"
                       ? undefined
                       : urlForAccount(category.account)}
-                    class="grid grid-cols-[minmax(0,1fr)_5.5rem_9rem] items-center gap-4 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-muted/65"
+                    class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-muted/65 lg:grid-cols-[minmax(0,1fr)_5.5rem_9rem] lg:gap-4"
+                    data-dashboard-outflow-row
                   >
-                    <span class="flex min-w-0 items-center gap-2">
+                    <span
+                      class="col-span-2 flex min-w-0 items-center gap-2 lg:col-span-1"
+                    >
                       <span
                         class="size-2.5 shrink-0 rounded-full"
                         style={`background: ${category.color}`}
                       ></span>
-                      <span class="break-words font-medium text-foreground"
+                      <span
+                        class="min-w-0 flex-1 overflow-hidden break-words font-medium text-foreground [overflow-wrap:anywhere]"
                         >{category.account}</span
                       >
                     </span>
                     <span
-                      class="text-right font-mono text-xs tabular-nums text-muted-foreground"
+                      class="font-mono text-xs tabular-nums text-muted-foreground lg:text-right"
                     >
-                      {dashboard.expenses
+                      <span class="lg:hidden">Share </span>{dashboard.expenses
                         ? ((category.value / dashboard.expenses) * 100).toFixed(
                             1,
                           )

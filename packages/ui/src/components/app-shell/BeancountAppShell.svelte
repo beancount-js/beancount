@@ -275,6 +275,14 @@
     height: auto;
     min-height: 0;
     padding-block: 1rem;
+    color: var(--sidebar-foreground);
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
+  }
+  :global(.beancount-shell__project-rail:hover) {
+    background: var(--sidebar-accent);
+    color: var(--sidebar-accent-foreground);
   }
   :global(.beancount-shell__project-rail span) {
     writing-mode: vertical-rl;

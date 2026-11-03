@@ -26,6 +26,7 @@
   import { Query } from "@beancount-js/beancount";
   import { untrack } from "svelte";
   import { FilterCommandPicker, FormField } from "../forms";
+  import { accountAvatarImageDataUrl } from "../forms/account-avatar";
   import type { BeancountController, WorkspaceView } from "../../controller";
   import type { ProjectFile } from "@beancount-js/workspace";
   import { Button } from "@lapismd/design-core/shadcn/button";
@@ -110,7 +111,11 @@
           .flatMap((directive) => directive.accounts)
           .filter(Boolean),
       ),
-    ].map((account) => ({ label: account, value: account })),
+    ].map((account) => ({
+      label: account,
+      value: account,
+      imageUrl: accountAvatarImageDataUrl(account),
+    })),
   );
   const queryPickerOptions = $derived([
     { value: "all", label: "Select query" },
@@ -585,7 +590,7 @@
       <div class="flex items-center gap-1">
         <label class="relative min-w-0 flex-1">
           <ListFilter
-            class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             value={ledgerQuery}
@@ -600,7 +605,7 @@
           type="button"
           variant="ghost"
           size="icon"
-          class="size-7"
+          class="size-7 rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-sidebar-accent-foreground"
           aria-label={hasCollapsedFiles()
             ? "Expand all ledgers"
             : "Collapse all ledgers"}
@@ -703,7 +708,7 @@
       <div class="flex items-center gap-1">
         <label class="relative min-w-0 flex-1">
           <ListFilter
-            class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             value={folderQuery}
@@ -718,7 +723,7 @@
           type="button"
           variant="ghost"
           size="icon"
-          class="size-7"
+          class="size-7 rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-sidebar-accent-foreground"
           aria-label={hasCollapsedFolders
             ? "Expand all filesystem folders"
             : "Collapse all filesystem folders"}
@@ -757,7 +762,7 @@
       <div class="flex items-center gap-1">
         <label class="relative min-w-0 flex-1">
           <ListFilter
-            class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            class="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             value={tagQuery}
@@ -879,7 +884,10 @@
       </Button>
     </div>
     {#if expanded}
-      <div class="min-w-0" data-ledger-file-panels={file.path}>
+      <div
+        class="flex min-w-0 flex-col gap-1"
+        data-ledger-file-panels={file.path}
+      >
         {#each menuItems as panel (panel.path)}
           <Button
             type="button"
@@ -966,7 +974,10 @@
       </Button>
     </div>
     {#if expanded}
-      <div class="min-w-0" data-review-ledger-panels={review.path}>
+      <div
+        class="flex min-w-0 flex-col gap-1"
+        data-review-ledger-panels={review.path}
+      >
         {#each menuItems as panel (panel.path)}
           <Button
             type="button"
@@ -1030,7 +1041,10 @@
       >
     </Button>
     {#if expanded}
-      <div class="min-w-0" data-ledger-folder-children={node.id}>
+      <div
+        class="flex min-w-0 flex-col gap-1"
+        data-ledger-folder-children={node.id}
+      >
         {#each node.files as file (file.path)}
           {@render LedgerFileRow({ file, depth })}
         {/each}

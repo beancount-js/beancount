@@ -12,6 +12,7 @@
     account,
     label,
     avatarSize = "sm",
+    truncate = false,
     onclick,
     onkeydown,
     class: className,
@@ -19,6 +20,7 @@
     account: string;
     label?: string;
     avatarSize?: "sm" | "md" | "lg";
+    truncate?: boolean;
     onclick?: (event: MouseEvent) => void;
     onkeydown?: (event: KeyboardEvent) => void;
     class?: string;
@@ -50,6 +52,7 @@
   {label}
   href={urlForAccount(account)}
   {avatarSize}
+  {truncate}
   appearance={appearance ? { ...appearance, merchantLogoUrl } : undefined}
   {onclick}
   {onkeydown}
