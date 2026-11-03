@@ -25,13 +25,19 @@
     await expect(
       await canvas.findByRole("heading", { name: "Financial dashboard" }),
     ).toBeVisible();
+    await userEvent.click(
+      canvas.getByRole("button", { name: /^Dashboard period:/ }),
+    );
+    await userEvent.click(
+      await within(document.body).findByRole("option", { name: "All time" }),
+    );
     await expect(
-      within(
-        canvas.getByText("Income", { exact: true }).parentElement!,
-      ).getByText("3000.00 GBP"),
+      canvas.getByText("beancount-js-studio-query-table-498bd075", {
+        selector: "[data-project-name]",
+      }),
     ).toBeVisible();
     await expect(
-      canvas.getByText("Review Project", { selector: "[data-project-name]" }),
+      canvasElement.querySelector('[data-ledger-file-row="sample.beancount"]'),
     ).toBeVisible();
     const shellBackground = getComputedStyle(
       canvasElement.querySelector<HTMLElement>(".ui-minimal-app-shell__main")!,
@@ -65,7 +71,7 @@
       canvas.getByRole("button", { name: "Expand left sidebar" }),
     ).toBeVisible();
     const projectRail = canvas.getByRole("button", {
-      name: "Expand project rail: Review Project",
+      name: "Expand project rail: beancount-js-studio-query-table-498bd075",
     });
     await expect(projectRail).toBeVisible();
     expect(getComputedStyle(projectRail).margin).toBe("4px");
@@ -88,7 +94,7 @@
 >
   {#snippet template()}<ApplicationHarness
       displayMode="desktop"
-      scenario="review"
+      scenario="preview"
     />{/snippet}
 </Story>
 <Story name="Mobile">

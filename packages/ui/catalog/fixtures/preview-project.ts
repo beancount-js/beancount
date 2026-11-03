@@ -9,8 +9,9 @@ import { demoProject, NOW } from "./project";
 export function previewProject() {
   const project = demoProject("fava-query-table-reference");
   project.project.name = "beancount-js-studio-query-table-498bd075";
-  project.project.entryFile = "packages/fava/public/sample.beancount";
+  project.project.entryFile = "sample.beancount";
   project.ledgerFiles = [
+    { path: "sample.beancount", contents: rootSample },
     { path: "packages/fava/e2e/fixtures/minimal.beancount", contents: minimal },
     { path: "packages/fava/public/sample.beancount", contents: sample },
     {
@@ -18,7 +19,6 @@ export function previewProject() {
       contents: offByOne,
     },
     { path: "sample-budgets.beancount", contents: budgets },
-    { path: "sample.beancount", contents: rootSample },
   ];
   project.revisions = project.ledgerFiles.map(({ path }) => ({
     path,

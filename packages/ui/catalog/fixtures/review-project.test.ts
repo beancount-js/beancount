@@ -4,7 +4,7 @@ import { runBql } from "@beancount-js/beanquery";
 import { expect, it } from "vitest";
 import { LedgerSource } from "../../src/domain/core/ledger";
 import { previewProject } from "./preview-project";
-import sample from "./reference/fava-sample.beancount?raw";
+import sample from "./reference/sample.beancount?raw";
 import { reviewProject } from "./review-project";
 
 it("loads each shared review ledger without errors and retains pagination data", () => {
@@ -41,9 +41,7 @@ it("keeps the complete review ledger available to reports and query pagination",
 it("matches the preview workspace paths and loads the selected sample ledger", async () => {
   const project = previewProject();
   expect(project.ledgerFiles).toHaveLength(5);
-  expect(project.project.entryFile).toBe(
-    "packages/fava/public/sample.beancount",
-  );
+  expect(project.project.entryFile).toBe("sample.beancount");
   expect(
     project.ledgerFiles.find((file) => file.path === project.project.entryFile)
       ?.contents,
@@ -54,20 +52,6 @@ it("matches the preview workspace paths and loads the selected sample ledger", a
   await controller.initialize();
   expect(controller.state.activeFile).toBe(project.project.entryFile);
   expect(controller.state.ledger.transactions.length).toBeGreaterThan(0);
-  // The selected reference sample has these existing validation diagnostics.
-  const messages = controller.state.ledger.errors.map((error) => error.message);
-  expect(
-    messages.filter(
-      (message) =>
-        message ===
-        "Invalid reference to unknown account 'Liabilities:CreditCard:Amex'",
-    ),
-  ).toHaveLength(30);
-  expect(
-    messages.filter(
-      (message) =>
-        message === "Duplicate open directive for Assets:Checking:Starling",
-    ),
-  ).toHaveLength(1);
+  expect(controller.state.ledger.errors).toEqual([]);
   controller.dispose();
 });

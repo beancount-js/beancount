@@ -11,6 +11,11 @@ Reusable Beancount application components backed by published Design Core 0.3.1.
 
 Run `pnpm dev` or `pnpm storybook` from the repository root. This is the sole active catalog and binds to `127.0.0.1:6006`. Retained Fava hosts are separate legacy/reference surfaces. Stories own deterministic, disposable controller instances and do not access a server or browser storage.
 
+The Application/Dashboard and matching-preview stories select the byte-identical
+workspace-root `sample.beancount` snapshot from Fava comparison commit
+`498bd075`. Specialized review stories retain a separate synthetic project for
+nested tags, multiple currencies, long values, scrolling and pagination.
+
 Consumers import `BeancountApplication` from `@beancount-js/ui`, controllers from `@beancount-js/ui/controller`, and `@beancount-js/ui/styles.css` once. Hosts supply a `BeancountController` and dispose it when their application is destroyed; the application initializes it on mount. The application owns its Design Core shell controller.
 
 Run `pnpm --filter @beancount-js/ui checks` for formatting, dependency boundaries, catalog coverage, types, unit tests, Storybook interactions/accessibility and the static build. `pnpm --filter @beancount-js/ui exec node scripts/check-catalog.mjs --built` also checks the built story index. Source provenance is recorded in `UI_PROVENANCE.json`; `CATALOG_INVENTORY.json` maps all 24 frozen reference routes to their adapted components and stories and lists the public Design Core imports.
