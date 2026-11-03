@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">American Express</title>
+  <rect width="120" height="120" rx="20" fill="#2671b9" />
+  <path d="M13 43h94v34H13z" fill="#fff" />
+  <text x="60" y="67" fill="#2671b9" font-family="Arial, sans-serif" font-size="25" font-weight="700" text-anchor="middle">AMEX</text>
+</svg>

@@ -615,9 +615,9 @@
                       class:rounded-b-xl={index ===
                         cluster.transactions.length - 1}
                       class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-3 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-                      aria-label={`Open review for ${tx.narration || tx.payee || tx.rawLabel}`}
                     >
                       <div class="min-w-0">
+                        <span class="sr-only">Open review for </span>
                         <div class="truncate text-sm font-semibold">
                           {tx.narration || tx.payee || tx.rawLabel}
                         </div>
@@ -658,11 +658,17 @@
 
   :global(.merchant-sheet-title),
   .merchant-form :global(.beancount-form-item-list-toggle),
-  .merchant-form :global(.beancount-form-section-title-toggle),
-  .merchant-form :global(.beancount-form-section-title-row h3) {
-    font-size: 0.75rem;
-    font-weight: 600;
+  .merchant-form :global(.cv-form-section-title-toggle),
+  .merchant-form :global(.cv-form-section-title-row h3) {
+    min-height: 1rem;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    line-height: 1rem !important;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+  }
+
+  .merchant-form :global(.cv-form-section-header) {
+    --ui-form-section-title-line-height: 1rem;
   }
 </style>

@@ -301,7 +301,7 @@
                 <div class="min-w-0">
                   <button
                     type="button"
-                    class="text-left text-sm font-semibold hover:underline focus-visible:outline focus-visible:outline-ring"
+                    class="text-left text-sm font-semibold focus-visible:outline focus-visible:outline-ring"
                     aria-label={`Edit merchant ${merchant.canonicalName}`}
                     onclick={() => openMerchant(merchant)}
                     >{merchant.canonicalName}</button

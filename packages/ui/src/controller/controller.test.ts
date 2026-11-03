@@ -77,12 +77,18 @@ it("keeps workspace selection and query history bound to one controller", async 
     "/api/projects/example/ingestion/merchants",
   );
   const merchants = await response.json();
-  expect(merchants).toHaveLength(3);
+  expect(merchants).toHaveLength(4);
   expect(merchants).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ canonicalName: "Example cafe" }),
       expect.objectContaining({ canonicalName: "Example bank" }),
       expect.objectContaining({ canonicalName: "Fixture provider" }),
+      expect.objectContaining({
+        canonicalName: "American Express",
+        provenance: expect.arrayContaining([
+          expect.objectContaining({ source: "brandfetch" }),
+        ]),
+      }),
     ]),
   );
   first.dispose();

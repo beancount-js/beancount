@@ -161,6 +161,34 @@
     />{/snippet}</Story
 >
 <Story
+  name="Review Merchant — Sheet Open"
+  play={async ({ canvasElement }) => {
+    await ready(canvasElement, "Review Merchants");
+    const portal = within(document.body);
+    await expect(
+      await portal.findByRole("heading", { name: "Review Merchant" }),
+    ).toBeVisible();
+    await expect(
+      (await portal.findAllByText("Example bookshop", { exact: true }))[0],
+    ).toBeVisible();
+    await expect(
+      portal.getByRole("link", { name: /Open review for Books/ }),
+    ).toBeVisible();
+    const titles = document.body.querySelectorAll<HTMLElement>(
+      "[data-ingestion-merchant-sheet] .cv-form-section-title-toggle",
+    );
+    expect(titles.length).toBeGreaterThan(2);
+    for (const title of titles) {
+      expect(getComputedStyle(title).fontSize).toBe("12px");
+      expect(getComputedStyle(title).lineHeight).toBe("16px");
+    }
+  }}
+  >{#snippet template()}<ApplicationHarness
+      displayMode="desktop"
+      initialRoute="/import/merchants?cluster=cluster-bookshop"
+    />{/snippet}</Story
+>
+<Story
   name="Manage Merchants"
   play={async ({ canvasElement }) => {
     await ready(canvasElement, "Manage Merchants");
@@ -179,6 +207,37 @@
   >{#snippet template()}<ApplicationHarness
       displayMode="desktop"
       initialRoute="/import/manage-merchants"
+    />{/snippet}</Story
+>
+<Story
+  name="Manage Merchant — Sheet Open"
+  play={async ({ canvasElement }) => {
+    await ready(canvasElement, "Manage Merchants");
+    const portal = within(document.body);
+    await expect(
+      await portal.findByRole("heading", { name: "American Express" }),
+    ).toBeVisible();
+    await expect(await portal.findByText(/brand-match-url/)).toBeVisible();
+    await expect(await portal.findByText(/logo-api/)).toBeVisible();
+    await expect(
+      await portal.findByText(/american-express-logo\.png · 120px/),
+    ).toBeVisible();
+    const merchantLogo = document.body.querySelector<HTMLImageElement>(
+      "[data-merchant-edit-sheet] img",
+    )!;
+    await waitFor(() => expect(merchantLogo.naturalWidth).toBeGreaterThan(0));
+    const titles = document.body.querySelectorAll<HTMLElement>(
+      "[data-merchant-edit-sheet] .cv-form-section-title-toggle",
+    );
+    expect(titles.length).toBe(4);
+    for (const title of titles) {
+      expect(getComputedStyle(title).fontSize).toBe("12px");
+      expect(getComputedStyle(title).lineHeight).toBe("16px");
+    }
+  }}
+  >{#snippet template()}<ApplicationHarness
+      displayMode="desktop"
+      initialRoute="/import/manage-merchants?merchantId=6c56a801-f41c-4a97-8e4c-81ad4ff1a969"
     />{/snippet}</Story
 >
 <Story

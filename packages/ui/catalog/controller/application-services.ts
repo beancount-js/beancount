@@ -20,6 +20,7 @@ import { exampleIngestionConfig } from "../../src/domain/ingestion/source-form";
 import { NOW } from "../fixtures/project";
 import exampleBankLogoUrl from "../assets/example-bank-logo.svg?url";
 import fixtureProviderLogoUrl from "../assets/fixture-provider-logo.svg?url";
+import americanExpressLogoUrl from "../assets/american-express-logo.svg?url";
 type SaveFile = (
   id: string,
   path: string,
@@ -199,6 +200,64 @@ export function createApplicationServices(
             observedAt: NOW,
           },
         ],
+      },
+      {
+        merchantId: "6c56a801-f41c-4a97-8e4c-81ad4ff1a969",
+        canonicalName: "American Express",
+        description: "Card provider enriched from americanexpress.com.",
+        domain: "americanexpress.com",
+        industry: "Financial services",
+        countryCode: "GB",
+        logoUrl: americanExpressLogoUrl,
+        notes: "Primary household card provider.",
+        aliases: [
+          {
+            value: "AMERICANEXPRESS",
+            normalizedValue: "americanexpress",
+            sourceId: "account:Liabilities:CreditCard:Amex",
+            confirmedAt: NOW,
+          },
+          {
+            value: "AMEX",
+            normalizedValue: "amex",
+            sourceId: "bank",
+            confirmedAt: NOW,
+          },
+        ],
+        provenance: [
+          {
+            source: "manual",
+            provider: "brand-match-url",
+            observedAt: NOW,
+          },
+          {
+            source: "brandfetch",
+            provider: "logo-api",
+            version: "cdn",
+            observedAt: NOW,
+          },
+          {
+            source: "ai",
+            provider: "codex",
+            model: "merchant-advisor",
+            version: "v1",
+            observedAt: NOW,
+          },
+        ],
+        brand: {
+          provider: "brandfetch",
+          brandId: "american-express",
+          fetchedAt: NOW,
+          expiresAt: "2025-01-30T12:00:00Z",
+          asset: {
+            filename: "american-express-logo.png",
+            mediaType: "image/png",
+            sha256:
+              "be4fc4aee19b46b26848e8419fe8f516c1de45f55ac84c2894242a76e6eb80e4",
+            size: 120,
+            expiresAt: "2025-01-30T12:00:00Z",
+          },
+        },
       },
     ];
     proposals[0]!.merchantResolution = {

@@ -592,11 +592,17 @@
     font-weight: 600;
   }
 
-  .merchant-edit-form :global(.beancount-form-section-title-toggle),
-  .merchant-edit-form :global(.beancount-form-section-title-row h3) {
-    font-size: 0.75rem;
-    font-weight: 600;
+  .merchant-edit-form :global(.cv-form-section-title-toggle),
+  .merchant-edit-form :global(.cv-form-section-title-row h3) {
+    min-height: 1rem;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    line-height: 1rem !important;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+  }
+
+  .merchant-edit-form :global(.cv-form-section-header) {
+    --ui-form-section-title-line-height: 1rem;
   }
 </style>
