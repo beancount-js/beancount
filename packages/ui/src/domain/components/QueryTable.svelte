@@ -154,14 +154,28 @@
   $: columnTypes = Object.fromEntries(
     columns.values.map((column) => [column.id, column.type]),
   );
-  $: queryRows = visibleRows.map(
-    (row, index): QueryResultRow => ({
+  $: queryRows = visibleRows.map((row, index): QueryResultRow => {
+    const values = Object.fromEntries(
+      columns.values.map((column) => [column.id, formatCell(row[column.id])]),
+    );
+    const lineCount = Math.max(
+      1,
+      ...Object.values(values).map((value) => displayValues(value).length),
+    );
+    return {
       id: String(pageStart + index),
       values: Object.fromEntries(
-        columns.values.map((column) => [column.id, formatCell(row[column.id])]),
+        Object.entries(values).map(([columnId, value]) => {
+          if (lineCount === 1) return [columnId, value];
+          const lines = displayValues(value);
+          return [
+            columnId,
+            [...lines, ...Array(lineCount - lines.length).fill("")],
+          ];
+        }),
       ),
-    }),
-  );
+    };
+  });
   $: activeSort = Object.entries($sortOrder)[0];
   $: sortColumnId = activeSort?.[0];
   $: sortDirection = sortDirectionFor(activeSort?.[1]?.order);
@@ -238,7 +252,13 @@
   value: QueryResultCell,
 )}
   {#each displayValues(value) as displayValue, index}
-    <div class:border-t={Array.isArray(value) && index > 0}>
+    <div
+      class={column.align === "right"
+        ? "-ml-2 -mr-8 min-h-[var(--query-line-height)] pl-2 pr-8"
+        : "-mx-2 min-h-[var(--query-line-height)] px-2"}
+      class:border-t={Array.isArray(value) && index > 0}
+      data-query-cell-line
+    >
       {#if columnTypes[column.id] === "account" && displayValue}
         <AccountLink account={displayValue} avatarSize="sm" />
       {:else}

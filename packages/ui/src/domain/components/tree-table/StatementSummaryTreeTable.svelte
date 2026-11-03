@@ -186,12 +186,12 @@
             >{contribution.account}</span
           >
           <span
-            class="whitespace-nowrap font-mono text-xs tabular-nums text-foreground"
+            class="w-14 whitespace-nowrap text-right font-mono text-xs tabular-nums text-foreground"
             >{contribution.percentage.toFixed(1)}%</span
           >
           {#if primaryCurrency}
             <span
-              class="whitespace-nowrap font-mono text-xs tabular-nums text-foreground"
+              class="w-28 whitespace-nowrap text-right font-mono text-xs tabular-nums text-foreground"
               >{$ctx.amount(contribution.amount, primaryCurrency)}</span
             >
           {/if}

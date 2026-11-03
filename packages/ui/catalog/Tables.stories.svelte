@@ -39,6 +39,17 @@
       await canvas.findByRole("region", { name });
       await expectStatementGeometry(canvasElement);
     }
+    const assetsTab = canvas.getByRole("tab", { name: "Assets" });
+    await userEvent.click(assetsTab);
+    await userEvent.unhover(assetsTab);
+    const restingTabBackground = getComputedStyle(assetsTab).backgroundColor;
+    await userEvent.hover(assetsTab);
+    await waitFor(() =>
+      expect(getComputedStyle(assetsTab).backgroundColor).not.toBe(
+        restingTabBackground,
+      ),
+    );
+    await userEvent.unhover(assetsTab);
     await expectContainedShell(canvasElement);
   }}
 >
@@ -344,7 +355,64 @@
         for (const row of rows)
           expectColumnsAligned(headers, [...row.children]);
         expect(table.querySelector("[data-query-sort] svg")).toBeVisible();
+        const shellBackground = getComputedStyle(
+          canvasElement.querySelector<HTMLElement>(
+            ".ui-minimal-app-shell__main",
+          )!,
+        ).backgroundColor;
+        expect(
+          getComputedStyle(
+            canvasElement.querySelector<HTMLElement>(
+              "[data-query-table-frame]",
+            )!,
+          ).backgroundColor,
+        ).toBe(shellBackground);
+        for (const row of canvasElement.querySelectorAll<HTMLElement>(
+          "[data-query-result-row]",
+        )) {
+          expect(getComputedStyle(row).backgroundColor).toBe(shellBackground);
+        }
       });
+      if (name === "Holdings") {
+        await userEvent.click(
+          canvas.getByRole("tab", { name: "Holdings by Cost currency" }),
+        );
+        await canvas.findByRole("button", {
+          name: "Sort by cost_currency",
+        });
+        await waitFor(() => {
+          const row = canvasElement.querySelector<HTMLElement>(
+            "[data-query-result-row]",
+          )!;
+          const separators = [...row.children].map(
+            (cell) =>
+              cell.querySelectorAll<HTMLElement>("[data-query-cell-line]")[1]!,
+          );
+          expect(separators.every(Boolean)).toBe(true);
+          expect(
+            Math.abs(
+              separators[0]!.getBoundingClientRect().left -
+                row.getBoundingClientRect().left,
+            ),
+          ).toBeLessThanOrEqual(1);
+          for (let index = 1; index < separators.length; index += 1) {
+            expect(
+              Math.abs(
+                separators[index - 1]!.getBoundingClientRect().right -
+                  separators[index]!.getBoundingClientRect().left,
+              ),
+            ).toBeLessThanOrEqual(1);
+          }
+          expect(
+            Math.abs(
+              separators.at(-1)!.getBoundingClientRect().right -
+                row.getBoundingClientRect().right,
+            ),
+          ).toBeLessThanOrEqual(1);
+        });
+        await userEvent.click(canvas.getByRole("tab", { name: "Holdings" }));
+        await canvas.findByRole("button", { name: "Sort by account" });
+      }
       const queryLink = canvas.getByRole("link", { name: "Query" });
       expect(queryLink).toHaveAttribute("data-ui-component", "button");
       const content = canvasElement.querySelector<HTMLElement>(
@@ -387,7 +455,7 @@
   }}
 >
   {#snippet template()}<ApplicationHarness
-      scenario="preview"
+      scenario="review"
       displayMode="desktop"
       initialRoute="/holdings"
     />{/snippet}

@@ -50,14 +50,30 @@ export async function expectStatementGeometry(canvas: HTMLElement) {
         }
       });
     });
-    for (const item of canvas.querySelectorAll<HTMLElement>(
-      "[data-statement-contribution-legend] > span",
+    for (const legend of canvas.querySelectorAll<HTMLElement>(
+      "[data-statement-contribution-legend]",
     )) {
-      const label = item.children[1]!;
-      const percentage = item.children[2]!;
-      expect(label.getBoundingClientRect().right).toBeLessThanOrEqual(
-        percentage.getBoundingClientRect().left + 1,
-      );
+      const percentagesByColumn = new Map<number, HTMLElement[]>();
+      for (const item of legend.children) {
+        const label = item.children[1]!;
+        const percentage = item.children[2] as HTMLElement;
+        expect(label.getBoundingClientRect().right).toBeLessThanOrEqual(
+          percentage.getBoundingClientRect().left + 1,
+        );
+        const column = Math.round(item.getBoundingClientRect().left);
+        percentagesByColumn.set(column, [
+          ...(percentagesByColumn.get(column) ?? []),
+          percentage,
+        ]);
+      }
+      for (const percentages of percentagesByColumn.values()) {
+        const right = percentages[0]!.getBoundingClientRect().right;
+        for (const percentage of percentages) {
+          expect(
+            Math.abs(percentage.getBoundingClientRect().right - right),
+          ).toBeLessThanOrEqual(1);
+        }
+      }
     }
   });
 }

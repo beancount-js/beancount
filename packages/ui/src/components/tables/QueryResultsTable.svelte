@@ -154,7 +154,7 @@
 
 <div class="beancount-query-table flex min-w-0 flex-col gap-3" data-query-table>
   {@render beforeTable?.()}
-  <div class="beancount-query-table__frame">
+  <div class="beancount-query-table__frame" data-query-table-frame>
     <Table.Root aria-label={ariaLabel} class="min-w-max font-mono text-xs">
       <Table.Header class="bg-muted/65 text-muted-foreground">
         <Table.Row class="hover:bg-muted/65">
@@ -204,7 +204,7 @@
       </Table.Header>
       <Table.Body>
         {#each sortedRows as row (row.id)}
-          <Table.Row>
+          <Table.Row class="bg-background" data-query-result-row>
             {#each columns as column (column.id)}
               <Table.Cell
                 style={column.style}
@@ -271,7 +271,7 @@
   </div>
   {#if pagination}
     <div
-      class="flex flex-col gap-3 rounded-xl border border-border/80 bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      class="flex flex-col gap-3 rounded-xl border border-border/80 bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
       data-query-pagination
     >
       <span class="text-sm text-muted-foreground">{pagination.resultLabel}</span
@@ -366,7 +366,7 @@
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 0.75rem;
-    background: var(--card);
+    background: var(--background);
     box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
   }
   .beancount-query-table :global(table) {
