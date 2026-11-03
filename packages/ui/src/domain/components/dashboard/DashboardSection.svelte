@@ -12,7 +12,8 @@
 </script>
 
 <section
-  class="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
+  class="overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
+  data-dashboard-surface
 >
   <button
     class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/45"

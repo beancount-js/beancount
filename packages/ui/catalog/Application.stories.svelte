@@ -33,6 +33,14 @@
     await expect(
       canvas.getByText("Review Project", { selector: "[data-project-name]" }),
     ).toBeVisible();
+    const shellBackground = getComputedStyle(
+      canvasElement.querySelector<HTMLElement>(".ui-minimal-app-shell__main")!,
+    ).backgroundColor;
+    for (const surface of canvasElement.querySelectorAll<HTMLElement>(
+      '[aria-label="Period summary"] > div, [data-dashboard-surface]',
+    )) {
+      expect(getComputedStyle(surface).backgroundColor).toBe(shellBackground);
+    }
     const outflowRows = canvasElement.querySelectorAll<HTMLElement>(
       "[data-dashboard-outflow-row]",
     );
@@ -60,6 +68,11 @@
       name: "Expand project rail: Review Project",
     });
     await expect(projectRail).toBeVisible();
+    expect(getComputedStyle(projectRail).margin).toBe("4px");
+    const rail = projectRail.parentElement!.getBoundingClientRect();
+    const railButton = projectRail.getBoundingClientRect();
+    expect(railButton.left - rail.left).toBeGreaterThanOrEqual(4);
+    expect(rail.right - railButton.right).toBeGreaterThanOrEqual(4);
     if (import.meta.env.MODE === "test") {
       const { page } = await import("vitest/browser");
       const background = getComputedStyle(projectRail).backgroundColor;

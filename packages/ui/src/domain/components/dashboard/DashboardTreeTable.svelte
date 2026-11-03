@@ -119,8 +119,9 @@
     class="mt-4 w-full min-w-0 max-w-full rounded-xl"
   >
     <ol
-      class="min-w-[42rem] overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
+      class="min-w-[42rem] overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
       data-dashboard-tree-rows
+      data-dashboard-surface
     >
       <li
         class="grid min-h-10 grid-cols-[minmax(0,1fr)_8rem_10rem] items-center bg-muted/65 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"

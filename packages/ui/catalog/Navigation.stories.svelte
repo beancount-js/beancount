@@ -39,6 +39,13 @@
         parent.querySelector<HTMLElement>("[data-ledger-file-panels]")!,
       ).rowGap,
     ).toBe("4px");
+    const treeNodes = canvas.querySelectorAll<HTMLElement>(
+      "[data-ledger-file-node], [data-review-ledger-node], [data-ledger-folder-node], [data-ledger-tag-node]",
+    );
+    expect(treeNodes.length).toBeGreaterThan(0);
+    for (const node of treeNodes) {
+      expect(getComputedStyle(node).rowGap).toBe("4px");
+    }
     const icon = parent.querySelector("[data-ledger-file-row] svg")!;
     for (const report of parent.querySelectorAll(
       "[data-ledger-report-row] svg",
@@ -71,6 +78,40 @@
         expect(getComputedStyle(row).backgroundColor).toBe(background),
       );
     }
+    const selectedTreeRow = canvas.querySelector<HTMLElement>(
+      '[data-ledger-tree-row][data-active="true"]',
+    )!;
+    const selectedTreeBackground =
+      getComputedStyle(selectedTreeRow).backgroundColor;
+    await page.elementLocator(selectedTreeRow).hover();
+    await waitFor(() =>
+      expect(getComputedStyle(selectedTreeRow).backgroundColor).toBe(
+        selectedTreeBackground,
+      ),
+    );
+    await page.elementLocator(selectedTreeRow).unhover();
+    const selectedReport = canvas.querySelector<HTMLElement>(
+      '[data-ledger-report-row][data-active="true"]',
+    )!;
+    const inactiveReport = canvas.querySelector<HTMLElement>(
+      '[data-ledger-report-row][data-active="false"]',
+    )!;
+    const selectedBackground = getComputedStyle(selectedReport).backgroundColor;
+    await page.elementLocator(selectedReport).hover();
+    await waitFor(() =>
+      expect(getComputedStyle(selectedReport).backgroundColor).toBe(
+        selectedBackground,
+      ),
+    );
+    await page.elementLocator(selectedReport).unhover();
+    const inactiveBackground = getComputedStyle(inactiveReport).backgroundColor;
+    await page.elementLocator(inactiveReport).hover();
+    await waitFor(() =>
+      expect(getComputedStyle(inactiveReport).backgroundColor).not.toBe(
+        inactiveBackground,
+      ),
+    );
+    await page.elementLocator(inactiveReport).unhover();
   }
   const { Story } = defineMeta({
     title: "Beancount/Navigation",
@@ -144,6 +185,7 @@
       '[data-ledger-folder-row="archive"]',
     )!;
     await userEvent.click(folder);
+    expect(getComputedStyle(folder.parentElement!).rowGap).toBe("4px");
     expect(
       getComputedStyle(
         folder.parentElement!.querySelector<HTMLElement>(
@@ -181,6 +223,12 @@
     const childRow = tagRoot.querySelector<HTMLElement>(
       "[data-ledger-tag-children] [data-ledger-tag-row]",
     )!;
+    expect(getComputedStyle(tagRoot).rowGap).toBe("4px");
+    expect(
+      getComputedStyle(
+        tagRoot.querySelector<HTMLElement>("[data-ledger-tag-children]")!,
+      ).rowGap,
+    ).toBe("4px");
     expect(
       Math.abs(
         tagRow.getBoundingClientRect().left -
@@ -272,6 +320,27 @@
     await expect(
       settings.getByRole("button", { name: "Accounts" }),
     ).toHaveAttribute("aria-current", "page");
+    if (import.meta.env.MODE === "test") {
+      const { page } = await import("vitest/browser");
+      const selected = settings.getByRole("button", { name: "Accounts" });
+      const inactive = settings.getByRole("button", { name: "Merchants" });
+      const selectedBackground = getComputedStyle(selected).backgroundColor;
+      await page.elementLocator(selected).hover();
+      await waitFor(() =>
+        expect(getComputedStyle(selected).backgroundColor).toBe(
+          selectedBackground,
+        ),
+      );
+      await page.elementLocator(selected).unhover();
+      const inactiveBackground = getComputedStyle(inactive).backgroundColor;
+      await page.elementLocator(inactive).hover();
+      await waitFor(() =>
+        expect(getComputedStyle(inactive).backgroundColor).not.toBe(
+          inactiveBackground,
+        ),
+      );
+      await page.elementLocator(inactive).unhover();
+    }
     const disclosure = settings.getByRole("button", {
       name: "Collapse import navigation",
     });

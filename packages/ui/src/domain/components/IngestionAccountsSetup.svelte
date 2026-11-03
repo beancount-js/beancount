@@ -948,7 +948,8 @@
           {@const isSelected = connection.id === selectedConnection.id}
           {@const merchant = merchantFor(connection)}
           <article
-            class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
+            class="overflow-hidden rounded-xl border border-border bg-background text-foreground shadow-sm"
+            data-linked-account-surface
           >
             <div
               class="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
@@ -1084,7 +1085,8 @@
                           {/if}
                         </div>
                         <ul
-                          class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+                          class="mx-1 mb-1 overflow-hidden rounded-xl border bg-background shadow-sm"
+                          data-linked-account-surface
                           role="list"
                         >
                           {#each group.accounts as account, index (account.id)}
@@ -1491,7 +1493,8 @@
         {/each}
 
         <section
-          class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
+          class="overflow-hidden rounded-xl border border-border bg-background text-foreground shadow-sm"
+          data-linked-account-surface
           aria-labelledby="other-ledger-accounts"
         >
           <button
@@ -1571,7 +1574,8 @@
                     {#if groupOpen}
                       <ul
                         id={`other-account-group-${group.label}`}
-                        class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+                        class="mx-1 mb-1 overflow-hidden rounded-xl border bg-background shadow-sm"
+                        data-linked-account-surface
                         role="list"
                       >
                         {#each group.accounts as account, index (account.name)}

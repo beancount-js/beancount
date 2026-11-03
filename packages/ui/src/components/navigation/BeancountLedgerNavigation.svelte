@@ -842,7 +842,7 @@
   {@const expanded = isFileExpanded(file.path, expandedFilePaths)}
   {@const active = file.path === controller.state.activeFile}
   {@const label = ledgerFileLabel(file)}
-  <div class="min-w-0" data-ledger-file-node={file.path}>
+  <div class="flex min-w-0 flex-col gap-1" data-ledger-file-node={file.path}>
     <div
       class={cn(
         "relative flex h-8 min-w-0 items-center rounded-md text-xs font-semibold transition-colors",
@@ -901,6 +901,7 @@
             )}
             style={filePanelStyle(depth)}
             data-ledger-report-row
+            data-active={active && isPanelActive(panel, activeRoute.path)}
             aria-current={active && isPanelActive(panel, activeRoute.path)
               ? "page"
               : undefined}
@@ -923,7 +924,10 @@
 })}
   {@const expanded = isFileExpanded(review.path, expandedFilePaths)}
   {@const active = review.path === controller.state.activeFile}
-  <div class="min-w-0" data-review-ledger-node={review.path}>
+  <div
+    class="flex min-w-0 flex-col gap-1"
+    data-review-ledger-node={review.path}
+  >
     <div
       class={cn(
         "relative flex h-8 min-w-0 items-center rounded-md text-xs font-semibold transition-colors",
@@ -991,6 +995,7 @@
             )}
             style={filePanelStyle(0)}
             data-ledger-report-row
+            data-active={active && isPanelActive(panel, activeRoute.path)}
             aria-current={active && isPanelActive(panel, activeRoute.path)
               ? "page"
               : undefined}
@@ -1013,7 +1018,7 @@
   depth?: number;
 })}
   {@const expanded = isFolderOpen(node.id, folderOpenNodes)}
-  <div class="min-w-0" data-ledger-folder-node={node.id}>
+  <div class="flex min-w-0 flex-col gap-1" data-ledger-folder-node={node.id}>
     <Button
       type="button"
       variant="ghost"
@@ -1024,6 +1029,7 @@
       title={node.path || "Ledgers"}
       data-ledger-folder-row={node.path || "ledgers"}
       data-ledger-tree-row
+      data-active="false"
       onclick={() => toggleFolder(node.id)}
     >
       {@render IndentGuides({ depth })}
@@ -1065,8 +1071,13 @@
 })}
   {@const expanded =
     node.children.length > 0 && isTagOpen(node.tag, tagOpenNodes)}
-  <div class="min-w-0" data-ledger-tag-node={node.tag}>
-    <div class="relative flex min-w-0 items-center" style={tagRowStyle(depth)}>
+  <div class="flex min-w-0 flex-col gap-1" data-ledger-tag-node={node.tag}>
+    <div
+      class="relative flex min-w-0 items-center"
+      style={tagRowStyle(depth)}
+      data-ledger-tree-row
+      data-active="false"
+    >
       {@render IndentGuides({ depth })}
       {#if node.children.length > 0}
         <Button
@@ -1103,7 +1114,10 @@
       </Button>
     </div>
     {#if expanded}
-      <div class="min-w-0" data-ledger-tag-children={node.tag}>
+      <div
+        class="flex min-w-0 flex-col gap-1"
+        data-ledger-tag-children={node.tag}
+      >
         {#each node.children as child (child.tag)}
           {@render TagTreeNode({ node: child, depth: depth + 1 })}
         {/each}

@@ -162,7 +162,7 @@
       class="mb-6 grid gap-px overflow-hidden rounded-xl border border-border/80 bg-border/80 sm:grid-cols-2 xl:grid-cols-4"
       aria-label="Period summary"
     >
-      <div class="bg-card px-5 py-4">
+      <div class="bg-background px-5 py-4">
         <p
           class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
         >
@@ -174,7 +174,7 @@
           {$ctx.amount(dashboard.income, dashboard.currency)}
         </p>
       </div>
-      <div class="bg-card px-5 py-4">
+      <div class="bg-background px-5 py-4">
         <p
           class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
         >
@@ -186,7 +186,7 @@
           {$ctx.amount(dashboard.expenses, dashboard.currency)}
         </p>
       </div>
-      <div class="bg-card px-5 py-4">
+      <div class="bg-background px-5 py-4">
         <p
           class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
         >
@@ -205,7 +205,7 @@
           {$ctx.amount(dashboard.cashFlow, dashboard.currency)}
         </p>
       </div>
-      <div class="bg-card px-5 py-4">
+      <div class="bg-background px-5 py-4">
         <p
           class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
         >

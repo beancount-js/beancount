@@ -247,7 +247,13 @@
     background: var(--background);
     box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
   }
-  .beancount-navigation :global([data-ledger-tree-row]:hover) {
+  .beancount-navigation
+    :global([data-ledger-tree-row][data-active="true"]:hover) {
+    background: var(--background);
+    color: var(--sidebar-accent-foreground, var(--foreground));
+  }
+  .beancount-navigation
+    :global([data-ledger-tree-row][data-active="false"]:hover) {
     background: var(--sidebar-accent, var(--accent));
     color: var(--sidebar-accent-foreground, var(--foreground));
   }
@@ -270,5 +276,30 @@
   }
   .beancount-navigation :global([data-ledger-report-row]) {
     border: 0;
+  }
+  .beancount-navigation
+    :global([data-ledger-report-row][data-active="false"]:hover) {
+    background: var(--sidebar-accent, var(--accent));
+    color: var(--sidebar-accent-foreground, var(--foreground));
+  }
+  .beancount-navigation :global([data-ledger-report-row][data-active="true"]),
+  .beancount-navigation
+    :global([data-ledger-report-row][data-active="true"]:hover) {
+    background: var(--background);
+    color: var(--sidebar-accent-foreground, var(--foreground));
+  }
+  .beancount-navigation
+    :global(
+      [data-ledger-settings-sidebar] button:not([aria-current="page"]):hover
+    ) {
+    background: var(--sidebar-accent, var(--accent));
+    color: var(--sidebar-accent-foreground, var(--foreground));
+  }
+  .beancount-navigation
+    :global([data-ledger-settings-sidebar] button[aria-current="page"]),
+  .beancount-navigation
+    :global([data-ledger-settings-sidebar] button[aria-current="page"]:hover) {
+    background: var(--background);
+    color: var(--sidebar-accent-foreground, var(--foreground));
   }
 </style>

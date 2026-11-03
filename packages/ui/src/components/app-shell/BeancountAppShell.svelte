@@ -274,7 +274,9 @@
     flex: 1;
     height: auto;
     min-height: 0;
+    margin: 0.25rem;
     padding-block: 1rem;
+    border-radius: 0.375rem;
     color: var(--sidebar-foreground);
     transition:
       background-color 150ms ease,

@@ -106,6 +106,16 @@
     await expect(
       canvas.getByRole("link", { name: "Open Assets:Checking" }),
     ).toBeVisible();
+    const shellBackground = getComputedStyle(
+      canvasElement.querySelector<HTMLElement>(".ui-minimal-app-shell__main")!,
+    ).backgroundColor;
+    const surfaces = canvasElement.querySelectorAll<HTMLElement>(
+      "[data-linked-account-surface]",
+    );
+    expect(surfaces.length).toBeGreaterThan(1);
+    for (const surface of surfaces) {
+      expect(getComputedStyle(surface).backgroundColor).toBe(shellBackground);
+    }
   }}
   >{#snippet template()}<ApplicationHarness
       displayMode="desktop"
