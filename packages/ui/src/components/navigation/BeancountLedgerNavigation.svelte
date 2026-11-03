@@ -604,7 +604,8 @@
             oninput={(event) =>
               actions.setSearch("ledgers", event.currentTarget.value)}
             placeholder="Search ledgers"
-            class="h-8 bg-sidebar pl-8 text-xs"
+            class="h-8 pl-8 text-xs"
+            data-navigation-search-input
           />
         </label>
         <Button
@@ -722,7 +723,8 @@
             oninput={(event) =>
               actions.setSearch("folders", event.currentTarget.value)}
             placeholder="Search folders"
-            class="h-8 bg-sidebar pl-8 text-xs"
+            class="h-8 pl-8 text-xs"
+            data-navigation-search-input
           />
         </label>
         <Button
@@ -776,7 +778,8 @@
             oninput={(event) =>
               actions.setSearch("tags", event.currentTarget.value)}
             placeholder="Search tags"
-            class="h-8 bg-sidebar pl-8 text-xs"
+            class="h-8 pl-8 text-xs"
+            data-navigation-search-input
           />
         </label>
         <Button

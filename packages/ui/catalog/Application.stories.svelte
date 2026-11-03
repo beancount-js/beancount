@@ -64,6 +64,13 @@
         );
       }
     }
+    const flowScrollArea = canvasElement.querySelector<HTMLElement>(
+      "[data-dashboard-flow-scroll-area]",
+    )!;
+    expect(flowScrollArea).toHaveAttribute("data-ui-component", "scroll-area");
+    expect(
+      flowScrollArea.querySelector('[data-ui-part="scroll-area-viewport"]'),
+    ).toBeVisible();
     const collapseSidebar = canvas.getByRole("button", {
       name: "Collapse left sidebar",
     });
@@ -99,6 +106,45 @@
   }}
 >
   {#snippet template()}<ApplicationHarness
+      displayMode="desktop"
+      scenario="preview"
+    />{/snippet}
+</Story>
+<Story
+  name="Route scroll resets"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: "Journal" });
+    const shellViewport = canvasElement.querySelector<HTMLElement>(
+      '[data-ui-part="body-content"] > [data-ui-component="scroll-area"] > [data-ui-part="scroll-area-viewport"]',
+    )!;
+    expect(shellViewport.scrollHeight).toBeGreaterThan(
+      shellViewport.clientHeight,
+    );
+    shellViewport.scrollTop = shellViewport.scrollHeight;
+    await waitFor(() => expect(shellViewport.scrollTop).toBeGreaterThan(0));
+    await userEvent.click(canvas.getByRole("button", { name: "Dashboard" }));
+    await canvas.findByRole("heading", { name: "Financial dashboard" });
+    await waitFor(() => {
+      const routeContent = canvasElement.querySelector<HTMLElement>(
+        '[data-ui-part="body-content"]',
+      )!;
+      const verticalScrollers = [
+        routeContent,
+        ...routeContent.querySelectorAll<HTMLElement>("*"),
+      ].filter((element) => {
+        const overflowY = getComputedStyle(element).overflowY;
+        return overflowY === "auto" || overflowY === "scroll";
+      });
+      expect(verticalScrollers.length).toBeGreaterThan(0);
+      for (const scroller of verticalScrollers) {
+        expect(scroller.scrollTop).toBe(0);
+      }
+    });
+  }}
+>
+  {#snippet template()}<ApplicationHarness
+      initialRoute="/journal"
       displayMode="desktop"
       scenario="preview"
     />{/snippet}

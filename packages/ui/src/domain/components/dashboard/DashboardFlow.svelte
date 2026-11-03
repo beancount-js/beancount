@@ -1,5 +1,6 @@
 <script lang="ts">
   import { urlForAccount } from "../../helpers";
+  import * as ScrollArea from "@lapismd/design-core/shadcn/scroll-area";
   import DashboardChartTooltip from "./DashboardChartTooltip.svelte";
   import { dashboardFlowLayout } from "./geometry";
   import type { DashboardCategory } from "./model";
@@ -111,198 +112,208 @@
     No cash-flow activity matches this period.
   </div>
 {:else}
-  <div class="overflow-x-auto px-3 py-4">
-    <div class="relative min-w-[720px]" bind:this={chartContainer}>
-      <svg
-        class="w-full text-foreground"
-        viewBox={`0 0 ${width} ${chartHeight}`}
-        role="group"
-        aria-label="Cash flow from income and refunds to outflows"
-        data-dashboard-flow
-        on:pointerleave={clearActive}
-      >
-        <defs>
+  <ScrollArea.Root
+    orientation="horizontal"
+    class="w-full min-w-0 max-w-full"
+    data-dashboard-flow-scroll-area
+  >
+    <div class="px-3 py-4">
+      <div class="relative min-w-[720px]" bind:this={chartContainer}>
+        <svg
+          class="w-full text-foreground"
+          viewBox={`0 0 ${width} ${chartHeight}`}
+          role="group"
+          aria-label="Cash flow from income and refunds to outflows"
+          data-dashboard-flow
+          on:pointerleave={clearActive}
+        >
+          <defs>
+            {#each layout.sources as source (source.account)}
+              <linearGradient
+                id={gradientId("in", source.account)}
+                x1="0"
+                x2="1"
+              >
+                <stop offset="0" stop-color={source.color} stop-opacity="0.5" />
+                <stop
+                  offset="1"
+                  stop-color="var(--primary)"
+                  stop-opacity="0.34"
+                />
+              </linearGradient>
+            {/each}
+            {#each layout.targets as target (target.account)}
+              <linearGradient
+                id={gradientId("out", target.account)}
+                x1="0"
+                x2="1"
+              >
+                <stop
+                  offset="0"
+                  stop-color="var(--primary)"
+                  stop-opacity="0.34"
+                />
+                <stop offset="1" stop-color={target.color} stop-opacity="0.5" />
+              </linearGradient>
+            {/each}
+          </defs>
+
           {#each layout.sources as source (source.account)}
-            <linearGradient id={gradientId("in", source.account)} x1="0" x2="1">
-              <stop offset="0" stop-color={source.color} stop-opacity="0.5" />
-              <stop
-                offset="1"
-                stop-color="var(--primary)"
-                stop-opacity="0.34"
-              />
-            </linearGradient>
+            <path
+              d={flowPath(
+                sideX + barWidth,
+                source.y,
+                centerX,
+                source.centerY,
+                source.height,
+              )}
+              fill={`url(#${gradientId("in", source.account)})`}
+              class:dimmed={isDimmed(source, "in")}
+              class:active={isActive(source, "in")}
+              class="flow-stream"
+              role="button"
+              tabindex="0"
+              aria-label={`${source.label} to Cash flow: ${formatter(source.value, currency)}`}
+              data-dashboard-flow-stream
+              data-side="in"
+              data-account={source.account}
+              data-active={isActive(source, "in")}
+              on:pointerenter={(event) => activate(source, "in", event)}
+              on:pointermove={positionTooltip}
+              on:focus={(event) => activate(source, "in", event)}
+              on:blur={clearActive}
+              on:click={(event) => activate(source, "in", event)}
+              on:keydown={(event) => handleKeydown(event, source, "in")}
+            />
           {/each}
           {#each layout.targets as target (target.account)}
-            <linearGradient
-              id={gradientId("out", target.account)}
-              x1="0"
-              x2="1"
-            >
-              <stop
-                offset="0"
-                stop-color="var(--primary)"
-                stop-opacity="0.34"
-              />
-              <stop offset="1" stop-color={target.color} stop-opacity="0.5" />
-            </linearGradient>
+            <path
+              d={flowPath(
+                centerX + barWidth,
+                target.centerY,
+                rightX,
+                target.y,
+                target.height,
+              )}
+              fill={`url(#${gradientId("out", target.account)})`}
+              class:dimmed={isDimmed(target, "out")}
+              class:active={isActive(target, "out")}
+              class="flow-stream"
+              role="button"
+              tabindex="0"
+              aria-label={`Cash flow to ${target.label}: ${formatter(target.value, currency)}`}
+              data-dashboard-flow-stream
+              data-side="out"
+              data-account={target.account}
+              data-active={isActive(target, "out")}
+              on:pointerenter={(event) => activate(target, "out", event)}
+              on:pointermove={positionTooltip}
+              on:focus={(event) => activate(target, "out", event)}
+              on:blur={clearActive}
+              on:click={(event) => activate(target, "out", event)}
+              on:keydown={(event) => handleKeydown(event, target, "out")}
+            />
           {/each}
-        </defs>
 
-        {#each layout.sources as source (source.account)}
-          <path
-            d={flowPath(
-              sideX + barWidth,
-              source.y,
-              centerX,
-              source.centerY,
-              source.height,
-            )}
-            fill={`url(#${gradientId("in", source.account)})`}
-            class:dimmed={isDimmed(source, "in")}
-            class:active={isActive(source, "in")}
-            class="flow-stream"
-            role="button"
-            tabindex="0"
-            aria-label={`${source.label} to Cash flow: ${formatter(source.value, currency)}`}
-            data-dashboard-flow-stream
-            data-side="in"
-            data-account={source.account}
-            data-active={isActive(source, "in")}
-            on:pointerenter={(event) => activate(source, "in", event)}
-            on:pointermove={positionTooltip}
-            on:focus={(event) => activate(source, "in", event)}
-            on:blur={clearActive}
-            on:click={(event) => activate(source, "in", event)}
-            on:keydown={(event) => handleKeydown(event, source, "in")}
-          />
-        {/each}
-        {#each layout.targets as target (target.account)}
-          <path
-            d={flowPath(
-              centerX + barWidth,
-              target.centerY,
-              rightX,
-              target.y,
-              target.height,
-            )}
-            fill={`url(#${gradientId("out", target.account)})`}
-            class:dimmed={isDimmed(target, "out")}
-            class:active={isActive(target, "out")}
-            class="flow-stream"
-            role="button"
-            tabindex="0"
-            aria-label={`Cash flow to ${target.label}: ${formatter(target.value, currency)}`}
-            data-dashboard-flow-stream
-            data-side="out"
-            data-account={target.account}
-            data-active={isActive(target, "out")}
-            on:pointerenter={(event) => activate(target, "out", event)}
-            on:pointermove={positionTooltip}
-            on:focus={(event) => activate(target, "out", event)}
-            on:blur={clearActive}
-            on:click={(event) => activate(target, "out", event)}
-            on:keydown={(event) => handleKeydown(event, target, "out")}
-          />
-        {/each}
+          {#each layout.sources as source (source.account)}
+            <a
+              href={source.account === "Other"
+                ? undefined
+                : urlForAccount(source.account)}
+              class:dimmed={isDimmed(source, "in")}
+              class="flow-node"
+            >
+              <rect
+                x={sideX}
+                y={source.y}
+                width={barWidth}
+                height={Math.max(source.height, 1.5)}
+                rx="3"
+                fill={source.color}
+              />
+              <text
+                x={sideX + 22}
+                y={source.y + Math.min(source.height / 2 + 4, 15)}
+                class="label"
+              >
+                {source.label}
+              </text>
+              <text
+                x={sideX + 22}
+                y={source.y + Math.min(source.height / 2 + 19, 30)}
+                class="amount"
+              >
+                {formatter(source.value, currency)}
+              </text>
+            </a>
+          {/each}
 
-        {#each layout.sources as source (source.account)}
-          <a
-            href={source.account === "Other"
-              ? undefined
-              : urlForAccount(source.account)}
-            class:dimmed={isDimmed(source, "in")}
-            class="flow-node"
+          <rect
+            x={centerX}
+            y={layout.centerY}
+            width={barWidth}
+            height={layout.centerHeight}
+            rx="3"
+            fill="var(--primary)"
+          />
+          <text
+            x={centerX + 22}
+            y={layout.centerY + layout.centerHeight / 2 - 4}
+            class="label">Cash flow</text
           >
-            <rect
-              x={sideX}
-              y={source.y}
-              width={barWidth}
-              height={Math.max(source.height, 1.5)}
-              rx="3"
-              fill={source.color}
-            />
-            <text
-              x={sideX + 22}
-              y={source.y + Math.min(source.height / 2 + 4, 15)}
-              class="label"
-            >
-              {source.label}
-            </text>
-            <text
-              x={sideX + 22}
-              y={source.y + Math.min(source.height / 2 + 19, 30)}
-              class="amount"
-            >
-              {formatter(source.value, currency)}
-            </text>
-          </a>
-        {/each}
+          <text
+            x={centerX + 22}
+            y={layout.centerY + layout.centerHeight / 2 + 12}
+            class="amount"
+          >
+            {formatter(layout.totalIn - layout.totalOut, currency)}
+          </text>
 
-        <rect
-          x={centerX}
-          y={layout.centerY}
-          width={barWidth}
-          height={layout.centerHeight}
-          rx="3"
-          fill="var(--primary)"
+          {#each layout.targets as target (target.account)}
+            <a
+              href={target.account === "Other"
+                ? undefined
+                : urlForAccount(target.account)}
+              class:dimmed={isDimmed(target, "out")}
+              class="flow-node"
+            >
+              <rect
+                x={rightX}
+                y={target.y}
+                width={barWidth}
+                height={Math.max(target.height, 1.5)}
+                rx="3"
+                fill={target.color}
+              />
+              <text
+                x={rightX + 22}
+                y={target.y + Math.min(target.height / 2 + 4, 15)}
+                class="label"
+              >
+                {target.label}
+              </text>
+              <text
+                x={rightX + 22}
+                y={target.y + Math.min(target.height / 2 + 19, 30)}
+                class="amount"
+              >
+                {formatter(target.value, currency)}
+              </text>
+            </a>
+          {/each}
+        </svg>
+
+        <DashboardChartTooltip
+          visible={Boolean(active)}
+          x={tooltipX}
+          y={tooltipY}
+          title={tooltipTitle}
+          value={active ? formatter(active.value, currency) : ""}
+          detail={tooltipDetail}
         />
-        <text
-          x={centerX + 22}
-          y={layout.centerY + layout.centerHeight / 2 - 4}
-          class="label">Cash flow</text
-        >
-        <text
-          x={centerX + 22}
-          y={layout.centerY + layout.centerHeight / 2 + 12}
-          class="amount"
-        >
-          {formatter(layout.totalIn - layout.totalOut, currency)}
-        </text>
-
-        {#each layout.targets as target (target.account)}
-          <a
-            href={target.account === "Other"
-              ? undefined
-              : urlForAccount(target.account)}
-            class:dimmed={isDimmed(target, "out")}
-            class="flow-node"
-          >
-            <rect
-              x={rightX}
-              y={target.y}
-              width={barWidth}
-              height={Math.max(target.height, 1.5)}
-              rx="3"
-              fill={target.color}
-            />
-            <text
-              x={rightX + 22}
-              y={target.y + Math.min(target.height / 2 + 4, 15)}
-              class="label"
-            >
-              {target.label}
-            </text>
-            <text
-              x={rightX + 22}
-              y={target.y + Math.min(target.height / 2 + 19, 30)}
-              class="amount"
-            >
-              {formatter(target.value, currency)}
-            </text>
-          </a>
-        {/each}
-      </svg>
-
-      <DashboardChartTooltip
-        visible={Boolean(active)}
-        x={tooltipX}
-        y={tooltipY}
-        title={tooltipTitle}
-        value={active ? formatter(active.value, currency) : ""}
-        detail={tooltipDetail}
-      />
+      </div>
     </div>
-  </div>
+  </ScrollArea.Root>
 {/if}
 
 <style>

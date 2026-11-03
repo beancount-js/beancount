@@ -141,12 +141,20 @@
     expect(getComputedStyle(fileRow).paddingLeft).toBe("0px");
     expect(fileRow.getBoundingClientRect().height).toBe(32);
     await expectTreePresentation(canvasElement);
+    const ledgerSearch = canvas.getByRole("textbox", {
+      name: "Search ledgers",
+    });
     expect(
-      canvas
-        .getByRole("textbox", { name: "Search ledgers" })
-        .parentElement!.querySelector("svg")!
-        .getBoundingClientRect().width,
+      ledgerSearch.parentElement!.querySelector("svg")!.getBoundingClientRect()
+        .width,
     ).toBe(14);
+    expect(getComputedStyle(ledgerSearch).backgroundColor).toBe(
+      getComputedStyle(
+        canvasElement.querySelector<HTMLElement>(
+          ".ui-minimal-app-shell__main",
+        )!,
+      ).backgroundColor,
+    );
     await userEvent.type(
       canvas.getByRole("textbox", { name: "Search ledgers" }),
       "nonexistent",

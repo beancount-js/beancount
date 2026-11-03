@@ -197,6 +197,9 @@
   .beancount-navigation :global(label > input) {
     padding-inline-start: 2rem;
   }
+  .beancount-navigation :global([data-navigation-search-input]) {
+    background-color: var(--background);
+  }
 
   .beancount-navigation :global([data-ledger-file-toggle]) {
     width: 0.875rem;

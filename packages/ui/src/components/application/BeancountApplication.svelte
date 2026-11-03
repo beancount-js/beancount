@@ -116,6 +116,29 @@
       },
     };
   }
+  function resetRouteScroll(node: HTMLElement) {
+    const frame = requestAnimationFrame(() => {
+      const routeContent =
+        node.closest<HTMLElement>('[data-ui-part="body-content"]') ?? node;
+      for (const element of [
+        routeContent,
+        ...routeContent.querySelectorAll<HTMLElement>("*"),
+      ]) {
+        const overflowY = getComputedStyle(element).overflowY;
+        if (
+          (overflowY === "auto" || overflowY === "scroll") &&
+          element.scrollTop !== 0
+        ) {
+          element.scrollTop = 0;
+        }
+      }
+    });
+    return {
+      destroy() {
+        cancelAnimationFrame(frame);
+      },
+    };
+  }
 </script>
 
 <div
@@ -181,38 +204,41 @@
             use:routerLinks
           >
             {#key `${controller.state.snapshot?.project.id}:${controller.state.route.path}:${controller.state.activeFile}`}
-              {#if controller.state.route.path === "/dashboard"}<FinancialDashboard
-                />
-              {:else if controller.state.route.path === "/income_statement"}<IncomeStatement
-                />
-              {:else if controller.state.route.path === "/balance_sheet"}<BalanceSheet
-                />
-              {:else if controller.state.route.path === "/trial_balance"}<TrialBalance
-                />
-              {:else if controller.state.route.path === "/holdings"}<Holdings />
-              {:else if controller.state.route.path === "/statistics"}<Statistics
-                />
-              {:else if controller.state.route.path === "/errors"}<Errors />
-              {:else if controller.state.route.path === "/journal"}<JournalTable
-                />
-              {:else if controller.state.route.path === "/accounts" || controller.state.route.params.account}<AccountDetails
-                  account={controller.state.route.params.account ?? ""}
-                />
-              {:else if controller.state.route.path === "/editor" || controller.state.route.path === "/directives"}<Editor
-                />
-              {:else if controller.state.route.path === "/query"}<Query />
-              {:else if controller.state.route.path === "/resource"}<ResourceViewer
-                />
-              {:else if controller.state.route.path === "/records"}<IngestionTable
-                />{:else if controller.state.route.path === "/import/editor"}<IngestionConfigEditor
-                />{:else if controller.state.route.path === "/import/accounts"}<IngestionAccountsSetup
-                />{:else if controller.state.route.path === "/import/merchants"}<IngestionMerchantReview
-                />{:else if controller.state.route.path === "/import/manage-merchants"}<IngestionMerchantManage
-                />{:else if controller.state.route.path === "/import/brands"}<IngestionBrandSettings
-                />{:else if controller.state.route.path === "/import/history"}<IngestionRunHistory
-                />{:else if controller.state.route.path === "/import/rules"}<RulesSettings
-                />{:else if controller.state.route.params.runId}<IngestionRunAudit
-                />{:else}<p class="p-4">Page not found</p>{/if}
+              <div class="contents" data-route-frame use:resetRouteScroll>
+                {#if controller.state.route.path === "/dashboard"}<FinancialDashboard
+                  />
+                {:else if controller.state.route.path === "/income_statement"}<IncomeStatement
+                  />
+                {:else if controller.state.route.path === "/balance_sheet"}<BalanceSheet
+                  />
+                {:else if controller.state.route.path === "/trial_balance"}<TrialBalance
+                  />
+                {:else if controller.state.route.path === "/holdings"}<Holdings
+                  />
+                {:else if controller.state.route.path === "/statistics"}<Statistics
+                  />
+                {:else if controller.state.route.path === "/errors"}<Errors />
+                {:else if controller.state.route.path === "/journal"}<JournalTable
+                  />
+                {:else if controller.state.route.path === "/accounts" || controller.state.route.params.account}<AccountDetails
+                    account={controller.state.route.params.account ?? ""}
+                  />
+                {:else if controller.state.route.path === "/editor" || controller.state.route.path === "/directives"}<Editor
+                  />
+                {:else if controller.state.route.path === "/query"}<Query />
+                {:else if controller.state.route.path === "/resource"}<ResourceViewer
+                  />
+                {:else if controller.state.route.path === "/records"}<IngestionTable
+                  />{:else if controller.state.route.path === "/import/editor"}<IngestionConfigEditor
+                  />{:else if controller.state.route.path === "/import/accounts"}<IngestionAccountsSetup
+                  />{:else if controller.state.route.path === "/import/merchants"}<IngestionMerchantReview
+                  />{:else if controller.state.route.path === "/import/manage-merchants"}<IngestionMerchantManage
+                  />{:else if controller.state.route.path === "/import/brands"}<IngestionBrandSettings
+                  />{:else if controller.state.route.path === "/import/history"}<IngestionRunHistory
+                  />{:else if controller.state.route.path === "/import/rules"}<RulesSettings
+                  />{:else if controller.state.route.params.runId}<IngestionRunAudit
+                  />{:else}<p class="p-4">Page not found</p>{/if}
+              </div>
             {/key}
           </div>
           <JournalRecordRouteSheet />{/if}
