@@ -40,7 +40,7 @@
 
 <li>
   <div
-    class="grid min-h-12 items-center border-t border-border/70 text-sm transition-colors hover:bg-muted/65"
+    class="grid min-h-12 items-center border-t border-border/70 bg-background text-sm transition-colors hover:bg-muted/65"
     style={`grid-template-columns: ${gridTemplate}`}
     data-statement-summary-tree-row
   >

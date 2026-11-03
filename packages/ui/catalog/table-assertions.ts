@@ -19,6 +19,9 @@ export function expectColumnsAligned(
 export async function expectStatementGeometry(canvas: HTMLElement) {
   await canvas.ownerDocument.fonts.ready;
   await waitFor(() => {
+    const shellBackground = getComputedStyle(
+      canvas.querySelector<HTMLElement>(".ui-minimal-app-shell__main")!,
+    ).backgroundColor;
     const tables = canvas.querySelectorAll<HTMLElement>(
       "[data-statement-summary-tree-table], [data-dashboard-tree-rows]",
     );
@@ -33,6 +36,7 @@ export async function expectStatementGeometry(canvas: HTMLElement) {
         expect(row.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);
         expect(getComputedStyle(row).borderTopWidth).toBe("1px");
         if (table.matches("[data-statement-summary-tree-table]")) {
+          expect(getComputedStyle(row).backgroundColor).toBe(shellBackground);
           const accountCell = row.firstElementChild!;
           const accountLink = accountCell.querySelector<HTMLElement>(
             "[data-account-navigation-link]",

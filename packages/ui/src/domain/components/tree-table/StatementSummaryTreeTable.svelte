@@ -204,7 +204,7 @@
     class="mt-4 w-full min-w-0 max-w-full rounded-xl"
   >
     <ol
-      class="min-w-[45rem] overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm"
+      class="min-w-[45rem] overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
       data-statement-summary-tree-table
     >
       <li
