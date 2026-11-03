@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Example bank</title>
+  <rect width="96" height="96" rx="48" fill="#fbcfe8" />
+  <path d="M30 25h38v10H42v8h22v10H42v8h27v10H30V25Z" fill="#9d174d" />
+</svg>

@@ -49,6 +49,29 @@
     await expect(
       await canvas.findByRole("button", { name: "Example bank" }),
     ).toBeVisible();
+    const shellBackground = getComputedStyle(
+      canvasElement.querySelector<HTMLElement>(".ui-minimal-app-shell__main")!,
+    ).backgroundColor;
+    const surfaces = canvasElement.querySelectorAll<HTMLElement>(
+      "[data-ingestion-surface]",
+    );
+    expect(surfaces.length).toBeGreaterThan(2);
+    for (const surface of surfaces) {
+      expect(getComputedStyle(surface).backgroundColor).toBe(shellBackground);
+    }
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelectorAll<HTMLImageElement>(
+          "[data-ingestion-connection-card] img",
+        ).length,
+      ).toBe(2),
+    );
+    const sourceLogos = canvasElement.querySelectorAll<HTMLImageElement>(
+      "[data-ingestion-connection-card] img",
+    );
+    for (const logo of sourceLogos) {
+      await waitFor(() => expect(logo.naturalWidth).toBeGreaterThan(0));
+    }
     await userEvent.click(
       canvas.getByRole("button", { name: "Switch to edit mode" }),
     );
@@ -175,11 +198,47 @@
   name="Import History"
   play={async ({ canvasElement }) => {
     await ready(canvasElement, "Import History");
+    const canvas = within(canvasElement);
     await expect(
-      await within(canvasElement).findByRole("link", {
+      await canvas.findByRole("link", {
         name: "Review Example bank",
       }),
     ).toBeVisible();
+    const shellBackground = getComputedStyle(
+      canvasElement.querySelector<HTMLElement>(".ui-minimal-app-shell__main")!,
+    ).backgroundColor;
+    const surfaces = canvasElement.querySelectorAll<HTMLElement>(
+      "[data-ingestion-history-surface]",
+    );
+    expect(surfaces.length).toBeGreaterThan(1);
+    for (const surface of surfaces) {
+      expect(getComputedStyle(surface).backgroundColor).toBe(shellBackground);
+    }
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelector<HTMLImageElement>(
+          "[data-ingestion-history-surface] img",
+        )?.naturalWidth,
+      ).toBeGreaterThan(0),
+    );
+    const importGroup = canvasElement.querySelector<HTMLElement>(
+      '[data-settings-group="import"]',
+    )!;
+    expect(importGroup).toHaveAttribute("data-settings-group", "import");
+    if (import.meta.env.MODE === "test") {
+      const { page } = await import("vitest/browser");
+      const activeBackground = getComputedStyle(importGroup).backgroundColor;
+      await page
+        .elementLocator(
+          canvas.getByRole("button", { name: "Collapse import navigation" }),
+        )
+        .hover();
+      await waitFor(() =>
+        expect(getComputedStyle(importGroup).backgroundColor).toBe(
+          activeBackground,
+        ),
+      );
+    }
   }}
   >{#snippet template()}<ApplicationHarness
       displayMode="desktop"

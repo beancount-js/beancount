@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Fixture provider</title>
+  <rect width="96" height="96" rx="48" fill="#fecdd3" />
+  <path d="M31 25h37v10H43v9h21v10H43v17H31V25Z" fill="#9f1239" />
+</svg>

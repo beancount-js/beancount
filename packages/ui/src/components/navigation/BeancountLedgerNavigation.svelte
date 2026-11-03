@@ -74,6 +74,11 @@
   const tagOpenNodes = $derived(sidebar.expanded.tags);
   const importSettingsOpen = $derived(sidebar.settingsGroups.import);
   const reviewSettingsOpen = $derived(sidebar.settingsGroups.review);
+  const importSettingsActive = $derived(
+    ["/import/editor", "/import/history", "/records", "/import/merchants"].some(
+      (path) => isLedgerSettingActive(path, activeViewPath),
+    ),
+  );
   const menuItems = $derived([
     ...MainNav,
     ...(controller.state.ledger.errors.length
@@ -287,17 +292,18 @@
         <div class="flex flex-col gap-1">
           <div
             class={cn(
-              "flex items-center rounded-md",
-              isLedgerSettingActive("/import/editor", activeViewPath)
-                ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm"
-                : "text-muted-foreground",
+              "flex items-center rounded-md transition-colors",
+              importSettingsActive
+                ? "border border-sidebar-border bg-background text-sidebar-accent-foreground shadow-sm hover:bg-background"
+                : "text-muted-foreground hover:bg-background hover:text-sidebar-foreground",
             )}
+            data-settings-group="import"
           >
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              class="ml-1 size-6 shrink-0"
+              class="ml-1 size-6 shrink-0 hover:bg-transparent"
               data-settings-disclosure
               aria-label={importSettingsOpen
                 ? "Collapse import navigation"
@@ -316,7 +322,7 @@
               type="button"
               variant="ghost"
               size="sm"
-              class="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent"
+              class="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent hover:text-inherit"
               data-settings-group-label
               aria-current={isLedgerSettingActive(
                 "/import/editor",

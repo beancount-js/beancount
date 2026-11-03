@@ -218,8 +218,9 @@
       {@const status = sourceStatus(source)}
       {@const merchant = merchantFor(source)}
       <article
-        class="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm"
+        class="overflow-hidden rounded-xl border border-border bg-background text-foreground shadow-sm"
         data-ingestion-connection-card
+        data-ingestion-surface
       >
         <div
           class="group flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
@@ -506,8 +507,9 @@
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {#each availableSamples as sample (sample.id)}
           <article
-            class="flex min-h-44 flex-col gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:border-foreground/20 hover:bg-muted/40 hover:shadow-md"
+            class="flex min-h-44 flex-col gap-3 rounded-xl border border-border bg-background p-4 text-foreground shadow-sm transition-colors hover:border-foreground/20 hover:bg-muted/40 hover:shadow-md"
             data-ingestion-sample-card
+            data-ingestion-surface
           >
             <div class="flex items-start gap-3">
               <div

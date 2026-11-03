@@ -481,8 +481,9 @@
 
         {#each historyGroups as group (group.key)}
           <section
-            class="overflow-hidden rounded-2xl bg-muted/80"
+            class="overflow-hidden rounded-2xl bg-background"
             aria-label={`Import runs from ${groupDate(group)}`}
+            data-ingestion-history-surface
           >
             <div class="px-5 py-4">
               <h2 class="text-sm font-semibold tracking-wide text-foreground">
@@ -493,7 +494,8 @@
               </h2>
             </div>
             <div
-              class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+              class="mx-1 mb-1 overflow-hidden rounded-xl border bg-background shadow-sm"
+              data-ingestion-history-surface
             >
               {#each group.runs as run, index (run.id)}
                 {@const source = ingestionRunSourceDisplay(

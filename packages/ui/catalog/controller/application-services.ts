@@ -18,6 +18,8 @@ import type { IngestionConfigResponse } from "../../src/domain/ingestion/types";
 import type { ReconciliationReviewResponse } from "../../src/domain/lib/reconciliation-review-response";
 import { exampleIngestionConfig } from "../../src/domain/ingestion/source-form";
 import { NOW } from "../fixtures/project";
+import exampleBankLogoUrl from "../assets/example-bank-logo.svg?url";
+import fixtureProviderLogoUrl from "../assets/fixture-provider-logo.svg?url";
 type SaveFile = (
   id: string,
   path: string,
@@ -61,6 +63,7 @@ export function createApplicationServices(
       sources: exampleIngestionConfig.sources.map((source) => ({
         ...structuredClone(source),
         name: "Example bank",
+        merchantId: "merchant-example-bank",
         sourceAccount: "Assets:Checking",
         destinationPath: "main.beancount",
         credentialAvailable: true,
@@ -71,6 +74,7 @@ export function createApplicationServices(
       id: "provider",
       name: "Fixture provider",
       kind: "lunchflow",
+      merchantId: "merchant-fixture-provider",
       destinationPath: "main.beancount",
       config: lunchflowConnector.defaultConfig(),
       accounts: [
@@ -161,6 +165,40 @@ export function createApplicationServices(
           },
         ],
         provenance: [{ source: "manual", observedAt: NOW }],
+      },
+      {
+        merchantId: "merchant-example-bank",
+        canonicalName: "Example bank",
+        description: "The connected sample bank used by the catalog.",
+        domain: "monzo.com",
+        countryCode: "GB",
+        logoUrl: exampleBankLogoUrl,
+        notes: "",
+        aliases: [],
+        provenance: [
+          {
+            source: "manual",
+            provider: "catalog-reference",
+            observedAt: NOW,
+          },
+        ],
+      },
+      {
+        merchantId: "merchant-fixture-provider",
+        canonicalName: "Fixture provider",
+        description: "The multi-account sample connection used by the catalog.",
+        domain: "lunchflow.app",
+        countryCode: "GB",
+        logoUrl: fixtureProviderLogoUrl,
+        notes: "",
+        aliases: [],
+        provenance: [
+          {
+            source: "manual",
+            provider: "catalog-reference",
+            observedAt: NOW,
+          },
+        ],
       },
     ];
     proposals[0]!.merchantResolution = {
