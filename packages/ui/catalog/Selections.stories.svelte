@@ -20,6 +20,10 @@
     const canvas = within(canvasElement);
     const cost = await canvas.findByRole("radio", { name: "At Cost" });
     const valuation = cost.closest<HTMLElement>("[data-beancount-toggle]")!;
+    const period = canvas.getByRole("button", { name: /^Dashboard period:/ });
+    expect(valuation.getBoundingClientRect().height).toBe(
+      period.getBoundingClientRect().height,
+    );
     await expectVisibleToggleSelection(valuation, ["AT_COST"]);
     await userEvent.click(canvas.getByRole("radio", { name: "Units" }));
     await expectVisibleToggleSelection(valuation, ["UNITS"]);

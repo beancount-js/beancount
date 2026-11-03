@@ -64,9 +64,13 @@
         );
       }
     }
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Collapse left sidebar" }),
+    const collapseSidebar = canvas.getByRole("button", {
+      name: "Collapse left sidebar",
+    });
+    await waitFor(() =>
+      expect(getComputedStyle(collapseSidebar).pointerEvents).not.toBe("none"),
     );
+    await userEvent.click(collapseSidebar);
     await expect(
       canvas.getByRole("button", { name: "Expand left sidebar" }),
     ).toBeVisible();
@@ -74,20 +78,22 @@
       name: "Expand project rail: beancount-js-studio-query-table-498bd075",
     });
     await expect(projectRail).toBeVisible();
-    expect(getComputedStyle(projectRail).margin).toBe("4px");
+    expect(getComputedStyle(projectRail).margin).toBe("8px 6px");
     const rail = projectRail.parentElement!.getBoundingClientRect();
     const railButton = projectRail.getBoundingClientRect();
-    expect(railButton.left - rail.left).toBeGreaterThanOrEqual(4);
-    expect(rail.right - railButton.right).toBeGreaterThanOrEqual(4);
+    expect(railButton.left - rail.left).toBeGreaterThanOrEqual(6);
+    expect(rail.right - railButton.right).toBeGreaterThanOrEqual(6);
     if (import.meta.env.MODE === "test") {
       const { page } = await import("vitest/browser");
       const background = getComputedStyle(projectRail).backgroundColor;
+      const border = getComputedStyle(projectRail).borderColor;
       await page.elementLocator(projectRail).hover();
-      await waitFor(() =>
+      await waitFor(() => {
         expect(getComputedStyle(projectRail).backgroundColor).not.toBe(
           background,
-        ),
-      );
+        );
+        expect(getComputedStyle(projectRail).borderColor).not.toBe(border);
+      });
       await page.elementLocator(projectRail).unhover();
     }
   }}

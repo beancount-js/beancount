@@ -452,7 +452,7 @@
           {/if}
           <button
             type="button"
-            class="flex min-w-0 items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+            class="flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-md text-left outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
             data-activity-group-toggle
             data-journal-group-toggle={tableId === "journal-table"
               ? ""

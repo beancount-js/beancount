@@ -63,8 +63,8 @@ body,
 @media (hover: hover) {
   .beancount-application
     [data-ui-component="tabs"][data-ui-part="tabs-trigger"]:hover {
-    background-color: var(--accent);
-    color: var(--accent-foreground);
+    background-color: var(--sidebar-accent, var(--accent));
+    color: var(--sidebar-accent-foreground, var(--accent-foreground));
   }
 }
 html.dark {

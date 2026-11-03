@@ -274,15 +274,18 @@
     flex: 1;
     height: auto;
     min-height: 0;
-    margin: 0.25rem;
-    padding-block: 1rem;
+    margin: 0.5rem 0.375rem;
+    padding: 0.5rem 0.25rem;
+    border: 1px solid transparent;
     border-radius: 0.375rem;
     color: var(--sidebar-foreground);
     transition:
+      border-color 150ms ease,
       background-color 150ms ease,
       color 150ms ease;
   }
-  :global(.beancount-shell__project-rail:hover) {
+  :global(.beancount-shell__project-rail:is(:hover, :focus-visible)) {
+    border-color: var(--sidebar-border);
     background: var(--sidebar-accent);
     color: var(--sidebar-accent-foreground);
   }

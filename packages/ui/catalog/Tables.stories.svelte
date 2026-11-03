@@ -307,6 +307,7 @@
     const toggle = journal.querySelector<HTMLElement>(
       "[data-journal-group-toggle]",
     )!;
+    expect(getComputedStyle(toggle).cursor).toBe("pointer");
     expect(
       toggle.closest("section")!.getBoundingClientRect().width,
     ).toBeLessThanOrEqual(journal.clientWidth + 1);
@@ -347,6 +348,18 @@
       if (name === "Statistics")
         await userEvent.click(canvas.getByRole("button", { name }));
       await canvas.findByRole("region", { name });
+      if (name === "Holdings" && import.meta.env.MODE === "test") {
+        const tab = canvas.getByRole("tab", { name: "Holdings by Account" });
+        const background = getComputedStyle(tab).backgroundColor;
+        const { page } = await import("vitest/browser");
+        await page.elementLocator(tab).hover();
+        await waitFor(() =>
+          expect(getComputedStyle(tab).backgroundColor).not.toBe(background),
+        );
+        await page
+          .elementLocator(canvas.getByRole("link", { name: "Query" }))
+          .hover();
+      }
       await waitFor(() => {
         const table = canvasElement.querySelector("[data-query-table] table")!;
         const headers = [...table.querySelectorAll("thead th")];

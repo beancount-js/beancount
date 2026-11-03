@@ -137,7 +137,7 @@
           data-beancount-toggle="segmented"
           value={$conversion}
           onValueChange={updateConversion}
-          class="!gap-0 rounded-lg border border-border bg-muted/65 p-1"
+          class="h-9 !gap-0 rounded-lg border border-border bg-muted/65 p-1"
         >
           <ToggleGroup.Item
             value="AT_COST"
