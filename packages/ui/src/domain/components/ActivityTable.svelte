@@ -380,8 +380,9 @@
     {#if selectable && showSelectionBanner}
       <div
         data-activity-selection-banner
+        data-activity-surface
         role="status"
-        class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+        class="rounded-xl border bg-background px-4 py-3 text-center text-sm text-muted-foreground"
       >
         {#if allMatchingSelected}
           All {records.length}
@@ -409,7 +410,8 @@
 
     {#if !groups.length}
       <div
-        class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+        class="rounded-2xl border bg-background p-8 text-center text-sm text-muted-foreground"
+        data-activity-surface
       >
         {shownEmptyMessage}
       </div>
@@ -526,7 +528,8 @@
         {/if}
 
         <div
-          class="mx-1 mb-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+          class="mx-1 mb-1 overflow-hidden rounded-xl border bg-background shadow-sm"
+          data-activity-surface
         >
           {#each group.records as record, index}
             {@const logo = recordLogo(record)}
@@ -639,8 +642,9 @@
 
     {#if pages.length > 1}
       <div
-        class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+        class="flex flex-col items-stretch gap-3 rounded-xl border bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
         data-activity-pagination
+        data-activity-surface
       >
         <span class="text-sm text-muted-foreground"
           >Page {page} of {pages.length}</span

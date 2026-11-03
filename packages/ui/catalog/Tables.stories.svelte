@@ -283,6 +283,16 @@
           );
       }
     });
+    const shellBackground = getComputedStyle(
+      canvasElement.querySelector<HTMLElement>(".ui-minimal-app-shell__main")!,
+    ).backgroundColor;
+    const activitySurfaces = journal.querySelectorAll<HTMLElement>(
+      "[data-activity-surface]",
+    );
+    expect(activitySurfaces.length).toBeGreaterThan(0);
+    for (const surface of activitySurfaces) {
+      expect(getComputedStyle(surface).backgroundColor).toBe(shellBackground);
+    }
     const toggle = journal.querySelector<HTMLElement>(
       "[data-journal-group-toggle]",
     )!;
