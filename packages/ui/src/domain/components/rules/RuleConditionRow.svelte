@@ -151,7 +151,7 @@
         <Select.Trigger class="h-9 text-sm" aria-label="Condition field">
           {meta?.label ?? leaf.conditionType}
         </Select.Trigger>
-        <Select.Content>
+        <Select.Content aria-label="Condition field options">
           {#each fieldOptions() as option (option.value)}
             <Select.Item value={option.value}>{option.label}</Select.Item>
           {/each}
@@ -172,7 +172,7 @@
           {operators.find((operator) => operator.value === leaf.operator)
             ?.label ?? leaf.operator}
         </Select.Trigger>
-        <Select.Content>
+        <Select.Content aria-label="Condition operator options">
           {#each operators as operator (operator.value)}
             <Select.Item value={operator.value}>{operator.label}</Select.Item>
           {/each}
@@ -263,7 +263,7 @@
               (option) => option.value === condition.operator,
             )?.label ?? condition.operator}
           </Select.Trigger>
-          <Select.Content>
+          <Select.Content aria-label="Group operator options">
             {#each groupOperatorOptions as option (option.value)}
               <Select.Item value={option.value}>{option.label}</Select.Item>
             {/each}

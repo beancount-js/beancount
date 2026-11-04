@@ -67,7 +67,7 @@
           >
             {conversionLabel($conversion) || "At Cost"}
           </Select.Trigger>
-          <Select.Content
+          <Select.Content aria-label="Report valuation options"
             ><Select.Group>
               <Select.Item value="AT_COST">At Cost</Select.Item>
               <Select.Item value="AT_VALUE">At Market Value</Select.Item>
@@ -86,7 +86,7 @@
           >
             {intervalLabel($interval) || "Monthly"}
           </Select.Trigger>
-          <Select.Content
+          <Select.Content aria-label="Report interval options"
             ><Select.Group>
               <Select.Item value="year">Yearly</Select.Item>
               <Select.Item value="quarter">Quarterly</Select.Item>

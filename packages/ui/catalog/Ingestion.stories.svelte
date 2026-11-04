@@ -165,9 +165,10 @@
   play={async ({ canvasElement }) => {
     await ready(canvasElement, "Review Merchants");
     const portal = within(document.body);
-    await expect(
-      await portal.findByRole("heading", { name: "Review Merchant" }),
-    ).toBeVisible();
+    const reviewTitle = await portal.findByRole("heading", {
+      name: "Review Merchant",
+    });
+    await waitFor(() => expect(reviewTitle).toBeVisible());
     await expect(
       (await portal.findAllByText("Example bookshop", { exact: true }))[0],
     ).toBeVisible();
@@ -214,9 +215,10 @@
   play={async ({ canvasElement }) => {
     await ready(canvasElement, "Manage Merchants");
     const portal = within(document.body);
-    await expect(
-      await portal.findByRole("heading", { name: "American Express" }),
-    ).toBeVisible();
+    const merchantTitle = await portal.findByRole("heading", {
+      name: "American Express",
+    });
+    await waitFor(() => expect(merchantTitle).toBeVisible());
     await expect(await portal.findByText(/brand-match-url/)).toBeVisible();
     await expect(await portal.findByText(/logo-api/)).toBeVisible();
     await expect(

@@ -296,7 +296,7 @@
               >
                 {pagination.pageSize}
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content aria-label="Rows per page options">
                 <Select.Group>
                   {#each pagination.pageSizes as pageSize (pageSize)}
                     <Select.Item

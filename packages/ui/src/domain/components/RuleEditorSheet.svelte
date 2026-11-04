@@ -355,7 +355,7 @@
                       >
                         {meta?.label ?? action.actionType}
                       </Select.Trigger>
-                      <Select.Content>
+                      <Select.Content aria-label="Action type options">
                         {#each registry.executors as executor (executor.key)}
                           <Select.Item value={executor.key}
                             >{executor.label}</Select.Item

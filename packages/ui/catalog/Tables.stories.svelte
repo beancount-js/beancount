@@ -242,6 +242,13 @@
       }),
     );
     await expect(await canvas.findByText("Showing 1–25 of 31")).toBeVisible();
+    await waitFor(() =>
+      expect(
+        document.body.querySelector(
+          '[data-ui-part="select-content"][data-state="closed"]',
+        ),
+      ).toBeNull(),
+    );
   }}
 >
   {#snippet template()}<QueryResultsHarness />{/snippet}

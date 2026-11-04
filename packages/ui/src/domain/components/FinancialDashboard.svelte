@@ -88,7 +88,7 @@
           >
             {dashboardPeriodLabels[period]}
           </Select.Trigger>
-          <Select.Content>
+          <Select.Content aria-label="Dashboard period options">
             <Select.Group>
               {#each periods as option}
                 <Select.Item
@@ -113,7 +113,7 @@
             >
               {dashboard.currency}
             </Select.Trigger>
-            <Select.Content>
+            <Select.Content aria-label="Display currency options">
               <Select.Group>
                 {#each currencies as currency}
                   <Select.Item value={currency} label={currency}>

@@ -22,6 +22,13 @@
     await userEvent.click(
       await within(document.body).findByRole("option", { name: "All time" }),
     );
+    await waitFor(() =>
+      expect(
+        document.body.querySelector(
+          '[data-ui-part="select-content"][data-state="closed"]',
+        ),
+      ).toBeNull(),
+    );
     await expectContainedShell(canvasElement);
     await waitFor(() => {
       expect(

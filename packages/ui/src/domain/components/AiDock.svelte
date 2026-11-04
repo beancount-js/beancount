@@ -371,7 +371,7 @@
         >
           {selectedModel.label}
         </Select.Trigger>
-        <Select.Content>
+        <Select.Content aria-label="Codex model options">
           <Select.Group>
             {#each modelOptions as option (option.value)}
               <Select.Item value={option.value}>{option.label}</Select.Item>
