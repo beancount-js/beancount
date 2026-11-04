@@ -1,5 +1,6 @@
 <script lang="ts">
   import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+  import { accountPickerOption } from "../../components/forms/account-avatar";
 
   import { FormField, FormSectionHeader } from "@lapismd/design-core/forms";
   import { ChevronsDownUp } from "@lucide/svelte";
@@ -56,19 +57,13 @@
   let sheetTitleEl = $state<HTMLElement | null>(null);
 
   const fromOptions = $derived(
-    accountsInRecords(records).map((account) => ({
-      value: account,
-      label: account,
-    })),
+    accountsInRecords(records).map(accountPickerOption),
   );
 
   const toOptions = $derived.by(() => {
-    const options = $accounts.map((account) => ({
-      value: account,
-      label: account,
-    }));
+    const options = $accounts.map(accountPickerOption);
     if (toAccount && !options.some((option) => option.value === toAccount)) {
-      options.push({ value: toAccount, label: toAccount });
+      options.push(accountPickerOption(toAccount));
     }
     return options;
   });

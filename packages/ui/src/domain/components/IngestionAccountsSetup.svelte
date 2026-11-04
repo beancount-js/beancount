@@ -15,7 +15,10 @@
   import { accountOpenClose, type Open } from "@beancount-js/beancount";
   import type { JsonApiLinkedAccount } from "@beancount-js/beangulp";
   import AccountAvatar from "../../components/forms/AccountAvatar.svelte";
-  import { accountAvatarInitial } from "../../components/forms/account-avatar";
+  import {
+    accountAvatarInitial,
+    accountPickerOption,
+  } from "../../components/forms/account-avatar";
   import type { IngestionSyncJob } from "@beancount-js/server";
   import { onDestroy } from "svelte";
   import { get } from "svelte/store";
@@ -141,10 +144,7 @@
     unlinkedAccounts.filter((account) => selectedIds.includes(account.id)),
   );
   const accountItems = $derived(
-    (loadedConfig?.accounts ?? []).map((account) => ({
-      label: account,
-      value: account,
-    })),
+    (loadedConfig?.accounts ?? []).map(accountPickerOption),
   );
   const canDiscover = $derived(
     Boolean(

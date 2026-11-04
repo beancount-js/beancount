@@ -5,6 +5,7 @@ import {
   accountAvatarImageValue,
   accountAvatarInitial,
   accountAvatarRawEmoji,
+  accountPickerOption,
 } from "./account-avatar";
 
 describe("account avatar fallback appearance", () => {
@@ -43,5 +44,13 @@ describe("account avatar fallback appearance", () => {
     expect(accountAvatarImageValue("landmark")).toBe("");
     expect(accountAvatarRawEmoji("😀")).toBe("😀");
     expect(accountAvatarRawEmoji("wallet")).toBe("");
+  });
+
+  it("provides account picker options with portable avatars", () => {
+    expect(accountPickerOption("Assets:Checking")).toEqual({
+      value: "Assets:Checking",
+      label: "Assets:Checking",
+      imageUrl: accountAvatarImageDataUrl("Assets:Checking"),
+    });
   });
 });

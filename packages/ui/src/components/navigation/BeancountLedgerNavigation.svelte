@@ -26,7 +26,7 @@
   import { Query } from "@beancount-js/beancount";
   import { untrack } from "svelte";
   import { FilterCommandPicker, FormField } from "../forms";
-  import { accountAvatarImageDataUrl } from "../forms/account-avatar";
+  import { accountPickerOption } from "../forms/account-avatar";
   import type { BeancountController, WorkspaceView } from "../../controller";
   import type { ProjectFile } from "@beancount-js/workspace";
   import { Button } from "@lapismd/design-core/shadcn/button";
@@ -116,11 +116,7 @@
           .flatMap((directive) => directive.accounts)
           .filter(Boolean),
       ),
-    ].map((account) => ({
-      label: account,
-      value: account,
-      imageUrl: accountAvatarImageDataUrl(account),
-    })),
+    ].map(accountPickerOption),
   );
   const queryPickerOptions = $derived([
     { value: "all", label: "Select query" },

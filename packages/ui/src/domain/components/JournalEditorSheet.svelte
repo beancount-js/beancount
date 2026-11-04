@@ -1,5 +1,6 @@
 <script lang="ts">
   import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+  import { accountPickerOption } from "../../components/forms/account-avatar";
 
   import "../codemirror/themes/base.scss";
   import type { DirectiveBase } from "@beancount-js/beancount";
@@ -116,9 +117,7 @@
     !isYamlOnly && !hasEditableAst(directive) && parsedFromYaml === null,
   );
 
-  const accountItems = $derived(
-    $accounts.map((account) => ({ label: account, value: account })),
-  );
+  const accountItems = $derived($accounts.map(accountPickerOption));
 
   const currencySuggestions = $derived([...$currencies]);
   const merchantProjectId = $derived($snapshot?.project.id ?? "");

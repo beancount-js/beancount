@@ -58,6 +58,9 @@
     await expect(body.getByRole("button", { name: "Apply" })).toBeVisible();
     const picker = body.getByRole("button", { name: /^Account to replace:/ });
     await expect(picker).toBeVisible();
+    const accountAvatar = picker.querySelector<HTMLImageElement>("img")!;
+    await expect(accountAvatar).toBeVisible();
+    expect(accountAvatar.getAttribute("src")).toContain("data:image/svg+xml,");
     expect(
       getComputedStyle(body.getByRole("button", { name: "Replace" })).fontSize,
     ).toBe("12px");

@@ -1,5 +1,6 @@
 <script lang="ts">
   import FilterCommandPicker from "../../../components/forms/FilterCommandPicker.svelte";
+  import { accountPickerOption } from "../../../components/forms/account-avatar";
 
   import { type FormFieldRenderArgs } from "@lapismd/design-core/forms";
 
@@ -17,10 +18,7 @@
 
   const placeholder = $derived(field.placeholder ?? "Select account");
   const options = $derived.by(() => {
-    const accounts = (context?.accounts ?? []).map((account: string) => ({
-      label: account,
-      value: account,
-    }));
+    const accounts = (context?.accounts ?? []).map(accountPickerOption);
     const values = [{ value: "all", label: placeholder }, ...accounts];
     if (
       value &&

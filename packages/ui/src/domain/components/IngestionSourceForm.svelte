@@ -25,6 +25,7 @@
 
 <script lang="ts">
   import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+  import { accountPickerOption } from "../../components/forms/account-avatar";
 
   import { ArrowRight } from "@lucide/svelte";
   import { Copy } from "@lucide/svelte";
@@ -130,11 +131,9 @@
     credentialAvailable,
     merchantCredentialAvailable,
   } satisfies SourceFormContext);
-  const accountItems = $derived(
-    accounts.map((account) => ({ label: account, value: account })),
-  );
+  const accountItems = $derived(accounts.map(accountPickerOption));
   const categoryAccountItems = $derived(
-    categoryAccounts.map((account) => ({ label: account, value: account })),
+    categoryAccounts.map(accountPickerOption),
   );
   const providerCategories = $derived(connector?.providerCategories ?? []);
 

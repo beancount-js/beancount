@@ -1,5 +1,6 @@
 <script lang="ts">
   import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+  import { accountPickerOption } from "../../components/forms/account-avatar";
 
   import { accountOpenClose } from "@beancount-js/beancount";
   import { onDestroy } from "svelte";
@@ -100,7 +101,7 @@
     collectReconciliationReviewFacetOptions(candidates),
   );
   const accountOptions = $derived<FilterCommandOption[]>(
-    facetOptions.accounts.map((value) => ({ value, label: value })),
+    facetOptions.accounts.map(accountPickerOption),
   );
   const sourceOptions = $derived<FilterCommandOption[]>(
     facetOptions.sources.map((value) => ({ value, label: value })),

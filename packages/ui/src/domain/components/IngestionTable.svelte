@@ -1,6 +1,7 @@
 <script lang="ts">
   import { rowOpen } from "../lib/row-open";
   import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+  import { accountPickerOption } from "../../components/forms/account-avatar";
 
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
@@ -211,7 +212,7 @@
   );
 
   const accountOptions = $derived<FilterCommandOption[]>(
-    facetOptions.accounts.map((value) => ({ value, label: value })),
+    facetOptions.accounts.map(accountPickerOption),
   );
   const yearOptions = $derived<FilterCommandOption[]>(
     facetOptions.years.map((value) => ({ value, label: value })),

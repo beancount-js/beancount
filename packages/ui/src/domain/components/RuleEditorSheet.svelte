@@ -1,5 +1,6 @@
 <script lang="ts">
   import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+  import { accountPickerOption } from "../../components/forms/account-avatar";
 
   import { Plus } from "@lucide/svelte";
   import { Trash2 } from "@lucide/svelte";
@@ -62,9 +63,7 @@
     for: true,
   });
 
-  const accountOptions = $derived(
-    accounts.map((account) => ({ value: account, label: account })),
-  );
+  const accountOptions = $derived(accounts.map(accountPickerOption));
   const dialogTitle = $derived(
     isCreate
       ? "Create transaction rule"

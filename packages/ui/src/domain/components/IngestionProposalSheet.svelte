@@ -1,5 +1,6 @@
 <script lang="ts">
   import FilterCommandPicker from "../../components/forms/FilterCommandPicker.svelte";
+  import { accountPickerOption } from "../../components/forms/account-avatar";
 
   import type { ImportProposal, IngestionRun } from "../ingestion/types";
   import { useIngestionApi, ingestionPath } from "../ingestion/api";
@@ -239,9 +240,7 @@
     debugOpen = {};
   }
 
-  const accountItems = $derived(
-    allowedAccounts.map((account) => ({ label: account, value: account })),
-  );
+  const accountItems = $derived(allowedAccounts.map(accountPickerOption));
 
   const merchantStatus = $derived(
     proposal.merchantResolution?.status ?? "unresolved",

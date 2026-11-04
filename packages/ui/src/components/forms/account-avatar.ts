@@ -26,6 +26,15 @@ export function accountAvatarImageDataUrl(account: string): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
+/** A shared account option for Design Core searchable pickers. */
+export function accountPickerOption(account: string) {
+  return {
+    value: account,
+    label: account,
+    imageUrl: accountAvatarImageDataUrl(account),
+  };
+}
+
 /** Image values written by the shared picker remain opaque application data. */
 export function accountAvatarImageValue(icon: string): string {
   const value = icon.trim();
