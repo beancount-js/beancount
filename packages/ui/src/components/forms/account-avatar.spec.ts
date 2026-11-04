@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   accountAvatarFallbackColor,
   accountAvatarImageDataUrl,
+  accountAvatarImageValue,
   accountAvatarInitial,
+  accountAvatarRawEmoji,
 } from "./account-avatar";
 
 describe("account avatar fallback appearance", () => {
@@ -29,5 +31,17 @@ describe("account avatar fallback appearance", () => {
     );
     expect(image).toContain(">C</text>");
     expect(image).toContain(accountAvatarFallbackColor("Assets:Checking"));
+  });
+
+  it("separates picker images and raw emoji from legacy icon names", () => {
+    expect(accountAvatarImageValue("data:image/svg+xml,avatar")).toBe(
+      "data:image/svg+xml,avatar",
+    );
+    expect(accountAvatarImageValue("https://example.test/avatar.png")).toBe(
+      "https://example.test/avatar.png",
+    );
+    expect(accountAvatarImageValue("landmark")).toBe("");
+    expect(accountAvatarRawEmoji("😀")).toBe("😀");
+    expect(accountAvatarRawEmoji("wallet")).toBe("");
   });
 });

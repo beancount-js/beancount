@@ -2,6 +2,7 @@
   import { defineMeta } from "@storybook/addon-svelte-csf";
   import { expect, fireEvent, waitFor, within } from "storybook/test";
   import AccountNavigationLink from "../src/components/navigation/AccountNavigationLink.svelte";
+  import AccountAppearanceHarness from "./AccountAppearanceHarness.svelte";
   const { Story } = defineMeta({
     title: "Beancount/Accounts",
     component: AccountNavigationLink,
@@ -42,6 +43,63 @@
         appearance={{ color: "#CA8A04", icon: "landmark" }}
       />
     </div>{/snippet}
+</Story>
+
+<Story
+  name="Edit account avatar"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("button", {
+      name: "Choose account colour and icon",
+    });
+    expect(
+      trigger.querySelector('[data-ui-component="avatar"]'),
+    ).not.toBeNull();
+    await fireEvent.click(trigger);
+    const portal = within(document.body);
+    await fireEvent.click(await portal.findByRole("tab", { name: "Emoji" }));
+    let library: HTMLElement | null | undefined;
+    await waitFor(
+      () => {
+        library = document
+          .querySelector("em-emoji-picker")
+          ?.shadowRoot?.querySelector<HTMLElement>("section");
+        if (!library?.querySelector("input"))
+          throw new Error("Waiting for the emoji library");
+      },
+      { timeout: 5000 },
+    );
+    await fireEvent.click(
+      (
+        await within(library!).findAllByRole(
+          "button",
+          { name: /^😀$/ },
+          { timeout: 5000 },
+        )
+      )[0]!,
+    );
+    await waitFor(() =>
+      expect(canvas.getByTestId("account-avatar-value")).toHaveTextContent(
+        "data:image/svg+xml",
+      ),
+    );
+    await fireEvent.click(
+      portal.getByRole("button", { name: "Use #3b82f6 background" }),
+    );
+    await waitFor(() =>
+      expect(canvas.getByTestId("account-avatar-color")).toHaveTextContent(
+        "#3B82F6",
+      ),
+    );
+    const preview = canvasElement.querySelector<HTMLElement>(
+      ".beancount-account-avatar [data-ui-component='avatar']",
+    )!;
+    expect(preview.querySelector("img")?.getAttribute("src")).toContain(
+      "data-avatar-text",
+    );
+  }}
+>
+  {#snippet template()}<AccountAppearanceHarness />{/snippet}
 </Story>
 
 <Story

@@ -25,3 +25,15 @@ export function accountAvatarImageDataUrl(account: string): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="${color}" fill-opacity=".1"/><text x="16" y="17" fill="${color}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="14" font-weight="600" text-anchor="middle" dominant-baseline="middle">${initial}</text></svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
+
+/** Image values written by the shared picker remain opaque application data. */
+export function accountAvatarImageValue(icon: string): string {
+  const value = icon.trim();
+  return /^(?:data:image\/|https?:\/\/|blob:|\/)/iu.test(value) ? value : "";
+}
+
+/** Accept raw emoji metadata while leaving unknown legacy names to initials. */
+export function accountAvatarRawEmoji(icon: string): string {
+  const value = icon.trim();
+  return /\p{Extended_Pictographic}/u.test(value) ? value : "";
+}

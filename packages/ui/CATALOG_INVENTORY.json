@@ -126,9 +126,11 @@
   "sharedImports": [
     "@lapismd/design-core/filter",
     "@lapismd/design-core/forms",
+    "@lapismd/design-core/forms/avatar-picker",
     "@lapismd/design-core/shadcn/accordion",
     "@lapismd/design-core/shadcn/alert",
     "@lapismd/design-core/shadcn/alert-dialog",
+    "@lapismd/design-core/shadcn/avatar",
     "@lapismd/design-core/shadcn/badge",
     "@lapismd/design-core/shadcn/breadcrumb",
     "@lapismd/design-core/shadcn/button",
@@ -139,7 +141,6 @@
     "@lapismd/design-core/shadcn/empty",
     "@lapismd/design-core/shadcn/input",
     "@lapismd/design-core/shadcn/pagination",
-    "@lapismd/design-core/shadcn/popover",
     "@lapismd/design-core/shadcn/progress",
     "@lapismd/design-core/shadcn/scroll-area",
     "@lapismd/design-core/shadcn/select",
@@ -193,6 +194,10 @@
     {
       "state": "Account avatars, custom appearance and merchant logo fallback",
       "storyId": "beancount-accounts--account-avatars"
+    },
+    {
+      "state": "Shared emoji and colour avatar editing",
+      "storyId": "beancount-accounts--edit-account-avatar"
     }
   ],
   "tableFamilies": [
