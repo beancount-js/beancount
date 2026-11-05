@@ -601,7 +601,8 @@
 
         {#if activeSearch && !matchedClusters.length}
           <div
-            class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+            class="rounded-2xl border bg-background p-8 text-center text-sm text-muted-foreground"
+            data-merchant-review-surface
           >
             No merchants match this search.
           </div>
@@ -670,8 +671,9 @@
           {#if showSelectionBanner}
             <div
               data-merchant-selection-banner
+              data-merchant-review-surface
               role="status"
-              class="rounded-xl border bg-card px-4 py-3 text-center text-sm text-muted-foreground"
+              class="rounded-xl border bg-background px-4 py-3 text-center text-sm text-muted-foreground"
             >
               {#if allMatchingSelected}
                 All {matchedClusters.length} matching merchant clusters are selected.
@@ -696,7 +698,10 @@
             </div>
           {/if}
 
-          <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div
+            class="mx-1 overflow-hidden rounded-xl border bg-background shadow-sm"
+            data-merchant-review-surface
+          >
             {#each visibleClusters as cluster, index (cluster.id)}
               <div
                 role="group"
@@ -760,8 +765,9 @@
 
           {#if pages.length > 1}
             <div
-              class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              class="flex flex-col items-stretch gap-3 rounded-xl border bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               data-review-merchant-pagination
+              data-merchant-review-surface
             >
               <span class="text-sm text-muted-foreground"
                 >Page {page} of {pages.length}</span

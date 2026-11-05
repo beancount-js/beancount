@@ -328,10 +328,22 @@
     await expect(
       settings.getByRole("button", { name: "Accounts" }),
     ).toHaveAttribute("aria-current", "page");
+    await expect(
+      await settings.findByRole("button", { name: /^Review/ }),
+    ).toBeVisible();
+    await waitFor(() =>
+      expect(
+        settings.getAllByRole("button", { name: "Merchants" }),
+      ).toHaveLength(2),
+    );
     if (import.meta.env.MODE === "test") {
       const { page } = await import("vitest/browser");
       const selected = settings.getByRole("button", { name: "Accounts" });
-      const inactive = settings.getByRole("button", { name: "Merchants" });
+      const inactive = settings
+        .getAllByRole("button", {
+          name: "Merchants",
+        })
+        .at(-1)!;
       const selectedBackground = getComputedStyle(selected).backgroundColor;
       await page.elementLocator(selected).hover();
       await waitFor(() =>

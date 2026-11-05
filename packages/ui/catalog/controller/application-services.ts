@@ -13,6 +13,7 @@ import {
 import type {
   IngestionSyncJob,
   MerchantReviewCluster,
+  IngestionReviewLedgerSnapshot,
 } from "@beancount-js/server";
 import type { IngestionConfigResponse } from "../../src/domain/ingestion/types";
 import type { ReconciliationReviewResponse } from "../../src/domain/lib/reconciliation-review-response";
@@ -417,14 +418,17 @@ export function createApplicationServices(
       limit,
     };
   }
-  function reviewLedger(id: string) {
+  function reviewLedger(id: string): IngestionReviewLedgerSnapshot {
     const data = state(id);
     const accounts = [...data.config.accounts, "Expenses:Uncategorized"];
+    const runIds: string[] = [];
+    let proposalCount = 0;
     let contents =
       'option "title" "Import review"\noption "operating_currency" "GBP"\n' +
       accounts.map((account) => `2024-01-01 open ${account} GBP`).join("\n") +
       "\n";
-    for (const run of data.runs)
+    for (const run of data.runs) {
+      let includedRun = false;
       for (const proposal of run.proposals) {
         const t = proposal.transaction;
         if (
@@ -432,13 +436,23 @@ export function createApplicationServices(
           ["accepted", "excluded", "duplicate"].includes(proposal.status)
         )
           continue;
+        proposalCount += 1;
+        includedRun = true;
         contents += `\n${t.bookedAt} * ${JSON.stringify(t.payee || "")} ${JSON.stringify(t.narration)}\n  ${t.sourceAccount} ${t.amount} ${t.currency}\n  ${proposal.selectedAccount || "Expenses:Uncategorized"} ${-Number(t.amount)} ${t.currency}\n`;
       }
+      if (includedRun) runIds.push(run.id);
+    }
     return {
+      kind: "ingestion-review",
       path: ".beancount/ingestion/active-review.beancount",
+      label: "Review transactions",
       contents,
       revision: String(data.sequence),
-      updatedAt: NOW,
+      proposalCount,
+      reviewableCount: proposalCount,
+      runIds,
+      readOnly: true,
+      projectionIssues: [],
     };
   }
   return {

@@ -185,7 +185,8 @@
         </p>
 
         <article
-          class="overflow-hidden rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm sm:p-6"
+          class="overflow-hidden rounded-xl border border-border bg-background p-4 text-foreground shadow-sm sm:p-6"
+          data-ingestion-brand-surface
         >
           <div class="beancount-structured-form">
             <StructuredForm

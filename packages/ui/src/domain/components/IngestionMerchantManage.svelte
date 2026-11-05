@@ -270,12 +270,16 @@
 
         {#if activeSearch && !merchants.length}
           <div
-            class="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground"
+            class="rounded-2xl border bg-background p-8 text-center text-sm text-muted-foreground"
+            data-merchant-manage-surface
           >
             No merchants match this search.
           </div>
         {:else if merchants.length}
-          <div class="mx-1 overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div
+            class="mx-1 overflow-hidden rounded-xl border bg-background shadow-sm"
+            data-merchant-manage-surface
+          >
             {#each visibleMerchants as merchant (merchant.merchantId)}
               <div
                 role="group"
@@ -315,8 +319,9 @@
           </div>
 
           <div
-            class="flex flex-col items-stretch gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            class="flex flex-col items-stretch gap-3 rounded-xl border bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
             data-merchant-pagination
+            data-merchant-manage-surface
           >
             <span class="text-sm text-muted-foreground">
               {#if pages.length > 1}

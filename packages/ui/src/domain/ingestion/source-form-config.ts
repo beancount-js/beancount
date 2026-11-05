@@ -137,7 +137,7 @@ export function secretField<TRoot>(config: {
     view: "edit",
     wrapper: "field",
     as: "div",
-    align: "start",
+    align: "center",
     props: envPlaceholder ? { envPlaceholder } : undefined,
   });
 }

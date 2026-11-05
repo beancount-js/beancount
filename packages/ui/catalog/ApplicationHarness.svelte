@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, untrack } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { BeancountApplication } from "@beancount-js/ui";
   import {
     createInMemoryBeancountController,
@@ -18,6 +18,13 @@
   const controller = untrack(() =>
     createInMemoryBeancountController(initialRoute, scenario),
   );
+  onMount(() => {
+    if (scenario !== "preview" && scenario !== "review") return;
+    void controller
+      .initialize()
+      .then(() => controller.workspace.refreshReviewLedger())
+      .catch(() => undefined);
+  });
   onDestroy(() => controller.dispose());
 </script>
 

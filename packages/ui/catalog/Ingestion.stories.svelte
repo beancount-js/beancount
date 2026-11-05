@@ -149,6 +149,21 @@
   name="Review Merchants"
   play={async ({ canvasElement }) => {
     await ready(canvasElement, "Review Merchants");
+    const shellBackground = getComputedStyle(
+      canvasElement.querySelector<HTMLElement>(".ui-minimal-app-shell__main")!,
+    ).backgroundColor;
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelectorAll("[data-merchant-review-surface]").length,
+      ).toBeGreaterThan(0),
+    );
+    const surfaces = canvasElement.querySelectorAll<HTMLElement>(
+      "[data-merchant-review-surface]",
+    );
+    expect(surfaces.length).toBeGreaterThan(0);
+    for (const surface of surfaces) {
+      expect(getComputedStyle(surface).backgroundColor).toBe(shellBackground);
+    }
     await expect(
       await within(canvasElement).findByText("Example bookshop", {
         exact: true,
@@ -194,6 +209,21 @@
   play={async ({ canvasElement }) => {
     await ready(canvasElement, "Manage Merchants");
     const canvas = within(canvasElement);
+    const shellBackground = getComputedStyle(
+      canvasElement.querySelector<HTMLElement>(".ui-minimal-app-shell__main")!,
+    ).backgroundColor;
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelectorAll("[data-merchant-manage-surface]").length,
+      ).toBeGreaterThan(1),
+    );
+    const surfaces = canvasElement.querySelectorAll<HTMLElement>(
+      "[data-merchant-manage-surface]",
+    );
+    expect(surfaces.length).toBeGreaterThan(1);
+    for (const surface of surfaces) {
+      expect(getComputedStyle(surface).backgroundColor).toBe(shellBackground);
+    }
     await userEvent.click(
       await canvas.findByRole("button", { name: /Example cafe/ }),
     );
@@ -246,9 +276,45 @@
   name="Brand Match"
   play={async ({ canvasElement }) => {
     await ready(canvasElement, "Brand Match");
-    await expect(
-      await within(canvasElement).findByRole("switch", { name: /brand/i }),
-    ).toBeVisible();
+    const canvas = within(canvasElement);
+    const configure = await canvas.findByRole("switch", {
+      name: "Configure Brandfetch Logo API",
+    });
+    await expect(configure).toBeVisible();
+    if (configure.getAttribute("aria-checked") !== "true") {
+      await userEvent.click(configure);
+    }
+    const shellBackground = getComputedStyle(
+      canvasElement.querySelector<HTMLElement>(".ui-minimal-app-shell__main")!,
+    ).backgroundColor;
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelectorAll("[data-ingestion-brand-surface]").length,
+      ).toBe(1),
+    );
+    const surfaces = canvasElement.querySelectorAll<HTMLElement>(
+      "[data-ingestion-brand-surface]",
+    );
+    expect(surfaces.length).toBe(1);
+    expect(getComputedStyle(surfaces[0]!).backgroundColor).toBe(
+      shellBackground,
+    );
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelector('[data-ui-component="secret-field"]'),
+      ).not.toBeNull(),
+    );
+    const secret = canvasElement.querySelector<HTMLElement>(
+      '[data-ui-component="secret-field"]',
+    )!;
+    expect(secret.closest('[data-ui-part="form-field"]')).toHaveAttribute(
+      "data-align",
+      "center",
+    );
+    const split = secret.querySelector<HTMLElement>(".cv-form-segmented")!;
+    expect(split.children).toHaveLength(2);
+    expect(["flex", "inline-flex"]).toContain(getComputedStyle(split).display);
+    expect(getComputedStyle(split.children[0]!).borderRightWidth).toBe("1px");
   }}
   >{#snippet template()}<ApplicationHarness
       displayMode="desktop"
