@@ -45,6 +45,12 @@ Use public package exports and Design Core controller semantics. Reuse the
 account appearance store, controller-scoped merchant-logo cache and shared
 avatar renderer, including inside mounted CodeMirror widgets. Retain editor
 context, native pointer/keyboard behavior and undo when adapting widgets.
+The shared renderer composes the public Design Core Avatar, and account
+appearance editing composes the public AvatarPicker. Preserve stored Lucide
+icon names as legacy display input; new edits persist the picker's portable
+image/emoji value and its separately selected colour. Searchable account
+pickers use the same portable fallback identity when their public option
+contract accepts an image rather than a component renderer.
 
 ## Retained compatibility and reference code
 
