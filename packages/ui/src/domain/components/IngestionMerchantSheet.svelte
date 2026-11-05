@@ -657,9 +657,9 @@
   }
 
   :global(.merchant-sheet-title),
-  .merchant-form :global(.beancount-form-item-list-toggle),
-  .merchant-form :global(.cv-form-section-title-toggle),
-  .merchant-form :global(.cv-form-section-title-row h3) {
+  :global(.merchant-form .cv-form-item-list-toggle),
+  :global(.merchant-form .cv-form-section-title-toggle),
+  :global(.merchant-form .cv-form-section-title-row h3) {
     min-height: 1rem;
     font-size: 0.75rem !important;
     font-weight: 600 !important;
@@ -668,7 +668,7 @@
     text-transform: uppercase;
   }
 
-  .merchant-form :global(.cv-form-section-header) {
+  :global(.merchant-form .cv-form-section-header) {
     --ui-form-section-title-line-height: 1rem;
   }
 </style>

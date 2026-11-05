@@ -360,6 +360,43 @@
     expect(
       Math.abs(d.top + d.height / 2 - g.top - g.height / 2),
     ).toBeLessThanOrEqual(1);
+    if (import.meta.env.MODE === "test") {
+      const { page } = await import("vitest/browser");
+      const importGroup = groupLabel.parentElement!;
+      const restingBackground = getComputedStyle(importGroup).backgroundColor;
+      const childBackground = getComputedStyle(groupLabel).backgroundColor;
+      await page.elementLocator(disclosure).hover();
+      await waitFor(() =>
+        expect(getComputedStyle(importGroup).backgroundColor).not.toBe(
+          restingBackground,
+        ),
+      );
+      expect(getComputedStyle(disclosure).backgroundColor).toBe(
+        childBackground,
+      );
+      expect(getComputedStyle(groupLabel).backgroundColor).toBe(
+        childBackground,
+      );
+      await page.elementLocator(disclosure).unhover();
+      await waitFor(() =>
+        expect(getComputedStyle(importGroup).backgroundColor).toBe(
+          restingBackground,
+        ),
+      );
+      await page.elementLocator(groupLabel).hover();
+      await waitFor(() =>
+        expect(getComputedStyle(importGroup).backgroundColor).not.toBe(
+          restingBackground,
+        ),
+      );
+      expect(getComputedStyle(disclosure).backgroundColor).toBe(
+        childBackground,
+      );
+      expect(getComputedStyle(groupLabel).backgroundColor).toBe(
+        childBackground,
+      );
+      await page.elementLocator(groupLabel).unhover();
+    }
     await userEvent.click(disclosure);
     await expect(
       settings.queryByRole("button", { name: "History" }),

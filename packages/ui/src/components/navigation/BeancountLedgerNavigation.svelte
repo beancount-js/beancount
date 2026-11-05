@@ -1196,4 +1196,16 @@
     justify-content: flex-start;
     font-size: 0.75rem;
   }
+  :global(
+      [data-ledger-settings-sidebar] [data-settings-group="import"] > button
+    ),
+  :global(
+      [data-ledger-settings-sidebar]
+        [data-settings-group="import"]
+        > button:hover
+    ) {
+    background: transparent !important;
+    color: inherit !important;
+    box-shadow: none !important;
+  }
 </style>

@@ -55,6 +55,13 @@
     expect(
       trigger.querySelector('[data-ui-component="avatar"]'),
     ).not.toBeNull();
+    const avatar = trigger.querySelector<HTMLElement>(
+      '[data-ui-component="avatar"]',
+    )!;
+    const edit = trigger.querySelector<HTMLElement>(".ui-avatar-picker__edit")!;
+    expect(edit.getBoundingClientRect().width).toBeLessThanOrEqual(
+      avatar.getBoundingClientRect().width * 0.4,
+    );
     await fireEvent.click(trigger);
     const portal = within(document.body);
     await fireEvent.click(await portal.findByRole("tab", { name: "Emoji" }));

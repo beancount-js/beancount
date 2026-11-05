@@ -63,4 +63,9 @@
     --ui-avatar-picker-size: 2.25rem;
     display: inline-flex;
   }
+
+  .beancount-account-avatar-picker :global(.ui-avatar-picker) {
+    --_picker-edit-size: 0.875rem;
+    --_picker-cutout-gap: 2px;
+  }
 </style>

@@ -1334,12 +1334,18 @@
   }
 
   :global(.proposal-sheet-title),
-  .proposal-form :global(.beancount-form-item-list-toggle),
-  .proposal-form :global(.beancount-form-section-title-toggle),
-  .proposal-form :global(.beancount-form-section-title-row h3) {
-    font-size: 0.75rem;
-    font-weight: 600;
+  :global(.proposal-form .cv-form-item-list-toggle),
+  :global(.proposal-form .cv-form-section-title-toggle),
+  :global(.proposal-form .cv-form-section-title-row h3) {
+    min-height: 1rem;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    line-height: 1rem !important;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+  }
+
+  :global(.proposal-form .cv-form-section-header) {
+    --ui-form-section-title-line-height: 1rem;
   }
 </style>

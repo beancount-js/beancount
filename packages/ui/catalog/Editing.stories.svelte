@@ -17,6 +17,24 @@
   play={async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Groceries/)).toBeVisible();
+    const record = (
+      await canvas.findAllByRole("group", { name: /^Open / })
+    )[0]!;
+    await userEvent.click(record);
+    const sheet = await within(document.body).findByRole("dialog");
+    const metadata = within(sheet).getByRole("button", {
+      name: "Collapse Metadata",
+    });
+    expect(metadata).toHaveClass("cv-form-item-list-toggle");
+    expect(metadata.closest(".journal-form")).not.toBeNull();
+    expect(getComputedStyle(metadata).fontSize).toBe("12px");
+    expect(getComputedStyle(metadata).lineHeight).toBe("16px");
+    const details = within(sheet).getByRole("button", {
+      name: "Details",
+    });
+    expect(details).toHaveClass("cv-form-section-title-toggle");
+    expect(getComputedStyle(details).fontSize).toBe("12px");
+    expect(getComputedStyle(details).lineHeight).toBe("16px");
   }}
   >{#snippet template()}<ApplicationHarness
       initialRoute="/journal"
