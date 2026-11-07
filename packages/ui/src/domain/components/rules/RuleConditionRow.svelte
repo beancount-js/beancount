@@ -39,6 +39,14 @@
     { value: "or", label: "Any condition matches (OR)" },
   ];
 
+  const valuelessOperators = new Set(["is_null", "is_not_null"]);
+  const freeTextOperators = new Set([
+    "like",
+    "not_like",
+    "matches",
+    "not_matches",
+  ]);
+
   function filterMeta(key: RuleConditionType) {
     return registry.filters.find((filter) => filter.key === key);
   }
@@ -48,6 +56,14 @@
       value: filter.key,
       label: filter.label,
     }));
+  }
+
+  function operatorLabel(condition: RuleCondition) {
+    return (
+      filterMeta(condition.conditionType)?.operators.find(
+        (operator) => operator.value === condition.operator,
+      )?.label ?? condition.operator
+    );
   }
 
   function valueOptions(key: RuleConditionType): FilterCommandOption[] {
@@ -99,8 +115,28 @@
     emit({
       ...current,
       operator: nextOperator,
-      value: nextOperator === "is_null" ? null : (current.value ?? ""),
+      value: valuelessOperators.has(nextOperator)
+        ? null
+        : (current.value ?? ""),
     });
+  }
+
+  function usesFreeTextValue(condition: RuleCondition) {
+    const meta = filterMeta(condition.conditionType);
+    return meta?.type === "text" || freeTextOperators.has(condition.operator);
+  }
+
+  function valuePlaceholder(condition: RuleCondition) {
+    if (
+      condition.operator === "matches" ||
+      condition.operator === "not_matches"
+    ) {
+      return "Regular expression";
+    }
+    if (condition.operator === "like" || condition.operator === "not_like") {
+      return "Text to find";
+    }
+    return "Value";
   }
 
   function addSubCondition() {
@@ -148,7 +184,10 @@
           if (next) changeField(leaf, next as RuleConditionType, emit);
         }}
       >
-        <Select.Trigger class="h-9 text-sm" aria-label="Condition field">
+        <Select.Trigger
+          class="h-9 text-sm"
+          aria-label={`Condition field: ${meta?.label ?? leaf.conditionType}`}
+        >
           {meta?.label ?? leaf.conditionType}
         </Select.Trigger>
         <Select.Content aria-label="Condition field options">
@@ -168,9 +207,11 @@
           if (next) changeOperator(leaf, next, emit);
         }}
       >
-        <Select.Trigger class="h-9 text-sm" aria-label="Condition operator">
-          {operators.find((operator) => operator.value === leaf.operator)
-            ?.label ?? leaf.operator}
+        <Select.Trigger
+          class="h-9 text-sm"
+          aria-label={`Condition operator: ${operatorLabel(leaf)}`}
+        >
+          {operatorLabel(leaf)}
         </Select.Trigger>
         <Select.Content aria-label="Condition operator options">
           {#each operators as operator (operator.value)}
@@ -180,7 +221,7 @@
       </Select.Root>
     </div>
 
-    {#if leaf.operator !== "is_null"}
+    {#if !valuelessOperators.has(leaf.operator)}
       <div class="min-w-0 flex-[2_1_12rem]">
         {#if meta?.type === "number"}
           <Input
@@ -195,7 +236,7 @@
                 emit,
               )}
           />
-        {:else if meta?.type === "select"}
+        {:else if meta?.type === "select" && !usesFreeTextValue(leaf)}
           <FilterCommandPicker
             fullWidth
             label={meta.label}
@@ -210,7 +251,11 @@
           <Input
             value={leaf.value ?? ""}
             {disabled}
-            placeholder="Value"
+            aria-label="Condition value"
+            placeholder={valuePlaceholder(leaf)}
+            autocomplete="off"
+            spellcheck={leaf.operator !== "matches" &&
+              leaf.operator !== "not_matches"}
             oninput={(event) =>
               updateLeaf(
                 leaf,
@@ -222,7 +267,7 @@
       </div>
     {:else}
       <div class="min-w-0 flex-[2_1_12rem] px-1 text-sm text-muted-foreground">
-        is empty
+        {leaf.operator === "is_not_null" ? "is not empty" : "is empty"}
       </div>
     {/if}
 
@@ -257,7 +302,11 @@
         >
           <Select.Trigger
             class="h-8 max-w-64 text-xs"
-            aria-label="Group operator"
+            aria-label={`Group operator: ${
+              groupOperatorOptions.find(
+                (option) => option.value === condition.operator,
+              )?.label ?? condition.operator
+            }`}
           >
             {groupOperatorOptions.find(
               (option) => option.value === condition.operator,

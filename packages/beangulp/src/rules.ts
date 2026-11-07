@@ -29,8 +29,13 @@ export type RuleActionType =
 
 export type RuleOperator =
   | "like"
+  | "not_like"
   | "="
+  | "!="
   | "is_null"
+  | "is_not_null"
+  | "matches"
+  | "not_matches"
   | ">"
   | ">="
   | "<"
@@ -148,8 +153,13 @@ export interface RuleRegistryMeta {
 
 const TEXT_OPERATORS = [
   { label: "Contains", value: "like" },
+  { label: "Does not contain", value: "not_like" },
   { label: "Equal to", value: "=" },
+  { label: "Not equal to", value: "!=" },
+  { label: "Matches regular expression", value: "matches" },
+  { label: "Does not match regular expression", value: "not_matches" },
   { label: "Is empty", value: "is_null" },
+  { label: "Is not empty", value: "is_not_null" },
 ] as const;
 
 const NUMBER_OPERATORS = [
@@ -158,11 +168,14 @@ const NUMBER_OPERATORS = [
   { label: "Less than", value: "<" },
   { label: "Less than or equal to", value: "<=" },
   { label: "Is equal to", value: "=" },
+  { label: "Is not equal to", value: "!=" },
 ] as const;
 
 const SELECT_OPERATORS = [
   { label: "Equal to", value: "=" },
+  { label: "Not equal to", value: "!=" },
   { label: "Is empty", value: "is_null" },
+  { label: "Is not empty", value: "is_not_null" },
 ] as const;
 
 export function newRuleId() {
@@ -207,7 +220,7 @@ export function createRuleRegistry(options?: {
         type: "select",
         key: "transaction_type",
         label: "Transaction type",
-        operators: [{ label: "Equal to", value: "=" }],
+        operators: [...SELECT_OPERATORS],
         options: [
           { value: "expense", label: "Expense" },
           { value: "income", label: "Income" },
@@ -217,14 +230,14 @@ export function createRuleRegistry(options?: {
         type: "select",
         key: "transaction_merchant",
         label: "Transaction merchant",
-        operators: [...SELECT_OPERATORS],
+        operators: [...TEXT_OPERATORS],
         options: options?.merchants ? [...options.merchants] : undefined,
       },
       {
         type: "select",
         key: "transaction_account",
         label: "Transaction account",
-        operators: [...SELECT_OPERATORS],
+        operators: [...TEXT_OPERATORS],
         options: accountOptions,
       },
     ],
@@ -303,11 +316,33 @@ function compareText(
   expected: string | null,
 ) {
   if (operator === "is_null") return !actual || actual.trim() === "";
+  if (operator === "is_not_null") return Boolean(actual?.trim());
   const left = normalizeWhitespace(actual ?? "").toLowerCase();
   const right = normalizeWhitespace(expected ?? "").toLowerCase();
   if (operator === "=") return left === right;
+  if (operator === "!=") return left !== right;
   if (operator === "like") return left.includes(right);
+  if (operator === "not_like") return !left.includes(right);
+  if (operator === "matches" || operator === "not_matches") {
+    const pattern = ruleRegex(expected);
+    if (!pattern) return false;
+    const matches = pattern.test(actual ?? "");
+    return operator === "matches" ? matches : !matches;
+  }
   return false;
+}
+
+function ruleRegex(value: string | null): RegExp | null {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) return null;
+  const literal = trimmed.match(/^\/([\s\S]*)\/([dgimsuvy]*)$/);
+  try {
+    return literal
+      ? new RegExp(literal[1] ?? "", literal[2] ?? "")
+      : new RegExp(trimmed, "i");
+  } catch {
+    return null;
+  }
 }
 
 function compareNumber(
@@ -318,6 +353,7 @@ function compareNumber(
   const right = Number(expected);
   if (!Number.isFinite(right)) return false;
   if (operator === "=") return actual === right;
+  if (operator === "!=") return actual !== right;
   if (operator === ">") return actual > right;
   if (operator === ">=") return actual >= right;
   if (operator === "<") return actual < right;
@@ -340,14 +376,15 @@ function evaluateLeafCondition(
         condition.value,
       );
     case "transaction_type": {
-      if (condition.operator !== "=") return false;
       const expected = (condition.value ?? "").toLowerCase();
       const actual = transactionType(tx.amount);
-      if (expected === "debit" || expected === "expense")
-        return actual === "expense";
-      if (expected === "credit" || expected === "income")
-        return actual === "income";
-      return actual === expected;
+      const normalizedExpected =
+        expected === "debit" || expected === "expense"
+          ? "expense"
+          : expected === "credit" || expected === "income"
+            ? "income"
+            : expected;
+      return compareText(actual, condition.operator, normalizedExpected);
     }
     case "transaction_merchant": {
       if (condition.operator === "is_null") {
@@ -356,11 +393,11 @@ function evaluateLeafCondition(
       const value = condition.value ?? "";
       if (value.startsWith("merchantId:")) {
         const merchantId = value.slice("merchantId:".length);
-        return (
-          condition.operator === "=" &&
-          Boolean(merchantId) &&
-          context.merchant?.merchantId === merchantId
-        );
+        if (!merchantId) return false;
+        const matches = context.merchant?.merchantId === merchantId;
+        if (condition.operator === "=") return matches;
+        if (condition.operator === "!=") return !matches;
+        return false;
       }
       return compareText(merchantLabel(context), condition.operator, value);
     }
@@ -744,19 +781,37 @@ export function validateDetectionRule(rule: DetectionRule): string[] {
       errors.push(`Action ${action.actionType} requires a value.`);
     }
   }
-  for (const condition of rule.conditions) {
+  function validateCondition(condition: RuleCondition) {
     if (condition.conditionType === "compound") {
       for (const sub of condition.subConditions ?? []) {
         if (sub.conditionType === "compound") {
           errors.push("Nested compound condition groups are not allowed.");
+          continue;
         }
+        validateCondition(sub);
       }
-    } else if (
+      return;
+    }
+    if (
       condition.operator !== "is_null" &&
+      condition.operator !== "is_not_null" &&
       (condition.value == null || condition.value === "")
     ) {
       errors.push(`Condition ${condition.conditionType} requires a value.`);
     }
+    if (
+      (condition.operator === "matches" ||
+        condition.operator === "not_matches") &&
+      condition.value &&
+      !ruleRegex(condition.value)
+    ) {
+      errors.push(
+        `Condition ${condition.conditionType} requires a valid regular expression.`,
+      );
+    }
+  }
+  for (const condition of rule.conditions) {
+    validateCondition(condition);
   }
   return errors;
 }
@@ -875,9 +930,17 @@ function summarizeCondition(condition: RuleCondition): string {
   }
   const field = condition.conditionType.replaceAll("transaction_", "");
   if (condition.operator === "is_null") return `${field} is empty`;
-  if (condition.operator === "like")
-    return `${field} like ${condition.value ?? ""}`;
-  return `${field} ${condition.operator} ${condition.value ?? ""}`;
+  if (condition.operator === "is_not_null") return `${field} is not empty`;
+  const operator =
+    {
+      like: "contains",
+      not_like: "does not contain",
+      "=": "equals",
+      "!=": "does not equal",
+      matches: "matches regular expression",
+      not_matches: "does not match regular expression",
+    }[condition.operator] ?? condition.operator;
+  return `${field} ${operator} ${condition.value ?? ""}`;
 }
 
 function summarizeAction(action: RuleAction): string {

@@ -98,6 +98,118 @@ describe("detection rules", () => {
     expect(ruleMatches(detection, { transaction: tx() })).toBe(true);
   });
 
+  test("exposes comprehensive text, reference, select, and number operators", () => {
+    const registry = createRuleRegistry();
+    const operators = (key: string) =>
+      registry.filters
+        .find((filter) => filter.key === key)
+        ?.operators.map((operator) => operator.value);
+
+    expect(operators("transaction_name")).toEqual([
+      "like",
+      "not_like",
+      "=",
+      "!=",
+      "matches",
+      "not_matches",
+      "is_null",
+      "is_not_null",
+    ]);
+    expect(operators("transaction_merchant")).toEqual(
+      operators("transaction_name"),
+    );
+    expect(operators("transaction_account")).toEqual(
+      operators("transaction_name"),
+    );
+    expect(operators("transaction_type")).toEqual([
+      "=",
+      "!=",
+      "is_null",
+      "is_not_null",
+    ]);
+    expect(operators("transaction_amount")).toContain("!=");
+  });
+
+  test("evaluates negative, empty, and regular-expression text operators", () => {
+    const matches = (operator: string, value: string | null) =>
+      ruleMatches(
+        rule({
+          id: `rule-${operator}`,
+          conditions: [
+            {
+              id: `condition-${operator}`,
+              conditionType: "transaction_name",
+              operator,
+              value,
+            },
+          ],
+        }),
+        { transaction: tx({ narration: "Coffee at CAFE 42" }) },
+      );
+
+    expect(matches("not_like", "tea")).toBe(true);
+    expect(matches("not_like", "cafe")).toBe(false);
+    expect(matches("!=", "Coffee at another cafe")).toBe(true);
+    expect(matches("matches", "^coffee\\s+at\\s+cafe\\s+\\d+$")).toBe(true);
+    expect(matches("matches", "/^Coffee at CAFE 42$/")).toBe(true);
+    expect(matches("not_matches", "tea|bakery")).toBe(true);
+    expect(matches("is_not_null", null)).toBe(true);
+    expect(matches("matches", "[")).toBe(false);
+    expect(matches("not_matches", "[")).toBe(false);
+  });
+
+  test("evaluates not-equal operators for typed rule fields", () => {
+    const matches = (
+      conditionType: "transaction_amount" | "transaction_type",
+      value: string,
+    ) =>
+      ruleMatches(
+        rule({
+          id: `rule-${conditionType}`,
+          conditions: [
+            {
+              id: `condition-${conditionType}`,
+              conditionType,
+              operator: "!=",
+              value,
+            },
+          ],
+        }),
+        { transaction: tx() },
+      );
+
+    expect(matches("transaction_amount", "41")).toBe(true);
+    expect(matches("transaction_amount", "42")).toBe(false);
+    expect(matches("transaction_type", "income")).toBe(true);
+    expect(matches("transaction_type", "expense")).toBe(false);
+  });
+
+  test("validates regular expressions in leaf and grouped conditions", () => {
+    const invalid = rule({
+      id: "invalid-regex",
+      conditions: [
+        {
+          id: "regex-group",
+          conditionType: "compound",
+          operator: "and",
+          value: null,
+          subConditions: [
+            {
+              id: "invalid-pattern",
+              conditionType: "transaction_name",
+              operator: "matches",
+              value: "[",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(validateDetectionRule(invalid)).toContain(
+      "Condition transaction_name requires a valid regular expression.",
+    );
+  });
+
   test("respects effectiveDate", () => {
     const detection = rule({
       id: "r1",

@@ -376,11 +376,39 @@
   name="Rules"
   play={async ({ canvasElement }) => {
     await ready(canvasElement, "Rules");
+    const canvas = within(canvasElement);
     await expect(
-      await within(canvasElement).findByText("Categorise coffee", {
+      await canvas.findByText("Categorise coffee", {
         exact: true,
       }),
     ).toBeVisible();
+    await userEvent.click(
+      await canvas.findByRole("button", {
+        name: "Edit rule Categorise coffee",
+      }),
+    );
+    const page = within(document.body);
+    const dialog = await page.findByRole("dialog", {
+      name: "Edit transaction rule 'Categorise coffee'",
+    });
+    await waitFor(() => expect(dialog).toBeVisible());
+    await userEvent.click(
+      page.getByRole("button", { name: /^Condition operator:/ }),
+    );
+    for (const name of [
+      "Does not contain",
+      "Not equal to",
+      "Matches regular expression",
+      "Does not match regular expression",
+      "Is not empty",
+    ]) {
+      const option = await page.findByRole("option", { name });
+      await waitFor(() => expect(option).toBeVisible());
+    }
+    await userEvent.click(
+      page.getByRole("option", { name: "Matches regular expression" }),
+    );
+    await expect(page.getByPlaceholderText("Regular expression")).toBeVisible();
   }}
   >{#snippet template()}<ApplicationHarness
       displayMode="desktop"

@@ -350,7 +350,7 @@
                     >
                       <Select.Trigger
                         class="h-9 text-sm"
-                        aria-label="Action type"
+                        aria-label={`Action type: ${meta?.label ?? action.actionType}`}
                       >
                         {meta?.label ?? action.actionType}
                       </Select.Trigger>
