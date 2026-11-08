@@ -185,10 +185,14 @@
         }}
       >
         <Select.Trigger
-          class="h-9 text-sm"
+          class="h-9 w-full min-w-0 overflow-hidden text-sm"
+          style="width: 100%"
           aria-label={`Condition field: ${meta?.label ?? leaf.conditionType}`}
+          title={meta?.label ?? leaf.conditionType}
         >
-          {meta?.label ?? leaf.conditionType}
+          <span class="min-w-0 truncate">
+            {meta?.label ?? leaf.conditionType}
+          </span>
         </Select.Trigger>
         <Select.Content aria-label="Condition field options">
           {#each fieldOptions() as option (option.value)}
@@ -208,10 +212,12 @@
         }}
       >
         <Select.Trigger
-          class="h-9 text-sm"
+          class="h-9 w-full min-w-0 overflow-hidden text-sm"
+          style="width: 100%"
           aria-label={`Condition operator: ${operatorLabel(leaf)}`}
+          title={operatorLabel(leaf)}
         >
-          {operatorLabel(leaf)}
+          <span class="min-w-0 truncate">{operatorLabel(leaf)}</span>
         </Select.Trigger>
         <Select.Content aria-label="Condition operator options">
           {#each operators as operator (operator.value)}
@@ -301,16 +307,22 @@
           }}
         >
           <Select.Trigger
-            class="h-8 max-w-64 text-xs"
+            class="h-8 w-full max-w-64 min-w-0 overflow-hidden text-xs"
+            style="width: 100%"
             aria-label={`Group operator: ${
               groupOperatorOptions.find(
                 (option) => option.value === condition.operator,
               )?.label ?? condition.operator
             }`}
-          >
-            {groupOperatorOptions.find(
+            title={groupOperatorOptions.find(
               (option) => option.value === condition.operator,
             )?.label ?? condition.operator}
+          >
+            <span class="min-w-0 truncate">
+              {groupOperatorOptions.find(
+                (option) => option.value === condition.operator,
+              )?.label ?? condition.operator}
+            </span>
           </Select.Trigger>
           <Select.Content aria-label="Group operator options">
             {#each groupOperatorOptions as option (option.value)}

@@ -408,7 +408,14 @@
     await userEvent.click(
       page.getByRole("option", { name: "Matches regular expression" }),
     );
-    await expect(page.getByPlaceholderText("Regular expression")).toBeVisible();
+    const regexInput = page.getByPlaceholderText("Regular expression");
+    await expect(regexInput).toBeVisible();
+    const operator = page.getByRole("button", {
+      name: "Condition operator: Matches regular expression",
+    });
+    expect(operator.getBoundingClientRect().right).toBeLessThanOrEqual(
+      regexInput.getBoundingClientRect().left + 1,
+    );
   }}
   >{#snippet template()}<ApplicationHarness
       displayMode="desktop"
