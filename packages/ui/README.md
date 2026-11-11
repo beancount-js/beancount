@@ -9,7 +9,7 @@ belongs here and consumes published Design Core.
 
 Reusable Beancount application components backed by published Design Core 0.4.0. The original Fava application remains the comparison application.
 
-Run `pnpm dev` or `pnpm storybook` from the repository root. This is the sole active catalog and binds to `127.0.0.1:6006`. Retained Fava hosts are separate legacy/reference surfaces. Stories own deterministic, disposable controller instances and do not access a server or browser storage.
+Run `pnpm dev` or `pnpm storybook` from the repository root. This is the sole active catalog and binds to `127.0.0.1:6006`. Run `pnpm dev:app` for the executable `packages/app` host on `127.0.0.1:5173`. Retained Fava hosts are separate legacy/reference surfaces. Stories own deterministic, disposable controller instances and do not access a server or browser storage; the executable host injects real filesystem/API or browser-workspace data sources.
 
 The Application/Dashboard and matching-preview stories select the byte-identical
 workspace-root `sample.beancount` snapshot from Fava comparison commit

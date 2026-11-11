@@ -5,9 +5,14 @@ import assert from "node:assert/strict";
 const root = resolve(import.meta.dirname, "..");
 const json = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
 const app = json("packages/ui/package.json");
+const host = json("packages/app/package.json");
 const legacy = json("packages/ui-legacy/package.json");
 const workspace = json("package.json");
 assert.equal(app.name, "@beancount-js/ui");
+assert.equal(host.name, "@beancount-js/app");
+assert.equal(host.dependencies["@beancount-js/ui"], "workspace:*");
+assert.equal(host.dependencies["@beancount-js/server"], "workspace:*");
+assert.equal(host.dependencies["@beancount-js/web"], "workspace:*");
 assert.equal(workspace.pnpm.overrides.svelte, app.devDependencies.svelte);
 for (const name of [
   "@codemirror/state",
@@ -30,6 +35,14 @@ assert(
   !app.dependencies["@lapis/ui"] && !app.dependencies["@beancount-js/forms"],
 );
 assert.equal(workspace.scripts.dev, "pnpm storybook");
+assert.equal(
+  workspace.scripts["dev:app"],
+  "pnpm --filter @beancount-js/app dev",
+);
+assert.equal(
+  workspace.scripts["build:app"],
+  "pnpm --filter @beancount-js/app build",
+);
 for (const command of [
   "storybook",
   "build-storybook",
@@ -76,5 +89,5 @@ function checkFiles(path) {
 }
 checkFiles(resolve(root, "packages/ui-legacy"));
 console.log(
-  "Application baseline passed: one active Design Core catalog; compatibility UI has no Storybook runtime or sources.",
+  "Application baseline passed: one active Design Core catalog and production host; compatibility UI has no Storybook runtime or sources.",
 );

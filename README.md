@@ -11,15 +11,16 @@ Read [app status](docs/APP_STATUS.md), the
 
 ## Packages
 
-| Package | Role |
-| --- | --- |
-| `@beancount-js/ui` | Active application composition, controllers, adapted presentation and sole Storybook catalog |
-| `@lapismd/design-core` | Published shell, forms and UI primitives consumed by the application |
-| `@beancount-js/beancount`, `parser`, `filters`, `beanquery` | Repository-owned accounting, parsing and query logic |
-| `@beancount-js/server`, `workspace`, connectors | Host services and integration boundaries |
-| `@beancount-js/fava` | Retained frozen comparison application |
-| `@beancount-js/fava-beta` | Retained legacy integration host/services |
-| `@lapis/ui` (`packages/ui-legacy`), `@beancount-js/forms` | Compatibility imports for retained hosts; no active catalog |
+| Package                                                     | Role                                                                                         |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `@beancount-js/app`                                         | Executable server/web host for the active application and its `BeancountDataSource` adapters |
+| `@beancount-js/ui`                                          | Active application composition, controllers, adapted presentation and sole Storybook catalog |
+| `@lapismd/design-core`                                      | Published shell, forms and UI primitives consumed by the application                         |
+| `@beancount-js/beancount`, `parser`, `filters`, `beanquery` | Repository-owned accounting, parsing and query logic                                         |
+| `@beancount-js/server`, `workspace`, connectors             | Host services and integration boundaries                                                     |
+| `@beancount-js/fava`                                        | Retained frozen comparison application                                                       |
+| `@beancount-js/fava-beta`                                   | Retained legacy integration host/services                                                    |
+| `@lapis/ui` (`packages/ui-legacy`), `@beancount-js/forms`   | Compatibility imports for retained hosts; no active catalog                                  |
 
 ## Development
 
@@ -29,12 +30,16 @@ checks need the pinned source/reference commit objects available in this repo.
 ```sh
 pnpm install
 pnpm dev
+pnpm dev:app
 ```
 
 `pnpm dev` starts Storybook at `http://127.0.0.1:6006`. The application stories
-use disposable in-memory projects and fixture services. They do not read/write
-real ledger files or contact banks. A production filesystem/API host through
-`BeancountDataSource` remains follow-up work.
+use disposable in-memory projects and fixture services. `pnpm dev:app` starts
+the executable host at `http://127.0.0.1:5173` and defaults to the repository
+`sample.beancount`; set `BEANCOUNT_STUDIO_PROJECT_ROOT` and
+`BEANCOUNT_STUDIO_ENTRY_FILE` for another project. The host reads and writes
+real ledger files through `BeancountDataSource`. Bank, merchant and AI service
+qualification remains separate from filesystem hosting.
 
 ```sh
 pnpm check:baseline
@@ -42,6 +47,7 @@ pnpm checks:ui
 pnpm checks:compat
 pnpm test:storybook
 pnpm build-storybook
+pnpm --filter @beancount-js/app checks
 pnpm test
 ```
 

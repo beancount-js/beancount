@@ -22,6 +22,12 @@ have been removed from `packages/ui`. Required `@lapis/ui` production imports
 are retained in `packages/ui-legacy`; that package has no Storybook setup.
 Fava and Fava Beta remain legacy consumers. Fava source is unchanged.
 
+`@beancount-js/app` is now the executable active host. `pnpm dev:app` mounts the
+same public application/controller exports with either the server filesystem
+API or the browser workspace. The server host reads and writes revision-aware
+ledger files and serves referenced resources; the static web host uses OPFS or
+a user-selected local directory. Neither host imports legacy Fava UI source.
+
 ## Validation observed during integration
 
 | Lane                                                       | Result                                                                                        |
@@ -33,6 +39,9 @@ Fava and Fava Beta remain legacy consumers. Fava source is unchanged.
 | UI unit tests                                              | Passed: 156 tests                                                                             |
 | Storybook browser/accessibility                            | Passed: 75 tests in the latest full run                                                       |
 | Production catalog build and built inventory               | Passed                                                                                        |
+| Application host adapter and real-filesystem persistence   | Passed: 3 tests                                                                               |
+| Application server and static-web production builds        | Passed                                                                                        |
+| Populated executable-host browser smoke                    | Passed: repository `sample.beancount` dashboard and editor loaded                             |
 | Compatibility UI and forms facade                          | Passed: 69 tests and 22 forwarders                                                            |
 | Retained Fava tests                                        | 187 of 188 passed in the concurrent root run; the failing editor DOM test passed in isolation |
 | Retained Fava Beta tests                                   | Passed: 189 tests                                                                             |
@@ -53,11 +62,14 @@ weakened.
 
 ## Remaining work and limits
 
-- Integrate a production host through `BeancountDataSource`. Current application
-  stories use disposable in-memory storage and fixture services.
-- Qualify real filesystem/persistence, bank, merchant and AI services. Fixture
-  coverage does not prove these integrations; reconciliation and merchant
-  backfill limitations are recorded in the UI README.
+- Integrate and qualify live bank, merchant and AI services in the executable
+  host. Its server request boundary is wired, but only project, file and resource
+  endpoints are currently present. Fixture coverage does not prove these
+  integrations; reconciliation and merchant backfill limitations are recorded
+  in the UI README.
+- Run browser-level persistence acceptance for the static OPFS/local-directory
+  build. Its adapter and production build pass, while the observed populated
+  smoke used the server filesystem host.
 - Human side-by-side visual signoff is not implied by automated geometry and
   accessibility checks. No new screenshot baseline, Docker or Visual Delta
   workflow is introduced by this transition.

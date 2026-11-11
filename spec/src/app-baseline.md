@@ -21,6 +21,12 @@ presentation, editors, charts and application bridges. These modules must not
 reach into Fava, legacy UI, the forms compatibility facade, or private Design
 Core source paths.
 
+`packages/app` (`@beancount-js/app`) is the executable host for that UI. It owns
+SvelteKit runtime configuration and the `BeancountDataSource` adapters; it does
+not own application presentation. Server mode uses the repository filesystem
+workspace behind same-origin project/file/resource endpoints. Web mode uses the
+browser workspace and OPFS/local-directory capabilities directly.
+
 Each controller owns its project and ledger selection, route/query history,
 sidebar state and asynchronous requests. Data sources and clocks are injected.
 Native filesystem access, API authorization, real bank/AI requests and durable
@@ -30,16 +36,23 @@ cancellation, errors and caches isolated to their owning controller/project.
 ## Current delivery surface
 
 `pnpm dev` and `pnpm storybook` start the sole active catalog on localhost:6006.
-Application stories compose the shared shell with navigation, reports, editor,
-query/history, journal, account activity, ingestion/settings and assistant.
-Standalone component stories retain their catalog layout.
+`pnpm dev:app` starts the executable server host on localhost:5173, using
+`BEANCOUNT_STUDIO_PROJECT_ROOT` and `BEANCOUNT_STUDIO_ENTRY_FILE` when supplied.
+`pnpm build:app` produces the default server build; the host package also
+qualifies explicit server and static web builds. Application stories compose
+the shared shell with navigation, reports, editor, query/history, journal,
+account activity, ingestion/settings and assistant. Standalone component
+stories retain their catalog layout.
 
-Storybook uses disposable in-memory projects and deterministic services. It is
-the current UI development/review host. Promoting it to the baseline does not
-establish a production filesystem-backed application. Live bank, AI, merchant
-and reconciliation behavior must be qualified through real host adapters before
-being described as production-ready. The existing service limitations in the
-UI package README remain in scope.
+Storybook uses disposable in-memory projects and deterministic services. It
+remains the UI development/review host. The executable host reads and writes
+real ledger projects through revision-aware workspace adapters and exposes
+referenced resources. Its server-side service request boundary is wired, but
+live bank, AI, merchant and reconciliation endpoints still require independent
+integration and qualification before those workflows are described as
+production-ready. Static web mode deliberately exposes only browser workspace
+capabilities. The existing service limitations in the UI package README remain
+in scope.
 
 Use public package exports and Design Core controller semantics. Reuse the
 account appearance store, controller-scoped merchant-logo cache and shared
@@ -76,6 +89,8 @@ capture tooling to the compatibility package.
 
 - Run `pnpm check:baseline` for package ownership, catalog and singleton-runtime
   configuration checks.
+- Run `pnpm --filter @beancount-js/app checks` for host formatting, types,
+  adapter/persistence tests and both production builds.
 - Every UI slice runs `pnpm checks:ui`, including formatting, boundaries,
   pinned-source/catalog validation, types, unit tests, browser/accessibility
   stories and the production catalog build. Verify built inventory with

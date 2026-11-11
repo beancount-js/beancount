@@ -33,8 +33,11 @@
   `archive/pre-design-core-baseline-2026-10-28`. Do not restart its component
   queue or treat historical certification statuses as current approval.
 - `pnpm dev` / `pnpm storybook` start the sole active catalog. Application
-  stories use disposable in-memory data sources; production host integration
-  through `BeancountDataSource` remains a separate qualification milestone.
+  stories use disposable in-memory data sources. `pnpm dev:app` starts the
+  executable `packages/app` host, which integrates the active UI through
+  `BeancountDataSource` with filesystem/API and browser-workspace adapters.
+  Keep presentation in `packages/ui`; keep host runtime and capability wiring
+  in `packages/app`.
 - Use published `@lapismd/design-core` shell, forms and primitives. Keep
   controller state/actions, history, cancellation, service/cache lifetimes and
   host capability boundaries explicit and isolated per instance/project.
@@ -42,6 +45,8 @@
   `pnpm checks:ui` for every active UI slice. Root `pnpm checks` includes the
   active UI and compatibility lanes. Report pre-existing aggregate failures
   separately and never disable checks to promote a baseline.
+- Run `pnpm --filter @beancount-js/app checks` for host changes. Passing host
+  persistence/build checks does not qualify live bank, merchant or AI services.
 
 ## Shared forms and searchable pickers
 
