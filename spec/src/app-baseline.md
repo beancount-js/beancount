@@ -47,12 +47,15 @@ stories retain their catalog layout.
 Storybook uses disposable in-memory projects and deterministic services. It
 remains the UI development/review host. The executable host reads and writes
 real ledger projects through revision-aware workspace adapters and exposes
-referenced resources. Its server-side service request boundary is wired, but
-live bank, AI, merchant and reconciliation endpoints still require independent
-integration and qualification before those workflows are described as
-production-ready. Static web mode deliberately exposes only browser workspace
-capabilities. The existing service limitations in the UI package README remain
-in scope.
+referenced resources. Server mode also owns persisted ingestion configuration,
+account discovery, connector-backed import runs, rule application, sync jobs
+and their event streams. These routes use the repository server/connectors and
+project-scoped secret references; successful fixture and route qualification
+does not prove any external bank credential. AI, merchant-management and
+reconciliation routes still require independent integration and qualification
+before those workflows are described as production-ready. Static web mode
+deliberately exposes only browser workspace capabilities. The existing service
+limitations in the UI package README remain in scope.
 
 Use public package exports and Design Core controller semantics. Reuse the
 account appearance store, controller-scoped merchant-logo cache and shared

@@ -39,7 +39,7 @@ a user-selected local directory. Neither host imports legacy Fava UI source.
 | UI unit tests                                              | Passed: 156 tests                                                                             |
 | Storybook browser/accessibility                            | Passed: 75 tests in the latest full run                                                       |
 | Production catalog build and built inventory               | Passed                                                                                        |
-| Application host adapter and real-filesystem persistence   | Passed: 3 tests                                                                               |
+| Application host adapters, persistence and service routes  | Passed: 6 tests                                                                               |
 | Application server and static-web production builds        | Passed                                                                                        |
 | Populated executable-host browser smoke                    | Passed: repository `sample.beancount` dashboard and editor loaded                             |
 | Compatibility UI and forms facade                          | Passed: 69 tests and 22 forwarders                                                            |
@@ -54,7 +54,7 @@ passes 283 tests, including deterministic dates and flags for the previously
 failing mixed-rule case.
 
 The latest concurrent root run instead failed the retained Fava CodeMirror
-header test `hides ## markers when the cursor leaves the heading line`. The
+fold-gutter test `classifies metadata and updates its active state`. The
 identical Fava Beta test passed in that run, and the Fava test passed immediately
 when rerun in isolation. This is recorded as an aggregate-gate failure rather
 than promoted to a passing root result. No test was disabled or assertion
@@ -63,10 +63,11 @@ weakened.
 ## Remaining work and limits
 
 - Integrate and qualify live bank, merchant and AI services in the executable
-  host. Its server request boundary is wired, but only project, file and resource
-  endpoints are currently present. Fixture coverage does not prove these
-  integrations; reconciliation and merchant backfill limitations are recorded
-  in the UI README.
+  host. Project/file/resource plus ingestion configuration, discovery, import,
+  rules and streamed sync endpoints are present and use the repository connector
+  services. No external bank credential has been exercised in this checkout,
+  and merchant-management, reconciliation and assistant endpoints remain to be
+  integrated. Fixture coverage does not prove these external integrations.
 - Run browser-level persistence acceptance for the static OPFS/local-directory
   build. Its adapter and production build pass, while the observed populated
   smoke used the server filesystem host.

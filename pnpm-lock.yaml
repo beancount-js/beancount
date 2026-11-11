@@ -28,6 +28,12 @@ importers:
 
   packages/app:
     dependencies:
+      '@beancount-js/beancount':
+        specifier: workspace:*
+        version: link:../beancount
+      '@beancount-js/beangulp':
+        specifier: workspace:*
+        version: link:../beangulp
       '@beancount-js/server':
         specifier: workspace:*
         version: link:../server
