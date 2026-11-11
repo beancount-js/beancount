@@ -348,6 +348,39 @@
 </Story>
 
 <Story
+  name="Compact journal activity"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("radio", { name: "Transactions" });
+    const firstRecord = canvasElement.querySelector<HTMLElement>(
+      "[data-journal-table] [data-activity-record-row]",
+    )!;
+    await waitFor(() => expect(firstRecord).toBeVisible());
+    const identity = firstRecord.querySelector<HTMLElement>(
+      "[data-activity-record-identity]",
+    )!;
+    const title = identity.querySelector<HTMLElement>("button")!;
+    const postings = firstRecord.querySelector<HTMLElement>(
+      "[data-activity-record-postings]",
+    )!;
+    expect(title.getBoundingClientRect().right).toBeLessThanOrEqual(
+      identity.getBoundingClientRect().right + 1,
+    );
+    expect(identity.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      postings.getBoundingClientRect().top + 1,
+    );
+  }}
+>
+  {#snippet template()}<div style="width: 760px; height: 100%; max-width: 100%">
+      <ApplicationHarness
+        scenario="preview"
+        displayMode="desktop"
+        initialRoute="/journal"
+      />
+    </div>{/snippet}
+</Story>
+
+<Story
   name="Holdings and statistics"
   play={async ({ canvasElement }) => {
     const canvas = within(canvasElement);

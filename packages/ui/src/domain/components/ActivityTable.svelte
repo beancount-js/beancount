@@ -528,7 +528,7 @@
         {/if}
 
         <div
-          class="mx-1 mb-1 overflow-hidden rounded-xl border bg-background shadow-sm"
+          class="activity-records mx-1 mb-1 overflow-hidden rounded-xl border bg-background shadow-sm"
           data-activity-surface
         >
           {#each group.records as record, index}
@@ -537,8 +537,10 @@
               role="group"
               class:rounded-b-xl={index === group.records.length - 1}
               class={selectable
-                ? "grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-                : "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"}
+                ? "activity-record-row grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                : "activity-record-row grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_minmax(14rem,22rem)] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"}
+              data-selectable={selectable ? "true" : "false"}
+              data-activity-record-row
               aria-label={`Open ${record.title}`}
               use:rowOpen={() => openRecord(record)}
             >
@@ -575,10 +577,13 @@
                   {/if}
                 </div>
               {/if}
-              <div class="min-w-0">
+              <div
+                class="activity-record-identity min-w-0"
+                data-activity-record-identity
+              >
                 <button
                   type="button"
-                  class="text-left text-sm font-semibold hover:underline focus-visible:outline focus-visible:outline-ring"
+                  class="block max-w-full truncate text-left text-sm font-semibold hover:underline focus-visible:outline focus-visible:outline-ring"
                   aria-label={`Open ${record.title}`}
                   onclick={() => openRecord(record)}>{record.title}</button
                 >
@@ -586,7 +591,10 @@
                   {record.detail}
                 </div>
               </div>
-              <div class="flex min-w-0 flex-col gap-1 text-right">
+              <div
+                class="activity-record-postings flex min-w-0 flex-col gap-1 text-right"
+                data-activity-record-postings
+              >
                 {#if record.postings?.length}
                   {#each record.postings as posting}
                     <div
@@ -681,3 +689,35 @@
     {/if}
   </div>
 </section>
+
+<style>
+  .activity-records {
+    container-type: inline-size;
+  }
+
+  @container (max-width: 32rem) {
+    .activity-record-row[data-selectable="false"] {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .activity-record-row[data-selectable="true"] {
+      grid-template-columns: auto auto minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .activity-record-row[data-selectable="false"] .activity-record-identity,
+    .activity-record-row[data-selectable="false"] .activity-record-postings {
+      grid-column: 2;
+    }
+
+    .activity-record-row[data-selectable="true"] .activity-record-identity,
+    .activity-record-row[data-selectable="true"] .activity-record-postings {
+      grid-column: 3;
+    }
+
+    .activity-record-postings {
+      width: 100%;
+    }
+  }
+</style>

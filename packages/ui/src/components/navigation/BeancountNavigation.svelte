@@ -185,6 +185,9 @@
     gap: 0.25rem;
     font-size: 0.75rem;
   }
+  .beancount-navigation :global([data-review-ledger-row]) {
+    padding-inline-end: 0.5rem;
+  }
 
   .beancount-navigation :global([data-ledger-file-panels] button),
   .beancount-navigation :global([data-review-ledger-panels] button),

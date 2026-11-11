@@ -141,6 +141,22 @@
     expect(getComputedStyle(fileRow).paddingLeft).toBe("0px");
     expect(fileRow.getBoundingClientRect().height).toBe(32);
     await expectTreePresentation(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Review transactions 2" }),
+    );
+    const reviewRow = canvasElement.querySelector<HTMLElement>(
+      "[data-review-ledger-node] > [data-ledger-tree-row]",
+    )!;
+    await waitFor(() =>
+      expect(reviewRow).toHaveAttribute("data-active", "true"),
+    );
+    const reviewCount = reviewRow.querySelector<HTMLElement>(
+      "[data-review-ledger-count]",
+    )!;
+    expect(
+      reviewRow.getBoundingClientRect().right -
+        reviewCount.getBoundingClientRect().right,
+    ).toBeGreaterThanOrEqual(8);
     const ledgerSearch = canvas.getByRole("textbox", {
       name: "Search ledgers",
     });

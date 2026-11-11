@@ -968,6 +968,7 @@
         class="relative z-10 h-8 min-w-0 flex-1 justify-start gap-1 rounded-sm px-1 text-xs font-semibold hover:bg-transparent"
         title="Active review transactions"
         data-ledger-file-row={review.path}
+        data-review-ledger-row
         onclick={() => {
           controller.actions.selectFile(review.path, "/journal");
           onNavigate();
@@ -977,8 +978,9 @@
         <span class="min-w-0 flex-1 truncate text-left"
           >Review transactions</span
         >
-        <span class="text-[10px] tabular-nums text-muted-foreground"
-          >{review.reviewableCount}</span
+        <span
+          class="text-[10px] tabular-nums text-muted-foreground"
+          data-review-ledger-count>{review.reviewableCount}</span
         >
       </Button>
     </div>
