@@ -39,7 +39,7 @@ a user-selected local directory. Neither host imports legacy Fava UI source.
 | UI unit tests                                              | Passed: 156 tests                                                                             |
 | Storybook browser/accessibility                            | Passed: 75 tests in the latest full run                                                       |
 | Production catalog build and built inventory               | Passed                                                                                        |
-| Application host adapters, persistence and service routes  | Passed: 6 tests                                                                               |
+| Application host adapters, persistence and service routes  | Passed: 29 tests                                                                              |
 | Application server and static-web production builds        | Passed                                                                                        |
 | Populated executable-host browser smoke                    | Passed: repository `sample.beancount` dashboard and editor loaded                             |
 | Compatibility UI and forms facade                          | Passed: 69 tests and 22 forwarders                                                            |
@@ -62,12 +62,13 @@ weakened.
 
 ## Remaining work and limits
 
-- Integrate and qualify live bank, merchant and AI services in the executable
+- Integrate and qualify live bank and AI services in the executable
   host. Project/file/resource plus ingestion configuration, discovery, import,
   rules and streamed sync endpoints are present and use the repository connector
   services. No external bank credential has been exercised in this checkout,
-  and merchant-management, reconciliation and assistant endpoints remain to be
-  integrated. Fixture coverage does not prove these external integrations.
+  while merchant-management and reconciliation routes are now integrated and
+  route-qualified. The assistant endpoints remain to be integrated. Fixture
+  coverage does not prove external bank or AI integrations.
 - Run browser-level persistence acceptance for the static OPFS/local-directory
   build. Its adapter and production build pass, while the observed populated
   smoke used the server filesystem host.

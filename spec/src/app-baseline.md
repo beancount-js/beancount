@@ -51,11 +51,12 @@ referenced resources. Server mode also owns persisted ingestion configuration,
 account discovery, connector-backed import runs, rule application, sync jobs
 and their event streams. These routes use the repository server/connectors and
 project-scoped secret references; successful fixture and route qualification
-does not prove any external bank credential. AI, merchant-management and
-reconciliation routes still require independent integration and qualification
-before those workflows are described as production-ready. Static web mode
-deliberately exposes only browser workspace capabilities. The existing service
-limitations in the UI package README remain in scope.
+does not prove any external bank credential. Server mode also owns merchant
+catalog/profile, brand matching, logo cache, merchant-review and reconciliation
+routes, including revision-aware application to the ledger. The assistant still
+requires independent integration and qualification before it is described as
+production-ready. Static web mode deliberately exposes only browser workspace
+capabilities. The deterministic Storybook services remain intentionally limited.
 
 Use public package exports and Design Core controller semantics. Reuse the
 account appearance store, controller-scoped merchant-logo cache and shared

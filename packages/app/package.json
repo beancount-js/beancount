@@ -17,6 +17,7 @@
   "dependencies": {
     "@beancount-js/beancount": "workspace:*",
     "@beancount-js/beangulp": "workspace:*",
+    "@beancount-js/filters": "workspace:*",
     "@beancount-js/server": "workspace:*",
     "@beancount-js/ui": "workspace:*",
     "@beancount-js/web": "workspace:*",
