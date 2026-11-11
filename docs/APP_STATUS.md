@@ -1,6 +1,6 @@
 # Application status
 
-Updated: 5 November 2026.
+Updated: 11 November 2026.
 
 ## Baseline transition
 
@@ -24,30 +24,35 @@ Fava and Fava Beta remain legacy consumers. Fava source is unchanged.
 
 ## Validation observed during integration
 
-| Lane                                                         | Result                                                                                       |
-| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| Baseline ownership/catalog guard                             | Passed                                                                                       |
-| Frozen dependency installation                               | Passed with the Design Core 0.4.0 lockfile                                                   |
-| UI formatting, dependency boundaries and catalog inventory   | Passed: 24 routes, 8 navigation states, 9 table families and 32 public Design Core imports   |
-| UI type checking                                             | Passed: zero errors/warnings                                                                 |
-| UI unit tests                                                | Passed: 156 tests                                                                            |
-| Storybook browser/accessibility                              | Passed: 74 stories in the latest full run                                                    |
-| Production catalog build and built inventory                 | Passed                                                                                       |
-| Compatibility UI and forms facade                            | Passed: 69 tests and 22 forwarders                                                           |
-| Retained Fava tests                                          | Last recorded baseline run passed: 188 tests; not rerun for the active-UI-only avatar slices |
-| Retained Fava Beta tests                                     | Last recorded baseline run passed: 189 tests; not rerun for the active-UI-only avatar slices |
-| Complete root tests (`turbo run test:run --continue=always`) | Last recorded run: 22 of 23 tasks passed; forecast assertion below remains failing           |
+| Lane                                                       | Result                                                                                        |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Baseline ownership/catalog guard                           | Passed                                                                                        |
+| Frozen dependency installation                             | Passed with the Design Core 0.4.0 lockfile                                                    |
+| UI formatting, dependency boundaries and catalog inventory | Passed: 24 routes, 8 navigation states, 9 table families and 32 public Design Core imports    |
+| UI type checking                                           | Passed: zero errors/warnings                                                                  |
+| UI unit tests                                              | Passed: 156 tests                                                                             |
+| Storybook browser/accessibility                            | Passed: 75 tests in the latest full run                                                       |
+| Production catalog build and built inventory               | Passed                                                                                        |
+| Compatibility UI and forms facade                          | Passed: 69 tests and 22 forwarders                                                            |
+| Retained Fava tests                                        | 187 of 188 passed in the concurrent root run; the failing editor DOM test passed in isolation |
+| Retained Fava Beta tests                                   | Passed: 189 tests                                                                             |
+| Complete root tests (`pnpm test`)                          | Forecast is fixed; aggregate remains non-green because of the retained Fava test above        |
 
-The root suite fails in
-`packages/beancount/src/plugins/forecast.spec.ts`, test
-`supports RFC and natural-language recurrence rules`: expected five entries,
-received six. The engine source/test files are unchanged from the preserved
-baseline. This is an outstanding accounting-engine test failure, not a passing
-aggregate gate. No test was disabled or assertion weakened.
+The forecast recurrence engine now anchors parsed RFC and natural-language
+rules to the source transaction date, excludes the source transaction from
+generated entries and includes the configured end date. Its package suite
+passes 283 tests, including deterministic dates and flags for the previously
+failing mixed-rule case.
+
+The latest concurrent root run instead failed the retained Fava CodeMirror
+header test `hides ## markers when the cursor leaves the heading line`. The
+identical Fava Beta test passed in that run, and the Fava test passed immediately
+when rerun in isolation. This is recorded as an aggregate-gate failure rather
+than promoted to a passing root result. No test was disabled or assertion
+weakened.
 
 ## Remaining work and limits
 
-- Resolve and qualify the forecast recurrence failure independently.
 - Integrate a production host through `BeancountDataSource`. Current application
   stories use disposable in-memory storage and fixture services.
 - Qualify real filesystem/persistence, bank, merchant and AI services. Fixture

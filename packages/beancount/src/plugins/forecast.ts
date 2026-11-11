@@ -102,6 +102,13 @@ const forecastSchema = z.preprocess(yamlProcessor, forecastOptions);
 
 const PERIOD_PATTERN =
   /(^.*)\[(MONTHLY|YEARLY|WEEKLY|DAILY)(\s+SKIP\s+([1-9][0-9]*)\s+TIME.?)?(\s+REPEAT\s+([1-9][0-9]*)\s+TIME.?)?(\s+UNTIL\s+([0-9-]+))?\]/;
+
+function forecastDates(rule: RRule, start: Date, end: Date): Date[] {
+  return rule
+    .between(start, end, true)
+    .filter((date) => date.getTime() > start.getTime());
+}
+
 export function forecast(
   entries: Directives,
   _options: BeancountOptions,
@@ -163,39 +170,45 @@ export function forecast(
             entry.narration.trim(),
           );
         if (match) {
-          const rule = RRule.fromString(match[2]);
-          rule.options.dtstart = entry.date.toUTC().toJSDate();
-          rule
-            .between(entry.date.toUTC().toJSDate(), end.toUTC().toJSDate())
-            .forEach((date) => {
-              const dt = DateTime.fromISO(date.toISOString(), { zone: "utc" });
-              newEntries.push(
-                entry.copy({
-                  date: dt,
-                  flag: dt > now ? "!" : entry.flag,
-                  narration: match![1],
-                }),
-              );
-            });
+          const ruleOptions = RRule.parseString(match[2]);
+          ruleOptions.dtstart = entry.date.toUTC().toJSDate();
+          const rule = new RRule(ruleOptions);
+          forecastDates(
+            rule,
+            entry.date.toUTC().toJSDate(),
+            end.toUTC().toJSDate(),
+          ).forEach((date) => {
+            const dt = DateTime.fromISO(date.toISOString(), { zone: "utc" });
+            newEntries.push(
+              entry.copy({
+                date: dt,
+                flag: dt > now ? "!" : entry.flag,
+                narration: match![1],
+              }),
+            );
+          });
           return;
         }
 
         match = /(^.*)\[(Every\s+[^\]]+)\]$/i.exec(entry.narration.trim());
         if (match) {
-          const rule = RRule.fromText(match[2]);
-          rule.options.dtstart = entry.date.toUTC().toJSDate();
-          rule
-            .between(entry.date.toUTC().toJSDate(), end.toUTC().toJSDate())
-            .forEach((date) => {
-              const dt = DateTime.fromISO(date.toISOString(), { zone: "utc" });
-              newEntries.push(
-                entry.copy({
-                  date: dt,
-                  flag: dt > now ? "!" : entry.flag,
-                  narration: match![1],
-                }),
-              );
-            });
+          const ruleOptions = RRule.parseText(match[2]);
+          ruleOptions.dtstart = entry.date.toUTC().toJSDate();
+          const rule = new RRule(ruleOptions);
+          forecastDates(
+            rule,
+            entry.date.toUTC().toJSDate(),
+            end.toUTC().toJSDate(),
+          ).forEach((date) => {
+            const dt = DateTime.fromISO(date.toISOString(), { zone: "utc" });
+            newEntries.push(
+              entry.copy({
+                date: dt,
+                flag: dt > now ? "!" : entry.flag,
+                narration: match![1],
+              }),
+            );
+          });
           return;
         }
         newEntries.push(entry);

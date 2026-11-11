@@ -100,10 +100,19 @@ describe("forecast plugin", () => {
     );
 
     expect(errors).toEqual([]);
-    expect(entries).toHaveLength(5);
     expect(
-      entries.map((entry) => (entry as Transaction).narration.trim()),
-    ).toEqual(["Gym", "Gym", "Rent", "Gym", "Gym"]);
+      entries.map((entry) => [
+        entry.date?.toISODate(),
+        (entry as Transaction).narration.trim(),
+        (entry as Transaction).flag,
+      ]),
+    ).toEqual([
+      ["2024-01-08", "Gym", "#"],
+      ["2024-01-15", "Gym", "#"],
+      ["2024-01-22", "Gym", "!"],
+      ["2024-01-29", "Gym", "!"],
+      ["2024-02-01", "Rent", "!"],
+    ]);
   });
 
   test("records an invalid declared end while retaining the default horizon", () => {
