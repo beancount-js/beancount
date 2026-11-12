@@ -41,13 +41,18 @@
 - Use published `@lapismd/design-core` shell, forms and primitives. Keep
   controller state/actions, history, cancellation, service/cache lifetimes and
   host capability boundaries explicit and isolated per instance/project.
+- The active app ships no AI component, provider route, MCP process, ingestion
+  enrichment action or AI rule executor. Do not reconnect the dormant shared
+  executor contracts implicitly. A future integration must remain host-owned
+  and enter through the optional details snippet and provider-neutral
+  `BeancountDataSource.request` boundary.
 - Run `pnpm check:baseline` for ownership/configuration checks and
   `pnpm checks:ui` for every active UI slice. Root `pnpm checks` includes the
   active UI and compatibility lanes. Report pre-existing aggregate failures
   separately and never disable checks to promote a baseline.
 - Run `pnpm --filter @beancount-js/app checks` for host changes. This includes
   static OPFS save/reload acceptance. Passing host route/persistence/build checks
-  does not qualify external bank credentials or a complete AI provider turn.
+  does not qualify external bank credentials.
 
 ## Shared forms and searchable pickers
 

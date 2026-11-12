@@ -29,9 +29,11 @@ browser workspace and OPFS/local-directory capabilities directly.
 
 Each controller owns its project and ledger selection, route/query history,
 sidebar state and asynchronous requests. Data sources and clocks are injected.
-Native filesystem access, API authorization, real bank/AI requests and durable
+Native filesystem access, API authorization, real bank requests and durable
 persistence belong to a host implementing `BeancountDataSource`. Keep
 cancellation, errors and caches isolated to their owning controller/project.
+The active host supplies no AI service. Its generic request adapter and optional
+host-owned details snippet remain extension boundaries, not provider behavior.
 
 ## Current delivery surface
 
@@ -41,8 +43,8 @@ cancellation, errors and caches isolated to their owning controller/project.
 `pnpm build:app` produces the default server build; the host package also
 qualifies explicit server and static web builds. Application stories compose
 the shared shell with navigation, reports, editor, query/history, journal,
-account activity, ingestion/settings and assistant. Standalone component
-stories retain their catalog layout.
+account activity and ingestion/settings. Standalone component stories retain
+their catalog layout.
 
 Storybook uses disposable in-memory projects and deterministic services. It
 remains the UI development/review host. The executable host reads and writes
@@ -53,12 +55,16 @@ and their event streams. These routes use the repository server/connectors and
 project-scoped secret references; successful fixture and route qualification
 does not prove any external bank credential. Server mode also owns merchant
 catalog/profile, brand matching, logo cache, merchant-review and reconciliation
-routes, including revision-aware application to the ledger. It also owns the
-persisted assistant sessions, streaming/approval endpoints and constrained
-ledger MCP process used by the Codex provider. Route and MCP-handshake coverage
-does not prove a real external provider turn. Static web mode deliberately
-exposes only browser workspace capabilities. The deterministic Storybook
-services remain intentionally limited.
+routes, including revision-aware application to the ledger. Static web mode
+deliberately exposes only browser workspace capabilities. The deterministic
+Storybook services remain intentionally limited.
+
+The active delivery surface contains no AI component, provider route, MCP
+process, ingestion enrichment endpoint or AI rule executor. The host strips
+persisted AI source flags and excludes provider-backed rules before execution,
+so older project configuration cannot reactivate those paths. Provider-neutral
+executor contracts in shared accounting/server packages are dormant extension
+hooks; reconnecting one requires an explicit future application integration.
 
 Use public package exports and Design Core controller semantics. Reuse the
 account appearance store, controller-scoped merchant-logo cache and shared

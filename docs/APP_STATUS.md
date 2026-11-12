@@ -34,17 +34,17 @@ a user-selected local directory. Neither host imports legacy Fava UI source.
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Baseline ownership/catalog guard                           | Passed                                                                                        |
 | Frozen dependency installation                             | Passed with the Design Core 0.4.0 lockfile                                                    |
-| UI formatting, dependency boundaries and catalog inventory | Passed: 24 routes, 8 navigation states, 9 table families and 32 public Design Core imports    |
+| UI formatting, dependency boundaries and catalog inventory | Passed: 24 routes, 8 navigation states, 9 table families and 29 public Design Core imports    |
 | UI type checking                                           | Passed: zero errors/warnings                                                                  |
-| UI unit tests                                              | Passed: 156 tests                                                                             |
-| Storybook browser/accessibility                            | Passed: 75 tests in the latest full run                                                       |
+| UI unit tests                                              | Passed: 151 tests                                                                             |
+| Storybook browser/accessibility                            | Passed: 72 tests in the latest full run                                                       |
 | Production catalog build and built inventory               | Passed                                                                                        |
-| Application host adapters, persistence and service routes  | Passed: 37 tests                                                                              |
+| Application host adapters, persistence and service routes  | Passed: 31 tests                                                                              |
 | Application server and static-web production builds        | Passed                                                                                        |
 | Populated executable-host browser smoke                    | Passed: repository `sample.beancount` dashboard and editor loaded                             |
 | Static web OPFS persistence                                | Passed: edit, save, direct storage read and full reload                                       |
-| Populated server service smoke                             | Passed: assistant, ingestion config, merchant catalog and reconciliation summary routes       |
-| Ledger assistant MCP runtime                               | Passed: initialization and five-tool inventory handshake                                      |
+| Populated server service smoke                             | Passed: ingestion config, merchant catalog and reconciliation summary routes                  |
+| Application AI removal policy                              | Passed: no panel, provider route, MCP process, enrichment action or rule executor             |
 | Compatibility UI and forms facade                          | Passed: 69 tests and 22 forwarders                                                            |
 | Retained Fava tests                                        | Passed: 188 tests                                                                             |
 | Retained Fava Beta tests                                   | 188 of 189 passed in the concurrent root run; the failing editor DOM test passed in isolation |
@@ -67,12 +67,15 @@ weakened.
 
 ## Remaining work and limits
 
-- Qualify live bank and AI provider calls in the executable host. Its
-  project/file/resource, ingestion, rules, streamed sync, merchant,
-  reconciliation and assistant endpoints are integrated. The constrained ledger
-  MCP process completed its initialization/tool-inventory handshake. No external
-  bank credential or complete Codex provider turn has been exercised in this
-  checkout, so route/fixture coverage does not prove those external systems.
+- Qualify live bank calls in the executable host. Its project/file/resource,
+  ingestion, rules, streamed sync, merchant and reconciliation endpoints are
+  integrated. No external bank credential has been exercised in this checkout,
+  so route/fixture coverage does not prove that external system.
+- AI is intentionally outside the active delivery surface. Existing persisted
+  source flags and provider-backed rule actions are filtered at the host
+  boundary, so they cannot reactivate execution. The application retains only
+  the optional host-owned details snippet and provider-neutral request boundary
+  for a future, explicitly integrated service.
 - Human side-by-side visual signoff is not implied by automated geometry and
   accessibility checks. No new screenshot baseline, Docker or Visual Delta
   workflow is introduced by this transition.

@@ -38,10 +38,14 @@ use disposable in-memory projects and fixture services. `pnpm dev:app` starts
 the executable host at `http://127.0.0.1:5173` and defaults to the repository
 `sample.beancount`; set `BEANCOUNT_STUDIO_PROJECT_ROOT` and
 `BEANCOUNT_STUDIO_ENTRY_FILE` for another project. The host reads and writes
-real ledger files through `BeancountDataSource`. Bank, merchant and AI service
+real ledger files through `BeancountDataSource`. Bank and merchant service
 routes are integrated in server mode; qualification against external bank
-credentials and a complete Codex provider turn remains separate from route and
-filesystem coverage.
+credentials remains separate from route and filesystem coverage.
+
+The active application intentionally includes no AI panel, provider route, MCP
+process, ingestion enrichment action or rule executor. The optional host-owned
+details snippet and the provider-neutral `BeancountDataSource.request` boundary
+remain available for a future integration without coupling one into the app.
 
 ```sh
 pnpm check:baseline
