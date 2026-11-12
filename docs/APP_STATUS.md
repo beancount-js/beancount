@@ -42,6 +42,7 @@ a user-selected local directory. Neither host imports legacy Fava UI source.
 | Application host adapters, persistence and service routes  | Passed: 37 tests                                                                              |
 | Application server and static-web production builds        | Passed                                                                                        |
 | Populated executable-host browser smoke                    | Passed: repository `sample.beancount` dashboard and editor loaded                             |
+| Static web OPFS persistence                                | Passed: edit, save, direct storage read and full reload                                       |
 | Populated server service smoke                             | Passed: assistant, ingestion config, merchant catalog and reconciliation summary routes       |
 | Ledger assistant MCP runtime                               | Passed: initialization and five-tool inventory handshake                                      |
 | Compatibility UI and forms facade                          | Passed: 69 tests and 22 forwarders                                                            |
@@ -70,9 +71,6 @@ weakened.
   MCP process completed its initialization/tool-inventory handshake. No external
   bank credential or complete Codex provider turn has been exercised in this
   checkout, so route/fixture coverage does not prove those external systems.
-- Run browser-level persistence acceptance for the static OPFS/local-directory
-  build. Its adapter and production build pass, while the observed populated
-  smoke used the server filesystem host.
 - Human side-by-side visual signoff is not implied by automated geometry and
   accessibility checks. No new screenshot baseline, Docker or Visual Delta
   workflow is introduced by this transition.

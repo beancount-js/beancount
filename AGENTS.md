@@ -45,8 +45,9 @@
   `pnpm checks:ui` for every active UI slice. Root `pnpm checks` includes the
   active UI and compatibility lanes. Report pre-existing aggregate failures
   separately and never disable checks to promote a baseline.
-- Run `pnpm --filter @beancount-js/app checks` for host changes. Passing host
-  persistence/build checks does not qualify live bank, merchant or AI services.
+- Run `pnpm --filter @beancount-js/app checks` for host changes. This includes
+  static OPFS save/reload acceptance. Passing host route/persistence/build checks
+  does not qualify external bank credentials or a complete AI provider turn.
 
 ## Shared forms and searchable pickers
 

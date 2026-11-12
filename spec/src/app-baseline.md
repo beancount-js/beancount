@@ -96,7 +96,8 @@ capture tooling to the compatibility package.
 - Run `pnpm check:baseline` for package ownership, catalog and singleton-runtime
   configuration checks.
 - Run `pnpm --filter @beancount-js/app checks` for host formatting, types,
-  adapter/persistence tests and both production builds.
+  adapter/service tests, both production builds and the static OPFS
+  save-and-reload browser acceptance.
 - Every UI slice runs `pnpm checks:ui`, including formatting, boundaries,
   pinned-source/catalog validation, types, unit tests, browser/accessibility
   stories and the production catalog build. Verify built inventory with

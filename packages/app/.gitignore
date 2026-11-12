@@ -1,3 +1,5 @@
 .svelte-kit/
 build-server/
 build-web/
+playwright-report/
+test-results/
