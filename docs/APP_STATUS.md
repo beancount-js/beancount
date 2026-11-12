@@ -39,9 +39,11 @@ a user-selected local directory. Neither host imports legacy Fava UI source.
 | UI unit tests                                              | Passed: 156 tests                                                                             |
 | Storybook browser/accessibility                            | Passed: 75 tests in the latest full run                                                       |
 | Production catalog build and built inventory               | Passed                                                                                        |
-| Application host adapters, persistence and service routes  | Passed: 29 tests                                                                              |
+| Application host adapters, persistence and service routes  | Passed: 37 tests                                                                              |
 | Application server and static-web production builds        | Passed                                                                                        |
 | Populated executable-host browser smoke                    | Passed: repository `sample.beancount` dashboard and editor loaded                             |
+| Populated server service smoke                             | Passed: assistant, ingestion config, merchant catalog and reconciliation summary routes       |
+| Ledger assistant MCP runtime                               | Passed: initialization and five-tool inventory handshake                                      |
 | Compatibility UI and forms facade                          | Passed: 69 tests and 22 forwarders                                                            |
 | Retained Fava tests                                        | 187 of 188 passed in the concurrent root run; the failing editor DOM test passed in isolation |
 | Retained Fava Beta tests                                   | Passed: 189 tests                                                                             |
@@ -62,13 +64,12 @@ weakened.
 
 ## Remaining work and limits
 
-- Integrate and qualify live bank and AI services in the executable
-  host. Project/file/resource plus ingestion configuration, discovery, import,
-  rules and streamed sync endpoints are present and use the repository connector
-  services. No external bank credential has been exercised in this checkout,
-  while merchant-management and reconciliation routes are now integrated and
-  route-qualified. The assistant endpoints remain to be integrated. Fixture
-  coverage does not prove external bank or AI integrations.
+- Qualify live bank and AI provider calls in the executable host. Its
+  project/file/resource, ingestion, rules, streamed sync, merchant,
+  reconciliation and assistant endpoints are integrated. The constrained ledger
+  MCP process completed its initialization/tool-inventory handshake. No external
+  bank credential or complete Codex provider turn has been exercised in this
+  checkout, so route/fixture coverage does not prove those external systems.
 - Run browser-level persistence acceptance for the static OPFS/local-directory
   build. Its adapter and production build pass, while the observed populated
   smoke used the server filesystem host.

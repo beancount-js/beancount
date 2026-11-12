@@ -39,7 +39,9 @@ the executable host at `http://127.0.0.1:5173` and defaults to the repository
 `sample.beancount`; set `BEANCOUNT_STUDIO_PROJECT_ROOT` and
 `BEANCOUNT_STUDIO_ENTRY_FILE` for another project. The host reads and writes
 real ledger files through `BeancountDataSource`. Bank, merchant and AI service
-qualification remains separate from filesystem hosting.
+routes are integrated in server mode; qualification against external bank
+credentials and a complete Codex provider turn remains separate from route and
+filesystem coverage.
 
 ```sh
 pnpm check:baseline

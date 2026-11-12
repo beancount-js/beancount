@@ -34,9 +34,15 @@ importers:
       '@beancount-js/beangulp':
         specifier: workspace:*
         version: link:../beangulp
+      '@beancount-js/beanquery':
+        specifier: workspace:*
+        version: link:../beanquery
       '@beancount-js/filters':
         specifier: workspace:*
         version: link:../filters
+      '@beancount-js/parser':
+        specifier: workspace:*
+        version: link:../parser
       '@beancount-js/server':
         specifier: workspace:*
         version: link:../server

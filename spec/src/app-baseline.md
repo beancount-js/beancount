@@ -53,10 +53,12 @@ and their event streams. These routes use the repository server/connectors and
 project-scoped secret references; successful fixture and route qualification
 does not prove any external bank credential. Server mode also owns merchant
 catalog/profile, brand matching, logo cache, merchant-review and reconciliation
-routes, including revision-aware application to the ledger. The assistant still
-requires independent integration and qualification before it is described as
-production-ready. Static web mode deliberately exposes only browser workspace
-capabilities. The deterministic Storybook services remain intentionally limited.
+routes, including revision-aware application to the ledger. It also owns the
+persisted assistant sessions, streaming/approval endpoints and constrained
+ledger MCP process used by the Codex provider. Route and MCP-handshake coverage
+does not prove a real external provider turn. Static web mode deliberately
+exposes only browser workspace capabilities. The deterministic Storybook
+services remain intentionally limited.
 
 Use public package exports and Design Core controller semantics. Reuse the
 account appearance store, controller-scoped merchant-logo cache and shared
