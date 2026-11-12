@@ -4,11 +4,13 @@ import {
   envSecretAvailable,
   resolveProjectEnv,
   sourceSecretRef,
+  type IngestionConfig,
 } from "@beancount-js/server";
 import {
   categoryAccountsForSource,
   serverIngestion,
 } from "$lib/server/ingestion";
+import { configForActiveApp } from "$lib/server/runtime-policy";
 import { serverWorkspace } from "$lib/server/workspace";
 
 function message(error: unknown) {
@@ -26,7 +28,9 @@ export async function GET({ params }: { params: { id: string } }) {
       contents: file.contents,
     })),
   );
-  const config = await serverIngestion().readConfig(params.id);
+  const config = configForActiveApp(
+    await serverIngestion().readConfig(params.id),
+  );
   return json({
     ...config,
     brandCredentialAvailable:
@@ -61,7 +65,9 @@ export async function PUT({
 }) {
   try {
     await (await serverWorkspace()).readProject(params.id);
-    const config = await request.json();
+    const config = configForActiveApp(
+      (await request.json()) as IngestionConfig,
+    );
     await serverIngestion().writeConfig(params.id, config);
     return json(await serverIngestion().readConfig(params.id));
   } catch (error) {

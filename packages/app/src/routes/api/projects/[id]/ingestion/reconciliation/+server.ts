@@ -12,6 +12,7 @@ import {
   compactReconciliationReview,
 } from "$lib/reconciliation-review-response";
 import { serverIngestion, serverReconciliations } from "$lib/server/ingestion";
+import { rulesForActiveApp } from "$lib/server/runtime-policy";
 import { serverRules } from "$lib/server/rules";
 import { serverWorkspace } from "$lib/server/workspace";
 
@@ -62,12 +63,16 @@ async function recheckSelectedCandidates(
     })),
   );
   const ingestion = serverIngestion();
-  const [config, runs, decisions, detectionRules] = await Promise.all([
+  const [config, runs, decisions, storedRules] = await Promise.all([
     ingestion.readConfig(projectId),
     ingestion.readRuns(projectId),
     serverReconciliations().read(projectId),
     serverRules().listActive(projectId),
   ]);
+  const detectionRules = rulesForActiveApp({
+    version: 1,
+    rules: storedRules,
+  }).rules;
   const current = buildReconciliationReview({
     config,
     runs,

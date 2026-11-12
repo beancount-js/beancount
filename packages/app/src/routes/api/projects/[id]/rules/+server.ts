@@ -2,6 +2,10 @@ import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
 import { parseRulesFile, validateDetectionRule } from "@beancount-js/beangulp";
 import { serverRules } from "$lib/server/rules";
+import {
+  registryForActiveApp,
+  rulesForActiveApp,
+} from "$lib/server/runtime-policy";
 import { serverWorkspace } from "$lib/server/workspace";
 
 function message(error: unknown) {
@@ -21,10 +25,10 @@ export async function GET({ params }: { params: { id: string } }) {
   const accounts = [...new Set(entries.flatMap((entry) => entry.accounts))]
     .filter(Boolean)
     .sort();
-  const file = await serverRules().readRules(params.id);
+  const file = rulesForActiveApp(await serverRules().readRules(params.id));
   return json({
     ...file,
-    registry: serverRules().registry({ accounts }),
+    registry: registryForActiveApp(serverRules().registry({ accounts })),
     accounts,
   });
 }
@@ -39,7 +43,7 @@ export async function PUT({
   try {
     await (await serverWorkspace()).readProject(params.id);
     const body = await request.json();
-    const file = parseRulesFile(body);
+    const file = rulesForActiveApp(parseRulesFile(body));
     for (const rule of file.rules) {
       const errors = validateDetectionRule(rule);
       if (errors.length > 0) {

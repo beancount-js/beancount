@@ -119,7 +119,6 @@ describe("production ingestion routes", () => {
     expect(mocks.startSync).toHaveBeenCalledWith({
       projectId: "demo",
       sourceId: "bank",
-      kind: "sync",
     });
     expect(response.status).toBe(202);
   });

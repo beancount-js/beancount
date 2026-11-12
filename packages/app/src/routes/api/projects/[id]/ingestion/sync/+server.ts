@@ -33,18 +33,15 @@ export async function POST({
 }) {
   try {
     const body = await request.json();
-    const { sourceId, mode } = body as {
+    const { sourceId } = body as {
       sourceId?: unknown;
-      mode?: unknown;
     };
     if (typeof sourceId !== "string" || !sourceId.trim()) {
       return json({ error: "A sourceId is required." }, { status: 400 });
     }
-    const kind = mode === "ai-rerun" ? "ai-rerun" : "sync";
     const { job, created } = await startIngestionSync({
       projectId: params.id,
       sourceId: sourceId.trim(),
-      kind,
     });
     return json(
       { jobId: job.id, status: job.status, job, created },

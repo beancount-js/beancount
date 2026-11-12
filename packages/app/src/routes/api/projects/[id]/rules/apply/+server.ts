@@ -1,10 +1,7 @@
 import { json } from "@sveltejs/kit";
-import {
-  applyDetectionRules,
-  createCodexRuleAiExecutor,
-  previewRuleApply,
-} from "@beancount-js/server";
+import { applyDetectionRules, previewRuleApply } from "@beancount-js/server";
 import { serverIngestion } from "$lib/server/ingestion";
+import { supportedRuleIds } from "$lib/server/runtime-policy";
 import { serverRules } from "$lib/server/rules";
 import { serverWorkspace } from "$lib/server/workspace";
 
@@ -46,11 +43,19 @@ export async function POST({
     const workspace = await serverWorkspace();
     const rulesStore = serverRules();
     const ingestionStore = serverIngestion();
+    const activeRuleIds = await supportedRuleIds(
+      params.id,
+      ruleIds,
+      (projectId) => rulesStore.readRules(projectId),
+    );
+    const executableRuleIds = activeRuleIds.length
+      ? activeRuleIds
+      : ["__no_active_app_rules__"];
 
     if (body.dryRun === true) {
       const preview = await previewRuleApply({
         projectId: params.id,
-        ruleIds,
+        ruleIds: executableRuleIds,
         target,
         rulesStore,
         ingestionStore,
@@ -61,12 +66,11 @@ export async function POST({
 
     const result = await applyDetectionRules({
       projectId: params.id,
-      ruleIds,
+      ruleIds: executableRuleIds,
       target,
       rulesStore,
       ingestionStore,
       workspace,
-      ai: createCodexRuleAiExecutor(),
     });
     return json(result);
   } catch (error) {

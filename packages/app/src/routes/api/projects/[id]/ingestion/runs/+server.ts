@@ -2,6 +2,10 @@ import { json } from "@sveltejs/kit";
 import { loadProjectSources } from "@beancount-js/beancount";
 import { ingestSource } from "@beancount-js/server";
 import { serverIngestion } from "$lib/server/ingestion";
+import {
+  rulesForActiveApp,
+  sourceForActiveApp,
+} from "$lib/server/runtime-policy";
 import { serverRules } from "$lib/server/rules";
 import { serverWorkspace } from "$lib/server/workspace";
 
@@ -46,9 +50,8 @@ export async function POST({
 }) {
   try {
     const body = await request.json();
-    const { sourceId, model, accountId } = body as {
+    const { sourceId, accountId } = body as {
       sourceId?: unknown;
-      model?: unknown;
       accountId?: unknown;
     };
     if (typeof sourceId !== "string")
@@ -63,14 +66,17 @@ export async function POST({
       })),
     );
     const store = serverIngestion();
-    const source = await store.source(params.id, sourceId);
+    const source = sourceForActiveApp(await store.source(params.id, sourceId));
     let state = await store.readState(params.id);
-    const detectionRules = await serverRules().listActive(params.id);
+    const detectionRules = rulesForActiveApp({
+      version: 1,
+      rules: await serverRules().listActive(params.id),
+    }).rules;
     const { runs, syncStatePatches } = await ingestSource(
       source,
       state,
       entries,
-      typeof model === "string" ? model : undefined,
+      undefined,
       { projectId: params.id, store },
       {
         ...(typeof accountId === "string" ? { accountId } : {}),

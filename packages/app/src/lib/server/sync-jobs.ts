@@ -2,14 +2,13 @@ import { randomUUID } from "node:crypto";
 import { loadProjectSources } from "@beancount-js/beancount";
 import {
   AsyncEventQueue,
-  enrichExistingSourceRuns,
   expandIngestionSource,
   ingestSource,
   type IngestionSyncJob,
-  type IngestionSyncJobKind,
   type IngestionSyncJobSummary,
 } from "@beancount-js/server";
 import { serverIngestion } from "./ingestion";
+import { rulesForActiveApp, sourceForActiveApp } from "./runtime-policy";
 import { serverRules } from "./rules";
 import { serverWorkspace } from "./workspace";
 
@@ -89,158 +88,7 @@ async function persistAndPublish(
   publish(active, { type, job });
 }
 
-function runBelongsToSource(runSourceId: string, connectionId: string) {
-  return (
-    runSourceId === connectionId || runSourceId.startsWith(`${connectionId}:`)
-  );
-}
-
-async function runAiRerunJob(active: ActiveSyncJob, job: IngestionSyncJob) {
-  const store = serverIngestion();
-  let current: IngestionSyncJob = {
-    ...job,
-    kind: "ai-rerun",
-    status: "running",
-    progress: {
-      stage: "process",
-      message: "Starting AI enrichment…",
-    },
-  };
-  await persistAndPublish(active, current, "progress");
-
-  try {
-    const workspace = await serverWorkspace();
-    const snapshot = await workspace.readProject(active.projectId);
-    const [entries] = loadProjectSources(
-      snapshot.project.entryFile,
-      snapshot.ledgerFiles.map((file) => ({
-        path: file.path,
-        contents: file.contents,
-      })),
-    );
-    const source = await store.source(active.projectId, active.sourceId);
-    const sourceRuns = (await store.readRuns(active.projectId)).filter((run) =>
-      runBelongsToSource(run.sourceId, active.sourceId),
-    );
-    if (!sourceRuns.length) {
-      throw new Error("No import runs are available to enrich.");
-    }
-
-    const detectionRules = await serverRules().listActive(active.projectId);
-    const enriched = await enrichExistingSourceRuns(
-      source,
-      sourceRuns,
-      entries,
-      undefined,
-      { projectId: active.projectId, store },
-      {
-        jobId: active.jobId,
-        detectionRules,
-        onProgress: async (progress) => {
-          current = {
-            ...current,
-            progress: {
-              stage: "process",
-              message: progress.message,
-              seen: progress.index,
-              imported: progress.total,
-            },
-          };
-          await persistAndPublish(active, current, "progress");
-        },
-      },
-    );
-
-    current = {
-      ...current,
-      progress: {
-        ...current.progress,
-        stage: "saving",
-        message: "Saving enriched proposals…",
-      },
-    };
-    await persistAndPublish(active, current, "progress");
-
-    const runIds: string[] = [];
-    for (const run of enriched) {
-      await store.saveRun(active.projectId, run);
-      runIds.push(run.id);
-    }
-
-    const summary = mergeSummaries(
-      enriched.map((run) => ({
-        summary: {
-          seen: run.summary.total,
-          imported: run.summary.total - run.summary.duplicates,
-          ready: run.summary.ready,
-          needsReview: run.summary.needsReview,
-          duplicates: run.summary.duplicates,
-          invalid: run.summary.invalid,
-          held: run.summary.held,
-        },
-      })),
-    );
-    const aiFailed = enriched.reduce(
-      (count, run) =>
-        count +
-        run.proposals.filter(
-          (proposal) => proposal.lastAiEnrichment?.ok === false,
-        ).length,
-      0,
-    );
-
-    current = {
-      ...current,
-      status: "completed",
-      completedAt: new Date().toISOString(),
-      runIds,
-      summary,
-      progress: {
-        stage: "complete",
-        message:
-          aiFailed > 0
-            ? `AI enriched ${summary.imported} proposal${summary.imported === 1 ? "" : "s"} (${aiFailed} with errors — open a proposal to review)`
-            : `AI enriched ${summary.imported} proposal${summary.imported === 1 ? "" : "s"}`,
-        seen: summary.imported,
-        imported: summary.imported,
-      },
-    };
-    await persistAndPublish(active, current, "done");
-  } catch (error) {
-    current = {
-      ...current,
-      status: "failed",
-      completedAt: new Date().toISOString(),
-      error: error instanceof Error ? error.message : String(error),
-      progress: {
-        ...current.progress,
-        stage: "complete",
-        message:
-          error instanceof Error
-            ? error.message
-            : "AI enrichment failed unexpectedly.",
-      },
-    };
-    await persistAndPublish(active, current, "error");
-  } finally {
-    for (const listener of active.listeners) {
-      listener.close();
-    }
-    active.listeners.clear();
-    activeByJobId.delete(active.jobId);
-    const key = sourceKey(active.projectId, active.sourceId);
-    if (activeBySourceKey.get(key) === active.jobId) {
-      activeBySourceKey.delete(key);
-    }
-  }
-}
-
 async function runSyncJob(active: ActiveSyncJob, job: IngestionSyncJob) {
-  if (job.kind === "ai-rerun") {
-    await runAiRerunJob(active, job);
-    return;
-  }
-
   const store = serverIngestion();
   let current: IngestionSyncJob = {
     ...job,
@@ -263,9 +111,14 @@ async function runSyncJob(active: ActiveSyncJob, job: IngestionSyncJob) {
         contents: file.contents,
       })),
     );
-    const source = await store.source(active.projectId, active.sourceId);
+    const source = sourceForActiveApp(
+      await store.source(active.projectId, active.sourceId),
+    );
     let state = await store.readState(active.projectId);
-    const detectionRules = await serverRules().listActive(active.projectId);
+    const detectionRules = rulesForActiveApp({
+      version: 1,
+      rules: await serverRules().listActive(active.projectId),
+    }).rules;
     const { runs, syncStatePatches } = await ingestSource(
       source,
       state,
@@ -372,10 +225,8 @@ async function runSyncJob(active: ActiveSyncJob, job: IngestionSyncJob) {
 export async function startIngestionSync(options: {
   projectId: string;
   sourceId: string;
-  kind?: IngestionSyncJobKind;
 }) {
   const { projectId, sourceId } = options;
-  const kind: IngestionSyncJobKind = options.kind ?? "sync";
   await ensureInterruptedFailed(projectId);
 
   const existingId = activeBySourceKey.get(sourceKey(projectId, sourceId));
@@ -390,21 +241,21 @@ export async function startIngestionSync(options: {
     return { job: diskActive, created: false };
   }
 
-  const source = await store.source(projectId, sourceId);
-  if (kind === "sync") expandIngestionSource(source);
+  const source = sourceForActiveApp(await store.source(projectId, sourceId));
+  expandIngestionSource(source);
 
-  const jobId = `${kind === "ai-rerun" ? "ai" : "sync"}:${randomUUID()}`;
+  const jobId = `sync:${randomUUID()}`;
   const startedAt = new Date().toISOString();
   const job: IngestionSyncJob = {
     id: jobId,
     projectId,
     sourceId,
-    kind,
+    kind: "sync",
     status: "queued",
     startedAt,
     progress: {
       stage: "queued",
-      message: kind === "ai-rerun" ? "Queued AI enrichment…" : "Queued…",
+      message: "Queued…",
     },
     runIds: [],
   };
