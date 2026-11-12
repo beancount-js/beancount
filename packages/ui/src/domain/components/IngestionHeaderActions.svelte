@@ -134,13 +134,6 @@
                 >
               </DropdownMenu.SubContent>
             </DropdownMenu.Sub>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Item
-              class="whitespace-nowrap"
-              onclick={() => header.onAskAi()}
-            >
-              <Sparkles class="mr-2 size-4" /> Ask AI about selection
-            </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       </div>

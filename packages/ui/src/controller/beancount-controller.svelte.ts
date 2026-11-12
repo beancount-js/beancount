@@ -49,8 +49,6 @@ export function createBeancountController(
   let settingsReturn: HistoryEntry | undefined;
   let index = $state(0);
   const routeStore = writable(initialRoute);
-  let inlineAiRequest =
-    $state.raw<import("../domain/studio/workspace").InlineAiRequest>();
   function syncRoute() {
     const route = history[index]!.route;
     routeStore.set(route);
@@ -202,9 +200,6 @@ export function createBeancountController(
       if (!snapshot || !options.source.resourceUrl)
         throw new Error("This data source does not provide resources.");
       return options.source.resourceUrl(snapshot.project.id, path);
-    },
-    requestInlineAi(request) {
-      inlineAiRequest = request;
     },
     sidebar: sidebar.actions,
     async addProject(path) {
@@ -391,7 +386,6 @@ export function createBeancountController(
       return next;
     },
     actions.resourceUrl,
-    actions.requestInlineAi,
   );
   const navigation = createControllerNavigation(routeStore, actions);
   const unsubscribeFile = workspace.activeFile.subscribe((path) => {
@@ -417,9 +411,6 @@ export function createBeancountController(
     workspace,
     navigation,
     state: {
-      get inlineAiRequest() {
-        return inlineAiRequest;
-      },
       get sidebar() {
         return sidebar.state;
       },

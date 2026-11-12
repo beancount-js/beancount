@@ -1,7 +1,6 @@
 <script lang="ts">
   import FilterCommandPicker from "../forms/FilterCommandPicker.svelte";
 
-  import AiDock from "../../domain/components/AiDock.svelte";
   import IngestionTable from "../../domain/components/IngestionTable.svelte";
   import IngestionConfigEditor from "../../domain/components/IngestionConfigEditor.svelte";
   import IngestionAccountsSetup from "../../domain/components/IngestionAccountsSetup.svelte";
@@ -20,7 +19,13 @@
   import ResourceViewer from "../../domain/components/ResourceViewer.svelte";
   import JournalRecordRouteSheet from "../../domain/components/JournalRecordRouteSheet.svelte";
   import IngestionHeaderActions from "../../domain/components/IngestionHeaderActions.svelte";
-  import { setContext, onMount, onDestroy, untrack } from "svelte";
+  import {
+    setContext,
+    onMount,
+    onDestroy,
+    untrack,
+    type Snippet,
+  } from "svelte";
   import {
     AppShellController,
     createLocalStorageAppShellLayoutPersistence,
@@ -49,10 +54,19 @@
     controller,
     displayMode = "auto",
     layoutStorage,
+    details,
+    detailsLabel = "Details",
+    detailsTitle = "Details",
+    detailsMobileLabel = "Details",
   }: {
     controller: BeancountController;
     displayMode?: AppShellDisplayMode;
     layoutStorage?: Storage;
+    /** Optional host-owned panel for future application extensions. */
+    details?: Snippet;
+    detailsLabel?: string;
+    detailsTitle?: string;
+    detailsMobileLabel?: string;
   } = $props();
   setContext(
     BeancountControllerKey,
@@ -87,14 +101,6 @@
   });
   onDestroy(() => {
     void shell.dispose();
-  });
-  $effect(() => {
-    if (controller.state.inlineAiRequest) {
-      untrack(() => {
-        shell.right.open();
-        if (shell.mobile.resolvedMode === "mobile") shell.mobile.show("right");
-      });
-    }
   });
   function navigate(path: string) {
     controller.actions.navigate(path);
@@ -158,6 +164,10 @@
       canNavigateForward={controller.state.canNavigateForward}
       onBack={controller.actions.back}
       onForward={controller.actions.forward}
+      {details}
+      {detailsLabel}
+      {detailsTitle}
+      {detailsMobileLabel}
     >
       {#snippet navigation()}
         <BeancountNavigation
@@ -165,17 +175,6 @@
           onNavigate={() => shell.mobile.showMain()}
         />
       {/snippet}
-      {#snippet details()}<AiDock
-          projectId={controller.state.snapshot?.project.id}
-          projectName={controller.state.snapshot?.project.name ?? "Ledger"}
-          hasProject={Boolean(controller.state.snapshot)}
-          inlineRequest={controller.state.inlineAiRequest}
-          onProjectChanged={controller.actions.refresh}
-          onClose={() => {
-            shell.right.close();
-            shell.mobile.showMain();
-          }}
-        />{/snippet}
       {#snippet toolbarLeading()}<IngestionHeaderActions
           region="leading"
         />{/snippet}

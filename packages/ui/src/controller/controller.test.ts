@@ -109,7 +109,7 @@ it("aborts streamed services when disposed even after response headers arrive", 
       },
     },
   });
-  await controller.actions.request("/api/projects/example/ai");
+  await controller.actions.request("/api/projects/example/ingestion");
   expect(captured.signal?.aborted).toBe(false);
   controller.dispose();
   expect(captured.signal?.aborted).toBe(true);

@@ -28,8 +28,6 @@ export { default as IngestionRunHistory } from "./domain/components/IngestionRun
 export { default as IngestionRunAudit } from "./domain/components/IngestionRunAudit.svelte";
 export { default as RulesSettings } from "./domain/components/RulesSettings.svelte";
 
-export { default as AiDock } from "./domain/components/AiDock.svelte";
-export { default as AiUnifiedReviewDiff } from "./domain/components/AiUnifiedReviewDiff.svelte";
 export { default as QueryResultsTable } from "./components/tables/QueryResultsTable.svelte";
 export type {
   QueryResultCell,

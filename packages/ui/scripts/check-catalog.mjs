@@ -104,8 +104,6 @@ for (const group of ["navigationStates", "tableFamilies"]) {
     if (!stories.has(storyId))
       throw new Error(`Missing ${group} story: ${storyId}`);
 }
-if (!stories.has(inventory.assistant))
-  throw new Error("Missing assistant story.");
 if (process.argv.includes("--built")) {
   const index = JSON.parse(readFileSync("storybook-static/index.json", "utf8"));
   for (const id of stories)

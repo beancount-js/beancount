@@ -37,20 +37,6 @@
       "stories": ["Beancount/Editing and discovery"]
     },
     {
-      "source": "packages/fava/src/components/AiDock.svelte",
-      "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
-    },
-    {
-      "source": "packages/fava/src/components/AiUnifiedReviewDiff.svelte",
-      "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
-    },
-    {
       "source": "packages/fava/src/components/BalanceSheet.svelte",
       "kind": "domain",
       "target": "src/domain/components/BalanceSheet.svelte",
@@ -472,13 +458,6 @@
     },
     {
       "source": "packages/fava/src/components/skeletons/AccountsPageSkeleton.svelte",
-      "kind": "domain",
-      "target": null,
-      "status": "pending",
-      "stories": []
-    },
-    {
-      "source": "packages/fava/src/components/skeletons/AiDockSkeleton.svelte",
       "kind": "domain",
       "target": null,
       "status": "pending",

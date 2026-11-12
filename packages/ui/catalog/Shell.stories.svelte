@@ -53,7 +53,7 @@
     await expect(left).toHaveAttribute("aria-expanded", String(expanded));
     await click(right);
     await expect(
-      await canvas.findByRole("textbox", { name: "Ask ledger assistant" }),
+      await canvas.findByText("Host-provided extension content"),
     ).toBeVisible();
     await expect(right).toHaveAttribute("aria-expanded", "true");
     await click(
@@ -66,7 +66,7 @@
     );
     await click(right);
     await expect(
-      await canvas.findByRole("textbox", { name: "Ask ledger assistant" }),
+      await canvas.findByText("Host-provided extension content"),
     ).toBeVisible();
     await expect(right).toHaveAttribute("aria-expanded", "true");
     await click(right);
@@ -98,7 +98,15 @@
   globals={{ theme: "default" }}
   play={sidebarControls}
 >
-  {#snippet template()}<ApplicationHarness displayMode="desktop" />{/snippet}
+  {#snippet template()}<ApplicationHarness
+      displayMode="desktop"
+      detailsLabel="Project extension"
+      detailsTitle="Extension"
+    >
+      {#snippet details()}<p class="p-4">
+          Host-provided extension content
+        </p>{/snippet}
+    </ApplicationHarness>{/snippet}
 </Story>
 <Story
   name="Mobile sidebar controls"
@@ -106,11 +114,27 @@
   play={sidebarControls}
 >
   {#snippet template()}<div style="width: 390px; max-width: 100%; height: 100%">
-      <ApplicationHarness displayMode="mobile" />
+      <ApplicationHarness
+        displayMode="mobile"
+        detailsLabel="Project extension"
+        detailsTitle="Extension"
+      >
+        {#snippet details()}<p class="p-4">
+            Host-provided extension content
+          </p>{/snippet}
+      </ApplicationHarness>
     </div>{/snippet}
 </Story>
 <Story name="Constrained desktop sidebar controls" play={sidebarControls}>
   {#snippet template()}<div style="width: 700px; max-width: 100%; height: 100%">
-      <ApplicationHarness displayMode="desktop" />
+      <ApplicationHarness
+        displayMode="desktop"
+        detailsLabel="Project extension"
+        detailsTitle="Extension"
+      >
+        {#snippet details()}<p class="p-4">
+            Host-provided extension content
+          </p>{/snippet}
+      </ApplicationHarness>
     </div>{/snippet}
 </Story>

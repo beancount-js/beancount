@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount, untrack } from "svelte";
+  import { onDestroy, onMount, untrack, type Snippet } from "svelte";
   import { BeancountApplication } from "@beancount-js/ui";
   import {
     createInMemoryBeancountController,
@@ -10,10 +10,16 @@
     initialRoute = "/dashboard",
     displayMode = "auto",
     scenario = "ready",
+    details,
+    detailsLabel = "Details",
+    detailsTitle = "Details",
   }: {
     initialRoute?: string;
     displayMode?: AppShellDisplayMode;
     scenario?: CatalogScenario;
+    details?: Snippet;
+    detailsLabel?: string;
+    detailsTitle?: string;
   } = $props();
   const controller = untrack(() =>
     createInMemoryBeancountController(initialRoute, scenario),
@@ -28,4 +34,10 @@
   onDestroy(() => controller.dispose());
 </script>
 
-<BeancountApplication {controller} {displayMode} />
+<BeancountApplication
+  {controller}
+  {displayMode}
+  {details}
+  {detailsLabel}
+  {detailsTitle}
+/>

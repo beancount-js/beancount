@@ -84,9 +84,6 @@ export interface BeancountControllerState {
   readonly ledger: LedgerData;
   readonly status: BeancountStatus;
   readonly error: string;
-  readonly inlineAiRequest:
-    | import("../domain/studio/workspace").InlineAiRequest
-    | undefined;
   readonly canNavigateBack: boolean;
   readonly canNavigateForward: boolean;
 }
@@ -103,9 +100,6 @@ export interface BeancountControllerActions {
     text?: string;
     revoke?: () => void;
   }>;
-  requestInlineAi(
-    request: import("../domain/studio/workspace").InlineAiRequest,
-  ): void;
   navigate(path: string, options?: { replace?: boolean }): void;
   back(): void;
   forward(): void;

@@ -1,4 +1,3 @@
-import { createAiServices } from "./ai-services";
 import { createApplicationServices } from "./application-services";
 import type { BeancountDataSource } from "../../src/controller/contracts";
 import type { ProjectSnapshot } from "@beancount-js/workspace";
@@ -35,7 +34,6 @@ export function createInMemorySource(
     return structuredClone(project);
   }
   const services = createApplicationServices(read, saveFile);
-  const ai = createAiServices(read, saveFile);
   let opened = 0;
   return {
     async addProject(path) {
@@ -46,10 +44,7 @@ export function createInMemorySource(
       projects.set(project.project.id, project);
       return structuredClone(project);
     },
-    request: (url, init) =>
-      new URL(url, "http://fixture.invalid").pathname.split("/")[4] === "ai"
-        ? ai.request(url, init)
-        : services.request(url, init),
+    request: services.request,
     async resourceUrl(id, path) {
       read(id);
       if (path !== "receipts/example.txt")

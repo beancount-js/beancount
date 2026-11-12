@@ -197,16 +197,7 @@
     expect(viewport.scrollLeft).toBeGreaterThan(0);
     await userEvent.click(canvas.getByRole("button", { name: /next page/i }));
     await expect(await canvas.findByText(/Showing 11–20 of/)).toBeVisible();
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Toggle AI panel" }),
-    );
-    await expect(
-      canvas.getByRole("complementary", { name: "AI assistant" }),
-    ).toBeVisible();
     await expectContainedShell(canvasElement);
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Toggle AI panel" }),
-    );
     await expect(canvas.getByRole("region", { name: "Query" })).toBeVisible();
     await expectContainedShell(canvasElement);
   }}

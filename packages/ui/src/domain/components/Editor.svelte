@@ -32,7 +32,6 @@
     activeLedgerKind,
     reviewLedger,
     saveFile,
-    requestInlineAi,
   } = useStudioWorkspace();
 
   let formatOnSave = true;
@@ -170,20 +169,6 @@
     dirty = false;
   }
 
-  function askAiAboutSelection() {
-    if (!editor || !$workspaceActiveFile) return;
-    const selection = editor.state.selection.main;
-    const text = editor.state.sliceDoc(selection.from, selection.to).trim();
-    const fromLine = editor.state.doc.lineAt(selection.from).number;
-    const toLine = editor.state.doc.lineAt(selection.to).number;
-    requestInlineAi({
-      path: $workspaceActiveFile,
-      text: text.slice(0, 4_000),
-      fromLine,
-      toLine,
-    });
-  }
-
   $: reviewFile =
     $activeLedgerKind === "ingestion-review" &&
     $reviewLedger?.path === $workspaceActiveFile
@@ -232,7 +217,6 @@
         onFindPrevious: () => {
           if (editor) findPrevious(editor);
         },
-        onAskAi: () => askAiAboutSelection(),
         onSave: () => {
           void handleSave();
         },

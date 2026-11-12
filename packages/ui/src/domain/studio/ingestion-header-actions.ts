@@ -120,7 +120,6 @@ export type LedgerEditorHeaderActions = {
   onFind: () => void;
   onFindNext: () => void;
   onFindPrevious: () => void;
-  onAskAi: () => void;
   onSave: () => void;
 };
 

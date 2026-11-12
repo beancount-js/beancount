@@ -17,6 +17,9 @@
     navigation,
     content,
     details,
+    detailsLabel = "Details",
+    detailsTitle = "Details",
+    detailsMobileLabel = "Details",
     title = "Beancount Studio",
     projectName = "Beancount Studio",
     onOpenSettings,
@@ -32,6 +35,9 @@
     navigation?: Snippet;
     content?: Snippet;
     details?: Snippet;
+    detailsLabel?: string;
+    detailsTitle?: string;
+    detailsMobileLabel?: string;
     title?: string;
     projectName?: string;
     onOpenSettings?: () => void;
@@ -63,8 +69,8 @@
     {#if details}<AppShell.Sidebar.Toggle
         shellController={controller}
         side="right"
-        label="Toggle AI panel"
-        class="beancount-shell__assistant-toggle"
+        label={`Toggle ${detailsLabel.toLocaleLowerCase()} panel`}
+        class="beancount-shell__details-toggle"
         onclick={async (event) => {
           const opening =
             event.currentTarget.getAttribute("aria-expanded") !== "true";
@@ -148,12 +154,12 @@
       >
       {#if details}<AppShell.Sidebar
           side="right"
-          label="AI assistant"
+          label={detailsLabel}
           closeable
           resizable
-          mobileLabel="Assistant"
+          mobileLabel={detailsMobileLabel}
           ><AppShell.Sidebar.Header
-            ><strong>Assistant</strong><AppShell.Sidebar.Close
+            ><strong>{detailsTitle}</strong><AppShell.Sidebar.Close
             /></AppShell.Sidebar.Header
           ><AppShell.Sidebar.Body>{@render details()}</AppShell.Sidebar.Body
           ></AppShell.Sidebar
@@ -294,7 +300,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  :global(.beancount-shell__assistant-toggle) {
+  :global(.beancount-shell__details-toggle) {
     margin-inline-start: auto;
   }
 </style>

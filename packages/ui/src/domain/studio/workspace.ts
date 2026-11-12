@@ -3,13 +3,6 @@ import { writable, type Writable } from "svelte/store";
 import type { ProjectSnapshot } from "@beancount-js/workspace";
 import type { IngestionReviewLedgerSnapshot } from "../ingestion/types";
 
-export type InlineAiRequest = {
-  path: string;
-  text: string;
-  fromLine: number;
-  toLine: number;
-};
-
 export type LedgerSidebarMode = "workspace" | "settings";
 export type ActiveLedgerKind = "file" | "ingestion-review";
 
@@ -39,7 +32,6 @@ export interface StudioWorkspaceContext {
     text?: string;
     revoke?: () => void;
   }>;
-  requestInlineAi: (request: InlineAiRequest) => void;
 }
 
 export function createStudioWorkspace(
@@ -47,7 +39,6 @@ export function createStudioWorkspace(
   refreshSnapshot: StudioWorkspaceContext["refreshSnapshot"],
   refreshReviewLedger: StudioWorkspaceContext["refreshReviewLedger"],
   resourceUrl: StudioWorkspaceContext["resourceUrl"],
-  requestInlineAi: StudioWorkspaceContext["requestInlineAi"],
 ) {
   return {
     headerActions: writable<
@@ -63,7 +54,6 @@ export function createStudioWorkspace(
     refreshSnapshot,
     refreshReviewLedger,
     resourceUrl,
-    requestInlineAi,
   } satisfies StudioWorkspaceContext;
 }
 
