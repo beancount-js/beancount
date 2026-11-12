@@ -30,25 +30,25 @@ a user-selected local directory. Neither host imports legacy Fava UI source.
 
 ## Validation observed during integration
 
-| Lane                                                       | Result                                                                                        |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Baseline ownership/catalog guard                           | Passed                                                                                        |
-| Frozen dependency installation                             | Passed with the Design Core 0.4.0 lockfile                                                    |
-| UI formatting, dependency boundaries and catalog inventory | Passed: 24 routes, 8 navigation states, 9 table families and 29 public Design Core imports    |
-| UI type checking                                           | Passed: zero errors/warnings                                                                  |
-| UI unit tests                                              | Passed: 151 tests                                                                             |
-| Storybook browser/accessibility                            | Passed: 72 tests in the latest full run                                                       |
-| Production catalog build and built inventory               | Passed                                                                                        |
-| Application host adapters, persistence and service routes  | Passed: 31 tests                                                                              |
-| Application server and static-web production builds        | Passed                                                                                        |
-| Populated executable-host browser smoke                    | Passed: repository `sample.beancount` dashboard and editor loaded                             |
-| Static web OPFS persistence                                | Passed: edit, save, direct storage read and full reload                                       |
-| Populated server service smoke                             | Passed: ingestion config, merchant catalog and reconciliation summary routes                  |
-| Application AI removal policy                              | Passed: no panel, provider route, MCP process, enrichment action or rule executor             |
-| Compatibility UI and forms facade                          | Passed: 69 tests and 22 forwarders                                                            |
-| Retained Fava tests                                        | Passed: 188 tests                                                                             |
-| Retained Fava Beta tests                                   | 188 of 189 passed in the concurrent root run; the failing editor DOM test passed in isolation |
-| Complete root tests (`pnpm test`)                          | Forecast is fixed; aggregate remains non-green because of the retained Fava Beta test above   |
+| Lane                                                       | Result                                                                                     |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Baseline ownership/catalog guard                           | Passed                                                                                     |
+| Frozen dependency installation                             | Passed with the Design Core 0.4.0 lockfile                                                 |
+| UI formatting, dependency boundaries and catalog inventory | Passed: 24 routes, 8 navigation states, 9 table families and 29 public Design Core imports |
+| UI type checking                                           | Passed: zero errors/warnings                                                               |
+| UI unit tests                                              | Passed: 151 tests                                                                          |
+| Storybook browser/accessibility                            | Passed: 72 tests in the latest full run                                                    |
+| Production catalog build and built inventory               | Passed                                                                                     |
+| Application host adapters, persistence and service routes  | Passed: 31 tests                                                                           |
+| Application server and static-web production builds        | Passed                                                                                     |
+| Populated executable-host browser smoke                    | Passed: repository `sample.beancount` dashboard and editor loaded                          |
+| Static web OPFS persistence                                | Passed: edit, save, direct storage read and full reload                                    |
+| Populated server service smoke                             | Passed: ingestion config, merchant catalog and reconciliation summary routes               |
+| Application AI removal policy                              | Passed: no panel, provider route, MCP process, enrichment action or rule executor          |
+| Compatibility UI and forms facade                          | Passed: 69 tests and 22 forwarders                                                         |
+| Retained Fava tests                                        | Passed: 188 tests                                                                          |
+| Retained Fava Beta tests                                   | Passed: 189 tests                                                                          |
+| Complete root tests (`pnpm test`)                          | Passed: 24 of 24 tasks                                                                     |
 
 The forecast recurrence engine now anchors parsed RFC and natural-language
 rules to the source transaction date, excludes the source transaction from
@@ -56,14 +56,12 @@ generated entries and includes the configured end date. Its package suite
 passes 283 tests, including deterministic dates and flags for the previously
 failing mixed-rule case.
 
-The latest concurrent root run instead failed the retained Fava Beta CodeMirror
-fold-gutter test `classifies metadata and updates its active state`. The
-identical Fava test passed in that run, and the Fava Beta test passed immediately
-when rerun in isolation. An earlier concurrent run produced the inverse result:
-Fava failed while its Fava Beta twin passed, followed by a passing isolated
-rerun. This is recorded as a concurrency-sensitive aggregate-gate failure
-rather than promoted to a passing root result. No test was disabled or assertion
-weakened.
+The final concurrent root run passed all 24 tasks. It included the retained Fava
+suite at 188 tests and Fava Beta at 189 tests; both mirrored CodeMirror
+fold-gutter tests passed in the aggregate. Earlier concurrent runs had produced
+opposite one-off failures between those twins followed by passing isolated
+reruns, so the history remains relevant when diagnosing future intermittent
+failures. No test was disabled or assertion weakened.
 
 ## Remaining work and limits
 
