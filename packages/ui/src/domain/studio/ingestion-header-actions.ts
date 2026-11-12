@@ -23,8 +23,6 @@ export type IngestionReviewHeaderActions = {
   sourceId: string;
   sourceOptions: { value: string; label: string }[];
   canForceRefetch: boolean;
-  canRerunAi: boolean;
-  aiRerunBusy: boolean;
   groupsCollapsedAll: boolean;
   canAccept: boolean;
   acceptCount: number;
@@ -36,7 +34,6 @@ export type IngestionReviewHeaderActions = {
   onOpenAccounts: () => void;
   onOpenMerchants: () => void;
   onForceRefetch: () => void;
-  onRerunAi: () => void;
   onEditSources: () => void;
   onAccept: () => void;
   onOpenLedger: () => void;
@@ -56,12 +53,8 @@ export type IngestionMerchantsHeaderActions = {
   sourceId: string;
   sourceOptions: { value: string; label: string }[];
   groupsCollapsedAll: boolean;
-  canDetect: boolean;
-  detectBusy: boolean;
-  bulkAction?: IngestionBulkReviewAction;
   onSourceChange: (sourceId: string) => void;
   onToggleCollapseGroups: () => void;
-  onDetectMerchants: () => void;
   onReviewImports: () => void;
   onOpenAccounts: () => void;
   onEditSources: () => void;

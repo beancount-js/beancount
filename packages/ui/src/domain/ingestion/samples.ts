@@ -68,11 +68,9 @@ function connectorSamples(): IngestionSample[] {
         name: connector.name,
         kind: connector.kind,
         merchantId: "",
-        aiEnabled: false,
         setup: connector.setupMarkdown,
         merchantEnrichment: {
           enabled: true,
-          aiEnabled: false,
           countryCode: "GB",
         },
         config: structuredClone(config),

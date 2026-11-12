@@ -36,7 +36,6 @@ export const exampleIngestionConfig: EditableIngestionConfig = {
       merchantId: "",
       sourceAccount: "Assets:Bank:Checking",
       defaultCurrency: "GBP",
-      aiEnabled: false,
       setup: [
         "1. Go to [api.example.com](https://api.example.com) and create an API key.",
         "2. Paste the API key below (or switch to Environment and enter a variable name) and connect.",
@@ -44,7 +43,6 @@ export const exampleIngestionConfig: EditableIngestionConfig = {
       ].join("\n"),
       merchantEnrichment: {
         enabled: true,
-        aiEnabled: false,
         countryCode: "GB",
       },
       api: {

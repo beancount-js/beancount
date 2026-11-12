@@ -13,11 +13,7 @@ export function createIngestionSync(
   request: BeancountControllerActions["request"],
 ) {
   const { ingestionJson } = createIngestionApi(request);
-  async function startIngestionSync(
-    projectId: string,
-    sourceId: string,
-    mode: "sync" | "ai-rerun" = "sync",
-  ) {
+  async function startIngestionSync(projectId: string, sourceId: string) {
     return ingestionJson<{
       jobId: string;
       status: IngestionSyncJob["status"];
@@ -26,7 +22,7 @@ export function createIngestionSync(
     }>(ingestionPath(projectId, "/sync"), {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sourceId, mode }),
+      body: JSON.stringify({ sourceId }),
     });
   }
 

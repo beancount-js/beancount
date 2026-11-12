@@ -18,12 +18,9 @@
   import { Input } from "@lapismd/design-core/shadcn/input";
   import * as Sheet from "@lapismd/design-core/shadcn/sheet";
   import * as Tooltip from "@lapismd/design-core/shadcn/tooltip";
-  import { Check } from "@lucide/svelte";
   import { ChevronsDownUp } from "@lucide/svelte";
   import { ChevronsUpDown } from "@lucide/svelte";
   import { CircleAlert } from "@lucide/svelte";
-  import { CircleX } from "@lucide/svelte";
-  import { Sparkles } from "@lucide/svelte";
   import { Undo2 } from "@lucide/svelte";
   import { CheckCheck } from "@lucide/svelte";
   import { X } from "@lucide/svelte";
@@ -35,11 +32,7 @@
   type WorkflowStep = {
     key: string;
     label: string;
-    ok: boolean;
-    at?: string;
-    prompt?: string;
     response?: string;
-    error?: string;
   };
 
   const sectionTitleClass = "text-xs font-semibold uppercase tracking-wide";
@@ -65,7 +58,6 @@
     runId: string;
     projectId: string;
     allowedAccounts?: readonly string[];
-    aiEnabled?: boolean;
     readOnly?: boolean;
     onClosed?: () => void;
     onUpdated?: (run: IngestionRun) => void;
@@ -78,7 +70,6 @@
     runId,
     projectId,
     allowedAccounts = [],
-    aiEnabled = false,
     readOnly = false,
     onClosed,
     onUpdated,
@@ -106,7 +97,6 @@
   let saveState = $state<SaveState>("idle");
   let saveTimer: number | null = null;
   let loadingDraft = $state(false);
-  let enriching = $state(false);
   let busy = $state(false);
   let errors = $state<string[]>([]);
   let sheetTitleEl = $state<HTMLElement | null>(null);
@@ -146,58 +136,23 @@
     }
   }
 
-  function isAiIssue(issue: string) {
-    return (
-      issue.startsWith("AI ") ||
-      issue.startsWith("Merchant resolver ") ||
-      issue.includes("merchant advisor") ||
-      issue.includes("categoriser") ||
-      issue.includes("categorizer")
-    );
-  }
-
-  const aiIssues = $derived(proposal.issues.filter(isAiIssue));
-
   const workflowSteps = $derived.by((): WorkflowStep[] => {
     const steps: WorkflowStep[] = [];
     if (proposal.sourceRecord) {
       steps.push({
         key: "source-api",
         label: "Source API",
-        ok: true,
         response: prettyJson(proposal.sourceRecord),
       });
     } else {
       steps.push({
         key: "source-api",
         label: "Source API",
-        ok: true,
         response: "No source payload was stored for this proposal.",
-      });
-    }
-    for (const call of proposal.lastAiEnrichment?.calls ?? []) {
-      steps.push({
-        key: `${call.id}:${call.at}`,
-        label: call.label,
-        ok: call.ok,
-        at: call.at,
-        prompt: call.prompt,
-        response: call.response,
-        error: call.error,
       });
     }
     return steps;
   });
-
-  const workflowTimestamp = $derived(
-    proposal.lastAiEnrichment?.at
-      ? new Date(proposal.lastAiEnrichment.at).toLocaleString()
-      : undefined,
-  );
-
-  function workflowStepDefaultOpen(step: WorkflowStep) {
-    return step.key === "source-api" ? false : !step.ok;
-  }
 
   const sectionsCollapsedAll = $derived(
     !isSectionOpen("workflow") ||
@@ -271,15 +226,6 @@
     !readOnly &&
       Boolean(proposal.transaction) &&
       (proposal.status === "ready" || proposal.status === "needs-review"),
-  );
-
-  const canEnrichAi = $derived(
-    !readOnly &&
-      aiEnabled &&
-      Boolean(proposal.transaction) &&
-      (proposal.status === "ready" ||
-        proposal.status === "needs-review" ||
-        proposal.status === "held"),
   );
 
   const canUnaccept = $derived(
@@ -490,29 +436,6 @@
     }
   }
 
-  async function rerunAiEnrichment() {
-    if (!canEnrichAi) return;
-    enriching = true;
-    errors = [];
-    try {
-      const result = await ingestionJson<{ run: IngestionRun }>(
-        ingestionPath(
-          projectId,
-          `/runs/${encodeURIComponent(runId)}/proposals/${encodeURIComponent(proposal.id)}/enrich`,
-        ),
-        { method: "POST" },
-      );
-      onUpdated?.(result.run);
-      onStatus?.("AI enrichment updated this proposal.");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      errors = [message];
-      onStatus?.(message);
-    } finally {
-      enriching = false;
-    }
-  }
-
   async function setProposalStatus(status: "ready" | "needs-review") {
     if (!editable) return;
     busy = true;
@@ -689,34 +612,6 @@
             <Tooltip.Content>Mark as accepted</Tooltip.Content>
           </Tooltip.Root>
         {/if}
-        {#if canEnrichAi || enriching}
-          <Tooltip.Root>
-            <Tooltip.Trigger>
-              {#snippet child({ props })}
-                <Button
-                  {...props}
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  class="size-8"
-                  aria-label="Re-run AI enrichment"
-                  disabled={enriching || busy || saving || !canEnrichAi}
-                  onclick={(event) => {
-                    void rerunAiEnrichment();
-                  }}
-                >
-                  <Sparkles
-                    class={enriching ? "animate-pulse" : ""}
-                    aria-hidden="true"
-                  />
-                </Button>
-              {/snippet}
-            </Tooltip.Trigger>
-            <Tooltip.Content>
-              {enriching ? "AI enrichment running…" : "Re-run AI enrichment"}
-            </Tooltip.Content>
-          </Tooltip.Root>
-        {/if}
         <Tooltip.Root>
           <Tooltip.Trigger>
             {#snippet child({ props })}
@@ -790,13 +685,7 @@
           />
           {#if isSectionOpen("workflow")}
             <div class="proposal-section-body">
-              {#if workflowTimestamp}
-                <p class="text-xs text-muted-foreground">
-                  Last run: {workflowTimestamp}
-                </p>
-              {/if}
               {#each workflowSteps as step (step.key)}
-                {@const stepDefaultOpen = workflowStepDefaultOpen(step)}
                 <section class="flex flex-col gap-2 pl-6">
                   <FormSectionHeader
                     index={0}
@@ -806,117 +695,15 @@
                     movable={false}
                     removable={false}
                     titleToggleable={true}
-                    open={isDebugOpen(`call:${step.key}`, stepDefaultOpen)}
-                    onToggle={() =>
-                      toggleDebug(`call:${step.key}`, stepDefaultOpen)}
-                  >
-                    {#snippet actions()}
-                      {#if step.ok}
-                        <Check
-                          class="size-4 text-green-600 dark:text-green-500"
-                        />
-                      {:else}
-                        <CircleX class="size-4 text-destructive" />
-                      {/if}
-                    {/snippet}
-                  </FormSectionHeader>
-                  {#if isDebugOpen(`call:${step.key}`, stepDefaultOpen)}
-                    <div class="flex flex-col gap-3 pl-2">
-                      {#if step.error}
-                        <section class="flex flex-col gap-2 pl-6">
-                          <FormSectionHeader
-                            index={0}
-                            total={1}
-                            title="Error"
-                            editable={false}
-                            movable={false}
-                            removable={false}
-                            titleToggleable={true}
-                            open={isDebugOpen(`error:${step.key}`, true)}
-                            onToggle={() =>
-                              toggleDebug(`error:${step.key}`, true)}
-                          >
-                            {#snippet actions()}
-                              <CircleX class="size-3.5 text-destructive" />
-                            {/snippet}
-                          </FormSectionHeader>
-                          {#if isDebugOpen(`error:${step.key}`, true)}
-                            <pre
-                              class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{step.error}</pre>
-                          {/if}
-                        </section>
-                      {/if}
-                      {#if step.prompt}
-                        <section class="flex flex-col gap-2 pl-6">
-                          <FormSectionHeader
-                            index={0}
-                            total={1}
-                            title="Prompt"
-                            editable={false}
-                            movable={false}
-                            removable={false}
-                            titleToggleable={true}
-                            open={isDebugOpen(`prompt:${step.key}`, false)}
-                            onToggle={() =>
-                              toggleDebug(`prompt:${step.key}`, false)}
-                          />
-                          {#if isDebugOpen(`prompt:${step.key}`, false)}
-                            <pre
-                              class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{step.prompt}</pre>
-                          {/if}
-                        </section>
-                      {/if}
-                      {#if step.response}
-                        <section class="flex flex-col gap-2 pl-6">
-                          <FormSectionHeader
-                            index={0}
-                            total={1}
-                            title="Response"
-                            editable={false}
-                            movable={false}
-                            removable={false}
-                            titleToggleable={true}
-                            open={isDebugOpen(`response:${step.key}`, false)}
-                            onToggle={() =>
-                              toggleDebug(`response:${step.key}`, false)}
-                          />
-                          {#if isDebugOpen(`response:${step.key}`, false)}
-                            <pre
-                              class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{step.response}</pre>
-                          {/if}
-                        </section>
-                      {/if}
-                    </div>
+                    open={isDebugOpen(`source:${step.key}`, false)}
+                    onToggle={() => toggleDebug(`source:${step.key}`, false)}
+                  />
+                  {#if isDebugOpen(`source:${step.key}`, false)}
+                    <pre
+                      class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{step.response}</pre>
                   {/if}
                 </section>
               {/each}
-              {#if aiIssues.length}
-                <section class="flex flex-col gap-2 pl-6">
-                  <FormSectionHeader
-                    index={0}
-                    total={1}
-                    title="Issues"
-                    editable={false}
-                    movable={false}
-                    removable={false}
-                    titleToggleable={true}
-                    open={isDebugOpen("issues", true)}
-                    onToggle={() => toggleDebug("issues", true)}
-                  >
-                    {#snippet actions()}
-                      <CircleX class="size-3.5 text-destructive" />
-                    {/snippet}
-                  </FormSectionHeader>
-                  {#if isDebugOpen("issues", true)}
-                    <div class="flex flex-col gap-2 pl-2">
-                      {#each aiIssues as issue (issue)}
-                        <pre
-                          class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-3 text-xs">{issue}</pre>
-                      {/each}
-                    </div>
-                  {/if}
-                </section>
-              {/if}
             </div>
           {/if}
         </section>

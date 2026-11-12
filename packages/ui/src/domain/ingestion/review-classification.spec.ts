@@ -28,9 +28,9 @@ function proposal(
     suggestions: [
       {
         account: "Expenses:Food:Groceries",
-        method: hard ? "rule" : "ai",
+        method: hard ? "rule" : "history",
         rawScore,
-        scoreKind: hard ? "rule-certainty" : "ai-advisory",
+        scoreKind: hard ? "rule-certainty" : "history-frequency",
         support: 0,
         hard,
         explanation: "Categorisation evidence",

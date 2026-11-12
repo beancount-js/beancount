@@ -471,16 +471,6 @@ export const sourceEnrichmentForm = createFormConfig<
   id: "ingestion-source-enrichment",
   fields: [
     switchField({
-      id: "ingestion-ai-enabled",
-      label: "AI categorisation",
-      ariaLabel: "Enable AI categorisation",
-      get: (source) => source.aiEnabled === true,
-      set: (source, aiEnabled) => ({
-        ...source,
-        aiEnabled: aiEnabled || undefined,
-      }),
-    }),
-    switchField({
       id: "ingestion-merchant-enrichment",
       label: "Merchant enrichment",
       ariaLabel: "Configure merchant enrichment",
@@ -509,19 +499,6 @@ export const sourceEnrichmentDetailsForm = createFormConfig<
         merchantEnrichment: {
           ...(source.merchantEnrichment ?? { enabled: false }),
           enabled,
-        },
-      }),
-    }),
-    switchField({
-      id: "ingestion-enrichment-ai",
-      label: "Use AI for enrichment",
-      ariaLabel: "Enable AI merchant enrichment",
-      get: (source) => source.merchantEnrichment?.aiEnabled === true,
-      set: (source, aiEnabled) => ({
-        ...source,
-        merchantEnrichment: {
-          ...(source.merchantEnrichment ?? { enabled: false }),
-          aiEnabled: aiEnabled || undefined,
         },
       }),
     }),

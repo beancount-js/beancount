@@ -23,7 +23,6 @@ function proposal(
     selectedAccount: partial.selectedAccount,
     merchantResolution: partial.merchantResolution,
     transaction: partial.transaction,
-    lastAiEnrichment: partial.lastAiEnrichment,
   };
 }
 

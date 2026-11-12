@@ -1,6 +1,4 @@
 import type {
-  AiEnrichmentCallRecord,
-  AiEnrichmentSnapshot,
   ImportProposal,
   IngestionRun,
   JsonApiLinkedAccount,
@@ -10,10 +8,7 @@ import type {
   ProviderCategoryMapping,
 } from "@beancount-js/beangulp";
 import type {
-  AiEnrichmentDebug,
-  AiEnrichmentDebugCall,
   BrandfetchEnrichmentConfig,
-  MerchantEnrichmentConfig,
   IngestionRunPage,
   IngestionRunSummary,
   IngestionReconciliationConfig,
@@ -21,14 +16,16 @@ import type {
 } from "@beancount-js/server";
 
 export type {
-  AiEnrichmentCallRecord,
-  AiEnrichmentDebug,
-  AiEnrichmentDebugCall,
-  AiEnrichmentSnapshot,
   BrandfetchEnrichmentConfig,
   IngestionReconciliationConfig,
   IngestionReviewLedgerSnapshot,
 };
+
+export interface MerchantEnrichmentConfig {
+  enabled: boolean;
+  countryCode?: string;
+  brandfetch?: BrandfetchEnrichmentConfig;
+}
 
 export interface IngestionSource {
   id: string;
@@ -45,7 +42,6 @@ export interface IngestionSource {
   defaultCurrency?: string;
   reconciliationPriority?: number;
   allowedAccountRoots?: string[];
-  aiEnabled?: boolean;
   /** Markdown shown in the connection preview setup callout. */
   setup?: string;
   merchantEnrichment?: MerchantEnrichmentConfig;

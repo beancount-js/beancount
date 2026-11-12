@@ -14,17 +14,9 @@
   import { Button } from "@lapismd/design-core/shadcn/button";
   import * as Empty from "@lapismd/design-core/shadcn/empty";
   import type { SortOrder } from "../grid/sort";
-  import {
-    checkboxSelectionState,
-    pruneReviewSelection,
-    updateReviewSelection,
-  } from "../lib/review-selection";
   import { useNavigation } from "../router/router";
   import { useStudioWorkspace } from "../studio/workspace";
-  import {
-    useIngestionHeaderActions,
-    type IngestionBulkReviewAction,
-  } from "../studio/ingestion-header-actions";
+  import { useIngestionHeaderActions } from "../studio/ingestion-header-actions";
   const ingestionHeaderActions = useIngestionHeaderActions();
   import { debounceWithDelay } from "../hooks/debounce";
   import { useIngestionApi, ingestionPath } from "../ingestion/api";
@@ -66,7 +58,6 @@
   let clusters = $state<MerchantReviewCluster[]>([]);
   let sourceId = $state("");
   let loading = $state(false);
-  let detectBusy = $state(false);
   let status = $state("");
   let sheetOpen = $state(false);
   let selectedCluster = $state<MerchantReviewCluster | null>(null);
@@ -84,7 +75,6 @@
     cloneIngestionMerchantSearchState(),
   );
   let lastSearchSignature = $state("");
-  let selectedClusterIds = $state(new Set<string>());
 
   const project = $derived($snapshot);
   const querySourceId = $derived($activeRoute?.query?.sourceId ?? "");
@@ -139,40 +129,6 @@
   );
   const page = $derived(Math.min(requestedPage, Math.max(1, pages.length)));
   const visibleClusters = $derived(pages[page - 1] ?? []);
-  const actionableClusterIds = $derived(
-    new Set(matchedClusters.map((cluster) => cluster.id)),
-  );
-  const selectedClusters = $derived(
-    matchedClusters.filter((cluster) => selectedClusterIds.has(cluster.id)),
-  );
-  const visibleClusterIds = $derived(
-    visibleClusters.map((cluster) => cluster.id),
-  );
-  const masterSelection = $derived(
-    checkboxSelectionState(selectedClusterIds, visibleClusterIds),
-  );
-  const allMatchingSelected = $derived(
-    matchedClusters.length > 0 &&
-      selectedClusterIds.size === matchedClusters.length,
-  );
-  const showSelectionBanner = $derived(
-    matchedClusters.length > visibleClusterIds.length &&
-      visibleClusterIds.length > 0 &&
-      (masterSelection.checked || allMatchingSelected),
-  );
-  const merchantBulkAction = $derived.by(
-    (): IngestionBulkReviewAction | undefined => {
-      if (!selectedClusters.length) return;
-      return {
-        label: "Detect",
-        selectedCount: selectedClusters.length,
-        canRun: Boolean(project && sourceId && !loading && !detectBusy),
-        busy: detectBusy,
-        onRun: () => void detectSelected(),
-      };
-    },
-  );
-
   const summaryLine = $derived(
     matchedClusters.length
       ? `${matchedClusters.length} merchant cluster${matchedClusters.length === 1 ? "" : "s"}${activeSearch && matchedClusters.length !== clusters.length ? ` of ${clusters.length}` : ""} · ${matchedClusters.reduce((sum, item) => sum + item.pendingCount, 0)} pending transactions`
@@ -189,16 +145,10 @@
       sourceId,
       sourceOptions,
       groupsCollapsedAll,
-      canDetect: Boolean(
-        sourceId && clusters.length && !loading && !detectBusy,
-      ),
-      detectBusy,
-      bulkAction: merchantBulkAction,
       onSourceChange: (next) => void loadForSource(next),
       onToggleCollapseGroups: () => {
         groupsCollapsedAll = !groupsCollapsedAll;
       },
-      onDetectMerchants: () => void detectAll(),
       onReviewImports: () => router.push("/records"),
       onOpenAccounts: () => router.push("/import/accounts"),
       onEditSources: () => router.push("/import/editor"),
@@ -226,34 +176,6 @@
       result.push(items.slice(index, index + size));
     }
     return result;
-  }
-
-  function setIndeterminate(node: HTMLInputElement, value: boolean) {
-    node.indeterminate = value;
-    return {
-      update(next: boolean) {
-        node.indeterminate = next;
-      },
-    };
-  }
-
-  function setSelectedClusters(
-    clusterIds: readonly string[],
-    selected: boolean,
-  ) {
-    selectedClusterIds = updateReviewSelection(
-      selectedClusterIds,
-      clusterIds,
-      selected,
-    );
-  }
-
-  function selectAllMatchingClusters() {
-    selectedClusterIds = new Set(matchedClusters.map((cluster) => cluster.id));
-  }
-
-  function clearSelectedClusters() {
-    selectedClusterIds = new Set();
   }
 
   function updateRoute(values: Record<string, string | undefined>) {
@@ -321,16 +243,6 @@
     if (signature === lastSearchSignature) return;
     lastSearchSignature = signature;
     searchState = parseIngestionMerchantSearchState($activeRoute.query);
-  });
-
-  $effect(() => {
-    const next = pruneReviewSelection(selectedClusterIds, actionableClusterIds);
-    if (
-      next.size !== selectedClusterIds.size ||
-      [...next].some((id) => !selectedClusterIds.has(id))
-    ) {
-      selectedClusterIds = next;
-    }
   });
 
   function openCluster(cluster: MerchantReviewCluster) {
@@ -470,37 +382,6 @@
       loading = false;
     }
   }
-
-  async function detectClusters(clusterIds?: readonly string[]) {
-    if (!project || !clusters.length) return;
-    detectBusy = true;
-    status = "Detecting merchants…";
-    try {
-      const result = await ingestionJson<{ clusters: number; calls: number }>(
-        ingestionPath(project.project.id, "/merchant-review/detect"),
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ sourceId, clusterIds }),
-        },
-      );
-      await refreshClusters();
-      selectedClusterIds = new Set();
-      status = `Merchant detection finished for ${result.clusters} cluster${result.clusters === 1 ? "" : "s"} in ${result.calls} AI call${result.calls === 1 ? "" : "s"}.`;
-    } catch (error) {
-      status = error instanceof Error ? error.message : String(error);
-    } finally {
-      detectBusy = false;
-    }
-  }
-
-  function detectAll() {
-    void detectClusters();
-  }
-
-  function detectSelected() {
-    void detectClusters(selectedClusters.map((cluster) => cluster.id));
-  }
 </script>
 
 <div class="h-full overflow-auto p-3 sm:p-5" data-ingestion-merchant-review>
@@ -609,21 +490,8 @@
         {:else if matchedClusters.length}
           <div
             role="group"
-            class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl bg-muted px-5 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
-            <input
-              use:setIndeterminate={masterSelection.indeterminate}
-              type="checkbox"
-              class="size-4 rounded border-input text-primary focus:ring-ring"
-              aria-label="Select visible merchant clusters"
-              checked={masterSelection.checked}
-              disabled={!visibleClusterIds.length || detectBusy}
-              onchange={(event) =>
-                setSelectedClusters(
-                  visibleClusterIds,
-                  (event.currentTarget as HTMLInputElement).checked,
-                )}
-            />
             <div
               role="group"
               data-sort-direction={ariaSortFor("merchant")}
@@ -668,36 +536,6 @@
             </div>
           </div>
 
-          {#if showSelectionBanner}
-            <div
-              data-merchant-selection-banner
-              data-merchant-review-surface
-              role="status"
-              class="rounded-xl border bg-background px-4 py-3 text-center text-sm text-muted-foreground"
-            >
-              {#if allMatchingSelected}
-                All {matchedClusters.length} matching merchant clusters are selected.
-                <button
-                  type="button"
-                  class="font-medium text-primary underline-offset-2 hover:underline"
-                  onclick={clearSelectedClusters}
-                >
-                  Clear selection
-                </button>
-              {:else}
-                All {visibleClusterIds.length} merchant clusters on this page are
-                selected.
-                <button
-                  type="button"
-                  class="font-medium text-primary underline-offset-2 hover:underline"
-                  onclick={selectAllMatchingClusters}
-                >
-                  Select all {matchedClusters.length} matching clusters
-                </button>
-              {/if}
-            </div>
-          {/if}
-
           <div
             class="mx-1 overflow-hidden rounded-xl border bg-background shadow-sm"
             data-merchant-review-surface
@@ -706,23 +544,10 @@
               <div
                 role="group"
                 class:rounded-b-xl={index === visibleClusters.length - 1}
-                class="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b px-[15px] py-4 outline-none transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={`Review merchant ${cluster.displayName}`}
                 use:rowOpen={() => openCluster(cluster)}
               >
-                <input
-                  type="checkbox"
-                  class="size-4 rounded border-input text-primary focus:ring-ring"
-                  aria-label={`Select ${cluster.displayName}`}
-                  checked={selectedClusterIds.has(cluster.id)}
-                  disabled={detectBusy}
-                  onclick={(event) => event.stopPropagation()}
-                  onchange={(event) =>
-                    setSelectedClusters(
-                      [cluster.id],
-                      (event.currentTarget as HTMLInputElement).checked,
-                    )}
-                />
                 {#if cluster.logoUrl && !failedLogoIds.has(cluster.id)}
                   <img
                     class="size-10 rounded-full border object-contain"

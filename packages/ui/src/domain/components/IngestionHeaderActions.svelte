@@ -13,9 +13,7 @@
   import { Plus } from "@lucide/svelte";
   import { RefreshCw } from "@lucide/svelte";
   import { Save } from "@lucide/svelte";
-  import { ScanSearch } from "@lucide/svelte";
   import { Settings2 } from "@lucide/svelte";
-  import { Sparkles } from "@lucide/svelte";
   import { Store } from "@lucide/svelte";
   import { UnfoldVertical } from "@lucide/svelte";
   import { FormToolbar } from "@lapismd/design-core/forms";
@@ -321,34 +319,6 @@
           </Tooltip.Trigger>
           <Tooltip.Content>Force re-fetch</Tooltip.Content>
         </Tooltip.Root>
-        {#if header.canRerunAi || header.aiRerunBusy}
-          <Tooltip.Root>
-            <Tooltip.Trigger>
-              {#snippet child({ props })}
-                <Button
-                  {...props}
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  class="size-8"
-                  aria-label="Re-run AI enrichment"
-                  title="Re-run AI merchant enrichment and categorisation on current proposals"
-                  disabled={!header.canRerunAi || header.aiRerunBusy}
-                  onclick={(event) => {
-                    header.onRerunAi();
-                  }}
-                >
-                  <Sparkles class={header.aiRerunBusy ? "animate-pulse" : ""} />
-                </Button>
-              {/snippet}
-            </Tooltip.Trigger>
-            <Tooltip.Content>
-              {header.aiRerunBusy
-                ? "AI enrichment running…"
-                : "Re-run AI enrichment"}
-            </Tooltip.Content>
-          </Tooltip.Root>
-        {/if}
         <Tooltip.Root>
           <Tooltip.Trigger>
             {#snippet child({ props })}
@@ -407,60 +377,6 @@
               : "Collapse all merchant groups"}
           </Tooltip.Content>
         </Tooltip.Root>
-        {#if header.bulkAction}
-          {@const bulkAction = header.bulkAction}
-          <Tooltip.Root>
-            <Tooltip.Trigger>
-              {#snippet child({ props })}
-                <Button
-                  {...props}
-                  type="button"
-                  size="sm"
-                  class="h-8 gap-1.5"
-                  aria-label={`${bulkAction.label} ${bulkAction.selectedCount} selected merchant cluster${bulkAction.selectedCount === 1 ? "" : "s"}`}
-                  disabled={!bulkAction.canRun || bulkAction.busy}
-                  onclick={() => bulkAction.onRun()}
-                >
-                  <ScanSearch data-icon="inline-start" />
-                  {bulkAction.busy
-                    ? `${bulkAction.label}…`
-                    : `${bulkAction.label} ${bulkAction.selectedCount}`}
-                </Button>
-              {/snippet}
-            </Tooltip.Trigger>
-            <Tooltip.Content>
-              {bulkAction.label} selected merchant clusters
-            </Tooltip.Content>
-          </Tooltip.Root>
-        {:else}
-          <Tooltip.Root>
-            <Tooltip.Trigger>
-              {#snippet child({ props })}
-                <Button
-                  {...props}
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  class="size-8"
-                  aria-label="Detect merchants"
-                  disabled={!header.canDetect || header.detectBusy}
-                  onclick={(event) => {
-                    header.onDetectMerchants();
-                  }}
-                >
-                  <ScanSearch
-                    class={header.detectBusy ? "animate-pulse" : ""}
-                  />
-                </Button>
-              {/snippet}
-            </Tooltip.Trigger>
-            <Tooltip.Content>
-              {header.detectBusy
-                ? "Detecting merchants…"
-                : "Run merchant detection on pending clusters"}
-            </Tooltip.Content>
-          </Tooltip.Root>
-        {/if}
         <Tooltip.Root>
           <Tooltip.Trigger>
             {#snippet child({ props })}

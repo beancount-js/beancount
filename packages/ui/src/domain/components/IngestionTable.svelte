@@ -31,11 +31,8 @@
   import { useIngestionApi, ingestionPath } from "../ingestion/api";
   const { ingestionJson } = useIngestionApi();
   import { useIngestionSync } from "../ingestion/sync";
-  const {
-    latestIngestionSyncJob,
-    startIngestionSync,
-    subscribeIngestionSyncEvents,
-  } = useIngestionSync();
+  const { latestIngestionSyncJob, subscribeIngestionSyncEvents } =
+    useIngestionSync();
   import {
     ingestionProposalReviewBucket,
     ingestionProposalReviewLabel,
@@ -67,7 +64,6 @@
   import * as Alert from "@lapismd/design-core/shadcn/alert";
   import { Button } from "@lapismd/design-core/shadcn/button";
   import * as Empty from "@lapismd/design-core/shadcn/empty";
-  import { Progress } from "@lapismd/design-core/shadcn/progress";
   import * as ToggleGroup from "@lapismd/design-core/shadcn/toggle-group";
   import IngestionProposalSheet from "./IngestionProposalSheet.svelte";
   import IngestionReconciliationPanel from "./IngestionReconciliationPanel.svelte";
@@ -264,61 +260,6 @@
         selectedSource?.credentialAvailable,
     ),
   );
-
-  const sourceAiEnabled = $derived(
-    selectedSource?.aiEnabled === true ||
-      (selectedSource?.merchantEnrichment?.enabled === true &&
-        selectedSource.merchantEnrichment.aiEnabled === true),
-  );
-
-  const reviewableProposalCount = $derived(
-    activeRuns.reduce(
-      (count, run) =>
-        count +
-        run.proposals.filter(
-          (proposal) =>
-            Boolean(proposal.transaction) &&
-            (proposal.status === "ready" ||
-              proposal.status === "needs-review" ||
-              proposal.status === "held"),
-        ).length,
-      0,
-    ),
-  );
-
-  const canRerunAi = $derived(
-    Boolean(
-      !allConnections &&
-        sourceId &&
-        sourceAiEnabled &&
-        reviewableProposalCount > 0 &&
-        !loading &&
-        !syncing,
-    ),
-  );
-
-  const aiRerunBusy = $derived(syncing && syncJob?.kind === "ai-rerun");
-
-  const aiRerunProgressValue = $derived.by(() => {
-    if (!syncJob || syncJob.kind !== "ai-rerun") return 0;
-    const imported = syncJob.progress.imported ?? 0;
-    if (imported <= 0) return 0;
-    const seen = syncJob.progress.seen ?? 0;
-    return Math.min(100, (seen / imported) * 100);
-  });
-
-  const aiRerunProgressCaption = $derived.by(() => {
-    if (!syncJob || syncJob.kind !== "ai-rerun") return "";
-    const message =
-      syncJob.progress.message ??
-      "Re-running AI enrichment and categorisation…";
-    const imported = syncJob.progress.imported ?? 0;
-    if (imported > 0) {
-      const seen = syncJob.progress.seen ?? 0;
-      return `${message} · ${seen} / ${imported}`;
-    }
-    return message;
-  });
 
   const duplicates = $derived(
     proposalRows.filter((row) => row.proposal.status === "duplicate").length,
@@ -642,8 +583,6 @@
       sourceId,
       sourceOptions,
       canForceRefetch,
-      canRerunAi,
-      aiRerunBusy,
       groupsCollapsedAll,
       canAccept:
         ready.length > 0 && !loading && !accepting && !bulkUpdating && !syncing,
@@ -658,7 +597,6 @@
       onOpenAccounts: openAccounts,
       onOpenMerchants: () => router.push("/import/merchants"),
       onForceRefetch: () => void fetchTransactions(),
-      onRerunAi: () => void rerunAiEnrichment(),
       onEditSources: () => router.push("/import/editor"),
       onAccept: () => void accept(),
       onOpenLedger: openReviewLedger,
@@ -949,22 +887,6 @@
     }
   }
 
-  async function rerunAiEnrichment() {
-    if (!project || !sourceId || !canRerunAi) return;
-    status = "Starting AI enrichment…";
-    try {
-      const { job } = await startIngestionSync(
-        project.project.id,
-        sourceId,
-        "ai-rerun",
-      );
-      syncJob = job;
-      void watchSync(project.project.id, sourceId);
-    } catch (error) {
-      status = error instanceof Error ? error.message : String(error);
-    }
-  }
-
   function openAccounts() {
     router.push("/import/accounts");
   }
@@ -1008,9 +930,7 @@
       proposal.suggestions[0]?.account ??
       proposal.issues[0] ??
       "Uncategorized";
-    const aiError =
-      proposal.lastAiEnrichment?.ok === false ? " · AI error" : "";
-    return `${category}${aiError}`;
+    return category;
   }
 
   function rowStatusClass(proposal: ImportProposal) {
@@ -1320,23 +1240,13 @@
     {/if}
 
     {#if syncing}
-      {#if syncJob?.kind === "ai-rerun"}
-        <div class="flex flex-col gap-2">
-          <Progress value={aiRerunProgressValue} />
-          <p class="text-center text-sm tabular-nums text-muted-foreground">
-            {aiRerunProgressCaption}
-          </p>
-        </div>
-      {:else}
-        <Alert.Root>
-          <Alert.Title>Sync in progress</Alert.Title>
-          <Alert.Description>
-            {syncJob?.progress.message ||
-              "Fetching transactions from Accounts…"}
-            Accept is disabled until this finishes.
-          </Alert.Description>
-        </Alert.Root>
-      {/if}
+      <Alert.Root>
+        <Alert.Title>Sync in progress</Alert.Title>
+        <Alert.Description>
+          {syncJob?.progress.message || "Fetching transactions from Accounts…"}
+          Accept is disabled until this finishes.
+        </Alert.Description>
+      </Alert.Root>
     {/if}
 
     {#if status}<p class="text-sm text-muted-foreground">{status}</p>{/if}
@@ -1876,7 +1786,6 @@
       runId={selectedRow.runId}
       projectId={project.project.id}
       {allowedAccounts}
-      aiEnabled={sourceAiEnabled}
       onClosed={closeProposalSheet}
       onUpdated={replaceRun}
       onStatus={(message) => (status = message)}

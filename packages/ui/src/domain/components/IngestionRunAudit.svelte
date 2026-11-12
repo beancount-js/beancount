@@ -3,10 +3,8 @@
   import { onDestroy } from "svelte";
   import { DateTime } from "luxon";
   import { ArrowLeft } from "@lucide/svelte";
-  import { Check } from "@lucide/svelte";
   import { ChevronDown } from "@lucide/svelte";
   import { ChevronUp } from "@lucide/svelte";
-  import { CircleX } from "@lucide/svelte";
   import { Button } from "@lapismd/design-core/shadcn/button";
   import * as Empty from "@lapismd/design-core/shadcn/empty";
   import { useIngestionApi, ingestionPath } from "../ingestion/api";
@@ -187,9 +185,7 @@
     const acceptance = proposal.acceptance
       ? ` · accepted into ${proposal.acceptance.destinationPath}`
       : "";
-    const aiError =
-      proposal.lastAiEnrichment?.ok === false ? " · AI error" : "";
-    return `${proposal.status} · ${category}${acceptance}${aiError}`;
+    return `${proposal.status} · ${category}${acceptance}`;
   }
 
   function rowAmount(proposal: ImportProposal) {
@@ -327,89 +323,6 @@
           </div>
           <p class="mt-3 text-sm text-muted-foreground">{summaryLine}</p>
         </section>
-
-        {#if run.audit?.ai.length}
-          <section class="overflow-hidden rounded-2xl border bg-card shadow-sm">
-            <div class="flex items-center justify-between gap-3 px-5 py-4">
-              <div>
-                <h2 class="text-sm font-semibold">AI call audit</h2>
-                <p class="mt-1 text-xs text-muted-foreground">
-                  {run.audit.ai.length} call{run.audit.ai.length === 1
-                    ? ""
-                    : "s"} captured for this run.
-                </p>
-              </div>
-            </div>
-            <div class="border-t px-5 py-4">
-              <div class="flex flex-col gap-3">
-                {#each run.audit.ai as call (`${call.id}:${call.at}`)}
-                  <details class="rounded-xl border bg-muted/30 px-4 py-3">
-                    <summary class="cursor-pointer text-sm font-medium">
-                      <span class="inline-flex items-center gap-2">
-                        {#if call.ok}
-                          <Check
-                            class="size-4 text-green-600 dark:text-green-500"
-                          />
-                        {:else}
-                          <CircleX class="size-4 text-destructive" />
-                        {/if}
-                        {call.label}
-                      </span>
-                      <span
-                        class="ml-2 text-xs font-normal text-muted-foreground"
-                      >
-                        {formatDateTime(call.at)}
-                        {#if call.batchSize}
-                          · {call.batchSize} item{call.batchSize === 1
-                            ? ""
-                            : "s"}
-                        {/if}
-                        {#if call.durationMs !== undefined}
-                          · {(call.durationMs / 1000).toFixed(1)}s
-                        {/if}
-                      </span>
-                    </summary>
-                    <div class="mt-3 flex flex-col gap-3">
-                      {#if call.prompt}
-                        <div>
-                          <p
-                            class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"
-                          >
-                            Prompt
-                          </p>
-                          <pre
-                            class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-background p-3 text-xs">{call.prompt}</pre>
-                        </div>
-                      {/if}
-                      {#if call.response}
-                        <div>
-                          <p
-                            class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"
-                          >
-                            Response
-                          </p>
-                          <pre
-                            class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-background p-3 text-xs">{call.response}</pre>
-                        </div>
-                      {/if}
-                      {#if call.error}
-                        <div>
-                          <p
-                            class="mb-1 text-xs font-medium uppercase tracking-wide text-destructive"
-                          >
-                            Error
-                          </p>
-                          <pre
-                            class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">{call.error}</pre>
-                        </div>
-                      {/if}
-                    </div>
-                  </details>
-                {/each}
-              </div>
-            </div>
-          </section>
-        {/if}
 
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>

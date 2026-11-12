@@ -148,7 +148,6 @@ export function createApplicationServices(
       completedAt: NOW,
       proposals,
       summary: summary(proposals),
-      audit: { ai: [] },
     };
     const merchants: (MerchantIdentity & { notes: string })[] = [
       {
@@ -235,13 +234,6 @@ export function createApplicationServices(
             source: "brandfetch",
             provider: "logo-api",
             version: "cdn",
-            observedAt: NOW,
-          },
-          {
-            source: "ai",
-            provider: "codex",
-            model: "merchant-advisor",
-            version: "v1",
             observedAt: NOW,
           },
         ],
