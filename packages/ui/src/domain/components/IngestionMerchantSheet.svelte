@@ -3,7 +3,6 @@
   import { ChevronsDownUp } from "@lucide/svelte";
   import { ChevronsUpDown } from "@lucide/svelte";
   import { CircleAlert } from "@lucide/svelte";
-  import { Sparkles } from "@lucide/svelte";
   import { X } from "@lucide/svelte";
   import { FormField, FormSectionHeader } from "@lapismd/design-core/forms";
   import type { MerchantReviewCluster } from "@beancount-js/server";
@@ -179,35 +178,6 @@
       busy = false;
     }
   }
-
-  async function detectMerchant() {
-    busy = true;
-    errors = [];
-    try {
-      await ingestionJson(
-        ingestionPath(
-          projectId,
-          `/runs/${encodeURIComponent(cluster.primary.runId)}/proposals/${encodeURIComponent(cluster.primary.proposalId)}/enrich`,
-        ),
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            merchantOnly: true,
-            normalizedLabels,
-          }),
-        },
-      );
-      onUpdated?.();
-      onStatus?.("Merchant detection updated pending imports.");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      errors = [message];
-      onStatus?.(message);
-    } finally {
-      busy = false;
-    }
-  }
 </script>
 
 <Sheet.Root bind:open>
@@ -262,27 +232,6 @@
           <Tooltip.Content>
             {sectionsCollapsedAll ? "Expand all" : "Collapse all"}
           </Tooltip.Content>
-        </Tooltip.Root>
-        <Tooltip.Root>
-          <Tooltip.Trigger>
-            {#snippet child({ props })}
-              <Button
-                {...props}
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="size-8"
-                aria-label="Detect merchant"
-                disabled={busy}
-                onclick={(event) => {
-                  void detectMerchant();
-                }}
-              >
-                <Sparkles class="size-4" />
-              </Button>
-            {/snippet}
-          </Tooltip.Trigger>
-          <Tooltip.Content>Detect merchant</Tooltip.Content>
         </Tooltip.Root>
         <Tooltip.Root>
           <Tooltip.Trigger>

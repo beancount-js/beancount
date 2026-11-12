@@ -814,16 +814,7 @@ export function createApplicationServices(
               { status: 404 },
             );
           const rawLabel = proposal.transaction?.merchant ?? "";
-          if (path[4] === "enrich") {
-            proposal.selectedAccount = "Expenses:Food";
-            proposal.status = "ready";
-            proposal.merchantResolution = {
-              status: "suggested",
-              rawLabel,
-              candidates: data.clusters[0]?.candidates ?? [],
-              explanation: "Fixture merchant detection",
-            };
-          } else if (body.action === "reject") {
+          if (body.action === "reject") {
             proposal.merchantResolution = {
               status: "suppressed",
               rawLabel,
