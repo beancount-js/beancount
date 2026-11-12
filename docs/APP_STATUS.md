@@ -1,6 +1,6 @@
 # Application status
 
-Updated: 11 November 2026.
+Updated: 12 November 2026.
 
 ## Baseline transition
 
@@ -46,9 +46,9 @@ a user-selected local directory. Neither host imports legacy Fava UI source.
 | Populated server service smoke                             | Passed: assistant, ingestion config, merchant catalog and reconciliation summary routes       |
 | Ledger assistant MCP runtime                               | Passed: initialization and five-tool inventory handshake                                      |
 | Compatibility UI and forms facade                          | Passed: 69 tests and 22 forwarders                                                            |
-| Retained Fava tests                                        | 187 of 188 passed in the concurrent root run; the failing editor DOM test passed in isolation |
-| Retained Fava Beta tests                                   | Passed: 189 tests                                                                             |
-| Complete root tests (`pnpm test`)                          | Forecast is fixed; aggregate remains non-green because of the retained Fava test above        |
+| Retained Fava tests                                        | Passed: 188 tests                                                                             |
+| Retained Fava Beta tests                                   | 188 of 189 passed in the concurrent root run; the failing editor DOM test passed in isolation |
+| Complete root tests (`pnpm test`)                          | Forecast is fixed; aggregate remains non-green because of the retained Fava Beta test above   |
 
 The forecast recurrence engine now anchors parsed RFC and natural-language
 rules to the source transaction date, excludes the source transaction from
@@ -56,11 +56,13 @@ generated entries and includes the configured end date. Its package suite
 passes 283 tests, including deterministic dates and flags for the previously
 failing mixed-rule case.
 
-The latest concurrent root run instead failed the retained Fava CodeMirror
+The latest concurrent root run instead failed the retained Fava Beta CodeMirror
 fold-gutter test `classifies metadata and updates its active state`. The
-identical Fava Beta test passed in that run, and the Fava test passed immediately
-when rerun in isolation. This is recorded as an aggregate-gate failure rather
-than promoted to a passing root result. No test was disabled or assertion
+identical Fava test passed in that run, and the Fava Beta test passed immediately
+when rerun in isolation. An earlier concurrent run produced the inverse result:
+Fava failed while its Fava Beta twin passed, followed by a passing isolated
+rerun. This is recorded as a concurrency-sensitive aggregate-gate failure
+rather than promoted to a passing root result. No test was disabled or assertion
 weakened.
 
 ## Remaining work and limits
