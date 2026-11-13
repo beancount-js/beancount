@@ -249,6 +249,7 @@
       name: "American Express",
     });
     await waitFor(() => expect(merchantTitle).toBeVisible());
+    const dialog = merchantTitle.closest<HTMLElement>('[role="dialog"]')!;
     await expect(await portal.findByText(/brand-match-url/)).toBeVisible();
     await expect(await portal.findByText(/logo-api/)).toBeVisible();
     await expect(
@@ -266,6 +267,10 @@
       expect(getComputedStyle(title).fontSize).toBe("12px");
       expect(getComputedStyle(title).lineHeight).toBe("16px");
     }
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Close" }),
+    );
+    await waitFor(() => expect(dialog).not.toBeVisible());
   }}
   >{#snippet template()}<ApplicationHarness
       displayMode="desktop"
