@@ -1,7 +1,0 @@
-{
-  "plugins": [
-    "prettier-plugin-jsdoc",
-    "prettier-plugin-svelte",
-    "prettier-plugin-tailwindcss"
-  ]
-}

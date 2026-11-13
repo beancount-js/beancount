@@ -1,9 +1,0 @@
-option "title" "E2E Test Ledger"
-option "operating_currency" "USD"
-
-2024-01-01 open Assets:Checking USD
-2024-01-01 open Equity:Opening-Balances
-
-2024-06-01 * "Coffee Shop" "Morning coffee"
-  Expenses:Food:Coffee   5.00 USD
-  Assets:Checking       -5.00 USD

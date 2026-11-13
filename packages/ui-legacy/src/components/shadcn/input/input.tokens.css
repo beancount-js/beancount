@@ -1,9 +1,0 @@
-:root {
-  --ui-input-background: transparent;
-  --ui-input-foreground: var(--ui-color-foreground);
-  --ui-input-border-color: var(--ui-color-input);
-  --ui-input-placeholder-color: var(--ui-color-muted-foreground);
-  --ui-input-radius: var(--ui-radius-md);
-  --ui-input-focus-ring-color: var(--ui-focus-ring-color);
-  --ui-input-shadow: var(--ui-shadow-xs);
-}

@@ -6,22 +6,11 @@ coverage
 .clinerules
 .changeyard
 
-# Fava report parity capture artifacts (keep REPORT.md)
-tools/fava-parity/out/
-
-
 # Changeyard local guard hooks
 .changeyard/bin/
 .changeyard/guards/
 *.timestamp-*.mjs
-packages/fava/.svelte-kit/
 packages/ui/.svelte-kit/
-packages/fava/build-server/
-packages/fava/build-web/
-packages/fava-beta/.svelte-kit/
-packages/fava-beta/build-server/
-packages/fava-beta/build-web/
-packages/fava-beta/test-results/
 packages/ui/storybook-static/
 packages/ui/playwright-report/
 packages/ui/test-results/

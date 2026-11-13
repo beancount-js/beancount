@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
 
@@ -6,7 +6,6 @@ const root = resolve(import.meta.dirname, "..");
 const json = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
 const app = json("packages/ui/package.json");
 const host = json("packages/app/package.json");
-const legacy = json("packages/ui-legacy/package.json");
 const workspace = json("package.json");
 assert.equal(app.name, "@beancount-js/ui");
 assert.equal(host.name, "@beancount-js/app");
@@ -21,7 +20,7 @@ for (const name of [
 ])
   assert(
     /^\d+\.\d+\.\d+$/.test(workspace.pnpm.overrides[name]),
-    `${name} must resolve to one pinned runtime across both UIs.`,
+    `${name} must resolve to one pinned application runtime.`,
   );
 assert.equal(
   app.devDependencies["@vitest/browser"],
@@ -59,35 +58,22 @@ const config = readFileSync(
 );
 assert(config.includes("../catalog/**/*.stories.svelte"));
 assert(!config.includes("fava") && !config.includes("ui-legacy"));
-assert.equal(legacy.name, "@lapis/ui");
-for (const name of Object.keys({
-  ...legacy.dependencies,
-  ...legacy.devDependencies,
-}))
+for (const retired of [
+  "packages/fava",
+  "packages/fava-beta",
+  "packages/ui-legacy",
+  "packages/forms",
+  "tools/fava-parity",
+])
   assert(
-    !/storybook|visual-delta|@vitest\/browser/.test(name),
-    `Retired catalog dependency in compatibility package: ${name}`,
+    !existsSync(resolve(root, retired)),
+    `Retired application package or tool is still present: ${retired}`,
   );
-for (const name of Object.keys(legacy.scripts))
+for (const command of Object.values(workspace.scripts))
   assert(
-    !/storybook|visual/.test(name),
-    `Retired catalog command in compatibility package: ${name}`,
+    !/@lapis\/ui|@beancount-js\/(forms|fava(?:-beta)?)|fava-parity/.test(command),
+    `Root command still targets a retired package or tool: ${command}`,
   );
-function checkFiles(path) {
-  for (const item of readdirSync(path, { withFileTypes: true })) {
-    if (item.name === "node_modules") continue;
-    const file = resolve(path, item.name);
-    assert(
-      !item.name.includes(".stories.") &&
-        item.name !== ".storybook" &&
-        item.name !== ".visual-delta" &&
-        !item.name.endsWith(".mdx"),
-      `Retired Storybook source in compatibility package: ${file}`,
-    );
-    if (item.isDirectory()) checkFiles(file);
-  }
-}
-checkFiles(resolve(root, "packages/ui-legacy"));
 console.log(
-  "Application baseline passed: one active Design Core catalog and production host; compatibility UI has no Storybook runtime or sources.",
+  "Application baseline passed: one active Design Core UI, catalog and production host; retired applications and compatibility packages are absent.",
 );

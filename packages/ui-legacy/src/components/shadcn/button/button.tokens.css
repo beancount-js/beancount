@@ -1,8 +1,0 @@
-:root {
-  --ui-button-background: var(--ui-color-primary);
-  --ui-button-foreground: var(--ui-color-primary-foreground);
-  --ui-button-border-color: transparent;
-  --ui-button-radius: var(--ui-radius-md);
-  --ui-button-focus-ring-color: var(--ui-focus-ring-color);
-  --ui-button-shadow: var(--ui-shadow-xs);
-}
