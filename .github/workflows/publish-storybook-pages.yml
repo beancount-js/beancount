@@ -44,6 +44,9 @@ jobs:
         with:
           enablement: true
 
+      - name: Build workspace dependencies
+        run: pnpm --filter @beancount-js/ui prepare:dependencies
+
       - name: Build static Storybook
         run: pnpm build-storybook
 
