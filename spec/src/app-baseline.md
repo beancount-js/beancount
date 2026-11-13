@@ -62,6 +62,12 @@ routes, including revision-aware application to the ledger. Static web mode
 deliberately exposes only browser workspace capabilities. The deterministic
 Storybook services remain intentionally limited.
 
+The catalog renders every canonical chapter under `spec/src` in a
+Specification section through metadata-only MDX mirrors and raw Markdown
+imports. Normative application contracts remain in `spec/src`; the catalog
+does not maintain a second copy. Specification navigation follows the
+canonical chapter order and appears before component stories.
+
 The active delivery surface contains no AI component, provider route, MCP
 process, ingestion enrichment endpoint or AI rule executor. The host strips
 persisted AI source flags and excludes provider-backed rules before execution,

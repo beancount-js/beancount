@@ -12,9 +12,20 @@ export default {
   },
   initialGlobals: { theme: "lapis", colorMode: "light" },
   parameters: {
+    options: {
+      storySort: {
+        order: ["Specification", ["Application baseline"], "Beancount", "*"],
+      },
+    },
     layout: "fullscreen",
     a11y: { test: "error" },
     backgrounds: { disable: true },
+    docs: {
+      toc: {
+        headingSelector: "h2, h3",
+        title: "On this page",
+      },
+    },
   },
   decorators: [
     withThemeByDataAttribute({
