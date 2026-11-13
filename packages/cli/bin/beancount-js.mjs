@@ -6,7 +6,7 @@ import { spawn, spawnSync } from "node:child_process";
 
 const cliDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(cliDirectory, "../../..");
-const studioDirectory = resolve(repositoryRoot, "packages/fava");
+const studioDirectory = resolve(repositoryRoot, "packages/app");
 const serverEntry = resolve(studioDirectory, "build-server/index.js");
 const arguments_ = process.argv.slice(2);
 
@@ -57,14 +57,7 @@ async function resolveStudioUrl() {
   for (let attempt = 0; attempt < 75; attempt += 1) {
     try {
       const response = await fetch(`${origin}/api/projects`);
-      if (response.ok) {
-        const projects = await response.json();
-        const projectId = Array.isArray(projects) ? projects[0]?.id : undefined;
-        if (typeof projectId === "string" && projectId) {
-          return `${origin}/${encodeURIComponent(projectId)}/`;
-        }
-        return `${origin}/`;
-      }
+      if (response.ok) return `${origin}/`;
     } catch {
       // Server still starting.
     }
