@@ -48,7 +48,7 @@
   `BeancountDataSource.request` boundary.
 - Run `pnpm check:baseline` for ownership/configuration checks and
   `pnpm checks:ui` for every active UI slice. Root `pnpm checks` includes the
-  active UI and compatibility lanes. Report pre-existing aggregate failures
+  active UI, application host and current package graph. Report pre-existing aggregate failures
   separately and never disable checks to promote a baseline.
 - Run `pnpm --filter @beancount-js/app checks` for host changes. This includes
   static OPFS save/reload acceptance. Passing host route/persistence/build checks
@@ -56,7 +56,7 @@
 
 ## Shared forms and searchable pickers
 
-- `packages/forms/FORMS.md` remains the form behavior contract. Implement it
+- `packages/ui/FORMS.md` is the form behavior contract. Implement it
   with public Design Core forms and application controls in
   `@beancount-js/ui/forms`.
 - Keep one `max-content minmax(0, 1fr)` label/value grid per form scope, visible
@@ -71,19 +71,16 @@
   overflow. Inline editor widgets remain compact document affordances rather
   than structured form rows.
 
-## Retained compatibility and frozen references
+## Retired applications and frozen references
 
-- `packages/fava` is an unchanged reference. `packages/fava-beta` retains the
-  old integration host/services. Neither is the destination for new UI work.
-- `packages/ui-legacy` provides the `@lapis/ui` runtime imports still needed by
-  those hosts. `@beancount-js/forms` is their implementation-free forwarding
-  facade. Do not add behavior, stories or new dependencies to the forms facade.
-- The compatibility package has no Storybook or visual runners. Keep changes
-  limited to necessary compatibility fixes; remove runtime code only after its
-  remaining consumers have migrated or been explicitly retired.
-- Consume no legacy/reference source in the active UI. Validate historical
-  provenance against recorded commits, not the current Fava file layout. Keep
-  live reference ledgers out of seed/write helpers.
+- `packages/fava`, `packages/fava-beta`, `packages/ui-legacy` and
+  `packages/forms` are retired and must not be restored as parallel application
+  or compatibility paths. Their history remains available through Jujutsu.
+- Consume no historical reference source in the active UI. Validate provenance
+  against the commits recorded in `UI_PROVENANCE.json` and
+  `CATALOG_INVENTORY.json`; those paths do not require current Fava files.
+- Keep reference fixture snapshots under
+  `packages/ui/catalog/fixtures/reference` and out of mutation/seed helpers.
 - Shell/table/editor qualification uses browser geometry and accessibility
   checks. Human visual approval and production backend readiness must be
   reported separately; do not claim either from passing catalog tests.

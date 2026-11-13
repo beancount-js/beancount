@@ -1,4 +1,4 @@
-# Fava parity review
+# Recorded Fava provenance review
 
 ## Current baseline
 
@@ -12,20 +12,23 @@ references were reviewed and do not imply a currently running server.
 
 ## Selected reference
 
-The comparison application is now Fava at `498bd075266922ab11cb4358f19aa6b9828e8539`
-(`Add UI query results table`), selected for review on 21 October 2026. Its
-isolated workspace is `../beancount-js-studio-query-table-498bd075`, served at
-`http://127.0.0.1:5174/`. The earlier reference remains available on port 5173.
+The recorded comparison application is Fava at
+`498bd075266922ab11cb4358f19aa6b9828e8539` (`Add UI query results table`),
+selected for review on 21 October 2026. It was reviewed in the isolated
+`../beancount-js-studio-query-table-498bd075` workspace. The localhost URLs in
+this document are historical review evidence, not current application surfaces.
 
 The adapted domain source originated at
 `215bb59f31d4658410c2fd2b0122022a56dff5aa`; that provenance remains accurate.
 Changing the comparison target does not replace the pinned Design Core shell,
-controller ownership or dependency versions. Neither Fava source tree is edited.
+controller ownership or dependency versions. Fava source is no longer present
+in the current package graph.
 
-`Beancount/Review/Matching preview` bundles the five ledger files enumerated by
-the selected reference. It selects `packages/fava/public/sample.beancount` and
-sets the dashboard to **All time**, using the live clock for this comparison
-scenario (focused stories retain the fixed 2024 clock). Paths and contents are recorded in
+`Beancount/Review/Matching preview` bundles five active-owned ledger snapshots.
+Its entry is `sample.beancount`, and the Fava-derived snapshots live under
+`catalog/fixtures/reference`. The dashboard uses **All time** and the live clock
+for this comparison scenario (focused stories retain the fixed 2024 clock).
+Original source paths and current targets are recorded in
 `CATALOG_INVENTORY.json`; catalog validation compares every snapshot byte with
 the selected Jujutsu commit. The synthetic review project and small fixtures
 remain available for focused navigation and geometry tests.

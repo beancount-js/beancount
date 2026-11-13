@@ -11,8 +11,9 @@ This package is the active application and Storybook baseline. Follow
 - `catalog/` and `.storybook/` are the sole active Storybook. Fixtures are
   disposable and controller-scoped. Preserve existing story IDs and public
   component/controller contracts unless the requested work requires a change.
-- Do not import `@lapis/ui`, `@beancount-js/forms`, Fava source, SvelteKit aliases
-  or private Design Core paths. Legacy compatibility lives outside this package.
+- Do not import retired `@lapis/ui` / `@beancount-js/forms` packages, historical
+  Fava source, SvelteKit aliases or private Design Core paths. No compatibility
+  package exists in the current checkout.
 - Keep mounted CodeMirror widgets on the owning editor's context. Reuse shared
   account appearance/avatar behavior and preserve replacement/undo semantics.
 - Keep application stories bounded to the viewport and standalone stories in

@@ -4,15 +4,15 @@ This package is the application baseline in the main checkout as of
 28 October 2026. It supersedes the former extraction/native-CSS catalog.
 See the [specification](../../spec/src/app-baseline.md),
 [status](../../docs/APP_STATUS.md) and [agent guidance](AGENTS.md).
-`packages/ui-legacy` retains compatibility imports for older hosts; new UI work
-belongs here and consumes published Design Core.
+New UI work belongs here and consumes published Design Core; the former
+application and compatibility packages are retired.
 
-Reusable Beancount application components backed by published Design Core 0.4.0. The original Fava application remains the comparison application.
+Reusable Beancount application components backed by published Design Core 0.4.0. Historical Fava commits remain recorded comparison sources, not live packages.
 
-Run `pnpm dev` or `pnpm storybook` from the repository root. This is the sole active catalog and binds to `127.0.0.1:6006`. Run `pnpm dev:app` for the executable `packages/app` host on `127.0.0.1:5173`. Retained Fava hosts are separate legacy/reference surfaces. Stories own deterministic, disposable controller instances and do not access a server or browser storage; the executable host injects real filesystem/API or browser-workspace data sources.
+Run `pnpm dev` or `pnpm storybook` from the repository root. This is the sole active catalog and binds to `127.0.0.1:6006`. Run `pnpm dev:app` for the sole executable `packages/app` host on `127.0.0.1:5173`. Stories own deterministic, disposable controller instances and do not access a server or browser storage; the executable host injects real filesystem/API or browser-workspace data sources.
 
 The Application/Dashboard and matching-preview stories select the byte-identical
-workspace-root `sample.beancount` snapshot from Fava comparison commit
+workspace-root `sample.beancount` snapshot recorded from Fava comparison commit
 `498bd075`. Specialized review stories retain a separate synthetic project for
 nested tags, multiple currencies, long values, scrolling and pagination.
 
@@ -20,7 +20,7 @@ Consumers import `BeancountApplication` from `@beancount-js/ui`, controllers fro
 
 Run `pnpm --filter @beancount-js/ui checks` for formatting, dependency boundaries, catalog coverage, types, unit tests, Storybook interactions/accessibility and the static build. `pnpm --filter @beancount-js/ui exec node scripts/check-catalog.mjs --built` also checks the built story index. Source provenance is recorded in `UI_PROVENANCE.json`; `CATALOG_INVENTORY.json` maps all 24 frozen reference routes to their adapted components and stories, 8 navigation states and 9 table families, and lists the public Design Core imports.
 
-The catalog includes reports, journal/account details, CodeMirror editing, query/search, resource viewing and ingestion/settings. Additional stories cover loading, an empty workspace, retry after failure, dark dashboard/editor, project isolation and mobile shell navigation. The reference application chrome is replaced by the shared Design Core shell, navigation controls and forms; ledger-specific tables, charts and editors retain their copied presentation. Reference provenance is validated at the recorded historical commits; source under `packages/fava` remains unchanged by this transition.
+The catalog includes reports, journal/account details, CodeMirror editing, query/search, resource viewing and ingestion/settings. Additional stories cover loading, an empty workspace, retry after failure, dark dashboard/editor, project isolation and mobile shell navigation. The reference application chrome is replaced by the shared Design Core shell, navigation controls and forms; ledger-specific tables, charts and editors retain their adapted presentation. Reference provenance is validated at recorded historical commits without a live Fava package.
 
 Account presentation is centralized through the public Design Core Avatar while
 preserving Beancount account sizing, merchant-logo precedence and legacy Lucide
