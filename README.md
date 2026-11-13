@@ -9,6 +9,8 @@ were retired on 13 November 2026.
 Read [app status](docs/APP_STATUS.md), the
 [baseline specification](spec/src/app-baseline.md), and the
 [UI package guide](packages/ui/README.md) for ownership, validation and limits.
+Review the current application catalog in the
+[hosted Storybook](https://beancount-js.github.io/beancount-js-studio/).
 
 ## Packages
 
@@ -40,6 +42,9 @@ the executable host at `http://127.0.0.1:5173` and defaults to the repository
 real ledger files through `BeancountDataSource`. Bank and merchant service
 routes are integrated in server mode; qualification against external bank
 credentials remains separate from route and filesystem coverage.
+
+The `beancount-studio` bookmark is the published application line. Pushes to it
+build `packages/ui` and deploy the static Storybook to GitHub Pages.
 
 The active application intentionally includes no AI panel, provider route, MCP
 process, ingestion enrichment action or rule executor. The optional host-owned

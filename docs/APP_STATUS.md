@@ -10,6 +10,10 @@ AvatarPicker. `packages/app` (`@beancount-js/app`) is the sole executable host;
 it mounts the same public application/controller exports with server filesystem
 or browser-workspace data sources.
 
+The public review catalog is deployed from the `beancount-studio` bookmark to
+[GitHub Pages](https://beancount-js.github.io/beancount-js-studio/). Its
+workflow builds and publishes the same `packages/ui` Storybook used locally.
+
 The server host reads and writes revision-aware ledger files, serves referenced
 resources and owns persisted ingestion, connector, merchant, rule and
 reconciliation routes. Static web mode uses OPFS or a user-selected local

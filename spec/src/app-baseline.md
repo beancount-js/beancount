@@ -39,6 +39,8 @@ host-owned details snippet remain extension boundaries, not provider behavior.
 ## Current delivery surface
 
 `pnpm dev` and `pnpm storybook` start the sole active catalog on localhost:6006.
+The `beancount-studio` bookmark publishes that catalog to
+`https://beancount-js.github.io/beancount-js-studio/` through GitHub Pages.
 `pnpm dev:app` starts the executable server host on localhost:5173, using
 `BEANCOUNT_STUDIO_PROJECT_ROOT` and `BEANCOUNT_STUDIO_ENTRY_FILE` when supplied.
 `pnpm build:app` produces the default server build; the host package also
