@@ -1,0 +1,20 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as InlineAccountStories from "./InlineAccounts.stories.svelte";
+
+<Meta of={InlineAccountStories} />
+
+# Inline account editing
+
+The Beancount editor mounts compact account affordances inside CodeMirror while
+preserving document selection, keyboard behavior, and undo history. Inline
+widgets use the same account appearance store and `AccountAvatar` renderer as
+navigation and tables.
+
+These widgets are document affordances, not standalone structured-form rows.
+Hosts normally consume them through the public `Editor` component rather than
+mounting the catalog harness.
+
+## Catalog coverage
+
+The stories cover account completion, avatar rendering, compact edit controls,
+menu sizing, keyboard selection, and containment inside the application shell.

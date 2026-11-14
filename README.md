@@ -10,7 +10,8 @@ Read [app status](docs/APP_STATUS.md), the
 [baseline specification](spec/src/app-baseline.md), and the
 [UI package guide](packages/ui/README.md) for ownership, validation and limits.
 Review the current application catalog in the
-[hosted Storybook](https://beancount-js.github.io/beancount-js-studio/).
+[hosted Storybook](https://beancount-js.github.io/beancount-js-studio/),
+including the canonical specification and public component documentation.
 
 ## Packages
 

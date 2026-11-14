@@ -68,6 +68,12 @@ imports. Normative application contracts remain in `spec/src`; the catalog
 does not maintain a second copy. Specification navigation follows the
 canonical chapter order and appears before component stories.
 
+Every catalog story family attaches a substantive MDX Docs page to its real
+story module. Docs explain the public boundary, ownership, usage and covered
+states without redefining normative behavior. A component reference inventories
+every component exported from `@beancount-js/ui` and links it to the owning Docs
+page; catalog validation rejects missing family documentation or public exports.
+
 The active delivery surface contains no AI component, provider route, MCP
 process, ingestion enrichment endpoint or AI rule executor. The host strips
 persisted AI source flags and excludes provider-backed rules before execution,

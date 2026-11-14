@@ -1,0 +1,24 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as ReportStories from "./Reports.stories.svelte";
+
+<Meta of={ReportStories} />
+
+# Reports
+
+Report components render controller-provided ledger data and valuation choices.
+They do not load files or resolve prices independently.
+
+## Public components
+
+- `FinancialDashboard` summarizes cash flow, outflows, position, and trend.
+- `IncomeStatement` renders income and expense trees by interval.
+- `BalanceSheet` renders assets, liabilities, and equity.
+- `TrialBalance` shows account balances across periods.
+- `Holdings` presents positions by account, currency, or commodity.
+- `Statistics` summarizes ledger activity and counts.
+
+Each component is exported from `@beancount-js/ui`; the standard application
+routes inject controller state and navigation actions.
+
+The stories exercise populated sample data, long account names, responsive
+tables, valuation controls, tabs, row disclosure, and empty/error reporting.

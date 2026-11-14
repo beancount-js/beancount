@@ -1,0 +1,30 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as ApplicationStories from "./Application.stories.svelte";
+
+<Meta of={ApplicationStories} />
+
+# Application
+
+`BeancountApplication` is the controller-backed application composition. It
+renders the shared shell, project navigation, route content, sheets, and host
+capability states without owning filesystem or network access.
+
+## Public boundary
+
+```tsx
+<script lang="ts">
+  import { BeancountApplication } from "@beancount-js/ui";
+</script>
+
+<BeancountApplication {controller} />
+```
+
+Create one controller per application or project lifetime and inject a
+`BeancountDataSource`. The executable host supplies filesystem/API or browser
+workspace adapters; Storybook supplies a disposable in-memory source.
+
+## Catalog coverage
+
+The application stories exercise the populated desktop dashboard, route scroll
+reset behavior, and the mobile shell. They use the same public component and
+controller exports as the executable host.

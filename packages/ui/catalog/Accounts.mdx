@@ -1,0 +1,33 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as AccountStories from "./Accounts.stories.svelte";
+
+<Meta of={AccountStories} />
+
+# Accounts
+
+Account presentation uses one shared identity across navigation, forms,
+CodeMirror widgets, tables, and merchant fallbacks. The application owns stored
+account appearance; Design Core owns the Avatar and AvatarPicker primitives.
+
+## Public components
+
+- `AccountNavigationLink` renders a linked account label and its avatar.
+- `AccountAvatar` renders the portable image, emoji, icon, initials, and colour
+  fallback used by the rest of the application.
+- `IconColorPicker` is the compact compatibility editor for an account's
+  appearance. New profile editing uses the Design Core AvatarPicker.
+
+```tsx
+<script lang="ts">
+  import { AccountNavigationLink } from "@beancount-js/ui";
+</script>
+
+<AccountNavigationLink
+  account="Assets:Checking:Monzo"
+  href="/account/Assets:Checking:Monzo"
+  appearance={{ color: "#7667d9", image: "💳" }}
+/>
+```
+
+The stories cover default and customized avatars, editing, merchant-logo
+failure, and fallback behavior in light and dark modes.

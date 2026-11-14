@@ -1,0 +1,20 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as ReviewStories from "./Review.stories.svelte";
+
+<Meta of={ReviewStories} />
+
+# Review
+
+Review surfaces present host-produced proposals before they change the ledger.
+The controller retains selection, revision checks, apply/cancel actions, and
+route history; sheets receive typed records and callbacks.
+
+The routed experience is composed by `BeancountApplication`. Public ingestion
+exports such as `IngestionTable` and `IngestionMerchantReview` can also be
+embedded by a host that owns its own route and shell.
+
+## Catalog coverage
+
+The stories cover transaction review, proposal details, account assignment,
+merchant review, reconciliation, grouped dates, narrow layouts, and the
+selected-row count treatment.

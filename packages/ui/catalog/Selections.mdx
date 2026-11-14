@@ -1,0 +1,17 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as SelectionStories from "./Selections.stories.svelte";
+
+<Meta of={SelectionStories} />
+
+# Selection controls
+
+Selection stories document the shared active, hover, focus, disabled, and
+pressed treatment used by tabs, toggle groups, navigation rows, valuation
+methods, and table controls.
+
+Application components consume the published Design Core controls and theme
+tokens. They do not reproduce toggle or tab state styling locally. Selected
+controls remain visibly distinct without acquiring a second hover surface.
+
+The catalog includes light and dark themes, keyboard focus, compact widths,
+valuation controls, report tabs, and legend selection geometry.

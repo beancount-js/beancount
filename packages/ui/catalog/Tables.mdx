@@ -1,0 +1,22 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as TableStories from "./Tables.stories.svelte";
+
+<Meta of={TableStories} />
+
+# Tables
+
+Beancount tables use semantic rows and headers, shared account identity, stable
+numeric alignment, responsive overflow, and explicit pagination. Controller
+state owns sorting/filtering decisions when they affect route history or host
+queries.
+
+## Public table components
+
+- `JournalTable` renders ledger directives and editor actions.
+- `QueryResultsTable` renders typed BQL results, sorting, and pagination.
+- `AccountDetails` contains the account activity table and bulk actions.
+- Report components expose their own account/tree tables through public routes.
+
+The stories cover query, journal, account activity, ingestion, statement trees,
+trial balance, long account names, full-width borders, narrow layouts, hover
+states, and pagination geometry.

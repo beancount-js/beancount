@@ -1,0 +1,25 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as NavigationStories from "./Navigation.stories.svelte";
+
+<Meta of={NavigationStories} />
+
+# Navigation
+
+Navigation is controller state rendered inside `BeancountAppShell`. Projects,
+ledgers, folders, tags, application routes, settings routes, search terms, and
+expanded tree nodes remain isolated per controller instance.
+
+## Public components
+
+- `BeancountAppShell` composes Design Core application rails, toolbar, main
+  body, and responsive presentation.
+- `AccountNavigationLink` supplies consistent account identity within trees and
+  pickers.
+
+Use `BeancountApplication` for the standard routed navigation. Use
+`BeancountAppShell` only when a host needs to supply its own controller-backed
+main content.
+
+The stories cover ledger/folder/tag modes, tree alignment, selected and hover
+states, settings disclosure, account picking, project opening, cancellation,
+failure, search width, and toolbar geometry.

@@ -1,0 +1,26 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as IngestionStories from "./Ingestion.stories.svelte";
+
+<Meta of={IngestionStories} />
+
+# Ingestion and settings
+
+Ingestion surfaces review connector configuration and host-produced records.
+They never contact a bank directly: credentials, connector execution,
+persistence, cancellation, and streamed progress remain host capabilities.
+
+## Public components
+
+- `IngestionTable` displays imported records and review status.
+- `IngestionConfigEditor` edits sources and secret references.
+- `IngestionAccountsSetup` maps discovered accounts.
+- `IngestionMerchantReview` and `IngestionMerchantManage` review merchant data.
+- `IngestionBrandSettings` configures brand matching and logo behavior.
+- `IngestionRunHistory` and `IngestionRunAudit` explain import runs.
+- `RulesSettings` manages deterministic transaction rules.
+
+Use `BeancountApplication` for the routed settings experience. The individual
+exports support hosts that already own routing and shell composition.
+
+The catalog covers records, sources, linked accounts, merchant review and edit
+sheets, brand matching, history, run audit, rules, and reconciliation fixtures.

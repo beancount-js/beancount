@@ -1,0 +1,24 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as ShellStories from "./Shell.stories.svelte";
+
+<Meta of={ShellStories} />
+
+# Shell
+
+`BeancountAppShell` adapts the published Design Core AppShell to Beancount
+projects and routes. It owns presentation and delegates controller actions;
+project data, persistence, and host capabilities remain outside the shell.
+
+```tsx
+<script lang="ts">
+  import { BeancountAppShell } from "@beancount-js/ui";
+</script>
+
+<BeancountAppShell {controller}>
+  {#snippet children()}<RouteContent />{/snippet}
+</BeancountAppShell>
+```
+
+The stories cover desktop and mobile composition, project and ledger rails,
+sidebar collapse/close controls, toolbar actions, content containment, settings
+navigation, hover states, and shell/body background continuity.

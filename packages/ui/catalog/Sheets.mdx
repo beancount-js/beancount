@@ -1,0 +1,19 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as SheetStories from "./Sheets.stories.svelte";
+
+<Meta of={SheetStories} />
+
+# Sheets
+
+Application sheets provide bounded editing and review without transferring
+authority away from the owning controller. They receive a typed draft or
+record, expose explicit save/apply/cancel actions, and close through one shared
+Design Core sheet control.
+
+Journal, account bulk actions, proposals, merchants, rules, and reconciliation
+all use the shared form layout contract: one label/value grid per scope,
+title-only collapsible headers, compact inline controls, and non-wrapping footer
+actions.
+
+The stories verify headers, close controls, footer alignment, account avatars,
+metadata disclosure, nested scrolling, cancellation, and populated edit states.

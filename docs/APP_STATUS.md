@@ -15,6 +15,8 @@ The public review catalog is deployed from the `beancount-studio` bookmark to
 workflow builds and publishes the same `packages/ui` Storybook used locally.
 The catalog exposes the canonical application specification as a first-class
 Specification section rather than copying its normative text into Storybook.
+All 15 catalog families have attached MDX Docs pages, and the public component
+reference covers every component exported from `@beancount-js/ui`.
 
 The server host reads and writes revision-aware ledger files, serves referenced
 resources and owns persisted ingestion, connector, merchant, rule and

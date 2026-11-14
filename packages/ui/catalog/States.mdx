@@ -1,0 +1,15 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as StateStories from "./States.stories.svelte";
+
+<Meta of={StateStories} />
+
+# Application states
+
+Application routes render explicit loading, empty, ready, and failure states
+from controller state. Alias routes resolve through the same controller history
+instead of mounting a second application or data source.
+
+The state catalog covers empty ledgers, loading and error boundaries, route
+aliases, missing resources, project transitions, and responsive presentation.
+Fixtures are deterministic and disposable; they do not imply production bank
+credentials or live filesystem qualification.

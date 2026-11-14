@@ -1,0 +1,68 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Beancount/Component reference" />
+
+# Public component reference
+
+The following components are exported from `@beancount-js/ui`. Prefer
+`BeancountApplication` for the complete routed experience; use the smaller
+exports when a host intentionally owns shell or route composition.
+
+## Application composition
+
+| Component              | Purpose                                        | Catalog documentation                                  |
+| ---------------------- | ---------------------------------------------- | ------------------------------------------------------ |
+| `BeancountApplication` | Complete controller-backed application         | [Application](?path=/docs/beancount-application--docs) |
+| `BeancountAppShell`    | Beancount composition of the Design Core shell | [Shell](?path=/docs/beancount-shell--docs)             |
+
+## Forms and account identity
+
+| Component             | Purpose                              | Catalog documentation                                                |
+| --------------------- | ------------------------------------ | -------------------------------------------------------------------- |
+| `AccountAvatar`       | Portable account identity renderer   | [Accounts](?path=/docs/beancount-accounts--docs)                     |
+| `TagEditor`           | Normalized tag list editor           | [Account profile](?path=/docs/beancount-forms-account-profile--docs) |
+| `IconColorPicker`     | Compatibility icon and colour editor | [Account profile](?path=/docs/beancount-forms-account-profile--docs) |
+| `AccountProfileForm`  | Composed account profile editor      | [Account profile](?path=/docs/beancount-forms-account-profile--docs) |
+| `FilterCommandPicker` | Searchable single/multi-value picker | [Account profile](?path=/docs/beancount-forms-account-profile--docs) |
+
+## Reports
+
+| Component            | Purpose                                   | Catalog documentation                          |
+| -------------------- | ----------------------------------------- | ---------------------------------------------- |
+| `FinancialDashboard` | Cash flow, position, and trend summary    | [Reports](?path=/docs/beancount-reports--docs) |
+| `IncomeStatement`    | Income and expense interval tree          | [Reports](?path=/docs/beancount-reports--docs) |
+| `BalanceSheet`       | Assets, liabilities, and equity           | [Reports](?path=/docs/beancount-reports--docs) |
+| `TrialBalance`       | Account balances by period                | [Reports](?path=/docs/beancount-reports--docs) |
+| `Holdings`           | Positions grouped by account or commodity | [Reports](?path=/docs/beancount-reports--docs) |
+| `Statistics`         | Ledger activity summaries                 | [Reports](?path=/docs/beancount-reports--docs) |
+
+## Ledger and discovery surfaces
+
+| Component               | Purpose                                     | Catalog documentation                                                      |
+| ----------------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
+| `Editor`                | Beancount CodeMirror editor                 | [Editing and discovery](?path=/docs/beancount-editing-and-discovery--docs) |
+| `JournalTable`          | Ledger journal and editor actions           | [Tables](?path=/docs/beancount-tables--docs)                               |
+| `AccountDetails`        | Account activity and bulk actions           | [Editing and discovery](?path=/docs/beancount-editing-and-discovery--docs) |
+| `Query`                 | BQL editor, history, execution, and results | [Query](?path=/docs/beancount-query--docs)                                 |
+| `Search`                | Ledger search surface                       | [Editing and discovery](?path=/docs/beancount-editing-and-discovery--docs) |
+| `ResourceViewer`        | Project resource viewer                     | [Editing and discovery](?path=/docs/beancount-editing-and-discovery--docs) |
+| `QueryResultsTable`     | Typed query results table                   | [Query](?path=/docs/beancount-query--docs)                                 |
+| `AccountNavigationLink` | Linked account label and avatar             | [Accounts](?path=/docs/beancount-accounts--docs)                           |
+
+## Ingestion and settings
+
+| Component                 | Purpose                            | Catalog documentation                                                        |
+| ------------------------- | ---------------------------------- | ---------------------------------------------------------------------------- |
+| `IngestionTable`          | Imported record review             | [Ingestion and settings](?path=/docs/beancount-ingestion-and-settings--docs) |
+| `IngestionConfigEditor`   | Connector and source configuration | [Ingestion and settings](?path=/docs/beancount-ingestion-and-settings--docs) |
+| `IngestionAccountsSetup`  | Discovered account mapping         | [Ingestion and settings](?path=/docs/beancount-ingestion-and-settings--docs) |
+| `IngestionMerchantReview` | Merchant review queue              | [Ingestion and settings](?path=/docs/beancount-ingestion-and-settings--docs) |
+| `IngestionMerchantManage` | Merchant profile management        | [Ingestion and settings](?path=/docs/beancount-ingestion-and-settings--docs) |
+| `IngestionBrandSettings`  | Brand matching configuration       | [Ingestion and settings](?path=/docs/beancount-ingestion-and-settings--docs) |
+| `IngestionRunHistory`     | Import run history                 | [Ingestion and settings](?path=/docs/beancount-ingestion-and-settings--docs) |
+| `IngestionRunAudit`       | Detailed import run audit          | [Ingestion and settings](?path=/docs/beancount-ingestion-and-settings--docs) |
+| `RulesSettings`           | Deterministic transaction rules    | [Ingestion and settings](?path=/docs/beancount-ingestion-and-settings--docs) |
+
+Controller types and factories are exported from `@beancount-js/ui/controller`.
+Design Core form primitives are re-exported from `@beancount-js/ui/forms` for
+application form composition.

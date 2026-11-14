@@ -1,0 +1,26 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as EditingStories from "./Editing.stories.svelte";
+
+<Meta of={EditingStories} />
+
+# Editing and discovery
+
+Editing and discovery routes are application surfaces backed by the active
+controller. They keep file revisions, navigation history, save authority, and
+host requests outside presentation components.
+
+## Public components
+
+- `Editor` provides the Beancount CodeMirror editor and document commands.
+- `JournalTable` renders ledger directives and opens bounded editor sheets.
+- `AccountDetails` combines account activity, filters, pagination, and actions.
+- `Query` runs and formats BQL queries through the injected data source.
+- `Search` finds ledger content without mutating the project.
+- `ResourceViewer` renders referenced project resources.
+
+Import these route surfaces from `@beancount-js/ui` when composing a custom host.
+Use `BeancountApplication` when the standard navigation and controller routing
+are desired.
+
+The stories cover journal, account, query, editor, search, resource, header
+actions, CodeMirror typography, and bounded scrolling.

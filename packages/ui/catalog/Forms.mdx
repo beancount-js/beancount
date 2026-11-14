@@ -1,0 +1,33 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as FormStories from "./Forms.stories.svelte";
+
+<Meta of={FormStories} />
+
+# Account profile form
+
+`AccountProfileForm` edits the account name, description, appearance, tags,
+and visibility through the shared form contract. Its draft is local until the
+host accepts `onSave`.
+
+## Public form components
+
+- `AccountProfileForm` is the composed account editor.
+- `AccountAvatar` renders the saved portable account identity.
+- `TagEditor` edits a normalized list of tags.
+- `IconColorPicker` retains compatibility with stored icon names.
+- `FilterCommandPicker` is the searchable single- or multi-value picker used by
+  application forms and sidebars.
+
+```tsx
+<script lang="ts">
+  import { AccountProfileForm } from "@beancount-js/ui/forms";
+</script>
+
+<AccountProfileForm
+  value={profile}
+  onSave={async (next) => saveAccountProfile(next)}
+/>
+```
+
+The story verifies a complete edit-and-save flow, including the Design Core
+AvatarPicker and persisted colour/image values.
