@@ -41,4 +41,4 @@ owning implementation slices land.
 | BC-GOV-002  | Implemented | Root scripts, `spec/book.toml`, `.qmd/index.yml`, the generated-book ignore, and spec-validator doctor/build/search integration provide publishing and discovery.        |
 | BC-GOV-003  | Implemented | Mapped spec-first protection covers active parser, accounting, UI, ingestion, host, catalog, and governance paths; `AGENTS.md` requires discovery and focused gates.    |
 | BC-GOV-004  | Implemented | `pnpm spec:check` runs validation, mdBook, spec-first, baseline, and source-catalog lanes; `pnpm checks` composes it with `checks:functional`.                           |
-| BC-GOV-005  | In progress | CI defines named Specification and Application jobs with Node 24, mdBook 0.5.4, frozen dependencies, full history for spec-first, and Chromium; protection is pending. |
+| BC-GOV-005  | Implemented | GitHub run `44617472061` passed named Specification and Application jobs; `beancount-studio` protection requires both strict checks and PRs with zero approvals and blocks force-push/deletion. |

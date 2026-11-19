@@ -39,4 +39,5 @@ action, or AI rule executor.
 
 - Package and catalog checks enforce the single supported UI and host path.
 - Persisted AI flags and provider-backed rules cannot activate behavior.
+- Verification evidence reflects the currently enforced delivery surface.
 - A future integration MUST use an explicit host-owned extension boundary.
