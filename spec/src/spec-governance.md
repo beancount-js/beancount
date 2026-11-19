@@ -57,6 +57,6 @@ require pull requests and both up-to-date checks while allowing solo maintenance
 ### Acceptance details
 
 - CI uses full history for spec-first comparison and a frozen dependency install.
-- CI installs Node 24, mdBook 0.5.4, pinned Jujutsu, dependencies, and Chromium.
+- CI installs pinned tools and initializes full-history Jujutsu provenance.
 - Branch protection requires zero human approvals and blocks force-push/deletion.
 - The application job runs the functional checks and root tests with Chromium.

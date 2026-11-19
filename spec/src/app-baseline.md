@@ -18,7 +18,7 @@ published Design Core MUST supply shared shell, form, and primitive UI.
 - Presentation imports only public Design Core and repository package exports.
 - Catalog manager dependencies are declared by the UI package.
 - Host adapters implement `BeancountDataSource`; they do not own application UI.
-- Ownership checks retain pinned Jujutsu provenance and reject retired paths.
+- Ownership checks use full Git history through a colocated Jujutsu view.
 
 ## BC-ARCH-002 — Isolate mutable runtime state
 

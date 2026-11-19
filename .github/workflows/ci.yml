@@ -53,6 +53,7 @@ jobs:
           tar -xzf "${archive}" -C "${directory}"
           echo "${directory}" >> "${GITHUB_PATH}"
           "${directory}/jj" version
+          "${directory}/jj" git init --colocate .
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -67,6 +68,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
@@ -91,6 +94,7 @@ jobs:
           tar -xzf "${archive}" -C "${directory}"
           echo "${directory}" >> "${GITHUB_PATH}"
           "${directory}/jj" version
+          "${directory}/jj" git init --colocate .
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
