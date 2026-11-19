@@ -21,6 +21,7 @@ contents used by current Lapis repositories.
 ### Acceptance details
 
 - Preview styling imports public Design Core Storybook and Lapis theme assets.
+- The brand selector has dynamic Lapis and default labels without a duplicate theme control.
 - The manager toggle and preview color mode remain synchronized.
 - Requirement headings display their stable ID as the TOC label.
 

@@ -4,11 +4,21 @@ import { syncCatalogStoryLayout } from "@lapismd/design-core/storybook/catalog-l
 import "@lapismd/design-core/storybook.css";
 import "@lapismd/design-core/themes/lapis.css";
 import "../src/styles.css";
+import { requirementTocLabel } from "./requirement-toc";
 export default {
   tags: ["autodocs", "test"],
   globalTypes: {
-    theme: { toolbar: { icon: "paintbrush", items: ["default", "lapis"] } },
-    colorMode: { toolbar: { icon: "circlehollow", items: ["light", "dark"] } },
+    theme: {
+      description: "Brand theme",
+      toolbar: {
+        icon: "paintbrush",
+        items: [
+          { value: "lapis", title: "Lapis" },
+          { value: "default", title: "Default" },
+        ],
+        dynamicTitle: true,
+      },
+    },
   },
   initialGlobals: { theme: "lapis", colorMode: "light" },
   parameters: {
@@ -36,10 +46,14 @@ export default {
     layout: "fullscreen",
     a11y: { test: "error" },
     backgrounds: { disable: true },
+    themes: { disable: true },
     docs: {
       toc: {
-        headingSelector: "h2, h3",
+        headingSelector: "h2",
         title: "On this page",
+        unsafeTocbotOptions: {
+          headingLabelCallback: requirementTocLabel,
+        },
       },
     },
   },

@@ -34,7 +34,7 @@ owning implementation slices land.
 | BC-HOST-003 | Implemented | Static web build and OPFS browser acceptance cover edit, save, direct storage read, and full reload without server routes.                                               |
 | BC-HOST-004 | Implemented | Baseline, package, app server/static, CLI, and production Storybook build checks cover the active delivery graph.                                                        |
 | BC-CAT-001  | Implemented | UI catalog scripts and stories enforce one catalog with in-memory projects and immutable reference fixtures.                                                             |
-| BC-CAT-002  | In progress | Preview already imports public Design Core Storybook and Lapis theme styles; shared manager and TOC behavior are not yet installed.                                      |
+| BC-CAT-002  | Implemented | Storybook imports Design Core/Lapis styles, exposes the dynamic brand selector and manager color-mode toggle, and unit-tests requirement-aware TOC labels.               |
 | BC-CAT-003  | Implemented | `packages/ui/catalog/spec`, Storybook ordering, spec-validator mirror validation, and catalog validation enforce one raw Markdown mirror for every `SUMMARY.md` chapter. |
 | BC-CAT-004  | Implemented | UI checks run catalog inventory, unit, Storybook interaction/accessibility, and production build checks without screenshot baselines.                                    |
 | BC-GOV-001  | Implemented | Heading, summary, file-limit, governance, and single-ID verification validators enforce the canonical chapter set.                                                       |

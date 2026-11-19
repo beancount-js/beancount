@@ -16,6 +16,7 @@ published Design Core MUST supply shared shell, form, and primitive UI.
 ### Acceptance details
 
 - Presentation imports only public Design Core and repository package exports.
+- Catalog manager dependencies are declared by the UI package.
 - Host adapters implement `BeancountDataSource`; they do not own application UI.
 - Ownership checks reject retired packages and private source coupling.
 

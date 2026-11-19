@@ -30,8 +30,8 @@ an owning canonical specification chapter in the same change.
 
 ### Acceptance details
 
-- Protected paths map to relevant chapters rather than any arbitrary spec file.
 - Product paths map to their respective owning chapters.
+- Package manifest changes update architecture and governance requirements.
 - Tests, fixtures, generated output, dependencies, and MDX mirrors are excluded.
 - Agents search requirements before manually scanning implementation files.
 
