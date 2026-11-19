@@ -6,8 +6,8 @@ The Design Core application in `packages/ui`, hosted by `packages/app`, is the
 sole application baseline. Deprecated application and compatibility packages
 were retired on 13 November 2026.
 
-Read [app status](docs/APP_STATUS.md), the
-[baseline specification](spec/src/app-baseline.md), and the
+Read the [product specification](spec/src/index.md),
+[app status](docs/APP_STATUS.md), and the
 [UI package guide](packages/ui/README.md) for ownership, validation and limits.
 Review the current application catalog in the
 [hosted Storybook](https://beancount-js.github.io/beancount/),
@@ -54,6 +54,7 @@ remain available for a future integration without coupling one into the app.
 
 ```sh
 pnpm check:baseline
+pnpm spec:check
 pnpm checks
 pnpm checks:ui
 pnpm test:storybook
@@ -62,7 +63,10 @@ pnpm --filter @beancount-js/app checks
 pnpm test
 ```
 
-`pnpm checks` runs the current package graph, active host and active UI. The
+`pnpm spec:check` validates the canonical `BC-*` requirements, their evidence,
+spec-first history, mdBook, baseline ownership, and Storybook mirrors.
+`pnpm checks` runs that governance lane before the current package graph, active
+host, and active UI. The
 [status page](docs/APP_STATUS.md) records observed results and outstanding
 limits. A passing catalog is not production integration or visual signoff.
 
@@ -84,7 +88,14 @@ provenance and comparison details are in
 compatibility packages, extraction ledger, old catalogs and visual tooling
 remain recoverable through Jujutsu history and the archive bookmark.
 
-## Plugin configuration
+## Language extensions and plugin configuration
+
+The canonical distinction between the pinned upstream Beancount baseline and
+Studio/Fava-derived additions is [BC-LANG-001–005](spec/src/beancount-language.md).
+Studio accepts editor conveniences such as lowercase Booleans, unquoted booking
+methods, fenced query/plugin bodies, retained document markup, and compatible
+`fava-option` / `ledger-option` directives. Output is normalized where the
+language contract requires it.
 
 Plugin declarations follow Beancount's standard three-argument contract: the optional second string is passed to the plugin unchanged as its configuration.
 

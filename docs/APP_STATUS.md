@@ -1,8 +1,13 @@
 # Application status
 
-Updated: 13 November 2026.
+Updated: 19 November 2026.
 
 ## Current baseline
+
+The canonical product requirements are the `BC-*` chapters in
+[`spec/src`](../spec/src/index.md), with implementation status and concrete
+evidence in [Verification](../spec/src/verification.md). This page is a dated
+qualification report, not a second normative contract.
 
 `packages/ui` (`@beancount-js/ui`) is the sole application UI and Storybook
 catalog. It uses published Design Core 0.4.0 for the shell, forms, Avatar and
