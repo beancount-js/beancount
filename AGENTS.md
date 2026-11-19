@@ -20,6 +20,18 @@
 - Documentation-only or configuration-only changes that cannot exercise runtime behavior still require a relevant validation, such as formatting, parsing, schema validation, or another focused consistency check. Record the command run for handoff.
 - At handoff, report the validations run and their outcomes, along with the committed `jj` change or changes.
 
+## Specification workflow
+
+- The canonical product requirements live under `spec/src`. Using the global
+  `spec-validator` skill is mandatory when editing those files, changing
+  protected product behavior, or diagnosing a specification check.
+- Before manually scanning implementation files, run
+  `pnpm spec:search "<topic or requirement ID>"`, then open the canonical hit.
+- Update the owning requirement and its verification evidence in the same
+  change as protected behavior. Tests do not replace this specification update.
+- Run `pnpm spec:first` while iterating and `pnpm spec:check` before committing.
+  Root `pnpm checks` runs the specification gate before functional checks.
+
 ## Application baseline and direction
 
 - The active application/UI baseline is `packages/ui` / `@beancount-js/ui`,
@@ -48,17 +60,18 @@
   `BeancountDataSource.request` boundary.
 - Run `pnpm check:baseline` for ownership/configuration checks and
   `pnpm checks:ui` for every active UI slice. Root `pnpm checks` includes the
-  active UI, application host and current package graph. Report pre-existing aggregate failures
-  separately and never disable checks to promote a baseline.
+  specification gate, active UI, application host and current package graph.
+  Report pre-existing aggregate failures separately and never disable checks to
+  promote a baseline.
 - Run `pnpm --filter @beancount-js/app checks` for host changes. This includes
   static OPFS save/reload acceptance. Passing host route/persistence/build checks
   does not qualify external bank credentials.
 
 ## Shared forms and searchable pickers
 
-- `packages/ui/FORMS.md` is the form behavior contract. Implement it
-  with public Design Core forms and application controls in
-  `@beancount-js/ui/forms`.
+- `BC-APP-004` in `spec/src/application-ui.md` is the canonical form behavior
+  contract. `packages/ui/FORMS.md` is its implementation guide. Implement it
+  with public Design Core forms and application controls in `@beancount-js/ui/forms`.
 - Keep one `max-content minmax(0, 1fr)` label/value grid per form scope, visible
   single separators, title-only collapsible headers and left-rail disclosure.
 - Use `FormField as="div" align="center"` for pill/button controls, date pickers

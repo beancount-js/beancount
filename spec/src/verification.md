@@ -39,6 +39,6 @@ owning implementation slices land.
 | BC-CAT-004  | Implemented | UI checks run catalog inventory, unit, Storybook interaction/accessibility, and production build checks without screenshot baselines.                                    |
 | BC-GOV-001  | Implemented | Heading, summary, file-limit, governance, and single-ID verification validators enforce the canonical chapter set.                                                       |
 | BC-GOV-002  | Implemented | Root scripts, `spec/book.toml`, `.qmd/index.yml`, the generated-book ignore, and spec-validator doctor/build/search integration provide publishing and discovery.        |
-| BC-GOV-003  | In progress | Mapped spec-first protection covers active parser, accounting, UI, ingestion, host, catalog, and governance paths; contributor guidance is not yet updated.              |
+| BC-GOV-003  | Implemented | Mapped spec-first protection covers active parser, accounting, UI, ingestion, host, catalog, and governance paths; `AGENTS.md` requires discovery and focused gates.    |
 | BC-GOV-004  | Implemented | `pnpm spec:check` runs validation, mdBook, spec-first, baseline, and source-catalog lanes; `pnpm checks` composes it with `checks:functional`.                           |
-| BC-GOV-005  | In progress | Named CI jobs and branch protection are scheduled after local implementation is verified.                                                                                |
+| BC-GOV-005  | In progress | `.github/workflows/ci.yml` defines the named Specification and Application jobs; branch protection is pending their first successful GitHub contexts.                    |

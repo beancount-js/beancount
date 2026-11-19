@@ -33,7 +33,7 @@ an owning canonical specification chapter in the same change.
 - Product paths map to their respective owning chapters.
 - Package manifest changes update architecture and governance requirements.
 - Tests, fixtures, generated output, dependencies, and MDX mirrors are excluded.
-- Agents search requirements before manually scanning implementation files.
+- Repository guidance requires requirement search, the spec-validator skill, and focused gates.
 
 ## BC-GOV-004 — Run complete local governance checks
 
@@ -57,5 +57,6 @@ require pull requests and both up-to-date checks while allowing solo maintenance
 ### Acceptance details
 
 - CI uses full history for spec-first comparison and a frozen dependency install.
+- CI installs Node 24, mdBook 0.5.4, pnpm dependencies, and Chromium explicitly.
 - Branch protection requires zero human approvals and blocks force-push/deletion.
 - The application job runs the functional checks and root tests with Chromium.
