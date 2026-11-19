@@ -31,7 +31,7 @@ an owning canonical specification chapter in the same change.
 ### Acceptance details
 
 - Product paths map to their respective owning chapters.
-- Package manifest changes update architecture and governance requirements.
+- Manifest and provenance changes update architecture and governance requirements.
 - Tests, fixtures, generated output, dependencies, and MDX mirrors are excluded.
 - Repository guidance requires requirement search, the spec-validator skill, and focused gates.
 

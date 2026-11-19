@@ -13,7 +13,7 @@ Run `pnpm dev` or `pnpm storybook` from the repository root. This is the sole ac
 
 The Application/Dashboard and matching-preview stories select the byte-identical
 workspace-root `sample.beancount` snapshot recorded from Fava comparison commit
-`498bd075`. Specialized review stories retain a separate synthetic project for
+`792cd4c7`. Specialized review stories retain a separate synthetic project for
 nested tags, multiple currencies, long values, scrolling and pagination.
 
 Consumers import `BeancountApplication` from `@beancount-js/ui`, controllers from `@beancount-js/ui/controller`, and `@beancount-js/ui/styles.css` once. Hosts supply a `BeancountController` and dispose it when their application is destroyed; the application initializes it on mount. The application owns its Design Core shell controller.

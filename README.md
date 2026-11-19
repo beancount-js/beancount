@@ -81,7 +81,7 @@ The repository's separate `main` bookmark is not repurposed by this transition.
 jj --no-pager show archive/pre-design-core-baseline-2026-10-28
 ```
 
-Both histories are retained by the baseline merge. Fava at `498bd075` remains
+Both histories are retained by the baseline merge. Fava at `792cd4c7` remains
 a recorded comparison commit, not a package in the current checkout;
 provenance and comparison details are in
 [PARITY_REVIEW.md](packages/ui/PARITY_REVIEW.md). The retired applications,

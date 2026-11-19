@@ -6,6 +6,10 @@ pre-Design-Core state remains recoverable at
 `archive/pre-design-core-baseline-2026-10-28`; it is history, not an active
 implementation queue.
 
+The frozen Fava comparison lineage is published at
+`archive/fava-reference-498bd075`; provenance manifests record its signed
+comparison and adaptation commits.
+
 ## BC-ARCH-001 — Separate presentation, host, and domain ownership
 
 **Requirement.** `packages/ui` MUST own controllers and presentation,

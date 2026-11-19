@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "215bb59f31d4658410c2fd2b0122022a56dff5aa",
+  "sourceCommit": "e64de2826dd5b36d7f1bc46bf4f6fec894892c74",
   "entries": [
     {
       "source": "packages/fava/src/components/AccountActivityTable.svelte",

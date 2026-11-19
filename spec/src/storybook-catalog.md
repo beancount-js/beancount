@@ -10,6 +10,7 @@ application stories.
 
 - `pnpm dev` and `pnpm storybook` start this catalog.
 - Stories do not contact live banks or mutate reference fixtures.
+- Catalog validation resolves frozen provenance from the published archive.
 - Retired application catalogs are not restored as compatibility paths.
 
 ## BC-CAT-002 — Share Lapis catalog presentation

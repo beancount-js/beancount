@@ -5,7 +5,7 @@ import budgets from "./reference/sample-budgets.beancount?raw";
 import rootSample from "./reference/sample.beancount?raw";
 import { demoProject, NOW } from "./project";
 
-/** Static ledger snapshots from the selected Fava reference commit, 498bd075. */
+/** Static ledger snapshots from the selected Fava reference commit, 792cd4c7. */
 export function previewProject() {
   const project = demoProject("fava-query-table-reference");
   project.project.name = "beancount-js-studio-query-table-498bd075";

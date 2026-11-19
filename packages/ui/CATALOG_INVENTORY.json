@@ -1,5 +1,5 @@
 {
-  "referenceCommit": "498bd075266922ab11cb4358f19aa6b9828e8539",
+  "referenceCommit": "792cd4c7e2b81892faaf02bb505467e824393460",
   "routes": [
     {
       "route": "/",
@@ -234,7 +234,7 @@
       "storyId": "beancount-tables--holdings-and-statistics"
     }
   ],
-  "adaptedSourceCommit": "215bb59f31d4658410c2fd2b0122022a56dff5aa",
+  "adaptedSourceCommit": "e64de2826dd5b36d7f1bc46bf4f6fec894892c74",
   "referenceFixtures": [
     {
       "source": "packages/fava/e2e/fixtures/minimal.beancount",

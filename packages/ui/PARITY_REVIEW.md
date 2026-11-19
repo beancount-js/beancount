@@ -13,13 +13,13 @@ references were reviewed and do not imply a currently running server.
 ## Selected reference
 
 The recorded comparison application is Fava at
-`498bd075266922ab11cb4358f19aa6b9828e8539` (`Add UI query results table`),
+`792cd4c7e2b81892faaf02bb505467e824393460` (`Add UI query results table`),
 selected for review on 21 October 2026. It was reviewed in the isolated
 `../beancount-js-studio-query-table-498bd075` workspace. The localhost URLs in
 this document are historical review evidence, not current application surfaces.
 
 The adapted domain source originated at
-`215bb59f31d4658410c2fd2b0122022a56dff5aa`; that provenance remains accurate.
+`e64de2826dd5b36d7f1bc46bf4f6fec894892c74`; that provenance remains accurate.
 Changing the comparison target does not replace the pinned Design Core shell,
 controller ownership or dependency versions. Fava source is no longer present
 in the current package graph.
@@ -36,7 +36,7 @@ remain available for focused navigation and geometry tests.
 ## Query table recovery and related history
 
 The newer renderer was not deleted from this historical workspace: the selected
-pre-Storybook base precedes its introduction. Fava at `498bd075` already uses
+pre-Storybook base precedes its introduction. Fava at `792cd4c7` already uses
 the paged native table for Query, Holdings and Statistics.
 
 The current UI recovers the reusable renderer from the parent of `66e56a4bf39f`
