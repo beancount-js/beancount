@@ -11,7 +11,7 @@ it mounts the same public application/controller exports with server filesystem
 or browser-workspace data sources.
 
 The public review catalog is deployed from the `beancount-studio` bookmark to
-[GitHub Pages](https://beancount-js.github.io/beancount-js-studio/). Its
+[GitHub Pages](https://beancount-js.github.io/beancount/). Its
 workflow builds and publishes the same `packages/ui` Storybook used locally.
 The catalog exposes the canonical application specification as a first-class
 Specification section rather than copying its normative text into Storybook.
