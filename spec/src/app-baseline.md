@@ -8,10 +8,10 @@ implementation queue.
 
 ## BC-ARCH-001 — Separate presentation, host, and domain ownership
 
-**Requirement.** `packages/ui` shall own controllers and presentation,
-`packages/app` shall own executable host and capability wiring, repository
-domain packages shall own parsing/accounting/query/ingestion behavior, and
-published Design Core shall supply shared shell, form, and primitive UI.
+**Requirement.** `packages/ui` MUST own controllers and presentation,
+`packages/app` MUST own executable host and capability wiring, repository
+domain packages MUST own parsing/accounting/query/ingestion behavior, and
+published Design Core MUST supply shared shell, form, and primitive UI.
 
 ### Acceptance details
 
@@ -21,28 +21,25 @@ published Design Core shall supply shared shell, form, and primitive UI.
 
 ## BC-ARCH-002 — Isolate mutable runtime state
 
-**Requirement.** Each application controller shall own its project and ledger
+**Requirement.** Each application controller MUST own its project and ledger
 selection, route and query history, sidebar state, requests, caches, services,
 and cancellation independently.
 
 ### Acceptance details
 
 - Data sources and clocks are injected for each controller.
-- Project-scoped errors, asynchronous results, and cache values do not cross
-  controller instances.
+- Project-scoped errors, results, and cache values stay within their controller.
 - Host capability lifetimes remain explicit and disposable.
 
 ## BC-ARCH-003 — Keep retired and dormant capabilities inactive
 
-**Requirement.** The active product shall not restore `packages/fava`,
-`packages/fava-beta`, `packages/ui-legacy`, or `packages/forms`, and shall ship
+**Requirement.** The active product MUST NOT restore `packages/fava`,
+`packages/fava-beta`, `packages/ui-legacy`, or `packages/forms`, and MUST NOT ship
 no AI component, provider route, MCP process, ingestion enrichment action, or
 AI rule executor.
 
 ### Acceptance details
 
 - Historical source remains available through Jujutsu and recorded provenance.
-- Older persisted AI source flags and provider-backed rules cannot reactivate
-  dormant behavior.
-- A future integration must be host-owned and use the optional details snippet
-  or provider-neutral `BeancountDataSource.request` boundary explicitly.
+- Older persisted AI flags and provider-backed rules cannot reactivate dormant behavior.
+- A future integration MUST use an explicit host-owned extension boundary.

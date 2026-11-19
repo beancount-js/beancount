@@ -14,7 +14,23 @@ export default {
   parameters: {
     options: {
       storySort: {
-        order: ["Specification", ["Application baseline"], "Beancount", "*"],
+        order: [
+          "Specification",
+          [
+            "Beancount Studio specification",
+            "Application baseline",
+            "Beancount language",
+            "Accounting and query",
+            "Application UI",
+            "Ingestion and rules",
+            "Hosts and storage",
+            "Storybook catalog",
+            "Specification governance",
+            "Verification",
+          ],
+          "Beancount",
+          "*",
+        ],
       },
     },
     layout: "fullscreen",

@@ -22,6 +22,9 @@ importers:
 
   .:
     devDependencies:
+      '@lapismd/spec-validator':
+        specifier: ^0.2.1
+        version: 0.2.1
       turbo:
         specifier: ^2.2.3
         version: 2.9.18
@@ -1776,6 +1779,11 @@ packages:
       '@lezer/highlight': ^1.2.3
       '@lezer/markdown': ^1.4.3
       svelte: 5.56.9
+
+  '@lapismd/spec-validator@0.2.1':
+    resolution: {integrity: sha512-aHLByppZkay1axSm8KvCwOJz0si8aDyZBXDGWW+d2VQw+66f1KLimw2rEMjYIpLdoSG9+yN5Kd1MKlAJw7xUVw==}
+    engines: {node: '>=22'}
+    hasBin: true
 
   '@lezer/common@1.5.2':
     resolution: {integrity: sha512-sxQE460fPZyU3sdc8lafxiPwJHBzZRy/udNFynGQky1SePYBdhkBl1kOagA9uT3pxR8K09bOrmTUqA9wb/PjSQ==}
@@ -6439,6 +6447,11 @@ snapshots:
       - '@sveltejs/kit'
       - supports-color
       - tailwindcss
+
+  '@lapismd/spec-validator@0.2.1':
+    dependencies:
+      jiti: 2.7.0
+      typescript: 5.9.3
 
   '@lezer/common@1.5.2': {}
 

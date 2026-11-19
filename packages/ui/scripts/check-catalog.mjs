@@ -136,7 +136,9 @@ for (const group of ["navigationStates", "tableFamilies"]) {
 }
 const specRoot = resolve("../../spec/src");
 const canonicalSpecFiles = new Set(
-  files(specRoot).filter((name) => name.endsWith(".md")),
+  files(specRoot).filter(
+    (name) => name.endsWith(".md") && !name.endsWith("/SUMMARY.md"),
+  ),
 );
 const specificationDocs = new Set();
 const mirroredSpecFiles = new Set();

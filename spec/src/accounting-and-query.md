@@ -2,7 +2,7 @@
 
 ## BC-CORE-001 — Load complete ledger projects
 
-**Requirement.** The accounting runtime shall load entry files and includes,
+**Requirement.** The accounting runtime MUST load entry files and includes,
 return typed directives and options, and report parse or transformation errors
 without discarding successfully loaded entries.
 
@@ -14,7 +14,7 @@ without discarding successfully loaded entries.
 
 ## BC-CORE-002 — Apply accounting transformations deterministically
 
-**Requirement.** The runtime shall perform booking, interpolation, balance and
+**Requirement.** The runtime MUST perform booking, interpolation, balance and
 pad processing, realization, prices, and inventory transformations with stable
 decimal semantics.
 
@@ -26,7 +26,7 @@ decimal semantics.
 
 ## BC-CORE-003 — Execute declared plugins safely
 
-**Requirement.** The loader shall execute supported declared plugins according
+**Requirement.** The loader MUST execute supported declared plugins according
 to plugin mode and configuration, preserving entry ordering and returning
 plugin failures as diagnostics.
 
@@ -38,7 +38,7 @@ plugin failures as diagnostics.
 
 ## BC-CORE-004 — Provide filters, BQL, and reports
 
-**Requirement.** Studio shall provide filter expressions, Bean Query Language
+**Requirement.** Studio MUST provide filter expressions, Bean Query Language
 execution, and the report projections required by the active application.
 
 ### Acceptance details

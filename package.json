@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "checks": "pnpm check:baseline && turbo run checks --filter='!@beancount-js/ui' && pnpm checks:ui",
+    "checks": "pnpm spec:check && pnpm checks:functional",
+    "checks:functional": "pnpm check:baseline && turbo run checks --filter='!@beancount-js/ui' && pnpm checks:ui",
     "checks:ui": "pnpm --filter @beancount-js/ui checks",
     "dev": "pnpm storybook",
     "dev:app": "pnpm --filter @beancount-js/app dev",
@@ -18,7 +19,14 @@
     "fmt": "turbo run fmt",
     "check-types": "turbo run check-types",
     "test:storybook": "pnpm --filter @beancount-js/ui test:storybook",
-    "check:baseline": "node scripts/check-app-baseline.mjs"
+    "check:baseline": "node scripts/check-app-baseline.mjs",
+    "spec:search": "spec-validator search",
+    "spec:validate": "spec-validator validate",
+    "spec:first": "spec-validator first",
+    "spec:check": "spec-validator check",
+    "spec:build": "spec-validator build",
+    "spec:serve": "spec-validator serve",
+    "spec:index": "spec-validator index"
   },
   "packageManager": "pnpm@10.12.4",
   "pnpm": {
@@ -42,6 +50,7 @@
     }
   },
   "devDependencies": {
+    "@lapismd/spec-validator": "^0.2.1",
     "turbo": "^2.2.3"
   }
 }

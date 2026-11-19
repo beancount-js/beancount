@@ -2,7 +2,7 @@
 
 ## BC-HOST-001 — Keep host capabilities behind the data-source boundary
 
-**Requirement.** Presentation code shall obtain projects, files, resources,
+**Requirement.** Presentation code MUST obtain projects, files, resources,
 services, clocks, and optional requests through `BeancountDataSource` rather
 than importing filesystem, server, or browser persistence implementations.
 
@@ -14,7 +14,7 @@ than importing filesystem, server, or browser persistence implementations.
 
 ## BC-HOST-002 — Serve repository workspaces in server mode
 
-**Requirement.** The executable server host shall expose revision-aware project,
+**Requirement.** The executable server host MUST expose revision-aware project,
 file, resource, ingestion, merchant, rule, and reconciliation capabilities for
 the configured repository workspace.
 
@@ -26,7 +26,7 @@ the configured repository workspace.
 
 ## BC-HOST-003 — Persist browser workspaces directly
 
-**Requirement.** Static web mode shall use browser workspace capabilities,
+**Requirement.** Static web mode MUST use browser workspace capabilities,
 including OPFS or an explicitly selected local directory, without depending on
 server-only routes.
 
@@ -38,7 +38,7 @@ server-only routes.
 
 ## BC-HOST-004 — Deliver executable and catalog builds
 
-**Requirement.** The repository shall build the server host, static web host,
+**Requirement.** The repository MUST build the server host, static web host,
 CLI launcher, and sole Storybook catalog from the active package graph.
 
 ### Acceptance details

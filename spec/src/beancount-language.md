@@ -6,7 +6,7 @@ separates upstream behavior from Studio/Fava-derived additions.
 
 ## BC-LANG-001 — Preserve the pinned upstream language baseline
 
-**Requirement.** The parser and accounting loader shall preserve the supported
+**Requirement.** The parser and accounting loader MUST preserve the supported
 behavior of upstream Beancount commit `a3cb3fd9f946d6213dd350fb87709a8ef198301d`,
 including query directives, arithmetic number expressions, slash dates,
 comma-grouped numbers, and HIFO booking.
@@ -19,7 +19,7 @@ comma-grouped numbers, and HIFO booking.
 
 ## BC-LANG-002 — Accept editor-friendly scalar syntax
 
-**Requirement.** Studio shall accept lowercase Boolean input and unquoted
+**Requirement.** Studio MUST accept lowercase Boolean input and unquoted
 booking methods while serializing them to canonical uppercase Booleans and
 quoted booking-method values.
 
@@ -31,7 +31,7 @@ quoted booking-method values.
 
 ## BC-LANG-003 — Support fenced query and plugin bodies
 
-**Requirement.** Studio shall accept matching fenced code blocks of three or
+**Requirement.** Studio MUST accept matching fenced code blocks of three or
 more backticks, with an optional language identifier, as query and plugin body
 strings while retaining non-directive document markup as editable, non-executed
 source.
@@ -40,12 +40,11 @@ source.
 
 - Opening and closing fences must use the same or a longer valid fence shape.
 - Query and plugin bodies expose the fenced content to their owning runtime.
-- Headings, prose, and other non-directive markup remain in the document but do
-  not create accounting entries.
+- Non-directive document markup does not create accounting entries.
 
 ## BC-LANG-004 — Interpret Studio option directives
 
-**Requirement.** Studio shall retain `custom "fava-option"` compatibility and
+**Requirement.** Studio MUST retain `custom "fava-option"` compatibility and
 support `custom "ledger-option"` values for `dashboard_collapsed`, `incognito`,
 and `plugins`.
 
@@ -57,13 +56,12 @@ and `plugins`.
 
 ## BC-LANG-005 — Resolve plugin configuration predictably
 
-**Requirement.** Inline plugin configuration shall override global
-`ledger-option` defaults; defaults shall configure only an explicitly declared
-plugin and shall never enable a plugin by themselves.
+**Requirement.** Inline plugin configuration MUST override global
+`ledger-option` defaults; defaults MUST configure only an explicitly declared
+plugin and MUST NOT enable a plugin by themselves.
 
 ### Acceptance details
 
 - Forecast configuration accepts YAML `now` and `end` fields.
-- Credit-card configuration accepts YAML `{ tag: ... }` and its legacy plain
-  tag string.
+- Credit-card configuration accepts YAML `{ tag: value }` and its legacy plain tag string.
 - Configuration-free plugins reject supplied configuration with a loader error.

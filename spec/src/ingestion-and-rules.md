@@ -2,7 +2,7 @@
 
 ## BC-ING-001 — Connect external transaction sources through host services
 
-**Requirement.** Server mode shall expose project-scoped connectors for the
+**Requirement.** Server mode MUST expose project-scoped connectors for the
 supported Monzo, Starling, and Lunch Flow sources without placing credentials
 or live bank requests in the presentation package.
 
@@ -14,20 +14,19 @@ or live bank requests in the presentation package.
 
 ## BC-ING-002 — Import and synchronize repeatably
 
-**Requirement.** Import and synchronization jobs shall normalize connector data,
+**Requirement.** Import and synchronization jobs MUST normalize connector data,
 track progress and events, and avoid duplicating previously accepted source
 transactions.
 
 ### Acceptance details
 
-- Jobs are project-scoped and expose running, completed, failed, and cancelled
-  states.
+- Jobs expose project-scoped running, completed, failed, and cancelled states.
 - Import previews remain reviewable before ledger mutation.
 - Repeated synchronization uses stable source identities and checkpoints.
 
 ## BC-ING-003 — Resolve merchant identity and presentation
 
-**Requirement.** Studio shall maintain merchant catalogs, profiles, brand
+**Requirement.** Studio MUST maintain merchant catalogs, profiles, brand
 matching, logo caching, and review state as host services consumable by the UI.
 
 ### Acceptance details
@@ -38,7 +37,7 @@ matching, logo caching, and review state as host services consumable by the UI.
 
 ## BC-ING-004 — Apply deterministic rules
 
-**Requirement.** Rule evaluation shall be ordered, deterministic, reviewable,
+**Requirement.** Rule evaluation MUST be ordered, deterministic, reviewable,
 and limited to the active non-AI rule actions before it mutates ledger data.
 
 ### Acceptance details
@@ -49,7 +48,7 @@ and limited to the active non-AI rule actions before it mutates ledger data.
 
 ## BC-ING-005 — Reconcile imports with revision safety
 
-**Requirement.** Reconciliation shall compare imported candidates with ledger
+**Requirement.** Reconciliation MUST compare imported candidates with ledger
 entries, preserve review decisions, and apply accepted changes only against the
 expected project revision.
 
