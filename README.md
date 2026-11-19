@@ -3,11 +3,10 @@
 A Beancount accounting monorepo with a controller-backed application UI built
 on published [Design Core](https://github.com/lapismd/design-core).
 The Design Core application in `packages/ui`, hosted by `packages/app`, is the
-sole application baseline. Deprecated application and compatibility packages
-were retired on 13 November 2026.
+sole application baseline.
 
-Read [app status](docs/APP_STATUS.md), the
-[baseline specification](spec/src/app-baseline.md), and the
+Read the [product specification](spec/src/index.md),
+[app status](docs/APP_STATUS.md), and the
 [UI package guide](packages/ui/README.md) for ownership, validation and limits.
 Review the current application catalog in the
 [hosted Storybook](https://beancount-js.github.io/beancount/),
@@ -26,8 +25,7 @@ including the canonical specification and public component documentation.
 
 ## Development
 
-Use Node.js 22.12+ (Node 24 is used locally), pnpm 10 and Jujutsu. Catalog
-checks need the pinned source/reference commit objects available in this repo.
+Use Node.js 22.12+ (Node 24 is used locally), pnpm 10 and Jujutsu.
 
 ```sh
 pnpm install
@@ -54,6 +52,7 @@ remain available for a future integration without coupling one into the app.
 
 ```sh
 pnpm check:baseline
+pnpm spec:check
 pnpm checks
 pnpm checks:ui
 pnpm test:storybook
@@ -62,29 +61,21 @@ pnpm --filter @beancount-js/app checks
 pnpm test
 ```
 
-`pnpm checks` runs the current package graph, active host and active UI. The
+`pnpm spec:check` validates the canonical `BC-*` requirements, their evidence,
+spec-first history, mdBook, baseline ownership, and Storybook mirrors.
+`pnpm checks` runs that governance lane before the current package graph, active
+host, and active UI. The
 [status page](docs/APP_STATUS.md) records observed results and outstanding
 limits. A passing catalog is not production integration or visual signoff.
 
-## Preserved previous state
+## Language extensions and plugin configuration
 
-`archive/pre-design-core-baseline-2026-10-28` preserves the previous checkout
-at `96936679`, including the pending Visual Delta/macOS changes. The
-`beancount-studio` bookmark names the promoted application development baseline.
-The repository's separate `main` bookmark is not repurposed by this transition.
-
-```sh
-jj --no-pager show archive/pre-design-core-baseline-2026-10-28
-```
-
-Both histories are retained by the baseline merge. Fava at `498bd075` remains
-a recorded comparison commit, not a package in the current checkout;
-provenance and comparison details are in
-[PARITY_REVIEW.md](packages/ui/PARITY_REVIEW.md). The retired applications,
-compatibility packages, extraction ledger, old catalogs and visual tooling
-remain recoverable through Jujutsu history and the archive bookmark.
-
-## Plugin configuration
+The canonical distinction between the pinned upstream Beancount baseline and
+Studio additions is [BC-LANG-001–005](spec/src/beancount-language.md).
+Studio accepts editor conveniences such as lowercase Booleans, unquoted booking
+methods, fenced query/plugin bodies, retained document markup, and compatible
+`fava-option` / `ledger-option` directives. Output is normalized where the
+language contract requires it.
 
 Plugin declarations follow Beancount's standard three-argument contract: the optional second string is passed to the plugin unchanged as its configuration.
 

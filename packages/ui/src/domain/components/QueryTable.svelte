@@ -12,7 +12,7 @@
   } from "@beancount-js/beancount";
   import { DefaultMap } from "@beancount-js/beancount";
   import { Amount } from "@beancount-js/beancount";
-  import type { FavaChart } from "../charts";
+  import type { BeancountChart } from "../charts";
   import { hierarchyFromParsedData } from "../charts/hierarchy";
   import Chart from "../charts/Chart.svelte";
   import { balances } from "../charts/line";
@@ -50,7 +50,7 @@
   function chartData(
     data: Array<Record<string, any>>,
     columns: Columns,
-  ): FavaChart | null {
+  ): BeancountChart | null {
     if (!data.length || columns.ids.length !== 2) {
       return null;
     }

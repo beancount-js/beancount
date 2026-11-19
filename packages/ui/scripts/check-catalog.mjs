@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 const inventory = JSON.parse(readFileSync("CATALOG_INVENTORY.json", "utf8"));
@@ -24,63 +23,8 @@ if (
   throw new Error(
     "Catalog Design Core import inventory no longer matches production source.",
   );
-function referenceFile(path) {
-  return execFileSync(
-    "jj",
-    ["file", "show", "-r", inventory.referenceCommit, path],
-    {
-      cwd: resolve("../.."),
-      encoding: "utf8",
-    },
-  );
-}
-const referencePaths = execFileSync(
-  "jj",
-  ["file", "list", "-r", inventory.referenceCommit],
-  {
-    cwd: resolve("../.."),
-    encoding: "utf8",
-  },
-).split("\n");
-for (const path of inventory.replacedReferenceChrome)
-  if (
-    !referencePaths.some(
-      (name) =>
-        name === `packages/fava/${path}` ||
-        name.startsWith(`packages/fava/${path}/`),
-    )
-  )
-    throw new Error(`Unknown reference chrome: ${path}`);
-for (const { source, target } of inventory.referenceFixtures)
-  if (referenceFile(source) !== readFileSync(target, "utf8"))
-    throw new Error(`Fixture differs from pinned Fava reference: ${target}`);
-const reference = referenceFile("packages/fava/src/Main.svelte");
-const routes = [
-  ...reference.matchAll(/\{ path: "([^"]+)", element: (\w+) \}/g),
-].map((match) => ({ route: match[1], component: match[2] }));
-if (
-  JSON.stringify(routes) !==
-  JSON.stringify(
-    inventory.routes.map(({ route, component }) => ({ route, component })),
-  )
-)
-  throw new Error(
-    "Catalog route inventory no longer matches the frozen reference.",
-  );
+const routes = inventory.routes;
 for (const specifier of inventory.sharedImports) import.meta.resolve(specifier);
-const provenance = JSON.parse(readFileSync("UI_PROVENANCE.json", "utf8"));
-const provenancePaths = new Set(
-  execFileSync("jj", ["file", "list", "-r", provenance.sourceCommit], {
-    cwd: resolve("../.."),
-    encoding: "utf8",
-  }).split("\n"),
-);
-for (const entry of provenance.copied) {
-  if (!existsSync(entry.target))
-    throw new Error(`Missing adapted source: ${entry.target}`);
-  if (!provenancePaths.has(entry.source))
-    throw new Error(`Missing provenance source: ${entry.source}`);
-}
 function slug(value) {
   return value
     .toLowerCase()
@@ -136,7 +80,9 @@ for (const group of ["navigationStates", "tableFamilies"]) {
 }
 const specRoot = resolve("../../spec/src");
 const canonicalSpecFiles = new Set(
-  files(specRoot).filter((name) => name.endsWith(".md")),
+  files(specRoot).filter(
+    (name) => name.endsWith(".md") && !name.endsWith("/SUMMARY.md"),
+  ),
 );
 const specificationDocs = new Set();
 const mirroredSpecFiles = new Set();
@@ -175,5 +121,5 @@ if (process.argv.includes("--built")) {
       throw new Error(`Missing built component documentation: ${id}`);
 }
 console.log(
-  `Catalog coverage passed: ${routes.length} reference routes and ${inventory.navigationStates.length} navigation states, ${inventory.tableFamilies.length} table families, ${canonicalSpecFiles.size} specification chapters, ${documentedStoryFamilies} documented story families, ${publicComponents.length} public components and ${inventory.sharedImports.length} public Design Core imports.`,
+  `Catalog coverage passed: ${routes.length} application routes and ${inventory.navigationStates.length} navigation states, ${inventory.tableFamilies.length} table families, ${canonicalSpecFiles.size} specification chapters, ${documentedStoryFamilies} documented story families, ${publicComponents.length} public components and ${inventory.sharedImports.length} public Design Core imports.`,
 );

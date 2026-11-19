@@ -16,7 +16,7 @@
   import LineChart from "./LineChart.svelte";
   import HierarchyContainer from "./HierarchyContainer.svelte";
   import ModeSwitch from "./ModeSwitch.svelte";
-  import type { FavaChart } from ".";
+  import type { BeancountChart } from ".";
   import { getInterval, intervalLabel } from "../lib/interval";
   import { conversionLabel, getConversion } from "@beancount-js/beancount";
   import ScatterPlot from "./ScatterPlot.svelte";
@@ -24,7 +24,7 @@
 
   const { conversion, interval } = useContext();
   /** The chart to render. */
-  export let chart: FavaChart;
+  export let chart: BeancountChart;
   export let hideButtons: boolean = false;
 
   /** Width of the chart. */

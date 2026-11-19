@@ -4,7 +4,7 @@ import { runBql } from "@beancount-js/beanquery";
 import { expect, it } from "vitest";
 import { LedgerSource } from "../../src/domain/core/ledger";
 import { previewProject } from "./preview-project";
-import sample from "./reference/sample.beancount?raw";
+import sample from "./ledger/sample.beancount?raw";
 import { reviewProject } from "./review-project";
 
 it("loads each shared review ledger without errors and retains pagination data", () => {

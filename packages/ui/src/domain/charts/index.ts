@@ -3,4 +3,8 @@ import type { HierarchyChart } from "./hierarchy";
 import type { LineChart } from "./line";
 import type { ScatterPlot } from "./scatterplot";
 
-export type FavaChart = HierarchyChart | BarChart | LineChart | ScatterPlot;
+export type BeancountChart =
+  | HierarchyChart
+  | BarChart
+  | LineChart
+  | ScatterPlot;

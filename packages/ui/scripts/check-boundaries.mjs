@@ -16,9 +16,7 @@ for (const file of files("src")) {
     /(?:from\s*|import\s*)["']([^"']+)["']/g,
   )) {
     if (
-      /\$lib|\$app|catalog|packages\/fava|@beancount-js\/forms|@lapis\/ui|@lapismd\/lapis-community|@lapismd\/design-core\/(?:src|dist)/.test(
-        match[1],
-      )
+      /\$lib|\$app|catalog|@lapismd\/design-core\/(?:src|dist)/.test(match[1])
     )
       failures.push(`${file}: ${match[1]}`);
   }

@@ -1,7 +1,7 @@
 # Filters
 
 With the text inputs at the top right of the page, you can filter the entries
-that are displayed in Fava's reports. If you use multiple filters, the entries
+that are displayed in application reports. If you use multiple filters, entries
 matching all of them will be selected.
 
 ### Time
@@ -41,7 +41,7 @@ This final filter allows you to filter entries by various attributes.
 - Filter by any entry attribute, such as payee `payee:"restaurant"` or narration
   `narration:'Dinner with Joe'`. The argument is a regular expression which
   needs to be quoted (with `'` or `"`) if it contains spaces or special
-  characters. If the argument is not a valid regular expression, Fava will look
+  characters. If the argument is not a valid regular expression, the filter looks
   for an exact match instead.
 - Search in payee and narration if no specific entry attribute is given, e.g.
   `"Cash withdrawal"`. For Note directives, the comment will be searched.
@@ -64,7 +64,6 @@ least one of the given filters. In other words, a space acts like an "and" and a
 comma like an "or". As usual, the logical "and" has a higher grouping power than
 "or" and you can use parentheses to group filters.
 
-When given regular expressions, Fava checks for a match anywhere in the
-corresponding attribute. Matching is always case-insensitive. To find out more
-about the specific syntax Fava uses, refer to
+Regular expressions match anywhere in the corresponding attribute. Matching is
+always case-insensitive. For details about the supported syntax, refer to
 [Python's Regular Expression Syntax](https://docs.python.org/3/library/re.html?highlight=match#regular-expression-syntax).

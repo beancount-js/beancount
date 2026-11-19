@@ -31,7 +31,7 @@
       "allowedAccountRoots": ["Expenses"],
       "aiEnabled": false,
       "reviewDateFormat": "YYYY-MM-DD",
-      "setup": "Deterministic local fixture provider used by Fava Beta review screens. The archived run in .beancount/ingestion/runs supplies active review proposals, so the placeholder endpoint is not contacted during normal UI review.",
+      "setup": "Deterministic local fixture provider used by catalog review screens. The stored run in .beancount/ingestion/runs supplies active review proposals, so the placeholder endpoint is not contacted during normal UI review.",
       "merchantEnrichment": {
         "enabled": true,
         "aiEnabled": false,

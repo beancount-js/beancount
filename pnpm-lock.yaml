@@ -22,6 +22,9 @@ importers:
 
   .:
     devDependencies:
+      '@lapismd/spec-validator':
+        specifier: ^0.2.1
+        version: 0.2.1
       turbo:
         specifier: ^2.2.3
         version: 2.9.18
@@ -786,6 +789,9 @@ importers:
       '@storybook/addon-vitest':
         specifier: 10.5.7
         version: 10.5.7(@vitest/browser-playwright@4.1.8)(@vitest/browser@4.1.8(vite@6.4.2(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.8))(@vitest/runner@4.1.10)(react@19.2.8)(storybook@10.5.7(@types/react@19.3.0)(prettier@3.3.3)(react@19.2.8))(vitest@4.1.8)
+      '@storybook/icons':
+        specifier: 2.1.0
+        version: 2.1.0(react@19.2.8)
       '@storybook/svelte-vite':
         specifier: 10.5.7
         version: 10.5.7(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.56.9(@typescript-eslint/types@8.61.0))(vite@6.4.2(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)(tsx@4.23.1)(yaml@2.9.0)))(esbuild@0.28.0)(rollup@4.61.1)(storybook@10.5.7(@types/react@19.3.0)(prettier@3.3.3)(react@19.2.8))(svelte@5.56.9(@typescript-eslint/types@8.61.0))(vite@6.4.2(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)(tsx@4.23.1)(yaml@2.9.0))
@@ -1776,6 +1782,11 @@ packages:
       '@lezer/highlight': ^1.2.3
       '@lezer/markdown': ^1.4.3
       svelte: 5.56.9
+
+  '@lapismd/spec-validator@0.2.1':
+    resolution: {integrity: sha512-aHLByppZkay1axSm8KvCwOJz0si8aDyZBXDGWW+d2VQw+66f1KLimw2rEMjYIpLdoSG9+yN5Kd1MKlAJw7xUVw==}
+    engines: {node: '>=22'}
+    hasBin: true
 
   '@lezer/common@1.5.2':
     resolution: {integrity: sha512-sxQE460fPZyU3sdc8lafxiPwJHBzZRy/udNFynGQky1SePYBdhkBl1kOagA9uT3pxR8K09bOrmTUqA9wb/PjSQ==}
@@ -6439,6 +6450,11 @@ snapshots:
       - '@sveltejs/kit'
       - supports-color
       - tailwindcss
+
+  '@lapismd/spec-validator@0.2.1':
+    dependencies:
+      jiti: 2.7.0
+      typescript: 5.9.3
 
   '@lezer/common@1.5.2': {}
 

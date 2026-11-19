@@ -1,0 +1,11 @@
+[book]
+authors = ["Beancount JS contributors"]
+language = "en"
+src = "src"
+title = "Beancount Studio specification"
+
+[build]
+build-dir = "book"
+
+[output.html]
+git-repository-url = "https://github.com/beancount-js/beancount"

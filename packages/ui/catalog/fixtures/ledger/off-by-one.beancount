@@ -1,3 +1,4 @@
+; Catalog fixture.
 option "title" "off-by-one"
 option "operating_currency" "USD"
 

@@ -68,7 +68,7 @@
   padding-right: 1em;
 }
 
-/* Preserve the historical flex geometry after the accessible markup adaptation. */
+/* Keep flex-table geometry aligned with the accessible grid markup. */
 .beancount .bean-table.flex-table [data-grid-row] > div {
   display: flex;
 }

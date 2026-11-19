@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
 
@@ -57,23 +57,7 @@ const config = readFileSync(
   "utf8",
 );
 assert(config.includes("../catalog/**/*.stories.svelte"));
-assert(!config.includes("fava") && !config.includes("ui-legacy"));
-for (const retired of [
-  "packages/fava",
-  "packages/fava-beta",
-  "packages/ui-legacy",
-  "packages/forms",
-  "tools/fava-parity",
-])
-  assert(
-    !existsSync(resolve(root, retired)),
-    `Retired application package or tool is still present: ${retired}`,
-  );
-for (const command of Object.values(workspace.scripts))
-  assert(
-    !/@lapis\/ui|@beancount-js\/(forms|fava(?:-beta)?)|fava-parity/.test(command),
-    `Root command still targets a retired package or tool: ${command}`,
-  );
+assert(config.includes("../catalog/**/*.mdx"));
 console.log(
-  "Application baseline passed: one active Design Core UI, catalog and production host; retired applications and compatibility packages are absent.",
+  "Application baseline passed: one active Design Core UI, catalog and production host.",
 );

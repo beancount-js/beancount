@@ -18,7 +18,7 @@ const merchants = [
   },
 ];
 
-describe("Fava fuzzy search helpers", () => {
+describe("fuzzy search helpers", () => {
   it("fuzzy-ranks merchant names, domains, and aliases", () => {
     expect(fuzzySearchMerchants(merchants, "amricn exp")[0]).toBe(merchants[0]);
     expect(fuzzySearchMerchants(merchants, "amex")[0]).toBe(merchants[0]);

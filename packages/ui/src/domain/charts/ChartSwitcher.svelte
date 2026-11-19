@@ -2,12 +2,12 @@
   import Chart from "../charts/Chart.svelte";
   import * as Tabs from "@lapismd/design-core/shadcn/tabs";
   import * as ScrollArea from "@lapismd/design-core/shadcn/scroll-area";
-  import type { FavaChart } from ".";
+  import type { BeancountChart } from ".";
   import { useContext } from "../context";
 
   const { lastActiveChartName } = useContext();
 
-  export let charts: FavaChart[];
+  export let charts: BeancountChart[];
   $: activeChart =
     charts.find((c) => c.name === $lastActiveChartName) ?? charts?.[0];
   function handleChange(value: string | undefined) {
