@@ -33,6 +33,7 @@ matching, logo caching, and review state as host services consumable by the UI.
 
 - Merchant matches retain their source and confidence or review status.
 - Cached logos and account identities do not leak across controller projects.
+- Unsupported enrichment settings do not reactivate host behavior.
 - Users can review and revise proposed merchant presentation.
 
 ## BC-ING-004 — Apply deterministic rules

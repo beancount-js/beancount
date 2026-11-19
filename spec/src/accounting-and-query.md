@@ -46,3 +46,4 @@ execution, and the report projections required by the active application.
 - Parsers produce typed syntax and useful diagnostics.
 - Queries operate against loaded Beancount entries and exposed sources.
 - Reports preserve account, transaction, lot, price, and date semantics.
+- Filter documentation describes the current application behavior.

@@ -62,7 +62,7 @@
     const canvas = within(canvasElement);
     await canvas.findByRole("heading", { name: "Financial dashboard" });
     await expect(
-      canvas.getByText("beancount-js-studio-query-table-498bd075", {
+      canvas.getByText("beancount-studio-catalog-preview", {
         selector: "[data-project-name]",
       }),
     ).toBeVisible();

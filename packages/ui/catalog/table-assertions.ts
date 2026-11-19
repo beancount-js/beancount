@@ -15,7 +15,7 @@ export function expectColumnsAligned(
   });
 }
 
-/** Assertions adapted from the immutable Fava e2e suite, without its seed helpers. */
+/** Shared table assertions for catalog interaction tests. */
 export async function expectStatementGeometry(canvas: HTMLElement) {
   await canvas.ownerDocument.fonts.ready;
   await waitFor(() => {

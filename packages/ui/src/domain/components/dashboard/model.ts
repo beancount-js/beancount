@@ -257,7 +257,7 @@ export function dashboardDefaultCurrency(
 
 /**
  * Build the dashboard from the same ledger instance used by the reports. The
- * caller receives a ledger that already reflects Fava's global predicate; the
+ * caller receives a ledger that already reflects the global predicate; the
  * dashboard only applies its period boundary and never admits forecast rows
  * after today.
  */

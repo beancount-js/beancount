@@ -2,7 +2,7 @@
 
 Studio implements a Beancount-compatible language at the upstream baseline
 recorded in `packages/beancount/src/parity/upstream.ts`. This chapter explicitly
-separates upstream behavior from Studio/Fava-derived additions.
+separates upstream behavior from Studio additions.
 
 ## BC-LANG-001 — Preserve the pinned upstream language baseline
 

@@ -382,7 +382,7 @@ export function validateBrandfetchConfig(
   }
   // Kept for compatibility with callers that still pass a country hint.
   void countryCode;
-  // Discard retired server-fetch settings. Logo API requests now redirect from
+  // Ignore unsupported server-fetch settings. Logo API requests redirect from
   // an internal URL to the browser, which is required for Brandfetch's
   // referrer-based delivery model. Matching local assets stay supported.
   if (

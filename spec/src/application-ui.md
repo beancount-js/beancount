@@ -33,6 +33,7 @@ selection, and responsive containment.
 ### Acceptance details
 
 - Tables expose meaningful names and keyboard-operable actions.
+- Chart and table models use product-owned, provider-neutral names.
 - Empty, loading, and error states remain distinguishable.
 - Geometry checks prevent clipped controls and unintended page overflow.
 

@@ -31,7 +31,7 @@ an owning canonical specification chapter in the same change.
 ### Acceptance details
 
 - Product paths map to their respective owning chapters.
-- Manifest and provenance changes update architecture and governance requirements.
+- Package graph and catalog inventory changes update architecture and governance requirements.
 - Tests, fixtures, generated output, dependencies, and MDX mirrors are excluded.
 - Repository guidance requires requirement search, the spec-validator skill, and focused gates.
 
@@ -57,6 +57,6 @@ require pull requests and both up-to-date checks while allowing solo maintenance
 ### Acceptance details
 
 - CI uses full history for spec-first comparison and a frozen dependency install.
-- CI installs pinned tools and initializes full-history Jujutsu provenance.
+- CI uses Node 24, mdBook 0.5.4, and a frozen pnpm installation.
 - Branch protection requires zero human approvals and blocks force-push/deletion.
 - The application job runs the functional checks and root tests with Chromium.

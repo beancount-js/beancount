@@ -22,7 +22,7 @@ the configured repository workspace.
 
 - Project root and entry file are explicit host configuration.
 - Same-origin routes enforce project and filesystem boundaries.
-- The CLI launches the supported server build rather than a retired app.
+- The CLI launches the supported `packages/app` server build.
 
 ## BC-HOST-003 — Persist browser workspaces directly
 
@@ -43,6 +43,6 @@ CLI launcher, and sole Storybook catalog from the active package graph.
 
 ### Acceptance details
 
-- Production builds reject retired package dependencies.
+- Production builds validate the supported package graph.
 - GitHub Pages publishes the same catalog built locally.
 - Build success remains distinct from live-bank or human-visual qualification.

@@ -32,7 +32,7 @@
       await within(document.body).findByRole("option", { name: "All time" }),
     );
     await expect(
-      canvas.getByText("beancount-js-studio-query-table-498bd075", {
+      canvas.getByText("beancount-studio-catalog-preview", {
         selector: "[data-project-name]",
       }),
     ).toBeVisible();
@@ -82,7 +82,7 @@
       canvas.getByRole("button", { name: "Expand left sidebar" }),
     ).toBeVisible();
     const projectRail = canvas.getByRole("button", {
-      name: "Expand project rail: beancount-js-studio-query-table-498bd075",
+      name: "Expand project rail: beancount-studio-catalog-preview",
     });
     await expect(projectRail).toBeVisible();
     expect(getComputedStyle(projectRail).margin).toBe("8px 6px");

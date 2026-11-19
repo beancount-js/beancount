@@ -35,15 +35,11 @@
 ## Application baseline and direction
 
 - The active application/UI baseline is `packages/ui` / `@beancount-js/ui`,
-  integrated from the Design Core historical workspace. Continue new work in
+  built with published Design Core. Continue new work in
   this main checkout on the `beancount-studio` development line.
 - Read `spec/src/app-baseline.md` for package/host ownership and
   `docs/APP_STATUS.md` for qualification and remaining work. Keep README files,
   these specifications and agent guidance aligned when direction changes.
-- The old extraction/native-CSS/Visual Delta campaign is superseded. Its
-  previous state, including pending work, is preserved at
-  `archive/pre-design-core-baseline-2026-10-28`. Do not restart its component
-  queue or treat historical certification statuses as current approval.
 - `pnpm dev` / `pnpm storybook` start the sole active catalog. Application
   stories use disposable in-memory data sources. `pnpm dev:app` starts the
   executable `packages/app` host, which integrates the active UI through
@@ -84,16 +80,10 @@
   overflow. Inline editor widgets remain compact document affordances rather
   than structured form rows.
 
-## Retired applications and frozen references
+## Catalog qualification
 
-- `packages/fava`, `packages/fava-beta`, `packages/ui-legacy` and
-  `packages/forms` are retired and must not be restored as parallel application
-  or compatibility paths. Their history remains available through Jujutsu.
-- Consume no historical reference source in the active UI. Validate provenance
-  against the commits recorded in `UI_PROVENANCE.json` and
-  `CATALOG_INVENTORY.json`; those paths do not require current Fava files.
-- Keep reference fixture snapshots under
-  `packages/ui/catalog/fixtures/reference` and out of mutation/seed helpers.
+- Keep catalog fixture ledgers under `packages/ui/catalog/fixtures/ledger` and
+  out of mutation/seed helpers.
 - Shell/table/editor qualification uses browser geometry and accessibility
   checks. Human visual approval and production backend readiness must be
   reported separately; do not claim either from passing catalog tests.

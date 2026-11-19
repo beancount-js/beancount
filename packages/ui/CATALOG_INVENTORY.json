@@ -1,5 +1,4 @@
 {
-  "referenceCommit": "792cd4c7e2b81892faaf02bb505467e824393460",
   "routes": [
     {
       "route": "/",
@@ -154,14 +153,6 @@
     "@lapismd/design-core/styles.css",
     "@lapismd/design-core/themes/lapis.css"
   ],
-  "replacedReferenceChrome": [
-    "src/Main.svelte",
-    "src/components/StudioShell.svelte",
-    "src/components/StudioShellHeader.svelte",
-    "src/components/FavaNavigation.svelte",
-    "src/components/Nav.svelte",
-    "src/lib/components/ui"
-  ],
   "navigationStates": [
     {
       "state": "Modes, selected tabs, folders, tags and ledger expansion",
@@ -232,29 +223,6 @@
     {
       "family": "Holdings and Statistics shared renderer",
       "storyId": "beancount-tables--holdings-and-statistics"
-    }
-  ],
-  "adaptedSourceCommit": "e64de2826dd5b36d7f1bc46bf4f6fec894892c74",
-  "referenceFixtures": [
-    {
-      "source": "packages/fava/e2e/fixtures/minimal.beancount",
-      "target": "catalog/fixtures/reference/minimal.beancount"
-    },
-    {
-      "source": "packages/fava/public/sample.beancount",
-      "target": "catalog/fixtures/reference/fava-sample.beancount"
-    },
-    {
-      "source": "packages/fava/src/parity/fixtures/off-by-one.beancount",
-      "target": "catalog/fixtures/reference/off-by-one.beancount"
-    },
-    {
-      "source": "sample-budgets.beancount",
-      "target": "catalog/fixtures/reference/sample-budgets.beancount"
-    },
-    {
-      "source": "sample.beancount",
-      "target": "catalog/fixtures/reference/sample.beancount"
     }
   ]
 }

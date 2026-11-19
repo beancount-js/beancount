@@ -9,7 +9,7 @@ owning implementation slices land.
 | ----------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | BC-ARCH-001 | Implemented | `scripts/check-app-baseline.mjs`, `packages/ui/scripts/check-boundaries.mjs`, and package checks enforce the active UI/host/domain ownership.                            |
 | BC-ARCH-002 | Implemented | `packages/ui/src/controller` and controller/catalog tests cover injected services, navigation, cancellation, cache, and instance isolation.                              |
-| BC-ARCH-003 | Implemented | Baseline checks reject retired packages and active AI paths; host rule and persistence tests cover filtering of older configuration.                                     |
+| BC-ARCH-003 | Implemented | Baseline checks enforce one UI and host path with no active AI surface; host rule and persistence tests cover filtering persisted inactive configuration.              |
 | BC-LANG-001 | Implemented | `packages/beancount/src/parity`, parser specs, booking specs, and oracle fixtures pin and test upstream commit `a3cb3fd9f946d6213dd350fb87709a8ef198301d`.               |
 | BC-LANG-002 | Implemented | Parser and printer specs cover lowercase Boolean input and canonical output for Booleans and booking methods.                                                            |
 | BC-LANG-003 | Implemented | Parser grammar/specs and CodeMirror language specs cover fenced bodies and retained non-directive Markdown.                                                              |
@@ -33,7 +33,7 @@ owning implementation slices land.
 | BC-HOST-002 | Implemented | `packages/app` server adapter/route tests and CLI smoke checks cover repository projects, resources, services, and builds.                                               |
 | BC-HOST-003 | Implemented | Static web build and OPFS browser acceptance cover edit, save, direct storage read, and full reload without server routes.                                               |
 | BC-HOST-004 | Implemented | Baseline, package, app server/static, CLI, and production Storybook build checks cover the active delivery graph.                                                        |
-| BC-CAT-001  | Implemented | UI catalog scripts and stories enforce one catalog with in-memory projects and immutable reference fixtures.                                                             |
+| BC-CAT-001  | Implemented | UI catalog scripts and stories enforce one catalog with in-memory projects and immutable catalog-owned fixtures.                                                         |
 | BC-CAT-002  | Implemented | Storybook imports Design Core/Lapis styles, exposes the dynamic brand selector and manager color-mode toggle, and unit-tests requirement-aware TOC labels.               |
 | BC-CAT-003  | Implemented | `packages/ui/catalog/spec`, Storybook ordering, spec-validator mirror validation, and catalog validation enforce one raw Markdown mirror for every `SUMMARY.md` chapter. |
 | BC-CAT-004  | Implemented | UI checks run catalog inventory, unit, Storybook interaction/accessibility, and production build checks without screenshot baselines.                                    |
@@ -41,4 +41,4 @@ owning implementation slices land.
 | BC-GOV-002  | Implemented | Root scripts, `spec/book.toml`, `.qmd/index.yml`, the generated-book ignore, and spec-validator doctor/build/search integration provide publishing and discovery.        |
 | BC-GOV-003  | Implemented | Mapped spec-first protection covers active parser, accounting, UI, ingestion, host, catalog, and governance paths; `AGENTS.md` requires discovery and focused gates.    |
 | BC-GOV-004  | Implemented | `pnpm spec:check` runs validation, mdBook, spec-first, baseline, and source-catalog lanes; `pnpm checks` composes it with `checks:functional`.                           |
-| BC-GOV-005  | In progress | CI defines named jobs with pinned tools, a published provenance archive, full-history Jujutsu, and Chromium; branch protection awaits green contexts.                  |
+| BC-GOV-005  | In progress | CI defines named Specification and Application jobs with Node 24, mdBook 0.5.4, frozen dependencies, full history for spec-first, and Chromium; protection is pending. |
